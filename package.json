@@ -1,0 +1,19 @@
+{
+  "name": "seettp",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tim Perry <pimterry@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "typescript": "^2.6.2"
+  }
+}

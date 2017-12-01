@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "outDir": "./dist",
+        "declaration": true, 
+        "sourceMap": true,
+        "strict": true,
+        "lib": [
+            "dom",
+            "es5",
+            "scripthost",
+            // Required for graphql (but it does actually bring its own polyfill)
+            "esnext.asynciterable"
+        ]
+    },
+    "compileOnSave": true,
+    "buildOnSave": true,
+    "include": [
+        "custom-typings/*.d.ts",
+        "src/**/*.ts",
+        "node_modules/@types/**/*.d.ts"
+    ]
+}
