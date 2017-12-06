@@ -2,10 +2,17 @@
     "compilerOptions": {
         "target": "es2015",
         "module": "commonjs",
+        "moduleResolution": "node",
         "outDir": "./dist",
-        "declaration": true, 
         "sourceMap": true,
-        "strict": true,
+
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "strictNullChecks": true,
+        // ^^ All this instead of `strict` because strictFunctionTypes
+        // breaks the current electron typings (at 1.7.9)
+
         "lib": [
             "dom",
             "es2015",
@@ -16,7 +23,6 @@
     "buildOnSave": true,
     "include": [
         "custom-typings/*.d.ts",
-        "src/**/*.ts",
-        "node_modules/@types/**/*.d.ts"
+        "src/**/*.ts"
     ]
 }

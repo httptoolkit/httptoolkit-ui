@@ -9,13 +9,14 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node ./dist/index.js",
+    "start": "npm run build && electron ./dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tim Perry <pimterry@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "mockttp": "../mockttp",
+    "electron": "^1.7.9",
+    "mockttp": "^0.5.0",
     "typescript": "^2.6.2"
   }
 }
