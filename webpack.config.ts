@@ -14,6 +14,10 @@ module.exports = {
         filename: 'app.js'
     },
 
+    resolve: {
+        extensions: ['.js', '.ts', '.tsx']
+    },
+
     module: {
         rules: [{
             test: /\.tsx?$/,
@@ -33,8 +37,15 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             template: path.join(SRC_DIR, 'index.html')
-        })
+        }),
+        new webpack.NamedModulesPlugin(),
+        new webpack.HotModuleReplacementPlugin()
     ],
 
-    devtool: 'cheap-source-map'
+    devtool: 'cheap-source-map',
+
+    devServer: {
+        contentBase: OUTPUT_DIR,
+        hot: true
+    }
 };

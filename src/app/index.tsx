@@ -1,12 +1,13 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-
-class Main extends React.Component {
-  render() {
-    return <div>Hello from React</div>;
-  }
-}
+import { Main } from './components/main';
 
 window.onload = function(){
-  ReactDOM.render(<Main />, document.getElementById('app'));
+    ReactDOM.render(<Main />, document.getElementById('app'));
+}
+
+if (module.hot) {
+    module.hot.accept('.', function() {
+        window.location.reload();
+    })
 }
