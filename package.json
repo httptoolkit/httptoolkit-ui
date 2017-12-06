@@ -2,21 +2,25 @@
   "name": "seettp",
   "version": "0.1.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/main.js",
   "files": [
     "dist",
     "src"
   ],
   "scripts": {
-    "build": "tsc",
-    "start": "npm run build && electron ./dist/index.js",
+    "build": "tsc && cp src/app/index.html dist/app",
+    "start": "npm run build && electron ./dist/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tim Perry <pimterry@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/react": "^16.0.27",
+    "@types/react-dom": "^16.0.3",
     "electron": "^1.7.9",
     "mockttp": "^0.5.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
     "typescript": "^2.6.2"
   }
 }

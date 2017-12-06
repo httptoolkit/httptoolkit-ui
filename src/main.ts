@@ -22,7 +22,6 @@ mockServer.start().then(async () => {
     await mockServer.anyRequest().always().thenPassThrough();
 });
 
-
 let mainWindow: Electron.BrowserWindow | null;
 
 function createWindow() {
@@ -32,7 +31,7 @@ function createWindow() {
     });
 
     mainWindow.loadURL(url.format({
-        pathname: path.join(__dirname, "../index.html"),
+        pathname: path.join(__dirname, "app", "index.html"),
         protocol: "file:",
         slashes: true,
     }));

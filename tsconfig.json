@@ -6,6 +6,8 @@
         "outDir": "./dist",
         "sourceMap": true,
 
+        "jsx": "react",
+
         "noImplicitAny": true,
         "noImplicitThis": true,
         "alwaysStrict": true,
@@ -23,6 +25,7 @@
     "buildOnSave": true,
     "include": [
         "custom-typings/*.d.ts",
-        "src/**/*.ts"
+        "src/**/*.ts",
+        "src/**/*.tsx"
     ]
 }
