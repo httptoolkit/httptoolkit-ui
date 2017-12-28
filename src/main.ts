@@ -4,23 +4,14 @@ import * as url from 'url';
 
 import { app, BrowserWindow } from 'electron';
 
-import { getLocal } from 'mockttp';
+import { getStandalone } from 'mockttp';
 
 const configDir = path.join(os.homedir(), '.httptoolkit/')
 
-let mockServer = getLocal({
-    https: {
-        keyPath: path.join(configDir, 'ca.key'),
-        certPath: path.join(configDir, 'ca.pem')
-    }
+let mockServer = getStandalone({
 });
 
-mockServer.start().then(async () => {
-    console.log('Server started on', mockServer.port);
-
-    await mockServer.get('/').thenReply(200, 'Running!');
-    await mockServer.anyRequest().always().thenPassThrough();
-});
+mockServer.start();
 
 let mainWindow: Electron.BrowserWindow | null;
 
