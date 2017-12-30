@@ -1,12 +1,18 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Main } from './components/main';
+import { Provider } from 'react-redux'
 
-import { getLocal } from 'mockttp';
-let mockServer = getLocal();
+import { AppContainer } from './components/app';
+import { getStore } from './store';
 
-window.onload = function(){
-    ReactDOM.render(<Main server={mockServer} />, document.getElementById('app'));
+window.onload = async function startApp() {
+    const store = await getStore();
+
+    ReactDOM.render(
+        <Provider store={store}>
+            <AppContainer />
+        </Provider>
+    , document.getElementById('app'));
 }
 
 if (module.hot) {
