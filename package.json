@@ -10,10 +10,8 @@
   "scripts": {
     "prebuild": "rimraf dist/*",
     "build": "tsc && webpack --config webpack.config.ts",
-
     "start": "npm run build && electron ./dist/main.js",
-    "start:web": "webpack-dev-server --open",
-
+    "start:web": "mockttp -c webpack-dev-server --open",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tim Perry <pimterry@gmail.com>",
