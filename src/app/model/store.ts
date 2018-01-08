@@ -54,6 +54,8 @@ export async function getStore(): Promise<Store<StoreModel>> {
             type: 'RequestReceived',
             request: req
         }));
+
+        window.addEventListener('beforeunload', () => server.stop());
     }).catch((err) => {
         // If we got a conflict response, then 
         if (err.response && err.response.status === 409) {
