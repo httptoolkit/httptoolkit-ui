@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 
 import { Mockttp } from 'mockttp';
 import { RequestListContainer } from './request-list-container';
-import { MockttpRequest } from '../../types';
+import { MockttpRequest } from '../types';
 import { connect } from 'react-redux';
 import { StoreModel } from '../store';
 

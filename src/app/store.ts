@@ -1,6 +1,6 @@
 import { createStore, Store } from 'redux';
 import { getLocal, Mockttp } from 'mockttp';
-import { MockttpRequest } from '../types';
+import { MockttpRequest } from './types';
 
 export interface StoreModel {
     server: Mockttp,

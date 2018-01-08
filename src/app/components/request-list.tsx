@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { MockttpRequest } from '../../types';
+import { MockttpRequest } from '../types';
 
 export function RequestList({ requests }: { requests: MockttpRequest[] }) {
     return <ul>
