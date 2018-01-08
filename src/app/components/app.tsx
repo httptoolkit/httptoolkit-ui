@@ -5,20 +5,25 @@ import { Mockttp } from 'mockttp';
 import { RequestListContainer } from './request-list-container';
 import { MockttpRequest } from '../types';
 import { connect } from 'react-redux';
-import { StoreModel } from '../store';
+import { StoreModel, ServerStatus } from '../model/store';
 
 class App extends React.Component<{
-    connectedToServer: boolean
+    serverStatus: ServerStatus
 }> {
-    render() {
-        return this.props.connectedToServer ? (
-            <RequestListContainer></RequestListContainer>
-        ) : (
-            <div>Connecting...</div>
-        );
+    render(): JSX.Element {
+        switch(this.props.serverStatus) {
+            case ServerStatus.Connected:
+                return <RequestListContainer></RequestListContainer>;
+            case ServerStatus.Connecting:
+                return <div>Connecting...</div>;
+            case ServerStatus.AlreadyInUse:
+                return <div>Port already in use</div>;
+            case ServerStatus.UnknownError:
+                return <div>An unknown error occurred</div>;
+        }
     }
 }
 
 export const AppContainer = connect((state: StoreModel) => ({
-    connectedToServer: state.connectedToServer
+    serverStatus: state.serverStatus
 }))(App);

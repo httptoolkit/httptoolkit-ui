@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import { Provider } from 'react-redux'
 
 import { AppContainer } from './components/app';
-import { getStore } from './store';
+import { getStore } from './model/store';
 
 window.onload = async function startApp() {
     const store = await getStore();
