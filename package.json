@@ -39,6 +39,7 @@
   "devDependencies": {
     "@types/webpack-env": "^1.13.2",
     "awesome-typescript-loader": "^3.4.1",
+    "file-loader": "^1.1.11",
     "rimraf": "^2.6.2",
     "source-map-loader": "^0.2.3",
     "typescript-styled-plugin": "^0.6.0",

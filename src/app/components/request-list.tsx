@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 import { MockttpRequest } from '../types';
 
@@ -9,20 +9,36 @@ const FullWidthTable = styled.table`
     background-color: #eee;
 `;
 
+const CellBase = css`
+    padding: 5px;
+`;
+
+const Tr = styled.tr`
+    ${CellBase}
+`;
+
+const Th = styled.th`
+    ${CellBase}
+`;
+
+const Td = styled.td`
+    ${CellBase}
+`;
+
 export function RequestList({ requests }: { requests: MockttpRequest[] }) {
     return <FullWidthTable>
         <thead>
-            <tr>
-                <th>Method</th>
-                <th>URL</th>
-            </tr>
+            <Tr>
+                <Th>Method</Th>
+                <Th>URL</Th>
+            </Tr>
         </thead>
         <tbody>
             { requests.map((req, i) => (
-                <tr key={i}>
-                    <td>{req.method}</td>
-                    <td>{req.url}</td>
-                </tr>
+                <Tr key={i}>
+                    <Td>{req.method}</Td>
+                    <Td>{req.url}</Td>
+                </Tr>
             )) }
         </tbody>
     </FullWidthTable>;

@@ -27,6 +27,9 @@ module.exports = {
             test: /\.js$/,
             enforce: "pre",
             loader: "source-map-loader"
+        }, {
+            test: /\.woff2$/,
+            loader: "file-loader"
         }]
     },
 
