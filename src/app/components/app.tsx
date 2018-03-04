@@ -1,17 +1,20 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
 import styled from 'styled-components';
 
 import { Mockttp } from 'mockttp';
-import { RequestListContainer } from './request-list-container';
+import { RequestList } from './request-list';
+import { RequestDetailsPane } from './request-details-pane';
+import { SplitScreen } from './split-screen';
+
 import { MockttpRequest } from '../types';
 import { connect } from 'react-redux';
 import { StoreModel, ServerStatus } from '../model/store';
 
-const StyledList = styled.div`
-    font-family: 'Verdana';
-    width: '50%';
-`;
+const RequestListFromStore = connect(
+    (state: StoreModel) => ({ requests: state.requests })
+)(RequestList);
 
 class App extends React.Component<{
     serverStatus: ServerStatus
@@ -20,9 +23,10 @@ class App extends React.Component<{
         switch(this.props.serverStatus) {
             case ServerStatus.Connected:
                 return (
-                    <StyledList>
-                        <RequestListContainer />
-                    </StyledList>
+                    <SplitScreen>
+                        <RequestListFromStore></RequestListFromStore>
+                        <RequestDetailsPane></RequestDetailsPane>
+                    </SplitScreen>
                 );
             case ServerStatus.Connecting:
                 return <div>Connecting...</div>;
@@ -34,6 +38,8 @@ class App extends React.Component<{
     }
 }
 
-export const AppContainer = connect((state: StoreModel) => ({
+export const AppContainer = styled(connect((state: StoreModel) => ({
     serverStatus: state.serverStatus
-}))(App);
+}))(App))`
+    height: 100vh;
+`;
