@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { style } from 'typestyle';
+import styled from 'styled-components';
 
 import { Mockttp } from 'mockttp';
 import { RequestListContainer } from './request-list-container';
@@ -8,10 +8,10 @@ import { MockttpRequest } from '../types';
 import { connect } from 'react-redux';
 import { StoreModel, ServerStatus } from '../model/store';
 
-const listClass = style({
-    fontFamily: 'Verdana',
-    width: '50%'
-});
+const StyledList = styled.div`
+    font-family: 'Verdana';
+    width: '50%';
+`;
 
 class App extends React.Component<{
     serverStatus: ServerStatus
@@ -20,9 +20,9 @@ class App extends React.Component<{
         switch(this.props.serverStatus) {
             case ServerStatus.Connected:
                 return (
-                    <div className={listClass}>
+                    <StyledList>
                         <RequestListContainer />
-                    </div>
+                    </StyledList>
                 );
             case ServerStatus.Connecting:
                 return <div>Connecting...</div>;

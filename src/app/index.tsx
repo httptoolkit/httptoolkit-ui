@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Provider } from 'react-redux'
-import { normalize, setupPage } from 'csstips';
 
 import { AppContainer } from './components/app';
 import { getStore } from './model/store';
@@ -16,9 +15,6 @@ window.onload = async function startApp() {
             <AppContainer />
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR));
-
-    normalize();
-    setupPage(APP_ELEMENT_SELECTOR);
 }
 
 if (module.hot) {

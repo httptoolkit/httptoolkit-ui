@@ -19,6 +19,12 @@
             "dom",
             "es2015",
             "scripthost"
+        ],
+
+        "plugins": [
+          {
+            "name": "typescript-styled-plugin"
+          }
         ]
     },
     "compileOnSave": true,
