@@ -17,14 +17,11 @@
   "author": "Tim Perry <pimterry@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@types/html-webpack-plugin": "^2.30.1",
     "@types/react": "^16.0.27",
     "@types/react-dom": "^16.0.3",
     "@types/react-redux": "^5.0.14",
     "@types/redux": "^3.6.0",
-    "@types/webpack": "^3.8.1",
     "electron": "^1.7.9",
-    "html-webpack-plugin": "^2.30.1",
     "mockttp": "^0.7.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
@@ -37,9 +34,12 @@
     "webpack": "^3.10.0"
   },
   "devDependencies": {
-    "@types/webpack-env": "^1.13.2",
+    "@types/html-webpack-plugin": "^2.30.1",
+    "@types/webpack": "^3.8.8",
+    "@types/webpack-env": "^1.13.5",
     "awesome-typescript-loader": "^3.4.1",
     "file-loader": "^1.1.11",
+    "html-webpack-plugin": "^2.30.1",
     "rimraf": "^2.6.2",
     "source-map-loader": "^0.2.3",
     "typescript-styled-plugin": "^0.6.0",
