@@ -4,32 +4,71 @@ import styled, { css } from 'styled-components';
 
 import { MockttpRequest } from '../types';
 
-const FullSizeTable = styled.table`
-    width: 100%;
+const HeaderSize = '40px';
+
+const TableRoot = styled.section`
+    position: relative;
+    padding-top: ${HeaderSize};
     height: 100%;
+    box-sizing: border-box;
 
     background-color: #1c324a;
-    color: #eee;
+    box-shadow: inset 0 0 50px 2px rgba(0,0,0,0.5);
+`;
+
+const HeaderBackground = styled.div`
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: ${HeaderSize};
+`;
+
+const TableScrollContainer = styled.div`
+    overflow-y: auto;
+    height: 100%;
+`;
+
+const Table = styled.table`
+    width: calc(100% - 10px);
+    height: 100%;
+
+    margin: -2px 5px 0;
 
     font-size: 14px;
 
     border-collapse: separate;
     border-spacing: 0 3px;
-    margin-top: -3px;
 `;
 
-const CellBase = css`
-    padding: 5px;
+const HeaderContentWrapper = styled.div`
+    position: absolute;
+    top: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
 `;
 
-const TBody = styled.tbody`
-    &:empty {
-        display: block;
-    }
+const Th = styled((props: { className?: string, children: JSX.Element[] | string }) => {
+    return <th className={props.className}>
+        <HeaderContentWrapper>
+            {props.children}
+        </HeaderContentWrapper>
+    </th>
+})`
+    height: 0;
+    padding: 0;
+    min-width: 50px;
+
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #222;
 `;
 
 const Tr = styled.tr`
-    ${CellBase}
     width: 100%;
     word-break: break-all;
 
@@ -49,21 +88,14 @@ const Tr = styled.tr`
     }
 `;
 
-const Th = styled.th`
-    ${CellBase}
-`;
-
 const Td = styled.td`
-    ${CellBase}
+    padding: 5px;
+    vertical-align: middle;
 
     &.method {
         white-space: nowrap;
         font-weight: 800;
     }
-`;
-
-const TFoot = styled.tfoot`
-    height: auto;
 `;
 
 const Ellipsis = styled(({ className }: { className?: string }) => 
@@ -96,21 +128,25 @@ const RequestRow = ({ request }: { request: MockttpRequest }) => {
 }
 
 export function RequestList({ requests }: { requests: MockttpRequest[] }) {
-    return <FullSizeTable>
-        <thead>
-            <Tr>
-                <Th>Method</Th>
-                <Th>Host</Th>
-                <Th>Path</Th>
-                <Th>Params</Th>
-            </Tr>
-        </thead>
-        <TBody>
-            { requests.map((req, i) => (
-                <RequestRow key={i} request={req} />
-            )) }
-            <tr></tr>
-        </TBody>
-        <TFoot><tr></tr></TFoot>
-    </FullSizeTable>;
+    return <TableRoot>
+        <HeaderBackground/>
+        <TableScrollContainer>
+            <Table>
+                <thead>
+                    <tr>
+                        <Th>Verb</Th>
+                        <Th>Host</Th>
+                        <Th>Path</Th>
+                        <Th>Params</Th>
+                    </tr>
+                </thead>
+                <tbody>
+                    { requests.map((req, i) => (
+                        <RequestRow key={i} request={req} />
+                    )) }
+                    <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
+                </tbody>
+            </Table>
+        </TableScrollContainer>
+    </TableRoot>;
 }
