@@ -37,6 +37,7 @@ export function injectGlobalStyles() {
 
     body {
       font-family: Lato;
+      background-color: #1c324a;
     }
   `;
 }

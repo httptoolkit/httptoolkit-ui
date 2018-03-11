@@ -17,7 +17,7 @@ const TableRoot = styled.section`
 `;
 
 const HeaderBackground = styled.div`
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: #f3f4f5;
     box-shadow: 0 0 30px rgba(0,0,0,0.5);
 
     position: absolute;
@@ -83,11 +83,11 @@ const Tr = styled.tr`
     /* Acts as a default height, when the table isn't yet full */
     height: 26px;
 
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: #f3f4f5;
     color: #222;
 
     &:hover {
-        background-color: rgba(255, 255, 255, 1);
+        background-color: #fff;
         cursor: pointer;
     }
 
