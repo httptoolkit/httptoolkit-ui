@@ -3,6 +3,7 @@ import * as ReactDOM from 'react-dom';
 import styled, { css } from 'styled-components';
 
 import { MockttpRequest } from '../types';
+import { EmptyState } from './empty-state';
 
 const HeaderSize = '40px';
 
@@ -36,7 +37,7 @@ const Table = styled.table`
     width: calc(100% - 10px);
     height: 100%;
 
-    margin: -2px 5px 0;
+    margin: -1px 5px 0;
 
     font-size: 14px;
 
@@ -64,6 +65,8 @@ const Th = styled((props: { className?: string, children: JSX.Element[] | string
     padding: 0;
     min-width: 45px;
 
+    font-size: 16px;
+    font-weight: bold;
     background-color: rgba(255, 255, 255, 0.8);
     color: #222;
 `;
@@ -140,6 +143,13 @@ const RequestRow = ({ request }: { request: MockttpRequest }) => {
     </Tr>
 }
 
+const Overlay = styled.div`
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    height: auto;
+`;
+
 export function RequestList({ requests }: { requests: MockttpRequest[] }) {
     return <TableRoot>
         <HeaderBackground/>
@@ -160,6 +170,11 @@ export function RequestList({ requests }: { requests: MockttpRequest[] }) {
                     <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
                 </tbody>
             </Table>
+            { requests.length === 0 ?
+                <Overlay>
+                    <EmptyState icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
+                </Overlay>
+                : null }
         </TableScrollContainer>
     </TableRoot>;
 }
