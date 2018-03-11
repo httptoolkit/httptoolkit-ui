@@ -1,15 +1,15 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-
+import { connect } from 'react-redux';
 import styled from 'styled-components';
 
 import { Mockttp } from 'mockttp';
+
 import { RequestList } from './request-list';
 import { RequestDetailsPane } from './request-details-pane';
 import { SplitScreen } from './split-screen';
 
 import { MockttpRequest } from '../types';
-import { connect } from 'react-redux';
 import { StoreModel, ServerStatus } from '../model/store';
 
 const RequestListFromStore = connect(

@@ -6,10 +6,7 @@ import { app, BrowserWindow } from 'electron';
 
 import { getStandalone } from 'mockttp';
 
-const configDir = path.join(os.homedir(), '.httptoolkit/')
-
-let mockServer = getStandalone({
-});
+let mockServer = getStandalone();
 
 mockServer.start();
 
@@ -28,6 +25,9 @@ function createWindow() {
         pathname: path.join(__dirname, "app", "index.html"),
         protocol: "file:",
         slashes: true,
+        query: { config: JSON.stringify({
+            "configRoot": path.join(os.homedir(), '.httptoolkit')
+        }) }
     }));
 
     // Open the DevTools.

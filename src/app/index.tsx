@@ -11,7 +11,8 @@ injectGlobalStyles();
 const APP_ELEMENT_SELECTOR = "#app";
 
 window.onload = async function startApp() {
-    const store = await getStore();
+    const config = JSON.parse((new URL(window.location.href)).searchParams.get('config') as string);
+    const store = await getStore(config);
 
     ReactDOM.render(
         <Provider store={store}>

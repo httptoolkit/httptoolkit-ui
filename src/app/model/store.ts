@@ -1,3 +1,5 @@
+import * as os from 'os';
+import * as path from 'path';
 import { createStore, Store } from 'redux';
 import { getLocal, Mockttp } from 'mockttp';
 import { MockttpRequest } from '../types';
@@ -30,8 +32,13 @@ const reducer = (state: StoreModel, action: Action): StoreModel => {
     }
 }
 
-export async function getStore(): Promise<Store<StoreModel>> {
-    const server = getLocal();
+export async function getStore(options: { configRoot: string }): Promise<Store<StoreModel>> {
+    const server = getLocal({
+        https: {
+            keyPath: path.join(options.configRoot, 'ca.key'),
+            certPath: path.join(options.configRoot, 'ca.pem')
+        }
+    });
 
     const store = createStore<StoreModel>(reducer, {
         server: server,
