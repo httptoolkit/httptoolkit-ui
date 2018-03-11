@@ -12,7 +12,7 @@ export const RequestDetailsPane = styled((props: {
     <div className={props.className}>{
         props.selected.length === 0 ?
             <EmptyState
-                icon={['far', 'search']}
+                icon={['far', 'arrow-left']}
                 message='Select some requests to see their details.'
             />
             : null
