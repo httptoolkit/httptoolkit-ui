@@ -17,7 +17,7 @@ const TableRoot = styled.section`
 `;
 
 const HeaderBackground = styled.div`
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 0 30px rgba(0,0,0,0.5);
 
     position: absolute;
@@ -62,11 +62,19 @@ const Th = styled((props: { className?: string, children: JSX.Element[] | string
 })`
     height: 0;
     padding: 0;
-    min-width: 50px;
+    min-width: 45px;
 
     background-color: rgba(255, 255, 255, 0.8);
     color: #222;
 `;
+
+const getColour = (method: string) => {
+    if (method === 'GET') {
+        return '#E91E63';
+    } else {
+        return '#4CAF50';
+    }
+};
 
 const Tr = styled.tr`
     width: 100%;
@@ -75,18 +83,23 @@ const Tr = styled.tr`
     /* Acts as a default height, when the table isn't yet full */
     height: 26px;
 
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.95);
     color: #222;
 
     &:hover {
-        background-color: rgba(255, 255, 255, 0.85);
+        background-color: rgba(255, 255, 255, 1);
         cursor: pointer;
     }
 
-    :first-child {
-        border-left: 3px solid #1c324a;
+    > :first-child {
+        border-left: 5px solid ${props => getColour((props as any).request.method)};
+        border-radius: 3px 0 0 3px;
     }
-`;
+
+    > :last-child {
+        border-radius: 0 3px 3px 0;
+    }
+` as any;
 
 const Td = styled.td`
     padding: 5px;
@@ -119,7 +132,7 @@ const truncate = (str: string, length: number, trailingLength: number = 0) => {
 const RequestRow = ({ request }: { request: MockttpRequest }) => {
     const url = new URL(request.url);
 
-    return <Tr>
+    return <Tr request={request}>
         <Td className='method'>{request.method}</Td>
         <Td>{truncate(url.host, 30, 4)}</Td>
         <Td>{truncate(url.pathname, 40, 4)}</Td>
@@ -137,7 +150,7 @@ export function RequestList({ requests }: { requests: MockttpRequest[] }) {
                         <Th>Verb</Th>
                         <Th>Host</Th>
                         <Th>Path</Th>
-                        <Th>Params</Th>
+                        <Th>Query</Th>
                     </tr>
                 </thead>
                 <tbody>
