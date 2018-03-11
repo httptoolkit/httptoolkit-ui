@@ -14,7 +14,7 @@ const SplitScreenElement = styled.div`
     flex-grow: 1;
     overflow: auto;
 
-    flex-basis: 1;
+    flex-basis: 0;
 ` as DomWithProps<HTMLDivElement, { innerRef: (elem: HTMLElement) => void }>;
 
 class Draggable extends React.Component<{
