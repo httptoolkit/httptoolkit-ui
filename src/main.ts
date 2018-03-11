@@ -26,7 +26,8 @@ function createWindow() {
         protocol: "file:",
         slashes: true,
         query: { config: JSON.stringify({
-            "configRoot": path.join(os.homedir(), '.httptoolkit')
+            https: true,
+            configRoot: path.join(os.homedir(), '.httptoolkit')
         }) }
     }));
 

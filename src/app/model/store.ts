@@ -32,12 +32,12 @@ const reducer = (state: StoreModel, action: Action): StoreModel => {
     }
 }
 
-export async function getStore(options: { configRoot: string }): Promise<Store<StoreModel>> {
+export async function getStore(options: { https: boolean, configRoot: string }): Promise<Store<StoreModel>> {
     const server = getLocal({
-        https: {
+        https: options.https ? {
             keyPath: path.join(options.configRoot, 'ca.key'),
             certPath: path.join(options.configRoot, 'ca.pem')
-        }
+        }: undefined
     });
 
     const store = createStore<StoreModel>(reducer, {
