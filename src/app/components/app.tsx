@@ -17,24 +17,28 @@ const RequestListFromStore = connect(
 )(RequestList);
 
 class App extends React.Component<{
+    className?: string,
     serverStatus: ServerStatus
 }> {
     render(): JSX.Element {
-        switch(this.props.serverStatus) {
-            case ServerStatus.Connected:
-                return (
-                    <SplitScreen>
-                        <RequestListFromStore></RequestListFromStore>
-                        <RequestDetailsPane></RequestDetailsPane>
-                    </SplitScreen>
-                );
-            case ServerStatus.Connecting:
-                return <div>Connecting...</div>;
-            case ServerStatus.AlreadyInUse:
-                return <div>Port already in use</div>;
-            case ServerStatus.UnknownError:
-                return <div>An unknown error occurred</div>;
+        let mainView: JSX.Element | undefined;
+
+        if (this.props.serverStatus === ServerStatus.Connected) {
+            mainView = (
+                <SplitScreen>
+                    <RequestListFromStore></RequestListFromStore>
+                    <RequestDetailsPane></RequestDetailsPane>
+                </SplitScreen>
+            );
+        } else if (this.props.serverStatus === ServerStatus.Connecting) {
+            mainView = <div>Connecting...</div>;
+        } else if (this.props.serverStatus === ServerStatus.AlreadyInUse) {
+            mainView = <div>Port already in use</div>;
+        } else if (this.props.serverStatus === ServerStatus.UnknownError) {
+            mainView = <div>An unknown error occurred</div>;
         }
+
+        return <div className={this.props.className}>{ mainView }</div>;
     }
 }
 
