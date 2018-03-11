@@ -25,7 +25,7 @@ class App extends React.Component<{
 
         if (this.props.serverStatus === ServerStatus.Connected) {
             mainView = (
-                <SplitScreen>
+                <SplitScreen minWidth={300}>
                     <RequestListFromStore></RequestListFromStore>
                     <RequestDetailsPane></RequestDetailsPane>
                 </SplitScreen>
