@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Provider } from 'react-redux'
 
-import { injectGlobalStyles } from './styles';
+import { injectGlobalStyles, ThemeProvider, theme } from './styles';
 import { AppContainer } from './components/app';
 import { getStore } from './model/store';
 
@@ -16,7 +16,9 @@ window.onload = async function startApp() {
 
     ReactDOM.render(
         <Provider store={store}>
-            <AppContainer />
+            <ThemeProvider theme={theme}>
+                <AppContainer />
+            </ThemeProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR));
 }

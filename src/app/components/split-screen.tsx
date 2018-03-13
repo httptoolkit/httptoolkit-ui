@@ -50,21 +50,11 @@ class Draggable extends React.Component<{
 }
 
 const Separator = styled(Draggable)`
-    width: 6px;
+    width: 2px;
     height: 100%;
     position: relative;
-    background-color: #f3f4f5;
+    background-color: ${props => props.theme.containerBorder};
     cursor: col-resize;
-
-    &:before {
-        content: '';
-        width: 2px;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        right: 2px;
-        background: linear-gradient(to bottom, rgba(28,50,74,0) 0%, rgba(28,50,74,0.8) 30%, rgba(28,50,74,0.8) 70%, rgba(28,50,74,0) 100%);
-    }
 `;
 
 export class SplitScreen extends React.Component<{

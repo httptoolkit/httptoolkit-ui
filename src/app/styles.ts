@@ -13,11 +13,17 @@ import fontawesome from '@fortawesome/fontawesome'
 import { faSpinnerThird, faArrowLeft } from '@fortawesome/fontawesome-pro-regular';
 fontawesome.library.add(faArrowLeft, faSpinnerThird);
 
-export interface ThemeInterface {
-  // No theming yet
-}
-
 export { styled, css, injectGlobal, keyframes, ThemeProvider };
+
+export const theme = {
+    mainBackground: '#ffffff',
+    
+    containerBackground: '#d8e2e6',
+    containerWatermark: '#b6c2ca',
+    containerBorder: '#abb4ba'
+};
+
+export type Theme = typeof theme;
 
 export function injectGlobalStyles() {
     injectGlobal`
@@ -42,7 +48,7 @@ export function injectGlobalStyles() {
 
         body {
             font-family: Lato;
-            background-color: #1c324a;
+            background-color: ${theme.containerBackground};
         }
     `;
 }

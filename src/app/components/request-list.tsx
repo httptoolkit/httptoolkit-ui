@@ -13,13 +13,13 @@ const TableRoot = styled.section`
     height: 100%;
     box-sizing: border-box;
 
-    background-color: #1c324a;
-    box-shadow: inset 0 0 50px 2px rgba(0,0,0,0.5);
+    background-color: ${props => props.theme.containerBackground};
 `;
 
 const HeaderBackground = styled.div`
-    background-color: #f3f4f5;
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    background-color: ${props => props.theme.mainBackground};
+    border-bottom: 1px solid ${props => props.theme.containerBorder};
+    box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
     position: absolute;
     top: 0;
@@ -84,9 +84,9 @@ const Tr = styled.tr`
     word-break: break-all;
 
     /* Acts as a default height, when the table isn't yet full */
-    height: 26px;
+    height: 30px;
 
-    background-color: #f3f4f5;
+    background-color: ${props => props.theme.mainBackground};
     color: #222;
 
     &:hover {
@@ -95,17 +95,17 @@ const Tr = styled.tr`
     }
 
     > :first-child {
-        border-left: 5px solid ${props => getColour((props as any).request.method)};
-        border-radius: 3px 0 0 3px;
+        border-left: 5px solid ${props => getColour((props as any).request)};
+        border-radius: 2px 0 0 2px;
     }
 
     > :last-child {
-        border-radius: 0 3px 3px 0;
+        border-radius: 0 2px 2px 0;
     }
 ` as any;
 
 const Td = styled.td`
-    padding: 5px;
+    padding: 8px 5px;
     vertical-align: middle;
 
     &.method {
@@ -143,7 +143,7 @@ const RequestRow = ({ request }: { request: MockttpRequest }) => {
     </Tr>
 }
 
-const Overlay = styled.div`
+const EmptyStateOverlay = EmptyState.extend`
     position: absolute;
     top: 40px;
     bottom: 40px;
@@ -171,9 +171,7 @@ export function RequestList({ requests }: { requests: MockttpRequest[] }) {
                 </tbody>
             </Table>
             { requests.length === 0 ?
-                <Overlay>
-                    <EmptyState icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
-                </Overlay>
+                <EmptyStateOverlay icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
                 : null }
         </TableScrollContainer>
     </TableRoot>;

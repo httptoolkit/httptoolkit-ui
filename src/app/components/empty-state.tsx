@@ -20,7 +20,7 @@ export const EmptyState = styled((props: {
     justify-content: center;
     height: 100%;
 
-    color: rgba(255, 255, 255, 0.2);
+    color: ${props => props.theme.containerWatermark};
     font-size: 40px;
     text-align: center;
 
