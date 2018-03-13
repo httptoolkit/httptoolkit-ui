@@ -71,11 +71,19 @@ const Th = styled((props: { className?: string, children: JSX.Element[] | string
     color: #222;
 `;
 
-const getColour = (method: string) => {
-    if (method === 'GET') {
-        return '#E91E63';
+const getColour = (request: MockttpRequest) => {
+    if (request.method === 'POST') {
+        return '#ce3939';
+    } else if (request.path.endsWith('.js')) {
+        return '#4c86af';
+    } else if (request.path.endsWith('/') || request.path.endsWith('.html')) {
+        return '#574caf';
+    } else if (request.path.endsWith('.css')) {
+        return '#af4c9a';
+    } else if (request.path.endsWith('.jpg') || request.path.endsWith('.jpeg') || request.path.endsWith('.png') || request.path.endsWith('.gif')) {
+        return '#4caf7d';
     } else {
-        return '#4CAF50';
+        return '#ffc107';
     }
 };
 
