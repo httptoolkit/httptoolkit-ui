@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled, { css } from 'styled-components';
 
-import { MockttpRequest } from '../types';
+import { MockttpRequest, DomWithProps } from '../types';
 import { EmptyState } from './empty-state';
 
 const HeaderSize = '40px';
@@ -97,20 +97,19 @@ const Tr = styled.tr`
     background-color: ${props => props.theme.mainBackground};
     color: #222;
 
-    &:hover {
-        background-color: #fff;
-        cursor: pointer;
-    }
+    cursor: pointer;
 
     > :first-child {
-        border-left: 5px solid ${props => getColour((props as any).request)};
+        border-left: 5px solid ${(props: any) => getColour(props.request)};
         border-radius: 2px 0 0 2px;
     }
 
     > :last-child {
         border-radius: 0 2px 2px 0;
     }
-` as any;
+` as any as DomWithProps<HTMLTableRowElement, {
+    request: MockttpRequest
+}>;
 
 const Td = styled.td`
     padding: 8px 5px;
@@ -122,7 +121,7 @@ const Td = styled.td`
     }
 `;
 
-const Ellipsis = styled(({ className }: { className?: string }) => 
+const Ellipsis = styled(({ className }: { className?: string }) =>
     <span className={className}>&nbsp;…&nbsp;</span>
 )`
     opacity: 0.5;
