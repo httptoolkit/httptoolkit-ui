@@ -94,7 +94,9 @@ const Tr = styled.tr`
     /* Acts as a default height, when the table isn't yet full */
     height: 30px;
 
-    background-color: ${props => props.theme.mainBackground};
+    background-color: ${(props: { isSelected: boolean, theme: any }) => 
+        props.isSelected ? props.theme.containerWatermark : props.theme.mainBackground
+    };
     color: #222;
 
     cursor: pointer;
@@ -108,7 +110,8 @@ const Tr = styled.tr`
         border-radius: 0 2px 2px 0;
     }
 ` as any as DomWithProps<HTMLTableRowElement, {
-    request: MockttpRequest
+    request: MockttpRequest,
+    isSelected: boolean
 }>;
 
 const Td = styled.td`
@@ -139,14 +142,23 @@ const truncate = (str: string, length: number, trailingLength: number = 0) => {
     }
 }
 
-class RequestRow extends React.PureComponent<{
-    request: MockttpRequest
-}, {}> {
+interface RequestRowProps {
+    request: MockttpRequest;
+    onSelected: () => void;
+    isSelected: boolean;
+}
+
+class RequestRow extends React.Component<RequestRowProps, {}> {
+    shouldComponentUpdate(nextProps: RequestRowProps) {
+        return this.props.request !== nextProps.request ||
+            this.props.isSelected !== nextProps.isSelected;
+    }
+
     render() {
-        const { request } = this.props;
+        const { request, isSelected } = this.props;
         const url = new URL(request.url);
 
-        return <Tr request={request}>
+        return <Tr request={request} onClick={this.props.onSelected} isSelected={isSelected}>
             <Td className='method'>{request.method}</Td>
             <Td>{truncate(url.host, 30, 4)}</Td>
             <Td>{truncate(url.pathname, 40, 4)}</Td>
@@ -162,29 +174,58 @@ const EmptyStateOverlay = EmptyState.extend`
     height: auto;
 `;
 
-export function RequestList({ requests }: { requests: MockttpRequest[] }) {
-    return <TableRoot>
-        <HeaderBackground/>
-        <TableScrollContainer>
-            <Table>
-                <thead>
-                    <tr>
-                        <Th>Verb</Th>
-                        <Th>Host</Th>
-                        <Th>Path</Th>
-                        <Th>Query</Th>
-                    </tr>
-                </thead>
-                <tbody>
-                    { requests.map((req, i) => (
-                        <RequestRow key={i} request={req} />
-                    )) }
-                    <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
-                </tbody>
-            </Table>
-            { requests.length === 0 ?
-                <EmptyStateOverlay icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
-                : null }
-        </TableScrollContainer>
-    </TableRoot>;
+interface RequestListProps {
+    requests: MockttpRequest[]
+}
+
+export class RequestList extends React.PureComponent<RequestListProps, {
+    selectedRequests: MockttpRequest[]
+}> {
+    constructor(props: RequestListProps) {
+        super(props);
+        this.state = {
+            selectedRequests: []
+        };
+    }
+
+    render() {
+        const { requests } = this.props;
+        const { selectedRequests } = this.state;
+
+        return <TableRoot>
+            <HeaderBackground/>
+            <TableScrollContainer>
+                <Table>
+                    <thead>
+                        <tr>
+                            <Th>Verb</Th>
+                            <Th>Host</Th>
+                            <Th>Path</Th>
+                            <Th>Query</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { requests.map((req, i) => (
+                            <RequestRow
+                                key={i}
+                                request={req}
+                                onSelected={() => this.requestSelected(req)}
+                                isSelected={selectedRequests.indexOf(req) > -1}
+                            />
+                        )) }
+                        <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
+                    </tbody>
+                </Table>
+                { requests.length === 0 ?
+                    <EmptyStateOverlay icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
+                    : null }
+            </TableScrollContainer>
+        </TableRoot>;
+    }
+
+    requestSelected(req: MockttpRequest) {
+        this.setState({
+            selectedRequests: [req]
+        });
+    }
 }
