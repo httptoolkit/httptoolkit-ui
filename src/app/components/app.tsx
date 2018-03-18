@@ -16,7 +16,7 @@ const RequestListFromStore = connect(
     (state: StoreModel) => ({ requests: state.requests })
 )(RequestList);
 
-class App extends React.Component<{
+class App extends React.PureComponent<{
     className?: string,
     serverStatus: ServerStatus
 }> {

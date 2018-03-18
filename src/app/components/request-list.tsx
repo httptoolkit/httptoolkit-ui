@@ -140,15 +140,20 @@ const truncate = (str: string, length: number, trailingLength: number = 0) => {
     }
 }
 
-const RequestRow = ({ request }: { request: MockttpRequest }) => {
-    const url = new URL(request.url);
+class RequestRow extends React.PureComponent<{
+    request: MockttpRequest
+}, {}> {
+    render() {
+        const { request } = this.props;
+        const url = new URL(request.url);
 
-    return <Tr request={request}>
-        <Td className='method'>{request.method}</Td>
-        <Td>{truncate(url.host, 30, 4)}</Td>
-        <Td>{truncate(url.pathname, 40, 4)}</Td>
-        <Td>{truncate(url.search.slice(1), 40)}</Td>
-    </Tr>
+        return <Tr request={request}>
+            <Td className='method'>{request.method}</Td>
+            <Td>{truncate(url.host, 30, 4)}</Td>
+            <Td>{truncate(url.pathname, 40, 4)}</Td>
+            <Td>{truncate(url.search.slice(1), 40)}</Td>
+        </Tr>
+    }
 }
 
 const EmptyStateOverlay = EmptyState.extend`

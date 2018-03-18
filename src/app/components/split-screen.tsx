@@ -57,7 +57,7 @@ const Separator = styled(Draggable)`
     cursor: col-resize;
 `;
 
-export class SplitScreen extends React.Component<{
+export class SplitScreen extends React.PureComponent<{
     children: JSX.Element[],
     minWidth?: number
 }, { }> {
