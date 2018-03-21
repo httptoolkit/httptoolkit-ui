@@ -99,6 +99,8 @@ const Tr = styled.tr`
     };
     color: #222;
 
+    user-select: none;
+
     cursor: pointer;
 
     > :first-child {
