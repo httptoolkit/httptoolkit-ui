@@ -147,6 +147,7 @@ const truncate = (str: string, length: number, trailingLength: number = 0) => {
 interface RequestRowProps {
     request: MockttpRequest;
     onSelected: () => void;
+    onDeselected: () => void;
     isSelected: boolean;
 }
 
@@ -157,10 +158,10 @@ class RequestRow extends React.Component<RequestRowProps, {}> {
     }
 
     render() {
-        const { request, isSelected } = this.props;
+        const { request, isSelected, onSelected, onDeselected } = this.props;
         const url = new URL(request.url);
 
-        return <Tr request={request} onClick={this.props.onSelected} isSelected={isSelected}>
+        return <Tr request={request} onClick={ isSelected ? onDeselected: onSelected } isSelected={isSelected}>
             <Td className='method'>{request.method}</Td>
             <Td>{truncate(url.host, 30, 4)}</Td>
             <Td>{truncate(url.pathname, 40, 4)}</Td>
@@ -181,18 +182,18 @@ interface RequestListProps {
 }
 
 export class RequestList extends React.PureComponent<RequestListProps, {
-    selectedRequests: MockttpRequest[]
+    selectedRequest: MockttpRequest | undefined
 }> {
     constructor(props: RequestListProps) {
         super(props);
         this.state = {
-            selectedRequests: []
+            selectedRequest: undefined
         };
     }
 
     render() {
         const { requests } = this.props;
-        const { selectedRequests } = this.state;
+        const { selectedRequest } = this.state;
 
         return <TableRoot>
             <HeaderBackground/>
@@ -212,7 +213,8 @@ export class RequestList extends React.PureComponent<RequestListProps, {
                                 key={i}
                                 request={req}
                                 onSelected={() => this.requestSelected(req)}
-                                isSelected={selectedRequests.indexOf(req) > -1}
+                                onDeselected={() => this.requestDeselected(req)}
+                                isSelected={selectedRequest === req}
                             />
                         )) }
                         <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
@@ -227,7 +229,11 @@ export class RequestList extends React.PureComponent<RequestListProps, {
 
     requestSelected(req: MockttpRequest) {
         this.setState({
-            selectedRequests: [req]
+            selectedRequest: req
         });
+    }
+
+    requestDeselected(req: MockttpRequest) {
+        this.setState({ selectedRequest: undefined });
     }
 }
