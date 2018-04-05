@@ -67,8 +67,8 @@ const Th = styled((props: { className?: string, children: JSX.Element[] | string
 
     font-size: 16px;
     font-weight: bold;
-    background-color: rgba(255, 255, 255, 0.8);
-    color: #222;
+    background-color: ${props => props.theme.mainBackground};
+    color: ${props => props.theme.mainColor};
 `;
 
 const getColour = (request: MockttpRequest) => {
@@ -95,9 +95,11 @@ const Tr = styled.tr`
     height: 30px;
 
     background-color: ${(props: { isSelected: boolean, theme: any }) => 
-        props.isSelected ? props.theme.containerWatermark : props.theme.mainBackground
+        props.isSelected ? props.theme.popBackground : props.theme.mainBackground
     };
-    color: #222;
+    color: ${(props: { isSelected: boolean, theme: any }) => 
+        props.isSelected ? props.theme.popColor : props.theme.mainColor
+    };;
 
     user-select: none;
 
@@ -158,15 +160,37 @@ class RequestRow extends React.Component<RequestRowProps, {}> {
     }
 
     render() {
-        const { request, isSelected, onSelected, onDeselected } = this.props;
-        const url = new URL(request.url);
+        const { request, isSelected } = this.props;
+        const url = new URL(request.url, `${request.protocol}://${request.hostname}`);
 
-        return <Tr request={request} onClick={ isSelected ? onDeselected: onSelected } isSelected={isSelected}>
+        return <Tr 
+            request={request}
+            onClick={this.onClick}
+            onKeyPress={this.onKeyPress}
+            isSelected={isSelected}
+            tabIndex={0}
+        >
             <Td className='method'>{request.method}</Td>
             <Td>{truncate(url.host, 30, 4)}</Td>
             <Td>{truncate(url.pathname, 40, 4)}</Td>
             <Td>{truncate(url.search.slice(1), 40)}</Td>
         </Tr>
+    }
+
+    onClick = () => {
+        const { isSelected, onSelected, onDeselected } = this.props
+
+        if (isSelected) {
+            onDeselected();
+        } else {
+            onSelected();
+        }
+    }
+
+    onKeyPress = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            this.onClick();
+        }
     }
 }
 
@@ -178,7 +202,8 @@ const EmptyStateOverlay = EmptyState.extend`
 `;
 
 interface RequestListProps {
-    requests: MockttpRequest[]
+    onSelected: (request: MockttpRequest | undefined) => void;
+    requests: MockttpRequest[];
 }
 
 export class RequestList extends React.PureComponent<RequestListProps, {
@@ -231,9 +256,11 @@ export class RequestList extends React.PureComponent<RequestListProps, {
         this.setState({
             selectedRequest: req
         });
+        this.props.onSelected(req);
     }
 
     requestDeselected(req: MockttpRequest) {
         this.setState({ selectedRequest: undefined });
+        this.props.onSelected(undefined);
     }
 }

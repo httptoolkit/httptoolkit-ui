@@ -47,7 +47,6 @@ export async function getStore(options: { https: boolean, configRoot: string }):
     });
 
     server.start(8000).then(async () => {
-        await server.get('/').thenReply(200, 'Running!');
         await server.anyRequest().always().thenPassThrough();
 
         console.log(`Server started on port ${server.port}`);

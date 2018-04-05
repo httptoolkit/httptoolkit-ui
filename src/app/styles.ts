@@ -17,10 +17,15 @@ export { styled, css, injectGlobal, keyframes, ThemeProvider };
 
 export const theme = {
     mainBackground: '#ffffff',
+    mainColor: '#222',
+
+    popBackground: '#ff904d',
+    popBorder: '#e26f29',
+    popColor: '#fff',
     
     containerBackground: '#d8e2e6',
     containerWatermark: '#b6c2ca',
-    containerBorder: '#abb4ba'
+    containerBorder: '#abb4ba',
 };
 
 export type Theme = typeof theme;

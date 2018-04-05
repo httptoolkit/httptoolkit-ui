@@ -16,18 +16,30 @@ const RequestListFromStore = connect(
     (state: StoreModel) => ({ requests: state.requests })
 )(RequestList);
 
-class App extends React.PureComponent<{
+interface AppProps {
     className?: string,
     serverStatus: ServerStatus
+}
+
+class App extends React.PureComponent<AppProps, {
+    selectedRequest: MockttpRequest | undefined
 }> {
+    constructor(props: AppProps) {
+        super(props);
+
+        this.state = {
+            selectedRequest: undefined
+        };
+    }
+
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
 
         if (this.props.serverStatus === ServerStatus.Connected) {
             mainView = (
                 <SplitScreen minWidth={300}>
-                    <RequestListFromStore></RequestListFromStore>
-                    <RequestDetailsPane selected={[]}></RequestDetailsPane>
+                    <RequestListFromStore onSelected={this.onSelected}></RequestListFromStore>
+                    <RequestDetailsPane request={this.state.selectedRequest}></RequestDetailsPane>
                 </SplitScreen>
             );
         } else if (this.props.serverStatus === ServerStatus.Connecting) {
@@ -39,6 +51,12 @@ class App extends React.PureComponent<{
         }
 
         return <div className={this.props.className}>{ mainView }</div>;
+    }
+
+    onSelected = (request: MockttpRequest | undefined) => {
+        this.setState({
+            selectedRequest: request
+        });
     }
 }
 
