@@ -18,13 +18,15 @@ export const EmptyState = styled((props: {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
 
     color: ${props => props.theme.containerWatermark};
     font-size: 40px;
     text-align: center;
 
-    margin: 0 40px;
+    box-sizing: border-box;
+    padding: 40px;
+    height: 100%;
+    width: 100%;
 
     > svg {
         font-size: 150px;
