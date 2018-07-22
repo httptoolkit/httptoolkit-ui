@@ -30,11 +30,15 @@ module.exports = {
         }, {
             test: /\.woff2$/,
             loader: "file-loader"
+        }, {
+          test: /\.css$/,
+          use: [ 'style-loader', 'css-loader' ]
         }]
     },
 
     node: {
-        process: true
+        process: true,
+        fs: 'empty'
     },
 
     plugins: [
