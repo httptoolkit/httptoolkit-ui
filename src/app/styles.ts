@@ -19,10 +19,14 @@ export const theme = {
     mainBackground: '#ffffff',
     mainColor: '#222',
 
-    popBackground: '#ff904d',
+    headingBackground: '#e1421f',
+    headingBorder: '#712c1c',
+    headingColor: '#fff',
+
+    popBackground: '#fff',
     popBorder: '#e26f29',
-    popColor: '#fff',
-    
+    popColor: '#e1421f',
+
     containerBackground: '#d8e2e6',
     containerWatermark: '#b6c2ca',
     containerBorder: '#abb4ba',

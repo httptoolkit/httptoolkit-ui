@@ -2,7 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { createStore, Store } from 'redux';
 import { getLocal, Mockttp } from 'mockttp';
-import { MockttpRequest } from '../types';
+import { MockttpRequest, CompletedRequest } from '../types';
 
 export interface StoreModel {
     server: Mockttp,
@@ -19,7 +19,7 @@ export enum ServerStatus {
 
 export type Action =
     { type: 'UpdateServerStatus', value: ServerStatus } |
-    { type: 'RequestReceived', request: MockttpRequest };
+    { type: 'RequestReceived', request: CompletedRequest };
 
 const reducer = (state: StoreModel, action: Action): StoreModel => {
     switch (action.type) {

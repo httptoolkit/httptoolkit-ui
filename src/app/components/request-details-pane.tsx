@@ -1,6 +1,7 @@
 import * as React from "react";
 import styled from 'styled-components';
-import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
+
+import ContentSize from './content-size';
 
 import { MockttpRequest } from "../types";
 import { EmptyState } from './empty-state';
@@ -11,19 +12,20 @@ const RequestDetailsContainer = styled.div`
     flex-direction: column;
     align-items: flex-start;
     justify-content: stretch;
-    
+
     position: relative;
 
     width: 100%;
-    padding: 5px;
     box-sizing: border-box;
 `;
 
 const Card = styled.div`
-    width: 100%;
+    width: calc(100% - 10px);
     overflow: hidden;
     word-break: break-all;
-    
+
+    margin: 5px;
+
     background-color: ${props => props.theme.mainBackground};
     border-radius: 2px;
 `;
@@ -33,15 +35,15 @@ const CardHeader = styled.div`
     height: 40px;
     padding: 10px;
     box-sizing: border-box;
-    
+
     display: flex;
     align-items: center;
 
     text-transform: uppercase;
 
-    color: ${props => props.theme.popColor};
-    background-color: ${props => props.theme.popBackground};
-    border-bottom: 1px solid ${props => props.theme.popBorder};
+    color: ${props => props.theme.headingColor};
+    background-color: ${props => props.theme.headingBackground};
+    border-bottom: 1px solid ${props => props.theme.headingBorder};
 `;
 
 const CardContent = styled.div`
@@ -65,6 +67,10 @@ const ContentValue = styled.div`
     font-family: 'Fira Mono', monospace;
 `;
 
+const RequestBody = styled.div`
+    font-family: 'Fira Mono', monospace;
+`;
+
 
 export const RequestDetailsPane = styled((props: {
     className?: string,
@@ -72,9 +78,12 @@ export const RequestDetailsPane = styled((props: {
 }) => {
     const url = props.request &&
         new URL(props.request.url, `${props.request.protocol}://${props.request.hostname}`);
-    
+
+    const bodyText = props.request && props.request.body && props.request.body.text;
+    const hasBody = bodyText != null;
+
     return <RequestDetailsContainer className={props.className}>{
-        props.request ?
+        props.request ? (<>
             <Card>
                 <CardHeader>Request details</CardHeader>
                 <CardContent>
@@ -87,7 +96,18 @@ export const RequestDetailsPane = styled((props: {
                     </ContentValue>
                 </CardContent>
             </Card>
-        :
+
+            <Card>
+                <CardHeader>
+                    Request body { hasBody && <ContentSize content={bodyText!} />}
+                </CardHeader>
+                <CardContent>
+                    { hasBody && <RequestBody>
+                        { bodyText }
+                    </RequestBody> }
+                </CardContent>
+            </Card>
+        </>) :
             <EmptyState
                 icon={['far', 'arrow-left']}
                 message='Select some requests to see their details.'
