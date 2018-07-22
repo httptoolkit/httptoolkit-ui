@@ -42,7 +42,7 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
         super(props);
 
         this.state = {
-            selectedContentType: props.contentType || 'text/plain',
+            selectedContentType: ContentTypes[props.contentType!] ? props.contentType! : 'text/plain',
             lineCount: this.props.content.split('\n').length
         };
     }
