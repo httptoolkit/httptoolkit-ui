@@ -80,7 +80,6 @@ export const RequestDetailsPane = styled((props: {
         new URL(props.request.url, `${props.request.protocol}://${props.request.hostname}`);
 
     const bodyText = props.request && props.request.body && props.request.body.text;
-    const hasBody = bodyText != null;
 
     return <RequestDetailsContainer className={props.className}>{
         props.request ? (<>
@@ -97,16 +96,16 @@ export const RequestDetailsPane = styled((props: {
                 </CardContent>
             </Card>
 
-            <Card>
+            { bodyText && <Card>
                 <CardHeader>
-                    Request body { hasBody && <ContentSize content={bodyText!} />}
+                    Request body <ContentSize content={bodyText!} />
                 </CardHeader>
                 <CardContent>
-                    { hasBody && <RequestBody>
+                    <RequestBody>
                         { bodyText }
-                    </RequestBody> }
+                    </RequestBody>
                 </CardContent>
-            </Card>
+            </Card> }
         </>) :
             <EmptyState
                 icon={['far', 'arrow-left']}
