@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as utf8 from 'utf8';
 
-import { styled } from '../styles';
+import { styled } from '../../styles';
 
 function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;

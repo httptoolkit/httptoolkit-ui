@@ -1,11 +1,12 @@
 import * as React from "react";
 import styled from 'styled-components';
 
-import ContentSize from './content-size';
+import ContentSize from './editor/content-size';
 
 import { MockttpRequest } from "../types";
 import { EmptyState } from './empty-state';
 import { HeaderDetails } from './header-details';
+import { EditorController } from "./editor/editor-controller";
 
 const RequestDetailsContainer = styled.div`
     display: flex;
@@ -27,7 +28,8 @@ const Card = styled.div`
     margin: 5px;
 
     background-color: ${props => props.theme.mainBackground};
-    border-radius: 2px;
+    border-radius: 4px;
+    overflow: hidden;
 `;
 
 const CardHeader = styled.div`
@@ -67,10 +69,13 @@ const ContentValue = styled.div`
     font-family: 'Fira Mono', monospace;
 `;
 
-const RequestBody = styled.div`
-    font-family: 'Fira Mono', monospace;
-`;
+const RequestBodyCardContent = styled.div`
+    height: ${(props: any) => Math.min(props.height, 500)}px;
 
+    .monaco-editor-overlaymessage {
+        display: none;
+    }
+`;
 
 export const RequestDetailsPane = styled((props: {
     className?: string,
@@ -79,6 +84,7 @@ export const RequestDetailsPane = styled((props: {
     const url = props.request &&
         new URL(props.request.url, `${props.request.protocol}://${props.request.hostname}`);
 
+    const contentType = props.request && props.request.headers['content-type'];
     const bodyText = props.request && props.request.body && props.request.body.text;
 
     return <RequestDetailsContainer className={props.className}>{
@@ -97,14 +103,42 @@ export const RequestDetailsPane = styled((props: {
             </Card>
 
             { bodyText && <Card>
-                <CardHeader>
-                    Request body <ContentSize content={bodyText!} />
-                </CardHeader>
-                <CardContent>
-                    <RequestBody>
-                        { bodyText }
-                    </RequestBody>
-                </CardContent>
+                <EditorController
+                    contentType={contentType}
+                    content={bodyText}
+                    options={{
+                        automaticLayout: true,
+                        readOnly: true,
+                        showFoldingControls: 'always',
+
+                        quickSuggestions: false,
+                        parameterHints: false,
+                        codeLens: false,
+                        minimap: { enabled: false },
+                        contextmenu: false,
+                        scrollBeyondLastLine: false,
+
+                        // TODO: Would like to set a fontFace here, but due to
+                        // https://github.com/Microsoft/monaco-editor/issues/392
+                        // it breaks wordwrap
+
+                        fontSize: 16,
+                        wordWrap: 'on'
+                    }}
+                >
+                    { ({ editor, contentTypeSelector, lineCount }) => <>
+                        <CardHeader>
+                            Request body
+
+                            <ContentSize content={bodyText!} />
+
+                            { contentTypeSelector }
+                        </CardHeader>
+                        <RequestBodyCardContent height={lineCount * 22}>
+                            { editor }
+                        </RequestBodyCardContent>
+                    </> }
+                </EditorController>
             </Card> }
         </>) :
             <EmptyState
