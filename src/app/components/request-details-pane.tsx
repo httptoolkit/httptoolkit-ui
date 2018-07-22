@@ -62,7 +62,7 @@ const ContentLabel = styled.div`
 `;
 
 const ContentValue = styled.div`
-    font-family: monospace; /* TODO: Find a nice monospaced font */
+    font-family: 'Fira Mono', monospace;
 `;
 
 
