@@ -68,9 +68,9 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
             lineCount
         } = this.state;
 
-        const contentTypeSelector = <select onChange={this.setContentType}>
+        const contentTypeSelector = <select onChange={this.setContentType} value={selectedContentType}>
             { _.map(ContentTypes, ((typeConfig, contentType) => (
-                <option value={contentType} selected={contentType === selectedContentType}>
+                <option key={contentType} value={contentType}>
                     { typeConfig.name }
                 </option>
             ))) }
