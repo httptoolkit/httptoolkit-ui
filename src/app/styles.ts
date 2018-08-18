@@ -2,16 +2,16 @@ import styled, {
   injectGlobal,
   css,
   keyframes,
-  ThemeProvider,
-  ThemedStyledComponentsModule
+  ThemeProvider
 } from 'styled-components';
 
 import reset from 'styled-reset'
 
 // Import required FA icons:
 import fontawesome from '@fortawesome/fontawesome'
+import * as spinner from '@fortawesome/fontawesome-pro-light/faSpinner';
 import { faSpinnerThird, faArrowLeft } from '@fortawesome/fontawesome-pro-regular';
-fontawesome.library.add(faArrowLeft, faSpinnerThird);
+fontawesome.library.add(faArrowLeft, faSpinnerThird, spinner);
 
 export { styled, css, injectGlobal, keyframes, ThemeProvider };
 

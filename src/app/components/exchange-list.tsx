@@ -1,10 +1,11 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 
-import { CompletedRequest, DomWithProps } from '../types';
-import { EmptyState } from './empty-state';
+import { DomWithProps } from '../types';
 import { HttpExchange } from '../model/store';
+
+import { EmptyState } from './empty-state';
+import { StatusCode } from './status-code';
 
 const HeaderSize = '40px';
 
@@ -170,7 +171,7 @@ class ExchangeRow extends React.Component<ExchangeRowProps, {}> {
             `${exchange.request.protocol}://${exchange.request.hostname}`
         );
 
-        return <Tr 
+        return <Tr
             exchange={exchange}
             onClick={this.onClick}
             onKeyPress={this.onKeyPress}
@@ -178,6 +179,12 @@ class ExchangeRow extends React.Component<ExchangeRowProps, {}> {
             tabIndex={0}
         >
             <Td className='method'>{exchange.request.method}</Td>
+            <Td>
+                <StatusCode
+                    status={exchange.response && exchange.response.statusCode}
+                    message={exchange.response && exchange.response.statusMessage}
+                />
+            </Td>
             <Td>{truncate(url.host, 30, 4)}</Td>
             <Td>{truncate(url.pathname, 40, 4)}</Td>
             <Td>{truncate(url.search.slice(1), 40)}</Td>
@@ -227,8 +234,6 @@ export class ExchangeList extends React.PureComponent<ExchangeListProps, {
         const { exchanges } = this.props;
         const { selectedExchange } = this.state;
 
-        console.log('Rendering with exchanges', exchanges);
-
         return <TableRoot>
             <HeaderBackground/>
             <TableScrollContainer>
@@ -236,6 +241,7 @@ export class ExchangeList extends React.PureComponent<ExchangeListProps, {
                     <thead>
                         <tr>
                             <Th>Verb</Th>
+                            <Th>Status</Th>
                             <Th>Host</Th>
                             <Th>Path</Th>
                             <Th>Query</Th>

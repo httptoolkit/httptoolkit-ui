@@ -75,59 +75,37 @@ const ExchangeBodyCardContent = styled.div`
 export const ExchangeDetailsPane = ({ exchange }: {
     exchange: HttpExchange | undefined
 }) => {
-    const url = exchange && new URL(
-        exchange.request.url,
-        `${exchange.request.protocol}://${exchange.request.hostname}`
-    );
+    const cards: JSX.Element[] = [];
 
-    const contentType = exchange && exchange.request.headers['content-type'];
-    const reqBodyText = exchange && exchange.request.body && exchange.request.body.text;
+    if (exchange) {
+        const { request, response } = exchange;
 
-    return <ExchangeDetailsContainer>{
-        exchange ? (<>
-            <Card>
-                <CardHeader>Request details</CardHeader>
-                <CardContent>
-                    <ContentLabel>URL</ContentLabel>
-                    <ContentValue>{url!.toString()}</ContentValue>
+        cards.push(<Card>
+            <CardHeader>Request</CardHeader>
+            <CardContent>
+                <ContentLabel>URL</ContentLabel>
+                <ContentValue>{
+                    new URL(request.url, `${request.protocol}://${request.hostname}`).toString()
+                }</ContentValue>
 
-                    <ContentLabel>Headers</ContentLabel>
-                    <ContentValue>
-                        <HeaderDetails headers={exchange.request.headers} />
-                    </ContentValue>
-                </CardContent>
-            </Card>
+                <ContentLabel>Headers</ContentLabel>
+                <ContentValue>
+                    <HeaderDetails headers={request.headers} />
+                </ContentValue>
+            </CardContent>
+        </Card>);
 
-            { reqBodyText && <Card>
+        if (request.body && request.body.text) {
+            const requestBody = request.body.text;
+
+            cards.push(<Card>
                 <EditorController
-                    contentType={contentType}
-                    content={reqBodyText}
-                    options={{
-                        automaticLayout: true,
-                        readOnly: true,
-                        showFoldingControls: 'always',
-
-                        quickSuggestions: false,
-                        parameterHints: false,
-                        codeLens: false,
-                        minimap: { enabled: false },
-                        contextmenu: false,
-                        scrollBeyondLastLine: false,
-
-                        // TODO: Would like to set a fontFace here, but due to
-                        // https://github.com/Microsoft/monaco-editor/issues/392
-                        // it breaks wordwrap
-
-                        fontSize: 16,
-                        wordWrap: 'on'
-                    }}
+                    contentType={request.headers['content-type']}
+                    content={requestBody}
                 >
                     { ({ editor, contentTypeSelector, lineCount }) => <>
                         <CardHeader>
-                            Request body
-
-                            <ContentSize content={reqBodyText!} />
-
+                            Request body <ContentSize content={requestBody} />
                             { contentTypeSelector }
                         </CardHeader>
                         <ExchangeBodyCardContent height={lineCount * 22}>
@@ -135,24 +113,54 @@ export const ExchangeDetailsPane = ({ exchange }: {
                         </ExchangeBodyCardContent>
                     </> }
                 </EditorController>
-            </Card> }
+            </Card>);
+        }
 
-            { exchange.response && <Card>
-                <CardHeader>Response details</CardHeader>
+        if (response) {
+            cards.push(<Card>
+                <CardHeader>Response</CardHeader>
                 <CardContent>
                     <ContentLabel>Status</ContentLabel>
-                    <ContentValue>{exchange.response.statusCode}: {exchange.response.statusMessage}</ContentValue>
+                    <ContentValue>
+                        {response.statusCode}: {response.statusMessage}
+                    </ContentValue>
 
                     <ContentLabel>Headers</ContentLabel>
                     <ContentValue>
-                        <HeaderDetails headers={exchange.response.headers} />
+                        <HeaderDetails headers={response.headers} />
                     </ContentValue>
                 </CardContent>
-            </Card> }
-        </>) :
+            </Card>);
+
+            if (response.body && response.body.text) {
+                const responseBody = response.body.text;
+
+                cards.push(<Card>
+                    <EditorController
+                        contentType={response.headers['content-type']}
+                        content={responseBody}
+                    >
+                        { ({ editor, contentTypeSelector, lineCount }) => <>
+                            <CardHeader>
+                                Response body <ContentSize content={responseBody} />
+                                { contentTypeSelector }
+                            </CardHeader>
+                            <ExchangeBodyCardContent height={lineCount * 22}>
+                                { editor }
+                            </ExchangeBodyCardContent>
+                        </> }
+                    </EditorController>
+                </Card>);
+            }
+        }
+    } else {
+        cards.push(
             <EmptyState
                 icon={['far', 'arrow-left']}
                 message='Select some requests to see their details.'
             />
-    }</ExchangeDetailsContainer>
+        );
+    }
+
+    return <ExchangeDetailsContainer>{cards}</ExchangeDetailsContainer>;
 }

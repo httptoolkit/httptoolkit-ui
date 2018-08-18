@@ -63,6 +63,26 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
 
     render() {
         const renderer = this.props.children;
+        const options = _.defaults(this.props.options, {
+            automaticLayout: true,
+            readOnly: true,
+            showFoldingControls: 'always',
+
+            quickSuggestions: false,
+            parameterHints: false,
+            codeLens: false,
+            minimap: { enabled: false },
+            contextmenu: false,
+            scrollBeyondLastLine: false,
+
+            // TODO: Would like to set a fontFace here, but due to
+            // https://github.com/Microsoft/monaco-editor/issues/392
+            // it breaks wordwrap
+
+            fontSize: 16,
+            wordWrap: 'on'
+        });
+
         const {
             selectedContentType,
             lineCount
@@ -81,7 +101,7 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
         const editor = <EditorClass
             onChange={this.props.onChange}
             onLineCount={this.updateLineCount}
-            options={this.props.options}
+            options={options}
         >
             { this.props.content }
         </EditorClass>
