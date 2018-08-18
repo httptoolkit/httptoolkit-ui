@@ -3,20 +3,15 @@ import styled from 'styled-components';
 
 import ContentSize from './editor/content-size';
 
-import { MockttpRequest } from "../types";
 import { EmptyState } from './empty-state';
 import { HeaderDetails } from './header-details';
 import { EditorController } from "./editor/editor-controller";
+import { HttpExchange } from "../model/store";
 
-const RequestDetailsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: stretch;
-
+const ExchangeDetailsContainer = styled.div`
     position: relative;
 
-    width: 100%;
+    min-height: 100%;
     box-sizing: border-box;
 `;
 
@@ -69,7 +64,7 @@ const ContentValue = styled.div`
     font-family: 'Fira Mono', monospace;
 `;
 
-const RequestBodyCardContent = styled.div`
+const ExchangeBodyCardContent = styled.div`
     height: ${(props: any) => Math.min(props.height, 500)}px;
 
     .monaco-editor-overlaymessage {
@@ -77,18 +72,19 @@ const RequestBodyCardContent = styled.div`
     }
 `;
 
-export const RequestDetailsPane = styled((props: {
-    className?: string,
-    request: MockttpRequest | undefined
+export const ExchangeDetailsPane = ({ exchange }: {
+    exchange: HttpExchange | undefined
 }) => {
-    const url = props.request &&
-        new URL(props.request.url, `${props.request.protocol}://${props.request.hostname}`);
+    const url = exchange && new URL(
+        exchange.request.url,
+        `${exchange.request.protocol}://${exchange.request.hostname}`
+    );
 
-    const contentType = props.request && props.request.headers['content-type'];
-    const bodyText = props.request && props.request.body && props.request.body.text;
+    const contentType = exchange && exchange.request.headers['content-type'];
+    const reqBodyText = exchange && exchange.request.body && exchange.request.body.text;
 
-    return <RequestDetailsContainer className={props.className}>{
-        props.request ? (<>
+    return <ExchangeDetailsContainer>{
+        exchange ? (<>
             <Card>
                 <CardHeader>Request details</CardHeader>
                 <CardContent>
@@ -97,15 +93,15 @@ export const RequestDetailsPane = styled((props: {
 
                     <ContentLabel>Headers</ContentLabel>
                     <ContentValue>
-                        <HeaderDetails headers={props.request.headers} />
+                        <HeaderDetails headers={exchange.request.headers} />
                     </ContentValue>
                 </CardContent>
             </Card>
 
-            { bodyText && <Card>
+            { reqBodyText && <Card>
                 <EditorController
                     contentType={contentType}
-                    content={bodyText}
+                    content={reqBodyText}
                     options={{
                         automaticLayout: true,
                         readOnly: true,
@@ -130,22 +126,33 @@ export const RequestDetailsPane = styled((props: {
                         <CardHeader>
                             Request body
 
-                            <ContentSize content={bodyText!} />
+                            <ContentSize content={reqBodyText!} />
 
                             { contentTypeSelector }
                         </CardHeader>
-                        <RequestBodyCardContent height={lineCount * 22}>
+                        <ExchangeBodyCardContent height={lineCount * 22}>
                             { editor }
-                        </RequestBodyCardContent>
+                        </ExchangeBodyCardContent>
                     </> }
                 </EditorController>
+            </Card> }
+
+            { exchange.response && <Card>
+                <CardHeader>Response details</CardHeader>
+                <CardContent>
+                    <ContentLabel>Status</ContentLabel>
+                    <ContentValue>{exchange.response.statusCode}: {exchange.response.statusMessage}</ContentValue>
+
+                    <ContentLabel>Headers</ContentLabel>
+                    <ContentValue>
+                        <HeaderDetails headers={exchange.response.headers} />
+                    </ContentValue>
+                </CardContent>
             </Card> }
         </>) :
             <EmptyState
                 icon={['far', 'arrow-left']}
                 message='Select some requests to see their details.'
             />
-    }</RequestDetailsContainer>
-})`
-    height: 100%;
-`;
+    }</ExchangeDetailsContainer>
+}

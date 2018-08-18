@@ -2,12 +2,17 @@ import * as os from 'os';
 import * as path from 'path';
 import { createStore, Store } from 'redux';
 import { getLocal, Mockttp } from 'mockttp';
-import { MockttpRequest, CompletedRequest } from '../types';
+import { CompletedRequest, CompletedResponse } from '../types';
+
+export type HttpExchange = {
+    request: CompletedRequest;
+    response?: CompletedResponse;
+};
 
 export interface StoreModel {
     server: Mockttp,
     serverStatus: ServerStatus,
-    requests: MockttpRequest[]
+    exchanges: HttpExchange[];
 }
 
 export enum ServerStatus {
@@ -19,12 +24,20 @@ export enum ServerStatus {
 
 export type Action =
     { type: 'UpdateServerStatus', value: ServerStatus } |
-    { type: 'RequestReceived', request: CompletedRequest };
+    { type: 'RequestReceived', request: CompletedRequest } |
+    { type: 'ResponseCompleted', response: CompletedResponse };
 
 const reducer = (state: StoreModel, action: Action): StoreModel => {
     switch (action.type) {
         case 'RequestReceived':
-            return Object.assign({}, state, { requests: state.requests.concat(action.request) });
+            return Object.assign({}, state, {
+                exchanges: state.exchanges.concat({ request: action.request })
+            });
+        case 'ResponseCompleted':
+            return Object.assign({}, state, {
+                exchanges: state.exchanges.map((exchange) => exchange.request.id === action.response.id ?
+                    { ...exchange, response: action.response } : exchange)
+            });
         case 'UpdateServerStatus':
             return Object.assign({}, state, { serverStatus: action.value });
         default:
@@ -37,13 +50,14 @@ export async function getStore(options: { https: boolean, configRoot: string }):
         https: options.https ? {
             keyPath: path.join(options.configRoot, 'ca.key'),
             certPath: path.join(options.configRoot, 'ca.pem')
-        }: undefined
+        }: undefined,
+        cors: false
     });
 
     const store = createStore<StoreModel>(reducer, {
         server: server,
         serverStatus: ServerStatus.Connecting,
-        requests: []
+        exchanges: []
     });
 
     server.start(8000).then(async () => {
@@ -59,6 +73,11 @@ export async function getStore(options: { https: boolean, configRoot: string }):
         server.on('request', (req) => store.dispatch<Action>({
             type: 'RequestReceived',
             request: req
+        }));
+
+        server.on('response', (res) => store.dispatch<Action>({
+            type: 'ResponseCompleted',
+            response: res
         }));
 
         window.addEventListener('beforeunload', () => server.stop());

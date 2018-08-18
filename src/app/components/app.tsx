@@ -1,20 +1,16 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 
-import { Mockttp } from 'mockttp';
-
-import { RequestList } from './request-list';
-import { RequestDetailsPane } from './request-details-pane';
+import { ExchangeList } from './exchange-list';
+import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitScreen } from './split-screen';
 
-import { MockttpRequest } from '../types';
-import { StoreModel, ServerStatus } from '../model/store';
+import { StoreModel, ServerStatus, HttpExchange } from '../model/store';
 
-const RequestListFromStore = connect(
-    (state: StoreModel) => ({ requests: state.requests })
-)(RequestList);
+const ExchangeListFromStore = connect(
+    (state: StoreModel) => ({ exchanges: state.exchanges })
+)(ExchangeList);
 
 interface AppProps {
     className?: string,
@@ -22,13 +18,13 @@ interface AppProps {
 }
 
 class App extends React.PureComponent<AppProps, {
-    selectedRequest: MockttpRequest | undefined
+    selectedExchange: HttpExchange | undefined
 }> {
     constructor(props: AppProps) {
         super(props);
 
         this.state = {
-            selectedRequest: undefined
+            selectedExchange: undefined
         };
     }
 
@@ -38,8 +34,8 @@ class App extends React.PureComponent<AppProps, {
         if (this.props.serverStatus === ServerStatus.Connected) {
             mainView = (
                 <SplitScreen minWidth={300}>
-                    <RequestListFromStore onSelected={this.onSelected}></RequestListFromStore>
-                    <RequestDetailsPane request={this.state.selectedRequest}></RequestDetailsPane>
+                    <ExchangeListFromStore onSelected={this.onSelected}></ExchangeListFromStore>
+                    <ExchangeDetailsPane exchange={this.state.selectedExchange}></ExchangeDetailsPane>
                 </SplitScreen>
             );
         } else if (this.props.serverStatus === ServerStatus.Connecting) {
@@ -53,9 +49,9 @@ class App extends React.PureComponent<AppProps, {
         return <div className={this.props.className}>{ mainView }</div>;
     }
 
-    onSelected = (request: MockttpRequest | undefined) => {
+    onSelected = (exchange: HttpExchange | undefined) => {
         this.setState({
-            selectedRequest: request
+            selectedExchange: exchange
         });
     }
 }

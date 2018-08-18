@@ -2,8 +2,9 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled, { css } from 'styled-components';
 
-import { MockttpRequest, DomWithProps } from '../types';
+import { CompletedRequest, DomWithProps } from '../types';
 import { EmptyState } from './empty-state';
+import { HttpExchange } from '../model/store';
 
 const HeaderSize = '40px';
 
@@ -71,16 +72,19 @@ const Th = styled((props: { className?: string, children: JSX.Element[] | string
     color: ${props => props.theme.mainColor};
 `;
 
-const getColour = (request: MockttpRequest) => {
-    if (request.method === 'POST') {
+const getColour = (exchange: HttpExchange) => {
+    if (exchange.request.method === 'POST') {
         return '#ce3939';
-    } else if (request.path.endsWith('.js')) {
+    } else if (exchange.request.path.endsWith('.js')) {
         return '#4c86af';
-    } else if (request.path.endsWith('/') || request.path.endsWith('.html')) {
+    } else if (exchange.request.path.endsWith('/') || exchange.request.path.endsWith('.html')) {
         return '#574caf';
-    } else if (request.path.endsWith('.css')) {
+    } else if (exchange.request.path.endsWith('.css')) {
         return '#af4c9a';
-    } else if (request.path.endsWith('.jpg') || request.path.endsWith('.jpeg') || request.path.endsWith('.png') || request.path.endsWith('.gif')) {
+    } else if (exchange.request.path.endsWith('.jpg') ||
+        exchange.request.path.endsWith('.jpeg') ||
+        exchange.request.path.endsWith('.png') ||
+        exchange.request.path.endsWith('.gif')) {
         return '#4caf7d';
     } else {
         return '#ffc107';
@@ -106,7 +110,7 @@ const Tr = styled.tr`
     cursor: pointer;
 
     > :first-child {
-        border-left: 5px solid ${(props: any) => getColour(props.request)};
+        border-left: 5px solid ${(props: any) => getColour(props.exchange)};
         border-radius: 2px 0 0 2px;
     }
 
@@ -114,7 +118,7 @@ const Tr = styled.tr`
         border-radius: 0 2px 2px 0;
     }
 ` as any as DomWithProps<HTMLTableRowElement, {
-    request: MockttpRequest,
+    exchange: HttpExchange,
     isSelected: boolean
 }>;
 
@@ -146,31 +150,34 @@ const truncate = (str: string, length: number, trailingLength: number = 0) => {
     }
 }
 
-interface RequestRowProps {
-    request: MockttpRequest;
+interface ExchangeRowProps {
+    exchange: HttpExchange;
     onSelected: () => void;
     onDeselected: () => void;
     isSelected: boolean;
 }
 
-class RequestRow extends React.Component<RequestRowProps, {}> {
-    shouldComponentUpdate(nextProps: RequestRowProps) {
-        return this.props.request !== nextProps.request ||
+class ExchangeRow extends React.Component<ExchangeRowProps, {}> {
+    shouldComponentUpdate(nextProps: ExchangeRowProps) {
+        return this.props.exchange !== nextProps.exchange ||
             this.props.isSelected !== nextProps.isSelected;
     }
 
     render() {
-        const { request, isSelected } = this.props;
-        const url = new URL(request.url, `${request.protocol}://${request.hostname}`);
+        const { exchange, isSelected } = this.props;
+        const url = new URL(
+            exchange.request.url,
+            `${exchange.request.protocol}://${exchange.request.hostname}`
+        );
 
         return <Tr 
-            request={request}
+            exchange={exchange}
             onClick={this.onClick}
             onKeyPress={this.onKeyPress}
             isSelected={isSelected}
             tabIndex={0}
         >
-            <Td className='method'>{request.method}</Td>
+            <Td className='method'>{exchange.request.method}</Td>
             <Td>{truncate(url.host, 30, 4)}</Td>
             <Td>{truncate(url.pathname, 40, 4)}</Td>
             <Td>{truncate(url.search.slice(1), 40)}</Td>
@@ -201,24 +208,26 @@ const EmptyStateOverlay = EmptyState.extend`
     height: auto;
 `;
 
-interface RequestListProps {
-    onSelected: (request: MockttpRequest | undefined) => void;
-    requests: MockttpRequest[];
+interface ExchangeListProps {
+    onSelected: (request: HttpExchange | undefined) => void;
+    exchanges: HttpExchange[];
 }
 
-export class RequestList extends React.PureComponent<RequestListProps, {
-    selectedRequest: MockttpRequest | undefined
+export class ExchangeList extends React.PureComponent<ExchangeListProps, {
+    selectedExchange: HttpExchange | undefined
 }> {
-    constructor(props: RequestListProps) {
+    constructor(props: ExchangeListProps) {
         super(props);
         this.state = {
-            selectedRequest: undefined
+            selectedExchange: undefined
         };
     }
 
     render() {
-        const { requests } = this.props;
-        const { selectedRequest } = this.state;
+        const { exchanges } = this.props;
+        const { selectedExchange } = this.state;
+
+        console.log('Rendering with exchanges', exchanges);
 
         return <TableRoot>
             <HeaderBackground/>
@@ -233,34 +242,34 @@ export class RequestList extends React.PureComponent<RequestListProps, {
                         </tr>
                     </thead>
                     <tbody>
-                        { requests.map((req, i) => (
-                            <RequestRow
+                        { exchanges.map((exchange, i) => (
+                            <ExchangeRow
                                 key={i}
-                                request={req}
-                                onSelected={() => this.requestSelected(req)}
-                                onDeselected={() => this.requestDeselected(req)}
-                                isSelected={selectedRequest === req}
+                                exchange={exchange}
+                                onSelected={() => this.exchangeSelected(exchange)}
+                                onDeselected={() => this.exchangeDeselected()}
+                                isSelected={selectedExchange === exchange}
                             />
                         )) }
                         <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
                     </tbody>
                 </Table>
-                { requests.length === 0 ?
+                { exchanges.length === 0 ?
                     <EmptyStateOverlay icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
                     : null }
             </TableScrollContainer>
         </TableRoot>;
     }
 
-    requestSelected(req: MockttpRequest) {
+    exchangeSelected(exchange: HttpExchange) {
         this.setState({
-            selectedRequest: req
+            selectedExchange: exchange
         });
-        this.props.onSelected(req);
+        this.props.onSelected(exchange);
     }
 
-    requestDeselected(req: MockttpRequest) {
-        this.setState({ selectedRequest: undefined });
+    exchangeDeselected() {
+        this.setState({ selectedExchange: undefined });
         this.props.onSelected(undefined);
     }
 }

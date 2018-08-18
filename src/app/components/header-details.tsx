@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from "react";
 import styled, { css } from 'styled-components';
 
-import { MockttpRequest } from "../types";
+import { CompletedRequest } from "../types";
 
 const Cell = css`
     padding: 0 10px 5px 0;
