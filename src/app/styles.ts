@@ -10,8 +10,9 @@ import reset from 'styled-reset'
 // Import required FA icons:
 import fontawesome from '@fortawesome/fontawesome'
 import * as spinner from '@fortawesome/fontawesome-pro-light/faSpinner';
-import { faSpinnerThird, faArrowLeft } from '@fortawesome/fontawesome-pro-regular';
-fontawesome.library.add(faArrowLeft, faSpinnerThird, spinner);
+import * as spinnerThird from '@fortawesome/fontawesome-pro-regular/faSpinnerThird';
+import * as arrowLeft from '@fortawesome/fontawesome-pro-regular/faArrowLeft';
+fontawesome.library.add(arrowLeft, spinnerThird, spinner);
 
 export { styled, css, injectGlobal, keyframes, ThemeProvider };
 
