@@ -35,7 +35,7 @@
     "css-loader": "^1.0.0",
     "electron": "^1.7.9",
     "lodash": "^4.17.5",
-    "mockttp": "^0.9.1",
+    "mockttp": "^0.10.0",
     "monaco-editor": "^0.13.1",
     "monaco-editor-webpack-plugin": "^1.4.0",
     "react": "^16.2.0",
