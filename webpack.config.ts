@@ -26,7 +26,12 @@ module.exports = {
         }, {
             test: /\.js$/,
             enforce: "pre",
-            loader: "source-map-loader"
+            loader: "source-map-loader",
+            exclude: [
+                path.join(__dirname, 'node_modules', 'monaco-editor'),
+                path.join(__dirname, 'node_modules', 'subscriptions-transport-ws'),
+                path.join(__dirname, '..', 'mockttp', 'subscriptions-transport-ws')
+            ]
         }, {
             test: /\.woff2$/,
             loader: "file-loader"
