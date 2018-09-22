@@ -1,4 +1,3 @@
-import * as os from 'os';
 import * as path from 'path';
 import { createStore, Store } from 'redux';
 import { getLocal, Mockttp } from 'mockttp';
@@ -82,7 +81,6 @@ export async function getStore(options: { https: boolean, configRoot: string }):
 
         window.addEventListener('beforeunload', () => server.stop());
     }).catch((err) => {
-        // If we got a conflict response, then 
         if (err.response && err.response.status === 409) {
             console.info('Server already in use');
             store.dispatch<Action>({

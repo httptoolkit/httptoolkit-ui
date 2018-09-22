@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { get } from 'typesafe-get';
 import styled from 'styled-components';
 
 import { DomWithProps } from '../types';
@@ -181,8 +182,8 @@ class ExchangeRow extends React.Component<ExchangeRowProps, {}> {
             <Td className='method'>{exchange.request.method}</Td>
             <Td>
                 <StatusCode
-                    status={exchange.response && exchange.response.statusCode}
-                    message={exchange.response && exchange.response.statusMessage}
+                    status={get(exchange, 'response', 'statusCode')}
+                    message={get(exchange, 'response', 'statusMessage')}
                 />
             </Td>
             <Td>{truncate(url.host, 30, 4)}</Td>

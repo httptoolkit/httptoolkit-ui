@@ -8,7 +8,7 @@ import { getStore } from './model/store';
 
 injectGlobalStyles();
 
-const APP_ELEMENT_SELECTOR = "#app";
+const APP_ELEMENT_SELECTOR = '#app';
 
 window.onload = async function startApp() {
     const config = JSON.parse((new URL(window.location.href)).searchParams.get('config') as string);

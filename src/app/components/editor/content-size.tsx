@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 import * as utf8 from 'utf8';
 
 import { styled } from '../../styles';

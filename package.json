@@ -47,6 +47,7 @@
     "styled-components": "^3.3.3",
     "styled-reset": "^1.1.2",
     "ts-node": "^3.3.0",
+    "typesafe-get": "^2.0.1",
     "typescript": "^2.6.2",
     "utf8": "^3.0.0",
     "webpack": "^3.0.0"
@@ -61,6 +62,7 @@
     "rimraf": "^2.6.2",
     "source-map-loader": "^0.2.3",
     "typescript-styled-plugin": "^0.6.0",
+    "umd-compat-loader": "^2.1.1",
     "webpack-dev-server": "^2.9.5"
   }
 }

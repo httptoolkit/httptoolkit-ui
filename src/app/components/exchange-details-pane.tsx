@@ -1,12 +1,13 @@
-import * as React from "react";
+import * as React from 'react';
+import { get } from 'typesafe-get';
 import styled from 'styled-components';
 
 import ContentSize from './editor/content-size';
 
 import { EmptyState } from './empty-state';
 import { HeaderDetails } from './header-details';
-import { EditorController } from "./editor/editor-controller";
-import { HttpExchange } from "../model/store";
+import { EditorController } from './editor/editor-controller';
+import { HttpExchange } from '../model/store';
 
 const ExchangeDetailsContainer = styled.div`
     position: relative;
@@ -95,9 +96,8 @@ export const ExchangeDetailsPane = ({ exchange }: {
             </CardContent>
         </Card>);
 
-        if (request.body && request.body.text) {
-            const requestBody = request.body.text;
-
+        const requestBody = get(request, 'body', 'text');
+        if (requestBody) {
             cards.push(<Card>
                 <EditorController
                     contentType={request.headers['content-type']}
@@ -132,9 +132,8 @@ export const ExchangeDetailsPane = ({ exchange }: {
                 </CardContent>
             </Card>);
 
-            if (response.body && response.body.text) {
-                const responseBody = response.body.text;
-
+            const responseBody = get(response, 'body', 'text');
+            if (responseBody) {
                 cards.push(<Card>
                     <EditorController
                         contentType={response.headers['content-type']}

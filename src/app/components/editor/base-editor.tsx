@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import * as monacoEditor from "monaco-editor";
+import * as monacoEditor from 'monaco-editor';
 import MonacoEditor from 'react-monaco-editor';
 
 export interface EditorProps {
@@ -30,13 +30,19 @@ export abstract class BaseEditor<
         this.editor = editor;
 
         let lineCount = (editor as any).viewModel.getLineCount();
-        this.props.onLineCount && this.props.onLineCount(lineCount);
+
+        if (this.props.onLineCount) {
+            this.props.onLineCount(lineCount);
+        }
     }
 
     componentDidUpdate() {
         if (this.editor) {
             let lineCount = (this.editor as any).viewModel.getLineCount();
-            this.props.onLineCount && this.props.onLineCount(lineCount);
+
+            if (this.props.onLineCount) {
+                this.props.onLineCount(lineCount);
+            }
         }
     }
 }

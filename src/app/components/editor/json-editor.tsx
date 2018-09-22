@@ -1,8 +1,8 @@
-import * as React from "react";
+import * as React from 'react';
 
-import * as monacoEditor from "monaco-editor";
+import * as monacoEditor from 'monaco-editor';
 import MonacoEditor from 'react-monaco-editor';
-import { BaseEditor, EditorProps } from "./base-editor";
+import { BaseEditor, EditorProps } from './base-editor';
 
 const minify = (text: string) => JSON.stringify(JSON.parse(text));
 const prettify = (text: string) => JSON.stringify(JSON.parse(text), null, 2);
@@ -55,8 +55,8 @@ export class JsonEditor extends BaseEditor<EditorProps, JsonEditorState> {
             return;
         }
 
-        if (newContent !== this.props.children) {
-            this.props.onChange && this.props.onChange(newContent);
+        if (newContent !== this.props.children && this.props.onChange) {
+            this.props.onChange(newContent);
         }
     }
 
@@ -69,7 +69,7 @@ export class JsonEditor extends BaseEditor<EditorProps, JsonEditorState> {
 
     render() {
         return <MonacoEditor
-            language="json"
+            language='json'
             value={this.state.content}
             options={this.props.options}
             onChange={this.saveAndMaybeAnnounceChange}

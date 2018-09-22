@@ -1,9 +1,9 @@
-import * as React from "react";
+import * as React from 'react';
 
-import * as monacoEditor from "monaco-editor";
+import * as monacoEditor from 'monaco-editor';
 import MonacoEditor from 'react-monaco-editor';
 
-import { BaseEditor, EditorProps } from "./base-editor";
+import { BaseEditor, EditorProps } from './base-editor';
 
 export class TextEditor extends BaseEditor {
 
@@ -13,7 +13,7 @@ export class TextEditor extends BaseEditor {
 
     render() {
         return <MonacoEditor
-            language="plaintext"
+            language='plaintext'
             value={this.props.children}
             options={this.props.options}
             onChange={this.props.onChange}

@@ -31,8 +31,11 @@ module.exports = {
             test: /\.woff2$/,
             loader: "file-loader"
         }, {
-          test: /\.css$/,
-          use: [ 'style-loader', 'css-loader' ]
+            test: /\.css$/,
+            use: [ 'style-loader', 'css-loader' ]
+        }, {
+            test: /node_modules[\\|/]typesafe-get/,
+            use: { loader: 'umd-compat-loader' }
         }]
     },
 

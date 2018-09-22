@@ -1,8 +1,8 @@
-import * as React from "react";
+import * as React from 'react';
 import styled, { StyledComponentClass } from 'styled-components';
 import * as _ from 'lodash';
 
-import { DomWithProps } from "../types";
+import { DomWithProps } from '../types';
 
 const SplitScreenContainer = styled.div`
     display: flex;
