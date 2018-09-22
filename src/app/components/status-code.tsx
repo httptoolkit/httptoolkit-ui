@@ -20,6 +20,7 @@ export const StatusCode = styled((props: {
         }
     </div>
 ))`
+    font-weight: bold;
     color: ${props => {
         if (!props.status || props.status < 100 || props.status >= 600) {
             // All odd undefined/unknown cases
@@ -27,9 +28,9 @@ export const StatusCode = styled((props: {
         } else if (props.status >= 500) {
             return '#ce3939';
         } else if (props.status >= 400) {
-            return '#ce3939';
+            return '#f1971f';
         } else if (props.status >= 300) {
-            return '#ffc107';
+            return '#5a80cc';
         } else if (props.status >= 200) {
             return '#4caf7d';
         } else if (props.status >= 100) {
