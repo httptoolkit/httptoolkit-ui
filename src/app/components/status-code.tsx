@@ -21,6 +21,10 @@ export const StatusCode = styled((props: {
     </div>
 ))`
     font-weight: bold;
+
+    .fa-spinner {
+        padding: 6px;
+    }
     color: ${props => {
         if (!props.status || props.status < 100 || props.status >= 600) {
             // All odd undefined/unknown cases
