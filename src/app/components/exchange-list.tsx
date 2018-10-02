@@ -1,78 +1,14 @@
 import * as React from 'react';
 import { get } from 'typesafe-get';
 import styled from 'styled-components';
+import 'react-virtualized/styles.css';
 
-import { DomWithProps } from '../types';
+import { AutoSizer, Table, Column } from 'react-virtualized';
+
 import { HttpExchange } from '../model/store';
 
 import { EmptyState } from './empty-state';
 import { StatusCode } from './status-code';
-
-const HeaderSize = '40px';
-
-const TableRoot = styled.section`
-    position: relative;
-    padding-top: ${HeaderSize};
-    height: 100%;
-    box-sizing: border-box;
-
-    background-color: ${props => props.theme.containerBackground};
-`;
-
-const HeaderBackground = styled.div`
-    background-color: ${props => props.theme.mainBackground};
-    border-bottom: 1px solid ${props => props.theme.containerBorder};
-    box-shadow: 0 0 30px rgba(0,0,0,0.2);
-
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: ${HeaderSize};
-`;
-
-const TableScrollContainer = styled.div`
-    overflow-y: auto;
-    height: 100%;
-`;
-
-const Table = styled.table`
-    width: calc(100% - 10px);
-    height: 100%;
-
-    margin: -1px 5px 0;
-
-    font-size: 14px;
-
-    border-collapse: separate;
-    border-spacing: 0 3px;
-`;
-
-const HeaderContentWrapper = styled.div`
-    position: absolute;
-    top: 0;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    padding-left: 5px;
-`;
-
-const Th = styled((props: { className?: string, children: JSX.Element[] | string }) => {
-    return <th className={props.className}>
-        <HeaderContentWrapper>
-            {props.children}
-        </HeaderContentWrapper>
-    </th>
-})`
-    height: 0;
-    padding: 0;
-    min-width: 45px;
-
-    font-size: 16px;
-    font-weight: bold;
-    background-color: ${props => props.theme.mainBackground};
-    color: ${props => props.theme.mainColor};
-`;
 
 const getColour = (exchange: HttpExchange) => {
     if (exchange.request.method === 'POST') {
@@ -89,125 +25,23 @@ const getColour = (exchange: HttpExchange) => {
         exchange.request.path.endsWith('.gif')) {
         return '#4caf7d';
     } else {
-        return '#ffc107';
+        return '#888';
     }
 };
 
-const Tr = styled.tr`
-    width: 100%;
-    word-break: break-all;
+const RowMarker = styled.div`
+    color: ${(p: { exchange: HttpExchange }) => getColour(p.exchange)};
+    background-color: currentColor;
 
-    /* Acts as a default height, when the table isn't yet full */
-    height: 30px;
+    width: 5px;
+    height: 100%;
 
-    background-color: ${(props: { isSelected: boolean, theme: any }) => 
-        props.isSelected ? props.theme.popBackground : props.theme.mainBackground
-    };
-    color: ${(props: { isSelected: boolean, theme: any }) => 
-        props.isSelected ? props.theme.popColor : props.theme.mainColor
-    };;
-
-    user-select: none;
-
-    cursor: pointer;
-
-    > :first-child {
-        border-left: 5px solid ${(props: any) => getColour(props.exchange)};
-        border-radius: 2px 0 0 2px;
-    }
-
-    > :last-child {
-        border-radius: 0 2px 2px 0;
-    }
-` as any as DomWithProps<HTMLTableRowElement, {
-    exchange: HttpExchange,
-    isSelected: boolean
-}>;
-
-const Td = styled.td`
-    padding: 8px 5px;
-    vertical-align: middle;
-
-    &.method {
-        white-space: nowrap;
-        font-weight: 800;
-    }
+    border-left: 5px solid ${p => p.theme.containerBackground};
 `;
 
-const Ellipsis = styled(({ className }: { className?: string }) =>
-    <span className={className}>&nbsp;…&nbsp;</span>
-)`
-    opacity: 0.5;
+const MarkerHeader = styled.div`
+    width: 10px;
 `;
-
-const truncate = (str: string, length: number, trailingLength: number = 0) => {
-    if (str.length <= length) {
-        return str;
-    } else {
-        return <>
-            {str.slice(0, length - 3 - trailingLength)}
-            <Ellipsis/>
-            {str.slice(str.length - trailingLength)}
-        </>;
-    }
-}
-
-interface ExchangeRowProps {
-    exchange: HttpExchange;
-    onSelected: () => void;
-    onDeselected: () => void;
-    isSelected: boolean;
-}
-
-class ExchangeRow extends React.Component<ExchangeRowProps, {}> {
-    shouldComponentUpdate(nextProps: ExchangeRowProps) {
-        return this.props.exchange !== nextProps.exchange ||
-            this.props.isSelected !== nextProps.isSelected;
-    }
-
-    render() {
-        const { exchange, isSelected } = this.props;
-        const url = new URL(
-            exchange.request.url,
-            `${exchange.request.protocol}://${exchange.request.hostname}`
-        );
-
-        return <Tr
-            exchange={exchange}
-            onClick={this.onClick}
-            onKeyPress={this.onKeyPress}
-            isSelected={isSelected}
-            tabIndex={0}
-        >
-            <Td className='method'>{exchange.request.method}</Td>
-            <Td>
-                <StatusCode
-                    status={get(exchange, 'response', 'statusCode')}
-                    message={get(exchange, 'response', 'statusMessage')}
-                />
-            </Td>
-            <Td>{truncate(url.host, 30, 4)}</Td>
-            <Td>{truncate(url.pathname, 40, 4)}</Td>
-            <Td>{truncate(url.search.slice(1), 40)}</Td>
-        </Tr>
-    }
-
-    onClick = () => {
-        const { isSelected, onSelected, onDeselected } = this.props
-
-        if (isSelected) {
-            onDeselected();
-        } else {
-            onSelected();
-        }
-    }
-
-    onKeyPress = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-            this.onClick();
-        }
-    }
-}
 
 const EmptyStateOverlay = EmptyState.extend`
     position: absolute;
@@ -217,11 +51,12 @@ const EmptyStateOverlay = EmptyState.extend`
 `;
 
 interface ExchangeListProps {
+    className?: string;
     onSelected: (request: HttpExchange | undefined) => void;
     exchanges: HttpExchange[];
 }
 
-export class ExchangeList extends React.PureComponent<ExchangeListProps, {
+export const ExchangeList = styled(class extends React.PureComponent<ExchangeListProps, {
     selectedExchange: HttpExchange | undefined
 }> {
     constructor(props: ExchangeListProps) {
@@ -232,40 +67,92 @@ export class ExchangeList extends React.PureComponent<ExchangeListProps, {
     }
 
     render() {
-        const { exchanges } = this.props;
+        const { exchanges, className } = this.props;
         const { selectedExchange } = this.state;
 
-        return <TableRoot>
-            <HeaderBackground/>
-            <TableScrollContainer>
-                <Table>
-                    <thead>
-                        <tr>
-                            <Th>Verb</Th>
-                            <Th>Status</Th>
-                            <Th>Host</Th>
-                            <Th>Path</Th>
-                            <Th>Query</Th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        { exchanges.map((exchange, i) => (
-                            <ExchangeRow
-                                key={i}
-                                exchange={exchange}
-                                onSelected={() => this.exchangeSelected(exchange)}
-                                onDeselected={() => this.exchangeDeselected()}
-                                isSelected={selectedExchange === exchange}
+        return <AutoSizer>
+            {({ height, width }) =>
+                <Table
+                    className={className}
+                    height={height}
+                    width={width}
+                    rowHeight={32}
+                    headerHeight={38}
+                    rowCount={exchanges.length}
+                    rowGetter={({ index }) => exchanges[index]}
+                    onRowClick={({ index }) => {
+                        const exchange = exchanges[index];
+                        if (selectedExchange !== exchange) {
+                            this.exchangeSelected(exchange);
+                        } else {
+                            this.exchangeDeselected();
+                        }
+                    }}
+                    rowClassName={({ index }) =>
+                        (selectedExchange === exchanges[index]) ? 'selected' : ''
+                    }
+                    noRowsRenderer={() =>
+                        <EmptyStateOverlay
+                            icon={['far', 'spinner-third']}
+                            spin
+                            message='Requests will appear here, once you send some...'
+                        />
+                    }
+                >
+                    <Column
+                        label=""
+                        dataKey="marker"
+                        className="marker"
+                        headerClassName="marker"
+                        headerRenderer={() => <MarkerHeader />}
+                        cellRenderer={({ rowData }) => <RowMarker exchange={rowData} />}
+                        width={10}
+                        flexShrink={0}
+                        flexGrow={0}
+                    />
+                    <Column
+                        label="Verb"
+                        dataKey="method"
+                        cellDataGetter={({ rowData }) => rowData.request.method}
+                        width={75}
+                        flexShrink={0}
+                        flexGrow={0}
+                    />
+                    <Column
+                        label="Status"
+                        dataKey="status"
+                        className="status"
+                        width={58}
+                        flexShrink={0}
+                        flexGrow={0}
+                        cellRenderer={({ rowData }) =>
+                            <StatusCode
+                                status={get(rowData, 'response', 'statusCode')}
+                                message={get(rowData, 'response', 'statusMessage')}
                             />
-                        )) }
-                        <tr></tr>{/* This fills up empty space at the bottom to stop other rows expanding */}
-                    </tbody>
+                        }
+                    />
+                    <Column
+                        label="Host"
+                        dataKey="host"
+                        width={500}
+                        cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
+                    />
+                    <Column
+                        label="Path"
+                        dataKey="path"
+                        width={500}
+                        cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname}
+                    />
+                    <Column
+                        label="Query"
+                        dataKey="query"
+                        width={500}
+                        cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
+                    />
                 </Table>
-                { exchanges.length === 0 ?
-                    <EmptyStateOverlay icon={['far', 'spinner-third']} spin message='Requests will appear here, once you send some...' />
-                    : null }
-            </TableScrollContainer>
-        </TableRoot>;
+            }
+        </AutoSizer>;
     }
 
     exchangeSelected(exchange: HttpExchange) {
@@ -279,4 +166,50 @@ export class ExchangeList extends React.PureComponent<ExchangeListProps, {
         this.setState({ selectedExchange: undefined });
         this.props.onSelected(undefined);
     }
-}
+})`
+    .ReactVirtualized__Table__headerRow {
+        background-color: ${props => props.theme.mainBackground};
+        color: ${props => props.theme.mainColor};
+
+        border-bottom: 1px solid ${props => props.theme.containerBorder};
+        box-shadow: 0 0 30px rgba(0,0,0,0.2);
+
+        font-size: 16px;
+
+        // For some reason, without this when the table starts scrolling
+        // the header adds padding & pops out of the container
+        padding-right: 0 !important;
+    }
+
+    .ReactVirtualized__Table__Grid {
+        outline: none;
+    }
+
+    .marker {
+        height: 100%;
+        margin-left: 0px;
+        margin-right: 5px;
+    }
+
+    .ReactVirtualized__Table__row {
+        user-select: none;
+        cursor: pointer;
+        outline: none;
+
+        background-color: ${props => props.theme.mainBackground};
+
+        border-width: 2px 0;
+        border-style: solid;
+        border-color: transparent;
+        background-clip: padding-box;
+        box-sizing: border-box;
+
+        &:hover ${RowMarker}, &.selected ${RowMarker} {
+            border-color: currentColor;
+        }
+
+        &.selected {
+            font-weight: bold;
+        }
+    }
+`;

@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import styled from 'styled-components';
+
+import { styled } from '../styles';
 
 import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
-import { SplitScreen } from './split-screen';
+import { SplitPane } from './split-pane';
 
 import { StoreModel, ServerStatus, HttpExchange } from '../model/store';
 
@@ -33,10 +34,16 @@ class App extends React.PureComponent<AppProps, {
 
         if (this.props.serverStatus === ServerStatus.Connected) {
             mainView = (
-                <SplitScreen minWidth={300}>
+                <SplitPane
+                    split='vertical'
+                    primary='second'
+                    defaultSize='50%'
+                    minSize={300}
+                    maxSize={-300}
+                >
                     <ExchangeListFromStore onSelected={this.onSelected}></ExchangeListFromStore>
                     <ExchangeDetailsPane exchange={this.state.selectedExchange}></ExchangeDetailsPane>
-                </SplitScreen>
+                </SplitPane>
             );
         } else if (this.props.serverStatus === ServerStatus.Connecting) {
             mainView = <div>Connecting...</div>;

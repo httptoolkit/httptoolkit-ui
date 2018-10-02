@@ -4,7 +4,7 @@ import { getLocal, Mockttp } from 'mockttp';
 import { CompletedRequest, CompletedResponse } from '../types';
 
 export type HttpExchange = {
-    request: CompletedRequest;
+    request: CompletedRequest & { parsedUrl: URL };
     response?: CompletedResponse;
 };
 
@@ -29,8 +29,14 @@ export type Action =
 const reducer = (state: StoreModel, action: Action): StoreModel => {
     switch (action.type) {
         case 'RequestReceived':
+            const request = Object.assign(action.request, {
+                parsedUrl: new URL(
+                    action.request.url,
+                    `${action.request.protocol}://${action.request.hostname}`
+                )
+            });
             return Object.assign({}, state, {
-                exchanges: state.exchanges.concat({ request: action.request })
+                exchanges: state.exchanges.concat({ request })
             });
         case 'ResponseCompleted':
             return Object.assign({}, state, {

@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import * as monacoEditor from 'monaco-editor';
-import MonacoEditor from 'react-monaco-editor';
 
 export interface EditorProps {
     children: string;

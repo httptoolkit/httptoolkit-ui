@@ -11,8 +11,10 @@ import { HttpExchange } from '../model/store';
 
 const ExchangeDetailsContainer = styled.div`
     position: relative;
+    overflow-y: auto;
 
-    min-height: 100%;
+    height: 100%;
+    width: 100%;
     box-sizing: border-box;
 `;
 
@@ -66,7 +68,7 @@ const ContentValue = styled.div`
 `;
 
 const ExchangeBodyCardContent = styled.div`
-    height: ${(props: any) => Math.min(props.height, 500)}px;
+    height: ${(p: { height: number }) => Math.min(p.height, 500)}px;
 
     .monaco-editor-overlaymessage {
         display: none;
