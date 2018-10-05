@@ -16,7 +16,7 @@ fontawesome.library.add(arrowLeft, spinnerThird, spinner);
 
 export { styled, css, injectGlobal, keyframes, ThemeProvider };
 
-export const theme = {
+export const lightTheme = {
     mainBackground: '#ffffff',
     mainColor: '#222',
 
@@ -33,9 +33,26 @@ export const theme = {
     containerBorder: '#abb4ba',
 };
 
-export type Theme = typeof theme;
+export const darkTheme = {
+    mainBackground: '#222222',
+    mainColor: '#efefef',
 
-export function injectGlobalStyles() {
+    headingBackground: '#e1421f',
+    headingBorder: '#712c1c',
+    headingColor: '#fafafa',
+
+    popBackground: '#000',
+    popBorder: '#e26f29',
+    popColor: '#e1421f',
+
+    containerBackground: '#303040',
+    containerWatermark: '#606070',
+    containerBorder: '#201010',
+};
+
+export type Theme = typeof lightTheme;
+
+export function injectGlobalStyles(theme: Theme) {
     injectGlobal`
         ${reset};
 
@@ -77,6 +94,7 @@ export function injectGlobalStyles() {
 
         body {
             font-family: Lato;
+            color: ${theme.mainColor};
             background-color: ${theme.containerBackground};
         }
     `;
