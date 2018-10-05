@@ -291,4 +291,8 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
             font-weight: bold;
         }
     }
+
+    .ReactVirtualized__Table__rowColumn {
+        padding: 5px 0;
+    }
 `;
