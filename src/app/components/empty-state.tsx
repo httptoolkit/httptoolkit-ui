@@ -1,14 +1,15 @@
 import * as React from 'react';
+import * as _ from 'lodash';
 import styled from 'styled-components';
 import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
 
-export const EmptyState = styled((props: {
+export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,
     message: string,
     icon: string[],
     spin?: boolean
 }) => (
-    <div className={props.className}>
+    <div {..._.omit(props, ['message', 'icon', 'spin'])}>
         <FontAwesomeIcon icon={props.icon} spin={props.spin} />
         <br/>
         { props.message }

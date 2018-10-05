@@ -83,7 +83,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
     if (exchange) {
         const { request, response } = exchange;
 
-        cards.push(<Card>
+        cards.push(<Card tabIndex={0}>
             <CardHeader>Request</CardHeader>
             <CardContent>
                 <ContentLabel>URL</ContentLabel>
@@ -100,7 +100,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
 
         const requestBody = get(request, 'body', 'text');
         if (requestBody) {
-            cards.push(<Card>
+            cards.push(<Card tabIndex={0}>
                 <EditorController
                     contentType={request.headers['content-type']}
                     content={requestBody}
@@ -119,7 +119,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
         }
 
         if (response) {
-            cards.push(<Card>
+            cards.push(<Card tabIndex={0}>
                 <CardHeader>Response</CardHeader>
                 <CardContent>
                     <ContentLabel>Status</ContentLabel>
@@ -136,7 +136,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
 
             const responseBody = get(response, 'body', 'text');
             if (responseBody) {
-                cards.push(<Card>
+                cards.push(<Card tabIndex={0}>
                     <EditorController
                         contentType={response.headers['content-type']}
                         content={responseBody}
@@ -157,11 +157,14 @@ export const ExchangeDetailsPane = ({ exchange }: {
     } else {
         cards.push(
             <EmptyState
+                tabIndex={0}
                 icon={['far', 'arrow-left']}
                 message='Select some requests to see their details.'
             />
         );
     }
 
-    return <ExchangeDetailsContainer>{cards}</ExchangeDetailsContainer>;
+    return <ExchangeDetailsContainer>
+        {cards}
+    </ExchangeDetailsContainer>;
 }

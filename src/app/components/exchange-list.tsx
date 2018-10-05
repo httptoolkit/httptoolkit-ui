@@ -3,7 +3,7 @@ import { get } from 'typesafe-get';
 import styled from 'styled-components';
 import 'react-virtualized/styles.css';
 
-import { AutoSizer, Table, Column } from 'react-virtualized';
+import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
 import { HttpExchange } from '../model/store';
 
@@ -57,22 +57,29 @@ interface ExchangeListProps {
 }
 
 export const ExchangeList = styled(class extends React.PureComponent<ExchangeListProps, {
-    selectedExchange: HttpExchange | undefined
+    selectedExchangeIndex: number | undefined
 }> {
     constructor(props: ExchangeListProps) {
         super(props);
         this.state = {
-            selectedExchange: undefined
+            selectedExchangeIndex: undefined
         };
     }
 
+    tableContainerRef: HTMLElement | null;
+    tableRef: Table | null;
+
     render() {
         const { exchanges, className } = this.props;
-        const { selectedExchange } = this.state;
+        const { selectedExchangeIndex } = this.state;
 
-        return <AutoSizer>
-            {({ height, width }) =>
+        return <AutoSizer>{({ height, width }) =>
+            <div
+                ref={(e) => this.tableContainerRef = e}
+                onKeyDown={this.onKeyDown}
+            >
                 <Table
+                    ref={(table) => this.tableRef = table}
                     className={className}
                     height={height}
                     width={width}
@@ -81,15 +88,14 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
                     rowCount={exchanges.length}
                     rowGetter={({ index }) => exchanges[index]}
                     onRowClick={({ index }) => {
-                        const exchange = exchanges[index];
-                        if (selectedExchange !== exchange) {
-                            this.exchangeSelected(exchange);
+                        if (selectedExchangeIndex !== index) {
+                            this.onExchangeSelected(index);
                         } else {
-                            this.exchangeDeselected();
+                            this.onExchangeDeselected();
                         }
                     }}
                     rowClassName={({ index }) =>
-                        (selectedExchange === exchanges[index]) ? 'selected' : ''
+                        (selectedExchangeIndex === index) ? 'selected' : ''
                     }
                     noRowsRenderer={() =>
                         <EmptyStateOverlay
@@ -98,6 +104,29 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
                             message='Requests will appear here, once you send some...'
                         />
                     }
+                    rowRenderer={({
+                        columns,
+                        className,
+                        style,
+                        onRowClick,
+                        key,
+                        index,
+                        rowData
+                    }: TableRowProps & { key: any } /* TODO: Add to R-V types */) => <div
+                        aria-label='row'
+                        aria-rowindex={index + 1}
+                        tabIndex={-1}
+
+                        className={className}
+                        key={key}
+                        role="row"
+                        style={style}
+                        onClick={(event: React.MouseEvent) =>
+                            onRowClick && onRowClick({ event, index, rowData })
+                        }
+                    >
+                        {columns}
+                    </div>}
                 >
                     <Column
                         label=""
@@ -151,20 +180,74 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
                         cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
                     />
                 </Table>
-            }
-        </AutoSizer>;
+            </div>
+        }</AutoSizer>;
     }
 
-    exchangeSelected(exchange: HttpExchange) {
+    focusSelectedExchange = () => {
+        if (!this.tableContainerRef) return;
+
+        if (this.state.selectedExchangeIndex != null) {
+            const rowElement = this.tableContainerRef.querySelector(
+                `[aria-rowindex='${this.state.selectedExchangeIndex + 1}']`
+            ) as HTMLDivElement;
+            rowElement.focus();
+
+            this.tableRef!.scrollToRow(this.state.selectedExchangeIndex);
+        }
+    }
+
+    componentDidMount() {
+        if (this.tableContainerRef) {
+            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
+            tableElement.addEventListener('focus', this.focusSelectedExchange);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.tableContainerRef) {
+            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
+            tableElement.removeEventListener('focus', this.focusSelectedExchange);
+        }
+    }
+
+    onExchangeSelected(index: number, callback?: () => void) {
         this.setState({
-            selectedExchange: exchange
-        });
-        this.props.onSelected(exchange);
+            selectedExchangeIndex: index
+        }, callback);
+        this.props.onSelected(this.props.exchanges[index]);
     }
 
-    exchangeDeselected() {
-        this.setState({ selectedExchange: undefined });
+    onExchangeDeselected() {
+        this.setState({ selectedExchangeIndex: undefined });
         this.props.onSelected(undefined);
+    }
+
+    onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (this.props.exchanges.length === 0) return;
+
+        const { exchanges } = this.props;
+        const { selectedExchangeIndex } = this.state;
+
+        let targetIndex: number | undefined;
+
+        switch (event.key) {
+            case 'j':
+            case 'ArrowDown':
+                targetIndex = selectedExchangeIndex === undefined ?
+                    0 : Math.min(selectedExchangeIndex + 1, exchanges.length - 1);
+                break;
+            case 'k':
+            case 'ArrowUp':
+                targetIndex = selectedExchangeIndex === undefined ?
+                    exchanges.length - 1 : Math.max(selectedExchangeIndex - 1, 0);
+                break;
+        }
+
+        if (targetIndex !== undefined) {
+            this.onExchangeSelected(targetIndex, this.focusSelectedExchange);
+            event.preventDefault();
+        }
     }
 })`
     .ReactVirtualized__Table__headerRow {
@@ -179,10 +262,6 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         // For some reason, without this when the table starts scrolling
         // the header adds padding & pops out of the container
         padding-right: 0 !important;
-    }
-
-    .ReactVirtualized__Table__Grid {
-        outline: none;
     }
 
     .marker {
