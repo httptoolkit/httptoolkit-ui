@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import styled from 'styled-components';
-import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
+import { styled, FontAwesomeIcon } from '../styles'
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,

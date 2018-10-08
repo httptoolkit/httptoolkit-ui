@@ -1,9 +1,12 @@
 import * as React from 'react';
+import * as _ from 'lodash';
 import { get } from 'typesafe-get';
-import styled from 'styled-components';
+
 import 'react-virtualized/styles.css';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
+
+import { styled, FontAwesomeIcon } from '../styles'
 
 import { HttpExchange } from '../model/store';
 
@@ -43,18 +46,62 @@ const MarkerHeader = styled.div`
     width: 10px;
 `;
 
-const EmptyStateOverlay = EmptyState.extend`
+const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
     top: 40px;
     bottom: 40px;
     height: auto;
 `;
 
+const TableFooter = styled.div`
+    position: absolute;
+    bottom: 0;
+
+    width: 100%;
+    height: 40px;
+    background-color: ${p => p.theme.mainBackground};
+
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+`;
+
+const ClearArrayButton = styled((props: {
+    className?: string,
+    array: any[],
+    onClear: () => void
+}) => {
+    return <button
+        className={props.className}
+        title='Clear all'
+        disabled={props.array.length === 0}
+        onClick={props.onClear}
+    >
+        <FontAwesomeIcon icon={['far', 'trash-alt']} />
+    </button>
+})`
+    border: none;
+    background-color: transparent;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px 10px;
+
+    &:hover {
+        color: ${p => p.theme.popColor};
+    }
+`;
+
 interface ExchangeListProps {
     className?: string;
     onSelected: (request: HttpExchange | undefined) => void;
+    onClear: () => void;
     exchanges: HttpExchange[];
 }
+
+const ListContainer = styled.div`
+    width: 100%;
+    height: 100%;
+`;
 
 export const ExchangeList = styled(class extends React.PureComponent<ExchangeListProps, {
     selectedExchangeIndex: number | undefined
@@ -70,118 +117,124 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
     tableRef: Table | null;
 
     render() {
-        const { exchanges, className } = this.props;
+        const { exchanges, className, onClear } = this.props;
         const { selectedExchangeIndex } = this.state;
 
-        return <AutoSizer>{({ height, width }) =>
-            <div
-                ref={(e) => this.tableContainerRef = e}
-                onKeyDown={this.onKeyDown}
-            >
-                <Table
-                    ref={(table) => this.tableRef = table}
-                    className={className}
-                    height={height}
-                    width={width}
-                    rowHeight={32}
-                    headerHeight={38}
-                    rowCount={exchanges.length}
-                    rowGetter={({ index }) => exchanges[index]}
-                    onRowClick={({ index }) => {
-                        if (selectedExchangeIndex !== index) {
-                            this.onExchangeSelected(index);
-                        } else {
-                            this.onExchangeDeselected();
-                        }
-                    }}
-                    rowClassName={({ index }) =>
-                        (selectedExchangeIndex === index) ? 'selected' : ''
-                    }
-                    noRowsRenderer={() =>
-                        <EmptyStateOverlay
-                            icon={['far', 'spinner-third']}
-                            spin
-                            message='Requests will appear here, once you send some...'
-                        />
-                    }
-                    rowRenderer={({
-                        columns,
-                        className,
-                        style,
-                        onRowClick,
-                        key,
-                        index,
-                        rowData
-                    }: TableRowProps & { key: any } /* TODO: Add to R-V types */) => <div
-                        aria-label='row'
-                        aria-rowindex={index + 1}
-                        tabIndex={-1}
-
-                        className={className}
-                        key={key}
-                        role="row"
-                        style={style}
-                        onClick={(event: React.MouseEvent) =>
-                            onRowClick && onRowClick({ event, index, rowData })
-                        }
-                    >
-                        {columns}
-                    </div>}
+        return <ListContainer>
+            <AutoSizer>{({ height, width }) =>
+                <div
+                    ref={(e) => this.tableContainerRef = e}
+                    onKeyDown={this.onKeyDown}
                 >
-                    <Column
-                        label=""
-                        dataKey="marker"
-                        className="marker"
-                        headerClassName="marker"
-                        headerRenderer={() => <MarkerHeader />}
-                        cellRenderer={({ rowData }) => <RowMarker exchange={rowData} />}
-                        width={10}
-                        flexShrink={0}
-                        flexGrow={0}
-                    />
-                    <Column
-                        label="Verb"
-                        dataKey="method"
-                        cellDataGetter={({ rowData }) => rowData.request.method}
-                        width={75}
-                        flexShrink={0}
-                        flexGrow={0}
-                    />
-                    <Column
-                        label="Status"
-                        dataKey="status"
-                        className="status"
-                        width={58}
-                        flexShrink={0}
-                        flexGrow={0}
-                        cellRenderer={({ rowData }) =>
-                            <StatusCode
-                                status={get(rowData, 'response', 'statusCode')}
-                                message={get(rowData, 'response', 'statusMessage')}
+                    <Table
+                        ref={(table) => this.tableRef = table}
+                        className={className}
+                        height={height - 42} // Leave space for the footer
+                        width={width}
+                        rowHeight={32}
+                        headerHeight={38}
+                        rowCount={exchanges.length}
+                        rowGetter={({ index }) => exchanges[index]}
+                        onRowClick={({ index }) => {
+                            if (selectedExchangeIndex !== index) {
+                                this.onExchangeSelected(index);
+                            } else {
+                                this.onExchangeDeselected();
+                            }
+                        }}
+                        rowClassName={({ index }) =>
+                            (selectedExchangeIndex === index) ? 'selected' : ''
+                        }
+                        noRowsRenderer={() =>
+                            <EmptyStateOverlay
+                                icon={['far', 'spinner-third']}
+                                spin
+                                message='Requests will appear here, once you send some...'
                             />
                         }
-                    />
-                    <Column
-                        label="Host"
-                        dataKey="host"
-                        width={500}
-                        cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
-                    />
-                    <Column
-                        label="Path"
-                        dataKey="path"
-                        width={500}
-                        cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname}
-                    />
-                    <Column
-                        label="Query"
-                        dataKey="query"
-                        width={500}
-                        cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
-                    />
-                </Table>
-            </div>
-        }</AutoSizer>;
+                        rowRenderer={({
+                            columns,
+                            className,
+                            style,
+                            onRowClick,
+                            key,
+                            index,
+                            rowData
+                        }: TableRowProps & { key: any }) => <div
+                            aria-label='row'
+                            aria-rowindex={index + 1}
+                            tabIndex={-1}
+
+                            className={className}
+                            key={key}
+                            role="row"
+                            style={style}
+                            onClick={(event: React.MouseEvent) =>
+                                onRowClick && onRowClick({ event, index, rowData })
+                            }
+                        >
+                            {columns}
+                        </div>}
+                    >
+                        <Column
+                            label=""
+                            dataKey="marker"
+                            className="marker"
+                            headerClassName="marker"
+                            headerRenderer={() => <MarkerHeader />}
+                            cellRenderer={({ rowData }) => <RowMarker exchange={rowData} />}
+                            width={10}
+                            flexShrink={0}
+                            flexGrow={0}
+                        />
+                        <Column
+                            label="Verb"
+                            dataKey="method"
+                            cellDataGetter={({ rowData }) => rowData.request.method}
+                            width={75}
+                            flexShrink={0}
+                            flexGrow={0}
+                        />
+                        <Column
+                            label="Status"
+                            dataKey="status"
+                            className="status"
+                            width={58}
+                            flexShrink={0}
+                            flexGrow={0}
+                            cellRenderer={({ rowData }) =>
+                                <StatusCode
+                                    status={get(rowData, 'response', 'statusCode')}
+                                    message={get(rowData, 'response', 'statusMessage')}
+                                />
+                            }
+                        />
+                        <Column
+                            label="Host"
+                            dataKey="host"
+                            width={500}
+                            cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
+                        />
+                        <Column
+                            label="Path"
+                            dataKey="path"
+                            width={500}
+                            cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname}
+                        />
+                        <Column
+                            label="Query"
+                            dataKey="query"
+                            width={500}
+                            cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
+                        />
+                    </Table>
+                </div>
+            }</AutoSizer>
+            <TableFooter>
+                <div>{exchanges.length} requests</div>
+                <ClearArrayButton array={exchanges} onClear={onClear} />
+            </TableFooter>
+        </ListContainer>;
     }
 
     focusSelectedExchange = () => {

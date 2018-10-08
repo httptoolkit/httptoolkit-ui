@@ -1,6 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
-import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
+import { styled, FontAwesomeIcon } from '../styles'
 
 export const StatusCode = styled((props: {
     status: undefined | number,

@@ -24,7 +24,8 @@ export enum ServerStatus {
 export type Action =
     { type: 'UpdateServerStatus', value: ServerStatus } |
     { type: 'RequestReceived', request: CompletedRequest } |
-    { type: 'ResponseCompleted', response: CompletedResponse };
+    { type: 'ResponseCompleted', response: CompletedResponse } |
+    { type: 'ClearExchanges' };
 
 const reducer = (state: StoreModel, action: Action): StoreModel => {
     switch (action.type) {
@@ -44,7 +45,9 @@ const reducer = (state: StoreModel, action: Action): StoreModel => {
                     { ...exchange, response: action.response } : exchange)
             });
         case 'UpdateServerStatus':
-            return Object.assign({}, state, { serverStatus: action.value });
+            return Object.assign({}, state, { serverStatus: action.value })
+        case 'ClearExchanges':
+            return Object.assign({}, state, { exchanges: [] });
         default:
             return state;
     }

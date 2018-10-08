@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as _ from 'lodash';
 import { connect } from 'react-redux';
 
 import { styled } from '../styles';
@@ -7,26 +8,44 @@ import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from './split-pane';
 
-import { StoreModel, ServerStatus, HttpExchange } from '../model/store';
+import { StoreModel, ServerStatus, HttpExchange, Action } from '../model/store';
+import { Dispatch } from 'redux';
 
-const ExchangeListFromStore = connect(
-    (state: StoreModel) => ({ exchanges: state.exchanges })
+const ExchangeListFromStore = connect<
+    // It seems this isn't inferrable? Very odd
+    { exchanges: HttpExchange[] },
+    { onClear: () => void },
+    { onSelected: (exchange: HttpExchange | undefined) => void }
+>(
+    (state: StoreModel) => ({ exchanges: state.exchanges }),
+    (dispatch: Dispatch<Action>) => ({ onClear: () => dispatch({ type: 'ClearExchanges' }) })
 )(ExchangeList);
 
 interface AppProps {
     className?: string,
-    serverStatus: ServerStatus
+    serverStatus: ServerStatus,
+    exchanges: HttpExchange[]
 }
 
-class App extends React.PureComponent<AppProps, {
-    selectedExchange: HttpExchange | undefined
-}> {
+interface AppState {
+    selectedExchange: HttpExchange | undefined,
+}
+
+class App extends React.PureComponent<AppProps, AppState> {
     constructor(props: AppProps) {
         super(props);
 
         this.state = {
             selectedExchange: undefined
         };
+    }
+
+    static getDerivedStateFromProps(nextProps: AppProps, prevState: AppState) : AppState | null {
+        if (!_.includes(nextProps.exchanges, prevState.selectedExchange)) {
+            return { selectedExchange: undefined };
+        }
+
+        return null;
     }
 
     render(): JSX.Element {
@@ -63,8 +82,9 @@ class App extends React.PureComponent<AppProps, {
     }
 }
 
-export const AppContainer = styled(connect((state: StoreModel) => ({
-    serverStatus: state.serverStatus
+export const AppContainer = styled(connect((state: StoreModel): AppProps => ({
+    serverStatus: state.serverStatus,
+    exchanges: state.exchanges
 }))(App))`
     height: 100vh;
 `;

@@ -9,12 +9,16 @@ import reset from 'styled-reset'
 
 // Import required FA icons:
 import fontawesome from '@fortawesome/fontawesome'
+
 import * as spinner from '@fortawesome/fontawesome-pro-light/faSpinner';
 import * as spinnerThird from '@fortawesome/fontawesome-pro-regular/faSpinnerThird';
+import * as trashAlt from '@fortawesome/fontawesome-pro-regular/faTrashAlt';
 import * as arrowLeft from '@fortawesome/fontawesome-pro-regular/faArrowLeft';
-fontawesome.library.add(arrowLeft, spinnerThird, spinner);
+fontawesome.library.add(arrowLeft, spinnerThird, spinner, trashAlt);
 
-export { styled, css, injectGlobal, keyframes, ThemeProvider };
+import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
+
+export { styled, css, injectGlobal, keyframes, ThemeProvider, FontAwesomeIcon };
 
 export const lightTheme = {
     mainBackground: '#ffffff',
