@@ -110,5 +110,9 @@ export function injectGlobalStyles(theme: Theme) {
             color: ${theme.mainColor};
             background-color: ${theme.containerBackground};
         }
+
+        :active {
+            outline: none;
+        }
     `;
 }
