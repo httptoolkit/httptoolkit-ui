@@ -14,7 +14,16 @@ import * as spinner from '@fortawesome/fontawesome-pro-light/faSpinner';
 import * as spinnerThird from '@fortawesome/fontawesome-pro-regular/faSpinnerThird';
 import * as trashAlt from '@fortawesome/fontawesome-pro-regular/faTrashAlt';
 import * as arrowLeft from '@fortawesome/fontawesome-pro-regular/faArrowLeft';
-fontawesome.library.add(arrowLeft, spinnerThird, spinner, trashAlt);
+import * as search from '@fortawesome/fontawesome-free-solid/faSearch';
+import * as plug from '@fortawesome/fontawesome-free-solid/faPlug';
+fontawesome.library.add(
+    arrowLeft,
+    spinnerThird,
+    spinner,
+    trashAlt,
+    search,
+    plug
+);
 
 import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
 

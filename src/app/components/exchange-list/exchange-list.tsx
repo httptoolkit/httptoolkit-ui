@@ -1,17 +1,18 @@
 import * as React from 'react';
-import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 
 import 'react-virtualized/styles.css';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
-import { styled, FontAwesomeIcon } from '../styles'
+import { styled } from '../../styles'
 
-import { HttpExchange } from '../model/store';
+import { HttpExchange } from '../../model/store';
 
-import { EmptyState } from './empty-state';
-import { StatusCode } from './status-code';
+import { EmptyState } from '../empty-state';
+import { StatusCode } from '../status-code';
+
+import { TableFooter } from './exchange-list-footer';
 
 const getColour = (exchange: HttpExchange) => {
     if (exchange.request.method === 'POST') {
@@ -51,44 +52,6 @@ const EmptyStateOverlay = styled(EmptyState)`
     top: 40px;
     bottom: 40px;
     height: auto;
-`;
-
-const TableFooter = styled.div`
-    position: absolute;
-    bottom: 0;
-
-    width: 100%;
-    height: 40px;
-    background-color: ${p => p.theme.mainBackground};
-
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-`;
-
-const ClearArrayButton = styled((props: {
-    className?: string,
-    array: any[],
-    onClear: () => void
-}) => {
-    return <button
-        className={props.className}
-        title='Clear all'
-        disabled={props.array.length === 0}
-        onClick={props.onClear}
-    >
-        <FontAwesomeIcon icon={['far', 'trash-alt']} />
-    </button>
-})`
-    border: none;
-    background-color: transparent;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 5px 10px;
-
-    &:hover {
-        color: ${p => p.theme.popColor};
-    }
 `;
 
 interface ExchangeListProps {
@@ -160,7 +123,7 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
                             key,
                             index,
                             rowData
-                        }: TableRowProps & { key: any }) => <div
+                        }: TableRowProps & { key: any } /* TODO: Add to R-V types */) => <div
                             aria-label='row'
                             aria-rowindex={index + 1}
                             tabIndex={-1}
@@ -230,10 +193,7 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
                     </Table>
                 </div>
             }</AutoSizer>
-            <TableFooter>
-                <div>{exchanges.length} requests</div>
-                <ClearArrayButton array={exchanges} onClear={onClear} />
-            </TableFooter>
+            <TableFooter exchanges={exchanges} onClear={onClear} />
         </ListContainer>;
     }
 
@@ -282,6 +242,7 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         const { exchanges } = this.props;
         const { selectedExchangeIndex } = this.state;
 
+        // Forcibly focus the row that has been selected when it is selected?
         let targetIndex: number | undefined;
 
         switch (event.key) {

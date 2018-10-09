@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import { Provider } from 'react-redux'
 
 import { injectGlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
-import { AppContainer } from './components/app';
+import { App } from './components/app';
 import { getStore } from './model/store';
 
 injectGlobalStyles(theme);
@@ -17,7 +17,7 @@ window.onload = async function startApp() {
     ReactDOM.render(
         <Provider store={store}>
             <ThemeProvider theme={theme}>
-                <AppContainer />
+                <App />
             </ThemeProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR));
