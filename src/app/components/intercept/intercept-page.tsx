@@ -56,29 +56,38 @@ const INTERCEPT_OPTIONS = [
 ];
 
 const InterceptPageContainer = styled.section`
-    display: flex;
-    align-items: end;
-    justify-content: start;
+    display: grid;
 
-    flex-direction: column;
+    grid-gap: 80px;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: auto;
+    grid-auto-rows: 200px;
 
-    height: 100%;
     max-width: 1120px;
     margin: 0 auto;
+    padding-top: 40px;
+
+    max-height: 100%;
+    overflow: auto;
+`;
+
+const InterceptInstructions = styled.div`
+    grid-column: 1 / span 2;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 
     > h1 {
         font-size: ${p => p.theme.loudHeadingSize};
-
         font-weight: bold;
-        width: 480px;
-        margin: 40px 40px;
+        margin-bottom: 40px;
     }
 
     > p {
         font-size: ${p => p.theme.headingSize};
 
-        margin: 0 40px 10px;
-        width: 480px;
+        margin-bottom: 20px;
         text-align: left;
     }
 `;
@@ -104,10 +113,10 @@ const InterceptSearchBox = styled((props: {
     </div>
 )`
     position: relative;
-    margin: 30px 40px 0;
+    margin: 20px 0 0;
 
     > input {
-        width: 480px;
+        width: 100%;
         padding: 15px;
         box-sizing: border-box;
 
@@ -135,22 +144,25 @@ const InterceptSearchBox = styled((props: {
     }
 `;
 
-const InterceptOptionsGrid = styled.section`
-    display: flex;
-    align-items: center;
-    justify-content: center;
+const ConnectedSources = styled.div`
+    grid-column: 3 / span 2;
 
-    flex-wrap: wrap;
-    flex-direction: row;
-`;
-
-const InterceptOption = styled.section`
-    height: 200px;
-    width: 200px;
+    height: 100%;
+    width: 100%;
     padding: 15px;
     box-sizing: border-box;
 
-    margin: 40px;
+    background-color: ${p => p.theme.mainBackground};
+    border: 1px solid ${p => p.theme.containerBorder};
+    border-radius: 4px;
+    box-shadow: 0 4px 10px 0 rgba(0,0,0,0.2);
+`;
+
+const InterceptOption = styled.section`
+    height: 100%;
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
 
     background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerBorder};
@@ -215,39 +227,41 @@ class InterceptPage extends React.PureComponent<InterceptPageProps, {
 
             mainView = (
                 <InterceptPageContainer>
-                    <h1>
-                        Intercept HTTP
-                    </h1>
-                    <p>
-                        To collect & view HTTP traffic, you need to connect
-                        a source of traffic, like a browser, mobile device, or
-                        docker container.
-                    </p>
-                    <p>
-                        Pick one of the options below to connect a traffic source.
-                    </p>
-                    <p>
-                        Not sure? Search for connectors that could work for you:
-                    </p>
-                    <InterceptSearchBox
-                        value={filter || ''}
-                        onChange={this.onSearchInput}
-                    />
+                    <InterceptInstructions>
+                        <h1>
+                            Intercept HTTP
+                        </h1>
+                        <p>
+                            To collect & view HTTP traffic, you need to connect
+                            a source of traffic, like a browser, mobile device, or
+                            docker container.
+                        </p>
+                        <p>
+                            Click an option below to connect a traffic source, or
+                            search for connectors that could work for you:
+                        </p>
+                        <InterceptSearchBox
+                            value={filter || ''}
+                            onChange={this.onSearchInput}
+                        />
+                    </InterceptInstructions>
 
-                    <InterceptOptionsGrid>
-                        { interceptOptions.map((option) =>
-                            <InterceptOption tabIndex={0}>
-                                <FontAwesomeIcon
-                                    {...option.iconProps}
-                                    size='8x'
-                                />
-                                <h1>{ option.name }</h1>
-                                <p>
-                                    { option.description }
-                                </p>
-                            </InterceptOption>
-                        ) }
-                    </InterceptOptionsGrid>
+                    <ConnectedSources>
+                        Connected sources:
+                    </ConnectedSources>
+
+                    { interceptOptions.map((option) =>
+                        <InterceptOption tabIndex={0}>
+                            <FontAwesomeIcon
+                                {...option.iconProps}
+                                size='8x'
+                            />
+                            <h1>{ option.name }</h1>
+                            <p>
+                                { option.description }
+                            </p>
+                        </InterceptOption>
+                    ) }
                 </InterceptPageContainer>
             );
         } else if (this.props.serverStatus === ServerStatus.Connecting) {
