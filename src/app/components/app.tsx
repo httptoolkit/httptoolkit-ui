@@ -3,10 +3,11 @@ import { styled } from '../styles';
 
 import { Sidebar } from './sidebar';
 
+import { InterceptPage } from './intercept/intercept-page';
 import { WatchPage } from './watch/watch-page';
 
 const PAGES = [
-    { name: 'Intercept', icon: ['fas', 'plug'], component: WatchPage },
+    { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
     { name: 'Watch', icon: ['fas', 'search'], component: WatchPage }
 ];
 

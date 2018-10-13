@@ -16,6 +16,13 @@ import { faTrashAlt } from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
 import { faArrowLeft } from '@fortawesome/pro-regular-svg-icons/faArrowLeft';
 import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
 import { faPlug } from '@fortawesome/free-solid-svg-icons/faPlug';
+import { faNetworkWired } from '@fortawesome/free-solid-svg-icons/faNetworkWired';
+import { faDesktop } from '@fortawesome/free-solid-svg-icons/faDesktop';
+import { faQuestion } from '@fortawesome/free-solid-svg-icons/faQuestion';
+import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
+
+import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
+import { faDocker } from '@fortawesome/free-brands-svg-icons/faDocker';
 
 library.add(
     faArrowLeft,
@@ -23,16 +30,31 @@ library.add(
     faSpinner,
     faTrashAlt,
     faSearch,
-    faPlug
+    faPlug,
+    faNetworkWired,
+    faDesktop,
+    faQuestion,
+    faTimes,
+    faChrome,
+    faDocker,
 );
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+
+export const IconProps = {
+    Chrome: { icon: ['fab', 'chrome'], color: '#4587f3' },
+    Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
+    Network: { icon: ['fas', 'network-wired'], color: '#888' },
+    Desktop: { icon: ['fas', 'desktop'], color: '#888' },
+    Unknown: { icon: ['fas', 'question'], color: '#888' }
+};
 
 export { styled, css, injectGlobal, keyframes, ThemeProvider, FontAwesomeIcon };
 
 const fontSizes = {
     textSize: '16px',
-    headingSize: '22px'
+    headingSize: '22px',
+    loudHeadingSize: '40px',
 }
 
 export const lightTheme = {
@@ -119,6 +141,10 @@ export function injectGlobalStyles(theme: Theme) {
             font-family: Lato;
             color: ${theme.mainColor};
             background-color: ${theme.containerBackground};
+        }
+
+        input {
+            font-family: Lato;
         }
 
         :active {
