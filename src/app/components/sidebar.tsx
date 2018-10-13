@@ -1,4 +1,6 @@
 import * as React from 'react';
+
+import * as logo from '../images/logo.png';
 import { styled, css, FontAwesomeIcon, Theme } from '../styles';
 
 interface SidebarProps {
@@ -13,9 +15,9 @@ interface SidebarProps {
 
 const sidebarItemStyles = css`
     height: 80px;
-    width: 100%;
-    display: flex;
+    margin: 0 auto;
 
+    display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -23,14 +25,21 @@ const sidebarItemStyles = css`
     box-sizing: border-box;
 `;
 
-const SidebarLogo = styled.div`
+const SidebarLogo = styled.img.attrs({
+    src: logo,
+    alt: 'HTTP Toolkit logo'
+})`
     ${sidebarItemStyles}
 `
 
 const SidebarItem = styled.div`
     ${sidebarItemStyles}
 
+    width: calc(100% + 2px);
+    margin: 0 -1px;
+
     cursor: pointer;
+    user-select: none;
     flex-direction: column;
 
     border-width: 0 5px;
@@ -50,9 +59,7 @@ const SidebarItem = styled.div`
 
 export const Sidebar = styled((props: SidebarProps) =>
     <nav className={props.className}>
-        <SidebarLogo>
-            HTTP Toolkit
-        </SidebarLogo>
+        <SidebarLogo />
         {props.pages.map((page, i) =>
             <SidebarItem
                 selected={i === props.selectedPageIndex}
@@ -68,6 +75,9 @@ export const Sidebar = styled((props: SidebarProps) =>
     background-color: ${p => p.theme.mainBackground};
     color: ${p => p.theme.mainColor};
     z-index: 1;
+
+    border-right: 1px solid rgba(0,0,0,0.12);
+    box-sizing: border-box;
     box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
     font-size: 16px;

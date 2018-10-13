@@ -25,16 +25,16 @@ module.exports = {
             include: [SRC_DIR]
         }, {
             test: /\.js$/,
-            enforce: "pre",
-            loader: "source-map-loader",
+            enforce: 'pre',
+            loader: 'source-map-loader',
             exclude: [
                 path.join(__dirname, 'node_modules', 'monaco-editor'),
                 path.join(__dirname, 'node_modules', 'subscriptions-transport-ws'),
                 path.join(__dirname, '..', 'mockttp', 'subscriptions-transport-ws')
             ]
         }, {
-            test: /\.woff2$/,
-            loader: "file-loader"
+            test: /\.(woff2|png)$/,
+            loader: 'file-loader'
         }, {
             test: /\.css$/,
             use: [ 'style-loader', 'css-loader' ]
