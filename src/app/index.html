@@ -4,8 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+      html, body {
+        background-color: #d8e2e6;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      #app-loading-placeholder {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #app:not(:empty) ~ #app-loading-placeholder { display: none; }
+    </style>
   </head>
   <body>
     <div id="app"></div>
+    <div id="app-loading-placeholder">
+      <img src="<%=require('./images/logo-large.png')%>">
+    </div>
   </body>
 </html>
