@@ -8,42 +8,50 @@ import styled, {
 import reset from 'styled-reset'
 
 // Import required FA icons:
-import fontawesome from '@fortawesome/fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core';
 
-import * as spinner from '@fortawesome/fontawesome-pro-light/faSpinner';
-import * as spinnerThird from '@fortawesome/fontawesome-pro-regular/faSpinnerThird';
-import * as trashAlt from '@fortawesome/fontawesome-pro-regular/faTrashAlt';
-import * as arrowLeft from '@fortawesome/fontawesome-pro-regular/faArrowLeft';
-import * as search from '@fortawesome/fontawesome-free-solid/faSearch';
-import * as plug from '@fortawesome/fontawesome-free-solid/faPlug';
-fontawesome.library.add(
-    arrowLeft,
-    spinnerThird,
-    spinner,
-    trashAlt,
-    search,
-    plug
+import { faSpinner } from '@fortawesome/pro-light-svg-icons/faSpinner';
+import { faSpinnerThird } from '@fortawesome/pro-regular-svg-icons/faSpinnerThird';
+import { faTrashAlt } from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
+import { faArrowLeft } from '@fortawesome/pro-regular-svg-icons/faArrowLeft';
+import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
+import { faPlug } from '@fortawesome/free-solid-svg-icons/faPlug';
+
+library.add(
+    faArrowLeft,
+    faSpinnerThird,
+    faSpinner,
+    faTrashAlt,
+    faSearch,
+    faPlug
 );
 
-import * as FontAwesomeIcon from '@fortawesome/react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 export { styled, css, injectGlobal, keyframes, ThemeProvider, FontAwesomeIcon };
 
+const fontSizes = {
+    textSize: '16px',
+    headingSize: '22px'
+}
+
 export const lightTheme = {
-    mainBackground: '#ffffff',
+    mainBackground: '#fafafa',
     mainColor: '#222',
 
     headingBackground: '#e1421f',
     headingBorder: '#712c1c',
-    headingColor: '#fff',
+    headingColor: '#ffffff',
 
-    popBackground: '#fff',
+    popBackground: '#ffffff',
     popBorder: '#e26f29',
     popColor: '#e1421f',
 
     containerBackground: '#d8e2e6',
     containerWatermark: '#b6c2ca',
     containerBorder: '#abb4ba',
+
+    ...fontSizes
 };
 
 export const darkTheme = {
@@ -61,6 +69,8 @@ export const darkTheme = {
     containerBackground: '#303040',
     containerWatermark: '#606070',
     containerBorder: '#201010',
+
+    ...fontSizes
 };
 
 export type Theme = typeof lightTheme;

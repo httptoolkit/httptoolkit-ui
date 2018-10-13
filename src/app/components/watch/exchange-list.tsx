@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { get } from 'typesafe-get';
 
-import 'react-virtualized/styles.css';
-
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
 import { styled } from '../../styles'
@@ -264,18 +262,31 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         }
     }
 })`
+    font-size: ${p => p.theme.textSize};
+
     .ReactVirtualized__Table__headerRow {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
         background-color: ${props => props.theme.mainBackground};
         color: ${props => props.theme.mainColor};
+        font-weight: bold;
 
         border-bottom: 1px solid ${props => props.theme.containerBorder};
         box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
-        font-size: 16px;
-
         // For some reason, without this when the table starts scrolling
         // the header adds padding & pops out of the container
         padding-right: 0 !important;
+    }
+
+    .ReactVirtualized__Table__headerTruncatedText {
+        display: inline-block;
+        max-width: 100%;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
 
     .marker {
@@ -285,6 +296,10 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
     }
 
     .ReactVirtualized__Table__row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
         user-select: none;
         cursor: pointer;
         outline: none;
@@ -302,11 +317,35 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         }
 
         &.selected {
+            background-color: ${p => p.theme.popBackground};
             font-weight: bold;
         }
     }
 
-    .ReactVirtualized__Table__rowColumn {
+    .ReactVirtualized__Table__rowColumn,
+    .ReactVirtualized__Table__headerColumn {
         padding: 5px 0;
+        margin-right: 10px;
+        min-width: 0px;
+
+        &:first-of-type {
+            margin-left: 0;
+        }
+    }
+
+    .ReactVirtualized__Table__rowColumn {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ReactVirtualized__Table__Grid::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
+        pointer-events: none;
     }
 `;

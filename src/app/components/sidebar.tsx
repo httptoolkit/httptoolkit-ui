@@ -80,5 +80,5 @@ export const Sidebar = styled((props: SidebarProps) =>
     box-sizing: border-box;
     box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
-    font-size: 16px;
+    font-size: ${p => p.theme.fontSize};
 `;

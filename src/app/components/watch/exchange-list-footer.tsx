@@ -21,7 +21,7 @@ const RequestCounter = styled((props: {
     }
 
     .label {
-        font-size: 16px;
+        font-size: ${p => p.theme.textSize};
         font-weight: lighter;
         margin-left: 5px;
     }

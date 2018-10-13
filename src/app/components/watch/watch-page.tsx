@@ -2,13 +2,13 @@ import * as React from 'react';
 import * as _ from 'lodash';
 import { connect } from 'react-redux';
 
-import { styled } from '../styles';
+import { styled } from '../../styles';
 
-import { ExchangeList } from './exchange-list/exchange-list';
+import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
-import { SplitPane } from './split-pane';
+import { SplitPane } from '../split-pane';
 
-import { StoreModel, ServerStatus, HttpExchange, Action } from '../model/store';
+import { StoreModel, ServerStatus, HttpExchange, Action } from '../../model/store';
 import { Dispatch } from 'redux';
 
 const ExchangeListFromStore = connect<
@@ -21,18 +21,18 @@ const ExchangeListFromStore = connect<
     (dispatch: Dispatch<Action>) => ({ onClear: () => dispatch({ type: 'ClearExchanges' }) })
 )(ExchangeList);
 
-interface AppProps {
+interface WatchPageProps {
     className?: string,
     serverStatus: ServerStatus,
     exchanges: HttpExchange[]
 }
 
-interface AppState {
+interface WatchPageState {
     selectedExchange: HttpExchange | undefined,
 }
 
-class WatchPage extends React.PureComponent<AppProps, AppState> {
-    constructor(props: AppProps) {
+class WatchPage extends React.PureComponent<WatchPageProps, WatchPageState> {
+    constructor(props: WatchPageProps) {
         super(props);
 
         this.state = {
@@ -40,7 +40,7 @@ class WatchPage extends React.PureComponent<AppProps, AppState> {
         };
     }
 
-    static getDerivedStateFromProps(nextProps: AppProps, prevState: AppState) : AppState | null {
+    static getDerivedStateFromProps(nextProps: WatchPageProps, prevState: WatchPageState) : WatchPageState | null {
         if (!_.includes(nextProps.exchanges, prevState.selectedExchange)) {
             return { selectedExchange: undefined };
         }
@@ -82,7 +82,7 @@ class WatchPage extends React.PureComponent<AppProps, AppState> {
     }
 }
 
-const ConnectedWatchPage = styled(connect((state: StoreModel): AppProps => ({
+const ConnectedWatchPage = styled(connect((state: StoreModel): WatchPageProps => ({
     serverStatus: state.serverStatus,
     exchanges: state.exchanges
 }))(WatchPage))`

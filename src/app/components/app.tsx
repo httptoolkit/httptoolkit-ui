@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { styled } from '../styles';
-import { WatchPage } from './watch-page';
+
 import { Sidebar } from './sidebar';
 
-const Pages = [
+import { WatchPage } from './watch/watch-page';
+
+const PAGES = [
     { name: 'Intercept', icon: ['fas', 'plug'], component: WatchPage },
     { name: 'Watch', icon: ['fas', 'search'], component: WatchPage }
 ];
@@ -29,11 +31,11 @@ export const App = styled(class App extends React.PureComponent<
     }
 
     render() {
-        const PageComponent = Pages[this.state.selectedPageIndex].component;
+        const PageComponent = PAGES[this.state.selectedPageIndex].component;
 
         return <AppContainer>
             <Sidebar
-                pages={Pages}
+                pages={PAGES}
                 selectedPageIndex={this.state.selectedPageIndex}
                 onSelectPage={this.onSelectPage}
             />

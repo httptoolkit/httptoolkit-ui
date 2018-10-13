@@ -2,12 +2,12 @@ import * as React from 'react';
 import { get } from 'typesafe-get';
 import styled from 'styled-components';
 
-import ContentSize from './editor/content-size';
+import ContentSize from '../editor/content-size';
 
-import { EmptyState } from './empty-state';
-import { HeaderDetails } from './header-details';
-import { EditorController } from './editor/editor-controller';
-import { HttpExchange } from '../model/store';
+import { EmptyState } from '../empty-state';
+import { HeaderDetails } from '../header-details';
+import { EditorController } from '../editor/editor-controller';
+import { HttpExchange } from '../../model/store';
 
 const ExchangeDetailsContainer = styled.div`
     position: relative;
@@ -16,6 +16,8 @@ const ExchangeDetailsContainer = styled.div`
     height: 100%;
     width: 100%;
     box-sizing: border-box;
+
+    background-color: ${p => p.theme.containerBackground};
 `;
 
 const Card = styled.div`
