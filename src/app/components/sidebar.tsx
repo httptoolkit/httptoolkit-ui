@@ -46,9 +46,11 @@ const SidebarItem = styled.div`
     border-style: solid;
     border-color: transparent;
 
+    opacity: 0.6;
+
     ${(p: { selected: boolean, theme?: Theme }) => p.selected && css`
-        font-weight: bold;
-        color: #000;
+        opacity: 1;
+        /* TODO: ! here is a bit of a hack to make the prop typings work */
         border-right-color: ${p.theme!.popColor};
     `}
 

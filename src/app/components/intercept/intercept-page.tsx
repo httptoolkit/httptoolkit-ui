@@ -63,9 +63,9 @@ const InterceptPageContainer = styled.section`
     grid-template-rows: auto;
     grid-auto-rows: 200px;
 
-    max-width: 1120px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding-top: 40px;
+    padding: 40px;
 
     max-height: 100%;
     overflow: auto;
@@ -155,7 +155,7 @@ const ConnectedSources = styled.div`
     background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerBorder};
     border-radius: 4px;
-    box-shadow: 0 4px 10px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
 `;
 
 const InterceptOption = styled.section`
@@ -167,7 +167,7 @@ const InterceptOption = styled.section`
     background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerBorder};
     border-radius: 4px;
-    box-shadow: 0 4px 10px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
 
     cursor: pointer;
     user-select: none;
