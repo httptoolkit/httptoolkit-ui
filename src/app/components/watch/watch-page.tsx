@@ -1,10 +1,8 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 
-import { observable, autorun } from 'mobx';
-import { observer, disposeOnUnmount } from 'mobx-react';
-
-import { connect } from 'react-redux';
+import { observable, autorun, action, runInAction } from 'mobx';
+import { observer, disposeOnUnmount, inject } from 'mobx-react';
 
 import { styled } from '../../styles';
 
@@ -12,25 +10,14 @@ import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from '../split-pane';
 
-import { StoreModel, ServerStatus, HttpExchange, Action } from '../../model/store';
-import { Dispatch } from 'redux';
-
-const ExchangeListFromStore = connect<
-    // It seems this isn't inferrable? Very odd
-    { exchanges: HttpExchange[] },
-    { onClear: () => void },
-    { onSelected: (exchange: HttpExchange | undefined) => void }
->(
-    (state: StoreModel) => ({ exchanges: state.exchanges }),
-    (dispatch: Dispatch<Action>) => ({ onClear: () => dispatch({ type: 'ClearExchanges' }) })
-)(ExchangeList);
+import { Store, ServerStatus, HttpExchange } from '../../model/store';
 
 interface WatchPageProps {
     className?: string,
-    serverStatus: ServerStatus,
-    exchanges: HttpExchange[]
+    store: Store
 }
 
+@inject('store')
 @observer
 class WatchPage extends React.Component<WatchPageProps> {
 
@@ -38,16 +25,17 @@ class WatchPage extends React.Component<WatchPageProps> {
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            if (!_.includes(this.props.exchanges, this.selectedExchange)) {
-                this.selectedExchange = undefined;
+            if (!_.includes(this.props.store.exchanges, this.selectedExchange)) {
+                runInAction(() => this.selectedExchange = undefined);
             }
         }));
     }
 
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
+        const { serverStatus, exchanges, clearExchanges } = this.props.store;
 
-        if (this.props.serverStatus === ServerStatus.Connected) {
+        if (serverStatus === ServerStatus.Connected) {
             mainView = (
                 <SplitPane
                     split='vertical'
@@ -56,32 +44,34 @@ class WatchPage extends React.Component<WatchPageProps> {
                     minSize={300}
                     maxSize={-300}
                 >
-                    <ExchangeListFromStore onSelected={this.onSelected}></ExchangeListFromStore>
+                    <ExchangeList
+                        onSelected={this.onSelected}
+                        onClear={clearExchanges}
+                        exchanges={exchanges}
+                    />
                     <ExchangeDetailsPane exchange={this.selectedExchange}></ExchangeDetailsPane>
                 </SplitPane>
             );
-        } else if (this.props.serverStatus === ServerStatus.Connecting) {
+        } else if (serverStatus === ServerStatus.Connecting) {
             mainView = <div>Connecting...</div>;
-        } else if (this.props.serverStatus === ServerStatus.AlreadyInUse) {
+        } else if (serverStatus === ServerStatus.AlreadyInUse) {
             mainView = <div>Port already in use</div>;
-        } else if (this.props.serverStatus === ServerStatus.UnknownError) {
+        } else if (serverStatus === ServerStatus.UnknownError) {
             mainView = <div>An unknown error occurred</div>;
         }
 
         return <div className={this.props.className}>{ mainView }</div>;
     }
 
-    onSelected = (exchange: HttpExchange | undefined) => {
+    @action.bound
+    onSelected(exchange: HttpExchange | undefined) {
         this.selectedExchange = exchange;
     }
 }
 
-const ConnectedWatchPage = styled(connect((state: StoreModel): WatchPageProps => ({
-    serverStatus: state.serverStatus,
-    exchanges: state.exchanges
-}))(WatchPage))`
+const StyledWatchPage = styled(WatchPage)`
     height: 100vh;
     position: relative;
 `;
 
-export { ConnectedWatchPage as WatchPage };
+export { StyledWatchPage as WatchPage };

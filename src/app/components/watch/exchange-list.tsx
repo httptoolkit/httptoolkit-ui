@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { get } from 'typesafe-get';
-import { observer } from 'mobx-react';
-import { observable } from 'mobx';
+import { observer, Observer } from 'mobx-react';
+import { observable, action } from 'mobx';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
@@ -64,201 +64,7 @@ interface ExchangeListProps {
 const ListContainer = styled.div`
     width: 100%;
     height: 100%;
-`;
 
-@observer
-class ExchangeList extends React.Component<ExchangeListProps> {
-
-    @observable selectedExchangeIndex: number | undefined;
-
-    private tableContainerRef: HTMLElement | null;
-    private tableRef: Table | null;
-
-    render() {
-        const { exchanges, className, onClear } = this.props;
-        const { selectedExchangeIndex } = this;
-
-        return <ListContainer>
-            <AutoSizer>{({ height, width }) =>
-                <div
-                    ref={(e) => this.tableContainerRef = e}
-                    onKeyDown={this.onKeyDown}
-                >
-                    <Table
-                        ref={(table) => this.tableRef = table}
-                        className={className}
-                        height={height - 42} // Leave space for the footer
-                        width={width}
-                        rowHeight={32}
-                        headerHeight={38}
-                        rowCount={exchanges.length}
-                        rowGetter={({ index }) => exchanges[index]}
-                        onRowClick={({ index }) => {
-                            if (selectedExchangeIndex !== index) {
-                                this.onExchangeSelected(index);
-                            } else {
-                                this.onExchangeDeselected();
-                            }
-                        }}
-                        rowClassName={({ index }) =>
-                            (selectedExchangeIndex === index) ? 'selected' : ''
-                        }
-                        noRowsRenderer={() =>
-                            <EmptyStateOverlay
-                                icon={['far', 'spinner-third']}
-                                spin
-                                message='Requests will appear here, once you send some...'
-                            />
-                        }
-                        rowRenderer={({
-                            columns,
-                            className,
-                            style,
-                            onRowClick,
-                            key,
-                            index,
-                            rowData
-                        }: TableRowProps & { key: any } /* TODO: Add to R-V types */) => <div
-                            aria-label='row'
-                            aria-rowindex={index + 1}
-                            tabIndex={-1}
-
-                            className={className}
-                            key={key}
-                            role="row"
-                            style={style}
-                            onClick={(event: React.MouseEvent) =>
-                                onRowClick && onRowClick({ event, index, rowData })
-                            }
-                        >
-                            {columns}
-                        </div>}
-                    >
-                        <Column
-                            label=""
-                            dataKey="marker"
-                            className="marker"
-                            headerClassName="marker"
-                            headerRenderer={() => <MarkerHeader />}
-                            cellRenderer={({ rowData }) => <RowMarker exchange={rowData} />}
-                            width={10}
-                            flexShrink={0}
-                            flexGrow={0}
-                        />
-                        <Column
-                            label="Verb"
-                            dataKey="method"
-                            cellDataGetter={({ rowData }) => rowData.request.method}
-                            width={75}
-                            flexShrink={0}
-                            flexGrow={0}
-                        />
-                        <Column
-                            label="Status"
-                            dataKey="status"
-                            className="status"
-                            width={58}
-                            flexShrink={0}
-                            flexGrow={0}
-                            cellRenderer={({ rowData }) =>
-                                <StatusCode
-                                    status={get(rowData, 'response', 'statusCode')}
-                                    message={get(rowData, 'response', 'statusMessage')}
-                                />
-                            }
-                        />
-                        <Column
-                            label="Host"
-                            dataKey="host"
-                            width={500}
-                            cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
-                        />
-                        <Column
-                            label="Path"
-                            dataKey="path"
-                            width={500}
-                            cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname}
-                        />
-                        <Column
-                            label="Query"
-                            dataKey="query"
-                            width={500}
-                            cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
-                        />
-                    </Table>
-                </div>
-            }</AutoSizer>
-            <TableFooter exchanges={exchanges} onClear={onClear} />
-        </ListContainer>;
-    }
-
-    focusSelectedExchange = () => {
-        if (!this.tableContainerRef) return;
-
-        if (this.selectedExchangeIndex != null) {
-            const rowElement = this.tableContainerRef.querySelector(
-                `[aria-rowindex='${this.selectedExchangeIndex + 1}']`
-            ) as HTMLDivElement;
-            rowElement.focus();
-
-            this.tableRef!.scrollToRow(this.selectedExchangeIndex);
-        }
-    }
-
-    componentDidMount() {
-        if (this.tableContainerRef) {
-            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.addEventListener('focus', this.focusSelectedExchange);
-        }
-    }
-
-    componentWillUnmount() {
-        if (this.tableContainerRef) {
-            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.removeEventListener('focus', this.focusSelectedExchange);
-        }
-    }
-
-    onExchangeSelected(index: number) {
-        this.selectedExchangeIndex = index;
-        this.props.onSelected(this.props.exchanges[index]);
-    }
-
-    onExchangeDeselected() {
-        this.selectedExchangeIndex = undefined;
-        this.props.onSelected(undefined);
-    }
-
-    onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (this.props.exchanges.length === 0) return;
-
-        const { exchanges } = this.props;
-
-        // Forcibly focus the row that has been selected when it is selected?
-        let targetIndex: number | undefined;
-
-        switch (event.key) {
-            case 'j':
-            case 'ArrowDown':
-                targetIndex = this.selectedExchangeIndex === undefined ?
-                    0 : Math.min(this.selectedExchangeIndex + 1, exchanges.length - 1);
-                break;
-            case 'k':
-            case 'ArrowUp':
-                targetIndex = this.selectedExchangeIndex === undefined ?
-                    exchanges.length - 1 : Math.max(this.selectedExchangeIndex - 1, 0);
-                break;
-        }
-
-        if (targetIndex !== undefined) {
-            this.onExchangeSelected(targetIndex);
-            this.focusSelectedExchange();
-            event.preventDefault();
-        }
-    }
-}
-
-const StyledExchangeList = styled(ExchangeList)`
     font-size: ${p => p.theme.textSize};
 
     .ReactVirtualized__Table__headerRow {
@@ -345,6 +151,205 @@ const StyledExchangeList = styled(ExchangeList)`
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
         pointer-events: none;
     }
-`
+`;
 
-export { StyledExchangeList as ExchangeList };
+@observer
+export class ExchangeList extends React.Component<ExchangeListProps> {
+
+    @observable selectedExchangeIndex: number | undefined;
+
+    private tableContainerRef: HTMLElement | null;
+    private tableRef: Table | null;
+
+    render() {
+        const { exchanges, className, onClear } = this.props;
+        const { selectedExchangeIndex } = this;
+
+        return <ListContainer>
+            <AutoSizer>{({ height, width }) =>
+                <Observer>{() =>
+                    <div
+                        ref={(e) => this.tableContainerRef = e}
+                        onKeyDown={this.onKeyDown}
+                    >
+                        <Table
+                            ref={(table) => this.tableRef = table}
+                            className={className}
+                            height={height - 42} // Leave space for the footer
+                            width={width}
+                            rowHeight={32}
+                            headerHeight={38}
+                            rowCount={exchanges.length}
+                            rowGetter={({ index }) => exchanges[index]}
+                            onRowClick={({ index }) => {
+                                if (selectedExchangeIndex !== index) {
+                                    this.onExchangeSelected(index);
+                                } else {
+                                    this.onExchangeDeselected();
+                                }
+                            }}
+                            rowClassName={({ index }) =>
+                                (selectedExchangeIndex === index) ? 'selected' : ''
+                            }
+                            noRowsRenderer={() =>
+                                <EmptyStateOverlay
+                                    icon={['far', 'spinner-third']}
+                                    spin
+                                    message='Requests will appear here, once you send some...'
+                                />
+                            }
+                            rowRenderer={({
+                                columns,
+                                className,
+                                style,
+                                onRowClick,
+                                key,
+                                index,
+                                rowData
+                            }: TableRowProps & { key: any } /* TODO: Add to R-V types */) =>
+                                <div
+                                    aria-label='row'
+                                    aria-rowindex={index + 1}
+                                    tabIndex={-1}
+
+                                    key={key}
+                                    className={className}
+                                    role="row"
+                                    style={style}
+                                    onClick={(event: React.MouseEvent) =>
+                                        onRowClick && onRowClick({ event, index, rowData })
+                                    }
+                                >
+                                    {columns}
+                                </div>
+                            }
+                        >
+                            <Column
+                                label=""
+                                dataKey="marker"
+                                className="marker"
+                                headerClassName="marker"
+                                headerRenderer={() => <MarkerHeader />}
+                                cellRenderer={({ rowData }) => <RowMarker exchange={rowData} />}
+                                width={10}
+                                flexShrink={0}
+                                flexGrow={0}
+                            />
+                            <Column
+                                label="Verb"
+                                dataKey="method"
+                                cellDataGetter={({ rowData }) => rowData.request.method}
+                                width={75}
+                                flexShrink={0}
+                                flexGrow={0}
+                            />
+                            <Column
+                                label="Status"
+                                dataKey="status"
+                                className="status"
+                                width={58}
+                                flexShrink={0}
+                                flexGrow={0}
+                                cellRenderer={({ rowData }) =>
+                                    <Observer>{() =>
+                                        <StatusCode
+                                            status={get(rowData, 'response', 'statusCode')}
+                                            message={get(rowData, 'response', 'statusMessage')}
+                                        />
+                                    }</Observer>
+                                }
+                            />
+                            <Column
+                                label="Host"
+                                dataKey="host"
+                                width={500}
+                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
+                            />
+                            <Column
+                                label="Path"
+                                dataKey="path"
+                                width={500}
+                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname}
+                            />
+                            <Column
+                                label="Query"
+                                dataKey="query"
+                                width={500}
+                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
+                            />
+                        </Table>
+                    </div>
+                }</Observer>
+            }</AutoSizer>
+            <TableFooter exchanges={exchanges} onClear={onClear} />
+        </ListContainer>;
+    }
+
+    focusSelectedExchange = () => {
+        if (!this.tableContainerRef) return;
+
+        if (this.selectedExchangeIndex != null) {
+            const rowElement = this.tableContainerRef.querySelector(
+                `[aria-rowindex='${this.selectedExchangeIndex + 1}']`
+            ) as HTMLDivElement;
+            rowElement.focus();
+
+            this.tableRef!.scrollToRow(this.selectedExchangeIndex);
+        }
+    }
+
+    componentDidMount() {
+        if (this.tableContainerRef) {
+            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
+            tableElement.addEventListener('focus', this.focusSelectedExchange);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.tableContainerRef) {
+            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
+            tableElement.removeEventListener('focus', this.focusSelectedExchange);
+        }
+    }
+
+    @action.bound
+    onExchangeSelected(index: number) {
+        this.selectedExchangeIndex = index;
+        this.props.onSelected(this.props.exchanges[index]);
+    }
+
+    @action.bound
+    onExchangeDeselected() {
+        this.selectedExchangeIndex = undefined;
+        this.props.onSelected(undefined);
+    }
+
+    @action.bound
+    onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+        if (this.props.exchanges.length === 0) return;
+
+        const { exchanges } = this.props;
+
+        // Forcibly focus the row that has been selected when it is selected?
+        let targetIndex: number | undefined;
+
+        switch (event.key) {
+            case 'j':
+            case 'ArrowDown':
+                targetIndex = this.selectedExchangeIndex === undefined ?
+                    0 : Math.min(this.selectedExchangeIndex + 1, exchanges.length - 1);
+                break;
+            case 'k':
+            case 'ArrowUp':
+                targetIndex = this.selectedExchangeIndex === undefined ?
+                    exchanges.length - 1 : Math.max(this.selectedExchangeIndex - 1, 0);
+                break;
+        }
+
+        if (targetIndex !== undefined) {
+            this.onExchangeSelected(targetIndex);
+            this.focusSelectedExchange();
+            event.preventDefault();
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import { observer } from 'mobx-react';
-import { observable } from 'mobx';
+import { observable, action } from 'mobx';
 
 import * as monacoEditor from 'monaco-editor';
 
@@ -48,11 +48,13 @@ export class EditorController extends React.Component<EditorControllerProps> {
         this.lineCount = this.props.content.split('\n').length;
     }
 
-    updateLineCount = (newLineCount: number) => {
+    @action.bound
+    updateLineCount(newLineCount: number) {
         this.lineCount = newLineCount;
     }
 
-    setContentType = (changeEvent: React.ChangeEvent<HTMLSelectElement>) => {
+    @action.bound
+    setContentType(changeEvent: React.ChangeEvent<HTMLSelectElement>) {
         let newContentType = changeEvent.target.value;
 
         this.selectedContentType = newContentType;

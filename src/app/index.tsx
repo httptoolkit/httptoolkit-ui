@@ -1,10 +1,10 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Provider } from 'react-redux'
 
 import { injectGlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
-import { getStore } from './model/store';
+import { Store } from './model/store';
+import { Provider } from 'mobx-react';
 
 injectGlobalStyles(theme);
 
@@ -12,7 +12,9 @@ const APP_ELEMENT_SELECTOR = '#app';
 
 window.onload = async function startApp() {
     const config = JSON.parse((new URL(window.location.href)).searchParams.get('config') as string);
-    const store = await getStore(config);
+
+    const store = new Store(config);
+    await store.startServer();
 
     ReactDOM.render(
         <Provider store={store}>

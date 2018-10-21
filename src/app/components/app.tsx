@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { observable } from 'mobx';
+import { observable, action } from 'mobx';
 import { observer } from 'mobx-react';
 
 import { styled } from '../styles';
@@ -9,9 +9,11 @@ import { Sidebar } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { WatchPage } from './watch/watch-page';
 
+type Page = React.ComponentType<{}>;
+
 const PAGES = [
-    { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
-    { name: 'Watch', icon: ['fas', 'search'], component: WatchPage }
+    { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage as Page },
+    { name: 'Watch', icon: ['fas', 'search'], component: WatchPage as Page }
 ];
 
 const AppContainer = styled.div`
@@ -40,7 +42,8 @@ export class App extends React.Component {
         </AppContainer>
     }
 
-    onSelectPage = (selectedPageIndex: number) => {
+    @action.bound
+    onSelectPage(selectedPageIndex: number) {
         this.selectedPageIndex = selectedPageIndex;
     }
 }

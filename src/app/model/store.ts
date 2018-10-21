@@ -1,6 +1,8 @@
+import * as _ from 'lodash';
 import * as path from 'path';
-import { createStore, Store } from 'redux';
+import { observable, action, configure, flow } from 'mobx';
 import { getLocal, Mockttp } from 'mockttp';
+
 import { CompletedRequest, CompletedResponse } from '../types';
 
 export type HttpExchange = {
@@ -8,102 +10,80 @@ export type HttpExchange = {
     response?: CompletedResponse;
 };
 
-export interface StoreModel {
-    server: Mockttp,
-    serverStatus: ServerStatus,
-    exchanges: HttpExchange[];
-}
-
 export enum ServerStatus {
+    NotStarted,
     Connecting,
     Connected,
     AlreadyInUse,
     UnknownError
 }
 
-export type Action =
-    { type: 'UpdateServerStatus', value: ServerStatus } |
-    { type: 'RequestReceived', request: CompletedRequest } |
-    { type: 'ResponseCompleted', response: CompletedResponse } |
-    { type: 'ClearExchanges' };
+configure({ enforceActions: 'observed' });
 
-const reducer = (state: StoreModel, action: Action): StoreModel => {
-    switch (action.type) {
-        case 'RequestReceived':
-            const request = Object.assign(action.request, {
-                parsedUrl: new URL(
-                    action.request.url,
-                    `${action.request.protocol}://${action.request.hostname}`
-                )
-            });
-            return Object.assign({}, state, {
-                exchanges: state.exchanges.concat({ request })
-            });
-        case 'ResponseCompleted':
-            return Object.assign({}, state, {
-                exchanges: state.exchanges.map((exchange) => exchange.request.id === action.response.id ?
-                    { ...exchange, response: action.response } : exchange)
-            });
-        case 'UpdateServerStatus':
-            return Object.assign({}, state, { serverStatus: action.value })
-        case 'ClearExchanges':
-            return Object.assign({}, state, { exchanges: [] });
-        default:
-            return state;
-    }
-}
+export class Store {
 
-export async function getStore(options: { https: boolean, configRoot: string }): Promise<Store<StoreModel>> {
-    const server = getLocal({
-        https: options.https ? {
-            keyPath: path.join(options.configRoot, 'ca.key'),
-            certPath: path.join(options.configRoot, 'ca.pem')
-        }: undefined,
-        cors: false
-    });
+    private server: Mockttp;
 
-    const store = createStore<StoreModel>(reducer, {
-        server: server,
-        serverStatus: ServerStatus.Connecting,
-        exchanges: []
-    });
+    @observable serverStatus: ServerStatus = ServerStatus.NotStarted;
+    exchanges = observable.array<HttpExchange>([], { deep: false });
 
-    server.start(8000).then(async () => {
-        await server.anyRequest().always().thenPassThrough();
-
-        console.log(`Server started on port ${server.port}`);
-
-        store.dispatch<Action>({
-            type: 'UpdateServerStatus',
-            value: ServerStatus.Connected
+    constructor(options: { https: boolean, configRoot: string }) {
+        this.server = getLocal({
+            https: options.https ? {
+                keyPath: path.join(options.configRoot, 'ca.key'),
+                certPath: path.join(options.configRoot, 'ca.pem')
+            }: undefined,
+            cors: false
         });
+    }
 
-        server.on('request', (req) => store.dispatch<Action>({
-            type: 'RequestReceived',
-            request: req
-        }));
+    startServer = flow(function * (this: Store) {
+        this.serverStatus = ServerStatus.Connecting;
 
-        server.on('response', (res) => store.dispatch<Action>({
-            type: 'ResponseCompleted',
-            response: res
-        }));
+        try {
+            yield this.server.start(8000);
+            yield this.server.anyRequest().always().thenPassThrough();
 
-        window.addEventListener('beforeunload', () => server.stop());
-    }).catch((err) => {
-        if (err.response && err.response.status === 409) {
-            console.info('Server already in use');
-            store.dispatch<Action>({
-                type: 'UpdateServerStatus',
-                value: ServerStatus.AlreadyInUse
-            });
-        } else {
-            store.dispatch<Action>({
-                type: 'UpdateServerStatus',
-                value: ServerStatus.UnknownError
-            });
-            console.error(err);
+            console.log(`Server started on port ${this.server.port}`);
+
+            this.serverStatus = ServerStatus.Connected;
+
+            this.server.on('request', (req) => this.addRequest(req));
+            this.server.on('response', (res) => this.setResponse(res));
+
+            window.addEventListener('beforeunload', () => this.server.stop());
+        } catch (err) {
+            if (err.response && err.response.status === 409) {
+                console.info('Server already in use');
+                this.serverStatus = ServerStatus.AlreadyInUse;
+            } else {
+                console.error(err);
+                this.serverStatus = ServerStatus.UnknownError;
+            }
         }
     });
 
-    return store;
+    @action
+    private addRequest(request: CompletedRequest) {
+        const newExchange = observable.object({
+            request: Object.assign(request, {
+                parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`)
+            }),
+            response: undefined
+        }, {}, { deep: false });
+
+        this.exchanges.push(newExchange);
+    }
+
+    @action
+    private setResponse(response: CompletedResponse) {
+        const exchange = _.find(this.exchanges, (exchange) => exchange.request.id === response.id)!;
+        exchange.response = response;
+    }
+
+    @action.bound
+    clearExchanges() {
+        this.exchanges.clear();
+    }
+
 }

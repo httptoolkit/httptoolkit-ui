@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
-import { observable } from 'mobx';
+import { observable, action } from 'mobx';
 
 import { styled } from '../styles';
 
@@ -78,11 +78,16 @@ export default class TabbedContainer extends React.PureComponent<
                     key={option}
                     disabled={!tabs[option]}
                     className={option === this.selected ? 'selected' : ''}
-                    onClick={() => this.selected = option }
+                    onClick={() => this.setSelectedTable(option)}
                 >
                     {tabNameFormatter(option)}
                 </TabButton>) }
             </Tabs>
         </Container>
+    }
+
+    @action.bound
+    setSelectedTable(option: string) {
+        this.selected = option;
     }
 }

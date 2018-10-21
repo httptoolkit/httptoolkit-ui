@@ -1,17 +1,16 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { connect } from 'react-redux';
 
-import { observable } from 'mobx';
-import { observer } from 'mobx-react';
+import { observable, action } from 'mobx';
+import { observer, inject } from 'mobx-react';
 
 import { styled, FontAwesomeIcon, IconProps } from '../../styles';
 
-import { StoreModel, ServerStatus } from '../../model/store';
+import { Store, ServerStatus } from '../../model/store';
 
 interface InterceptPageProps {
     className?: string,
-    serverStatus: ServerStatus,
+    store: Store,
 }
 
 const MOBILE_TAGS =['mobile', 'phone', 'apple', 'samsung', 'ios', 'android', 'app'];
@@ -200,14 +199,16 @@ const InterceptOption = styled.section`
     }
 `;
 
-@observer class InterceptPage extends React.Component<InterceptPageProps> {
+@inject('store')
+@observer
+class InterceptPage extends React.Component<InterceptPageProps> {
 
     @observable filter: string | false = false;
 
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
 
-        if (this.props.serverStatus === ServerStatus.Connected) {
+        if (this.props.store.serverStatus === ServerStatus.Connected) {
             const interceptOptions = INTERCEPT_OPTIONS.filter((option) =>
                 !this.filter ||
                 _.includes(option.name.toLocaleLowerCase(), this.filter) ||
@@ -258,27 +259,26 @@ const InterceptOption = styled.section`
                     ) }
                 </InterceptPageContainer>
             );
-        } else if (this.props.serverStatus === ServerStatus.Connecting) {
+        } else if (this.props.store.serverStatus === ServerStatus.Connecting) {
             mainView = <div>Connecting...</div>;
-        } else if (this.props.serverStatus === ServerStatus.AlreadyInUse) {
+        } else if (this.props.store.serverStatus === ServerStatus.AlreadyInUse) {
             mainView = <div>Port already in use</div>;
-        } else if (this.props.serverStatus === ServerStatus.UnknownError) {
+        } else if (this.props.store.serverStatus === ServerStatus.UnknownError) {
             mainView = <div>An unknown error occurred</div>;
         }
 
         return <div className={this.props.className}>{ mainView }</div>;
     }
 
-    onSearchInput = (input: string) => {
+    @action.bound
+    onSearchInput(input: string) {
         this.filter = input || false;
     }
 }
 
-const ConnectedInterceptPage = styled(connect((state: StoreModel): InterceptPageProps => ({
-    serverStatus: state.serverStatus
-}))(InterceptPage))`
+const StyledInterceptPage = styled(InterceptPage)`
     height: 100vh;
     position: relative;
 `;
 
-export { ConnectedInterceptPage as InterceptPage };
+export { StyledInterceptPage as InterceptPage };

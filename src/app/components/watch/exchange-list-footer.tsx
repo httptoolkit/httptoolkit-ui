@@ -1,10 +1,11 @@
 import * as React from 'react';
+import { observer } from 'mobx-react';
 
 import { styled } from '../../styles'
 import { HttpExchange } from "../../model/store";
 import { ClearArrayButton } from './clear-button';
 
-const RequestCounter = styled((props: {
+const RequestCounter = styled(observer((props: {
     className?: string,
     exchanges: HttpExchange[]
 }) =>
@@ -12,7 +13,7 @@ const RequestCounter = styled((props: {
         <span className='count'>{props.exchanges.length}</span>
         <span className='label'>requests</span>
     </div>
-)`
+))`
     min-width: 120px;
 
     .count {
@@ -27,14 +28,14 @@ const RequestCounter = styled((props: {
     }
 `;
 
-export const TableFooter = styled((props: {
+export const TableFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
     exchanges: HttpExchange[]
 }) => <div className={props.className}>
     <RequestCounter exchanges={props.exchanges} />
     <ClearArrayButton array={props.exchanges} onClear={props.onClear} />
-</div>)`
+</div>))`
     position: absolute;
     bottom: 0;
 

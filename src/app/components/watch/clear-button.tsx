@@ -1,8 +1,9 @@
 import * as React from 'react';
+import { observer } from 'mobx-react';
 
 import { styled, FontAwesomeIcon } from '../../styles'
 
-export const ClearArrayButton = styled((props: {
+export const ClearArrayButton = styled(observer((props: {
     className?: string,
     array: any[],
     onClear: () => void
@@ -15,7 +16,7 @@ export const ClearArrayButton = styled((props: {
     >
         <FontAwesomeIcon icon={['far', 'trash-alt']} />
     </button>
-})`
+}))`
     border: none;
     background-color: transparent;
     font-size: 20px;
