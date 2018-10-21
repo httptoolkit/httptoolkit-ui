@@ -2,6 +2,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { connect } from 'react-redux';
 
+import { observable } from 'mobx';
+import { observer } from 'mobx-react';
+
 import { styled, FontAwesomeIcon, IconProps } from '../../styles';
 
 import { StoreModel, ServerStatus } from '../../model/store';
@@ -197,28 +200,19 @@ const InterceptOption = styled.section`
     }
 `;
 
-class InterceptPage extends React.PureComponent<InterceptPageProps, {
-    filter: string | false
-}> {
-    constructor(props: InterceptPageProps) {
-        super(props);
+@observer class InterceptPage extends React.PureComponent<InterceptPageProps> {
 
-        this.state = {
-            filter: false
-        };
-    }
+    @observable filter: string | false = false;
 
     render(): JSX.Element {
-        const { filter } = this.state;
-
         let mainView: JSX.Element | undefined;
 
         if (this.props.serverStatus === ServerStatus.Connected) {
             const interceptOptions = INTERCEPT_OPTIONS.filter((option) =>
-                !filter ||
-                _.includes(option.name.toLocaleLowerCase(), filter) ||
-                _.includes(option.description.toLocaleLowerCase(), filter) ||
-                _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), filter))
+                !this.filter ||
+                _.includes(option.name.toLocaleLowerCase(), this.filter) ||
+                _.includes(option.description.toLocaleLowerCase(), this.filter) ||
+                _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), this.filter))
             );
 
             if (interceptOptions.length === 0) {
@@ -241,7 +235,7 @@ class InterceptPage extends React.PureComponent<InterceptPageProps, {
                             search for connectors that could work for you:
                         </p>
                         <InterceptSearchBox
-                            value={filter || ''}
+                            value={this.filter || ''}
                             onChange={this.onSearchInput}
                         />
                     </InterceptInstructions>
@@ -276,7 +270,7 @@ class InterceptPage extends React.PureComponent<InterceptPageProps, {
     }
 
     onSearchInput = (input: string) => {
-        this.setState({ filter: input || false });
+        this.filter = input || false;
     }
 }
 

@@ -7,6 +7,7 @@
         "sourceMap": true,
 
         "jsx": "react",
+        "experimentalDecorators": true,
 
         "noImplicitAny": true,
         "noImplicitThis": true,

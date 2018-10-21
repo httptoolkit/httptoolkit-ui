@@ -39,6 +39,8 @@
     "css-loader": "^1.0.0",
     "electron": "^1.7.9",
     "lodash": "^4.17.5",
+    "mobx": "^5.5.1",
+    "mobx-react": "^5.3.4",
     "mockttp": "^0.10.0",
     "monaco-editor": "^0.13.1",
     "monaco-editor-webpack-plugin": "^1.4.0",
