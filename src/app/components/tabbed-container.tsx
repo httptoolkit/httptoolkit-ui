@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { observer } from 'mobx-react';
+import { observable } from 'mobx';
 
 import { styled } from '../styles';
 
@@ -48,20 +50,15 @@ interface TabbedContainerProps {
     children: { [key: string]: React.ReactNode }
 }
 
-interface TabbedContainerState {
-    selected: string;
-}
-
+@observer
 export default class TabbedContainer extends React.PureComponent<
-    TabbedContainerProps,
-    TabbedContainerState
+    TabbedContainerProps
 > {
+    @observable selected: string;
+
     constructor(props: TabbedContainerProps) {
         super(props);
-
-        this.state = {
-            selected: props.defaultSelection
-        };
+        this.selected = props.defaultSelection;
     }
 
     render() {
@@ -72,7 +69,7 @@ export default class TabbedContainer extends React.PureComponent<
         } = this.props;
 
         const options = Object.keys(tabs);
-        const currentTab = tabs[this.state.selected];
+        const currentTab = tabs[this.selected];
 
         return <Container className={className}>
             { currentTab }
@@ -80,8 +77,8 @@ export default class TabbedContainer extends React.PureComponent<
                 { options.map((option) => <TabButton
                     key={option}
                     disabled={!tabs[option]}
-                    className={option === this.state.selected ? 'selected' : ''}
-                    onClick={() => this.setState({ selected: option })}
+                    className={option === this.selected ? 'selected' : ''}
+                    onClick={() => this.selected = option }
                 >
                     {tabNameFormatter(option)}
                 </TabButton>) }

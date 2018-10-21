@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { get } from 'typesafe-get';
+import { observer } from 'mobx-react';
+import { observable } from 'mobx';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
@@ -64,22 +66,17 @@ const ListContainer = styled.div`
     height: 100%;
 `;
 
-export const ExchangeList = styled(class extends React.PureComponent<ExchangeListProps, {
-    selectedExchangeIndex: number | undefined
-}> {
-    constructor(props: ExchangeListProps) {
-        super(props);
-        this.state = {
-            selectedExchangeIndex: undefined
-        };
-    }
+@observer
+class ExchangeList extends React.Component<ExchangeListProps> {
 
-    tableContainerRef: HTMLElement | null;
-    tableRef: Table | null;
+    @observable selectedExchangeIndex: number | undefined;
+
+    private tableContainerRef: HTMLElement | null;
+    private tableRef: Table | null;
 
     render() {
         const { exchanges, className, onClear } = this.props;
-        const { selectedExchangeIndex } = this.state;
+        const { selectedExchangeIndex } = this;
 
         return <ListContainer>
             <AutoSizer>{({ height, width }) =>
@@ -198,13 +195,13 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
     focusSelectedExchange = () => {
         if (!this.tableContainerRef) return;
 
-        if (this.state.selectedExchangeIndex != null) {
+        if (this.selectedExchangeIndex != null) {
             const rowElement = this.tableContainerRef.querySelector(
-                `[aria-rowindex='${this.state.selectedExchangeIndex + 1}']`
+                `[aria-rowindex='${this.selectedExchangeIndex + 1}']`
             ) as HTMLDivElement;
             rowElement.focus();
 
-            this.tableRef!.scrollToRow(this.state.selectedExchangeIndex);
+            this.tableRef!.scrollToRow(this.selectedExchangeIndex);
         }
     }
 
@@ -222,15 +219,13 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         }
     }
 
-    onExchangeSelected(index: number, callback?: () => void) {
-        this.setState({
-            selectedExchangeIndex: index
-        }, callback);
+    onExchangeSelected(index: number) {
+        this.selectedExchangeIndex = index;
         this.props.onSelected(this.props.exchanges[index]);
     }
 
     onExchangeDeselected() {
-        this.setState({ selectedExchangeIndex: undefined });
+        this.selectedExchangeIndex = undefined;
         this.props.onSelected(undefined);
     }
 
@@ -238,7 +233,6 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         if (this.props.exchanges.length === 0) return;
 
         const { exchanges } = this.props;
-        const { selectedExchangeIndex } = this.state;
 
         // Forcibly focus the row that has been selected when it is selected?
         let targetIndex: number | undefined;
@@ -246,22 +240,25 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         switch (event.key) {
             case 'j':
             case 'ArrowDown':
-                targetIndex = selectedExchangeIndex === undefined ?
-                    0 : Math.min(selectedExchangeIndex + 1, exchanges.length - 1);
+                targetIndex = this.selectedExchangeIndex === undefined ?
+                    0 : Math.min(this.selectedExchangeIndex + 1, exchanges.length - 1);
                 break;
             case 'k':
             case 'ArrowUp':
-                targetIndex = selectedExchangeIndex === undefined ?
-                    exchanges.length - 1 : Math.max(selectedExchangeIndex - 1, 0);
+                targetIndex = this.selectedExchangeIndex === undefined ?
+                    exchanges.length - 1 : Math.max(this.selectedExchangeIndex - 1, 0);
                 break;
         }
 
         if (targetIndex !== undefined) {
-            this.onExchangeSelected(targetIndex, this.focusSelectedExchange);
+            this.onExchangeSelected(targetIndex);
+            this.focusSelectedExchange();
             event.preventDefault();
         }
     }
-})`
+}
+
+const StyledExchangeList = styled(ExchangeList)`
     font-size: ${p => p.theme.textSize};
 
     .ReactVirtualized__Table__headerRow {
@@ -348,4 +345,6 @@ export const ExchangeList = styled(class extends React.PureComponent<ExchangeLis
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
         pointer-events: none;
     }
-`;
+`
+
+export { StyledExchangeList as ExchangeList };

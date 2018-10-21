@@ -23,6 +23,7 @@ export class JsonEditor extends BaseEditor<EditorProps, JsonEditorState> {
         }) as JsonEditorState;
     }
 
+    // TODO: Move these state updates to mobx
     static getDerivedStateFromProps(nextProps: EditorProps, prevState: JsonEditorState) : JsonEditorState | {} {
         try {
             const minifiedCurrentContent = prevState.content && minify(prevState.content);

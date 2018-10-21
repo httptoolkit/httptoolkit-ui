@@ -1,5 +1,9 @@
 import * as React from 'react';
 import * as _ from 'lodash';
+
+import { observable, autorun } from 'mobx';
+import { observer, disposeOnUnmount } from 'mobx-react';
+
 import { connect } from 'react-redux';
 
 import { styled } from '../../styles';
@@ -27,25 +31,17 @@ interface WatchPageProps {
     exchanges: HttpExchange[]
 }
 
-interface WatchPageState {
-    selectedExchange: HttpExchange | undefined,
-}
+@observer
+class WatchPage extends React.Component<WatchPageProps> {
 
-class WatchPage extends React.PureComponent<WatchPageProps, WatchPageState> {
-    constructor(props: WatchPageProps) {
-        super(props);
+    @observable.ref selectedExchange: HttpExchange | undefined = undefined;
 
-        this.state = {
-            selectedExchange: undefined
-        };
-    }
-
-    static getDerivedStateFromProps(nextProps: WatchPageProps, prevState: WatchPageState) : WatchPageState | null {
-        if (!_.includes(nextProps.exchanges, prevState.selectedExchange)) {
-            return { selectedExchange: undefined };
-        }
-
-        return null;
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            if (!_.includes(this.props.exchanges, this.selectedExchange)) {
+                this.selectedExchange = undefined;
+            }
+        }));
     }
 
     render(): JSX.Element {
@@ -61,7 +57,7 @@ class WatchPage extends React.PureComponent<WatchPageProps, WatchPageState> {
                     maxSize={-300}
                 >
                     <ExchangeListFromStore onSelected={this.onSelected}></ExchangeListFromStore>
-                    <ExchangeDetailsPane exchange={this.state.selectedExchange}></ExchangeDetailsPane>
+                    <ExchangeDetailsPane exchange={this.selectedExchange}></ExchangeDetailsPane>
                 </SplitPane>
             );
         } else if (this.props.serverStatus === ServerStatus.Connecting) {
@@ -76,9 +72,7 @@ class WatchPage extends React.PureComponent<WatchPageProps, WatchPageState> {
     }
 
     onSelected = (exchange: HttpExchange | undefined) => {
-        this.setState({
-            selectedExchange: exchange
-        });
+        this.selectedExchange = exchange;
     }
 }
 

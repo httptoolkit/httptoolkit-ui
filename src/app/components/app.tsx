@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { observable } from 'mobx';
+import { observer } from 'mobx-react';
+
 import { styled } from '../styles';
 
 import { Sidebar } from './sidebar';
@@ -19,25 +22,18 @@ const AppContainer = styled.div`
     }
 `;
 
-export const App = styled(class App extends React.PureComponent<
-    {},
-    { selectedPageIndex: number }
-> {
-    constructor(props: {}) {
-        super(props);
+@observer
+export class App extends React.Component {
 
-        this.state = {
-            selectedPageIndex: 0
-        }
-    }
+    @observable selectedPageIndex: number = 0;
 
     render() {
-        const PageComponent = PAGES[this.state.selectedPageIndex].component;
+        const PageComponent = PAGES[this.selectedPageIndex].component;
 
         return <AppContainer>
             <Sidebar
                 pages={PAGES}
-                selectedPageIndex={this.state.selectedPageIndex}
+                selectedPageIndex={this.selectedPageIndex}
                 onSelectPage={this.onSelectPage}
             />
             <PageComponent />
@@ -45,7 +41,6 @@ export const App = styled(class App extends React.PureComponent<
     }
 
     onSelectPage = (selectedPageIndex: number) => {
-        this.setState({ selectedPageIndex });
+        this.selectedPageIndex = selectedPageIndex;
     }
-})`
-`;
+}

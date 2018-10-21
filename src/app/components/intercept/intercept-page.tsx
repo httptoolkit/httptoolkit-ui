@@ -200,7 +200,7 @@ const InterceptOption = styled.section`
     }
 `;
 
-@observer class InterceptPage extends React.PureComponent<InterceptPageProps> {
+@observer class InterceptPage extends React.Component<InterceptPageProps> {
 
     @observable filter: string | false = false;
 

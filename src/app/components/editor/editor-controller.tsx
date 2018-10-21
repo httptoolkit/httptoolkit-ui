@@ -1,5 +1,7 @@
 import * as React from 'react';
 import * as _ from 'lodash';
+import { observer } from 'mobx-react';
+import { observable } from 'mobx';
 
 import * as monacoEditor from 'monaco-editor';
 
@@ -22,11 +24,6 @@ interface EditorControllerProps {
     onChange?: (newContent: string) => void;
 }
 
-interface EditorControllerState {
-    selectedContentType: string;
-    lineCount: number;
-}
-
 interface ContentTypeConfig<E extends typeof BaseEditor = typeof BaseEditor> {
     name: string;
     editor: E;
@@ -37,28 +34,28 @@ const ContentTypes = {
     'application/json': { name: 'JSON', editor: JsonEditor }
 } as { [key: string]: ContentTypeConfig };
 
-export class EditorController extends React.PureComponent<EditorControllerProps, EditorControllerState> {
+@observer
+export class EditorController extends React.Component<EditorControllerProps> {
+
+    @observable lineCount: number;
+    @observable selectedContentType: string;
+
     constructor(props: EditorControllerProps) {
         super(props);
 
-        this.state = {
-            selectedContentType: ContentTypes[props.contentType!] ? props.contentType! : 'text/plain',
-            lineCount: this.props.content.split('\n').length
-        };
+        this.selectedContentType = ContentTypes[props.contentType!] ?
+            props.contentType! : 'text/plain',
+        this.lineCount = this.props.content.split('\n').length;
     }
 
     updateLineCount = (newLineCount: number) => {
-        this.setState({
-            lineCount: newLineCount
-        });
+        this.lineCount = newLineCount;
     }
 
     setContentType = (changeEvent: React.ChangeEvent<HTMLSelectElement>) => {
         let newContentType = changeEvent.target.value;
 
-        this.setState({
-            selectedContentType: newContentType
-        });
+        this.selectedContentType = newContentType;
     }
 
     render() {
@@ -83,12 +80,7 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
             wordWrap: 'on'
         });
 
-        const {
-            selectedContentType,
-            lineCount
-        } = this.state;
-
-        const contentTypeSelector = <select onChange={this.setContentType} value={selectedContentType}>
+        const contentTypeSelector = <select onChange={this.setContentType} value={this.selectedContentType}>
             { _.map(ContentTypes, ((typeConfig, contentType) => (
                 <option key={contentType} value={contentType}>
                     { typeConfig.name }
@@ -96,7 +88,7 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
             ))) }
         </select>;
 
-        const EditorClass = ContentTypes[selectedContentType].editor;
+        const EditorClass = ContentTypes[this.selectedContentType].editor;
 
         const editor = <EditorClass
             onChange={this.props.onChange}
@@ -109,7 +101,7 @@ export class EditorController extends React.PureComponent<EditorControllerProps,
         return renderer({
             editor,
             contentTypeSelector,
-            lineCount
+            lineCount: this.lineCount
         });
     }
 }
