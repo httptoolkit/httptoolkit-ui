@@ -85,7 +85,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
     if (exchange) {
         const { request, response } = exchange;
 
-        cards.push(<Card tabIndex={0}>
+        cards.push(<Card tabIndex={0} key='request'>
             <CardHeader>Request</CardHeader>
             <CardContent>
                 <ContentLabel>URL</ContentLabel>
@@ -102,7 +102,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
 
         const requestBody = get(request, 'body', 'text');
         if (requestBody) {
-            cards.push(<Card tabIndex={0}>
+            cards.push(<Card tabIndex={0} key='requestBody'>
                 <EditorController
                     contentType={request.headers['content-type']}
                     content={requestBody}
@@ -121,7 +121,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
         }
 
         if (response) {
-            cards.push(<Card tabIndex={0}>
+            cards.push(<Card tabIndex={0} key='response'>
                 <CardHeader>Response</CardHeader>
                 <CardContent>
                     <ContentLabel>Status</ContentLabel>
@@ -138,7 +138,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
 
             const responseBody = get(response, 'body', 'text');
             if (responseBody) {
-                cards.push(<Card tabIndex={0}>
+                cards.push(<Card tabIndex={0} key='responseBody'>
                     <EditorController
                         contentType={response.headers['content-type']}
                         content={responseBody}
@@ -159,6 +159,7 @@ export const ExchangeDetailsPane = ({ exchange }: {
     } else {
         cards.push(
             <EmptyState
+                key='empty'
                 tabIndex={0}
                 icon={['far', 'arrow-left']}
                 message='Select some requests to see their details.'

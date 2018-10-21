@@ -245,7 +245,7 @@ const InterceptOption = styled.section`
                     </ConnectedSources>
 
                     { interceptOptions.map((option) =>
-                        <InterceptOption tabIndex={0}>
+                        <InterceptOption key={option.name} tabIndex={0}>
                             <FontAwesomeIcon
                                 {...option.iconProps}
                                 size='8x'

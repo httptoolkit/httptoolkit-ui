@@ -64,6 +64,7 @@ export const Sidebar = styled((props: SidebarProps) =>
         <SidebarLogo />
         {props.pages.map((page, i) =>
             <SidebarItem
+                key={page.name}
                 selected={i === props.selectedPageIndex}
                 onClick={() => props.onSelectPage(i)}
             >
