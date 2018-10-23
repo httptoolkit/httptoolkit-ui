@@ -4,7 +4,7 @@ import * as url from 'url';
 
 import { app, BrowserWindow } from 'electron';
 
-import { getStandalone } from '../../mockttp/dist/main';
+import { getStandalone } from 'mockttp';
 
 let mockServer = getStandalone();
 
