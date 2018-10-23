@@ -6,7 +6,7 @@ import MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const SRC_DIR = path.resolve(__dirname, 'src', 'app');
 const OUTPUT_DIR = path.resolve(__dirname, 'dist', 'app');
 
-module.exports = {
+export = {
     entry: path.join(SRC_DIR, 'index.tsx'),
 
     output: {
@@ -24,15 +24,6 @@ module.exports = {
             use: [{ loader: 'awesome-typescript-loader' }],
             include: [SRC_DIR]
         }, {
-            test: /\.js$/,
-            enforce: 'pre',
-            loader: 'source-map-loader',
-            exclude: [
-                path.join(__dirname, 'node_modules', 'monaco-editor'),
-                path.join(__dirname, 'node_modules', 'subscriptions-transport-ws'),
-                path.join(__dirname, '..', 'mockttp', 'subscriptions-transport-ws')
-            ]
-        }, {
             test: /\.(woff2|png)$/,
             loader: 'file-loader'
         }, {
@@ -46,7 +37,7 @@ module.exports = {
 
     node: {
         process: true,
-        fs: 'empty'
+        fs: <'empty'> 'empty'
     },
 
     plugins: [
@@ -63,15 +54,6 @@ module.exports = {
                 'xml',
                 'yaml'
             ]
-        }),
-        new webpack.NamedModulesPlugin(),
-        new webpack.HotModuleReplacementPlugin()
+        })
     ],
-
-    devtool: 'cheap-source-map',
-
-    devServer: {
-        contentBase: OUTPUT_DIR,
-        hot: true
-    }
 };
