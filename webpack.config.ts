@@ -53,7 +53,17 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: path.join(SRC_DIR, 'index.html')
         }),
-        new MonacoWebpackPlugin(),
+        new MonacoWebpackPlugin({
+            languages: [
+                'html',
+                'css',
+                'javascript',
+                'json',
+                'markdown',
+                'xml',
+                'yaml'
+            ]
+        }),
         new webpack.NamedModulesPlugin(),
         new webpack.HotModuleReplacementPlugin()
     ],
