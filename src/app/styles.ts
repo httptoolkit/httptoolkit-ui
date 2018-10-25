@@ -41,7 +41,12 @@ library.add(
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-export const IconProps = {
+export interface IconProps {
+    icon: string[];
+    color: string;
+}
+
+export const Icons = {
     Chrome: { icon: ['fab', 'chrome'], color: '#4587f3' },
     Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
@@ -149,6 +154,10 @@ export function injectGlobalStyles(theme: Theme) {
 
         :active {
             outline: none;
+        }
+
+        .slow-spin {
+            animation: fa-spin 6s infinite linear;
         }
     `;
 }

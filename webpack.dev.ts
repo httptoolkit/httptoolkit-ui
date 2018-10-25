@@ -10,7 +10,7 @@ export = merge(common, {
   devtool: 'inline-source-map',
 
   devServer: {
-      contentBase: common.output.path,
+      contentBase: common.output!.path!,
       hot: true
   },
 

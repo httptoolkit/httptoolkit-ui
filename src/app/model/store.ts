@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
 import * as path from 'path';
-import { observable, action, configure, flow } from 'mobx';
+
+import { observable, action, configure, flow, computed } from 'mobx';
 import { getLocal, Mockttp } from 'mockttp';
 
 import { CompletedRequest, CompletedResponse } from '../types';
+import { parseSource } from './sources';
 
 export type HttpExchange = {
     request: CompletedRequest & { parsedUrl: URL };
@@ -26,6 +28,14 @@ export class Store {
 
     @observable serverStatus: ServerStatus = ServerStatus.NotStarted;
     exchanges = observable.array<HttpExchange>([], { deep: false });
+
+    @computed get activeSources() {
+        return _(this.exchanges)
+            .map(e => e.request.headers['user-agent'])
+            .uniq()
+            .map(parseSource)
+            .value();
+    }
 
     constructor(options: { https: boolean, configRoot: string }) {
         this.server = getLocal({

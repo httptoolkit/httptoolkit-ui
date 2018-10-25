@@ -4,14 +4,20 @@ import { styled, FontAwesomeIcon } from '../styles'
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,
-    message: string,
     icon: string[],
-    spin?: boolean
+    spin?: true | 'slow',
+    message?: string
 }) => (
     <div {..._.omit(props, ['message', 'icon', 'spin'])}>
-        <FontAwesomeIcon icon={props.icon} spin={props.spin} />
-        <br/>
-        { props.message }
+        <FontAwesomeIcon
+            icon={props.icon}
+            spin={props.spin === true}
+            className={props.spin === 'slow' ? 'slow-spin' : undefined}
+        />
+        { props.message && <>
+            <br/>
+            { props.message }
+        </> }
     </div>
 ))`
     display: flex;

@@ -1,12 +1,12 @@
-import webpack = require('webpack');
 import path = require('path');
 import HtmlWebpackPlugin = require('html-webpack-plugin');
 import MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+import { Configuration } from 'webpack';
 
 const SRC_DIR = path.resolve(__dirname, 'src', 'app');
 const OUTPUT_DIR = path.resolve(__dirname, 'dist', 'app');
 
-export = {
+export = <Configuration> {
     entry: path.join(SRC_DIR, 'index.tsx'),
 
     output: {
@@ -37,7 +37,7 @@ export = {
 
     node: {
         process: true,
-        fs: <'empty'> 'empty'
+        fs: 'empty'
     },
 
     plugins: [

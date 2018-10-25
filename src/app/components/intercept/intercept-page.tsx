@@ -4,9 +4,12 @@ import * as React from 'react';
 import { observable, action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { styled, FontAwesomeIcon, IconProps } from '../../styles';
+import { styled, FontAwesomeIcon, Icons } from '../../styles';
+
+import { LittleCard } from '../card';
 
 import { Store, ServerStatus } from '../../model/store';
+import { ConnectedSources } from './connected-sources';
 
 interface InterceptPageProps {
     className?: string,
@@ -19,7 +22,7 @@ const DOCKER_TAGS = ['bridge', 'services', 'images'];
 const MANUAL_INTERCEPT_OPTION = {
     name: 'Manual setup',
     description: 'Manually configure a source with the proxy settings and certificate',
-    iconProps: IconProps.Unknown,
+    iconProps: Icons.Unknown,
     tags: []
 }
 
@@ -27,31 +30,31 @@ const INTERCEPT_OPTIONS = [
     {
         name: 'Fresh Chrome',
         description: 'Open a preconfigured fresh Chrome window',
-        iconProps: IconProps.Chrome,
+        iconProps: Icons.Chrome,
         tags: ['browsers', 'web page']
     },
     {
         name: 'All Docker Containers',
         description: 'Intercept all local Docker traffic',
-        iconProps: IconProps.Docker,
+        iconProps: Icons.Docker,
         tags: DOCKER_TAGS
     },
     {
         name: 'Specific Docker Containers',
         description: 'Intercept all traffic from specific Docker containers',
-        iconProps: IconProps.Docker,
+        iconProps: Icons.Docker,
         tags: DOCKER_TAGS
     },
     {
         name: 'A device on your network',
         description: 'Intercept all HTTP traffic from another device on your network',
-        iconProps: IconProps.Network,
+        iconProps: Icons.Network,
         tags: [...MOBILE_TAGS, 'lan', 'arp', 'wifi']
     },
     {
         name: 'Everything',
         description: 'Intercept all HTTP traffic on this machine',
-        iconProps: IconProps.Desktop,
+        iconProps: Icons.Desktop,
         tags: ['local', 'machine', 'system', 'me']
     },
     MANUAL_INTERCEPT_OPTION
@@ -62,7 +65,7 @@ const InterceptPageContainer = styled.section`
 
     grid-gap: 80px;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: auto;
+    grid-template-rows: 350px;
     grid-auto-rows: 200px;
 
     max-width: 1200px;
@@ -71,6 +74,11 @@ const InterceptPageContainer = styled.section`
 
     max-height: 100%;
     overflow: auto;
+
+    > ${ConnectedSources} {
+        grid-column: 3 / span 2;
+        overflow-y: auto;
+    }
 `;
 
 const InterceptInstructions = styled.div`
@@ -146,36 +154,13 @@ const InterceptSearchBox = styled((props: {
     }
 `;
 
-const ConnectedSources = styled.div`
-    grid-column: 3 / span 2;
-
+const InterceptOption = styled(LittleCard)`
     height: 100%;
     width: 100%;
-    padding: 15px;
-    box-sizing: border-box;
-
-    background-color: ${p => p.theme.mainBackground};
-    border: 1px solid ${p => p.theme.containerBorder};
-    border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
-`;
-
-const InterceptOption = styled.section`
-    height: 100%;
-    width: 100%;
-    padding: 15px;
-    box-sizing: border-box;
-
-    background-color: ${p => p.theme.mainBackground};
-    border: 1px solid ${p => p.theme.containerBorder};
-    border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
 
     cursor: pointer;
     user-select: none;
 
-    overflow: hidden;
-    position: relative;
     > svg {
         position: absolute;
         bottom: -10px;
@@ -188,14 +173,8 @@ const InterceptOption = styled.section`
         z-index: 1;
     }
 
-    > h1 {
-        font-size: ${p => p.theme.headingSize};
-        font-weight: bold;
-    }
-
     > p {
         color: ${p => p.theme.mainColor};
-        margin-top: 15px;
     }
 `;
 
@@ -241,9 +220,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         />
                     </InterceptInstructions>
 
-                    <ConnectedSources>
-                        Connected sources:
-                    </ConnectedSources>
+                    <ConnectedSources activeSources={this.props.store.activeSources} />
 
                     { interceptOptions.map((option) =>
                         <InterceptOption key={option.name} tabIndex={0}>
