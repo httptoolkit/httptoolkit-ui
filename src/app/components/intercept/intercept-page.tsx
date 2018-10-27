@@ -4,7 +4,7 @@ import * as React from 'react';
 import { observable, action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { styled, FontAwesomeIcon, Icons } from '../../styles';
+import { styled, FontAwesomeIcon, Icons, IconProps } from '../../styles';
 
 import { LittleCard } from '../card';
 
@@ -19,39 +19,53 @@ interface InterceptPageProps {
 const MOBILE_TAGS =['mobile', 'phone', 'apple', 'samsung', 'ios', 'android', 'app'];
 const DOCKER_TAGS = ['bridge', 'services', 'images'];
 
-const MANUAL_INTERCEPT_OPTION = {
+interface InterceptorOption {
+    id: string;
+    name: string;
+    description: string;
+    iconProps: IconProps;
+    tags: string[];
+}
+
+const MANUAL_INTERCEPT_OPTION: InterceptorOption = {
+    id: 'manual-setup',
     name: 'Manual setup',
     description: 'Manually configure a source with the proxy settings and certificate',
     iconProps: Icons.Unknown,
     tags: []
 }
 
-const INTERCEPT_OPTIONS = [
+const INTERCEPT_OPTIONS: InterceptorOption[] = [
     {
+        id: 'fresh-chrome',
         name: 'Fresh Chrome',
         description: 'Open a preconfigured fresh Chrome window',
         iconProps: Icons.Chrome,
         tags: ['browsers', 'web page']
     },
     {
+        id: 'docker-all',
         name: 'All Docker Containers',
         description: 'Intercept all local Docker traffic',
         iconProps: Icons.Docker,
         tags: DOCKER_TAGS
     },
     {
+        id: 'docker-specific',
         name: 'Specific Docker Containers',
         description: 'Intercept all traffic from specific Docker containers',
         iconProps: Icons.Docker,
         tags: DOCKER_TAGS
     },
     {
+        id: 'network-device',
         name: 'A device on your network',
         description: 'Intercept all HTTP traffic from another device on your network',
         iconProps: Icons.Network,
         tags: [...MOBILE_TAGS, 'lan', 'arp', 'wifi']
     },
     {
+        id: 'system-proxy',
         name: 'Everything',
         description: 'Intercept all HTTP traffic on this machine',
         iconProps: Icons.Desktop,
@@ -158,7 +172,6 @@ const InterceptOption = styled(LittleCard)`
     height: 100%;
     width: 100%;
 
-    cursor: pointer;
     user-select: none;
 
     > svg {
@@ -186,6 +199,8 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
+
+        const supportedInterceptorIds = _.map(this.props.store.supportedInterceptors, 'id');
 
         if (this.props.store.serverStatus === ServerStatus.Connected) {
             const interceptOptions = INTERCEPT_OPTIONS.filter((option) =>
@@ -223,7 +238,15 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                     <ConnectedSources activeSources={this.props.store.activeSources} />
 
                     { interceptOptions.map((option) =>
-                        <InterceptOption key={option.name} tabIndex={0}>
+                        <InterceptOption
+                            disabled={
+                                !_.includes(supportedInterceptorIds, option.id) &&
+                                option !== MANUAL_INTERCEPT_OPTION
+                            }
+                            onClick={this.onInterceptorClicked.bind(this, option)}
+                            key={option.name}
+                            tabIndex={0}
+                        >
                             <FontAwesomeIcon
                                 {...option.iconProps}
                                 size='8x'
@@ -245,6 +268,10 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         }
 
         return <div className={this.props.className}>{ mainView }</div>;
+    }
+
+    onInterceptorClicked(interceptor: InterceptorOption) {
+        this.props.store.activateInterceptor(interceptor.id);
     }
 
     @action.bound

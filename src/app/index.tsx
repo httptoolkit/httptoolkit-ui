@@ -11,9 +11,7 @@ injectGlobalStyles(theme);
 const APP_ELEMENT_SELECTOR = '#app';
 
 window.onload = async function startApp() {
-    const config = JSON.parse((new URL(window.location.href)).searchParams.get('config') as string);
-
-    const store = new Store(config);
+    const store = new Store();
     await store.startServer();
 
     ReactDOM.render(

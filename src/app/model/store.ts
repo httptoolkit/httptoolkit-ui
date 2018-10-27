@@ -1,16 +1,23 @@
 import * as _ from 'lodash';
-import * as path from 'path';
 
-import { observable, action, configure, flow, computed } from 'mobx';
+import { observable, action, configure, flow, computed, runInAction } from 'mobx';
 import { getLocal, Mockttp } from 'mockttp';
 
 import { CompletedRequest, CompletedResponse } from '../types';
 import { parseSource } from './sources';
+import { getInterceptors, activateInterceptor } from './htk-client';
 
-export type HttpExchange = {
+export interface HttpExchange {
     request: CompletedRequest & { parsedUrl: URL };
     response?: CompletedResponse;
 };
+
+export interface Interceptor {
+    id: string;
+    version: string;
+    isActivable: string;
+    isActive: string;
+}
 
 export enum ServerStatus {
     NotStarted,
@@ -22,12 +29,14 @@ export enum ServerStatus {
 
 configure({ enforceActions: 'observed' });
 
+const PROXY_PORT = 8000;
+
 export class Store {
 
     private server: Mockttp;
 
     @observable serverStatus: ServerStatus = ServerStatus.NotStarted;
-    exchanges = observable.array<HttpExchange>([], { deep: false });
+    readonly exchanges = observable.array<HttpExchange>([], { deep: false });
 
     @computed get activeSources() {
         return _(this.exchanges)
@@ -37,21 +46,19 @@ export class Store {
             .value();
     }
 
-    constructor(options: { https: boolean, configRoot: string }) {
-        this.server = getLocal({
-            https: options.https ? {
-                keyPath: path.join(options.configRoot, 'ca.key'),
-                certPath: path.join(options.configRoot, 'ca.pem')
-            }: undefined,
-            cors: false
-        });
+    @observable supportedInterceptors: Interceptor[] | null = null;
+
+    constructor() {
+        this.server = getLocal();
     }
 
     startServer = flow(function * (this: Store) {
         this.serverStatus = ServerStatus.Connecting;
 
+        yield this.refreshInterceptors();
+
         try {
-            yield this.server.start(8000);
+            yield this.server.start(PROXY_PORT);
             yield this.server.anyRequest().always().thenPassThrough();
 
             console.log(`Server started on port ${this.server.port}`);
@@ -72,6 +79,14 @@ export class Store {
             }
         }
     });
+
+    async refreshInterceptors() {
+        const interceptors = await getInterceptors(PROXY_PORT);
+
+        runInAction(() => {
+            this.supportedInterceptors = interceptors;
+        });
+    }
 
     @action
     private addRequest(request: CompletedRequest) {
@@ -94,6 +109,11 @@ export class Store {
     @action.bound
     clearExchanges() {
         this.exchanges.clear();
+    }
+
+    async activateInterceptor(interceptorId: string) {
+        await activateInterceptor(interceptorId, PROXY_PORT);
+        await this.refreshInterceptors();
     }
 
 }
