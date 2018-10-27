@@ -2,7 +2,7 @@
   "name": "httptoolkit",
   "version": "0.1.0",
   "private": true,
-  "description": "",
+  "description": "Beautiful, cross-platform & open-source HTTP(S) debugging proxy, analyzer & client.",
   "main": "dist/main.js",
   "files": [
     "dist",
