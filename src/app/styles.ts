@@ -22,6 +22,7 @@ import { faQuestion } from '@fortawesome/free-solid-svg-icons/faQuestion';
 import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
+import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
 import { faDocker } from '@fortawesome/free-brands-svg-icons/faDocker';
 
 library.add(
@@ -36,6 +37,7 @@ library.add(
     faQuestion,
     faTimes,
     faChrome,
+    faFirefox,
     faDocker,
 );
 
@@ -47,7 +49,8 @@ export interface IconProps {
 }
 
 export const Icons = {
-    Chrome: { icon: ['fab', 'chrome'], color: '#4587f3' },
+    Chrome: { icon: ['fab', 'chrome'], color: '#1da462' },
+    Firefox: { icon: ['fab', 'firefox'], color: '#e66000' },
     Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },

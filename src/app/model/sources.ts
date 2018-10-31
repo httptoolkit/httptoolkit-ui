@@ -22,9 +22,13 @@ const getDescription = (useragent: IUAParser.IResult) => {
     }
 };
 
+const isValidIconName = (name: string | undefined): name is keyof typeof Icons => {
+    return !!(name && _.has(Icons, name));
+}
+
 const getIcon = (useragent: IUAParser.IResult) => {
-    if (useragent.browser.name === 'Chrome') {
-        return Icons.Chrome;
+    if (isValidIconName(useragent.browser.name)) {
+        return Icons[useragent.browser.name];
     } else {
         return Icons.Unknown;
     }
