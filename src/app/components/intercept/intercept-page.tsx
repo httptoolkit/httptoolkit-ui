@@ -44,6 +44,13 @@ const INTERCEPT_OPTIONS: InterceptorOption[] = [
         tags: ['browsers', 'web page']
     },
     {
+        id: 'fresh-firefox',
+        name: 'Fresh Firefox',
+        description: 'Open a preconfigured fresh Firefox window',
+        iconProps: Icons.Firefox,
+        tags: ['browsers', 'web page']
+    },
+    {
         id: 'docker-all',
         name: 'All Docker Containers',
         description: 'Intercept all local Docker traffic',

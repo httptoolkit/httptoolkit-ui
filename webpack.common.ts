@@ -30,6 +30,9 @@ export = <Configuration> {
             test: /\.css$/,
             use: [ 'style-loader', 'css-loader' ]
         }, {
+            test: /\.html$/,
+            use: 'raw-loader'
+        }, {
             test: /node_modules[\\|/]typesafe-get/,
             use: { loader: 'umd-compat-loader' }
         }]

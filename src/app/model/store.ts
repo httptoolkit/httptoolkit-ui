@@ -7,6 +7,8 @@ import { CompletedRequest, CompletedResponse } from '../types';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor } from './htk-client';
 
+import * as amIUsingHtml from '../amiusing.html';
+
 export interface HttpExchange {
     request: CompletedRequest & { parsedUrl: URL };
     response?: CompletedResponse;
@@ -59,6 +61,9 @@ export class Store {
 
         try {
             yield this.server.start(PROXY_PORT);
+
+            yield this.server.get('http://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml);
+            yield this.server.get('https://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml);
             yield this.server.anyRequest().always().thenPassThrough();
 
             console.log(`Server started on port ${this.server.port}`);
