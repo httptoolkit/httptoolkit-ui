@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { observable, action } from 'mobx';
+import { observable, action, runInAction } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled, FontAwesomeIcon, Icons, IconProps } from '../../styles';
@@ -25,6 +25,7 @@ interface InterceptorOption {
     description: string;
     iconProps: IconProps;
     tags: string[];
+    inProgress?: boolean;
 }
 
 const MANUAL_INTERCEPT_OPTION: InterceptorOption = {
@@ -35,7 +36,7 @@ const MANUAL_INTERCEPT_OPTION: InterceptorOption = {
     tags: []
 }
 
-const INTERCEPT_OPTIONS: InterceptorOption[] = [
+const INTERCEPT_OPTIONS: InterceptorOption[] = observable([
     {
         id: 'fresh-chrome',
         name: 'Fresh Chrome',
@@ -79,7 +80,7 @@ const INTERCEPT_OPTIONS: InterceptorOption[] = [
         tags: ['local', 'machine', 'system', 'me']
     },
     MANUAL_INTERCEPT_OPTION
-];
+]);
 
 const InterceptPageContainer = styled.section`
     display: grid;
@@ -196,6 +197,21 @@ const InterceptOption = styled(LittleCard)`
     > p {
         color: ${p => p.theme.mainColor};
     }
+
+    position: relative;
+`;
+
+const LoadingOverlay = styled.div`
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.2);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 `;
 
 @inject('store')
@@ -248,8 +264,9 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         <InterceptOption
                             disabled={
                                 !_.includes(supportedInterceptorIds, option.id) &&
-                                option !== MANUAL_INTERCEPT_OPTION
+                                option.id !== MANUAL_INTERCEPT_OPTION.id
                             }
+                            onKeyDown={this.onInterceptKeyDown.bind(this, option)}
                             onClick={this.onInterceptorClicked.bind(this, option)}
                             key={option.name}
                             tabIndex={0}
@@ -262,6 +279,13 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                             <p>
                                 { option.description }
                             </p>
+                            { option.inProgress && <LoadingOverlay>
+                                <FontAwesomeIcon
+                                    icon={['far', 'spinner-third']}
+                                    size='4x'
+                                    spin={true}
+                                />
+                            </LoadingOverlay> }
                         </InterceptOption>
                     ) }
                 </InterceptPageContainer>
@@ -277,8 +301,16 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         return <div className={this.props.className}>{ mainView }</div>;
     }
 
-    onInterceptorClicked(interceptor: InterceptorOption) {
-        this.props.store.activateInterceptor(interceptor.id);
+    async onInterceptorClicked(interceptor: InterceptorOption) {
+        runInAction(() => interceptor.inProgress = true);
+        await this.props.store.activateInterceptor(interceptor.id);
+        runInAction(() => interceptor.inProgress = false);
+    }
+
+    onInterceptKeyDown(intercept: InterceptorOption, event: React.KeyboardEvent) {
+        if (event.key === 'Enter') {
+            this.onInterceptorClicked(intercept);
+        }
     }
 
     @action.bound
