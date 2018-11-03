@@ -30,7 +30,7 @@ export = <Configuration> {
             test: /\.css$/,
             use: [ 'style-loader', 'css-loader' ]
         }, {
-            test: /\.html$/,
+            test: /amiusing.html$/,
             use: 'raw-loader'
         }, {
             test: /node_modules[\\|/]typesafe-get/,
