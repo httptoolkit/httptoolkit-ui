@@ -4,13 +4,16 @@ import { observable, action, configure, flow, computed, runInAction } from 'mobx
 import { getLocal, Mockttp } from 'mockttp';
 
 import { CompletedRequest, CompletedResponse } from '../types';
-import { parseSource } from './sources';
+import { parseSource, TrafficSource } from './sources';
 import { getInterceptors, activateInterceptor } from './htk-client';
 
 import * as amIUsingHtml from '../amiusing.html';
 
 export interface HttpExchange {
-    request: CompletedRequest & { parsedUrl: URL };
+    request: CompletedRequest & {
+        parsedUrl: URL,
+        source: TrafficSource
+    };
     response?: CompletedResponse;
 };
 
@@ -97,7 +100,8 @@ export class Store {
     private addRequest(request: CompletedRequest) {
         const newExchange = observable.object({
             request: Object.assign(request, {
-                parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`)
+                parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`),
+                source: parseSource(request.headers['user-agent'])
             }),
             response: undefined
         }, {}, { deep: false });

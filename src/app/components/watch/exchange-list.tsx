@@ -5,7 +5,7 @@ import { observable, action } from 'mobx';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
-import { styled } from '../../styles'
+import { styled, FontAwesomeIcon } from '../../styles'
 
 import { HttpExchange } from '../../model/store';
 
@@ -96,6 +96,11 @@ const ListContainer = styled.div`
         height: 100%;
         margin-left: 0px;
         margin-right: 5px;
+    }
+
+    .source > svg {
+        display: block;
+        margin: 0 auto;
     }
 
     .ReactVirtualized__Table__row {
@@ -239,7 +244,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 label="Verb"
                                 dataKey="method"
                                 cellDataGetter={({ rowData }) => rowData.request.method}
-                                width={75}
+                                width={71}
                                 flexShrink={0}
                                 flexGrow={0}
                             />
@@ -247,7 +252,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 label="Status"
                                 dataKey="status"
                                 className="status"
-                                width={58}
+                                width={45}
                                 flexShrink={0}
                                 flexGrow={0}
                                 cellRenderer={({ rowData }) =>
@@ -257,6 +262,21 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                             message={get(rowData, 'response', 'statusMessage')}
                                         />
                                     }</Observer>
+                                }
+                            />
+                            <Column
+                                label="Source"
+                                dataKey="source"
+                                className="source"
+                                width={49}
+                                flexShrink={0}
+                                flexGrow={0}
+                                cellRenderer={({ rowData }) =>
+                                    <FontAwesomeIcon
+                                        title={rowData.request.source.description}
+                                        {...rowData.request.source.icon}
+                                        fixedWidth={true}
+                                    />
                                 }
                             />
                             <Column
