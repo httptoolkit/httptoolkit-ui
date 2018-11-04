@@ -34,8 +34,6 @@ export enum ServerStatus {
 
 configure({ enforceActions: 'observed' });
 
-const PROXY_PORT = 8000;
-
 export class Store {
 
     private server: Mockttp;
@@ -63,7 +61,7 @@ export class Store {
         yield this.refreshInterceptors();
 
         try {
-            yield this.server.start(PROXY_PORT);
+            yield this.server.start();
 
             yield this.server.get('http://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml);
             yield this.server.get('https://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml);
@@ -89,7 +87,7 @@ export class Store {
     });
 
     async refreshInterceptors() {
-        const interceptors = await getInterceptors(PROXY_PORT);
+        const interceptors = await getInterceptors(this.server.port);
 
         runInAction(() => {
             this.supportedInterceptors = interceptors;
@@ -121,7 +119,7 @@ export class Store {
     }
 
     async activateInterceptor(interceptorId: string) {
-        await activateInterceptor(interceptorId, PROXY_PORT);
+        await activateInterceptor(interceptorId, this.server.port);
         await this.refreshInterceptors();
     }
 
