@@ -1,3 +1,5 @@
+document.dispatchEvent(new Event('load:executing'));
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -14,6 +16,7 @@ window.onload = async function startApp() {
     const store = new Store();
     await store.startServer();
 
+    document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
         <Provider store={store}>
             <ThemeProvider theme={theme}>

@@ -24,12 +24,67 @@
       }
 
       #app:not(:empty) ~ #app-loading-placeholder { display: none; }
+
+      #initial-logo, #progress-logo {
+        position: absolute;
+      }
+
+      #initial-logo {
+        filter: grayscale()
+      }
+
+      #progress-logo {
+        clip-path: inset(0 100% 0 0);
+        transition: clip-path 0.5s;
+      }
     </style>
   </head>
   <body>
     <div id="app"></div>
     <div id="app-loading-placeholder">
-      <img src="<%=require('./images/logo-large.png')%>">
+      <img id="initial-logo" src="<%=require('./images/logo-large.png')%>">
+      <img id="progress-logo" src="<%=require('./images/logo-large.png')%>">
     </div>
+
+    <script>
+      var progressElement = document.getElementById('progress-logo');
+      function setProgress(progress) {
+        progressElement.style.clipPath = 'inset(0 ' + (100 - progress) + '% 0 0)';
+      }
+
+      setTimeout(function () {
+        var appScript = document.scripts[document.scripts.length - 1];
+
+        setProgress(10);
+
+        // Fake page loaded -> script loaded progress, since we're blind here.
+        var progress = 10;
+        var initialProgressInterval = setInterval(function () {
+          progress = progress + (50 - progress) / 3;
+          setProgress(progress);
+        }, 500);
+
+        // Triggered when script has loaded and starts running
+        document.addEventListener('load:executing', function () {
+          clearInterval(initialProgressInterval);
+          setProgress(60);
+        });
+
+        // Triggered when sync code from script has finished
+        appScript.addEventListener('load', function () {
+          setProgress(75);
+        });
+
+        // Triggered when _everything_ is loaded and run
+        window.addEventListener('load', function () {
+          setProgress(90);
+        });
+
+        // The store & Mockttp setup is done, and React is rendering.
+        document.addEventListener('load:rendering', function () {
+          setProgress(100);
+        });
+      }, 0);
+    </script>
   </body>
 </html>
