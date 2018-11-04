@@ -58,14 +58,18 @@ export class Store {
     startServer = flow(function * (this: Store) {
         this.serverStatus = ServerStatus.Connecting;
 
-        yield this.refreshInterceptors();
-
         try {
             yield this.server.start();
 
-            yield this.server.get('http://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml);
-            yield this.server.get('https://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml);
-            yield this.server.anyRequest().always().thenPassThrough();
+            yield Promise.all([
+                this.server.get('http://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml)
+                .then(() =>
+                    this.server.get('https://amiusing.httptoolkit.tech').always().thenReply(200, amIUsingHtml)
+                ).then(() =>
+                    this.server.anyRequest().always().thenPassThrough()
+                ),
+                this.refreshInterceptors()
+            ]);
 
             console.log(`Server started on port ${this.server.port}`);
 
