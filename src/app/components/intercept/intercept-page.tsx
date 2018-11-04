@@ -1,15 +1,14 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { observable, action, runInAction } from 'mobx';
+import { observable, action, flow } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled, FontAwesomeIcon, Icons, IconProps } from '../../styles';
 
-import { LittleCard } from '../card';
-
 import { Store, ServerStatus } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
+import { InterceptOption } from './intercept-option';
 
 interface InterceptPageProps {
     className?: string,
@@ -19,7 +18,7 @@ interface InterceptPageProps {
 const MOBILE_TAGS =['mobile', 'phone', 'apple', 'samsung', 'ios', 'android', 'app'];
 const DOCKER_TAGS = ['bridge', 'services', 'images'];
 
-interface InterceptorOption {
+export interface InterceptorUIConfig {
     id: string;
     name: string;
     description: string;
@@ -28,7 +27,7 @@ interface InterceptorOption {
     inProgress?: boolean;
 }
 
-const MANUAL_INTERCEPT_OPTION: InterceptorOption = {
+const MANUAL_INTERCEPT_OPTION: InterceptorUIConfig = {
     id: 'manual-setup',
     name: 'Manual setup',
     description: 'Manually configure a source with the proxy settings and certificate',
@@ -36,7 +35,7 @@ const MANUAL_INTERCEPT_OPTION: InterceptorOption = {
     tags: []
 }
 
-const INTERCEPT_OPTIONS: InterceptorOption[] = observable([
+const INTERCEPT_OPTIONS: InterceptorUIConfig[] = observable([
     {
         id: 'fresh-chrome',
         name: 'Fresh Chrome',
@@ -176,44 +175,6 @@ const InterceptSearchBox = styled((props: {
     }
 `;
 
-const InterceptOption = styled(LittleCard)`
-    height: 100%;
-    width: 100%;
-
-    user-select: none;
-
-    > svg {
-        position: absolute;
-        bottom: -10px;
-        right: -10px;
-        z-index: 0;
-        opacity: 0.2;
-    }
-
-    > :not(svg) {
-        z-index: 1;
-    }
-
-    > p {
-        color: ${p => p.theme.mainColor};
-    }
-
-    position: relative;
-`;
-
-const LoadingOverlay = styled.div`
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background-color: rgba(0,0,0,0.2);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-`;
-
 @inject('store')
 @observer
 class InterceptPage extends React.Component<InterceptPageProps> {
@@ -223,18 +184,19 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
 
+        const interceptOptions = INTERCEPT_OPTIONS;
         const supportedInterceptorIds = _.map(this.props.store.supportedInterceptors, 'id');
 
         if (this.props.store.serverStatus === ServerStatus.Connected) {
-            const interceptOptions = INTERCEPT_OPTIONS.filter((option) =>
+            const visibleInterceptOptions = interceptOptions.filter((option) =>
                 !this.filter ||
                 _.includes(option.name.toLocaleLowerCase(), this.filter) ||
                 _.includes(option.description.toLocaleLowerCase(), this.filter) ||
                 _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), this.filter))
             );
 
-            if (interceptOptions.length === 0) {
-                interceptOptions.push(MANUAL_INTERCEPT_OPTION);
+            if (visibleInterceptOptions.length === 0) {
+                visibleInterceptOptions.push(MANUAL_INTERCEPT_OPTION);
             }
 
             mainView = (
@@ -260,33 +222,15 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
                     <ConnectedSources activeSources={this.props.store.activeSources} />
 
-                    { interceptOptions.map((option) =>
+                    { visibleInterceptOptions.map((option) =>
                         <InterceptOption
+                            interceptor={option}
                             disabled={
                                 !_.includes(supportedInterceptorIds, option.id) &&
                                 option.id !== MANUAL_INTERCEPT_OPTION.id
                             }
-                            onKeyDown={this.onInterceptKeyDown.bind(this, option)}
-                            onClick={this.onInterceptorClicked.bind(this, option)}
-                            key={option.name}
-                            tabIndex={0}
-                        >
-                            <FontAwesomeIcon
-                                {...option.iconProps}
-                                size='8x'
-                            />
-                            <h1>{ option.name }</h1>
-                            <p>
-                                { option.description }
-                            </p>
-                            { option.inProgress && <LoadingOverlay>
-                                <FontAwesomeIcon
-                                    icon={['far', 'spinner-third']}
-                                    size='4x'
-                                    spin={true}
-                                />
-                            </LoadingOverlay> }
-                        </InterceptOption>
+                            onActivate={this.onInterceptorActivated.bind(this)}
+                        />
                     ) }
                 </InterceptPageContainer>
             );
@@ -301,17 +245,11 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         return <div className={this.props.className}>{ mainView }</div>;
     }
 
-    async onInterceptorClicked(interceptor: InterceptorOption) {
-        runInAction(() => interceptor.inProgress = true);
-        await this.props.store.activateInterceptor(interceptor.id);
-        runInAction(() => interceptor.inProgress = false);
-    }
-
-    onInterceptKeyDown(intercept: InterceptorOption, event: React.KeyboardEvent) {
-        if (event.key === 'Enter') {
-            this.onInterceptorClicked(intercept);
-        }
-    }
+    onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: InterceptorUIConfig) {
+        interceptor.inProgress = true;
+        yield this.props.store.activateInterceptor(interceptor.id);
+        interceptor.inProgress = false;
+    });
 
     @action.bound
     onSearchInput(input: string) {
