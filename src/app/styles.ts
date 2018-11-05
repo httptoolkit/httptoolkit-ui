@@ -69,17 +69,12 @@ export const lightTheme = {
     mainBackground: '#fafafa',
     mainColor: '#222',
 
-    headingBackground: '#e1421f',
-    headingBorder: '#712c1c',
-    headingColor: '#ffffff',
-
     popBackground: '#ffffff',
-    popBorder: '#e26f29',
     popColor: '#e1421f',
 
     containerBackground: '#d8e2e6',
-    containerWatermark: '#b6c2ca',
-    containerBorder: '#abb4ba',
+    containerWatermark: '#a0afaf',
+    containerBorder: '#888',
 
     ...fontSizes
 };
@@ -88,12 +83,7 @@ export const darkTheme = {
     mainBackground: '#222222',
     mainColor: '#efefef',
 
-    headingBackground: '#e1421f',
-    headingBorder: '#712c1c',
-    headingColor: '#fafafa',
-
     popBackground: '#000',
-    popBorder: '#e26f29',
     popColor: '#e1421f',
 
     containerBackground: '#303040',

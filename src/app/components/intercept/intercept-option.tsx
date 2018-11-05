@@ -47,7 +47,9 @@ const LoadingOverlay = styled.div`
     right: 0;
     bottom: 0;
     left: 0;
+
     background-color: rgba(0,0,0,0.2);
+    box-shadow: inset 0 2px 10px 0 rgba(0,0,0,0.2);
 
     display: flex;
     align-items: center;
@@ -66,8 +68,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             disabled={this.props.disabled}
             onKeyDown={this.onInterceptKeyDown.bind(this)}
             onClick={this.onInterceptorClicked.bind(this)}
-            key={this.props.interceptor.name}
-            tabIndex={0}
+            tabIndex={this.props.disabled ? -1 : 0}
         >
             <FontAwesomeIcon
                 {...this.props.interceptor.iconProps}

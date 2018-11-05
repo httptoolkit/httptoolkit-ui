@@ -26,34 +26,47 @@ const Card = styled((props: {
     `}
 
     background-color: ${p => p.theme.mainBackground};
-    border: 1px solid ${p => p.theme.containerBorder};
     border-radius: 4px;
     box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
 
     overflow: hidden;
     position: relative;
 
-    > h1 {
+    > header h1, > h1 {
         font-size: ${p => p.theme.headingSize};
         font-weight: bold;
+    }
+
+    > header {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
     }
 `;
 
 export const LittleCard = styled(Card)`
     padding: 15px;
 
-    > h1 {
+    > header, > h1 {
         margin-bottom: 15px;
     }
 `;
 
-export const BigCard = styled(Card)`
-    padding: 30px;
+export const MediumCard = styled(Card)`
+    padding: 20px;
 
-    > h1 {
+    > header, > h1 {
         text-transform: uppercase;
         text-align: right;
         color: ${p => p.theme.containerWatermark};
+        margin-bottom: 20px;
+    }
+`;
+
+export const BigCard = styled(MediumCard)`
+    padding: 30px;
+
+    > header, > h1 {
         margin-bottom: 30px;
     }
 `;

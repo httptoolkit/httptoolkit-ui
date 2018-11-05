@@ -8,33 +8,15 @@ import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 import { styled, FontAwesomeIcon } from '../../styles'
 
 import { HttpExchange } from '../../model/store';
+import { getExchangeSummaryColour } from '../exchange-colors';
 
 import { EmptyState } from '../empty-state';
 import { StatusCode } from '../status-code';
 
 import { TableFooter } from './exchange-list-footer';
 
-const getColour = (exchange: HttpExchange) => {
-    if (exchange.request.method === 'POST') {
-        return '#ce3939';
-    } else if (exchange.request.path.endsWith('.js')) {
-        return '#4c86af';
-    } else if (exchange.request.path.endsWith('/') || exchange.request.path.endsWith('.html')) {
-        return '#574caf';
-    } else if (exchange.request.path.endsWith('.css')) {
-        return '#af4c9a';
-    } else if (exchange.request.path.endsWith('.jpg') ||
-        exchange.request.path.endsWith('.jpeg') ||
-        exchange.request.path.endsWith('.png') ||
-        exchange.request.path.endsWith('.gif')) {
-        return '#4caf7d';
-    } else {
-        return '#888';
-    }
-};
-
 const RowMarker = styled.div`
-    color: ${(p: { exchange: HttpExchange }) => getColour(p.exchange)};
+    color: ${(p: { exchange: HttpExchange }) => getExchangeSummaryColour(p.exchange)};
     background-color: currentColor;
 
     width: 5px;

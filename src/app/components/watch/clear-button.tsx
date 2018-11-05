@@ -11,6 +11,7 @@ export const ClearArrayButton = styled(observer((props: {
     return <button
         className={props.className}
         title='Clear all'
+        tabIndex={props.array.length !== 0 ? 0 : -1}
         disabled={props.array.length === 0}
         onClick={props.onClear}
     >

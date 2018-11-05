@@ -224,6 +224,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
                     { visibleInterceptOptions.map((option) =>
                         <InterceptOption
+                            key={option.id}
                             interceptor={option}
                             disabled={
                                 !_.includes(supportedInterceptorIds, option.id) &&

@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import * as monacoEditor from 'monaco-editor';
 import MonacoEditor from 'react-monaco-editor';
 
 import { BaseEditor, EditorProps } from './base-editor';

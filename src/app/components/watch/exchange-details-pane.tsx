@@ -1,13 +1,17 @@
 import * as React from 'react';
+import * as utf8 from 'utf8';
 import { get } from 'typesafe-get';
-import styled from 'styled-components';
+import { observer } from 'mobx-react';
 
-import ContentSize from '../editor/content-size';
+import { styled, css } from '../../styles';
+import { HttpExchange } from '../../model/store';
 
+import { MediumCard } from '../card'
 import { EmptyState } from '../empty-state';
 import { HeaderDetails } from '../header-details';
 import { EditorController } from '../editor/editor-controller';
-import { HttpExchange } from '../../model/store';
+import { Pill } from '../pill';
+import { getExchangeSummaryColour, getStatusColor } from '../exchange-colors';
 
 const ExchangeDetailsContainer = styled.div`
     position: relative;
@@ -20,38 +24,48 @@ const ExchangeDetailsContainer = styled.div`
     background-color: ${p => p.theme.containerBackground};
 `;
 
-const Card = styled.div`
-    width: calc(100% - 10px);
-    overflow: hidden;
-    word-break: break-all;
+function getReadableSize(bytes: number, siUnits = true) {
+    let thresh = siUnits ? 1000 : 1024;
 
-    margin: 5px;
+    let units = siUnits
+        ? ['bytes', 'kB','MB','GB','TB','PB','EB','ZB','YB']
+        : ['bytes', 'KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
 
-    background-color: ${props => props.theme.mainBackground};
-    border-radius: 4px;
-    overflow: hidden;
+    let unitIndex = bytes === 0 ? 0 :
+        Math.floor(Math.log(bytes) / Math.log(thresh));
+
+    let unitName = bytes === 1 ? 'byte' : units[unitIndex];
+
+    return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
+}
+
+// Bit of redundancy here, but just because the TS styled plugin
+// gets super confused if you use variables in property names.
+const cardDirectionCss = (direction: string) => direction === 'right' ? css`
+    padding-right: 15px;
+    border-right: solid 5px ${p => p.theme.containerBorder};
+` : css`
+    padding-left: 15px;
+    border-left: solid 5px ${p => p.theme.containerBorder};
 `;
 
-const CardHeader = styled.div`
-    width: 100%;
-    height: 40px;
-    padding: 10px;
-    box-sizing: border-box;
+const Card = styled(MediumCard)`
+    margin: 20px;
+    word-break: break-all;
 
-    display: flex;
-    align-items: center;
+    ${(p: { direction: 'left' | 'right' }) => cardDirectionCss(p.direction)};
 
-    text-transform: uppercase;
+    &:focus, &:focus-within {
+        header h1 {
+            color: ${p => p.theme.popColor};
+        }
 
-    color: ${props => props.theme.headingColor};
-    background-color: ${props => props.theme.headingBackground};
-    border-bottom: 1px solid ${props => props.theme.headingBorder};
+        outline: none;
+        border-color: ${p => p.theme.popColor};
+    }
 `;
 
 const CardContent = styled.div`
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
 `;
 
 const ContentLabel = styled.div`
@@ -72,12 +86,14 @@ const ContentValue = styled.div`
 const ExchangeBodyCardContent = styled.div`
     height: ${(p: { height: number }) => Math.min(p.height, 500)}px;
 
+    margin: 0 -20px -20px -20px;
+
     .monaco-editor-overlaymessage {
         display: none;
     }
 `;
 
-export const ExchangeDetailsPane = ({ exchange }: {
+export const ExchangeDetailsPane = observer(({ exchange }: {
     exchange: HttpExchange | undefined
 }) => {
     const cards: JSX.Element[] = [];
@@ -85,8 +101,11 @@ export const ExchangeDetailsPane = ({ exchange }: {
     if (exchange) {
         const { request, response } = exchange;
 
-        cards.push(<Card tabIndex={0} key='request'>
-            <CardHeader>Request</CardHeader>
+        cards.push(<Card tabIndex={0} key='request' direction='right'>
+            <header>
+                <Pill color={getExchangeSummaryColour(exchange)}>{ request.method } { request.hostname }</Pill>
+                <h1>Request</h1>
+            </header>
             <CardContent>
                 <ContentLabel>URL</ContentLabel>
                 <ContentValue>{
@@ -102,16 +121,19 @@ export const ExchangeDetailsPane = ({ exchange }: {
 
         const requestBody = get(request, 'body', 'text');
         if (requestBody) {
-            cards.push(<Card tabIndex={0} key='requestBody'>
+            cards.push(<Card tabIndex={0} key='requestBody' direction='right'>
                 <EditorController
                     contentType={request.headers['content-type']}
                     content={requestBody}
                 >
                     { ({ editor, contentTypeSelector, lineCount }) => <>
-                        <CardHeader>
-                            Request body <ContentSize content={requestBody} />
+                        <header>
+                            <Pill>{ getReadableSize(utf8.encode(requestBody).length) }</Pill>
                             { contentTypeSelector }
-                        </CardHeader>
+                            <h1>
+                                Request body
+                            </h1>
+                        </header>
                         <ExchangeBodyCardContent height={lineCount * 22}>
                             { editor }
                         </ExchangeBodyCardContent>
@@ -121,8 +143,11 @@ export const ExchangeDetailsPane = ({ exchange }: {
         }
 
         if (response) {
-            cards.push(<Card tabIndex={0} key='response'>
-                <CardHeader>Response</CardHeader>
+            cards.push(<Card tabIndex={0} key='response' direction='left'>
+                <header>
+                    <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>
+                    <h1>Response</h1>
+                </header>
                 <CardContent>
                     <ContentLabel>Status</ContentLabel>
                     <ContentValue>
@@ -138,16 +163,19 @@ export const ExchangeDetailsPane = ({ exchange }: {
 
             const responseBody = get(response, 'body', 'text');
             if (responseBody) {
-                cards.push(<Card tabIndex={0} key='responseBody'>
+                cards.push(<Card tabIndex={0} key='responseBody' direction='left'>
                     <EditorController
                         contentType={response.headers['content-type']}
                         content={responseBody}
                     >
                         { ({ editor, contentTypeSelector, lineCount }) => <>
-                            <CardHeader>
-                                Response body <ContentSize content={responseBody} />
+                            <header>
+                                <Pill>{ getReadableSize(utf8.encode(responseBody).length) }</Pill>
                                 { contentTypeSelector }
-                            </CardHeader>
+                                <h1>
+                                    Response body
+                                </h1>
+                            </header>
                             <ExchangeBodyCardContent height={lineCount * 22}>
                                 { editor }
                             </ExchangeBodyCardContent>
@@ -170,4 +198,4 @@ export const ExchangeDetailsPane = ({ exchange }: {
     return <ExchangeDetailsContainer>
         {cards}
     </ExchangeDetailsContainer>;
-}
+});

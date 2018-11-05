@@ -42,6 +42,7 @@
     "mobx-react": "^5.3.4",
     "mockttp": "^0.10.0",
     "monaco-editor": "^0.14.3",
+    "polished": "^2.3.0",
     "raw-loader": "^0.5.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
