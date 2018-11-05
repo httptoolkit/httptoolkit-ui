@@ -78,7 +78,7 @@ export class Store {
             this.server.on('request', (req) => this.addRequest(req));
             this.server.on('response', (res) => this.setResponse(res));
 
-            window.addEventListener('beforeunload', () => this.server.stop());
+            window.addEventListener('beforeunload', () => this.server.stop().catch(() => {}));
         } catch (err) {
             if (err.response && err.response.status === 409) {
                 console.info('Server already in use');
