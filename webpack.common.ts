@@ -1,12 +1,12 @@
 import path = require('path');
 import HtmlWebpackPlugin = require('html-webpack-plugin');
 import MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-import { Configuration } from 'webpack';
+import * as Webpack from 'webpack';
 
 const SRC_DIR = path.resolve(__dirname, 'src', 'app');
 const OUTPUT_DIR = path.resolve(__dirname, 'dist', 'app');
 
-export = <Configuration> {
+export = <Webpack.Configuration> {
     entry: path.join(SRC_DIR, 'index.tsx'),
 
     output: {
@@ -57,6 +57,9 @@ export = <Configuration> {
                 'xml',
                 'yaml'
             ]
-        })
+        }),
+        new Webpack.EnvironmentPlugin([
+            'SENTRY_DSN'
+        ])
     ],
 };

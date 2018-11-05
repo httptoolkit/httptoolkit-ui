@@ -7,8 +7,10 @@ import { injectGlobalStyles, ThemeProvider, lightTheme as theme } from './styles
 import { App } from './components/app';
 import { Store } from './model/store';
 import { Provider } from 'mobx-react';
+import { ErrorBoundary, initSentry } from './components/error-boundary';
 
 injectGlobalStyles(theme);
+initSentry(process.env.SENTRY_DSN);
 
 const APP_ELEMENT_SELECTOR = '#app';
 
@@ -20,7 +22,9 @@ window.onload = async function startApp() {
     ReactDOM.render(
         <Provider store={store}>
             <ThemeProvider theme={theme}>
-                <App />
+                <ErrorBoundary>
+                    <App />
+                </ErrorBoundary>
             </ThemeProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR));
