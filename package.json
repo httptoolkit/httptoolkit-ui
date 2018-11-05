@@ -68,7 +68,7 @@
     "css-loader": "^1.0.0",
     "file-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
-    "httptoolkit-server": "httptoolkit/httptoolkit-server",
+    "httptoolkit-server": "0.0.2",
     "monaco-editor-webpack-plugin": "^1.5.4",
     "node-dev": "^3.1.3",
     "rimraf": "^2.6.2",
