@@ -1,17 +1,20 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import * as utf8 from 'utf8';
 import { get } from 'typesafe-get';
-import { observer } from 'mobx-react';
+import { observer, disposeOnUnmount } from 'mobx-react';
+import { observable, action, autorun } from 'mobx';
 
 import { styled, css } from '../../styles';
 import { HttpExchange } from '../../model/store';
+import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
 
+import { Pill } from '../pill';
 import { MediumCard } from '../card'
 import { EmptyState } from '../empty-state';
 import { HeaderDetails } from '../header-details';
 import { EditorController } from '../editor/editor-controller';
-import { Pill } from '../pill';
-import { getExchangeSummaryColour, getStatusColor } from '../exchange-colors';
+import { ContentTypeSelector } from '../editor/content-type-selector';
 
 const ExchangeDetailsContainer = styled.div`
     position: relative;
@@ -93,89 +96,78 @@ const ExchangeBodyCardContent = styled.div`
     }
 `;
 
-export const ExchangeDetailsPane = observer(({ exchange }: {
-    exchange: HttpExchange | undefined
-}) => {
-    const cards: JSX.Element[] = [];
+@observer
+export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchange | undefined }> {
 
-    if (exchange) {
-        const { request, response } = exchange;
+    @observable
+    private requestContentType: string | undefined;
 
-        cards.push(<Card tabIndex={0} key='request' direction='right'>
-            <header>
-                <Pill color={getExchangeSummaryColour(exchange)}>{ request.method } { request.hostname }</Pill>
-                <h1>Request</h1>
-            </header>
-            <CardContent>
-                <ContentLabel>URL</ContentLabel>
-                <ContentValue>{
-                    new URL(request.url, `${request.protocol}://${request.hostname}`).toString()
-                }</ContentValue>
+    @observable
+    private responseContentType: string | undefined;
 
-                <ContentLabel>Headers</ContentLabel>
-                <ContentValue>
-                    <HeaderDetails headers={request.headers} />
-                </ContentValue>
-            </CardContent>
-        </Card>);
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            if (!this.props.exchange) {
+                this.setRequestContentType(undefined);
+                this.setResponseContentType(undefined);
+                return;
+            }
 
-        const requestBody = get(request, 'body', 'text');
-        if (requestBody) {
-            cards.push(<Card tabIndex={0} key='requestBody' direction='right'>
-                <EditorController
-                    contentType={request.headers['content-type']}
-                    content={requestBody}
-                >
-                    { ({ editor, contentTypeSelector, lineCount }) => <>
-                        <header>
-                            <Pill>{ getReadableSize(utf8.encode(requestBody).length) }</Pill>
-                            { contentTypeSelector }
-                            <h1>
-                                Request body
-                            </h1>
-                        </header>
-                        <ExchangeBodyCardContent height={lineCount * 22}>
-                            { editor }
-                        </ExchangeBodyCardContent>
-                    </> }
-                </EditorController>
-            </Card>);
-        }
+            this.setRequestContentType(
+                this.requestContentType ||
+                this.props.exchange.request.headers['content-type']
+            );
 
-        if (response) {
-            cards.push(<Card tabIndex={0} key='response' direction='left'>
+            if (!this.props.exchange.response) return;
+
+            this.setResponseContentType(
+                this.responseContentType ||
+                this.props.exchange.response.headers['content-type']
+            );
+        }));
+    }
+
+    render() {
+        const { exchange } = this.props;
+        const cards: JSX.Element[] = [];
+
+        if (exchange) {
+            const { request, response } = exchange;
+
+            cards.push(<Card tabIndex={0} key='request' direction='right'>
                 <header>
-                    <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>
-                    <h1>Response</h1>
+                    <Pill color={getExchangeSummaryColour(exchange)}>{ request.method } { request.hostname }</Pill>
+                    <h1>Request</h1>
                 </header>
                 <CardContent>
-                    <ContentLabel>Status</ContentLabel>
-                    <ContentValue>
-                        {response.statusCode}: {response.statusMessage}
-                    </ContentValue>
+                    <ContentLabel>URL</ContentLabel>
+                    <ContentValue>{
+                        new URL(request.url, `${request.protocol}://${request.hostname}`).toString()
+                    }</ContentValue>
 
                     <ContentLabel>Headers</ContentLabel>
                     <ContentValue>
-                        <HeaderDetails headers={response.headers} />
+                        <HeaderDetails headers={request.headers} />
                     </ContentValue>
                 </CardContent>
             </Card>);
 
-            const responseBody = get(response, 'body', 'text');
-            if (responseBody) {
-                cards.push(<Card tabIndex={0} key='responseBody' direction='left'>
+            const requestBody = get(request, 'body', 'text');
+            if (requestBody) {
+                cards.push(<Card tabIndex={0} key='requestBody' direction='right'>
+                    <header>
+                        <Pill>{ getReadableSize(utf8.encode(requestBody).length) }</Pill>
+                        <ContentTypeSelector
+                            onChange={this.setRequestContentType}
+                            contentType={this.requestContentType!}
+                        />
+                        <h1>Request body</h1>
+                    </header>
                     <EditorController
-                        contentType={response.headers['content-type']}
-                        content={responseBody}
+                        contentType={this.requestContentType!}
+                        content={requestBody}
                     >
-                        { ({ editor, contentTypeSelector, lineCount }) => <>
-                            <header>
-                                <Pill>{ getReadableSize(utf8.encode(responseBody).length) }</Pill>
-                                { contentTypeSelector }
-                                <h1>
-                                    Response body
-                                </h1>
-                            </header>
+                        { ({ editor, lineCount }) => <>
                             <ExchangeBodyCardContent height={lineCount * 22}>
                                 { editor }
                             </ExchangeBodyCardContent>
@@ -183,19 +175,73 @@ export const ExchangeDetailsPane = observer(({ exchange }: {
                     </EditorController>
                 </Card>);
             }
+
+            if (response) {
+                cards.push(<Card tabIndex={0} key='response' direction='left'>
+                    <header>
+                        <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>
+                        <h1>Response</h1>
+                    </header>
+                    <CardContent>
+                        <ContentLabel>Status</ContentLabel>
+                        <ContentValue>
+                            {response.statusCode}: {response.statusMessage}
+                        </ContentValue>
+
+                        <ContentLabel>Headers</ContentLabel>
+                        <ContentValue>
+                            <HeaderDetails headers={response.headers} />
+                        </ContentValue>
+                    </CardContent>
+                </Card>);
+
+                const responseBody = get(response, 'body', 'text');
+                if (responseBody) {
+                    cards.push(<Card tabIndex={0} key='responseBody' direction='left'>
+                        <header>
+                            <Pill>{ getReadableSize(utf8.encode(responseBody).length) }</Pill>
+                            <ContentTypeSelector
+                                onChange={this.setResponseContentType}
+                                contentType={this.responseContentType!}
+                            />
+                            <h1>Response body</h1>
+                        </header>
+                        <EditorController
+                            contentType={this.responseContentType!}
+                            content={responseBody}
+                        >
+                            { ({ editor, lineCount }) => <>
+                                <ExchangeBodyCardContent height={lineCount * 22}>
+                                    { editor }
+                                </ExchangeBodyCardContent>
+                            </> }
+                        </EditorController>
+                    </Card>);
+                }
+            }
+        } else {
+            cards.push(
+                <EmptyState
+                    key='empty'
+                    tabIndex={0}
+                    icon={['far', 'arrow-left']}
+                    message='Select some requests to see their details.'
+                />
+            );
         }
-    } else {
-        cards.push(
-            <EmptyState
-                key='empty'
-                tabIndex={0}
-                icon={['far', 'arrow-left']}
-                message='Select some requests to see their details.'
-            />
-        );
+
+        return <ExchangeDetailsContainer>
+            {cards}
+        </ExchangeDetailsContainer>;
     }
 
-    return <ExchangeDetailsContainer>
-        {cards}
-    </ExchangeDetailsContainer>;
-});
+    @action.bound
+    setRequestContentType(contentType: string | undefined) {
+        this.requestContentType = contentType && contentType.split(';')[0];
+    }
+
+    @action.bound
+    setResponseContentType(contentType: string | undefined) {
+        this.responseContentType = contentType && contentType.split(';')[0];
+    }
+};

@@ -11,13 +11,12 @@ import { BaseEditor } from './base-editor';
 
 interface EditorBuildArgs {
     editor: React.ReactNode;
-    contentTypeSelector: React.ReactNode;
     lineCount: number;
 };
 
 interface EditorControllerProps {
     content: string;
-    contentType?: string;
+    contentType: string;
     children: (args: EditorBuildArgs) => React.ReactNode;
 
     options?: monacoEditor.editor.IEditorConstructionOptions;
@@ -38,26 +37,16 @@ const ContentTypes = {
 export class EditorController extends React.Component<EditorControllerProps> {
 
     @observable lineCount: number;
-    @observable selectedContentType: string;
 
     constructor(props: EditorControllerProps) {
         super(props);
 
-        this.selectedContentType = ContentTypes[props.contentType!] ?
-            props.contentType! : 'text/plain',
         this.lineCount = this.props.content.split('\n').length;
     }
 
     @action.bound
     updateLineCount(newLineCount: number) {
         this.lineCount = newLineCount;
-    }
-
-    @action.bound
-    setContentType(changeEvent: React.ChangeEvent<HTMLSelectElement>) {
-        let newContentType = changeEvent.target.value;
-
-        this.selectedContentType = newContentType;
     }
 
     render() {
@@ -82,15 +71,7 @@ export class EditorController extends React.Component<EditorControllerProps> {
             wordWrap: 'on'
         });
 
-        const contentTypeSelector = <select onChange={this.setContentType} value={this.selectedContentType}>
-            { _.map(ContentTypes, ((typeConfig, contentType) => (
-                <option key={contentType} value={contentType}>
-                    { typeConfig.name }
-                </option>
-            ))) }
-        </select>;
-
-        const EditorClass = ContentTypes[this.selectedContentType].editor;
+        const EditorClass = ContentTypes[this.props.contentType].editor;
 
         const editor = <EditorClass
             onChange={this.props.onChange}
@@ -102,7 +83,6 @@ export class EditorController extends React.Component<EditorControllerProps> {
 
         return renderer({
             editor,
-            contentTypeSelector,
             lineCount: this.lineCount
         });
     }

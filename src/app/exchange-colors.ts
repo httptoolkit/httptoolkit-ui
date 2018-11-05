@@ -1,4 +1,4 @@
-import { HttpExchange } from "../model/store";
+import { HttpExchange } from "./model/store";
 
 export function getExchangeSummaryColour(exchange: HttpExchange) {
     if (exchange.request.method === 'POST') {

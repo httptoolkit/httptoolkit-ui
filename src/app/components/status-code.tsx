@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { styled, FontAwesomeIcon } from '../styles'
-import { getStatusColor } from './exchange-colors';
+import { getStatusColor } from '../exchange-colors';
 
 export const StatusCode = styled((props: {
     status: undefined | number,

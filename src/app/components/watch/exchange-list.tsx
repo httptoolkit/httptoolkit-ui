@@ -8,7 +8,7 @@ import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 import { styled, FontAwesomeIcon } from '../../styles'
 
 import { HttpExchange } from '../../model/store';
-import { getExchangeSummaryColour } from '../exchange-colors';
+import { getExchangeSummaryColour } from '../../exchange-colors';
 
 import { EmptyState } from '../empty-state';
 import { StatusCode } from '../status-code';
