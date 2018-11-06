@@ -58,8 +58,8 @@ export = <Webpack.Configuration> {
                 'yaml'
             ]
         }),
-        new Webpack.EnvironmentPlugin([
-            'SENTRY_DSN'
-        ])
+        new Webpack.EnvironmentPlugin({
+            'SENTRY_DSN': null
+        })
     ],
 };
