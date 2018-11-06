@@ -71,7 +71,10 @@ export class EditorController extends React.Component<EditorControllerProps> {
             wordWrap: 'on'
         });
 
-        const EditorClass = ContentTypes[this.props.contentType].editor;
+        const contentType = ContentTypes[this.props.contentType] ||
+            ContentTypes['text/plain'];
+
+        const EditorClass = contentType.editor;
 
         const editor = <EditorClass
             onChange={this.props.onChange}
