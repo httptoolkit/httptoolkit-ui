@@ -5,7 +5,8 @@ import { observable, action } from 'mobx';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
-import { styled, FontAwesomeIcon } from '../../styles'
+import { styled } from '../../styles'
+import { FontAwesomeIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/store';
 import { getExchangeSummaryColour } from '../../exchange-colors';
@@ -109,6 +110,12 @@ const ListContainer = styled.div`
         &.selected {
             background-color: ${p => p.theme.popBackground};
             font-weight: bold;
+        }
+    }
+
+    &:focus-within {
+        .ReactVirtualized__Table__row.selected {
+            color: ${p => p.theme.popColor};
         }
     }
 

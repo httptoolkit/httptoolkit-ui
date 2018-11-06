@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as UserAgent from 'ua-parser-js';
 
-import { Icons, IconProps } from '../styles';
+import { Icons, IconProps } from '../icons';
 
 export interface TrafficSource {
     ua: string;

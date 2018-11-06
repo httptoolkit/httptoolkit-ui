@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled, FontAwesomeIcon } from '../../styles'
+import { styled } from '../../styles'
+import { FontAwesomeIcon } from '../../icons';
 
 export const ClearArrayButton = styled(observer((props: {
     className?: string,

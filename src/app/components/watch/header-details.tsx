@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import styled, { css } from 'styled-components';
+import { styled, css } from '../../styles';
 
 const Cell = css`
     padding: 0 10px 5px 0;

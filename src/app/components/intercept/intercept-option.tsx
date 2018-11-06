@@ -2,7 +2,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled, FontAwesomeIcon } from '../../styles';
+import { styled } from '../../styles';
+import { FontAwesomeIcon } from '../../icons';
+
 import { LittleCard } from '../card';
 import { InterceptorUIConfig } from './intercept-page';
 

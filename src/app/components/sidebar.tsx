@@ -1,7 +1,8 @@
 import * as React from 'react';
 
 import * as logo from '../images/logo.png';
-import { styled, css, FontAwesomeIcon, Theme } from '../styles';
+import { styled, css, Theme } from '../styles';
+import { FontAwesomeIcon } from '../icons';
 
 interface SidebarProps {
     className?: string;
@@ -83,5 +84,5 @@ export const Sidebar = styled((props: SidebarProps) =>
     box-sizing: border-box;
     box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
-    font-size: ${p => p.theme.fontSize};
+    font-size: ${p => p.theme.textSize};
 `;

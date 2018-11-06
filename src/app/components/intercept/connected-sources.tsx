@@ -1,10 +1,11 @@
 import * as React from 'react';
 
-import { styled, FontAwesomeIcon } from '../../styles';
+import { styled } from '../../styles';
 import { TrafficSource } from '../../model/sources';
 
 import { BigCard } from "../card";
 import { EmptyState } from '../empty-state';
+import { FontAwesomeIcon } from '../../icons';
 
 const ConnectedSource = styled.div`
     &:not(:last-child) {

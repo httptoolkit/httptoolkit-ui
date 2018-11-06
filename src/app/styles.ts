@@ -1,63 +1,7 @@
-import styled, {
-  injectGlobal,
-  css,
-  keyframes,
-  ThemeProvider
-} from 'styled-components';
+import * as styledComponents from 'styled-components';
+import { ThemeProps } from 'styled-components';
 
 import reset from 'styled-reset'
-
-// Import required FA icons:
-import { library } from '@fortawesome/fontawesome-svg-core';
-
-import { faSpinner } from '@fortawesome/pro-light-svg-icons/faSpinner';
-import { faSpinnerThird } from '@fortawesome/pro-regular-svg-icons/faSpinnerThird';
-import { faTrashAlt } from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
-import { faArrowLeft } from '@fortawesome/pro-regular-svg-icons/faArrowLeft';
-import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
-import { faPlug } from '@fortawesome/free-solid-svg-icons/faPlug';
-import { faNetworkWired } from '@fortawesome/free-solid-svg-icons/faNetworkWired';
-import { faDesktop } from '@fortawesome/free-solid-svg-icons/faDesktop';
-import { faQuestion } from '@fortawesome/free-solid-svg-icons/faQuestion';
-import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
-
-import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
-import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
-import { faDocker } from '@fortawesome/free-brands-svg-icons/faDocker';
-
-library.add(
-    faArrowLeft,
-    faSpinnerThird,
-    faSpinner,
-    faTrashAlt,
-    faSearch,
-    faPlug,
-    faNetworkWired,
-    faDesktop,
-    faQuestion,
-    faTimes,
-    faChrome,
-    faFirefox,
-    faDocker,
-);
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-
-export interface IconProps {
-    icon: string[];
-    color: string;
-}
-
-export const Icons = {
-    Chrome: { icon: ['fab', 'chrome'], color: '#1da462' },
-    Firefox: { icon: ['fab', 'firefox'], color: '#e66000' },
-    Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
-    Network: { icon: ['fas', 'network-wired'], color: '#888' },
-    Desktop: { icon: ['fas', 'desktop'], color: '#888' },
-    Unknown: { icon: ['fas', 'question'], color: '#888' }
-};
-
-export { styled, css, injectGlobal, keyframes, ThemeProvider, FontAwesomeIcon };
 
 const fontSizes = {
     textSize: '16px',
@@ -93,10 +37,27 @@ export const darkTheme = {
     ...fontSizes
 };
 
-export type Theme = typeof lightTheme;
+export type Theme = typeof lightTheme | typeof darkTheme;
 
-export function injectGlobalStyles(theme: Theme) {
-    injectGlobal`
+const {
+    default: styled,
+    css,
+    createGlobalStyle,
+    keyframes,
+    ThemeProvider,
+} = styledComponents as styledComponents.ThemedStyledComponentsModule<Theme>;
+
+export {
+    styled,
+    css,
+    createGlobalStyle,
+    keyframes,
+    ThemeProvider,
+    ThemeProps
+};
+
+export function createGlobalStyles(theme: Theme) {
+    return createGlobalStyle`
         ${reset};
 
         /* latin-ext */
@@ -137,8 +98,8 @@ export function injectGlobalStyles(theme: Theme) {
 
         body {
             font-family: Lato;
-            color: ${theme.mainColor};
-            background-color: ${theme.containerBackground};
+            color: ${p => p.theme.mainColor};
+            background-color: ${p => p.theme.containerBackground};
         }
 
         input {

@@ -1,23 +1,26 @@
 import * as React from 'react';
-import { styled } from '../styles';
+import { observable, action } from 'mobx';
+import { observer } from 'mobx-react';
 
-const Card = styled((props: {
-    disabled?: boolean,
-    onClick?: (e: React.MouseEvent) => void
-} & React.HTMLAttributes<HTMLElement>) =>
-    <section
-        {...props}
-        onClick={!props.disabled ? props.onClick : undefined}
-        tabIndex={props.disabled ? -1 : props.tabIndex}
-    />
-)`
+import { styled, Theme, ThemeProps } from '../styles';
+import { FontAwesomeIcon } from '../icons';
+
+interface CardProps extends React.HTMLAttributes<HTMLElement> {
+    disabled?: boolean;
+}
+
+const Card = styled.section.attrs({
+    onClick: (p: CardProps) => !p.disabled ? p.onClick : undefined,
+    onKeyDown: (p: CardProps) => !p.disabled ? p.onKeyDown : undefined,
+    tabIndex: (p: CardProps) => !p.disabled ? p.tabIndex : -1
+})`
     box-sizing: border-box;
 
-    ${p => p.disabled && `
+    ${(p: CardProps) => p.disabled && `
         opacity: 0.5;
     `}
 
-    ${p => !p.disabled && p.onClick && `
+    ${(p: CardProps) => !p.disabled && p.onClick && `
         cursor: pointer;
 
         &:active {
@@ -47,7 +50,7 @@ const Card = styled((props: {
 export const LittleCard = styled(Card)`
     padding: 15px;
 
-    > header, > h1 {
+    > header:not(:last-child), > h1:not(:last-child) {
         margin-bottom: 15px;
     }
 `;
@@ -59,14 +62,91 @@ export const MediumCard = styled(Card)`
         text-transform: uppercase;
         text-align: right;
         color: ${p => p.theme.containerWatermark};
-        margin-bottom: 20px;
+
+        &:not(:last-child) {
+            margin-bottom: 20px;
+        }
     }
 `;
 
 export const BigCard = styled(MediumCard)`
     padding: 30px;
 
-    > header, > h1 {
+    > header:not(:last-child), > h1:not(:last-child) {
         margin-bottom: 30px;
     }
 `;
+
+interface CollapseIconProps extends ThemeProps<Theme> {
+    collapsed: boolean;
+}
+
+export const CollapseIcon = styled(FontAwesomeIcon).attrs<{}>({
+    icon: (p: CollapseIconProps) => ([
+        'fas',
+        p.collapsed ? 'chevron-down' : 'chevron-up'
+    ])
+})`
+    cursor: pointer;
+    user-select: none;
+
+    padding: 4px 10px;
+    margin: 0 -10px 0 5px;
+
+    &:hover {
+        color: ${p => p.theme.popColor};
+    }
+`;
+
+@observer
+export class CollapsibleCard extends React.Component<
+    React.HTMLAttributes<HTMLDivElement>
+> {
+
+    private cardRef = React.createRef();
+    private iconRef = React.createRef();
+
+    @observable
+    private collapsed: boolean = false;
+
+    render() {
+        const { children } = this.props;
+
+        return <MediumCard
+            {...this.props}
+            ref={this.cardRef as any} /* https://github.com/DefinitelyTyped/DefinitelyTyped/issues/28884 */
+            onKeyDown={this.onKeyDown}
+        >{
+            React.Children.map(children, (child: React.ReactElement<any>, i) =>
+                i === 0 ?
+                    React.cloneElement(child, { },
+                        React.Children.toArray(child.props.children).concat(
+                            <CollapseIcon
+                                key='collapse-icon'
+                                ref={this.iconRef as any}
+                                collapsed={this.collapsed}
+                                onClick={this.toggleCollapsed}
+                            />
+                        )
+                    )
+                    : !this.collapsed && child
+            )
+        }</MediumCard>;
+    }
+
+    onKeyDown = (event: React.KeyboardEvent) => {
+        if (event.target !== this.cardRef.current && event.target !== this.iconRef.current) {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            this.toggleCollapsed();
+        }
+    }
+
+    @action.bound
+    toggleCollapsed() {
+        this.collapsed = !this.collapsed;
+    }
+
+}

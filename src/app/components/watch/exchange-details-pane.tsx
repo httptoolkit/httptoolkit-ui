@@ -10,9 +10,9 @@ import { HttpExchange } from '../../model/store';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
 
 import { Pill } from '../pill';
-import { MediumCard } from '../card'
+import { CollapsibleCard, CollapseIcon } from '../card'
 import { EmptyState } from '../empty-state';
-import { HeaderDetails } from '../header-details';
+import { HeaderDetails } from './header-details';
 import { EditorController } from '../editor/editor-controller';
 import { ContentTypeSelector } from '../editor/content-type-selector';
 
@@ -52,13 +52,19 @@ const cardDirectionCss = (direction: string) => direction === 'right' ? css`
     border-left: solid 5px ${p => p.theme.containerBorder};
 `;
 
-const Card = styled(MediumCard)`
+const Card = styled(CollapsibleCard)`
     margin: 20px;
     word-break: break-all;
 
     ${(p: { direction: 'left' | 'right' }) => cardDirectionCss(p.direction)};
 
-    &:focus, &:focus-within {
+    &:focus {
+        ${CollapseIcon} {
+            color: ${p => p.theme.popColor};
+        }
+    }
+
+    &:focus-within {
         header h1 {
             color: ${p => p.theme.popColor};
         }
@@ -136,7 +142,13 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
 
             cards.push(<Card tabIndex={0} key='request' direction='right'>
                 <header>
-                    <Pill color={getExchangeSummaryColour(exchange)}>{ request.method } { request.hostname }</Pill>
+                    <Pill color={getExchangeSummaryColour(exchange)}>
+                        { request.method } {
+                            request.hostname
+                            // Add some tiny spaces to split up parts of the hostname
+                            .replace(/\./g, '\u2008.\u2008')
+                        }
+                    </Pill>
                     <h1>Request</h1>
                 </header>
                 <CardContent>

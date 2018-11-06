@@ -7,15 +7,17 @@ export const Pill = styled.div`
     margin: 0 8px;
     border-radius: 4px;
 
+    text-transform: none;
+
     font-weight: bold;
 
     word-spacing: 4px;
 
     color: ${(p: { color?: string, theme?: Theme }) =>
-        p.color || p.theme!.containerWatermark
+        p.color || p.theme!.containerBorder
     };
 
     background-color: ${(p: { color?: string, theme?: Theme }) =>
-        polished.lighten(0.2, polished.rgba(p.color || p.theme!.containerWatermark, 0.2))
+        polished.lighten(0.2, polished.rgba(p.color || p.theme!.containerBorder, 0.2))
     };
 `;

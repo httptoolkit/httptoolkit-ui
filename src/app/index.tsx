@@ -1,16 +1,17 @@
 document.dispatchEvent(new Event('load:executing'));
 
+import { ErrorBoundary, initSentry } from './components/error-boundary';
+initSentry(process.env.SENTRY_DSN);
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { injectGlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
+import { createGlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
 import { Store } from './model/store';
 import { Provider } from 'mobx-react';
-import { ErrorBoundary, initSentry } from './components/error-boundary';
 
-injectGlobalStyles(theme);
-initSentry(process.env.SENTRY_DSN);
+const GlobalStyles = createGlobalStyles(theme);
 
 const APP_ELEMENT_SELECTOR = '#app';
 
@@ -23,6 +24,7 @@ window.onload = async function startApp() {
         <Provider store={store}>
             <ThemeProvider theme={theme}>
                 <ErrorBoundary>
+                    <GlobalStyles />
                     <App />
                 </ErrorBoundary>
             </ThemeProvider>

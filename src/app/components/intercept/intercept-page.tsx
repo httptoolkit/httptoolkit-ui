@@ -4,7 +4,8 @@ import * as React from 'react';
 import { observable, action, flow } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { styled, FontAwesomeIcon, Icons, IconProps } from '../../styles';
+import { styled } from '../../styles';
+import { FontAwesomeIcon, Icons, IconProps } from '../../icons';
 
 import { Store, ServerStatus } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
