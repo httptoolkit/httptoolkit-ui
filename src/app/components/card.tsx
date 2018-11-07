@@ -78,15 +78,18 @@ export const BigCard = styled(MediumCard)`
 `;
 
 interface CollapseIconProps extends ThemeProps<Theme> {
+    className?: string;
+    onClick: () => void;
     collapsed: boolean;
 }
 
-export const CollapseIcon = styled(FontAwesomeIcon).attrs<{}>({
-    icon: (p: CollapseIconProps) => ([
-        'fas',
-        p.collapsed ? 'chevron-down' : 'chevron-up'
-    ])
-})`
+export const CollapseIcon = styled((props: CollapseIconProps) =>
+    <FontAwesomeIcon
+        className={props.className}
+        icon={['fas', props.collapsed ? 'chevron-down' : 'chevron-up']}
+        onClick={props.onClick}
+    />
+)`
     cursor: pointer;
     user-select: none;
 
@@ -104,7 +107,6 @@ export class CollapsibleCard extends React.Component<
 > {
 
     private cardRef = React.createRef();
-    private iconRef = React.createRef();
 
     @observable
     private collapsed: boolean = false;
@@ -123,7 +125,6 @@ export class CollapsibleCard extends React.Component<
                         React.Children.toArray(child.props.children).concat(
                             <CollapseIcon
                                 key='collapse-icon'
-                                ref={this.iconRef as any}
                                 collapsed={this.collapsed}
                                 onClick={this.toggleCollapsed}
                             />
@@ -135,7 +136,7 @@ export class CollapsibleCard extends React.Component<
     }
 
     onKeyDown = (event: React.KeyboardEvent) => {
-        if (event.target !== this.cardRef.current && event.target !== this.iconRef.current) {
+        if (event.target !== this.cardRef.current) {
             return;
         }
 
