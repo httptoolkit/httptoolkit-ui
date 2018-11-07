@@ -6,6 +6,7 @@ import { getLocal, Mockttp } from 'mockttp';
 import { CompletedRequest, CompletedResponse } from '../types';
 import { parseSource, TrafficSource } from './sources';
 import { getInterceptors, activateInterceptor } from './htk-client';
+import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
 
@@ -15,6 +16,7 @@ export interface HttpExchange {
         source: TrafficSource
     };
     response?: CompletedResponse;
+    category: ExchangeCategory;
 };
 
 export interface Interceptor {
@@ -108,13 +110,18 @@ export class Store {
             response: undefined
         }, {}, { deep: false });
 
-        this.exchanges.push(newExchange);
+        const exchangeWithCategory = Object.assign(newExchange, {
+            category: <ExchangeCategory> getExchangeCategory(newExchange)
+        });
+
+        this.exchanges.push(exchangeWithCategory);
     }
 
     @action
     private setResponse(response: CompletedResponse) {
         const exchange = _.find(this.exchanges, (exchange) => exchange.request.id === response.id)!;
         exchange.response = response;
+        exchange.category = getExchangeCategory(exchange);
     }
 
     @action.bound

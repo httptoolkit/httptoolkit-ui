@@ -2,16 +2,17 @@ import * as _ from 'lodash';
 
 import { HttpExchange } from "./model/store";
 
-type CompletedExchange = Required<HttpExchange>;
+type UncategorizedExchange = Pick<HttpExchange, Exclude<keyof HttpExchange, 'category'>>;
+type CompletedExchange = Required<UncategorizedExchange>;
 
 // Simplify the content type as much as we can, without throwing any errors
 const getBaseContentType = (requestOrResponse: { headers: { [key: string]: string } }) =>
     (requestOrResponse.headers['content-type'] || '').split(';')[0].split('+')[0];
 
-const isCompletedExchange = (exchange: HttpExchange): exchange is CompletedExchange =>
+const isCompletedExchange = (exchange: UncategorizedExchange): exchange is CompletedExchange =>
     !!exchange.response;
 
-const isMutatativeExchange = (exchange: HttpExchange) => _.includes([
+const isMutatativeExchange = (exchange: UncategorizedExchange) => _.includes([
     'POST',
     'PATCH',
     'PUT',
@@ -62,31 +63,56 @@ const isFontExchange = (exchange: CompletedExchange) =>
         'application/x-font-opentype',
     ], getBaseContentType(exchange.response));
 
-export function getExchangeSummaryColour(exchange: HttpExchange): string {
+export function getExchangeCategory(exchange: UncategorizedExchange) {
     if (!isCompletedExchange(exchange)) {
         if (isMutatativeExchange(exchange)) {
-            return '#ce3939'; // red
+            return 'mutative'; // red
         } else {
-            return '#000'; // black
+            return 'incomplete';
         }
     } else if (isImageExchange(exchange)) {
-        return '#4caf7d'; // green
+        return 'image';
     } else if (isJSExchange(exchange)) {
-        return '#ff8c38'; // orange
+        return 'js';
     } else if (isCSSExchange(exchange)) {
-        return '#e9f05b'; // yellow
+        return 'css';
     } else if (isHTMLExchange(exchange)) {
-        return '#2fb4e0'; // light blue
+        return 'html';
     } else if (isFontExchange(exchange)) {
-        return '#6e40aa'; // dark blue
+        return 'font';
     } else if (isDataExchange(exchange)) {
-        return '#6e40aa'; // purple
+        return 'data';
     } else if (isMutatativeExchange(exchange)) {
-        return '#ce3939'; // red
+        return 'mutative';
     } else {
-        return '#888'; // grey
+        return 'unknown';
     }
 };
+
+export type ExchangeCategory = ReturnType<typeof getExchangeCategory>;
+
+export function getExchangeSummaryColour(exchange: HttpExchange): string {
+    switch (exchange.category) {
+        case 'incomplete':
+            return '#000'; // black
+        case 'mutative':
+            return '#ce3939'; // red
+        case 'image':
+            return '#4caf7d'; // green
+        case 'js':
+            return '#ff8c38'; // orange
+        case 'css':
+            return '#e9f05b'; // yellow
+        case 'html':
+            return '#2fb4e0'; // light blue
+        case 'font':
+            return '#6e40aa'; // dark blue
+        case 'data':
+            return '#6e40aa'; // purple
+        case 'unknown':
+            return '#888'; // grey
+    }
+}
 
 export function getStatusColor(status: undefined | number): string {
     if (!status || status < 100 || status >= 600) {
