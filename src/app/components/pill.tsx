@@ -13,6 +13,8 @@ export const Pill = styled.div`
 
     word-spacing: 4px;
 
+    transition: color 0.2s;
+
     color: ${(p: { color?: string, theme?: Theme }) =>
         p.color || p.theme!.containerBorder
     };
