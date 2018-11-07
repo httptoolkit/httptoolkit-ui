@@ -40,6 +40,9 @@ export class Store {
 
     private server: Mockttp;
 
+    private requestQueue: CompletedRequest[] = [];
+    private responseQueue: CompletedResponse[] = [];
+
     @observable serverStatus: ServerStatus = ServerStatus.NotStarted;
     readonly exchanges = observable.array<HttpExchange>([], { deep: false });
 
@@ -77,8 +80,20 @@ export class Store {
 
             this.serverStatus = ServerStatus.Connected;
 
-            this.server.on('request', (req) => this.addRequest(req));
-            this.server.on('response', (res) => this.setResponse(res));
+            this.server.on('request', (req) => {
+                if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+                    requestAnimationFrame(this.flushQueuedUpdates);
+                }
+
+                this.requestQueue.push(req);
+            });
+            this.server.on('response', (res) => {
+                if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+                    requestAnimationFrame(this.flushQueuedUpdates);
+                }
+
+                this.responseQueue.push(res);
+            });
 
             window.addEventListener('beforeunload', () => this.server.stop().catch(() => {}));
         } catch (err) {
@@ -91,6 +106,19 @@ export class Store {
             }
         }
     });
+
+    @action.bound
+    private flushQueuedUpdates() {
+        // We batch request updates until here. This runs in a mobx transaction, and
+        // on request animation frame, so batches get larger and cheaper if
+        // the frame rate starts to drop.
+
+        this.requestQueue.forEach((req) => this.addRequest(req));
+        this.requestQueue = [];
+
+        this.responseQueue.forEach((res) => this.setResponse(res));
+        this.responseQueue = [];
+    }
 
     async refreshInterceptors() {
         const interceptors = await getInterceptors(this.server.port);
