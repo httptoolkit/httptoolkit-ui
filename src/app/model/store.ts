@@ -130,19 +130,19 @@ export class Store {
 
     @action
     private addRequest(request: CompletedRequest) {
-        const newExchange = observable.object({
+        const newExchange = {
             request: Object.assign(request, {
                 parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`),
                 source: parseSource(request.headers['user-agent'])
             }),
             response: undefined
-        }, {}, { deep: false });
+        };
 
         const exchangeWithCategory = Object.assign(newExchange, {
             category: <ExchangeCategory> getExchangeCategory(newExchange)
         });
 
-        this.exchanges.push(exchangeWithCategory);
+        this.exchanges.push(observable.object(exchangeWithCategory, {}, { deep: false }));
     }
 
     @action

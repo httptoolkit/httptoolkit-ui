@@ -9,7 +9,7 @@ import { styled } from '../../styles'
 import { FontAwesomeIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/store';
-import { getExchangeSummaryColour } from '../../exchange-colors';
+import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-colors';
 
 import { EmptyState } from '../empty-state';
 import { StatusCode } from '../status-code';
@@ -18,7 +18,7 @@ import { TableFooter } from './exchange-list-footer';
 
 const RowMarker = styled.div`
     transition: color 0.2s;
-    color: ${(p: { exchange: HttpExchange }) => getExchangeSummaryColour(p.exchange)};
+    color: ${(p: { category: ExchangeCategory }) => getExchangeSummaryColour(p.category)};
 
     background-color: currentColor;
 
@@ -226,7 +226,9 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 className="marker"
                                 headerClassName="marker"
                                 headerRenderer={() => <MarkerHeader />}
-                                cellRenderer={({ rowData }) => <RowMarker exchange={rowData} />}
+                                cellRenderer={({ rowData }: { rowData: HttpExchange }) => <Observer>{() =>
+                                    <RowMarker category={rowData.category} />
+                                }</Observer>}
                                 width={10}
                                 flexShrink={0}
                                 flexGrow={0}

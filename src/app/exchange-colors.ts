@@ -91,8 +91,14 @@ export function getExchangeCategory(exchange: UncategorizedExchange) {
 
 export type ExchangeCategory = ReturnType<typeof getExchangeCategory>;
 
-export function getExchangeSummaryColour(exchange: HttpExchange): string {
-    switch (exchange.category) {
+const isExchange = (maybeExchange: any): maybeExchange is HttpExchange =>
+    maybeExchange.request && maybeExchange.category;
+
+export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | ExchangeCategory): string {
+    const category = isExchange(exchangeOrCategory) ?
+        exchangeOrCategory.category : exchangeOrCategory;
+
+    switch (category) {
         case 'incomplete':
             return '#000'; // black
         case 'mutative':
