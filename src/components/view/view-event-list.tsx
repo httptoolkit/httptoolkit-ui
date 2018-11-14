@@ -4,7 +4,8 @@ import { get } from 'typesafe-get';
 import { observer, Observer } from 'mobx-react';
 import { observable, action, computed } from 'mobx';
 
-import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
+import AutoSizer from 'react-virtualized-auto-sizer';
+import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
 import { FontAwesomeIcon } from '../../icons';
@@ -17,22 +18,6 @@ import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
 import { TableFooter, HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
-
-const RowMarker = styled.div`
-    transition: color 0.1s;
-    color: ${(p: { category: ExchangeCategory }) => getExchangeSummaryColour(p.category)};
-
-    background-color: currentColor;
-
-    width: 5px;
-    height: 100%;
-
-    border-left: 5px solid ${p => p.theme.containerBackground};
-`;
-
-const MarkerHeader = styled.div`
-    width: 10px;
-`;
 
 const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
@@ -56,6 +41,10 @@ const ListContainer = styled.div`
     width: 100%;
     height: 100%;
 
+    /* For unclear reasons, we need -4 to make the autosizer size this correctly: */
+    padding-bottom: ${HEADER_FOOTER_HEIGHT - 4}px;
+    box-sizing: border-box;
+
     font-size: ${p => p.theme.textSize};
 
     &::after {
@@ -68,101 +57,142 @@ const ListContainer = styled.div`
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
         pointer-events: none;
     }
+`;
 
-    .ReactVirtualized__Table__headerRow {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
+const Column = styled.div`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 3px 0;
+`;
 
-        background-color: ${props => props.theme.mainBackground};
-        color: ${props => props.theme.mainColor};
+const RowMarker = styled(Column)`
+    transition: color 0.2s;
+    color: ${(p: { category: ExchangeCategory }) => getExchangeSummaryColour(p.category)};
+
+    background-color: currentColor;
+
+    flex-basis: 5px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    height: 100%;
+    padding: 0;
+
+    border-left: 5px solid ${p => p.theme.containerBackground};
+`;
+
+const MarkerHeader = styled.div`
+    flex-basis: 10px;
+    flex-shrink: 0;
+`;
+
+const Method = styled(Column)`
+    flex-basis: 71px;
+    flex-shrink: 0;
+    flex-grow: 0;
+`;
+
+const Status = styled(Column)`
+    flex-basis: 45px;
+    flex-shrink: 0;
+    flex-grow: 0;
+`;
+
+const Source = styled(Column)`
+    flex-basis: 49px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    text-align: center;
+`;
+
+const Host = styled(Column)`
+    flex-shrink: 1;
+    flex-grow: 0;
+    flex-basis: 500px;
+`;
+
+const PathAndQuery = styled(Column)`
+    flex-shrink: 1;
+    flex-grow: 0;
+    flex-basis: 1000px;
+`;
+
+const EventListRow = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    user-select: none;
+    cursor: pointer;
+
+    &.selected {
+        background-color: ${p => p.theme.highlightBackground};
         font-weight: bold;
-
-        border-bottom: 1px solid ${props => props.theme.containerBorder};
-        box-shadow: 0 0 30px rgba(0,0,0,0.2);
-
-        /* React-Virtualized adds padding when the scrollbar appears (on the
-           table and header). Without this, the header pops out of the table. */
-        box-sizing: border-box;
     }
 
-    .ReactVirtualized__Table__headerTruncatedText {
-        display: inline-block;
-        max-width: 100%;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
+    &:focus {
+        outline: thin dotted ${p => p.theme.popColor};
+    }
+`;
+
+const ExchangeListRow = styled(EventListRow)`
+    background-color: ${props => props.theme.mainBackground};
+
+    border-width: 2px 0;
+    border-style: solid;
+    border-color: transparent;
+    background-clip: padding-box;
+    box-sizing: border-box;
+
+    &:hover ${RowMarker}, &.selected ${RowMarker} {
+        border-color: currentColor;
     }
 
-    .marker {
-        height: 100%;
-        margin-left: 0px;
-        margin-right: 5px;
+    > * {
+        margin-right: 10px;
+    }
+`;
+
+const FailedRequestListRow = styled(EventListRow)`
+    height: 28px !important; /* Important required to override react-window's style attr */
+    margin: 2px 0;
+
+    font-style: italic;
+    justify-content: center;
+
+    opacity: 0.7;
+
+    &:hover {
+        opacity: 1;
     }
 
-    .source > svg {
-        display: block;
-        margin: 0 auto;
+    &.selected {
+        opacity: 1;
+        color: ${p => p.theme.mainColor};
+        background-color: ${p => p.theme.mainBackground};
     }
+`;
 
-    .ReactVirtualized__Table__row {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
+export const TableHeader = styled.header`
+    height: 38px;
+    overflow: hidden;
+    width: 100%;
 
-        user-select: none;
-        cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 
-        &:focus {
-            outline: thin dotted ${p => p.theme.popColor};
-        }
+    background-color: ${props => props.theme.mainBackground};
+    color: ${props => props.theme.mainColor};
+    font-weight: bold;
 
-        &.selected {
-            font-weight: bold;
-        }
+    border-bottom: 1px solid ${props => props.theme.containerBorder};
+    box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
-        &.exchange-row {
-            background-color: ${props => props.theme.mainBackground};
+    padding-right: 18px;
+    box-sizing: border-box;
 
-            border-width: 2px 0;
-            border-style: solid;
-            border-color: transparent;
-            background-clip: padding-box;
-            box-sizing: border-box;
-
-            &:hover ${RowMarker}, &.selected ${RowMarker} {
-                border-color: currentColor;
-            }
-
-            &.selected {
-                color: ${p => p.theme.highlightColor};
-                background-color: ${p => p.theme.highlightBackground};
-            }
-        }
-
-        &.tls-failure-row {
-            height: 28px !important; /* Important required to override virtualized's style attr */
-            margin: 2px 0;
-
-            justify-content: center;
-            font-style: italic;
-
-            opacity: 0.7;
-
-            &:hover {
-                opacity: 1;
-            }
-
-            &.selected {
-                opacity: 1;
-                color: ${p => p.theme.mainColor};
-                background-color: ${p => p.theme.mainBackground};
-            }
-        }
-    }
-
-    .ReactVirtualized__Table__rowColumn,
-    .ReactVirtualized__Table__headerColumn {
+    > div {
         padding: 5px 0;
         margin-right: 10px;
         min-width: 0px;
@@ -171,20 +201,103 @@ const ListContainer = styled.div`
             margin-left: 0;
         }
     }
-
-    .ReactVirtualized__Table__rowColumn {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .ReactVirtualized__Grid__innerScrollContainer {
-        // Ensures that row outlines on the last row are visible
-        padding-bottom: 2px;
-    }
 `;
 
-const FailedRequestRow = (p: { failure: FailedTlsRequest }) =>
-    <div>
+interface EventRowProps extends ListChildComponentProps {
+    data: {
+        selectedEvent: CollectedEvent | undefined;
+        events: CollectedEvent[];
+    }
+}
+
+const EventRow = observer((props: EventRowProps) => {
+    const { index, style } = props;
+    const { events, selectedEvent } = props.data;
+    const event = events[index];
+
+    const isSelected = (selectedEvent === event);
+
+    if ('failureCause' in event) {
+        return <FailedRequestRow
+            index={index}
+            isSelected={isSelected}
+            style={style}
+            failure={event}
+        />;
+    } else {
+        return <ExchangeRow
+            index={index}
+            isSelected={isSelected}
+            style={style}
+            exchange={event}
+        />;
+    };
+});
+
+const ExchangeRow = observer(({
+    index,
+    isSelected,
+    style,
+    exchange: { id, category, request, response }
+}: {
+    index: number,
+    isSelected: boolean,
+    style: {},
+    exchange: HttpExchange
+}) =>
+    <ExchangeListRow
+        role="row"
+        aria-label='row'
+        aria-rowindex={index + 1}
+        data-event-id={id}
+        tabIndex={isSelected ? 0 : -1}
+
+        className={isSelected ? 'selected' : ''}
+        style={style}
+    >
+        <RowMarker category={category} />
+        <Method>{ request.method }</Method>
+        <Status>
+            { response === 'aborted'
+                ? <StatusCode
+                    status={'aborted'}
+                /> : <StatusCode
+                    status={get(response, 'statusCode')}
+                    message={get(response, 'statusMessage')}
+                /> }
+        </Status>
+        <Source>
+            <FontAwesomeIcon
+                title={request.source.summary}
+                {...request.source.icon}
+                fixedWidth={true}
+            />
+        </Source>
+        <Host>
+            { request.parsedUrl.host }
+        </Host>
+        <PathAndQuery>
+            { request.parsedUrl.pathname + request.parsedUrl.search }
+        </PathAndQuery>
+    </ExchangeListRow>
+);
+
+const FailedRequestRow = observer((p: {
+    index: number,
+    failure: FailedTlsRequest,
+    isSelected: boolean,
+    style: {}
+}) =>
+    <FailedRequestListRow
+        role="row"
+        aria-label='row'
+        aria-rowindex={p.index + 1}
+        data-event-id={p.failure.id}
+        tabIndex={p.isSelected ? 0 : -1}
+
+        className={p.isSelected ? 'selected' : ''}
+        style={p.style}
+    >
         {
             ({
                 'closed': 'Aborted ',
@@ -195,7 +308,8 @@ const FailedRequestRow = (p: { failure: FailedTlsRequest }) =>
             } as _.Dictionary<string>)[p.failure.failureCause]
         }
         connection to { p.failure.hostname || 'unknown domain' }
-    </div>
+    </FailedRequestListRow>
+);
 
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
@@ -209,6 +323,13 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @observable searchFilter: string | false = false;
 
+    @computed get listItemData(): EventRowProps['data'] {
+        return {
+            selectedEvent: this.props.selectedEvent,
+            events: this.filteredEvents
+        };
+    }
+
     @computed
     private get filteredEvents() {
         if (!this.searchFilter) return this.props.events;
@@ -219,12 +340,27 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         });
     }
 
-    private tableContainerRef: HTMLDivElement | null | undefined;
-    private tableRef: Table | null | undefined;
+    private listBodyRef = React.createRef<HTMLDivElement>();
+    private listRef = React.createRef<List>();
+
+    private KeyBoundListWindow = observer(
+        React.forwardRef<HTMLDivElement>(
+            (props: any, ref) => <section
+                {...props}
+                style={Object.assign({}, props.style, { 'overflowY': 'scroll' })}
+                ref={ref}
+
+                onFocus={this.focusSelectedEvent}
+                onKeyDown={this.onKeyDown}
+                onMouseDown={this.onListMouseDown}
+                tabIndex={this.props.selectedEvent != null ? -1 : 0}
+            />
+        )
+    );
 
     render() {
-        const { events, className, onClear, isPaused } = this.props;
-        const { selectedEventId, filteredEvents } = this;
+        const { events, onClear, isPaused } = this.props;
+        const { filteredEvents } = this;
 
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
@@ -236,213 +372,99 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 onClear={onClear}
             />
 
-            <AutoSizer>{({ height, width }) =>
-                <Observer>{() =>
-                    <div
-                        ref={(e) => this.tableContainerRef = e}
-                        onKeyDown={this.onKeyDown}
-                    >
-                        <Table
-                            ref={(table) => this.tableRef = table}
-                            className={className}
-                            height={height - (HEADER_FOOTER_HEIGHT + 2)} // Leave space for the footer
+            <TableHeader>
+                <MarkerHeader />
+                <Method>Method</Method>
+                <Status>Status</Status>
+                <Source>Source</Source>
+                <Host>Host</Host>
+                <PathAndQuery>Path and query</PathAndQuery>
+            </TableHeader>
+
+            {
+                events.length === 0
+                ? (isPaused
+                    ? <EmptyStateOverlay icon={['fas', 'pause']}>
+                        Interception is paused, resume it to collect intercepted requests
+                    </EmptyStateOverlay>
+                    : <EmptyStateOverlay icon={['fas', 'plug']}>
+                        Connect a client and intercept some requests, and they'll appear here
+                    </EmptyStateOverlay>
+                )
+
+                : filteredEvents.length === 0
+                ? <EmptyStateOverlay icon={['fas', 'question']}>
+                        No requests match this search filter{
+                            isPaused ? ' and interception is paused' : ''
+                        }
+                </EmptyStateOverlay>
+
+                : <AutoSizer>{({ height, width }) =>
+                    <Observer>{() =>
+                        <List
+                            innerRef={this.listBodyRef}
+                            outerElementType={this.KeyBoundListWindow}
+                            ref={this.listRef}
+
+                            height={height - 42} // Leave space for the footer
                             width={width}
-                            rowHeight={32}
-                            headerHeight={HEADER_FOOTER_HEIGHT}
-                            // Unset tabindex if a row is selected
-                            tabIndex={selectedEventId != null ? -1 : 0}
-                            rowCount={filteredEvents.length}
-                            rowGetter={({ index }) => filteredEvents[index]}
-                            onRowClick={({ rowData, index }) => {
-                                if (selectedEventId !== rowData.id) {
-                                    this.onEventSelected(index);
-                                } else {
-                                    this.onEventDeselected();
-                                }
-                            }}
-                            rowClassName={({ index }) => {
-                                const classes = [];
-                                const event = filteredEvents[index] || {};
-
-                                if (selectedEventId === event.id) {
-                                    classes.push('selected');
-                                }
-
-                                if ('request' in event) {
-                                    classes.push('exchange-row');
-                                } else {
-                                    classes.push('tls-failure-row');
-                                }
-
-                                return classes.join(' ');
-                            }}
-                            noRowsRenderer={() =>
-                                isPaused
-                                    ? <EmptyStateOverlay icon={['fas', 'pause']}>
-                                        Interception is paused, resume it to collect intercepted requests
-                                    </EmptyStateOverlay>
-                                    : <EmptyStateOverlay icon={['fas', 'plug']}>
-                                        Connect a client and intercept some requests, and they'll appear here
-                                    </EmptyStateOverlay>
-                            }
-                            rowRenderer={(({
-                                columns,
-                                className,
-                                style,
-                                onRowClick,
-                                index,
-                                rowData,
-                                key
-                            }: TableRowProps & { key: string, rowData: CollectedEvent }) =>
-                                <div
-                                    key={key}
-                                    aria-label='row'
-                                    aria-rowindex={index + 1}
-                                    tabIndex={selectedEventId === rowData.id ? 0 : -1}
-                                    data-event-id={rowData.id}
-
-                                    className={className}
-                                    role="row"
-                                    style={style}
-                                    onMouseDown={(event: React.MouseEvent) =>
-                                        onRowClick && onRowClick({ event, index, rowData })
-                                    }
-                                >
-                                    { 'request' in rowData
-                                        ? columns
-                                        : <FailedRequestRow failure={rowData} />
-                                    }
-                                </div>
-                            ) as any /* Required so we can hack the 'key' in here */}
+                            itemCount={filteredEvents.length}
+                            itemSize={32}
+                            itemData={this.listItemData}
                         >
-                            <Column
-                                label=""
-                                dataKey="marker"
-                                className="marker"
-                                headerClassName="marker"
-                                headerRenderer={() => <MarkerHeader />}
-                                cellRenderer={({ rowData }: { rowData: CollectedEvent }) =>
-                                    'category' in rowData
-                                        ? <Observer>{() => <RowMarker category={rowData.category} />}</Observer>
-                                        : null
-                                }
-                                width={10}
-                                flexShrink={0}
-                                flexGrow={0}
-                            />
-                            <Column
-                                label="Verb"
-                                dataKey="method"
-                                cellDataGetter={({ rowData }) =>
-                                    'request' in rowData
-                                        ? rowData.request.method
-                                        : null
-                                }
-                                width={71}
-                                flexShrink={0}
-                                flexGrow={0}
-                            />
-                            <Column
-                                label="Status"
-                                dataKey="status"
-                                className="status"
-                                width={45}
-                                flexShrink={0}
-                                flexGrow={0}
-                                cellRenderer={({ rowData }) =>
-                                    'request' in rowData
-                                        ? <Observer>{() =>
-                                            <StatusCode
-                                                status={get(rowData, 'response', 'statusCode') || rowData.response}
-                                                message={get(rowData, 'response', 'statusMessage')}
-                                            />
-                                        }</Observer>
-                                        : null
-                                }
-                            />
-                            <Column
-                                label="Source"
-                                dataKey="source"
-                                className="source"
-                                width={49}
-                                flexShrink={0}
-                                flexGrow={0}
-                                cellRenderer={({ rowData }) =>
-
-                                    'request' in rowData
-                                        ? <FontAwesomeIcon
-                                            title={rowData.request.source.summary}
-                                            {...rowData.request.source.icon}
-                                            fixedWidth={true}
-                                        />
-                                        : null
-                                }
-                            />
-                            <Column
-                                label="Host"
-                                dataKey="host"
-                                width={500}
-                                cellDataGetter={({ rowData }) =>
-                                    'request' in rowData
-                                        ? rowData.request.parsedUrl.host
-                                        : null
-                                }
-                            />
-                            <Column
-                                label="Path and query"
-                                dataKey="path"
-                                width={1000}
-                                cellDataGetter={({ rowData }) =>
-                                    'request' in rowData
-                                        ? rowData.request.parsedUrl.pathname + rowData.request.parsedUrl.search
-                                        : null
-                                }
-                            />
-                        </Table>
-                    </div>
-                }</Observer>
-            }</AutoSizer>
+                            { EventRow }
+                        </List>
+                    }</Observer>
+                }</AutoSizer>
+            }
         </ListContainer>;
     }
 
     focusSelectedEvent = () => {
-        if (
-            !this.tableRef ||
-            !this.tableContainerRef ||
-            !this.tableContainerRef.contains(document.activeElement)
-        ) return;
+        if (!this.listRef.current || !this.listBodyRef.current) return;
 
-        // Something in the table is focused - make sure it's the correct thing.
+        const listBody = this.listBodyRef.current;
+        const listWindow = listBody.parentElement!;
+        if (!listWindow.contains(document.activeElement)) return;
+
+        // Something in the table is focused, make sure it's the correct thing:
 
         if (this.selectedEventId != null) {
-            const rowElement = this.tableContainerRef.querySelector(
+            const rowElement = listBody.querySelector(
                 `[data-event-id='${this.selectedEventId}']`
             ) as HTMLDivElement;
-            if (rowElement) {
-                rowElement.focus();
-            }
+            if (rowElement) rowElement.focus();
         } else {
-            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.focus();
-        }
-    }
-
-    componentDidMount() {
-        if (this.tableContainerRef) {
-            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.addEventListener('focus', this.focusSelectedEvent);
-        }
-    }
-
-    componentWillUnmount() {
-        if (this.tableContainerRef) {
-            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.removeEventListener('focus', this.focusSelectedEvent);
+            const listWindow = listBody.parentElement!;
+            listWindow.focus();
         }
     }
 
     componentDidUpdate() {
         this.focusSelectedEvent();
+    }
+
+    onListMouseDown = (mouseEvent: React.MouseEvent) => {
+        let row: Element | null = mouseEvent.target as Element;
+        let ariaRowIndex: string | null = null;
+
+        // Climb up until we find the row, or the container
+        while (ariaRowIndex === null && row && row !== this.listBodyRef.current) {
+            // Be a little careful - React thinks event targets might not have getAttribute
+            ariaRowIndex = row.getAttribute && row.getAttribute('aria-rowindex');
+            row = row.parentElement;
+        }
+
+        if (!ariaRowIndex) return;
+
+        const eventIndex = parseInt(ariaRowIndex, 10) - 1;
+        const event = this.filteredEvents[eventIndex];
+        if (event !== this.props.selectedEvent) {
+            this.onEventSelected(eventIndex);
+        } else {
+            // Clicking the selected row deselects it
+            this.onEventDeselected();
+        }
     }
 
     @action.bound
@@ -467,28 +489,33 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         switch (event.key) {
             case 'j':
             case 'ArrowDown':
-                targetIndex = currentIndex === undefined ?
-                    0 : Math.min(currentIndex + 1, filteredEvents.length - 1);
+                targetIndex = currentIndex === -1
+                    ? 0
+                    : Math.min(currentIndex + 1, filteredEvents.length - 1);
                 break;
             case 'k':
             case 'ArrowUp':
-                targetIndex = currentIndex === undefined ?
-                filteredEvents.length - 1 : Math.max(currentIndex - 1, 0);
+                targetIndex = currentIndex === -1
+                    ? filteredEvents.length - 1
+                    : Math.max(currentIndex - 1, 0);
                 break;
             case 'PageUp':
-                targetIndex = currentIndex === undefined ?
-                    undefined : Math.max(currentIndex - 10, 0);
+                targetIndex = currentIndex === -1
+                    ? undefined
+                    : Math.max(currentIndex - 10, 0);
                 break;
             case 'PageDown':
-                targetIndex = currentIndex === undefined ?
-                    undefined : Math.min(currentIndex + 10, filteredEvents.length - 1);
+                targetIndex = currentIndex === -1
+                    ? undefined
+                    : Math.min(currentIndex + 10, filteredEvents.length - 1);
                 break;
         }
 
         if (targetIndex !== undefined) {
             this.onEventSelected(targetIndex);
-            this.focusSelectedEvent();
-            this.tableRef!.scrollToRow(targetIndex);
+            if (this.listRef.current) {
+                this.listRef.current.scrollToItem(targetIndex);
+            }
             event.preventDefault();
         }
     }

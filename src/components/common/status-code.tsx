@@ -6,7 +6,7 @@ import { getStatusColor } from '../../model/exchange-colors';
 
 export const StatusCode = styled((props: {
     status: undefined | 'aborted' | number,
-    message: undefined | string,
+    message?: string,
     className?: string
 }) => (
     <div

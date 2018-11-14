@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { styled } from './styles';
 
 // Import required FA icons:
@@ -170,8 +171,8 @@ export const Icons = {
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 };
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-export { FontAwesomeIcon };
+import { FontAwesomeIcon as FAI } from '@fortawesome/react-fontawesome';
+export const FontAwesomeIcon = React.memo(FAI);
 
 export const SuggestionIcon = styled(FontAwesomeIcon).attrs({
     icon: ['fas', 'lightbulb']
