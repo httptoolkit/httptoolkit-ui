@@ -164,6 +164,9 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
         const { selectedExchangeIndex } = this;
 
         return <ListContainer>
+            {/* Footer is above the table in HTML order to ensure correct tab order */}
+            <TableFooter exchanges={exchanges} onClear={onClear} />
+
             <AutoSizer>{({ height, width }) =>
                 <Observer>{() =>
                     <div
@@ -177,6 +180,8 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                             width={width}
                             rowHeight={32}
                             headerHeight={38}
+                            // Unset tabindex if a row is selected
+                            tabIndex={selectedExchangeIndex != null ? -1 : 0}
                             rowCount={exchanges.length}
                             rowGetter={({ index }) => exchanges[index]}
                             onRowClick={({ index }) => {
@@ -208,7 +213,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 <div
                                     aria-label='row'
                                     aria-rowindex={index + 1}
-                                    tabIndex={-1}
+                                    tabIndex={selectedExchangeIndex === index ? 0 : -1}
 
                                     key={key}
                                     className={className}
@@ -296,20 +301,28 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                     </div>
                 }</Observer>
             }</AutoSizer>
-            <TableFooter exchanges={exchanges} onClear={onClear} />
         </ListContainer>;
     }
 
     focusSelectedExchange = () => {
-        if (!this.tableContainerRef) return;
+        if (
+            !this.tableRef ||
+            !this.tableContainerRef ||
+            !this.tableContainerRef.contains(document.activeElement)
+        ) return;
+
+        // Something in the table is focused - make sure it's the correct thing.
 
         if (this.selectedExchangeIndex != null) {
             const rowElement = this.tableContainerRef.querySelector(
                 `[aria-rowindex='${this.selectedExchangeIndex + 1}']`
             ) as HTMLDivElement;
-            rowElement.focus();
-
-            this.tableRef!.scrollToRow(this.selectedExchangeIndex);
+            if (rowElement) {
+                rowElement.focus();
+            }
+        } else {
+            const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
+            tableElement.focus();
         }
     }
 
@@ -325,6 +338,10 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
             const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
             tableElement.removeEventListener('focus', this.focusSelectedExchange);
         }
+    }
+
+    componentDidUpdate() {
+        this.focusSelectedExchange();
     }
 
     @action.bound
@@ -363,6 +380,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
         if (targetIndex !== undefined) {
             this.onExchangeSelected(targetIndex);
             this.focusSelectedExchange();
+            this.tableRef!.scrollToRow(this.selectedExchangeIndex);
             event.preventDefault();
         }
     }

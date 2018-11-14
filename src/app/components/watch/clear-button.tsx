@@ -25,7 +25,8 @@ export const ClearArrayButton = styled(observer((props: {
     cursor: pointer;
     padding: 5px 10px;
 
-    &:hover {
+    &:hover, &:focus {
+        outline: none;
         color: ${p => p.theme.popColor};
     }
 `;
