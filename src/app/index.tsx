@@ -6,12 +6,10 @@ initSentry(process.env.SENTRY_DSN);
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { createGlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
+import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
 import { Store } from './model/store';
 import { Provider } from 'mobx-react';
-
-const GlobalStyles = createGlobalStyles(theme);
 
 const APP_ELEMENT_SELECTOR = '#app';
 

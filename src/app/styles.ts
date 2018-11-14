@@ -56,62 +56,24 @@ export {
     ThemeProps
 };
 
-export function createGlobalStyles(theme: Theme) {
-    return createGlobalStyle`
-        ${reset};
+export const GlobalStyles = createGlobalStyle`
+    ${reset};
 
-        /* latin-ext */
-        @font-face {
-            font-family: 'Lato';
-            font-style: normal;
-            font-weight: 400;
-            src: local('Lato Regular'), local('Lato-Regular'), url(${require('./fonts/lato-ext.woff2')}) format('woff2');
-            unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
-        }
+    body {
+        font-family: Lato;
+        color: ${p => p.theme.mainColor};
+        background-color: ${p => p.theme.containerBackground};
+    }
 
-        /* latin */
-        @font-face {
-            font-family: 'Lato';
-            font-style: normal;
-            font-weight: 400;
-            src: local('Lato Regular'), local('Lato-Regular'), url(${require('./fonts/lato.woff2')}) format('woff2');
-            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-        }
+    input {
+        font-family: Lato, sans-serif;
+    }
 
-        /* latin-ext */
-        @font-face {
-            font-family: 'Fira Mono';
-            font-style: normal;
-            font-weight: 400;
-            src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(${require('./fonts/fira-mono-ext.woff2')}) format('woff2');
-            unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
-        }
+    :active {
+        outline: none;
+    }
 
-        /* latin */
-        @font-face {
-            font-family: 'Fira Mono';
-            font-style: normal;
-            font-weight: 400;
-            src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(${require('./fonts/fira-mono.woff2')}) format('woff2');
-            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-        }
-
-        body {
-            font-family: Lato;
-            color: ${p => p.theme.mainColor};
-            background-color: ${p => p.theme.containerBackground};
-        }
-
-        input {
-            font-family: Lato;
-        }
-
-        :active {
-            outline: none;
-        }
-
-        .slow-spin {
-            animation: fa-spin 6s infinite linear;
-        }
-    `;
-}
+    .slow-spin {
+        animation: fa-spin 6s infinite linear;
+    }
+`;
