@@ -26,6 +26,8 @@ const isDataExchange = (exchange: CompletedExchange) =>
     _.includes([
         'application/json',
         'application/xml',
+        'text/xml',
+        'text/json',
         'multipart/form-data',
         'application/x-www-form-urlencoded',
         'application/x-protobuf'
