@@ -24,7 +24,7 @@ function getBackgroundColor(color: string) {
 export const Pill = styled.div`
     display: inline-block;
     padding: 4px 8px;
-    margin: 0 8px;
+    margin: 0 8px 0 0;
     border-radius: 4px;
 
     text-transform: none;
@@ -36,10 +36,10 @@ export const Pill = styled.div`
     transition: color 0.2s;
 
     color: ${(p: { color?: string, theme?: Theme }) =>
-        getColor(p.color || p.theme!.containerBorder)
+        getColor(p.color || polished.lighten(0.1, p.theme!.mainColor))
     };
 
     background-color: ${(p: { color?: string, theme?: Theme }) =>
-        getBackgroundColor(p.color || p.theme!.containerBorder)
+        getBackgroundColor(p.color || polished.lighten(0.1, p.theme!.mainColor))
     };
 `;

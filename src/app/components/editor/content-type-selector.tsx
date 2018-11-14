@@ -1,25 +1,30 @@
 import * as React from 'react';
 
 import { Pill } from '../common/pill';
+import { styled } from '../../styles';
 
 const contentTypes = [
     'text/plain',
     'application/json'
 ];
 
-/*
-Pill style drop down
-Takes a content type header
-Includes the list of relevant content types you want want to view
+const Selector = styled(Pill.withComponent('select'))`
+    border: none;
 
-Editor controller has a list
-*/
+    height: 24px;
+    padding: 0 4px 3px 8px;
+
+    font-size: 16px;
+    font-family: Lato, Arial, sans-serif;
+`;
 
 export const ContentTypeSelector = (props: {
     contentType: string,
     onChange: (contentType: string) => void
-}) => <select
-    onChange={(e) => props.onChange(e.target.value)}
+}) => <Selector
+    onChange={(e: any) =>
+        props.onChange(e.target.value)
+    }
     value={props.contentType}
 >
     {contentTypes.map((contentType) =>
@@ -27,4 +32,4 @@ export const ContentTypeSelector = (props: {
             { contentType }
         </option>
     )}
-</select>;
+</Selector>;
