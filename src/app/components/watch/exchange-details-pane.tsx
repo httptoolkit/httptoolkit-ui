@@ -96,6 +96,7 @@ const ExchangeBodyCardContent = styled.div`
     height: ${(p: { height: number }) => Math.min(p.height, 500)}px;
 
     margin: 0 -20px -20px -20px;
+    border-top: solid 1px ${p => p.theme.containerBorder};
 
     .monaco-editor-overlaymessage {
         display: none;
