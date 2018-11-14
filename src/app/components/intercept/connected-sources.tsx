@@ -3,8 +3,8 @@ import * as React from 'react';
 import { styled } from '../../styles';
 import { TrafficSource } from '../../model/sources';
 
-import { BigCard } from "../card";
-import { EmptyState } from '../empty-state';
+import { BigCard } from "../common/card";
+import { EmptyState } from '../common/empty-state';
 import { FontAwesomeIcon } from '../../icons';
 
 const ConnectedSource = styled.div`

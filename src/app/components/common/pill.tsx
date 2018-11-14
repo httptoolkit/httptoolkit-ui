@@ -1,5 +1,5 @@
 import * as polished from 'polished';
-import { styled, Theme } from '../styles';
+import { styled, Theme } from '../../styles';
 
 function needsInversion(color: string) {
     return color && polished.getLuminance(color) > 0.45;

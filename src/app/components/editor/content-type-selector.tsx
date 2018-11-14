@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { Pill } from '../pill';
+import { Pill } from '../common/pill';
 
 const contentTypes = [
     'text/plain',

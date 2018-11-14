@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 
-import { styled } from '../styles'
-import { FontAwesomeIcon } from '../icons';
+import { styled } from '../../styles'
+import { FontAwesomeIcon } from '../../icons';
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,

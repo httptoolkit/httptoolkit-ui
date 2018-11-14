@@ -9,9 +9,9 @@ import { styled, css } from '../../styles';
 import { HttpExchange } from '../../model/store';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
 
-import { Pill } from '../pill';
-import { CollapsibleCard, CollapseIcon } from '../card'
-import { EmptyState } from '../empty-state';
+import { Pill } from '../common/pill';
+import { CollapsibleCard, CollapseIcon } from '../common/card'
+import { EmptyState } from '../common/empty-state';
 import { HeaderDetails } from './header-details';
 import { EditorController } from '../editor/editor-controller';
 import { ContentTypeSelector } from '../editor/content-type-selector';

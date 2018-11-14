@@ -2,8 +2,8 @@ import * as React from 'react';
 import { observable, action } from 'mobx';
 import { observer } from 'mobx-react';
 
-import { styled, Theme, ThemeProps } from '../styles';
-import { FontAwesomeIcon } from '../icons';
+import { styled, Theme, ThemeProps } from '../../styles';
+import { FontAwesomeIcon } from '../../icons';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     disabled?: boolean;

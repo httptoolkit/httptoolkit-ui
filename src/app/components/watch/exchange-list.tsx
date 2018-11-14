@@ -11,8 +11,8 @@ import { FontAwesomeIcon } from '../../icons';
 import { HttpExchange } from '../../model/store';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-colors';
 
-import { EmptyState } from '../empty-state';
-import { StatusCode } from '../status-code';
+import { EmptyState } from '../common/empty-state';
+import { StatusCode } from '../common/status-code';
 
 import { TableFooter } from './exchange-list-footer';
 

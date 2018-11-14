@@ -5,7 +5,7 @@ import { observer } from 'mobx-react';
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 
-import { LittleCard } from '../card';
+import { LittleCard } from '../common/card';
 import { InterceptorUIConfig } from './intercept-page';
 
 export interface InterceptOption {
