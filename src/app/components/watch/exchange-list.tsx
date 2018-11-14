@@ -95,7 +95,6 @@ const ListContainer = styled.div`
 
         user-select: none;
         cursor: pointer;
-        outline: none;
 
         background-color: ${props => props.theme.mainBackground};
 
@@ -113,11 +112,9 @@ const ListContainer = styled.div`
             background-color: ${p => p.theme.popBackground};
             font-weight: bold;
         }
-    }
 
-    &:focus-within {
-        .ReactVirtualized__Table__row.selected {
-            color: ${p => p.theme.popColor};
+        &:focus {
+            outline: thin dotted ${p => p.theme.popColor};
         }
     }
 
@@ -135,6 +132,11 @@ const ListContainer = styled.div`
     .ReactVirtualized__Table__rowColumn {
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .ReactVirtualized__Grid__innerScrollContainer {
+        // Ensures that row outlines on the last row are visible
+        padding-bottom: 2px;
     }
 
     .ReactVirtualized__Table__Grid::after {
@@ -343,7 +345,6 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
 
         const { exchanges } = this.props;
 
-        // Forcibly focus the row that has been selected when it is selected?
         let targetIndex: number | undefined;
 
         switch (event.key) {
