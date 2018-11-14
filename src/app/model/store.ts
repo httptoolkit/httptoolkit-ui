@@ -147,6 +147,10 @@ export class Store {
     @action
     private setResponse(response: CompletedResponse) {
         const exchange = _.find(this.exchanges, (exchange) => exchange.request.id === response.id)!;
+
+        // Shouldn't happen in general, but possible in some very rare cases
+        if (!exchange) return;
+
         exchange.response = response;
         exchange.category = getExchangeCategory(exchange);
     }
