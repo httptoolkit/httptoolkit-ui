@@ -3,8 +3,8 @@ import HtmlWebpackPlugin = require('html-webpack-plugin');
 import MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 import * as Webpack from 'webpack';
 
-const SRC_DIR = path.resolve(__dirname, 'src', 'app');
-const OUTPUT_DIR = path.resolve(__dirname, 'dist', 'app');
+const SRC_DIR = path.resolve(__dirname, 'src');
+const OUTPUT_DIR = path.resolve(__dirname, 'dist');
 
 export = <Webpack.Configuration> {
     entry: path.join(SRC_DIR, 'index.tsx'),

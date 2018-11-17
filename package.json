@@ -11,8 +11,8 @@
   "scripts": {
     "prebuild": "rimraf dist/*",
     "build": "tsc && webpack --config webpack.prod.ts",
-    "start": "npm run build && electron ./dist/main.js",
-    "start:web": "node-dev ./node_modules/.bin/httptoolkit-server & webpack-dev-server --config webpack.dev.ts",
+    "start": "node-dev ./node_modules/.bin/httptoolkit-server & npm run start:web",
+    "start:web": "webpack-dev-server --config webpack.dev.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tim Perry <pimterry@gmail.com>",
@@ -37,7 +37,6 @@
     "@types/styled-components": "^4.0.3",
     "@types/ua-parser-js": "^0.7.32",
     "@types/utf8": "^2.1.6",
-    "electron": "^1.7.9",
     "graphql.js": "^0.5.2",
     "lodash": "^4.17.5",
     "mobx": "^5.5.1",

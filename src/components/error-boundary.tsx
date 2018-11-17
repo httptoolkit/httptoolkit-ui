@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/browser';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
-import * as packageJson from '../../../package.json';
+import * as packageJson from '../../package.json';
 
 import { styled } from '../styles';
 

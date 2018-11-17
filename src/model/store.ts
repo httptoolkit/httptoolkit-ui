@@ -44,6 +44,8 @@ export class Store {
 
     private server: Mockttp;
 
+    // TODO: Combine into a batchedEvent queue of callbacks
+
     private requestQueue: CompletedRequest[] = [];
     private responseQueue: CompletedResponse[] = [];
     private abortedQueue: CompletedRequest[] = [];

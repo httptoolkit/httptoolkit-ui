@@ -19,6 +19,7 @@ interface InterceptPageProps {
 const MOBILE_TAGS =['mobile', 'phone', 'apple', 'samsung', 'ios', 'android', 'app'];
 const DOCKER_TAGS = ['bridge', 'services', 'images'];
 
+// TODO: Move the interceptor list into the store
 export interface InterceptorUIConfig {
     id: string;
     name: string;
