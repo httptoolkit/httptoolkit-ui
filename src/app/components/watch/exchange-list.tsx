@@ -375,6 +375,14 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                 targetIndex = this.selectedExchangeIndex === undefined ?
                     exchanges.length - 1 : Math.max(this.selectedExchangeIndex - 1, 0);
                 break;
+            case 'PageUp':
+                targetIndex = this.selectedExchangeIndex === undefined ?
+                    undefined : Math.max(this.selectedExchangeIndex - 10, 0);
+                break;
+            case 'PageDown':
+                targetIndex = this.selectedExchangeIndex === undefined ?
+                    undefined : Math.min(this.selectedExchangeIndex + 10, exchanges.length - 1);
+                break;
         }
 
         if (targetIndex !== undefined) {
