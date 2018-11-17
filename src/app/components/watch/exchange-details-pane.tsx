@@ -125,7 +125,10 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                 this.props.exchange.request.headers['content-type']
             );
 
-            if (!this.props.exchange.response) return;
+            if (
+                !this.props.exchange.response ||
+                this.props.exchange.response === 'aborted'
+            ) return;
 
             this.setResponseContentType(
                 this.responseContentType ||
@@ -189,7 +192,17 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                 </Card>);
             }
 
-            if (response) {
+            if (response === 'aborted') {
+                cards.push(<Card tabIndex={0} key='response' direction='left'>
+                    <header>
+                    <Pill color={getStatusColor(response)}>Aborted</Pill>
+                        <h1>Response</h1>
+                    </header>
+                    <CardContent>
+                        The request was aborted before the response was completed.
+                    </CardContent>
+                </Card>);
+            } else if (!!response) {
                 cards.push(<Card tabIndex={0} key='response' direction='left'>
                     <header>
                         <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>

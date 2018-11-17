@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
 
 import { HttpExchange } from "./model/store";
+import { CompletedResponse } from 'mockttp';
 
 type UncategorizedExchange = Pick<HttpExchange, Exclude<keyof HttpExchange, 'category'>>;
 type CompletedExchange = Required<UncategorizedExchange>;
+type SuccessfulExchange = CompletedExchange & { response: CompletedResponse };
 
 // Simplify the content type as much as we can, without throwing any errors
 const getBaseContentType = (requestOrResponse: { headers: { [key: string]: string } }) =>
@@ -12,6 +14,9 @@ const getBaseContentType = (requestOrResponse: { headers: { [key: string]: strin
 const isCompletedExchange = (exchange: UncategorizedExchange): exchange is CompletedExchange =>
     !!exchange.response;
 
+const isSuccessfulExchange = (exchange: UncategorizedExchange): exchange is SuccessfulExchange =>
+    isCompletedExchange(exchange) && exchange.response !== 'aborted';
+
 const isMutatativeExchange = (exchange: UncategorizedExchange) => _.includes([
     'POST',
     'PATCH',
@@ -19,10 +24,10 @@ const isMutatativeExchange = (exchange: UncategorizedExchange) => _.includes([
     'DELETE'
 ], exchange.request.method);
 
-const isImageExchange = (exchange: CompletedExchange) =>
+const isImageExchange = (exchange: SuccessfulExchange) =>
     getBaseContentType(exchange.response).startsWith('image/');
 
-const isDataExchange = (exchange: CompletedExchange) =>
+const isDataExchange = (exchange: SuccessfulExchange) =>
     _.includes([
         'application/json',
         'application/xml',
@@ -33,7 +38,7 @@ const isDataExchange = (exchange: CompletedExchange) =>
         'application/x-protobuf'
     ], getBaseContentType(exchange.response));
 
-const isJSExchange = (exchange: CompletedExchange) =>
+const isJSExchange = (exchange: SuccessfulExchange) =>
     _.includes([
         'text/javascript',
         'application/javascript',
@@ -41,7 +46,7 @@ const isJSExchange = (exchange: CompletedExchange) =>
         'application/ecmascript'
     ], getBaseContentType(exchange.response));
 
-const isCSSExchange = (exchange: CompletedExchange) =>
+const isCSSExchange = (exchange: SuccessfulExchange) =>
 _.includes([
     'text/css',
     'application/javascript',
@@ -49,10 +54,10 @@ _.includes([
     'application/ecmascript'
 ], getBaseContentType(exchange.response));
 
-const isHTMLExchange = (exchange: CompletedExchange) =>
+const isHTMLExchange = (exchange: SuccessfulExchange) =>
     getBaseContentType(exchange.response) === 'text/html';
 
-const isFontExchange = (exchange: CompletedExchange) =>
+const isFontExchange = (exchange: SuccessfulExchange) =>
     getBaseContentType(exchange.response).startsWith('font/') ||
     _.includes([
         'application/font-woff',
@@ -72,6 +77,8 @@ export function getExchangeCategory(exchange: UncategorizedExchange) {
         } else {
             return 'incomplete';
         }
+    } else if (!isSuccessfulExchange(exchange)) {
+        return 'aborted';
     } else if (isImageExchange(exchange)) {
         return 'image';
     } else if (isJSExchange(exchange)) {
@@ -102,6 +109,7 @@ export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | Exch
 
     switch (category) {
         case 'incomplete':
+        case 'aborted':
             return '#000'; // black
         case 'mutative':
             return '#ce3939'; // red
@@ -122,8 +130,8 @@ export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | Exch
     }
 }
 
-export function getStatusColor(status: undefined | number): string {
-    if (!status || status < 100 || status >= 600) {
+export function getStatusColor(status: undefined | 'aborted' | number): string {
+    if (!status || status === 'aborted' || status < 100 || status >= 600) {
         // All odd undefined/unknown cases
         return '#000';
     } else if (status >= 500) {

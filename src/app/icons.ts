@@ -13,6 +13,7 @@ import { faQuestion } from '@fortawesome/free-solid-svg-icons/faQuestion';
 import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 import { faChevronUp } from '@fortawesome/free-solid-svg-icons/faChevronUp';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
+import { faBan } from '@fortawesome/pro-regular-svg-icons/faBan';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -31,6 +32,7 @@ library.add(
     faTimes,
     faChevronUp,
     faChevronDown,
+    faBan,
 
     faChrome,
     faFirefox,

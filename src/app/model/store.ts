@@ -15,7 +15,7 @@ export interface HttpExchange {
         parsedUrl: URL,
         source: TrafficSource
     };
-    response?: CompletedResponse;
+    response: undefined | 'aborted' | CompletedResponse;
     category: ExchangeCategory;
 };
 
@@ -42,6 +42,7 @@ export class Store {
 
     private requestQueue: CompletedRequest[] = [];
     private responseQueue: CompletedResponse[] = [];
+    private abortedQueue: CompletedRequest[] = [];
 
     @observable serverStatus: ServerStatus = ServerStatus.NotStarted;
     readonly exchanges = observable.array<HttpExchange>([], { deep: false });
@@ -93,6 +94,13 @@ export class Store {
 
                 this.responseQueue.push(res);
             });
+            this.server.on('abort', (req) => {
+                if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+                    requestAnimationFrame(this.flushQueuedUpdates);
+                }
+
+                this.abortedQueue.push(req);
+            });
 
             window.addEventListener('beforeunload', () => this.server.stop().catch(() => {}));
         } catch (err) {
@@ -117,6 +125,9 @@ export class Store {
 
         this.responseQueue.forEach((res) => this.setResponse(res));
         this.responseQueue = [];
+
+        this.abortedQueue.forEach((req) => this.markRequestAborted(req));
+        this.abortedQueue = [];
     }
 
     async refreshInterceptors() {
@@ -142,6 +153,16 @@ export class Store {
         });
 
         this.exchanges.push(observable.object(exchangeWithCategory, {}, { deep: false }));
+    }
+
+    @action
+    private markRequestAborted(request: CompletedRequest) {
+        const exchange = _.find(this.exchanges, (exchange) => exchange.request.id === request.id)!;
+
+        // Shouldn't happen in general, but possible in some very rare cases
+        if (!exchange) return;
+
+        exchange.response = 'aborted';
     }
 
     @action

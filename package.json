@@ -42,7 +42,7 @@
     "lodash": "^4.17.5",
     "mobx": "^5.5.1",
     "mobx-react": "^5.3.4",
-    "mockttp": "^0.10.0",
+    "mockttp": "^0.12.0",
     "monaco-editor": "^0.14.3",
     "polished": "^2.3.0",
     "raw-loader": "^0.5.1",

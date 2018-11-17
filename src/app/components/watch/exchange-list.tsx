@@ -258,7 +258,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 cellRenderer={({ rowData }) =>
                                     <Observer>{() =>
                                         <StatusCode
-                                            status={get(rowData, 'response', 'statusCode')}
+                                            status={get(rowData, 'response', 'statusCode') || rowData.response}
                                             message={get(rowData, 'response', 'statusMessage')}
                                         />
                                     }</Observer>
