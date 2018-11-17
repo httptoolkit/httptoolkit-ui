@@ -29,8 +29,8 @@ interface ContentTypeConfig<E extends typeof BaseEditor = typeof BaseEditor> {
 }
 
 const ContentTypes = {
-    'text/plain': { name: 'Text', editor: TextEditor },
-    'application/json': { name: 'JSON', editor: JsonEditor }
+    'text': { name: 'Text', editor: TextEditor },
+    'json': { name: 'JSON', editor: JsonEditor }
 } as { [key: string]: ContentTypeConfig };
 
 @observer
@@ -72,7 +72,7 @@ export class EditorController extends React.Component<EditorControllerProps> {
         });
 
         const contentType = ContentTypes[this.props.contentType] ||
-            ContentTypes['text/plain'];
+            ContentTypes['text'];
 
         const EditorClass = contentType.editor;
 

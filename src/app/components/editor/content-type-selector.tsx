@@ -1,7 +1,10 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 
-import { Pill } from '../common/pill';
+import { HtkContentType, getCompatibleTypes, getContentTypeName } from '../../content-types';
+
 import { styled } from '../../styles';
+import { Pill } from '../common/pill';
 
 const contentTypes = [
     'text/plain',
@@ -19,17 +22,24 @@ const Selector = styled(Pill.withComponent('select'))`
 `;
 
 export const ContentTypeSelector = (props: {
-    contentType: string,
-    onChange: (contentType: string) => void
-}) => <Selector
-    onChange={(e: any) =>
-        props.onChange(e.target.value)
+    baseContentType: HtkContentType,
+    selectedContentType: HtkContentType,
+    onChange: (contentType: HtkContentType) => void
+}) => {
+    const compatibleTypes = getCompatibleTypes(props.baseContentType);
+
+    if (!_.includes(compatibleTypes, props.selectedContentType)) {
+        props.onChange(compatibleTypes[0]);
     }
-    value={props.contentType}
->
-    {contentTypes.map((contentType) =>
-        <option key={ contentType } value={ contentType }>
-            { contentType }
-        </option>
-    )}
-</Selector>;
+
+    return <Selector
+        onChange={(e: any) => props.onChange(e.target.value)}
+        value={props.selectedContentType}
+    >
+        {compatibleTypes.map((contentType) =>
+            <option key={ contentType } value={ contentType }>
+                { getContentTypeName(contentType) }
+            </option>
+        )}
+    </Selector>;
+}

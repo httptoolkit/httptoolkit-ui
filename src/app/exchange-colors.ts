@@ -1,15 +1,15 @@
 import * as _ from 'lodash';
-
-import { HttpExchange } from "./model/store";
 import { CompletedResponse } from 'mockttp';
+
+import { HttpExchange } from './model/store';
+import { getBaseContentType } from './content-types';
 
 type UncategorizedExchange = Pick<HttpExchange, Exclude<keyof HttpExchange, 'category'>>;
 type CompletedExchange = Required<UncategorizedExchange>;
 type SuccessfulExchange = CompletedExchange & { response: CompletedResponse };
 
-// Simplify the content type as much as we can, without throwing any errors
-const getBaseContentType = (requestOrResponse: { headers: { [key: string]: string } }) =>
-    (requestOrResponse.headers['content-type'] || '').split(';')[0].split('+')[0];
+export const getRequestBaseContentType = (requestOrResponse: { headers: { [key: string]: string } }) =>
+    getBaseContentType(requestOrResponse.headers['content-type']);
 
 const isCompletedExchange = (exchange: UncategorizedExchange): exchange is CompletedExchange =>
     !!exchange.response;
@@ -25,7 +25,7 @@ const isMutatativeExchange = (exchange: UncategorizedExchange) => _.includes([
 ], exchange.request.method);
 
 const isImageExchange = (exchange: SuccessfulExchange) =>
-    getBaseContentType(exchange.response).startsWith('image/');
+    getRequestBaseContentType(exchange.response).startsWith('image/');
 
 const isDataExchange = (exchange: SuccessfulExchange) =>
     _.includes([
@@ -36,7 +36,7 @@ const isDataExchange = (exchange: SuccessfulExchange) =>
         'multipart/form-data',
         'application/x-www-form-urlencoded',
         'application/x-protobuf'
-    ], getBaseContentType(exchange.response));
+    ], getRequestBaseContentType(exchange.response));
 
 const isJSExchange = (exchange: SuccessfulExchange) =>
     _.includes([
@@ -44,21 +44,18 @@ const isJSExchange = (exchange: SuccessfulExchange) =>
         'application/javascript',
         'application/x-javascript',
         'application/ecmascript'
-    ], getBaseContentType(exchange.response));
+    ], getRequestBaseContentType(exchange.response));
 
 const isCSSExchange = (exchange: SuccessfulExchange) =>
 _.includes([
-    'text/css',
-    'application/javascript',
-    'application/x-javascript',
-    'application/ecmascript'
-], getBaseContentType(exchange.response));
+    'text/css'
+], getRequestBaseContentType(exchange.response));
 
 const isHTMLExchange = (exchange: SuccessfulExchange) =>
-    getBaseContentType(exchange.response) === 'text/html';
+    getRequestBaseContentType(exchange.response) === 'text/html';
 
 const isFontExchange = (exchange: SuccessfulExchange) =>
-    getBaseContentType(exchange.response).startsWith('font/') ||
+    getRequestBaseContentType(exchange.response).startsWith('font/') ||
     _.includes([
         'application/font-woff',
         'application/x-font-woff',
@@ -68,7 +65,7 @@ const isFontExchange = (exchange: SuccessfulExchange) =>
         'application/x-font-ttf',
         'application/x-font-typetype',
         'application/x-font-opentype',
-    ], getBaseContentType(exchange.response));
+    ], getRequestBaseContentType(exchange.response));
 
 export function getExchangeCategory(exchange: UncategorizedExchange) {
     if (!isCompletedExchange(exchange)) {

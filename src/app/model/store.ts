@@ -9,13 +9,17 @@ import { getInterceptors, activateInterceptor } from './htk-client';
 import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
+import { getHTKContentType, HtkContentType } from '../content-types';
 
 export interface HttpExchange {
     request: CompletedRequest & {
         parsedUrl: URL,
-        source: TrafficSource
+        source: TrafficSource,
+        contentType: HtkContentType
     };
-    response: undefined | 'aborted' | CompletedResponse;
+    response: undefined | 'aborted' | (CompletedResponse & {
+        contentType: HtkContentType
+    });
     category: ExchangeCategory;
 };
 
@@ -143,7 +147,8 @@ export class Store {
         const newExchange = {
             request: Object.assign(request, {
                 parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`),
-                source: parseSource(request.headers['user-agent'])
+                source: parseSource(request.headers['user-agent']),
+                contentType: getHTKContentType(request.headers['content-type'])
             }),
             response: undefined
         };
@@ -172,7 +177,9 @@ export class Store {
         // Shouldn't happen in general, but possible in some very rare cases
         if (!exchange) return;
 
-        exchange.response = response;
+        exchange.response = Object.assign(response, {
+            contentType: getHTKContentType(response.headers['content-type'])
+        });
         exchange.category = getExchangeCategory(exchange);
     }
 

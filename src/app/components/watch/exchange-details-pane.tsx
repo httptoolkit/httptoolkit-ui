@@ -7,6 +7,7 @@ import { observable, action, autorun } from 'mobx';
 
 import { styled, css } from '../../styles';
 import { HttpExchange } from '../../model/store';
+import { HtkContentType, getHTKContentType } from '../../content-types';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
 
 import { Pill } from '../common/pill';
@@ -107,10 +108,10 @@ const ExchangeBodyCardContent = styled.div`
 export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchange | undefined }> {
 
     @observable
-    private requestContentType: string | undefined;
+    private selectedRequestContentType: HtkContentType | undefined;
 
     @observable
-    private responseContentType: string | undefined;
+    private selectedResponseContentType: HtkContentType | undefined;
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
@@ -121,8 +122,8 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
             }
 
             this.setRequestContentType(
-                this.requestContentType ||
-                this.props.exchange.request.headers['content-type']
+                this.selectedRequestContentType ||
+                this.props.exchange.request.contentType
             );
 
             if (
@@ -131,8 +132,8 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
             ) return;
 
             this.setResponseContentType(
-                this.responseContentType ||
-                this.props.exchange.response.headers['content-type']
+                this.selectedResponseContentType ||
+                this.props.exchange.response.contentType
             );
         }));
     }
@@ -175,12 +176,13 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                         <Pill>{ getReadableSize(utf8.encode(requestBody).length) }</Pill>
                         <ContentTypeSelector
                             onChange={this.setRequestContentType}
-                            contentType={this.requestContentType!}
+                            baseContentType={request.contentType}
+                            selectedContentType={this.selectedRequestContentType!}
                         />
                         <h1>Request body</h1>
                     </header>
                     <EditorController
-                        contentType={this.requestContentType!}
+                        contentType={this.selectedRequestContentType!}
                         content={requestBody}
                     >
                         { ({ editor, lineCount }) => <>
@@ -228,12 +230,13 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                             <Pill>{ getReadableSize(utf8.encode(responseBody).length) }</Pill>
                             <ContentTypeSelector
                                 onChange={this.setResponseContentType}
-                                contentType={this.responseContentType!}
+                                baseContentType={response.contentType}
+                                selectedContentType={this.selectedResponseContentType!}
                             />
                             <h1>Response body</h1>
                         </header>
                         <EditorController
-                            contentType={this.responseContentType!}
+                            contentType={this.selectedResponseContentType!}
                             content={responseBody}
                         >
                             { ({ editor, lineCount }) => <>
@@ -262,12 +265,12 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
     }
 
     @action.bound
-    setRequestContentType(contentType: string | undefined) {
-        this.requestContentType = contentType && contentType.split(';')[0];
+    setRequestContentType(contentType: HtkContentType | undefined) {
+        this.selectedRequestContentType = contentType;
     }
 
     @action.bound
-    setResponseContentType(contentType: string | undefined) {
-        this.responseContentType = contentType && contentType.split(';')[0];
+    setResponseContentType(contentType: HtkContentType | undefined) {
+        this.selectedResponseContentType = contentType;
     }
 };
