@@ -24,7 +24,7 @@ export function getContentEditorName(contentType: HtkContentType): string {
 }
 
 export const EditorFormats: {
-    [key in HtkContentType]?: EditorFormat
+    [key in HtkContentType]?: EditorFormat | React.ComponentType<{ content: Buffer }>
 } = {
     raw: {
         language: 'text',
@@ -93,7 +93,14 @@ export const EditorFormats: {
                 indent_size: 2
             });
         }
-    }
+    },
+    image: styled.img.attrs<{ content: Buffer }>({
+        src: (p: { content: Buffer }) => 'data:;base64,' + p.content.toString('base64')
+    })`
+        display: block;
+        max-width: 100%;
+        margin: 0 auto;
+    `
 };
 
 interface ContentEditorProps {
@@ -104,6 +111,10 @@ interface ContentEditorProps {
 const EditorContainer = styled.div`
     height: ${(p: { height: number }) => Math.min(p.height, 500)}px;
 `;
+
+function isEditorFormat(input: any): input is EditorFormat {
+    return !!input.language;
+}
 
 @observer
 export class ContentEditor extends React.Component<ContentEditorProps> {
@@ -121,7 +132,9 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
 
     @computed
     private get renderedContent() {
-        return this.editorFormat.render(this.props.children);
+        if (isEditorFormat(this.editorFormat)) {
+            return this.editorFormat.render(this.props.children);
+        }
     }
 
     @action.bound
@@ -130,21 +143,26 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
     }
 
     render() {
-        try {
-            return <EditorContainer height={this.lineCount * 22}>
-                <BaseEditor
-                    // For now, we only support read only content
-                    options={{readOnly: true}}
-                    language={this.editorFormat.language}
-                    onLineCount={this.updateLineCount}
-                    value={this.renderedContent}
-                />
-            </EditorContainer>;
-        } catch (e) {
-            return <div>
-                Failed to render {this.props.contentType} content:<br/>
-                {e.toString()}
-            </div>
+        if (isEditorFormat(this.editorFormat)) {
+            try {
+                return <EditorContainer height={this.lineCount * 22}>
+                    <BaseEditor
+                        // For now, we only support read only content
+                        options={{readOnly: true}}
+                        language={this.editorFormat.language}
+                        onLineCount={this.updateLineCount}
+                        value={this.renderedContent!}
+                    />
+                </EditorContainer>;
+            } catch (e) {
+                return <div>
+                    Failed to render {this.props.contentType} content:<br/>
+                    {e.toString()}
+                </div>
+            }
+        } else {
+            const Viewer = this.editorFormat;
+            return <Viewer content={this.props.children} />
         }
     }
 }
