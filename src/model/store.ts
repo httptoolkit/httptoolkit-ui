@@ -74,7 +74,7 @@ export class Store {
             yield this.server.start();
 
             yield Promise.all([
-                this.server.get(/https?:\/\/amiusing\.httptoolkit\.tech/).always().thenReply(
+                this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech$/).always().thenReply(
                     200, amIUsingHtml, { 'content-type': 'text/html' }
                 ).then(() =>
                     this.server.anyRequest().always().thenPassThrough()
