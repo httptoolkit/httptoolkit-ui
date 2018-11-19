@@ -41,6 +41,18 @@ export const EditorFormats: {
             return content.toString('utf8');
         }
     },
+    markdown: {
+        language: 'markdown',
+        render(content: Buffer) {
+            return content.toString('utf8');
+        }
+    },
+    yaml: {
+        language: 'yaml',
+        render(content: Buffer) {
+            return content.toString('utf8');
+        }
+    },
     html: {
         language: 'html',
         render(content: Buffer) {
