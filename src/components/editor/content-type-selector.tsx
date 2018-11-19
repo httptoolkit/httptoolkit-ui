@@ -1,15 +1,11 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { HtkContentType, getCompatibleTypes, getContentTypeName } from '../../content-types';
+import { HtkContentType, getCompatibleTypes } from '../../content-types';
 
 import { styled } from '../../styles';
 import { Pill } from '../common/pill';
-
-const contentTypes = [
-    'text/plain',
-    'application/json'
-];
+import { getContentEditorName } from './content-editor';
 
 const Selector = styled(Pill.withComponent('select'))`
     border: none;
@@ -38,7 +34,7 @@ export const ContentTypeSelector = (props: {
     >
         {compatibleTypes.map((contentType) =>
             <option key={ contentType } value={ contentType }>
-                { getContentTypeName(contentType) }
+                { getContentEditorName(contentType) }
             </option>
         )}
     </Selector>;

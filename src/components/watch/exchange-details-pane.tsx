@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import * as utf8 from 'utf8';
 import { get } from 'typesafe-get';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import { observable, action, autorun } from 'mobx';
@@ -14,8 +13,8 @@ import { Pill } from '../common/pill';
 import { CollapsibleCard, CollapseIcon } from '../common/card'
 import { EmptyState } from '../common/empty-state';
 import { HeaderDetails } from './header-details';
-import { EditorController } from '../editor/editor-controller';
 import { ContentTypeSelector } from '../editor/content-type-selector';
+import { ContentEditor } from '../editor/content-editor';
 
 const ExchangeDetailsContainer = styled.div`
     position: relative;
@@ -94,8 +93,6 @@ const ContentValue = styled.div`
 `;
 
 const ExchangeBodyCardContent = styled.div`
-    height: ${(p: { height: number }) => Math.min(p.height, 500)}px;
-
     margin: 0 -20px -20px -20px;
     border-top: solid 1px ${p => p.theme.containerBorder};
 
@@ -169,11 +166,11 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                 </CardContent>
             </Card>);
 
-            const requestBody = get(request, 'body', 'text');
+            const requestBody = get(request, 'body', 'decodedBuffer');
             if (requestBody) {
                 cards.push(<Card tabIndex={0} key='requestBody' direction='right'>
                     <header>
-                        <Pill>{ getReadableSize(utf8.encode(requestBody).length) }</Pill>
+                        <Pill>{ getReadableSize(requestBody.length) }</Pill>
                         <ContentTypeSelector
                             onChange={this.setRequestContentType}
                             baseContentType={request.contentType}
@@ -181,16 +178,11 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                         />
                         <h1>Request body</h1>
                     </header>
-                    <EditorController
-                        contentType={this.selectedRequestContentType!}
-                        content={requestBody}
-                    >
-                        { ({ editor, lineCount }) => <>
-                            <ExchangeBodyCardContent height={lineCount * 22}>
-                                { editor }
-                            </ExchangeBodyCardContent>
-                        </> }
-                    </EditorController>
+                        <ExchangeBodyCardContent>
+                            <ContentEditor contentType={this.selectedRequestContentType!}>
+                                {requestBody}
+                            </ContentEditor>
+                        </ExchangeBodyCardContent>
                 </Card>);
             }
 
@@ -223,11 +215,11 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                     </CardContent>
                 </Card>);
 
-                const responseBody = get(response, 'body', 'text');
+                const responseBody = get(response, 'body', 'decodedBuffer');
                 if (responseBody) {
                     cards.push(<Card tabIndex={0} key='responseBody' direction='left'>
                         <header>
-                            <Pill>{ getReadableSize(utf8.encode(responseBody).length) }</Pill>
+                            <Pill>{ getReadableSize(responseBody.length) }</Pill>
                             <ContentTypeSelector
                                 onChange={this.setResponseContentType}
                                 baseContentType={response.contentType}
@@ -235,16 +227,11 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                             />
                             <h1>Response body</h1>
                         </header>
-                        <EditorController
-                            contentType={this.selectedResponseContentType!}
-                            content={responseBody}
-                        >
-                            { ({ editor, lineCount }) => <>
-                                <ExchangeBodyCardContent height={lineCount * 22}>
-                                    { editor }
-                                </ExchangeBodyCardContent>
-                            </> }
-                        </EditorController>
+                        <ExchangeBodyCardContent>
+                            <ContentEditor contentType={this.selectedResponseContentType!}>
+                                {responseBody}
+                            </ContentEditor>
+                        </ExchangeBodyCardContent>
                     </Card>);
                 }
             }

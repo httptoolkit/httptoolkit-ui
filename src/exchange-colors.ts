@@ -31,6 +31,7 @@ const isDataExchange = (exchange: SuccessfulExchange) =>
     _.includes([
         'application/json',
         'application/xml',
+        'application/rss',
         'text/xml',
         'text/json',
         'multipart/form-data',

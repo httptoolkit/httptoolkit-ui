@@ -24,6 +24,7 @@ export function getHTKContentType(mimeType: string): HtkContentType {
 
         case 'application/xml':
         case 'text/xml':
+        case 'application/rss':
             return 'xml';
 
         case 'text/javascript':
@@ -64,10 +65,6 @@ export function getHTKContentType(mimeType: string): HtkContentType {
         default:
             return 'raw';
     }
-}
-
-export function getContentTypeName(contentType: HtkContentType): string {
-    return _.capitalize(contentType);
 }
 
 export function getCompatibleTypes(contentType: HtkContentType): HtkContentType[] {
