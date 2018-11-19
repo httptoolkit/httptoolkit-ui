@@ -23,7 +23,8 @@ export = merge(common, {
             exclude: [
                 path.join(__dirname, 'node_modules', 'monaco-editor'),
                 path.join(__dirname, 'node_modules', 'subscriptions-transport-ws'),
-                path.join(__dirname, '..', 'mockttp', 'node_modules', 'subscriptions-transport-ws')
+                path.join(__dirname, '..', 'mockttp', 'node_modules', 'subscriptions-transport-ws'),
+                path.join(__dirname, 'node_modules', 'js-beautify')
             ]
         }
       ]
