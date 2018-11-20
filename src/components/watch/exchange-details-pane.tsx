@@ -215,7 +215,10 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                     </header>
                     { decodedBody ?
                         <ExchangeBodyCardContent>
-                            <ContentEditor contentType={this.selectedRequestContentType!}>
+                            <ContentEditor
+                                rawContentType={request.headers['content-type']}
+                                contentType={this.selectedRequestContentType!}
+                            >
                                 {decodedBody}
                             </ContentEditor>
                         </ExchangeBodyCardContent>
@@ -272,7 +275,10 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                         </header>
                         { decodedBody ?
                             <ExchangeBodyCardContent>
-                                <ContentEditor contentType={this.selectedResponseContentType!}>
+                                <ContentEditor
+                                    rawContentType={response.headers['content-type']}
+                                    contentType={this.selectedResponseContentType!}
+                                >
                                     {decodedBody}
                                 </ContentEditor>
                             </ExchangeBodyCardContent>

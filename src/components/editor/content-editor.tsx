@@ -24,7 +24,9 @@ export function getContentEditorName(contentType: HtkContentType): string {
 }
 
 export const EditorFormats: {
-    [key in HtkContentType]?: EditorFormat | React.ComponentType<{ content: Buffer }>
+    [key in HtkContentType]?:
+        | EditorFormat
+        | React.ComponentType<{ content: Buffer, rawContentType: string }>
 } = {
     raw: {
         language: 'text',
@@ -94,8 +96,9 @@ export const EditorFormats: {
             });
         }
     },
-    image: styled.img.attrs<{ content: Buffer }>({
-        src: (p: { content: Buffer }) => 'data:;base64,' + p.content.toString('base64')
+    image: styled.img.attrs<{ content: Buffer, rawContentType: string }>({
+        src: (p: { content: Buffer, rawContentType: string }) =>
+            `data:${p.rawContentType};base64,${p.content.toString('base64')}`
     })`
         display: block;
         max-width: 100%;
@@ -105,6 +108,7 @@ export const EditorFormats: {
 
 interface ContentEditorProps {
     children: Buffer;
+    rawContentType: string;
     contentType: HtkContentType
 }
 
@@ -162,7 +166,7 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
             }
         } else {
             const Viewer = this.editorFormat;
-            return <Viewer content={this.props.children} />
+            return <Viewer content={this.props.children} rawContentType={this.props.rawContentType} />
         }
     }
 }
