@@ -12,9 +12,19 @@ const cardDirectionCss = (direction: string) => direction === 'right' ? css`
     border-left: solid 5px ${p => p.theme.containerBorder};
 `;
 
-export const ExchangeCard = styled(CollapsibleCard)`
-    margin: 20px;
+export const ExchangeCard = styled(CollapsibleCard).attrs({
+    tabIndex: 0
+})`
     word-break: break-all;
+
+    margin-bottom: 20px;
+    transition: margin-bottom 0.1s;
+
+    ${p => p.collapsed && css`
+        :not(:last-child) {
+            margin-bottom: -16px;
+        }
+    `}
 
     ${(p: { direction: 'left' | 'right' }) => cardDirectionCss(p.direction)};
 

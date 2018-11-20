@@ -113,7 +113,8 @@ interface ContentEditorProps {
 }
 
 const EditorContainer = styled.div`
-    height: ${(p: { height: number }) => Math.min(p.height, 500)}px;
+    height: ${(p: { height: number }) => p.height}px;
+    max-height: 560px;
 `;
 
 function isEditorFormat(input: any): input is EditorFormat {

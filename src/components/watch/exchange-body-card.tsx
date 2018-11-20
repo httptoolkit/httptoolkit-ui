@@ -53,8 +53,11 @@ type ExchangeMessage = HtkRequest | HtkResponse;
 
 @observer
 export class ExchangeBodyCard extends React.Component<{
+    title: string,
     message: ExchangeMessage,
-    direction: 'left' | 'right'
+    direction: 'left' | 'right',
+    collapsed: boolean,
+    onCollapseToggled: () => void
 }> {
 
     @observable
@@ -95,13 +98,23 @@ export class ExchangeBodyCard extends React.Component<{
     }
 
     render() {
-        const { message, direction } = this.props;
+        const {
+            title,
+            message,
+            direction,
+            collapsed,
+            onCollapseToggled
+        } = this.props;
 
         // any because bad types will just get undefined here, and that's ok.
         const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
         const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
 
-        return <ExchangeCard direction={direction} tabIndex={0}>
+        return <ExchangeCard
+            direction={direction}
+            collapsed={collapsed}
+            onCollapseToggled={onCollapseToggled}
+        >
             <header>
                 { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
                 <ContentTypeSelector
@@ -109,7 +122,7 @@ export class ExchangeBodyCard extends React.Component<{
                     baseContentType={message.contentType}
                     selectedContentType={this.selectedContentType!}
                 />
-                <h1>Response body</h1>
+                <h1>{ title }</h1>
             </header>
             { decodedBody ?
                 <EditorCardContent>

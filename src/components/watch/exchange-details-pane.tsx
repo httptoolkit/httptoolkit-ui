@@ -12,6 +12,7 @@ import { EmptyState } from '../common/empty-state';
 import { HeaderDetails } from './header-details';
 import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
+import { action, observable } from 'mobx';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -24,6 +25,7 @@ const ExchangeDetailsContainer = styled.div`
     height: 100%;
     width: 100%;
     box-sizing: border-box;
+    padding: 20px 20px 0 20px;
 
     background-color: ${p => p.theme.containerBackground};
 `;
@@ -45,8 +47,24 @@ const ContentValue = styled.div`
     width: 100%;
 `;
 
+type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
+
 @observer
 export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchange | undefined }> {
+
+    @observable
+    private collapseState = {
+        'request': false,
+        'requestBody': false,
+        'response': false,
+        'responseBody': false,
+    };
+
+    private cardProps = (key: CardKey) => ({
+        key: key,
+        collapsed: this.collapseState[key],
+        onCollapseToggled: this.toggleCollapse.bind(this, key)
+    });
 
     render() {
         const { exchange } = this.props;
@@ -55,7 +73,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
         if (exchange) {
             const { request, response } = exchange;
 
-            cards.push(<ExchangeCard tabIndex={0} key='request' direction='right'>
+            cards.push(<ExchangeCard {...this.cardProps('request')} direction='right'>
                 <header>
                     <Pill color={getExchangeSummaryColour(exchange)}>
                         { request.method } {
@@ -81,14 +99,15 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
 
             if (request.body.buffer) {
                 cards.push(<ExchangeBodyCard
-                    key='requestBody'
+                    title='Request Body'
                     direction='right'
                     message={request}
+                    {...this.cardProps('requestBody')}
                 />);
             }
 
             if (response === 'aborted') {
-                cards.push(<ExchangeCard tabIndex={0} key='response' direction='left'>
+                cards.push(<ExchangeCard {...this.cardProps('response')} direction='left'>
                     <header>
                     <Pill color={getStatusColor(response)}>Aborted</Pill>
                         <h1>Response</h1>
@@ -98,7 +117,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                     </div>
                 </ExchangeCard>);
             } else if (!!response) {
-                cards.push(<ExchangeCard tabIndex={0} key='response' direction='left'>
+                cards.push(<ExchangeCard {...this.cardProps('response')} direction='left'>
                     <header>
                         <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>
                         <h1>Response</h1>
@@ -118,9 +137,10 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
 
                 if (hasCompletedBody(response)) {
                     cards.push(<ExchangeBodyCard
-                        key='responseBody'
+                        title='Response Body'
                         direction='left'
                         message={response}
+                        {...this.cardProps('responseBody')}
                     />);
                 }
             }
@@ -138,6 +158,11 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
         return <ExchangeDetailsContainer>
             {cards}
         </ExchangeDetailsContainer>;
+    }
+
+    @action.bound
+    private toggleCollapse(key: CardKey) {
+        this.collapseState[key] = !this.collapseState[key];
     }
 
 };

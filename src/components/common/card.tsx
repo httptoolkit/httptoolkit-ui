@@ -1,5 +1,5 @@
+import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action } from 'mobx';
 import { observer } from 'mobx-react';
 
 import { styled, Theme, ThemeProps } from '../../styles';
@@ -102,20 +102,18 @@ export const CollapseIcon = styled((props: CollapseIconProps) =>
 `;
 
 @observer
-export class CollapsibleCard extends React.Component<
-    React.HTMLAttributes<HTMLDivElement>
-> {
+export class CollapsibleCard extends React.Component<{
+    collapsed: boolean;
+    onCollapseToggled: () => void;
+} & React.HTMLAttributes<HTMLDivElement>> {
 
     private cardRef = React.createRef();
 
-    @observable
-    private collapsed: boolean = false;
-
     render() {
-        const { children } = this.props;
+        const { children, collapsed, onCollapseToggled } = this.props;
 
         return <MediumCard
-            {...this.props}
+            {..._.omit(this.props, ['onCollapseToggled', 'collapsed'])}
             ref={this.cardRef as any} /* https://github.com/DefinitelyTyped/DefinitelyTyped/issues/28884 */
             onKeyDown={this.onKeyDown}
         >{
@@ -125,12 +123,12 @@ export class CollapsibleCard extends React.Component<
                         React.Children.toArray(child.props.children).concat(
                             <CollapseIcon
                                 key='collapse-icon'
-                                collapsed={this.collapsed}
-                                onClick={this.toggleCollapsed}
+                                collapsed={collapsed}
+                                onClick={onCollapseToggled}
                             />
                         )
                     )
-                    : !this.collapsed && child
+                    : !collapsed && child
             )
         }</MediumCard>;
     }
@@ -141,13 +139,8 @@ export class CollapsibleCard extends React.Component<
         }
 
         if (event.key === 'Enter') {
-            this.toggleCollapsed();
+            this.props.onCollapseToggled();
         }
-    }
-
-    @action.bound
-    toggleCollapsed() {
-        this.collapsed = !this.collapsed;
     }
 
 }
