@@ -1,41 +1,20 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
-import { observer, disposeOnUnmount } from 'mobx-react';
-import { observable, action, autorun, IObservableValue } from 'mobx';
+import { observer } from 'mobx-react';
 
-import { CompletedRequest, CompletedResponse } from '../../types';
-import { styled, css } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
-import { HttpExchange } from '../../model/store';
-import { HtkContentType } from '../../content-types';
+import { HttpExchange, HtkResponse } from '../../types';
+import { styled } from '../../styles';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
-import { decodeContent } from '../../worker/worker-api';
 
 import { Pill } from '../common/pill';
-import { CollapsibleCard, CollapseIcon } from '../common/card'
 import { EmptyState } from '../common/empty-state';
 import { HeaderDetails } from './header-details';
-import { ContentTypeSelector } from '../editor/content-type-selector';
-import { ContentEditor } from '../editor/content-editor';
+import { ExchangeCard } from './exchange-card';
+import { ExchangeBodyCard } from './exchange-body-card';
 
-function hasCompletedBody(res: CompletedResponse): res is CompletedResponse {
-    return !!get(res, 'body', 'buffer');
-}
-
-function getReadableSize(bytes: number, siUnits = true) {
-    let thresh = siUnits ? 1000 : 1024;
-
-    let units = siUnits
-        ? ['bytes', 'kB','MB','GB','TB','PB','EB','ZB','YB']
-        : ['bytes', 'KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
-
-    let unitIndex = bytes === 0 ? 0 :
-        Math.floor(Math.log(bytes) / Math.log(thresh));
-
-    let unitName = bytes === 1 ? 'byte' : units[unitIndex];
-
-    return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
+function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
+    return !!get(res as any, 'body', 'buffer');
 }
 
 const ExchangeDetailsContainer = styled.div`
@@ -47,49 +26,6 @@ const ExchangeDetailsContainer = styled.div`
     box-sizing: border-box;
 
     background-color: ${p => p.theme.containerBackground};
-`;
-
-// Bit of redundancy here, but just because the TS styled plugin
-// gets super confused if you use variables in property names.
-const cardDirectionCss = (direction: string) => direction === 'right' ? css`
-    padding-right: 15px;
-    border-right: solid 5px ${p => p.theme.containerBorder};
-` : css`
-    padding-left: 15px;
-    border-left: solid 5px ${p => p.theme.containerBorder};
-`;
-
-const Card = styled(CollapsibleCard)`
-    margin: 20px;
-    word-break: break-all;
-
-    ${(p: { direction: 'left' | 'right' }) => cardDirectionCss(p.direction)};
-
-    &:focus {
-        ${CollapseIcon} {
-            color: ${p => p.theme.popColor};
-        }
-    }
-
-    &:focus-within {
-        header h1 {
-            color: ${p => p.theme.popColor};
-        }
-
-        outline: none;
-        border-color: ${p => p.theme.popColor};
-    }
-`;
-
-const CardContent = styled.div<{ height?: string }>`
-    ${p => p.height && css`
-        height: ${p.height};
-    `}
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
 `;
 
 const ContentLabel = styled.div`
@@ -109,64 +45,8 @@ const ContentValue = styled.div`
     width: 100%;
 `;
 
-const ExchangeBodyCardContent = styled.div`
-    margin: 0 -20px -20px -20px;
-    border-top: solid 1px ${p => p.theme.containerBorder};
-
-    .monaco-editor-overlaymessage {
-        display: none;
-    }
-`;
-
 @observer
 export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchange | undefined }> {
-
-    @observable
-    private selectedRequestContentType: HtkContentType | undefined;
-
-    @observable
-    private selectedResponseContentType: HtkContentType | undefined;
-
-    private decodedBodyCache = new WeakMap<CompletedRequest | CompletedResponse, IObservableValue<undefined | Buffer>>();
-
-    componentDidMount() {
-        disposeOnUnmount(this, autorun(() => {
-            const { exchange } = this.props;
-            if (!exchange) {
-                this.setRequestContentType(undefined);
-                this.setResponseContentType(undefined);
-                return;
-            }
-
-            const { request, response } = exchange;
-
-            this.setRequestContentType(this.selectedRequestContentType || request.contentType);
-
-            if (this.decodedBodyCache.get(request) === undefined) {
-                const observableResult = observable.box<undefined | Buffer>(undefined);
-                this.decodedBodyCache.set(request, observableResult);
-
-                decodeContent(request.body.buffer, request.headers['content-encoding'])
-                .then(action<(result: Buffer) => void>((decodingResult) => {
-                    observableResult.set(decodingResult);
-                })).catch(() => {}); // Ignore errors for now - for broken encodings just spin forever
-            }
-
-            if (!response || response === 'aborted') return;
-
-            this.setResponseContentType(this.selectedResponseContentType || response.contentType);
-
-            if (this.decodedBodyCache.get(response) === undefined) {
-                const observableResult = observable.box<undefined | Buffer>(undefined);
-                this.decodedBodyCache.set(response, observableResult);
-
-                decodeContent(response.body.buffer, response.headers['content-encoding'])
-                .then(action<(result: Buffer) => void>((decodingResult) => {
-                    observableResult.set(decodingResult);
-                })).catch(() => {}); // Ignore errors for now - for broken encodings just spin forever
-            }
-        }));
-    }
 
     render() {
         const { exchange } = this.props;
@@ -175,7 +55,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
         if (exchange) {
             const { request, response } = exchange;
 
-            cards.push(<Card tabIndex={0} key='request' direction='right'>
+            cards.push(<ExchangeCard tabIndex={0} key='request' direction='right'>
                 <header>
                     <Pill color={getExchangeSummaryColour(exchange)}>
                         { request.method } {
@@ -186,7 +66,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                     </Pill>
                     <h1>Request</h1>
                 </header>
-                <CardContent>
+                <div>
                     <ContentLabel>URL</ContentLabel>
                     <ContentValue>{
                         new URL(request.url, `${request.protocol}://${request.hostname}`).toString()
@@ -196,57 +76,34 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                     <ContentValue>
                         <HeaderDetails headers={request.headers} />
                     </ContentValue>
-                </CardContent>
-            </Card>);
+                </div>
+            </ExchangeCard>);
 
             if (request.body.buffer) {
-                // ! because autorun in componentDidMount should guarantee this is set
-                const decodedBody = this.decodedBodyCache.get(request)!.get();
-
-                cards.push(<Card tabIndex={0} key='requestBody' direction='right'>
-                    <header>
-                        { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
-                        <ContentTypeSelector
-                            onChange={this.setRequestContentType}
-                            baseContentType={request.contentType}
-                            selectedContentType={this.selectedRequestContentType!}
-                        />
-                        <h1>Request body</h1>
-                    </header>
-                    { decodedBody ?
-                        <ExchangeBodyCardContent>
-                            <ContentEditor
-                                rawContentType={request.headers['content-type']}
-                                contentType={this.selectedRequestContentType!}
-                            >
-                                {decodedBody}
-                            </ContentEditor>
-                        </ExchangeBodyCardContent>
-                    :
-                        <CardContent height='500px'>
-                            <FontAwesomeIcon spin icon={['far', 'spinner-third']} size='8x' />
-                        </CardContent>
-                    }
-                </Card>);
+                cards.push(<ExchangeBodyCard
+                    key='requestBody'
+                    direction='right'
+                    message={request}
+                />);
             }
 
             if (response === 'aborted') {
-                cards.push(<Card tabIndex={0} key='response' direction='left'>
+                cards.push(<ExchangeCard tabIndex={0} key='response' direction='left'>
                     <header>
                     <Pill color={getStatusColor(response)}>Aborted</Pill>
                         <h1>Response</h1>
                     </header>
-                    <CardContent>
+                    <div>
                         The request was aborted before the response was completed.
-                    </CardContent>
-                </Card>);
+                    </div>
+                </ExchangeCard>);
             } else if (!!response) {
-                cards.push(<Card tabIndex={0} key='response' direction='left'>
+                cards.push(<ExchangeCard tabIndex={0} key='response' direction='left'>
                     <header>
                         <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>
                         <h1>Response</h1>
                     </header>
-                    <CardContent>
+                    <div>
                         <ContentLabel>Status</ContentLabel>
                         <ContentValue>
                             {response.statusCode}: {response.statusMessage}
@@ -256,38 +113,15 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                         <ContentValue>
                             <HeaderDetails headers={response.headers} />
                         </ContentValue>
-                    </CardContent>
-                </Card>);
+                    </div>
+                </ExchangeCard>);
 
                 if (hasCompletedBody(response)) {
-                    // ! because autorun in componentDidMount should guarantee this is set
-                    const decodedBody = this.decodedBodyCache.get(response)!.get();
-
-                    cards.push(<Card tabIndex={0} key='responseBody' direction='left'>
-                        <header>
-                            { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
-                            <ContentTypeSelector
-                                onChange={this.setResponseContentType}
-                                baseContentType={response.contentType}
-                                selectedContentType={this.selectedResponseContentType!}
-                            />
-                            <h1>Response body</h1>
-                        </header>
-                        { decodedBody ?
-                            <ExchangeBodyCardContent>
-                                <ContentEditor
-                                    rawContentType={response.headers['content-type']}
-                                    contentType={this.selectedResponseContentType!}
-                                >
-                                    {decodedBody}
-                                </ContentEditor>
-                            </ExchangeBodyCardContent>
-                        :
-                            <CardContent height='500px'>
-                                <FontAwesomeIcon spin icon={['far', 'spinner-third']} size='8x' />
-                            </CardContent>
-                        }
-                    </Card>);
+                    cards.push(<ExchangeBodyCard
+                        key='responseBody'
+                        direction='left'
+                        message={response}
+                    />);
                 }
             }
         } else {
@@ -306,13 +140,4 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
         </ExchangeDetailsContainer>;
     }
 
-    @action.bound
-    setRequestContentType(contentType: HtkContentType | undefined) {
-        this.selectedRequestContentType = contentType;
-    }
-
-    @action.bound
-    setResponseContentType(contentType: HtkContentType | undefined) {
-        this.selectedResponseContentType = contentType;
-    }
 };

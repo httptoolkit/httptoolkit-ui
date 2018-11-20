@@ -1,27 +1,15 @@
 import * as _ from 'lodash';
 
 import { observable, action, configure, flow, computed, runInAction } from 'mobx';
-import { getLocal, Mockttp } from 'mockttp';
+import { getLocal, Mockttp, CompletedRequest, CompletedResponse } from 'mockttp';
 
-import { CompletedRequest, CompletedResponse } from '../types';
-import { parseSource, TrafficSource } from './sources';
+import { HttpExchange } from '../types';
+import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor } from './htk-client';
 import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
-import { getHTKContentType, HtkContentType } from '../content-types';
-
-export interface HttpExchange {
-    request: CompletedRequest & {
-        parsedUrl: URL,
-        source: TrafficSource,
-        contentType: HtkContentType
-    };
-    response: undefined | 'aborted' | (CompletedResponse & {
-        contentType: HtkContentType
-    });
-    category: ExchangeCategory;
-};
+import { getHTKContentType } from '../content-types';
 
 export interface Interceptor {
     id: string;

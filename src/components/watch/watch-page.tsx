@@ -4,13 +4,14 @@ import * as _ from 'lodash';
 import { observable, autorun, action, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 
+import { HttpExchange } from '../../types';
 import { styled } from '../../styles';
 
 import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from '../split-pane';
 
-import { Store, ServerStatus, HttpExchange } from '../../model/store';
+import { Store, ServerStatus } from '../../model/store';
 
 interface WatchPageProps {
     className?: string,

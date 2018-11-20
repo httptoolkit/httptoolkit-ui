@@ -1,0 +1,131 @@
+import * as React from 'react';
+import { IObservableValue, observable, autorun, action } from 'mobx';
+import { disposeOnUnmount, observer } from 'mobx-react';
+
+import { HtkRequest, HtkResponse } from '../../types';
+import { styled, css } from '../../styles';
+import { HtkContentType } from '../../content-types';
+import { decodeContent } from '../../worker/worker-api';
+
+import { ExchangeCard } from './exchange-card';
+import { Pill } from '../common/pill';
+import { ContentTypeSelector } from '../editor/content-type-selector';
+import { ContentEditor } from '../editor/content-editor';
+import { FontAwesomeIcon } from '../../icons';
+
+function getReadableSize(bytes: number, siUnits = true) {
+    let thresh = siUnits ? 1000 : 1024;
+
+    let units = siUnits
+        ? ['bytes', 'kB','MB','GB','TB','PB','EB','ZB','YB']
+        : ['bytes', 'KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+
+    let unitIndex = bytes === 0 ? 0 :
+        Math.floor(Math.log(bytes) / Math.log(thresh));
+
+    let unitName = bytes === 1 ? 'byte' : units[unitIndex];
+
+    return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
+}
+
+const EditorCardContent = styled.div`
+    margin: 0 -20px -20px -20px;
+    border-top: solid 1px ${p => p.theme.containerBorder};
+    background-color: ${p => p.theme.popBackground};
+
+    .monaco-editor-overlaymessage {
+        display: none;
+    }
+`;
+
+const LoadingCardContent = styled.div<{ height?: string }>`
+    ${p => p.height && css`
+        height: ${p.height};
+    `}
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+`;
+
+type ExchangeMessage = HtkRequest | HtkResponse;
+
+@observer
+export class ExchangeBodyCard extends React.Component<{
+    message: ExchangeMessage,
+    direction: 'left' | 'right'
+}> {
+
+    @observable
+    private selectedContentType: HtkContentType | undefined;
+
+    private static decodedBodyCache = new WeakMap<
+        ExchangeMessage, IObservableValue<undefined | Buffer>
+    >();
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const message = this.props.message;
+
+            if (!message) {
+                this.setContentType(undefined);
+                return;
+            }
+
+            this.setContentType(this.selectedContentType || message.contentType);
+
+            if (ExchangeBodyCard.decodedBodyCache.get(message) === undefined) {
+                const observableResult = observable.box<undefined | Buffer>(undefined);
+                ExchangeBodyCard.decodedBodyCache.set(message, observableResult);
+
+                decodeContent(message.body.buffer, message.headers['content-encoding'])
+                .then(action<(result: Buffer) => void>((decodingResult) => {
+                    observableResult.set(decodingResult);
+                }))
+                // Ignore errors for now - for broken encodings just spin forever
+                .catch(() => {});
+            }
+        }));
+    }
+
+    @action.bound
+    setContentType(contentType: HtkContentType | undefined) {
+        this.selectedContentType = contentType;
+    }
+
+    render() {
+        const { message, direction } = this.props;
+
+        // any because bad types will just get undefined here, and that's ok.
+        const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
+        const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
+
+        return <ExchangeCard direction={direction} tabIndex={0}>
+            <header>
+                { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
+                <ContentTypeSelector
+                    onChange={this.setContentType}
+                    baseContentType={message.contentType}
+                    selectedContentType={this.selectedContentType!}
+                />
+                <h1>Response body</h1>
+            </header>
+            { decodedBody ?
+                <EditorCardContent>
+                    <ContentEditor
+                        rawContentType={message.headers['content-type']}
+                        contentType={this.selectedContentType!}
+                    >
+                        {decodedBody}
+                    </ContentEditor>
+                </EditorCardContent>
+            :
+                <LoadingCardContent height='500px'>
+                    <FontAwesomeIcon spin icon={['far', 'spinner-third']} size='8x' />
+                </LoadingCardContent>
+            }
+        </ExchangeCard>;
+    }
+
+}

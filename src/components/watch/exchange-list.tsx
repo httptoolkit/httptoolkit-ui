@@ -5,10 +5,10 @@ import { observable, action } from 'mobx';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
+import { HttpExchange } from '../../types';
 import { styled } from '../../styles'
 import { FontAwesomeIcon } from '../../icons';
 
-import { HttpExchange } from '../../model/store';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-colors';
 
 import { EmptyState } from '../common/empty-state';

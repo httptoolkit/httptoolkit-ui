@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
+import { HttpExchange } from '../../types';
 import { styled } from '../../styles'
-import { HttpExchange } from "../../model/store";
+
 import { ClearArrayButton } from './clear-button';
 
 const RequestCounter = styled(observer((props: {

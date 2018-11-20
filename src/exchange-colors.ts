@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { CompletedResponse } from 'mockttp';
 
-import { HttpExchange } from './model/store';
+import { HttpExchange } from './types';
 import { getBaseContentType } from './content-types';
 
 type UncategorizedExchange = Pick<HttpExchange, Exclude<keyof HttpExchange, 'category'>>;
