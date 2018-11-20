@@ -83,6 +83,12 @@ export class ExchangeBodyCard extends React.Component<{
                 decodeContent(message.body.buffer, message.headers['content-encoding'])
                 .then(action<(result: Buffer) => void>((decodingResult) => {
                     observableResult.set(decodingResult);
+
+                    // Necessary as a read for this key before the observable was
+                    // created will not be subscribed to this update.
+                    if (this.props.message === message) {
+                        this.forceUpdate();
+                    }
                 }))
                 // Ignore errors for now - for broken encodings just spin forever
                 .catch(() => {});
