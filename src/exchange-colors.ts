@@ -77,6 +77,8 @@ export function getExchangeCategory(exchange: UncategorizedExchange) {
         }
     } else if (!isSuccessfulExchange(exchange)) {
         return 'aborted';
+    } else if (isMutatativeExchange(exchange)) {
+        return 'mutative';
     } else if (isImageExchange(exchange)) {
         return 'image';
     } else if (isJSExchange(exchange)) {
@@ -89,8 +91,6 @@ export function getExchangeCategory(exchange: UncategorizedExchange) {
         return 'font';
     } else if (isDataExchange(exchange)) {
         return 'data';
-    } else if (isMutatativeExchange(exchange)) {
-        return 'mutative';
     } else {
         return 'unknown';
     }
