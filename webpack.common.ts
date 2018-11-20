@@ -11,7 +11,10 @@ export = <Webpack.Configuration> {
 
     output: {
         path: OUTPUT_DIR,
-        filename: 'app.js'
+        filename: 'app.js',
+        // https://github.com/webpack-contrib/worker-loader/issues/142
+        // Stops HMR breaking worker-loader
+        globalObject: 'this'
     },
 
     resolve: {
