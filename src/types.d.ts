@@ -12,7 +12,7 @@ export type HtkRequest = CompletedRequest & {
     contentType: HtkContentType
 };
 
-export type HtkResponse = (CompletedResponse & { contentType: HtkContentType });
+export type HtkResponse = CompletedResponse & { contentType: HtkContentType };
 
 export interface HttpExchange {
     request: HtkRequest;

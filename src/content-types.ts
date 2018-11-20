@@ -35,6 +35,7 @@ export function getHTKContentType(mimeType: string): HtkContentType {
 
         case 'text/plain':
         case 'text/csv':
+        case 'application/x-www-form-urlencoded':
             return 'text';
 
         case 'text/markdown':
@@ -62,8 +63,11 @@ export function getHTKContentType(mimeType: string): HtkContentType {
         case 'application/xhtml':
             return 'html';
 
-        default:
+        case 'application/octet-stream':
             return 'raw';
+
+        default:
+            return 'text';
     }
 }
 
