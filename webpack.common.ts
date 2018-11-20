@@ -55,6 +55,7 @@ export = <Webpack.Configuration> {
                 'html',
                 'css',
                 'javascript',
+                'typescript', // required for JS
                 'json',
                 'markdown',
                 'xml',
