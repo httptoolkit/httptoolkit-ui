@@ -11,11 +11,7 @@ import { App } from './components/app';
 import { Store } from './model/store';
 import { Provider } from 'mobx-react';
 
-import * as worker from './worker/worker-api';
-
 const APP_ELEMENT_SELECTOR = '#app';
-
-worker.send();
 
 window.onload = async function startApp() {
     const store = new Store();

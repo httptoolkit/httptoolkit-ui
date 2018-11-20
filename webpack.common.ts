@@ -25,7 +25,7 @@ export = <Webpack.Configuration> {
         rules: [{
             test: /\.tsx?$/,
             use: [{ loader: 'awesome-typescript-loader' }],
-            include: [SRC_DIR]
+            exclude: /node_modules/
         }, {
             test: /\.(woff2|png)$/,
             loader: 'file-loader'
