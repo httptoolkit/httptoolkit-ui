@@ -123,7 +123,7 @@ function isEditorFormat(input: any): input is EditorFormat {
 @observer
 export class ContentEditor extends React.Component<ContentEditorProps> {
 
-    @observable lineCount: number;
+    @observable lineCount: number = 0;
 
     constructor(props: ContentEditorProps) {
         super(props);
