@@ -17,7 +17,7 @@ import { StatusCode } from '../common/status-code';
 import { TableFooter } from './exchange-list-footer';
 
 const RowMarker = styled.div`
-    transition: color 0.2s;
+    transition: color 0.1s;
     color: ${(p: { category: ExchangeCategory }) => getExchangeSummaryColour(p.category)};
 
     background-color: currentColor;

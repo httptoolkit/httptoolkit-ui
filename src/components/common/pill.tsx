@@ -1,3 +1,4 @@
+import * as React from 'react';
 import * as polished from 'polished';
 import { styled, Theme } from '../../styles';
 
@@ -33,7 +34,7 @@ export const Pill = styled.div`
 
     word-spacing: 4px;
 
-    transition: color 0.2s;
+    transition: color 0.1s;
 
     color: ${(p: { color?: string, theme?: Theme }) =>
         getColor(p.color || polished.lighten(0.1, p.theme!.mainColor))
@@ -43,3 +44,29 @@ export const Pill = styled.div`
         getBackgroundColor(p.color || polished.lighten(0.1, p.theme!.mainColor))
     };
 `;
+
+const Select = styled(Pill.withComponent('select'))`
+    border: none;
+
+    height: 24px;
+    padding: 0 4px 3px 8px;
+
+    font-size: 16px;
+    font-family: Lato, Arial, sans-serif;
+`;
+
+export const PillSelector = <T extends {}>(props: {
+    value: T,
+    options: T[],
+    onChange: (option: T) => void
+    nameFormatter: (key: T) => string
+}) => <Select
+    onChange={(e: any) => props.onChange(e.target.value)}
+    value={ props.value as any }
+>
+    {props.options.map((option: any) =>
+        <option key={option} value={option}>
+            { props.nameFormatter ? props.nameFormatter(option) : option }
+        </option>
+    )}
+</Select>;

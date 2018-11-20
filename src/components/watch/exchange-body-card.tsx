@@ -1,16 +1,16 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { IObservableValue, observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 
 import { HtkRequest, HtkResponse } from '../../types';
 import { styled, css } from '../../styles';
-import { HtkContentType } from '../../content-types';
+import { HtkContentType, getCompatibleTypes } from '../../content-types';
 import { decodeContent } from '../../worker/worker-api';
 
 import { ExchangeCard } from './exchange-card';
-import { Pill } from '../common/pill';
-import { ContentTypeSelector } from '../editor/content-type-selector';
-import { ContentEditor } from '../editor/content-editor';
+import { Pill, PillSelector } from '../common/pill';
+import { ContentEditor, getContentEditorName } from '../editor/content-editor';
 import { FontAwesomeIcon } from '../../icons';
 
 function getReadableSize(bytes: number, siUnits = true) {
@@ -76,8 +76,6 @@ export class ExchangeBodyCard extends React.Component<{
                 return;
             }
 
-            this.setContentType(this.selectedContentType || message.contentType);
-
             if (ExchangeBodyCard.decodedBodyCache.get(message) === undefined) {
                 const observableResult = observable.box<undefined | Buffer>(undefined);
                 ExchangeBodyCard.decodedBodyCache.set(message, observableResult);
@@ -94,7 +92,11 @@ export class ExchangeBodyCard extends React.Component<{
 
     @action.bound
     setContentType(contentType: HtkContentType | undefined) {
-        this.selectedContentType = contentType;
+        if (contentType === this.props.message.contentType) {
+            this.selectedContentType = undefined;
+        } else {
+            this.selectedContentType = contentType;
+        }
     }
 
     render() {
@@ -105,6 +107,10 @@ export class ExchangeBodyCard extends React.Component<{
             collapsed,
             onCollapseToggled
         } = this.props;
+
+        const compatibleContentTypes = getCompatibleTypes(message.contentType);
+        const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
+            this.selectedContentType! : message.contentType;
 
         // any because bad types will just get undefined here, and that's ok.
         const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
@@ -117,10 +123,11 @@ export class ExchangeBodyCard extends React.Component<{
         >
             <header>
                 { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
-                <ContentTypeSelector
+                <PillSelector<HtkContentType>
                     onChange={this.setContentType}
-                    baseContentType={message.contentType}
-                    selectedContentType={this.selectedContentType!}
+                    value={contentType}
+                    options={compatibleContentTypes}
+                    nameFormatter={getContentEditorName}
                 />
                 <h1>{ title }</h1>
             </header>
@@ -128,7 +135,7 @@ export class ExchangeBodyCard extends React.Component<{
                 <EditorCardContent>
                     <ContentEditor
                         rawContentType={message.headers['content-type']}
-                        contentType={this.selectedContentType!}
+                        contentType={contentType}
                     >
                         {decodedBody}
                     </ContentEditor>
