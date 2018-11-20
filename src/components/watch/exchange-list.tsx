@@ -14,6 +14,8 @@ import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-color
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
+export const HEADER_FOOTER_HEIGHT = 38;
+
 import { TableFooter } from './exchange-list-footer';
 
 const RowMarker = styled.div`
@@ -34,8 +36,8 @@ const MarkerHeader = styled.div`
 
 const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
-    top: 40px;
-    bottom: 40px;
+    top: ${HEADER_FOOTER_HEIGHT}px;
+    bottom: ${HEADER_FOOTER_HEIGHT}px;
     height: auto;
 `;
 
@@ -51,6 +53,17 @@ const ListContainer = styled.div`
     height: 100%;
 
     font-size: ${p => p.theme.textSize};
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: ${HEADER_FOOTER_HEIGHT}px;
+        bottom: ${HEADER_FOOTER_HEIGHT}px;
+        left: 0;
+        right: 0;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
+        pointer-events: none;
+    }
 
     .ReactVirtualized__Table__headerRow {
         display: flex;
@@ -138,17 +151,6 @@ const ListContainer = styled.div`
         // Ensures that row outlines on the last row are visible
         padding-bottom: 2px;
     }
-
-    .ReactVirtualized__Table__Grid::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
-        pointer-events: none;
-    }
 `;
 
 @observer
@@ -176,10 +178,10 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                         <Table
                             ref={(table) => this.tableRef = table}
                             className={className}
-                            height={height - 42} // Leave space for the footer
+                            height={height - (HEADER_FOOTER_HEIGHT + 2)} // Leave space for the footer
                             width={width}
                             rowHeight={32}
-                            headerHeight={38}
+                            headerHeight={HEADER_FOOTER_HEIGHT}
                             // Unset tabindex if a row is selected
                             tabIndex={selectedExchangeIndex != null ? -1 : 0}
                             rowCount={exchanges.length}

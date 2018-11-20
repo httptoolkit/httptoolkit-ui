@@ -5,6 +5,7 @@ import { HttpExchange } from '../../types';
 import { styled } from '../../styles'
 
 import { ClearArrayButton } from './clear-button';
+import { HEADER_FOOTER_HEIGHT } from './exchange-list';
 
 const RequestCounter = styled(observer((props: {
     className?: string,
@@ -41,7 +42,7 @@ export const TableFooter = styled(observer((props: {
     bottom: 0;
 
     width: 100%;
-    height: 40px;
+    height: ${HEADER_FOOTER_HEIGHT}px;
     background-color: ${p => p.theme.mainBackground};
 
     display: flex;
