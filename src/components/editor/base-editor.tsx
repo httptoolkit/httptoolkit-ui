@@ -16,27 +16,26 @@ export class BaseEditor extends React.Component<EditorProps> {
         super(props);
     }
 
-    onEditorWillMount = (monaco: typeof monacoEditor) => {
-        this.monaco = monaco;
-    }
-
-    onEditorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor) => {
-        this.editor = editor;
-
-        let lineCount = (editor as any).viewModel.getLineCount();
+    private announceLineCount(editor: monacoEditor.editor.IStandaloneCodeEditor) {
+        let lineCount = (editor as any)._modelData.viewModel.getLineCount();
 
         if (this.props.onLineCount) {
             this.props.onLineCount(lineCount);
         }
     }
 
+    onEditorWillMount = (monaco: typeof monacoEditor) => {
+        this.monaco = monaco;
+    }
+
+    onEditorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor) => {
+        this.editor = editor;
+        this.announceLineCount(editor);
+    }
+
     componentDidUpdate() {
         if (this.editor) {
-            let lineCount = (this.editor as any).viewModel.getLineCount();
-
-            if (this.props.onLineCount) {
-                this.props.onLineCount(lineCount);
-            }
+            this.announceLineCount(this.editor);
         }
     }
 
