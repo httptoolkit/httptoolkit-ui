@@ -77,9 +77,9 @@ const ListContainer = styled.div`
         border-bottom: 1px solid ${props => props.theme.containerBorder};
         box-shadow: 0 0 30px rgba(0,0,0,0.2);
 
-        // For some reason, without this when the table starts scrolling
-        // the header adds padding & pops out of the container
-        padding-right: 0 !important;
+        /* React-Virtualized adds padding when the scrollbar appears (on the
+           table and header). Without this, the header pops out of the table. */
+        box-sizing: border-box;
     }
 
     .ReactVirtualized__Table__headerTruncatedText {
