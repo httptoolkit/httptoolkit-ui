@@ -6,7 +6,7 @@ import { disposeOnUnmount, observer } from 'mobx-react';
 import { HtkRequest, HtkResponse } from '../../types';
 import { styled, css } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
-import { decodeContent } from '../../worker/worker-api';
+import { decodeContent } from '../../workers/worker-api';
 
 import { ExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
