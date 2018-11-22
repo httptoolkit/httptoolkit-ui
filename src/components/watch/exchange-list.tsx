@@ -1,7 +1,8 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
 import { observer, Observer } from 'mobx-react';
-import { observable, action } from 'mobx';
+import { observable, action, computed } from 'mobx';
 
 import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
@@ -156,18 +157,36 @@ const ListContainer = styled.div`
 @observer
 export class ExchangeList extends React.Component<ExchangeListProps> {
 
-    @observable selectedExchangeIndex: number | undefined;
+    @observable selectedExchangeId: string | undefined;
+
+    @observable searchFilter: string | false = false;
+
+    @computed
+    private get filteredExchanges() {
+        if (!this.searchFilter) return this.props.exchanges;
+
+        let filter = this.searchFilter;
+        return this.props.exchanges.filter((exchange) =>
+            _.some(exchange.searchIndex, (key) => key.includes(filter))
+        );
+    }
 
     private tableContainerRef: HTMLElement | null;
     private tableRef: Table | null;
 
     render() {
         const { exchanges, className, onClear } = this.props;
-        const { selectedExchangeIndex } = this;
+        const { selectedExchangeId, filteredExchanges } = this;
 
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
-            <TableFooter exchanges={exchanges} onClear={onClear} />
+            <TableFooter
+                exchangeCount={exchanges.length}
+                filteredExchangeCount={filteredExchanges.length}
+                currentSearch={this.searchFilter || ''}
+                onSearch={this.onSearchInput}
+                onClear={onClear}
+            />
 
             <AutoSizer>{({ height, width }) =>
                 <Observer>{() =>
@@ -183,18 +202,18 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                             rowHeight={32}
                             headerHeight={HEADER_FOOTER_HEIGHT}
                             // Unset tabindex if a row is selected
-                            tabIndex={selectedExchangeIndex != null ? -1 : 0}
-                            rowCount={exchanges.length}
-                            rowGetter={({ index }) => exchanges[index]}
-                            onRowClick={({ index }) => {
-                                if (selectedExchangeIndex !== index) {
+                            tabIndex={selectedExchangeId != null ? -1 : 0}
+                            rowCount={filteredExchanges.length}
+                            rowGetter={({ index }) => filteredExchanges[index]}
+                            onRowClick={({ rowData, index }) => {
+                                if (selectedExchangeId !== rowData.id) {
                                     this.onExchangeSelected(index);
                                 } else {
                                     this.onExchangeDeselected();
                                 }
                             }}
                             rowClassName={({ index }) =>
-                                (selectedExchangeIndex === index) ? 'selected' : ''
+                                (selectedExchangeId === (filteredExchanges[index] || {}).id) ? 'selected' : ''
                             }
                             noRowsRenderer={() =>
                                 <EmptyStateOverlay
@@ -215,7 +234,8 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 <div
                                     aria-label='row'
                                     aria-rowindex={index + 1}
-                                    tabIndex={selectedExchangeIndex === index ? 0 : -1}
+                                    tabIndex={selectedExchangeId === rowData.id ? 0 : -1}
+                                    data-exchange-id={rowData.id}
 
                                     key={key}
                                     className={className}
@@ -315,9 +335,9 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
 
         // Something in the table is focused - make sure it's the correct thing.
 
-        if (this.selectedExchangeIndex != null) {
+        if (this.selectedExchangeId != null) {
             const rowElement = this.tableContainerRef.querySelector(
-                `[aria-rowindex='${this.selectedExchangeIndex + 1}']`
+                `[data-exchange-id='${this.selectedExchangeId}']`
             ) as HTMLDivElement;
             if (rowElement) {
                 rowElement.focus();
@@ -348,50 +368,56 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
 
     @action.bound
     onExchangeSelected(index: number) {
-        this.selectedExchangeIndex = index;
-        this.props.onSelected(this.props.exchanges[index]);
+        this.selectedExchangeId = this.filteredExchanges[index].id;
+        this.props.onSelected(this.filteredExchanges[index]);
     }
 
     @action.bound
     onExchangeDeselected() {
-        this.selectedExchangeIndex = undefined;
+        this.selectedExchangeId = undefined;
         this.props.onSelected(undefined);
     }
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        if (this.props.exchanges.length === 0) return;
+        if (this.filteredExchanges.length === 0) return;
 
-        const { exchanges } = this.props;
+        const { filteredExchanges } = this;
 
+        let currentIndex = _.findIndex(filteredExchanges, { id: this.selectedExchangeId });
         let targetIndex: number | undefined;
 
         switch (event.key) {
             case 'j':
             case 'ArrowDown':
-                targetIndex = this.selectedExchangeIndex === undefined ?
-                    0 : Math.min(this.selectedExchangeIndex + 1, exchanges.length - 1);
+                targetIndex = currentIndex === undefined ?
+                    0 : Math.min(currentIndex + 1, filteredExchanges.length - 1);
                 break;
             case 'k':
             case 'ArrowUp':
-                targetIndex = this.selectedExchangeIndex === undefined ?
-                    exchanges.length - 1 : Math.max(this.selectedExchangeIndex - 1, 0);
+                targetIndex = currentIndex === undefined ?
+                    filteredExchanges.length - 1 : Math.max(currentIndex - 1, 0);
                 break;
             case 'PageUp':
-                targetIndex = this.selectedExchangeIndex === undefined ?
-                    undefined : Math.max(this.selectedExchangeIndex - 10, 0);
+                targetIndex = currentIndex === undefined ?
+                    undefined : Math.max(currentIndex - 10, 0);
                 break;
             case 'PageDown':
-                targetIndex = this.selectedExchangeIndex === undefined ?
-                    undefined : Math.min(this.selectedExchangeIndex + 10, exchanges.length - 1);
+                targetIndex = currentIndex === undefined ?
+                    undefined : Math.min(currentIndex + 10, filteredExchanges.length - 1);
                 break;
         }
 
         if (targetIndex !== undefined) {
             this.onExchangeSelected(targetIndex);
             this.focusSelectedExchange();
-            this.tableRef!.scrollToRow(this.selectedExchangeIndex);
+            this.tableRef!.scrollToRow(targetIndex);
             event.preventDefault();
         }
+    }
+
+    @action.bound
+    onSearchInput(input: string) {
+        this.searchFilter = input || false;
     }
 }

@@ -15,7 +15,9 @@ export type HtkRequest = CompletedRequest & {
 export type HtkResponse = CompletedResponse & { contentType: HtkContentType };
 
 export interface HttpExchange {
+    id: string;
     request: HtkRequest;
     response: HtkResponse | 'aborted' | undefined;
     category: ExchangeCategory;
+    searchIndex: string[];
 }

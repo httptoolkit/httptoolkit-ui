@@ -10,6 +10,7 @@ import { FontAwesomeIcon, Icons, IconProps } from '../../icons';
 import { Store, ServerStatus } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
+import { SearchBox } from '../common/search-box';
 
 interface InterceptPageProps {
     className?: string,
@@ -125,56 +126,12 @@ const InterceptInstructions = styled.div`
     }
 `;
 
-const InterceptSearchBox = styled((props: {
-    className?: string,
-    value: string,
-    onChange: (input: string) => void
-}) =>
-    <div className={props.className}>
-        <input
-            type='text'
-            autoFocus
-            value={props.value}
-            placeholder='Browsers, mobile, docker...'
-            onChange={(e) => props.onChange(e.currentTarget.value.toLocaleLowerCase())}
-        />
-        <FontAwesomeIcon
-            icon={['fas', 'times']}
-            size='2x'
-            onClick={() => props.onChange('')}
-        />
-    </div>
-)`
-    position: relative;
+const InterceptSearchBox = styled(SearchBox).attrs({
+    autoFocus: true,
+    placeholder: 'Browsers, mobile, docker...',
+    iconSize: '2x'
+})`
     margin: 20px 0 0;
-
-    > input {
-        width: 100%;
-        padding: 15px;
-        box-sizing: border-box;
-
-        border-radius: 4px;
-
-        border: 1px solid ${p => p.theme.containerBorder};
-        box-shadow: inset 0 2px 4px 1px rgba(0, 0, 0, 0.1);
-        background-color: ${p => p.theme.popBackground};
-
-        font-size: ${p => p.theme.headingSize};
-    }
-
-    > svg {
-        position: absolute;
-
-        right: 15px;
-        top: 13px;
-        cursor: pointer;
-
-        display: none;
-    }
-
-    input:not([value=""]) ~ svg {
-        display: block;
-    }
 `;
 
 @inject('store')
@@ -218,7 +175,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         </p>
                         <InterceptSearchBox
                             value={this.filter || ''}
-                            onChange={this.onSearchInput}
+                            onSearch={this.onSearchInput}
                         />
                     </InterceptInstructions>
 

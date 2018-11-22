@@ -135,12 +135,17 @@ export class Store {
     @action
     private addRequest(request: CompletedRequest) {
         const newExchange = {
+            id: request.id,
             request: Object.assign(request, {
                 parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`),
                 source: parseSource(request.headers['user-agent']),
                 contentType: getHTKContentType(request.headers['content-type'])
             }),
-            response: undefined
+            response: undefined,
+            searchIndex: observable.array(
+                [request.url]
+                .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
+            )
         };
 
         const exchangeWithCategory = Object.assign(newExchange, {
@@ -158,6 +163,7 @@ export class Store {
         if (!exchange) return;
 
         exchange.response = 'aborted';
+        exchange.searchIndex.push('aborted');
     }
 
     @action
@@ -171,6 +177,12 @@ export class Store {
             contentType: getHTKContentType(response.headers['content-type'])
         });
         exchange.category = getExchangeCategory(exchange);
+
+        exchange.searchIndex.push(
+            response.statusCode.toString(),
+            response.statusMessage.toString(),
+            ..._.map(response.headers, (value, key) => `${key}: ${value}`)
+        );
     }
 
     @action.bound

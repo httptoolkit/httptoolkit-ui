@@ -6,14 +6,14 @@ import { FontAwesomeIcon } from '../../icons';
 
 export const ClearArrayButton = styled(observer((props: {
     className?: string,
-    array: any[],
+    count: number,
     onClear: () => void
 }) => {
     return <button
         className={props.className}
         title='Clear all'
-        tabIndex={props.array.length !== 0 ? 0 : -1}
-        disabled={props.array.length === 0}
+        tabIndex={props.count !== 0 ? 0 : -1}
+        disabled={props.count === 0}
         onClick={props.onClear}
     >
         <FontAwesomeIcon icon={['far', 'trash-alt']} />
