@@ -9,11 +9,11 @@ interface CardProps extends React.HTMLAttributes<HTMLElement> {
     disabled?: boolean;
 }
 
-const Card = styled.section.attrs({
-    onClick: (p: CardProps) => !p.disabled ? p.onClick : undefined,
-    onKeyDown: (p: CardProps) => !p.disabled ? p.onKeyDown : undefined,
-    tabIndex: (p: CardProps) => !p.disabled ? p.tabIndex : -1
-})`
+const Card = styled.section.attrs((p: CardProps) => ({
+    onClick: !p.disabled ? p.onClick : undefined,
+    onKeyDown: !p.disabled ? p.onKeyDown : undefined,
+    tabIndex: !p.disabled ? p.tabIndex : -1
+}))`
     box-sizing: border-box;
 
     ${(p: CardProps) => p.disabled && `

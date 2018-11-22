@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
+import { filterProps } from '../component-utils';
 
 const SearchInput = styled.input.attrs({
     type: 'text'
@@ -25,7 +26,7 @@ const ClearSearchButton = styled<React.ComponentType<{
     icon: string[],
     size?: string,
     onClick: () => void
-}>>(FontAwesomeIcon)`
+}>>(filterProps(FontAwesomeIcon, 'visible'))`
     position: absolute;
 
     right: 15px;
