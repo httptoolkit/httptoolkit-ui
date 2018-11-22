@@ -11,6 +11,7 @@ import { Store, ServerStatus } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
 import { SearchBox } from '../common/search-box';
+import { WithInjectedStore } from '../../types';
 
 interface InterceptPageProps {
     className?: string,
@@ -217,7 +218,10 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     }
 }
 
-const StyledInterceptPage = styled(InterceptPage)`
+const StyledInterceptPage = styled(
+    // Exclude store from the external props, as it's injected
+    InterceptPage as unknown as WithInjectedStore<typeof InterceptPage>
+)`
     height: 100vh;
     position: relative;
 `;

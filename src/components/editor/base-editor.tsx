@@ -9,8 +9,8 @@ export interface EditorProps extends MonacoEditorProps {
 }
 
 export class BaseEditor extends React.Component<EditorProps> {
-    monaco: typeof monacoEditor;
-    editor: monacoEditor.editor.IStandaloneCodeEditor;
+
+    editor: monacoEditor.editor.IStandaloneCodeEditor | undefined;
 
     constructor(props: EditorProps) {
         super(props);
@@ -22,10 +22,6 @@ export class BaseEditor extends React.Component<EditorProps> {
         if (this.props.onLineCount) {
             this.props.onLineCount(lineCount);
         }
-    }
-
-    onEditorWillMount = (monaco: typeof monacoEditor) => {
-        this.monaco = monaco;
     }
 
     onEditorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor) => {
@@ -62,7 +58,6 @@ export class BaseEditor extends React.Component<EditorProps> {
         return <MonacoEditor
             {...this.props}
             options={options}
-            editorWillMount={this.onEditorWillMount}
             editorDidMount={this.onEditorDidMount}
         />
     }

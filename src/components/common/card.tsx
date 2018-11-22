@@ -104,6 +104,7 @@ export const CollapseIcon = styled((props: CollapseIconProps) =>
 @observer
 export class CollapsibleCard extends React.Component<{
     collapsed: boolean;
+    children: React.ReactElement<any> | React.ReactElement<any>[];
     onCollapseToggled: () => void;
 } & React.HTMLAttributes<HTMLDivElement>> {
 
@@ -117,7 +118,7 @@ export class CollapsibleCard extends React.Component<{
             ref={this.cardRef as any} /* https://github.com/DefinitelyTyped/DefinitelyTyped/issues/28884 */
             onKeyDown={this.onKeyDown}
         >{
-            React.Children.map(children, (child: React.ReactElement<any>, i) =>
+            React.Children.map(children as React.ReactElement<any>[], (child, i) =>
                 i === 0 ?
                     React.cloneElement(child, { },
                         React.Children.toArray(child.props.children).concat(

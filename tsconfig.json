@@ -9,12 +9,7 @@
         "jsx": "react",
         "experimentalDecorators": true,
 
-        "noImplicitAny": true,
-        "noImplicitThis": true,
-        "alwaysStrict": true,
-        "strictNullChecks": true,
-        // ^^ All this instead of `strict` because strictFunctionTypes
-        // breaks the current electron typings (at 1.7.9)
+        "strict": true,
 
         "lib": [
             "dom",

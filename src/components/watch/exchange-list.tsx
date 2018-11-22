@@ -171,8 +171,8 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
         );
     }
 
-    private tableContainerRef: HTMLElement | null;
-    private tableRef: Table | null;
+    private tableContainerRef: HTMLDivElement | null | undefined;
+    private tableRef: Table | null | undefined;
 
     render() {
         const { exchanges, className, onClear } = this.props;
@@ -227,17 +227,15 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 className,
                                 style,
                                 onRowClick,
-                                key,
                                 index,
                                 rowData
-                            }: TableRowProps & { key: any } /* TODO: Add to R-V types */) =>
+                            }: TableRowProps) =>
                                 <div
                                     aria-label='row'
                                     aria-rowindex={index + 1}
                                     tabIndex={selectedExchangeId === rowData.id ? 0 : -1}
                                     data-exchange-id={rowData.id}
 
-                                    key={key}
                                     className={className}
                                     role="row"
                                     style={style}

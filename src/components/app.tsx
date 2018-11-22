@@ -9,11 +9,9 @@ import { Sidebar } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { WatchPage } from './watch/watch-page';
 
-type Page = React.ComponentType<{}>;
-
 const PAGES = [
-    { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage as Page },
-    { name: 'Watch', icon: ['fas', 'search'], component: WatchPage as Page }
+    { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
+    { name: 'Watch', icon: ['fas', 'search'], component: WatchPage }
 ];
 
 const AppContainer = styled.div`

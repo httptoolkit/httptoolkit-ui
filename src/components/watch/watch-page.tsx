@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import { observable, autorun, action, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 
-import { HttpExchange } from '../../types';
+import { HttpExchange, WithInjectedStore } from '../../types';
 import { styled } from '../../styles';
 
 import { ExchangeList } from './exchange-list';
@@ -70,7 +70,10 @@ class WatchPage extends React.Component<WatchPageProps> {
     }
 }
 
-const StyledWatchPage = styled(WatchPage)`
+const StyledWatchPage = styled(
+    // Exclude store from the external props, as it's injected
+    WatchPage as unknown as WithInjectedStore<typeof WatchPage>
+)`
     height: 100vh;
     position: relative;
 `;
