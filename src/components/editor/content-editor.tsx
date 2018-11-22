@@ -19,6 +19,8 @@ interface EditorFormat {
     render(content: Buffer): string;
 }
 
+type EditorFormatComponent = React.ComponentType<{ content: Buffer, rawContentType: string }>;
+
 export function getContentEditorName(contentType: HtkContentType): string {
     return contentType === 'raw' ? 'Hex' : _.capitalize(contentType);
 }
@@ -26,7 +28,7 @@ export function getContentEditorName(contentType: HtkContentType): string {
 export const EditorFormats: {
     [key in HtkContentType]?:
         | EditorFormat
-        | React.ComponentType<{ content: Buffer, rawContentType: string }>
+        | EditorFormatComponent
 } = {
     raw: {
         language: 'text',
@@ -96,14 +98,13 @@ export const EditorFormats: {
             });
         }
     },
-    image: styled.img.attrs<{ content: Buffer, rawContentType: string }>({
-        src: (p: { content: Buffer, rawContentType: string }) =>
-            `data:${p.rawContentType};base64,${p.content.toString('base64')}`
-    })`
+    image: styled.img.attrs((p: { content: Buffer, rawContentType: string }) => ({
+        src: `data:${p.rawContentType};base64,${p.content.toString('base64')}`
+    }))`
         display: block;
         max-width: 100%;
         margin: 0 auto;
-    `
+    ` as EditorFormatComponent // Shouldn't be necessary, but somehow TS doesn't work this out
 };
 
 interface ContentEditorProps {

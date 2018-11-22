@@ -33,7 +33,7 @@ const SidebarLogo = styled.img.attrs({
     ${sidebarItemStyles}
 `
 
-const SidebarItem = styled.div`
+const SidebarItem = styled.div<{ selected: boolean }>`
     ${sidebarItemStyles}
 
     width: calc(100% + 2px);
@@ -49,7 +49,7 @@ const SidebarItem = styled.div`
 
     opacity: 0.6;
 
-    ${(p: { selected: boolean, theme?: Theme }) => p.selected && css`
+    ${(p) => p.selected && css`
         opacity: 1;
         /* TODO: ! here is a bit of a hack to make the prop typings work */
         border-right-color: ${p.theme!.popColor};

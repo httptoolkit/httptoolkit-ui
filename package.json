@@ -33,8 +33,6 @@
     "@types/react": "^16.6.3",
     "@types/react-dom": "^16.0.9",
     "@types/react-fontawesome": "^1.6.2",
-    "@types/react-monaco-editor": "^0.16.0",
-    "@types/react-split-pane": "^0.1.67",
     "@types/react-virtualized": "^9.18.7",
     "@types/serialize-error": "^2.1.0",
     "@types/styled-components": "^4.0.3",
