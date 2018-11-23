@@ -14,7 +14,8 @@
         "lib": [
             "dom",
             "es2015",
-            "scripthost"
+            "scripthost",
+            "webworker"
         ],
 
         "plugins": [

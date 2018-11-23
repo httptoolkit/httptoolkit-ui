@@ -37,6 +37,7 @@
     "@types/serialize-error": "^2.1.0",
     "@types/styled-components": "^4.0.3",
     "@types/ua-parser-js": "^0.7.32",
+    "@types/workbox-sw": "^3.2.0",
     "deserialize-error": "0.0.3",
     "graphql.js": "^0.5.2",
     "js-beautify": "^1.8.8",
@@ -63,6 +64,7 @@
     "xml-beautifier": "^0.4.0"
   },
   "devDependencies": {
+    "@httptoolkit/workbox-webpack-plugin": "^3.6.4-pr1765.1",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
     "@types/html-webpack-plugin": "3.2.0",

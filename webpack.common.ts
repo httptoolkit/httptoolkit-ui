@@ -1,5 +1,6 @@
 import path = require('path');
 import HtmlWebpackPlugin = require('html-webpack-plugin');
+import { InjectManifest } from '@httptoolkit/workbox-webpack-plugin';
 import * as Webpack from 'webpack';
 
 // Webpack (but not tsc) gets upset about this, so let's opt out
@@ -67,6 +68,11 @@ export = <Webpack.Configuration> {
         }),
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null
+        }),
+        new InjectManifest({
+            swDest: 'update-worker.js',
+            importWorkboxFrom: 'local',
+            exclude: [/.*\.hot-update\.js(on)?$/]
         })
     ],
 };
