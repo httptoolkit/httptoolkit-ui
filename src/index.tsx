@@ -1,15 +1,16 @@
 document.dispatchEvent(new Event('load:executing'));
 
-import { ErrorBoundary, initSentry } from './components/error-boundary';
+import { initSentry } from './errors';
 initSentry(process.env.SENTRY_DSN);
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { Provider } from 'mobx-react';
 
 import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
+import { ErrorBoundary } from './components/error-boundary';
 import { Store } from './model/store';
-import { Provider } from 'mobx-react';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
 
@@ -39,10 +40,4 @@ window.onload = async function startApp() {
             </ThemeProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR));
-}
-
-if (module.hot) {
-    module.hot.accept('.', function() {
-        window.location.reload();
-    })
 }

@@ -18,6 +18,9 @@
   },
   "author": "Tim Perry <pimterry@gmail.com>",
   "license": "Apache-2.0",
+  "runtimeDependencies": {
+    "httptoolkit-server": "^0.0.2"
+  },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.6",
     "@fortawesome/free-brands-svg-icons": "^5.4.0",
@@ -34,6 +37,7 @@
     "@types/react-dom": "^16.0.9",
     "@types/react-fontawesome": "^1.6.2",
     "@types/react-virtualized": "^9.18.7",
+    "@types/semver": "^5.5.0",
     "@types/serialize-error": "^2.1.0",
     "@types/styled-components": "^4.0.3",
     "@types/ua-parser-js": "^0.7.32",
@@ -53,6 +57,7 @@
     "react-monaco-editor": "^0.22.0",
     "react-split-pane": "^0.1.84",
     "react-virtualized": "^9.20.1",
+    "semver": "^5.6.0",
     "serialize-error": "^3.0.0",
     "style-loader": "^0.21.0",
     "styled-components": "^4.0.3",

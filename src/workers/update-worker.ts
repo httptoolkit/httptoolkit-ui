@@ -1,6 +1,14 @@
-import WorkboxNamespace from "workbox-sw";
+import { initSentry } from '../errors';
+initSentry(process.env.SENTRY_DSN);
 
-import { version as appVersion } from '../../package.json';
+import WorkboxNamespace from 'workbox-sw';
+import * as semver from 'semver';
+
+import * as appPackage from '../../package.json';
+import { getVersion as getServerVersion } from '../model/htk-client';
+
+const appVersion = appPackage.version;
+const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css?family=Fira+Mono|Lato';
 
 type PrecacheEntry = {
     url: string;
@@ -12,7 +20,13 @@ declare const self: ServiceWorkerGlobalScope;
 declare const workbox: typeof WorkboxNamespace;
 declare const __precacheManifest: Array<PrecacheEntry>;
 
-workbox.core.setLogLevel(workbox.core.LOG_LEVELS.log);
+workbox.core.setLogLevel(workbox.core.LOG_LEVELS.silent);
+workbox.core.setCacheNameDetails({
+    prefix: 'http-toolkit',
+    precache: 'precache',
+    runtime: 'runtime'
+});
+const precacheName = workbox.core.cacheNames.precache;
 
 function mapPrecacheEntry(entry: PrecacheEntry, url: string, targetUrl: string) {
     if (typeof entry === 'string' && entry === url) {
@@ -34,54 +48,61 @@ function getAllRegexGroupMatches(input: string, regex: RegExp, groupIndex = 1): 
     return matches;
 }
 
-workbox.core.setCacheNameDetails({
-    prefix: 'http-toolkit',
-    precache: 'precache',
-    runtime: 'runtime'
-});
-
 const precacheController = new workbox.precaching.PrecacheController();
 
 async function buildPrecacheList() {
-    const fontsCssResponse = await fetch('https://fonts.googleapis.com/css?family=Fira+Mono|Lato');
+    const fontsCssResponse = await fetch(GOOGLE_FONTS_URL);
     const fontsCss = await fontsCssResponse.text();
     const fontUrls = getAllRegexGroupMatches(fontsCss, /url\(([^\)]+)\)/g);
 
     return __precacheManifest.map((precacheEntry) =>
         mapPrecacheEntry(precacheEntry, 'index.html', '/')
     ).concat([
-        // Tiny race condition here: the above could return different font URLs than
-        // the next request. Very unlikely though, and not a major problem.
-        'https://fonts.googleapis.com/css?family=Fira+Mono|Lato',
+        // Tiny race condition here: the above could return different font CSS than
+        // this new request. Very unlikely though, and not a major problem.
+        GOOGLE_FONTS_URL,
         ...fontUrls
     ]);
 };
+
+async function precacheNewVersionIfSupported() {
+    const [precacheList, serverVersion] = await Promise.all([buildPrecacheList(), getServerVersion()]);
+    console.log(`Connected httptoolkit-server version is ${serverVersion}.`);
+    console.log(`App requires server version satisfying ${appPackage.runtimeDependencies['httptoolkit-server']}.`);
+
+    if (!semver.satisfies(serverVersion, appPackage.runtimeDependencies['httptoolkit-server'])) {
+        throw new Error(
+            `New app version ${appVersion} available, but server ${serverVersion} is out of date - aborting`
+        );
+    } else {
+        console.log('Server version is sufficient, continuing install...');
+    }
+
+    precacheController.addToCacheList(precacheList);
+
+    const result = await precacheController.install();
+    console.log(`New precache installed, ${result.updatedEntries.length} files updated.`);
+}
+
 self.addEventListener('install', (event: ExtendableEvent) => {
     console.log(`SW installing for version ${appVersion}`);
-    event.waitUntil(buildPrecacheList()
-        .then(async (precacheList) => {
-            precacheController.addToCacheList(precacheList);
-            const result = await precacheController.install();
-            console.log(`New precache installed, ${result.updatedEntries.length} files updated.`);
-        })
-    );
+    event.waitUntil(precacheNewVersionIfSupported());
 });
 
 self.addEventListener('activate', (event) => {
     console.log(`SW activating for version ${appVersion}`);
+    // We assume here that the server version is still good. It could not be if
+    // it's been downgraded, but now that the app is running, it's the app's problem.
     event.waitUntil(precacheController.activate({}));
 });
 
-const preCacheOnly = workbox.strategies.cacheOnly({
-    cacheName: workbox.core.cacheNames.precache
-});
+const preCacheOnly = workbox.strategies.cacheOnly({ cacheName: precacheName });
 
 const tryFromPrecacheAndRefresh = workbox.strategies.staleWhileRevalidate({
-    cacheName: workbox.core.cacheNames.precache
+    cacheName: precacheName
 });
 
-// Hot Module Reload goes to the network:
-workbox.routing.registerRoute(/\/.*\.hot-update\.js(on)?$/, workbox.strategies.networkOnly());
+// Webpack Dev Sever goes straight to the network:
 workbox.routing.registerRoute(/\/sockjs-node\/.*/, workbox.strategies.networkOnly());
 
 // All other app code _must_ be precached - no random updates from elsewhere please.

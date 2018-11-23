@@ -5,32 +5,27 @@ import merge = require('webpack-merge');
 import common = require('./webpack.common');
 
 export = merge(common, {
-  mode: 'development',
+    mode: 'development',
 
-  devtool: 'inline-source-map',
+    devtool: 'inline-source-map',
 
-  devServer: {
-      contentBase: common.output!.path!,
-      hot: true
-  },
+    devServer: {
+        contentBase: common.output!.path!
+    },
 
-  module: {
-      rules: [
-        {
-            test: /\.js$/,
-            enforce: 'pre',
-            loader: 'source-map-loader',
-            exclude: [
-                path.join(__dirname, 'node_modules', 'monaco-editor'),
-                path.join(__dirname, 'node_modules', 'subscriptions-transport-ws'),
-                path.join(__dirname, '..', 'mockttp', 'node_modules', 'subscriptions-transport-ws'),
-                path.join(__dirname, 'node_modules', 'js-beautify')
-            ]
-        }
-      ]
-  },
-
-  plugins: [
-    new webpack.HotModuleReplacementPlugin()
-  ]
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                enforce: 'pre',
+                loader: 'source-map-loader',
+                exclude: [
+                    path.join(__dirname, 'node_modules', 'monaco-editor'),
+                    path.join(__dirname, 'node_modules', 'subscriptions-transport-ws'),
+                    path.join(__dirname, '..', 'mockttp', 'node_modules', 'subscriptions-transport-ws'),
+                    path.join(__dirname, 'node_modules', 'js-beautify')
+                ]
+            }
+        ]
+    }
 });

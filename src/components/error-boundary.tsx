@@ -3,17 +3,8 @@ import * as Sentry from '@sentry/browser';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
-import * as packageJson from '../../package.json';
-
 import { styled } from '../styles';
-
-let sentryInitialized = false;
-export function initSentry(dsn: string | undefined) {
-    if (dsn) {
-        Sentry.init({ dsn: dsn, release: packageJson.version });
-        sentryInitialized = true;
-    }
-}
+import { isSentryInitialized } from '../errors';
 
 const ErrorOverlay = styled((props: {
     className?: string,
@@ -102,7 +93,7 @@ export class ErrorBoundary extends React.Component {
                     Sorry, it's all gone wrong.
                 </p>
                 <div>
-                    { sentryInitialized &&
+                    { isSentryInitialized() &&
                         <button disabled={this.feedbackSent} onClick={this.sendFeedback}>
                             Tell us what happened
                         </button>

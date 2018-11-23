@@ -71,8 +71,7 @@ export = <Webpack.Configuration> {
         }),
         new InjectManifest({
             swDest: 'update-worker.js',
-            importWorkboxFrom: 'local',
-            exclude: [/.*\.hot-update\.js(on)?$/]
+            importWorkboxFrom: 'local'
         })
     ],
 };
