@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "prebuild": "rimraf dist/*",
-    "build": "tsc && webpack --config webpack.prod.ts",
+    "build": "webpack --config webpack.prod.ts",
     "start": "node-dev ./node_modules/.bin/httptoolkit-server & npm run start:web",
     "start:web": "webpack-dev-server --config webpack.dev.ts",
     "test": "karma start",

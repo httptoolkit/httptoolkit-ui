@@ -1,7 +1,10 @@
 import path = require('path');
 import HtmlWebpackPlugin = require('html-webpack-plugin');
-import MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 import * as Webpack from 'webpack';
+
+// Webpack (but not tsc) gets upset about this, so let's opt out
+// of proper typing entirely.
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const SRC_DIR = path.resolve(__dirname, 'src');
 const OUTPUT_DIR = path.resolve(__dirname, 'dist');
