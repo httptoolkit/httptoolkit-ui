@@ -222,15 +222,17 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                     message='Requests will appear here, once you send some...'
                                 />
                             }
-                            rowRenderer={({
+                            rowRenderer={(({
                                 columns,
                                 className,
                                 style,
                                 onRowClick,
                                 index,
-                                rowData
-                            }: TableRowProps) =>
+                                rowData,
+                                key
+                            }: TableRowProps & { key: string }) =>
                                 <div
+                                    key={key}
                                     aria-label='row'
                                     aria-rowindex={index + 1}
                                     tabIndex={selectedExchangeId === rowData.id ? 0 : -1}
@@ -245,7 +247,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 >
                                     {columns}
                                 </div>
-                            }
+                            ) as any /* Required so we can hack the 'key' in here */}
                         >
                             <Column
                                 label=""
