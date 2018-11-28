@@ -12,6 +12,7 @@ import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
 import { SearchBox } from '../common/search-box';
 import { WithInjectedStore } from '../../types';
+import { trackEvent } from '../../tracking';
 
 interface InterceptPageProps {
     className?: string,
@@ -207,6 +208,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     }
 
     onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: InterceptorUIConfig) {
+        trackEvent({ category: 'Interceptors', action: 'Activated', label: interceptor.id });
         interceptor.inProgress = true;
         yield this.props.store.activateInterceptor(interceptor.id);
         interceptor.inProgress = false;

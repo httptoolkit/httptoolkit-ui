@@ -8,6 +8,7 @@ import { Sidebar } from './sidebar';
 
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
+import { trackPage } from '../tracking';
 
 const PAGES = [
     { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
@@ -43,5 +44,6 @@ export class App extends React.Component {
     @action.bound
     onSelectPage(selectedPageIndex: number) {
         this.selectedPageIndex = selectedPageIndex;
+        trackPage(PAGES[selectedPageIndex].name);
     }
 }

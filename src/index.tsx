@@ -11,6 +11,7 @@ import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
 import { ErrorBoundary } from './components/error-boundary';
 import { Store } from './model/store';
+import { initTracking } from './tracking';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
 
@@ -25,6 +26,8 @@ window.onload = async function startApp() {
         }
         throw e;
     });
+
+    initTracking();
 
     const store = new Store();
     await store.startServer();

@@ -79,7 +79,8 @@ export = <Webpack.Configuration> {
             ]
         }),
         new Webpack.EnvironmentPlugin({
-            'SENTRY_DSN': null
+            'SENTRY_DSN': null,
+            'GA_ID': null
         }),
         new InjectManifest({
             swDest: 'update-worker.js',
