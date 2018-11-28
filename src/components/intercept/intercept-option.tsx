@@ -4,18 +4,18 @@ import { observer } from 'mobx-react';
 
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
+import { Interceptor } from '../../model/interceptors';
 
 import { LittleCard } from '../common/card';
-import { InterceptorUIConfig } from './intercept-page';
+import { Pill } from '../common/pill';
 
 export interface InterceptOption {
     matches(filter: string): boolean;
 }
 
 interface InterceptOptionProps {
-    interceptor: InterceptorUIConfig;
-    disabled: boolean;
-    onActivate: (interceptor: InterceptorUIConfig) => void;
+    interceptor: Interceptor;
+    onActivate: (interceptor: Interceptor) => void;
 }
 
 const InterceptOptionCard = styled(LittleCard)`
@@ -41,6 +41,9 @@ const InterceptOptionCard = styled(LittleCard)`
     }
 
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 `;
 
 const LoadingOverlay = styled.div`
@@ -58,6 +61,30 @@ const LoadingOverlay = styled.div`
     justify-content: center;
 `;
 
+const StatusPill = styled(Pill)`
+    margin-top: auto;
+`;
+
+function getStatusPill(interceptor: Interceptor) {
+    if (interceptor.isActive) {
+        return <StatusPill color='#4caf7d'>
+            Activated
+        </StatusPill>;
+    } else if (!interceptor.isActivable) {
+        if (interceptor.isSupported) {
+            return <StatusPill>
+                Not available
+            </StatusPill>;
+        } else {
+            return <StatusPill color='#e1421f'>
+                Coming soon
+            </StatusPill>;
+        }
+    } else {
+        return null;
+    }
+}
+
 @observer
 export class InterceptOption extends React.Component<InterceptOptionProps> {
 
@@ -66,21 +93,27 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
     }
 
     render() {
+        const { interceptor } = this.props;
+
+        const isDisabled = !interceptor.isActivable;
+
         return <InterceptOptionCard
-            disabled={this.props.disabled}
+            disabled={isDisabled}
             onKeyDown={this.onInterceptKeyDown.bind(this)}
             onClick={this.onInterceptorClicked.bind(this)}
-            tabIndex={this.props.disabled ? -1 : 0}
+            tabIndex={isDisabled ? -1 : 0}
         >
             <FontAwesomeIcon
-                {...this.props.interceptor.iconProps}
+                {...interceptor.iconProps}
                 size='8x'
             />
 
-            <h1>{ this.props.interceptor.name }</h1>
-            <p>{ this.props.interceptor.description }</p>
+            <h1>{ interceptor.name }</h1>
+            <p>{ interceptor.description }</p>
 
-            { this.props.interceptor.inProgress &&
+            { getStatusPill(interceptor) }
+
+            { interceptor.inProgress &&
                 <LoadingOverlay>
                     <FontAwesomeIcon
                         icon={['far', 'spinner-third']}

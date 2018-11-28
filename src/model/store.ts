@@ -10,13 +10,8 @@ import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
 import { getHTKContentType } from '../content-types';
+import { Interceptor, getInterceptOptions } from './interceptors';
 
-export interface Interceptor {
-    id: string;
-    version: string;
-    isActivable: string;
-    isActive: string;
-}
 
 export enum ServerStatus {
     NotStarted,
@@ -49,10 +44,11 @@ export class Store {
             .value();
     }
 
-    @observable supportedInterceptors: Interceptor[] | null = null;
+    @observable interceptors: _.Dictionary<Interceptor>;
 
     constructor() {
         this.server = getLocal();
+        this.interceptors = getInterceptOptions([]);
     }
 
     startServer = flow(function * (this: Store) {
@@ -69,6 +65,8 @@ export class Store {
                 ),
                 this.refreshInterceptors()
             ]);
+
+            setInterval(() => this.refreshInterceptors(), 10000);
 
             console.log(`Server started on port ${this.server.port}`);
 
@@ -125,10 +123,10 @@ export class Store {
     }
 
     async refreshInterceptors() {
-        const interceptors = await getInterceptors(this.server.port);
+        const serverInterceptors = await getInterceptors(this.server.port);
 
         runInAction(() => {
-            this.supportedInterceptors = interceptors;
+            this.interceptors = getInterceptOptions(serverInterceptors);
         });
     }
 
@@ -191,7 +189,7 @@ export class Store {
     }
 
     async activateInterceptor(interceptorId: string) {
-        await activateInterceptor(interceptorId, this.server.port);
+        await activateInterceptor(interceptorId, this.server.port).catch(console.warn);
         await this.refreshInterceptors();
     }
 

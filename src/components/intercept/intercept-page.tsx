@@ -5,7 +5,6 @@ import { observable, action, flow } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled } from '../../styles';
-import { FontAwesomeIcon, Icons, IconProps } from '../../icons';
 
 import { Store, ServerStatus } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
@@ -13,78 +12,12 @@ import { InterceptOption } from './intercept-option';
 import { SearchBox } from '../common/search-box';
 import { WithInjectedStore } from '../../types';
 import { trackEvent } from '../../tracking';
+import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
 
 interface InterceptPageProps {
     className?: string,
     store: Store,
 }
-
-const MOBILE_TAGS =['mobile', 'phone', 'apple', 'samsung', 'ios', 'android', 'app'];
-const DOCKER_TAGS = ['bridge', 'services', 'images'];
-
-// TODO: Move the interceptor list into the store
-export interface InterceptorUIConfig {
-    id: string;
-    name: string;
-    description: string;
-    iconProps: IconProps;
-    tags: string[];
-    inProgress?: boolean;
-}
-
-const MANUAL_INTERCEPT_OPTION: InterceptorUIConfig = {
-    id: 'manual-setup',
-    name: 'Manual setup',
-    description: 'Manually configure a source with the proxy settings and certificate',
-    iconProps: Icons.Unknown,
-    tags: []
-}
-
-const INTERCEPT_OPTIONS: InterceptorUIConfig[] = observable([
-    {
-        id: 'fresh-chrome',
-        name: 'Fresh Chrome',
-        description: 'Open a preconfigured fresh Chrome window',
-        iconProps: Icons.Chrome,
-        tags: ['browsers', 'web page']
-    },
-    {
-        id: 'fresh-firefox',
-        name: 'Fresh Firefox',
-        description: 'Open a preconfigured fresh Firefox window',
-        iconProps: Icons.Firefox,
-        tags: ['browsers', 'web page']
-    },
-    {
-        id: 'docker-all',
-        name: 'All Docker Containers',
-        description: 'Intercept all local Docker traffic',
-        iconProps: Icons.Docker,
-        tags: DOCKER_TAGS
-    },
-    {
-        id: 'docker-specific',
-        name: 'Specific Docker Containers',
-        description: 'Intercept all traffic from specific Docker containers',
-        iconProps: Icons.Docker,
-        tags: DOCKER_TAGS
-    },
-    {
-        id: 'network-device',
-        name: 'A device on your network',
-        description: 'Intercept all HTTP traffic from another device on your network',
-        iconProps: Icons.Network,
-        tags: [...MOBILE_TAGS, 'lan', 'arp', 'wifi']
-    },
-    {
-        id: 'system-proxy',
-        name: 'Everything',
-        description: 'Intercept all HTTP traffic on this machine',
-        iconProps: Icons.Desktop,
-        tags: ['local', 'machine', 'system', 'me']
-    },
-    MANUAL_INTERCEPT_OPTION
-]);
 
 const InterceptPageContainer = styled.section`
     display: grid;
@@ -142,19 +75,18 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
 
-        const interceptOptions = INTERCEPT_OPTIONS;
-        const supportedInterceptorIds = _.map(this.props.store.supportedInterceptors, 'id');
+        const interceptOptions = this.props.store.interceptors;
 
         if (this.props.store.serverStatus === ServerStatus.Connected) {
-            const visibleInterceptOptions = interceptOptions.filter((option) =>
+            const visibleInterceptOptions = _.pickBy(interceptOptions, (option) =>
                 !this.filter ||
                 _.includes(option.name.toLocaleLowerCase(), this.filter) ||
                 _.includes(option.description.toLocaleLowerCase(), this.filter) ||
                 _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), this.filter))
             );
 
-            if (visibleInterceptOptions.length === 0) {
-                visibleInterceptOptions.push(MANUAL_INTERCEPT_OPTION);
+            if (!_.some(visibleInterceptOptions, (o) => o.isActivable)) {
+                visibleInterceptOptions[MANUAL_INTERCEPT_ID] = interceptOptions[MANUAL_INTERCEPT_ID];
             }
 
             mainView = (
@@ -180,14 +112,10 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
                     <ConnectedSources activeSources={this.props.store.activeSources} />
 
-                    { visibleInterceptOptions.map((option) =>
+                    { _.map(visibleInterceptOptions, (option, id) =>
                         <InterceptOption
-                            key={option.id}
+                            key={id}
                             interceptor={option}
-                            disabled={
-                                !_.includes(supportedInterceptorIds, option.id) &&
-                                option.id !== MANUAL_INTERCEPT_OPTION.id
-                            }
                             onActivate={this.onInterceptorActivated.bind(this)}
                         />
                     ) }
@@ -204,7 +132,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         return <div className={this.props.className}>{ mainView }</div>;
     }
 
-    onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: InterceptorUIConfig) {
+    onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: Interceptor) {
         trackEvent({ category: 'Interceptors', action: 'Activated', label: interceptor.id });
         interceptor.inProgress = true;
         yield this.props.store.activateInterceptor(interceptor.id);

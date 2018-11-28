@@ -2,6 +2,13 @@ import * as getGraphQL from 'graphql.js';
 
 const graphql = getGraphQL('http://localhost:4000/', { asJSON: true });
 
+export interface ServerInterceptor {
+    id: string;
+    version: string;
+    isActivable: boolean;
+    isActive: boolean;
+}
+
 export async function getVersion() {
     const response = await graphql(`
         query getVersion {
@@ -12,7 +19,7 @@ export async function getVersion() {
     return response.version;
 }
 
-export async function getInterceptors(proxyPort: number) {
+export async function getInterceptors(proxyPort: number): Promise<ServerInterceptor[]> {
     const response = await graphql(`
         query getInterceptors($proxyPort: Int!) {
             interceptors {
