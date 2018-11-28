@@ -6,14 +6,19 @@ import { styled, Theme, ThemeProps } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
+    className?: string;
+    ref?: React.Ref<HTMLElement>;
     disabled?: boolean;
 }
 
-const Card = styled.section.attrs((p: CardProps) => ({
-    onClick: !p.disabled ? p.onClick : undefined,
-    onKeyDown: !p.disabled ? p.onKeyDown : undefined,
-    tabIndex: !p.disabled ? p.tabIndex : -1
-}))`
+const Card = styled((p: CardProps) =>
+    <section
+        {...p}
+        onClick={!p.disabled ? p.onClick : undefined}
+        onKeyDown={!p.disabled ? p.onKeyDown : undefined}
+        tabIndex={!p.disabled ? p.tabIndex : undefined}
+    />
+)`
     box-sizing: border-box;
 
     ${(p: CardProps) => p.disabled && `
@@ -108,14 +113,14 @@ export class CollapsibleCard extends React.Component<{
     onCollapseToggled: () => void;
 } & React.HTMLAttributes<HTMLDivElement>> {
 
-    private cardRef = React.createRef();
+    private cardRef = React.createRef<HTMLElement>();
 
     render() {
         const { children, collapsed, onCollapseToggled } = this.props;
 
         return <MediumCard
             {..._.omit(this.props, ['onCollapseToggled', 'collapsed'])}
-            ref={this.cardRef as any} /* https://github.com/DefinitelyTyped/DefinitelyTyped/issues/28884 */
+            ref={this.cardRef}
             onKeyDown={this.onKeyDown}
         >{
             React.Children.map(children as React.ReactElement<any>[], (child, i) =>
