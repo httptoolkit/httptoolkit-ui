@@ -17,6 +17,7 @@ const PAGES = [
 
 const AppContainer = styled.div`
     display: flex;
+    height: 100%;
 
     > :not(:first-child) {
         flex: 1 1;

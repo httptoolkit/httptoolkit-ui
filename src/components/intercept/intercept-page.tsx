@@ -95,11 +95,8 @@ const InterceptPageContainer = styled.section`
     grid-auto-rows: 200px;
 
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 0 auto 20px;
     padding: 40px;
-
-    max-height: 100%;
-    overflow: auto;
 
     > ${ConnectedSources} {
         grid-column: 3 / span 2;
@@ -224,7 +221,8 @@ const StyledInterceptPage = styled(
     // Exclude store from the external props, as it's injected
     InterceptPage as unknown as WithInjectedStore<typeof InterceptPage>
 )`
-    height: 100vh;
+    height: 100%;
+    overflow-y: auto;
     position: relative;
 `;
 
