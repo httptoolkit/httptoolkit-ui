@@ -1,11 +1,10 @@
 import * as React from 'react';
 
 import * as logo from '../images/logo.png';
-import { styled, css, Theme } from '../styles';
+import { styled, css } from '../styles';
 import { FontAwesomeIcon } from '../icons';
 
 interface SidebarProps {
-    className?: string;
     selectedPageIndex: number;
     pages: Array<{
         name: string,
@@ -14,11 +13,28 @@ interface SidebarProps {
     onSelectPage: (selectedPageIndex: number) => void;
 }
 
+const SidebarNav = styled.nav`
+    width: 90px;
+    background-color: ${p => p.theme.mainBackground};
+    color: ${p => p.theme.mainColor};
+    z-index: 1;
+
+    border-right: 1px solid rgba(0,0,0,0.12);
+    box-sizing: border-box;
+    box-shadow: 0 0 30px rgba(0,0,0,0.2);
+
+    font-size: ${p => p.theme.textSize};
+
+    display: flex;
+    flex-direction: column;
+`
+
 const sidebarItemStyles = css`
     height: 80px;
     margin: 0 auto;
 
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -41,7 +57,6 @@ const SidebarItem = styled.div<{ selected: boolean }>`
 
     cursor: pointer;
     user-select: none;
-    flex-direction: column;
 
     border-width: 0 5px;
     border-style: solid;
@@ -60,8 +75,23 @@ const SidebarItem = styled.div<{ selected: boolean }>`
     }
 `;
 
-export const Sidebar = styled((props: SidebarProps) =>
-    <nav className={props.className}>
+const FeedbackButton = styled.a`
+    ${sidebarItemStyles}
+
+    color: ${p => p.theme.popColor};
+    font-weight: bold;
+    text-decoration: none;
+
+    margin-top: auto;
+    margin-bottom: 5px;
+
+    > svg {
+        margin-bottom: 5px;
+    }
+`;
+
+export const Sidebar = (props: SidebarProps) =>
+    <SidebarNav>
         <SidebarLogo />
         {props.pages.map((page, i) =>
             <SidebarItem
@@ -73,16 +103,11 @@ export const Sidebar = styled((props: SidebarProps) =>
                 {page.name}
             </SidebarItem>
         )}
-    </nav>
-)`
-    width: 90px;
-    background-color: ${p => p.theme.mainBackground};
-    color: ${p => p.theme.mainColor};
-    z-index: 1;
-
-    border-right: 1px solid rgba(0,0,0,0.12);
-    box-sizing: border-box;
-    box-shadow: 0 0 30px rgba(0,0,0,0.2);
-
-    font-size: ${p => p.theme.textSize};
-`;
+        <FeedbackButton
+            href='https://github.com/httptoolkit/feedback/issues/new'
+            target='_blank'
+        >
+            <FontAwesomeIcon size='2x' icon={['far', 'comment']} />
+            Give feedback
+        </FeedbackButton>
+    </SidebarNav>;
