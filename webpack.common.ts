@@ -64,6 +64,18 @@ export = <Webpack.Configuration> {
                 'markdown',
                 'xml',
                 'yaml'
+            ],
+            features: [
+                'bracketMatching',
+                'caretOperations',
+                'clipboard',
+                'colorDetector',
+                'find',
+                'folding',
+                'inspectTokens',
+                'links',
+                'smartSelect',
+                'wordHighlighter'
             ]
         }),
         new Webpack.EnvironmentPlugin({
