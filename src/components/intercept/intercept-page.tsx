@@ -112,13 +112,20 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
                     <ConnectedSources activeSources={this.props.store.activeSources} />
 
-                    { _.map(visibleInterceptOptions, (option, id) =>
-                        <InterceptOption
-                            key={id}
-                            interceptor={option}
-                            onActivate={this.onInterceptorActivated.bind(this)}
-                        />
-                    ) }
+                    { _(visibleInterceptOptions)
+                        .sortBy((option) => {
+                            if (option.isActive) return -100;
+                            else if (option.isActivable) return -50;
+                            else if (option.isSupported) return -25;
+                            else return 0;
+                        })
+                        .map((option, id) =>
+                            <InterceptOption
+                                key={id}
+                                interceptor={option}
+                                onActivate={this.onInterceptorActivated.bind(this)}
+                            />
+                    ).value() }
                 </InterceptPageContainer>
             );
         } else if (this.props.store.serverStatus === ServerStatus.Connecting) {

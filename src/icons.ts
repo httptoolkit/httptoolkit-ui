@@ -19,6 +19,11 @@ import { faComment } from '@fortawesome/free-regular-svg-icons/faComment';
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
 import { faDocker } from '@fortawesome/free-brands-svg-icons/faDocker';
+import { faAndroid } from '@fortawesome/free-brands-svg-icons/faAndroid';
+import { faApple } from '@fortawesome/free-brands-svg-icons/faApple';
+import { faSafari } from '@fortawesome/free-brands-svg-icons/faSafari';
+import { faEdge } from '@fortawesome/free-brands-svg-icons/faEdge';
+import { faInternetExplorer } from '@fortawesome/free-brands-svg-icons/faInternetExplorer';
 
 library.add(
     faArrowLeft,
@@ -39,6 +44,11 @@ library.add(
     faChrome,
     faFirefox,
     faDocker,
+    faAndroid,
+    faApple,
+    faSafari,
+    faEdge,
+    faInternetExplorer
 );
 
 export { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -51,8 +61,13 @@ export interface IconProps {
 export const Icons = {
     Chrome: { icon: ['fab', 'chrome'], color: '#1da462' },
     Firefox: { icon: ['fab', 'firefox'], color: '#e66000' },
+    Safari: { icon: ['fab', 'safari'], color: '#448aff' },
+    Edge: { icon: ['fab', 'edge'], color: '#2c75be' },
+    InternetExplorer: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
     Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
+    Android: { icon: ['fab', 'android'], color: '#A4C639' },
+    iOS: { icon: ['fab', 'apple'], color: '#000' },
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 };
