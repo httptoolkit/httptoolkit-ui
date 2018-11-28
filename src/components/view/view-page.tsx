@@ -13,14 +13,14 @@ import { SplitPane } from '../split-pane';
 
 import { Store, ServerStatus } from '../../model/store';
 
-interface WatchPageProps {
+interface ViewPageProps {
     className?: string,
     store: Store
 }
 
 @inject('store')
 @observer
-class WatchPage extends React.Component<WatchPageProps> {
+class ViewPage extends React.Component<ViewPageProps> {
 
     @observable.ref selectedExchange: HttpExchange | undefined = undefined;
 
@@ -70,12 +70,12 @@ class WatchPage extends React.Component<WatchPageProps> {
     }
 }
 
-const StyledWatchPage = styled(
+const StyledViewPage = styled(
     // Exclude store from the external props, as it's injected
-    WatchPage as unknown as WithInjectedStore<typeof WatchPage>
+    ViewPage as unknown as WithInjectedStore<typeof ViewPage>
 )`
     height: 100vh;
     position: relative;
 `;
 
-export { StyledWatchPage as WatchPage };
+export { StyledViewPage as ViewPage };

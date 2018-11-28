@@ -7,11 +7,11 @@ import { styled } from '../styles';
 import { Sidebar } from './sidebar';
 
 import { InterceptPage } from './intercept/intercept-page';
-import { WatchPage } from './watch/watch-page';
+import { ViewPage } from './view/view-page';
 
 const PAGES = [
     { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
-    { name: 'Watch', icon: ['fas', 'search'], component: WatchPage }
+    { name: 'View', icon: ['fas', 'search'], component: ViewPage }
 ];
 
 const AppContainer = styled.div`
