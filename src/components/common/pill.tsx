@@ -32,7 +32,7 @@ export const Pill = styled.div`
 
     font-weight: bold;
 
-    word-spacing: 4px;
+    word-spacing: 3px;
 
     transition: color 0.1s;
 
