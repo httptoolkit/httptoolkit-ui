@@ -14,8 +14,9 @@ export interface InterceptOption {
 }
 
 interface InterceptOptionProps {
+    className?: string;
     interceptor: Interceptor;
-    onActivate: (interceptor: Interceptor) => void;
+    onActivate?: (interceptor: Interceptor) => void;
 }
 
 const InterceptOptionCard = styled(LittleCard)`
@@ -24,7 +25,7 @@ const InterceptOptionCard = styled(LittleCard)`
 
     user-select: none;
 
-    > svg {
+    > svg:first-child {
         position: absolute;
         bottom: -10px;
         right: -10px;
@@ -93,44 +94,49 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
     }
 
     render() {
-        const { interceptor } = this.props;
+        const { interceptor, children, className, onActivate } = this.props;
 
         const isDisabled = !interceptor.isActivable;
 
-        return <InterceptOptionCard
-            disabled={isDisabled}
-            onKeyDown={this.onInterceptKeyDown.bind(this)}
-            onClick={this.onInterceptorClicked.bind(this)}
-            tabIndex={isDisabled ? -1 : 0}
-        >
-            <FontAwesomeIcon
-                {...interceptor.iconProps}
-                size='8x'
-            />
+        return <div className={className}>
+            <InterceptOptionCard
 
-            <h1>{ interceptor.name }</h1>
-            <p>{ interceptor.description }</p>
+                disabled={isDisabled}
+                onKeyDown={this.onInterceptKeyDown.bind(this)}
+                onClick={onActivate ? () => onActivate(interceptor) : undefined}
+                tabIndex={!isDisabled && onActivate ? 0 : undefined}
+            >
+                <FontAwesomeIcon
+                    {...interceptor.iconProps}
+                    size='8x'
+                />
 
-            { getStatusPill(interceptor) }
+                <h1>{ interceptor.name }</h1>
 
-            { interceptor.inProgress &&
-                <LoadingOverlay>
-                    <FontAwesomeIcon
-                        icon={['far', 'spinner-third']}
-                        size='4x'
-                        spin={true}
-                    />
-                </LoadingOverlay>
-            }
-        </InterceptOptionCard>
-    }
+                { children ?
+                    children :
+                    <>
+                        <p>{ interceptor.description }</p>
 
-    async onInterceptorClicked() {
-        this.props.onActivate(this.props.interceptor);
+                        { getStatusPill(interceptor) }
+
+                        { interceptor.inProgress &&
+                            <LoadingOverlay>
+                                <FontAwesomeIcon
+                                    icon={['far', 'spinner-third']}
+                                    size='4x'
+                                    spin={true}
+                                />
+                            </LoadingOverlay>
+                        }
+                    </>
+                }
+            </InterceptOptionCard>
+        </div>
     }
 
     onInterceptKeyDown(event: React.KeyboardEvent) {
-        if (event.key === 'Enter') {
+        if (event.key === 'Enter' && this.props.onActivate) {
             this.props.onActivate(this.props.interceptor);
         }
     }

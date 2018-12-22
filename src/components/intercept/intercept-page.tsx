@@ -4,7 +4,7 @@ import * as React from 'react';
 import { observable, action, flow } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { styled } from '../../styles';
+import { styled, css } from '../../styles';
 
 import { Store, ServerStatus } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
@@ -13,6 +13,7 @@ import { SearchBox } from '../common/search-box';
 import { WithInjectedStore } from '../../types';
 import { trackEvent } from '../../tracking';
 import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
+import { ManualInterceptOption } from './manual-intercept-config';
 
 interface InterceptPageProps {
     className?: string,
@@ -25,7 +26,7 @@ const InterceptPageContainer = styled.section`
     grid-gap: 80px;
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 350px;
-    grid-auto-rows: 200px;
+    grid-auto-rows: minmax(200px, auto);
 
     max-width: 1200px;
     margin: 0 auto 20px;
@@ -72,13 +73,15 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
     @observable filter: string | false = false;
 
+    private readonly gridRef = React.createRef<HTMLDivElement>();
+
     render(): JSX.Element {
         let mainView: JSX.Element | undefined;
 
-        const interceptOptions = this.props.store.interceptors;
+        const { serverPort, certPath, activeSources, interceptors } = this.props.store;
 
-        if (this.props.store.serverStatus === ServerStatus.Connected) {
-            const visibleInterceptOptions = _.pickBy(interceptOptions, (option) =>
+        if (this.props.store.serverStatus === ServerStatus.Connected && serverPort && certPath) {
+            const visibleInterceptOptions = _.pickBy(interceptors, (option) =>
                 !this.filter ||
                 _.includes(option.name.toLocaleLowerCase(), this.filter) ||
                 _.includes(option.description.toLocaleLowerCase(), this.filter) ||
@@ -86,11 +89,11 @@ class InterceptPage extends React.Component<InterceptPageProps> {
             );
 
             if (!_.some(visibleInterceptOptions, (o) => o.isActivable)) {
-                visibleInterceptOptions[MANUAL_INTERCEPT_ID] = interceptOptions[MANUAL_INTERCEPT_ID];
+                visibleInterceptOptions[MANUAL_INTERCEPT_ID] = interceptors[MANUAL_INTERCEPT_ID];
             }
 
             mainView = (
-                <InterceptPageContainer>
+                <InterceptPageContainer ref={this.gridRef}>
                     <InterceptInstructions>
                         <h1>
                             Intercept HTTP
@@ -110,21 +113,31 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         />
                     </InterceptInstructions>
 
-                    <ConnectedSources activeSources={this.props.store.activeSources} />
+                    <ConnectedSources activeSources={activeSources} />
 
                     { _(visibleInterceptOptions)
                         .sortBy((option) => {
-                            if (option.isActive) return -100;
-                            else if (option.isActivable) return -50;
+                            if (option.isActive || option.isActivable) return -50;
                             else if (option.isSupported) return -25;
                             else return 0;
                         })
-                        .map((option, id) =>
-                            <InterceptOption
-                                key={id}
-                                interceptor={option}
-                                onActivate={this.onInterceptorActivated.bind(this)}
-                            />
+                        .map((option, index) =>
+                            // TODO: This is fine for now, but in future we definitely need a generic
+                            // activateAction for interceptors, and to move this into the option.
+                            (option.id === MANUAL_INTERCEPT_ID) ?
+                                <ManualInterceptOption
+                                    key={option.id}
+                                    interceptor={option}
+                                    index={index}
+                                    serverPort={serverPort}
+                                    certPath={certPath}
+                                />
+                            :
+                                <InterceptOption
+                                    key={option.id}
+                                    interceptor={option}
+                                    onActivate={this.onInterceptorActivated.bind(this)}
+                                />
                     ).value() }
                 </InterceptPageContainer>
             );

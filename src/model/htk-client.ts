@@ -1,6 +1,6 @@
 import * as getGraphQL from 'graphql.js';
 
-const graphql = getGraphQL('http://localhost:4000/', { asJSON: true });
+const graphql = getGraphQL('http://localhost:45457/', { asJSON: true });
 
 export interface ServerInterceptor {
     id: string;
@@ -17,6 +17,18 @@ export async function getVersion() {
     `, {});
 
     return response.version;
+}
+
+export async function getConfig() {
+    const response = await graphql(`
+        query getConfig {
+            config {
+                certificatePath
+            }
+        }
+    `, {});
+
+    return response.config;
 }
 
 export async function getInterceptors(proxyPort: number): Promise<ServerInterceptor[]> {

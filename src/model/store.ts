@@ -5,7 +5,7 @@ import { getLocal, Mockttp, CompletedRequest, CompletedResponse } from 'mockttp'
 
 import { HttpExchange } from '../types';
 import { parseSource } from './sources';
-import { getInterceptors, activateInterceptor } from './htk-client';
+import { getInterceptors, activateInterceptor, getConfig } from './htk-client';
 import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
@@ -25,10 +25,21 @@ configure({ enforceActions: 'observed' });
 
 export class Store {
 
+    @observable.ref
     private server: Mockttp;
 
-    // TODO: Combine into a batchedEvent queue of callbacks
+    @observable
+    certPath: string | undefined;
 
+    @computed get serverPort() {
+        if (this.server) {
+            return this.server.port;
+        } else {
+            return undefined;
+        }
+    }
+
+    // TODO: Combine into a batchedEvent queue of callbacks
     private requestQueue: CompletedRequest[] = [];
     private responseQueue: CompletedResponse[] = [];
     private abortedQueue: CompletedRequest[] = [];
@@ -63,7 +74,10 @@ export class Store {
                 ).then(() =>
                     this.server.anyRequest().always().thenPassThrough()
                 ),
-                this.refreshInterceptors()
+                this.refreshInterceptors(),
+                getConfig().then((config) => {
+                    this.certPath = config.certificatePath
+                })
             ]);
 
             setInterval(() => this.refreshInterceptors(), 10000);

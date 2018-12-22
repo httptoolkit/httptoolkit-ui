@@ -19,7 +19,7 @@
   "author": "Tim Perry <pimterry@gmail.com>",
   "license": "Apache-2.0",
   "runtimeDependencies": {
-    "httptoolkit-server": "^0.0.5"
+    "httptoolkit-server": "^0.0.8"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.6",
@@ -87,7 +87,7 @@
     "css-loader": "^1.0.0",
     "file-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
-    "httptoolkit-server": "^0.0.5",
+    "httptoolkit-server": "^0.0.8",
     "karma": "^3.1.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.2.0",
