@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import * as logo from '../images/logo.png';
+import * as logo from '../images/logo-stacked.svg';
 import { styled, css } from '../styles';
 import { FontAwesomeIcon } from '../icons';
 
@@ -30,6 +30,7 @@ const SidebarNav = styled.nav`
 `
 
 const sidebarItemStyles = css`
+    width: 80px;
     height: 80px;
     margin: 0 auto;
 
