@@ -54,6 +54,8 @@ export function getHTKContentType(mimeType: string): HtkContentType {
         case 'image/svg':
         case 'image/tiff':
         case 'image/webp':
+        case 'image/x-icon':
+        case 'image/vnd.microsoft.icon':
             return 'image';
 
         case 'text/css':
@@ -74,10 +76,12 @@ export function getHTKContentType(mimeType: string): HtkContentType {
 export function getCompatibleTypes(contentType: HtkContentType): HtkContentType[] {
     let types = [contentType];
 
+    // Anything except raw & image can be shown as text
     if (!_.includes(['raw', 'image', 'text'], contentType)) {
         types.push('text');
     }
 
+    // Anything can be shown raw
     if (contentType !== 'raw') types.push('raw');
 
     return types;
