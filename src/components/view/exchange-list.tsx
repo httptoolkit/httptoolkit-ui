@@ -308,16 +308,10 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
                             />
                             <Column
-                                label="Path"
+                                label="Path and query"
                                 dataKey="path"
-                                width={500}
-                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname}
-                            />
-                            <Column
-                                label="Query"
-                                dataKey="query"
-                                width={500}
-                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.search.slice(1)}
+                                width={1000}
+                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname + rowData.request.parsedUrl.search}
                             />
                         </Table>
                     </div>
