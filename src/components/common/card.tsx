@@ -7,13 +7,14 @@ import { FontAwesomeIcon } from '../../icons';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
-    ref?: React.Ref<HTMLElement>;
+    innerRef?: React.Ref<HTMLElement>;
     disabled?: boolean;
 }
 
 const Card = styled((p: CardProps) =>
     <section
         {...p}
+        ref={p.innerRef}
         onClick={!p.disabled ? p.onClick : undefined}
         onKeyDown={!p.disabled ? p.onKeyDown : undefined}
         tabIndex={!p.disabled ? p.tabIndex : undefined}
@@ -120,7 +121,7 @@ export class CollapsibleCard extends React.Component<{
 
         return <MediumCard
             {..._.omit(this.props, ['onCollapseToggled', 'collapsed'])}
-            ref={this.cardRef}
+            innerRef={this.cardRef}
             onKeyDown={this.onKeyDown}
         >{
             React.Children.map(children as React.ReactElement<any>[], (child, i) =>
