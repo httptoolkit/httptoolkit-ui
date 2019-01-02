@@ -74,6 +74,6 @@ export const GlobalStyles = createGlobalStyle`
     }
 
     .slow-spin {
-        animation: fa-spin 6s infinite linear;
+        animation: fa-spin 5s infinite linear;
     }
 `;

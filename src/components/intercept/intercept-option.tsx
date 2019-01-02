@@ -123,7 +123,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                         { interceptor.inProgress &&
                             <LoadingOverlay>
                                 <FontAwesomeIcon
-                                    icon={['far', 'spinner-third']}
+                                    icon={['fac', 'spinner-arc']}
                                     size='4x'
                                     spin={true}
                                 />

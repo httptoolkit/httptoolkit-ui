@@ -15,11 +15,11 @@ export const StatusCode = styled((props: {
     >
         {
             props.status === 'aborted' ?
-                <FontAwesomeIcon icon={['far', 'ban']} />
+                <FontAwesomeIcon icon={['fas', 'ban']} />
             : (
                 props.status ||
                 <FontAwesomeIcon
-                    icon={['fal', 'spinner']}
+                    icon={['fas', 'spinner']}
                     spin={true}
                 />
             )

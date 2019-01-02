@@ -217,7 +217,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                             }
                             noRowsRenderer={() =>
                                 <EmptyStateOverlay
-                                    icon={['far', 'spinner-third']}
+                                    icon={['fac', 'spinner-arc']}
                                     spin
                                     message='Requests will appear here, once you send some...'
                                 />

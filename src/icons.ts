@@ -1,10 +1,9 @@
 // Import required FA icons:
-import { library } from '@fortawesome/fontawesome-svg-core';
+import { library, IconPrefix, IconDefinition, IconName } from '@fortawesome/fontawesome-svg-core';
 
-import { faSpinner } from '@fortawesome/pro-light-svg-icons/faSpinner';
-import { faSpinnerThird } from '@fortawesome/pro-regular-svg-icons/faSpinnerThird';
-import { faTrashAlt } from '@fortawesome/pro-regular-svg-icons/faTrashAlt';
-import { faArrowLeft } from '@fortawesome/pro-regular-svg-icons/faArrowLeft';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons/faSpinner';
+import { faTrashAlt } from '@fortawesome/free-regular-svg-icons/faTrashAlt';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons/faArrowLeft';
 import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
 import { faPlug } from '@fortawesome/free-solid-svg-icons/faPlug';
 import { faNetworkWired } from '@fortawesome/free-solid-svg-icons/faNetworkWired';
@@ -13,7 +12,7 @@ import { faQuestion } from '@fortawesome/free-solid-svg-icons/faQuestion';
 import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 import { faChevronUp } from '@fortawesome/free-solid-svg-icons/faChevronUp';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
-import { faBan } from '@fortawesome/pro-regular-svg-icons/faBan';
+import { faBan } from '@fortawesome/free-solid-svg-icons/faBan';
 import { faComment } from '@fortawesome/free-regular-svg-icons/faComment';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
@@ -25,9 +24,24 @@ import { faSafari } from '@fortawesome/free-brands-svg-icons/faSafari';
 import { faEdge } from '@fortawesome/free-brands-svg-icons/faEdge';
 import { faInternetExplorer } from '@fortawesome/free-brands-svg-icons/faInternetExplorer';
 
+const customSpinnerArc: IconDefinition = {
+    // Based on https://codepen.io/aurer/pen/jEGbA
+    prefix: <IconPrefix> 'fac',
+    iconName: <IconName> 'spinner-arc',
+    icon: [
+        // height x width
+        50, 50,
+        [],
+        '',
+        // SVG path
+        'M25.251,6.461c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615V6.461z'
+    ]
+};
+
 library.add(
+    customSpinnerArc,
+
     faArrowLeft,
-    faSpinnerThird,
     faSpinner,
     faTrashAlt,
     faSearch,

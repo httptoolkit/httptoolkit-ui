@@ -148,7 +148,7 @@ export class ExchangeBodyCard extends React.Component<{
                 </EditorCardContent>
             :
                 <LoadingCardContent height='500px'>
-                    <FontAwesomeIcon spin icon={['far', 'spinner-third']} size='8x' />
+                    <FontAwesomeIcon spin icon={['fas', 'spinner']} size='8x' />
                 </LoadingCardContent>
             }
         </ExchangeCard>;

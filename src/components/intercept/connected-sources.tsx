@@ -33,7 +33,7 @@ export const ConnectedSources = styled((props: { activeSources: TrafficSource[],
             :
                 <EmptyState
                     key='empty'
-                    icon={['far', 'spinner-third']}
+                    icon={['fac', 'spinner-arc']}
                     spin='slow'
                 />
         }
