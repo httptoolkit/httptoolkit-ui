@@ -92,8 +92,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorUiConfig> = {
         tags: ['local', 'machine', 'system', 'me']
     },
     [MANUAL_INTERCEPT_ID]: {
-        name: 'Manual setup',
-        description: 'Manually configure a source with the proxy settings and certificate',
+        name: 'Anything',
+        description: 'Manually configure any source using the proxy settings and CA certificate',
         iconProps: Icons.Unknown,
         tags: []
     }
