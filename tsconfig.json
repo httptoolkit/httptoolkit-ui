@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
         "target": "es2015",
-        "module": "commonjs",
+        "module": "esnext",
         "moduleResolution": "node",
         "outDir": "./dist",
         "sourceMap": true,
 
         "jsx": "react",
         "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
 
         "strict": true,
 

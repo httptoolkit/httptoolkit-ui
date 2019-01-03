@@ -1,5 +1,5 @@
-import path = require('path');
-import HtmlWebpackPlugin = require('html-webpack-plugin');
+import * as path from 'path';
+import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 import { InjectManifest } from '@httptoolkit/workbox-webpack-plugin';
 import * as Webpack from 'webpack';
 
@@ -7,15 +7,16 @@ import * as Webpack from 'webpack';
 // of proper typing entirely.
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
-const SRC_DIR = path.resolve(__dirname, 'src');
-const OUTPUT_DIR = path.resolve(__dirname, 'dist');
+const SRC_DIR = path.resolve(__dirname, '..', 'src');
+const OUTPUT_DIR = path.resolve(__dirname, '..', 'dist');
 
-export = <Webpack.Configuration> {
+export default <Webpack.Configuration> {
     entry: path.join(SRC_DIR, 'index.tsx'),
 
     output: {
         path: OUTPUT_DIR,
         filename: 'app.js',
+        chunkFilename: '[name].bundle.js',
         // https://github.com/webpack-contrib/worker-loader/issues/142
         // Stops HMR breaking worker-loader
         globalObject: 'this'

@@ -1,7 +1,7 @@
 import { DecodeRequest, DecodeResponse } from './background-worker';
-import Worker = require('worker-loader!./background-worker');
+import Worker from 'worker-loader!./background-worker';
 
-import deserializeError = require('deserialize-error');
+import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
 
 const worker = new Worker();

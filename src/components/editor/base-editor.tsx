@@ -1,19 +1,40 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { observer } from 'mobx-react';
+import { observable, action } from 'mobx';
 
 import * as monacoEditor from 'monaco-editor';
-import MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
+import _MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
+
+import { reportError } from '../../errors';
+import { delay } from '../../util';
+
+let MonacoEditor: typeof _MonacoEditor | undefined;
+// Defer loading react-monaco-editor ever so slightly. This has two benefits:
+// * don't delay first app start waiting for this massive chunk to load
+// * better caching (app/monaco-editor bundles can update independently)
+const rmeModulePromise = delay(100)
+    .then(() => import(/* webpackChunkName: "react-monaco-editor" */ 'react-monaco-editor'))
+    .then((rmeModule) => MonacoEditor = rmeModule.default);
 
 export interface EditorProps extends MonacoEditorProps {
     onLineCount?: (lineCount: number) => void;
 }
 
+@observer
 export class BaseEditor extends React.Component<EditorProps> {
 
     editor: monacoEditor.editor.IStandaloneCodeEditor | undefined;
 
+    @observable
+    monacoEditorLoaded = !!MonacoEditor;
+
     constructor(props: EditorProps) {
         super(props);
+
+        if (!this.monacoEditorLoaded) {
+            rmeModulePromise.then(action(() => this.monacoEditorLoaded = true));
+        }
     }
 
     private announceLineCount(editor: monacoEditor.editor.IStandaloneCodeEditor) {
@@ -36,6 +57,11 @@ export class BaseEditor extends React.Component<EditorProps> {
     }
 
     render() {
+        if (!this.monacoEditorLoaded || !MonacoEditor) {
+            reportError('Monaco editor failed to load');
+            return null;
+        }
+
         const options = _.defaults(this.props.options, {
             automaticLayout: true,
             showFoldingControls: 'always',

@@ -4,8 +4,9 @@ import { observer } from 'mobx-react';
 import { styled } from '../../styles'
 
 import { ClearArrayButton } from './clear-button';
-import { HEADER_FOOTER_HEIGHT } from './exchange-list';
 import { SearchBox } from '../common/search-box';
+
+export const HEADER_FOOTER_HEIGHT = 38;
 
 const RequestCounter = styled(observer((props: {
     className?: string,

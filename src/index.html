@@ -54,44 +54,46 @@
     </div>
 
     <script>
-      var progressElement = document.getElementById('progress-logo');
-      function setProgress(progress) {
-        progressElement.style.clipPath = 'inset(0 ' + (100 - progress) + '% 0 0)';
-      }
+        let progressElement = document.getElementById('progress-logo');
 
-      setTimeout(function () {
-        var appScript = document.scripts[document.scripts.length - 1];
+        let progress = 0;
+        function setProgress(newProgress) {
+            progress = Math.max(progress, newProgress);
+            progressElement.style.clipPath = 'inset(0 ' + (100 - progress) + '% 0 0)';
+        }
 
-        setProgress(10);
+        setTimeout(function () {
+            let appScript = document.scripts[document.scripts.length - 1];
 
-        // Fake page loaded -> script loaded progress, since we're blind here.
-        var progress = 10;
-        var initialProgressInterval = setInterval(function () {
-          progress = progress + (50 - progress) / 3;
-          setProgress(progress);
-        }, 500);
+            setTimeout(() => setProgress(10), 100);
 
-        // Triggered when script has loaded and starts running
-        document.addEventListener('load:executing', function () {
-          clearInterval(initialProgressInterval);
-          setProgress(60);
-        });
+            // Fake page loaded -> script loaded progress, since we're blind here.
+            let initialProgressInterval = setInterval(function () {
+                let newProgress = progress + (50 - progress) / 3;
+                setProgress(newProgress);
+            }, 500);
 
-        // Triggered when sync code from script has finished
-        appScript.addEventListener('load', function () {
-          setProgress(75);
-        });
+            // Triggered when script has loaded and starts running
+            document.addEventListener('load:executing', function () {
+                clearInterval(initialProgressInterval);
+                setProgress(60);
+            });
 
-        // Triggered when _everything_ is loaded and run
-        window.addEventListener('load', function () {
-          setProgress(90);
-        });
+            // Triggered when sync code from script has finished
+            appScript.addEventListener('load', function () {
+                setProgress(75);
+            });
 
-        // The store & Mockttp setup is done, and React is rendering.
-        document.addEventListener('load:rendering', function () {
-          setProgress(100);
-        });
-      }, 0);
+            // Triggered when _everything_ is loaded and run
+            window.addEventListener('load', function () {
+                setProgress(90);
+            });
+
+            // The store & Mockttp setup is done, and React is rendering.
+            document.addEventListener('load:rendering', function () {
+                setProgress(100);
+            });
+        }, 0);
     </script>
   </body>
 </html>

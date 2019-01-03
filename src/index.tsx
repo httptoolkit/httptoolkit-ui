@@ -17,7 +17,7 @@ import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worke
 
 const APP_ELEMENT_SELECTOR = '#app';
 
-window.onload = async function startApp() {
+async function startApp() {
     registerUpdateWorker({ scope: '/' })
     .then(() => console.log('Service worker loaded'))
     .catch((e) => {
@@ -44,3 +44,5 @@ window.onload = async function startApp() {
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR));
 }
+
+startApp();

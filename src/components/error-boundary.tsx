@@ -1,10 +1,9 @@
 import * as React from 'react';
-import * as Sentry from '@sentry/browser';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
 import { styled } from '../styles';
-import { isSentryInitialized } from '../errors';
+import { Sentry, isSentryInitialized } from '../errors';
 
 const ErrorOverlay = styled((props: {
     className?: string,
@@ -75,7 +74,6 @@ export class ErrorBoundary extends React.Component {
         this.error = error;
 
         Sentry.withScope(scope => {
-            scope.setExtra('agreedToReport', true);
             Object.keys(errorInfo).forEach(key => {
                 scope.setExtra(key, errorInfo[key]);
             });

@@ -15,9 +15,7 @@ import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-color
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
-export const HEADER_FOOTER_HEIGHT = 38;
-
-import { TableFooter } from './exchange-list-footer';
+import { TableFooter, HEADER_FOOTER_HEIGHT } from './exchange-list-footer';
 
 const RowMarker = styled.div`
     transition: color 0.1s;
