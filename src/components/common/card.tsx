@@ -4,22 +4,18 @@ import { observer } from 'mobx-react';
 
 import { styled, Theme, ThemeProps } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
+import { filterProps } from '../component-utils';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
-    innerRef?: React.Ref<HTMLElement>;
     disabled?: boolean;
 }
 
-const Card = styled((p: CardProps) =>
-    <section
-        {...p}
-        ref={p.innerRef}
-        onClick={!p.disabled ? p.onClick : undefined}
-        onKeyDown={!p.disabled ? p.onKeyDown : undefined}
-        tabIndex={!p.disabled ? p.tabIndex : undefined}
-    />
-)`
+const Card = styled.section.attrs((p: CardProps) => ({
+    onClick: !p.disabled ? p.onClick : undefined,
+    onKeyDown: !p.disabled ? p.onKeyDown : undefined,
+    tabIndex: !p.disabled ? p.tabIndex : undefined
+}))`
     box-sizing: border-box;
 
     ${(p: CardProps) => p.disabled && `
@@ -121,7 +117,7 @@ export class CollapsibleCard extends React.Component<{
 
         return <MediumCard
             {..._.omit(this.props, ['onCollapseToggled', 'collapsed'])}
-            innerRef={this.cardRef}
+            ref={this.cardRef}
             onKeyDown={this.onKeyDown}
         >{
             React.Children.map(children as React.ReactElement<any>[], (child, i) =>
