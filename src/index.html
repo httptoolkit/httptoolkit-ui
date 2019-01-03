@@ -41,6 +41,12 @@
         transition: clip-path 0.5s;
       }
 
+      #app-loading-error {
+        margin-top: 460px;
+        font-weight: bold;
+        font-size: 40pt;
+      }
+
       #app {
           height: 100%;
       }
@@ -51,10 +57,12 @@
     <div id="app-loading-placeholder">
       <img id="initial-logo" src="<%=require('./images/logo-large.png')%>">
       <img id="progress-logo" src="<%=require('./images/logo-large.png')%>">
+      <div id="app-loading-error"></div>
     </div>
 
     <script>
         let progressElement = document.getElementById('progress-logo');
+        let errorElement = document.getElementById('app-loading-error');
 
         let progress = 0;
         function setProgress(newProgress) {
@@ -92,6 +100,11 @@
             // The store & Mockttp setup is done, and React is rendering.
             document.addEventListener('load:rendering', function () {
                 setProgress(100);
+            });
+
+            document.addEventListener('load:failed', function () {
+                setProgress(100);
+                errorElement.innerText = 'Could not start! Is the server running?';
             });
         }, 0);
     </script>

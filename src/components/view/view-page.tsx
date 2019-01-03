@@ -11,11 +11,11 @@ import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from '../split-pane';
 
-import { Store, ServerStatus } from '../../model/store';
+import { ActivatedStore } from '../../model/store';
 
 interface ViewPageProps {
     className?: string,
-    store: Store
+    store: ActivatedStore
 }
 
 @inject('store')
@@ -33,35 +33,24 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     render(): JSX.Element {
-        let mainView: JSX.Element | undefined;
-        const { serverStatus, exchanges, clearExchanges } = this.props.store;
+        const { exchanges, clearExchanges } = this.props.store;
 
-        if (serverStatus === ServerStatus.Connected) {
-            mainView = (
-                <SplitPane
-                    split='vertical'
-                    primary='second'
-                    defaultSize='50%'
-                    minSize={300}
-                    maxSize={-300}
-                >
-                    <ExchangeList
-                        onSelected={this.onSelected}
-                        onClear={clearExchanges}
-                        exchanges={exchanges}
-                    />
-                    <ExchangeDetailsPane exchange={this.selectedExchange}></ExchangeDetailsPane>
-                </SplitPane>
-            );
-        } else if (serverStatus === ServerStatus.Connecting) {
-            mainView = <div>Connecting...</div>;
-        } else if (serverStatus === ServerStatus.AlreadyInUse) {
-            mainView = <div>Port already in use</div>;
-        } else if (serverStatus === ServerStatus.UnknownError) {
-            mainView = <div>An unknown error occurred</div>;
-        }
-
-        return <div className={this.props.className}>{ mainView }</div>;
+        return <div className={this.props.className}>
+            <SplitPane
+                split='vertical'
+                primary='second'
+                defaultSize='50%'
+                minSize={300}
+                maxSize={-300}
+            >
+                <ExchangeList
+                    onSelected={this.onSelected}
+                    onClear={clearExchanges}
+                    exchanges={exchanges}
+                />
+                <ExchangeDetailsPane exchange={this.selectedExchange}></ExchangeDetailsPane>
+            </SplitPane>
+        </div>;
     }
 
     @action.bound

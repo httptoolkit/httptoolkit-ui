@@ -1,6 +1,6 @@
 document.dispatchEvent(new Event('load:executing'));
 
-import { initSentry } from './errors';
+import { initSentry, reportError } from './errors';
 initSentry(process.env.SENTRY_DSN);
 
 import * as React from 'react';
@@ -17,21 +17,19 @@ import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worke
 
 const APP_ELEMENT_SELECTOR = '#app';
 
-async function startApp() {
-    registerUpdateWorker({ scope: '/' })
-    .then(() => console.log('Service worker loaded'))
-    .catch((e) => {
-        if (e instanceof ServiceWorkerNoSupportError) {
-            console.log('Service worker not supported, oh well, no autoupdating for you.');
-        }
-        throw e;
-    });
+registerUpdateWorker({ scope: '/' })
+.then(() => console.log('Service worker loaded'))
+.catch((e) => {
+    if (e instanceof ServiceWorkerNoSupportError) {
+        console.log('Service worker not supported, oh well, no autoupdating for you.');
+    }
+    throw e;
+});
 
-    initTracking();
+initTracking();
 
-    const store = new Store();
-    await store.startServer();
-
+const store = new Store();
+store.startServer().then(() => {
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
         <Provider store={store}>
@@ -42,7 +40,9 @@ async function startApp() {
                 </ErrorBoundary>
             </ThemeProvider>
         </Provider>
-    , document.querySelector(APP_ELEMENT_SELECTOR));
-}
-
-startApp();
+    , document.querySelector(APP_ELEMENT_SELECTOR))
+}).catch((e) => {
+    document.dispatchEvent(new Event('load:failed'));
+    console.error('Failed to initialize application.', e);
+    reportError(e);
+});

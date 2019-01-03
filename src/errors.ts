@@ -1,4 +1,3 @@
-
 import * as Sentry from '@sentry/browser';
 import * as packageJson from '../package.json';
 

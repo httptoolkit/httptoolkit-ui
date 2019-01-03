@@ -11,17 +11,23 @@ import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 import * as amIUsingHtml from '../amiusing.html';
 import { getHTKContentType } from '../content-types';
 import { Interceptor, getInterceptOptions } from './interceptors';
-
-
-export enum ServerStatus {
-    NotStarted,
-    Connecting,
-    Connected,
-    AlreadyInUse,
-    UnknownError
-}
+import { delay } from '../util';
 
 configure({ enforceActions: 'observed' });
+
+// All later components assume the store is fully activated - that means
+// all undefined/nullable fields have been set.
+export type ActivatedStore = { [P in keyof Store]: NonNullable<Store[P]> };
+
+function startServer(server: Mockttp, retries = 10): Promise<void> {
+    return server.start().catch((e) => {
+        if (retries > 0) {
+            return delay(500).then(() => startServer(server, retries - 1));
+        } else {
+            throw e;
+        }
+    });
+}
 
 export class Store {
 
@@ -44,7 +50,6 @@ export class Store {
     private responseQueue: CompletedResponse[] = [];
     private abortedQueue: CompletedRequest[] = [];
 
-    @observable serverStatus: ServerStatus = ServerStatus.NotStarted;
     readonly exchanges = observable.array<HttpExchange>([], { deep: false });
 
     @computed get activeSources() {
@@ -63,61 +68,47 @@ export class Store {
     }
 
     startServer = flow(function * (this: Store) {
-        this.serverStatus = ServerStatus.Connecting;
+        yield startServer(this.server);
 
-        try {
-            yield this.server.start();
+        yield Promise.all([
+            this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech$/).always().thenReply(
+                200, amIUsingHtml, { 'content-type': 'text/html' }
+            ).then(() =>
+                this.server.anyRequest().always().thenPassThrough()
+            ),
+            this.refreshInterceptors(),
+            getConfig().then((config) => {
+                this.certPath = config.certificatePath
+            })
+        ]);
 
-            yield Promise.all([
-                this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech$/).always().thenReply(
-                    200, amIUsingHtml, { 'content-type': 'text/html' }
-                ).then(() =>
-                    this.server.anyRequest().always().thenPassThrough()
-                ),
-                this.refreshInterceptors(),
-                getConfig().then((config) => {
-                    this.certPath = config.certificatePath
-                })
-            ]);
+        setInterval(() => this.refreshInterceptors(), 10000);
 
-            setInterval(() => this.refreshInterceptors(), 10000);
+        console.log(`Server started on port ${this.server.port}`);
 
-            console.log(`Server started on port ${this.server.port}`);
-
-            this.serverStatus = ServerStatus.Connected;
-
-            this.server.on('request', (req) => {
-                if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
-                    requestAnimationFrame(this.flushQueuedUpdates);
-                }
-
-                this.requestQueue.push(req);
-            });
-            this.server.on('response', (res) => {
-                if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
-                    requestAnimationFrame(this.flushQueuedUpdates);
-                }
-
-                this.responseQueue.push(res);
-            });
-            this.server.on('abort', (req) => {
-                if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
-                    requestAnimationFrame(this.flushQueuedUpdates);
-                }
-
-                this.abortedQueue.push(req);
-            });
-
-            window.addEventListener('beforeunload', () => this.server.stop().catch(() => {}));
-        } catch (err) {
-            if (err.response && err.response.status === 409) {
-                console.info('Server already in use');
-                this.serverStatus = ServerStatus.AlreadyInUse;
-            } else {
-                console.error(err);
-                this.serverStatus = ServerStatus.UnknownError;
+        this.server.on('request', (req) => {
+            if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+                requestAnimationFrame(this.flushQueuedUpdates);
             }
-        }
+
+            this.requestQueue.push(req);
+        });
+        this.server.on('response', (res) => {
+            if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+                requestAnimationFrame(this.flushQueuedUpdates);
+            }
+
+            this.responseQueue.push(res);
+        });
+        this.server.on('abort', (req) => {
+            if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+                requestAnimationFrame(this.flushQueuedUpdates);
+            }
+
+            this.abortedQueue.push(req);
+        });
+
+        window.addEventListener('beforeunload', () => this.server.stop().catch(() => {}));
     });
 
     @action.bound

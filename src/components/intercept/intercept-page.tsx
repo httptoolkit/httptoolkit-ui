@@ -4,9 +4,9 @@ import * as React from 'react';
 import { observable, action, flow } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { styled, css } from '../../styles';
+import { styled } from '../../styles';
 
-import { Store, ServerStatus } from '../../model/store';
+import { ActivatedStore } from '../../model/store';
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
 import { SearchBox } from '../common/search-box';
@@ -17,7 +17,7 @@ import { ManualInterceptOption } from './manual-intercept-config';
 
 interface InterceptPageProps {
     className?: string,
-    store: Store,
+    store: ActivatedStore,
 }
 
 const InterceptPageContainer = styled.section`
@@ -80,76 +80,66 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
         const { serverPort, certPath, activeSources, interceptors } = this.props.store;
 
-        if (this.props.store.serverStatus === ServerStatus.Connected && serverPort && certPath) {
-            const visibleInterceptOptions = _.pickBy(interceptors, (option) =>
-                !this.filter ||
-                _.includes(option.name.toLocaleLowerCase(), this.filter) ||
-                _.includes(option.description.toLocaleLowerCase(), this.filter) ||
-                _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), this.filter))
-            );
+        const visibleInterceptOptions = _.pickBy(interceptors, (option) =>
+            !this.filter ||
+            _.includes(option.name.toLocaleLowerCase(), this.filter) ||
+            _.includes(option.description.toLocaleLowerCase(), this.filter) ||
+            _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), this.filter))
+        );
 
-            if (!_.some(visibleInterceptOptions, (o) => o.isActivable)) {
-                visibleInterceptOptions[MANUAL_INTERCEPT_ID] = interceptors[MANUAL_INTERCEPT_ID];
-            }
-
-            mainView = (
-                <InterceptPageContainer ref={this.gridRef}>
-                    <InterceptInstructions>
-                        <h1>
-                            Intercept HTTP
-                        </h1>
-                        <p>
-                            To collect & view HTTP traffic, you need to connect
-                            a source of traffic, like a browser, mobile device, or
-                            docker container.
-                        </p>
-                        <p>
-                            Click an option below to connect a traffic source, or
-                            search for connectors that could work for you:
-                        </p>
-                        <InterceptSearchBox
-                            value={this.filter || ''}
-                            onSearch={this.onSearchInput}
-                        />
-                    </InterceptInstructions>
-
-                    <ConnectedSources activeSources={activeSources} />
-
-                    { _(visibleInterceptOptions)
-                        .sortBy((option) => {
-                            if (option.isActive || option.isActivable) return -50;
-                            else if (option.isSupported) return -25;
-                            else return 0;
-                        })
-                        .map((option, index) =>
-                            // TODO: This is fine for now, but in future we definitely need a generic
-                            // activateAction for interceptors, and to move this into the option.
-                            (option.id === MANUAL_INTERCEPT_ID) ?
-                                <ManualInterceptOption
-                                    key={option.id}
-                                    interceptor={option}
-                                    index={index}
-                                    serverPort={serverPort}
-                                    certPath={certPath}
-                                />
-                            :
-                                <InterceptOption
-                                    key={option.id}
-                                    interceptor={option}
-                                    onActivate={this.onInterceptorActivated.bind(this)}
-                                />
-                    ).value() }
-                </InterceptPageContainer>
-            );
-        } else if (this.props.store.serverStatus === ServerStatus.Connecting) {
-            mainView = <div>Connecting...</div>;
-        } else if (this.props.store.serverStatus === ServerStatus.AlreadyInUse) {
-            mainView = <div>Port already in use</div>;
-        } else if (this.props.store.serverStatus === ServerStatus.UnknownError) {
-            mainView = <div>An unknown error occurred</div>;
+        if (!_.some(visibleInterceptOptions, (o) => o.isActivable)) {
+            visibleInterceptOptions[MANUAL_INTERCEPT_ID] = interceptors[MANUAL_INTERCEPT_ID];
         }
 
-        return <div className={this.props.className}>{ mainView }</div>;
+        return <div className={this.props.className}>
+            <InterceptPageContainer ref={this.gridRef}>
+                <InterceptInstructions>
+                    <h1>
+                        Intercept HTTP
+                    </h1>
+                    <p>
+                        To collect & view HTTP traffic, you need to connect
+                        a source of traffic, like a browser, mobile device, or
+                        docker container.
+                    </p>
+                    <p>
+                        Click an option below to connect a traffic source, or
+                        search for connectors that could work for you:
+                    </p>
+                    <InterceptSearchBox
+                        value={this.filter || ''}
+                        onSearch={this.onSearchInput}
+                    />
+                </InterceptInstructions>
+
+                <ConnectedSources activeSources={activeSources} />
+
+                { _(visibleInterceptOptions)
+                    .sortBy((option) => {
+                        if (option.isActive || option.isActivable) return -50;
+                        else if (option.isSupported) return -25;
+                        else return 0;
+                    })
+                    .map((option, index) =>
+                        // TODO: This is fine for now, but in future we definitely need a generic
+                        // activateAction for interceptors, and to move this into the option.
+                        (option.id === MANUAL_INTERCEPT_ID) ?
+                            <ManualInterceptOption
+                                key={option.id}
+                                interceptor={option}
+                                index={index}
+                                serverPort={serverPort}
+                                certPath={certPath}
+                            />
+                        :
+                            <InterceptOption
+                                key={option.id}
+                                interceptor={option}
+                                onActivate={this.onInterceptorActivated.bind(this)}
+                            />
+                ).value() }
+            </InterceptPageContainer>
+        </div>;
     }
 
     onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: Interceptor) {
