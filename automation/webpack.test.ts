@@ -5,6 +5,7 @@ import commonConfig from './webpack.common';
 
 commonConfig.mode = 'development';
 commonConfig.entry = undefined;
+commonConfig.plugins = undefined;
 commonConfig.output = {
     path: tmp.dirSync(),
 }

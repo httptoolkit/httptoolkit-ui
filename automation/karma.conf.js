@@ -7,16 +7,16 @@ module.exports = function(config) {
     config.set({
         frameworks: ['mocha', 'chai'],
         files: [
-            'test/**/*.spec.ts'
+            '../test/**/*.spec.ts'
         ],
         mime: { 'text/x-typescript': ['ts'] },
-        webpack: require('./webpack.test'),
+        webpack: require('./webpack.test').default,
         webpackMiddleware: {
             stats: 'error-only'
         },
         preprocessors: {
-            'src/**/*.ts': ['webpack', 'sourcemap'],
-            'test/**/*.ts': ['webpack', 'sourcemap']
+            '../src/**/*.ts': ['webpack', 'sourcemap'],
+            '../test/**/*.ts': ['webpack', 'sourcemap']
         },
         reporters: ['progress'],
         port: 9876,
