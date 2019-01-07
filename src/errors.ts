@@ -17,6 +17,7 @@ export function initSentry(dsn: string | undefined) {
 }
 
 export function reportError(error: Error | string) {
+    console.log('Reporting error:', error);
     if (typeof error === 'string') {
         Sentry.captureMessage(error);
     } else {

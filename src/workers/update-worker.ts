@@ -1,4 +1,4 @@
-import { initSentry } from '../errors';
+import { initSentry, reportError } from '../errors';
 initSentry(process.env.SENTRY_DSN);
 
 import WorkboxNamespace from 'workbox-sw';
@@ -96,18 +96,47 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(precacheController.activate({}));
 });
 
-const preCacheOnly = workbox.strategies.cacheOnly({ cacheName: precacheName });
+const precacheOnly = workbox.strategies.cacheOnly({ cacheName: precacheName });
 
 const tryFromPrecacheAndRefresh = workbox.strategies.staleWhileRevalidate({
     cacheName: precacheName
 });
 
-// Webpack Dev Sever goes straight to the network:
+// Webpack Dev Server goes straight to the network:
 workbox.routing.registerRoute(/\/sockjs-node\/.*/, workbox.strategies.networkOnly());
 
 // All other app code _must_ be precached - no random updates from elsewhere please.
-workbox.routing.registerRoute(/\/.*/, preCacheOnly);
+workbox.routing.registerRoute(/\/.*/, precacheOnly);
 
 // We allow new fonts to come in automatically, but use the cache first
 workbox.routing.registerRoute(/https:\/\/fonts\.googleapis\.com\/.*/, tryFromPrecacheAndRefresh);
 workbox.routing.registerRoute(/https:\/\/fonts\.gstatic\.com\/.*/, tryFromPrecacheAndRefresh);
+
+// Patch the workbox router to handle disappearing precaches:
+const router = workbox.routing as any;
+const handleReq = router.handleRequest;
+router.handleRequest = function (event: FetchEvent) {
+    const responsePromise = handleReq.call(router, event);
+    if (responsePromise) {
+        return responsePromise.then((result: any) => {
+            if (result == null) {
+                // Somehow we're returning a broken null/undefined response.
+                // This can happen if the precache somehow disappears. Though in theory
+                // that shouldn't happen, it does seem to very occasionally, and it
+                // then breaks app loading. If this does somehow happen, refresh everything:
+                reportError(`Null result for ${event.request.url}, resetting SW.`);
+
+                // Refresh the SW (won't take effect until after all pages unload).
+                self.registration.unregister();
+                // Drop the precache entirely in the meantime, since it's corrupt.
+                caches.delete(precacheName);
+
+                // Fallback to a real network request until the SW cache is rebuilt
+                return fetch(event.request);
+            } else {
+                return result;
+            }
+        });
+    }
+    return responsePromise;
+}
