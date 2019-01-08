@@ -9,13 +9,25 @@ export interface TrafficSource {
     icon: IconProps;
 }
 
+function formatVersion(version: string | undefined): string {
+    if (!version) return '';
+
+    // Space-prefixed, first two parts only, trim 0s so that '10.0' -> '10'
+    return ' ' + version.split('.').slice(0, 2).join('.').replace(/\.0$/, '');
+}
+
 const getDescription = (useragent: IUAParser.IResult) => {
     const hasOS = _(useragent.os).values().some();
     const hasBrowser = _(useragent.browser).values().some();
 
     if (hasOS || hasBrowser) {
-        const osDescription = hasOS ? `(${useragent.os.name || ''} ${(useragent.os.version || '').split('.')[0]})` : '';
-        const browserDescription = hasBrowser ? `${useragent.browser.name || ''} ${useragent.browser.major || ''}` : 'Unknown client';
+        const osDescription = hasOS ?
+            `(${useragent.os.name || ''}${formatVersion(useragent.os.version)})`
+        : '';
+        const browserDescription = hasBrowser ?
+            (useragent.browser.name || '') + formatVersion(useragent.browser.version)
+        : 'Unknown client';
+
         return [browserDescription, osDescription].join(' ');
     } else {
         return _.capitalize(useragent.ua.split(' ')[0]);
