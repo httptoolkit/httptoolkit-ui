@@ -73,12 +73,17 @@ export function getHTKContentType(mimeType: string): HtkContentType {
     }
 }
 
-export function getCompatibleTypes(contentType: HtkContentType): HtkContentType[] {
+export function getCompatibleTypes(contentType: HtkContentType, rawContentType: string): HtkContentType[] {
     let types = [contentType];
 
     // Anything except raw & image can be shown as text
     if (!_.includes(['raw', 'image', 'text'], contentType)) {
         types.push('text');
+    }
+
+    // SVGs can be shown as XML
+    if (rawContentType.startsWith('image/svg')) {
+        types.push('xml');
     }
 
     // Anything can be shown raw

@@ -114,9 +114,10 @@ export class ExchangeBodyCard extends React.Component<{
             onCollapseToggled
         } = this.props;
 
-        const compatibleContentTypes = getCompatibleTypes(message.contentType);
+        const compatibleContentTypes = getCompatibleTypes(message.contentType, message.headers['content-type']);
         const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
             this.selectedContentType! : message.contentType;
+
 
         // any because bad types will just get undefined here, and that's ok.
         const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
