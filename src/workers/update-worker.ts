@@ -115,11 +115,13 @@ workbox.routing.registerRoute(/https:\/\/fonts\.gstatic\.com\/.*/, tryFromPrecac
 // Patch the workbox router to handle disappearing precaches:
 const router = workbox.routing as any;
 const handleReq = router.handleRequest;
+
+let resettingSw = false;
 router.handleRequest = function (event: FetchEvent) {
     const responsePromise = handleReq.call(router, event);
     if (responsePromise) {
         return responsePromise.then((result: any) => {
-            if (result == null) {
+            if (result == null && !resettingSw) {
                 // Somehow we're returning a broken null/undefined response.
                 // This can happen if the precache somehow disappears. Though in theory
                 // that shouldn't happen, it does seem to very occasionally, and it
@@ -131,6 +133,10 @@ router.handleRequest = function (event: FetchEvent) {
                 // Drop the precache entirely in the meantime, since it's corrupt.
                 caches.delete(precacheName);
 
+                resettingSw = true;
+            }
+
+            if (resettingSw) {
                 // Fallback to a real network request until the SW cache is rebuilt
                 return fetch(event.request);
             } else {
