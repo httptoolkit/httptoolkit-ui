@@ -150,7 +150,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
                     key='empty'
                     tabIndex={0}
                     icon={['fas', 'arrow-left']}
-                    message='Select some requests to see their details.'
+                    message='Select an exchange to see the full details.'
                 />
             );
         }
