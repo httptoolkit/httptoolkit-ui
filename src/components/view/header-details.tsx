@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 
 import { styled, css } from '../../styles';
-import { getDocsUrl } from '../../model/headers';
+import { getDocsUrl, getDocsSummary } from '../../model/headers';
 
 const Cell = css`
     padding: 0 10px 5px 0;
@@ -43,7 +43,7 @@ export const HeaderDetails = (props: { headers: { [key: string]: string }, class
                 { _.map(props.headers, (value, name) =>
                     <tr key={name}>
                         <NameCell>
-                            <HeaderInfo href={getDocsUrl(name)} target="_blank">
+                            <HeaderInfo href={getDocsUrl(name)} title={getDocsSummary(name)} target="_blank">
                                 { name }
                             </HeaderInfo>
                         </NameCell>
