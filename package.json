@@ -14,6 +14,7 @@
     "start": "node-dev ./node_modules/.bin/httptoolkit-server start & npm run start:web",
     "start:web": "TS_NODE_PROJECT=./automation/tsconfig.json webpack-dev-server --config ./automation/webpack.dev.ts",
     "test": "TS_NODE_PROJECT=./automation/tsconfig.json karma start ./automation/karma.conf.js",
+    "test:dev": "npm run test -- --single-run=false --auto-watch",
     "test:debug": "npm run test -- --single-run=false --browsers Chrome"
   },
   "author": "Tim Perry <pimterry@gmail.com>",
