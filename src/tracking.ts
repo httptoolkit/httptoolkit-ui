@@ -13,21 +13,37 @@ export function initTracking() {
     if (GA_ID) {
         ReactGA.initialize(GA_ID, { gaOptions: { siteSpeedSampleRate: 100 } });
 
-        const { timing } = window.performance;
-
         ReactGA.timing({
             category: 'Initial load',
-            variable: 'page-load',
-            value: timing.loadEventEnd - timing.navigationStart
-        });
-
-        ReactGA.timing({
-            category: 'Initial load',
-            variable: 'dom-render',
-            value: timing.domComplete - timing.domLoading
+            variable: 'tracking-initialize',
+            value: performance.now()
         });
 
         ReactGA.pageview('initial');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            ReactGA.timing({
+                category: 'Initial load',
+                variable: 'page-load',
+                value: performance.now()
+            });
+        });
+
+        document.addEventListener('load:rendering', () => {
+            ReactGA.timing({
+                category: 'Initial load',
+                variable: 'app-load',
+                value: performance.now()
+            });
+        });
+
+        window.addEventListener('load', () => {
+            ReactGA.timing({
+                category: 'Initial load',
+                variable: 'load-event',
+                value: performance.now()
+            });
+        });
     }
 }
 
