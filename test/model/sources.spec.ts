@@ -61,5 +61,19 @@ describe('HTTP source parsing', () => {
             expect(source.description).to.equal('Wget/1.12 (Linux)');
             expect(source.icon).to.equal(Icons.Unknown);
         });
+
+        it('should handle empty user agents', () => {
+            const source = parseSource('');
+
+            expect(source.description).to.equal('Unknown client');
+            expect(source.icon).to.equal(Icons.Unknown);
+        });
+
+        it('should handle undefined user agents', () => {
+            const source = parseSource(undefined);
+
+            expect(source.description).to.equal('Unknown client');
+            expect(source.icon).to.equal(Icons.Unknown);
+        });
     });
 });

@@ -49,6 +49,12 @@ const getIcon = (useragent: IUAParser.IResult) => {
 };
 
 export const parseSource = (userAgentHeader: string): TrafficSource => {
+    if (!userAgentHeader) return {
+        ua: '',
+        description: 'Unknown client',
+        icon: Icons.Unknown
+    };
+
     const useragent = new UserAgent(userAgentHeader).getResult();
 
     return {
