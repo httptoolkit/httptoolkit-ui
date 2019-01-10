@@ -26,6 +26,8 @@ export function initTracking() {
             variable: 'dom-render',
             value: timing.domComplete - timing.domLoading
         });
+
+        ReactGA.pageview('initial');
     }
 }
 
