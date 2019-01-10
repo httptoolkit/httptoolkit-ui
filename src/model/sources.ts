@@ -20,17 +20,19 @@ const getDescription = (useragent: IUAParser.IResult) => {
     const hasOS = _(useragent.os).values().some();
     const hasBrowser = _(useragent.browser).values().some();
 
+    const clientName = _.upperFirst(useragent.ua.split(' ')[0]);
+
     if (hasOS || hasBrowser) {
         const osDescription = hasOS ?
-            `(${useragent.os.name || ''}${formatVersion(useragent.os.version)})`
+            ` (${_.upperFirst(useragent.os.name)}${formatVersion(useragent.os.version)})`
         : '';
         const browserDescription = hasBrowser ?
             (useragent.browser.name || '') + formatVersion(useragent.browser.version)
-        : 'Unknown client';
+        : clientName;
 
-        return [browserDescription, osDescription].join(' ');
+        return browserDescription + osDescription;
     } else {
-        return _.capitalize(useragent.ua.split(' ')[0]);
+        return clientName;
     }
 };
 

@@ -77,7 +77,7 @@ export const Icons = {
     Firefox: { icon: ['fab', 'firefox'], color: '#e66000' },
     Safari: { icon: ['fab', 'safari'], color: '#448aff' },
     Edge: { icon: ['fab', 'edge'], color: '#2c75be' },
-    InternetExplorer: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
+    IE: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
     Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
     Android: { icon: ['fab', 'android'], color: '#A4C639' },
