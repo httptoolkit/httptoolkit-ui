@@ -1,12 +1,13 @@
 import * as React from 'react';
-
-import { styled, css } from '../../styles';
-import { Interceptor } from '../../model/interceptors';
-
-import { InterceptOption } from './intercept-option';
 import { action, observable } from 'mobx';
 import { observer } from 'mobx-react';
+
+import { styled, css } from '../../styles';
+import { trackEvent } from '../../tracking';
 import { FontAwesomeIcon } from '../../icons';
+
+import { Interceptor, MANUAL_INTERCEPT_ID } from '../../model/interceptors';
+import { InterceptOption } from './intercept-option';
 
 interface ManualInterceptOptionCardProps {
     expanded: boolean;
@@ -173,6 +174,7 @@ export class ManualInterceptOption extends React.Component<ManualInterceptOption
 
     @action.bound
     onExpand() {
+        trackEvent({ category: 'Interceptors', action: 'Activated', label: MANUAL_INTERCEPT_ID });
         this.expanded = true;
     }
 
