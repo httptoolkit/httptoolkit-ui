@@ -118,8 +118,6 @@ export class ExchangeBodyCard extends React.Component<{
         const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
             this.selectedContentType! : message.contentType;
 
-
-        // any because bad types will just get undefined here, and that's ok.
         const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
         const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
 
