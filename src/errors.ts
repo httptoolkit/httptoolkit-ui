@@ -14,9 +14,13 @@ export function initSentry(dsn: string | undefined) {
         Sentry.init({ dsn: dsn, release: packageJson.version });
         sentryInitialized = true;
 
-        window.addEventListener('beforeunload', () => {
-            sentryInitialized = false;
-        });
+        // If we're running in the main window (not the SW),
+        // stop reporting errors after the page starts unloading
+        if (typeof window !== 'undefined') {
+            window.addEventListener('beforeunload', () => {
+                sentryInitialized = false;
+            });
+        }
     }
 }
 
