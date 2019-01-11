@@ -19,10 +19,12 @@ configure({ enforceActions: 'observed' });
 // all undefined/nullable fields have been set.
 export type ActivatedStore = { [P in keyof Store]: NonNullable<Store[P]> };
 
-function startServer(server: Mockttp, retries = 10): Promise<void> {
+// Start the server, with slowly decreasing retry frequency. Total time to failure about 10s.
+// Sum calculation: (initialDelayMs * (1 - delayRatio ^ maxRetries))/(1 - delayRatio)
+function startServer(server: Mockttp, retries = 10, delayMs = 250): Promise<void> {
     return server.start().catch((e) => {
         if (retries > 0) {
-            return delay(500).then(() => startServer(server, retries - 1));
+            return delay(delayMs).then(() => startServer(server, retries - 1, delayMs * 1.3));
         } else {
             throw e;
         }
