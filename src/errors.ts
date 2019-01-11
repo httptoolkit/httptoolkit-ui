@@ -13,11 +13,17 @@ export function initSentry(dsn: string | undefined) {
     if (dsn) {
         Sentry.init({ dsn: dsn, release: packageJson.version });
         sentryInitialized = true;
+
+        window.addEventListener('beforeunload', () => {
+            sentryInitialized = false;
+        });
     }
 }
 
 export function reportError(error: Error | string) {
     console.log('Reporting error:', error);
+    if (!sentryInitialized) return;
+
     if (typeof error === 'string') {
         Sentry.captureMessage(error);
     } else {

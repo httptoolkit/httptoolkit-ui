@@ -110,7 +110,9 @@ export class Store {
             this.abortedQueue.push(req);
         });
 
-        window.addEventListener('beforeunload', () => this.server.stop().catch(() => {}));
+        window.addEventListener('beforeunload', () => {
+            this.server.stop().catch(() => {});
+        });
     });
 
     @action.bound
