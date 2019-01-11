@@ -13,9 +13,21 @@ let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
 // * don't delay first app start waiting for this massive chunk to load
 // * better caching (app/monaco-editor bundles can update independently)
-const rmeModulePromise = delay(100)
-    .then(() => import(/* webpackChunkName: "react-monaco-editor" */ 'react-monaco-editor'))
-    .then((rmeModule) => MonacoEditor = rmeModule.default);
+let rmeModulePromise = delay(100).then(() => loadMonacoEditor());
+
+async function loadMonacoEditor(retries = 5): Promise<void> {
+    try {
+        const rmeModule = await import(/* webpackChunkName: "react-monaco-editor" */ 'react-monaco-editor');
+        MonacoEditor = rmeModule.default;
+    } catch (err) {
+        if (retries <= 0) {
+            console.warn('Repeatedly failed to load monaco editor, giving up');
+            throw err;
+        }
+
+        return loadMonacoEditor(retries - 1);
+    }
+}
 
 export interface EditorProps extends MonacoEditorProps {
     onLineCount?: (lineCount: number) => void;
@@ -33,7 +45,13 @@ export class BaseEditor extends React.Component<EditorProps> {
         super(props);
 
         if (!this.monacoEditorLoaded) {
-            rmeModulePromise.then(action(() => this.monacoEditorLoaded = true));
+            rmeModulePromise
+                // Did it fail before? Retry it now, just in case
+                .catch(() => {
+                    rmeModulePromise = loadMonacoEditor(0);
+                    return rmeModulePromise;
+                })
+                .then(action(() => this.monacoEditorLoaded = true));
         }
     }
 
