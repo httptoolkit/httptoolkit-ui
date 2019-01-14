@@ -18,7 +18,14 @@ import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worke
 const APP_ELEMENT_SELECTOR = '#app';
 
 registerUpdateWorker({ scope: '/' })
-.then(() => console.log('Service worker loaded'))
+.then((registration) => {
+    console.log('Service worker loaded');
+
+    // Check for SW updates every 5 minutes.
+    setInterval(() => {
+        registration.update().catch(console.log);
+    }, 1000 * 60 * 5);
+})
 .catch((e) => {
     if (e instanceof ServiceWorkerNoSupportError) {
         console.log('Service worker not supported, oh well, no autoupdating for you.');
