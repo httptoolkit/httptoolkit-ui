@@ -11,6 +11,7 @@ import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
 import { ErrorBoundary } from './components/error-boundary';
 import { Store } from './model/store';
+import { triggerServerUpdate } from './model/htk-client';
 import { initTracking } from './tracking';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
@@ -23,6 +24,7 @@ registerUpdateWorker({ scope: '/' })
 
     // Check for SW updates every 5 minutes.
     setInterval(() => {
+        triggerServerUpdate();
         registration.update().catch(console.log);
     }, 1000 * 60 * 5);
 })
@@ -37,6 +39,9 @@ initTracking();
 
 const store = new Store();
 store.startServer().then(() => {
+    // We now know that the server is running - tell it to check for updates
+    triggerServerUpdate();
+
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
         <Provider store={store}>

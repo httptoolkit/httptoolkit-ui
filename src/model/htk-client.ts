@@ -94,3 +94,13 @@ export async function deactivateInterceptor(id: string, proxyPort: number) {
         throw new Error('Failed to deactivate interceptor');
     }
 }
+
+export async function triggerServerUpdate() {
+    await graphql(`
+        mutation TriggerUpdate {
+            triggerUpdate
+        }
+    `, { })
+    // We ignore all errors, this trigger is just advisory
+    .catch(formatError).catch(console.log);
+}
