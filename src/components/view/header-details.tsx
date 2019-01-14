@@ -29,7 +29,7 @@ const HeaderInfo = styled.a`
     opacity: ${p => !!p.href ? 1 : 0.7};
     color: ${p => p.theme.mainColor};
 
-    &:active {
+    &[href]:active {
         color: ${p => p.theme.popColor};
     }
 `;
