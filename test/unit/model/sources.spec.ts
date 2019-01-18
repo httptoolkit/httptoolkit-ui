@@ -1,8 +1,8 @@
-import { expect } from '../test-setup';
+import { expect } from '../../test-setup';
 
-import { Icons } from '../../src/icons';
+import { Icons } from '../../../src/icons';
 
-import { parseSource } from '../../src/model/sources';
+import { parseSource } from '../../../src/model/sources';
 
 describe('HTTP source parsing', () => {
     describe('well-known UAs', () => {
