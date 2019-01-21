@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as UserAgent from 'ua-parser-js';
 
 import { Icons, IconProps } from '../icons';
+import { get } from 'typesafe-get';
 
 export interface TrafficSource {
     ua: string;
@@ -41,8 +42,11 @@ const isValidIconName = (name: string | undefined): name is keyof typeof Icons =
 }
 
 const getIcon = (useragent: IUAParser.IResult) => {
-    if (isValidIconName(useragent.browser.name)) {
-        return Icons[useragent.browser.name];
+    const clientName = get(useragent, 'browser', 'name') ||
+        _.upperFirst((useragent.ua.match(/\w+/) || [])[0]);
+
+    if (isValidIconName(clientName)) {
+        return Icons[clientName];
     } else {
         return Icons.Unknown;
     }

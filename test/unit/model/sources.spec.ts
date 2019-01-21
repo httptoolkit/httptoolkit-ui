@@ -41,6 +41,25 @@ describe('HTTP source parsing', () => {
             expect(source.description).to.equal('IE 6 (Windows XP)');
             expect(source.icon).to.equal(Icons.IE);
         });
+
+        it('should parse Git UA', () => {
+            const source = parseSource(
+                'git/2.20.1'
+            );
+
+            expect(source.description).to.equal('Git/2.20.1');
+            expect(source.icon).to.equal(Icons.Git);
+        });
+
+        it('should parse NPM UA', () => {
+            const source = parseSource(
+                'npm/6.4.1 node/v10.13.0 linux x64'
+            );
+
+            expect(source.description).to.equal('Npm/6.4.1 (Linux x64)');
+            expect(source.icon).to.equal(Icons.Npm);
+        });
+
     });
 
     describe('unknown UAs:', () => {
