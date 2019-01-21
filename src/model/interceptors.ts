@@ -61,6 +61,12 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorUiConfig> = {
         iconProps: Icons.Edge,
         tags: BROWSER_TAGS
     },
+    'fresh-terminal': {
+        name: 'Terminal',
+        description: 'Open a new terminal preconfigured using proxy environment variables',
+        iconProps: Icons.Terminal,
+        tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell']
+    },
     'android-device': {
         name: 'An Android device',
         description: 'Intercept all HTTP traffic from an Android device on your network',

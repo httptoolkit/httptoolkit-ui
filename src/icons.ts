@@ -8,6 +8,7 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
 import { faPlug } from '@fortawesome/free-solid-svg-icons/faPlug';
 import { faNetworkWired } from '@fortawesome/free-solid-svg-icons/faNetworkWired';
 import { faDesktop } from '@fortawesome/free-solid-svg-icons/faDesktop';
+import { faTerminal } from '@fortawesome/free-solid-svg-icons/faTerminal';
 import { faQuestion } from '@fortawesome/free-solid-svg-icons/faQuestion';
 import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 import { faChevronUp } from '@fortawesome/free-solid-svg-icons/faChevronUp';
@@ -48,6 +49,7 @@ library.add(
     faPlug,
     faNetworkWired,
     faDesktop,
+    faTerminal,
     faQuestion,
     faTimes,
     faChevronUp,
@@ -80,6 +82,7 @@ export const Icons = {
     Edge: { icon: ['fab', 'edge'], color: '#2c75be' },
     IE: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
     Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
+    Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
     Android: { icon: ['fab', 'android'], color: '#A4C639' },
     iOS: { icon: ['fab', 'apple'], color: '#000' },
