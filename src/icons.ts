@@ -74,6 +74,7 @@ export interface IconProps {
 
 export const Icons = {
     Chrome: { icon: ['fab', 'chrome'], color: '#1da462' },
+    Chromium: { icon: ['fab', 'chrome'], color: '#4489f4' },
     Firefox: { icon: ['fab', 'firefox'], color: '#e66000' },
     Safari: { icon: ['fab', 'safari'], color: '#448aff' },
     Edge: { icon: ['fab', 'edge'], color: '#2c75be' },
