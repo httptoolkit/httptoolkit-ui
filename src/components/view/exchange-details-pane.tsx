@@ -13,6 +13,8 @@ import { HeaderDetails } from './header-details';
 import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { action, observable } from 'mobx';
+import { FontAwesomeIcon, Icons } from '../../icons';
+import { TrafficSource } from '../../model/sources';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -47,6 +49,17 @@ const ContentValue = styled.div`
     width: 100%;
 `;
 
+const SourceIcon = styled(({ source, className }: { source: TrafficSource, className?: string }) =>
+    source.icon !== Icons.Unknown ?
+        <FontAwesomeIcon
+            className={className}
+            title={source.description}
+            {...source.icon}
+        /> : null
+)`
+    margin-right: 8px;
+`;
+
 type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
 
 @observer
@@ -75,6 +88,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
 
             cards.push(<ExchangeCard {...this.cardProps('request')} direction='right'>
                 <header>
+                    <SourceIcon source={request.source} />
                     <Pill color={getExchangeSummaryColour(exchange)}>
                         { request.method } {
                             request.hostname
