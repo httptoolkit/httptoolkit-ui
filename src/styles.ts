@@ -60,7 +60,7 @@ export const GlobalStyles = createGlobalStyle`
     ${reset};
 
     body {
-        font-family: Lato;
+        font-family: Lato, Arial, sans-serif;
         color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.containerBackground};
     }
