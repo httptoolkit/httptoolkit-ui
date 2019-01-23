@@ -34,7 +34,7 @@ function formatError(errors: GraphQLError[] | XMLHttpRequest) {
     }
 }
 
-export async function getVersion() {
+export async function getVersion(): Promise<string> {
     const response = await graphql(`
         query getVersion {
             version
