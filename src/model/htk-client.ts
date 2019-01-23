@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
 
-const graphql = getGraphQL('http://localhost:45457/', { asJSON: true });
+const graphql = getGraphQL('http://127.0.0.1:45457/', { asJSON: true });
 
 export interface ServerInterceptor {
     id: string;
