@@ -69,6 +69,10 @@ declare global {
     interface Window { httpToolkitDesktopVersion: string | undefined; }
 }
 export async function getDesktopShellVersion() {
+    // In the SW, it's tricky to check the desktop version, as we don't get it injected.
+    // For now, just treat it as a different environment
+    if (typeof window === 'undefined') return 'service-worker';
+
     if (window.httpToolkitDesktopVersion) {
         // If it's already been set, just return it
         return window.httpToolkitDesktopVersion;
