@@ -50,19 +50,24 @@ function getAllRegexGroupMatches(input: string, regex: RegExp, groupIndex = 1): 
 
 const precacheController = new workbox.precaching.PrecacheController();
 
-async function buildPrecacheList() {
+async function getGoogleFontsUrlsToPrecache() {
     const fontsCssResponse = await fetch(GOOGLE_FONTS_URL);
     const fontsCss = await fontsCssResponse.text();
     const fontUrls = getAllRegexGroupMatches(fontsCss, /url\(([^\)]+)\)/g);
 
+    // Tiny race condition here: the above could return different font CSS than
+    // the later request for the fonts URL. Very unlikely though, and not a major problem.
+    return [GOOGLE_FONTS_URL, ...fontUrls];
+}
+
+async function buildPrecacheList() {
+    // If we fail to precache google fonts, don't worry about it too much, it's ok.
+    // Doesn't cause problems because this is served with stale-while-revalidate.
+    const googleFontsUrls = await getGoogleFontsUrlsToPrecache().catch(() => []);
+
     return __precacheManifest.map((precacheEntry) =>
         mapPrecacheEntry(precacheEntry, 'index.html', '/')
-    ).concat([
-        // Tiny race condition here: the above could return different font CSS than
-        // this new request. Very unlikely though, and not a major problem.
-        GOOGLE_FONTS_URL,
-        ...fontUrls
-    ]);
+    ).concat(googleFontsUrls);
 };
 
 async function precacheNewVersionIfSupported() {
