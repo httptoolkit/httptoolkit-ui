@@ -24,7 +24,8 @@ registerUpdateWorker({ scope: '/' })
 
     // Check for SW updates every 5 minutes.
     setInterval(() => {
-        triggerServerUpdate();
+        // TODO: Reenable, once everybody has updated to a server that updates more reliably:
+        // triggerServerUpdate();
         registration.update().catch(console.log);
     }, 1000 * 60 * 5);
 })
