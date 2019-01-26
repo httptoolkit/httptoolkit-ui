@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/browser';
 import * as packageJson from '../package.json';
 
 import { getDesktopShellVersion } from './tracking';
-import { getVersion as getServerVersion } from './model/htk-client';
+import { waitUntilServerReady, getVersion as getServerVersion } from './model/htk-client';
 
 let sentryInitialized = false;
 
@@ -16,9 +16,10 @@ export function initSentry(dsn: string | undefined) {
     if (dsn) {
         Sentry.init({ dsn: dsn, release: packageJson.version });
 
-        getServerVersion().then((version) =>
+        waitUntilServerReady().then(async () => {
+            const version = await getServerVersion();
             Sentry.configureScope((scope) => scope.setExtra('version:server', version))
-        );
+        });
 
         getDesktopShellVersion().then((version) =>
             Sentry.configureScope((scope) => scope.setExtra('version:desktop', version))

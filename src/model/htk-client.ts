@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
+import { getDeferred } from '../util';
 
 const graphql = getGraphQL('http://127.0.0.1:45457/', { asJSON: true });
 
@@ -33,6 +34,10 @@ function formatError(errors: GraphQLError[] | XMLHttpRequest) {
         throw errors;
     }
 }
+
+const serverReady = getDeferred();
+export const announceServerReady = () => serverReady.resolve();
+export const waitUntilServerReady = () => serverReady.promise;
 
 export async function getVersion(): Promise<string> {
     const response = await graphql(`

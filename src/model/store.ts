@@ -5,7 +5,7 @@ import { getLocal, Mockttp, CompletedRequest, CompletedResponse } from 'mockttp'
 
 import { HttpExchange } from '../types';
 import { parseSource } from './sources';
-import { getInterceptors, activateInterceptor, getConfig } from './htk-client';
+import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from './htk-client';
 import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
@@ -71,6 +71,7 @@ export class Store {
 
     startServer = flow(function * (this: Store) {
         yield startServer(this.server);
+        announceServerReady();
 
         yield Promise.all([
             this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech$/).always().thenReply(

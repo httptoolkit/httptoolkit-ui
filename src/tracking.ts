@@ -1,5 +1,5 @@
 import * as ReactGA from 'react-ga';
-import { getVersion as getServerVersion } from './model/htk-client';
+import { waitUntilServerReady, getVersion as getServerVersion } from './model/htk-client';
 
 const GA_ID = process.env.GA_ID;
 
@@ -15,7 +15,10 @@ export function initTracking() {
         ReactGA.initialize(GA_ID, { gaOptions: { siteSpeedSampleRate: 100 } });
 
         // dimension1 is version:server (so we can work out how many users have updated to which server version)
-        getServerVersion().then((version) => ReactGA.set({ 'dimension1': version }));
+        waitUntilServerReady().then(async () => {
+            const version = await getServerVersion();
+            ReactGA.set({ 'dimension1': version })
+        });
 
         // dimension2 is version:desktop (so we can work out how many users are using which desktop shell version)
         getDesktopShellVersion().then((version) => ReactGA.set({ 'dimension2': version }));
