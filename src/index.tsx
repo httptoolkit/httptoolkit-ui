@@ -11,6 +11,7 @@ import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
 import { ErrorBoundary } from './components/error-boundary';
 import { InterceptionStore } from './model/interception-store';
+import { AccountStore } from './model/account-store';
 import { triggerServerUpdate } from './model/htk-client';
 import { initTracking } from './tracking';
 
@@ -38,6 +39,7 @@ registerUpdateWorker({ scope: '/' })
 
 initTracking();
 
+const accountStore = new AccountStore();
 const interceptionStore = new InterceptionStore();
 interceptionStore.startServer().then(() => {
     // We now know that the server is running - tell it to check for updates
@@ -45,7 +47,7 @@ interceptionStore.startServer().then(() => {
 
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
-        <Provider interceptionStore={interceptionStore}>
+        <Provider interceptionStore={interceptionStore} accountStore={accountStore}>
             <ThemeProvider theme={theme}>
                 <ErrorBoundary>
                     <GlobalStyles />

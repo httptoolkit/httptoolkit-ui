@@ -1,21 +1,25 @@
 import * as React from 'react';
 import { observable, action } from 'mobx';
-import { observer } from 'mobx-react';
+import { observer, inject } from 'mobx-react';
 
 import { styled } from '../styles';
+import { WithInjected } from '../types';
+import { trackPage } from '../tracking';
+import { AccountStore } from '../model/account-store';
 
 import { Sidebar } from './sidebar';
-
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
-import { trackPage } from '../tracking';
+
+import { PlanPicker } from './account/plan-picker';
+import { ModalOverlay } from './account/modal-overlay';
 
 const PAGES = [
     { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
     { name: 'View', icon: ['fas', 'search'], component: ViewPage }
 ];
 
-const AppContainer = styled.div`
+const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
     height: 100%;
 
@@ -24,22 +28,46 @@ const AppContainer = styled.div`
     }
 `;
 
+@inject('accountStore')
 @observer
-export class App extends React.Component {
+class App extends React.Component<{ accountStore: AccountStore }> {
 
     @observable selectedPageIndex: number = 0;
 
     render() {
+        const { modal, setSelectedPlan, subscriptionPlans, user, logOut } = this.props.accountStore;
         const PageComponent = PAGES[this.selectedPageIndex].component;
 
-        return <AppContainer>
-            <Sidebar
-                pages={PAGES}
-                selectedPageIndex={this.selectedPageIndex}
-                onSelectPage={this.onSelectPage}
-            />
-            <PageComponent />
-        </AppContainer>
+        return <>
+            <AppContainer
+                aria-hidden={!!modal}
+                inert={!!modal}
+                // 'inert' doesn't actually work - it's non-standard, so we need this:
+                ref={node => node && (!!modal ?
+                    node.setAttribute('inert', '') : node.removeAttribute('inert')
+                )}
+            >
+                <Sidebar
+                    pages={PAGES}
+                    selectedPageIndex={this.selectedPageIndex}
+                    onSelectPage={this.onSelectPage}
+                />
+                <PageComponent />
+            </AppContainer>
+
+            { !!modal && <ModalOverlay opacity={
+                modal === 'checkout' ? 0.5 : undefined // Override for checkout, as it has an independent overlay
+            } /> }
+
+            { modal === 'pick-a-plan' &&
+                <PlanPicker
+                    email={user.email!}
+                    onPlanPicked={setSelectedPlan}
+                    onLogOut={logOut}
+                    plans={subscriptionPlans}
+                />
+            }
+        </>;
     }
 
     @action.bound
@@ -48,3 +76,10 @@ export class App extends React.Component {
         trackPage(PAGES[selectedPageIndex].name);
     }
 }
+
+// Annoying cast required to handle the store prop nicely in our types
+const AppWithStoreInjected = (
+    App as unknown as WithInjected<typeof App, 'accountStore'>
+);
+
+export { AppWithStoreInjected as App };

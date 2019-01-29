@@ -73,11 +73,42 @@ export const GlobalStyles = createGlobalStyle`
         font-family: Lato, sans-serif;
     }
 
+    em {
+        font-style: italic;
+    }
+
+    strong {
+        font-weight: bold;
+    }
+
     :active {
         outline: none;
     }
 
     .slow-spin {
         animation: fa-spin 5s infinite linear;
+    }
+
+    /* Override Auth0's style choices to match the rest of the UI */
+    .auth0-lock {
+        font-family: Lato, sans-serif !important;
+
+        .auth0-lock-overlay {
+            display: none; /* We have our own overlay we'll use instead */
+        }
+
+        .auth0-lock-widget {
+            box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2) !important;
+        }
+
+        .auth0-lock-form {
+            .auth0-lock-name {
+                font-size: ${fontSizes.headingSize} !important;
+            }
+
+            p, .auth0-lock-social-button-text {
+                font-size: ${fontSizes.textSize} !important;
+            }
+        }
     }
 `;

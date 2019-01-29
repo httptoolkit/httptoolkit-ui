@@ -15,6 +15,8 @@ import { faChevronUp } from '@fortawesome/free-solid-svg-icons/faChevronUp';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { faBan } from '@fortawesome/free-solid-svg-icons/faBan';
 import { faComment } from '@fortawesome/free-regular-svg-icons/faComment';
+import { faToggleOn } from '@fortawesome/free-solid-svg-icons/faToggleOn';
+import { faToggleOff } from '@fortawesome/free-solid-svg-icons/faToggleOff';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -58,6 +60,8 @@ library.add(
     faChevronDown,
     faBan,
     faComment,
+    faToggleOn,
+    faToggleOff,
 
     faChrome,
     faFirefox,
