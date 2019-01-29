@@ -1,8 +1,20 @@
 import * as React from 'react';
-import { styled } from "../../styles";
+import { styled, Theme } from "../../styles";
 import { FontAwesomeIcon } from "../../icons";
+import { filterProps } from '../component-utils';
 
-export const CloseButton = styled(FontAwesomeIcon).attrs((props) => ({
+interface CloseButtonProps {
+    onClose?: () => void;
+    inverted?: boolean;
+    top?: string;
+    right?: string;
+
+    theme?: Theme;
+}
+
+export const CloseButton = styled(
+    filterProps(FontAwesomeIcon, 'inverted')
+).attrs((props: CloseButtonProps) => ({
     icon: ['fas', 'times'],
     size: '2x',
 
@@ -17,7 +29,9 @@ export const CloseButton = styled(FontAwesomeIcon).attrs((props) => ({
     position: absolute;
     cursor: pointer;
 
-    color: ${p => p.inverted ? p.theme.mainBackground : p.theme.mainColor};
+    color: ${(p: CloseButtonProps) => p.inverted ?
+        p.theme!.mainBackground : p.theme!.mainColor
+    };
 
     top: ${p => p.top || '15px'};
     right: ${p => p.right || '15px'};
