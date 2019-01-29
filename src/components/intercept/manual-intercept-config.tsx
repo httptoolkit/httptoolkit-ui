@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '../../icons';
 
 import { Interceptor, MANUAL_INTERCEPT_ID } from '../../model/interceptors';
 import { InterceptOption } from './intercept-option';
+import { CloseButton } from '../common/close-button';
 
 interface ManualInterceptOptionCardProps {
     expanded: boolean;
@@ -69,17 +70,6 @@ const InstructionsStep = styled.div`
     }
 `;
 
-const CloseButton = styled(FontAwesomeIcon).attrs({
-    icon: ['fas', 'times'],
-    size: '2x'
-})`
-    position: absolute;
-
-    right: 15px;
-    top: 15px;
-    cursor: pointer;
-`;
-
 const CopyableInstruction = styled.span`
     font-family: monospace;
     user-select: all;
@@ -109,9 +99,7 @@ export class ManualInterceptOption extends React.Component<ManualInterceptOption
             onActivate={this.expanded ? undefined : this.onExpand}
             expanded={this.expanded}
         >{ this.expanded ? <>
-            <CloseButton
-                onClick={this.onClose}
-            />
+            <CloseButton onClose={this.onClose} />
 
             <InstructionsContainer>
                 <InstructionsStep>
