@@ -13,6 +13,8 @@ export const lightTheme = {
     mainBackground: '#fafafa',
     mainColor: '#222',
 
+    primaryInputColor: '#1f83e0',
+
     popBackground: '#ffffff',
     popColor: '#e1421f',
 
@@ -26,6 +28,8 @@ export const lightTheme = {
 export const darkTheme = {
     mainBackground: '#222222',
     mainColor: '#efefef',
+
+    primaryInputColor: '#1f83e0',
 
     popBackground: '#000',
     popColor: '#e1421f',
