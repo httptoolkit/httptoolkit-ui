@@ -37,7 +37,7 @@ describe('Smoke test', function () {
 
     it('can load the app', async () => {
         const page = await browser.newPage();
-        await page.goto('http://localhost:7654');
+        await page.goto('http://local.httptoolkit.tech:7654');
 
         await page.waitFor('h1');
         const heading = await page.$eval('h1', (h1) => h1.innerHTML);

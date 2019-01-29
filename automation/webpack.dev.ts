@@ -9,7 +9,8 @@ export default merge(common, {
     devtool: 'inline-source-map',
 
     devServer: {
-        contentBase: common.output!.path!
+        contentBase: common.output!.path!,
+        public: 'local.httptoolkit.tech:8080'
     },
 
     module: {
