@@ -4,21 +4,21 @@ import * as _ from 'lodash';
 import { observable, autorun, action, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 
-import { HttpExchange, WithInjectedStore } from '../../types';
+import { HttpExchange, WithInjected } from '../../types';
 import { styled } from '../../styles';
 
 import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from '../split-pane';
 
-import { ActivatedStore } from '../../model/store';
+import { ActivatedStore } from '../../model/interception-store';
 
 interface ViewPageProps {
     className?: string,
-    store: ActivatedStore
+    interceptionStore: ActivatedStore
 }
 
-@inject('store')
+@inject('interceptionStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
@@ -26,14 +26,14 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            if (!_.includes(this.props.store.exchanges, this.selectedExchange)) {
+            if (!_.includes(this.props.interceptionStore.exchanges, this.selectedExchange)) {
                 runInAction(() => this.selectedExchange = undefined);
             }
         }));
     }
 
     render(): JSX.Element {
-        const { exchanges, clearExchanges } = this.props.store;
+        const { exchanges, clearExchanges } = this.props.interceptionStore;
 
         return <div className={this.props.className}>
             <SplitPane
@@ -61,7 +61,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
 const StyledViewPage = styled(
     // Exclude store from the external props, as it's injected
-    ViewPage as unknown as WithInjectedStore<typeof ViewPage>
+    ViewPage as unknown as WithInjected<typeof ViewPage, 'interceptionStore'>
 )`
     height: 100vh;
     position: relative;

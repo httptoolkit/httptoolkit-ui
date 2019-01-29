@@ -17,7 +17,7 @@ configure({ enforceActions: 'observed' });
 
 // All later components assume the store is fully activated - that means
 // all undefined/nullable fields have been set.
-export type ActivatedStore = { [P in keyof Store]: NonNullable<Store[P]> };
+export type ActivatedStore = { [P in keyof InterceptionStore]: NonNullable<InterceptionStore[P]> };
 
 // Start the server, with slowly decreasing retry frequency. Total time to failure about 10s.
 // Sum calculation: (initialDelayMs * (1 - delayRatio ^ maxRetries))/(1 - delayRatio)
@@ -31,7 +31,7 @@ function startServer(server: Mockttp, retries = 10, delayMs = 250): Promise<void
     });
 }
 
-export class Store {
+export class InterceptionStore {
 
     @observable.ref
     private server: Mockttp;
@@ -69,7 +69,7 @@ export class Store {
         this.interceptors = getInterceptOptions([]);
     }
 
-    startServer = flow(function * (this: Store) {
+    startServer = flow(function * (this: InterceptionStore) {
         yield startServer(this.server);
         announceServerReady();
 

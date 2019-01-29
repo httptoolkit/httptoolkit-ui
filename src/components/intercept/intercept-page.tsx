@@ -6,18 +6,18 @@ import { observer, inject } from 'mobx-react';
 
 import { styled } from '../../styles';
 
-import { ActivatedStore } from '../../model/store';
+import { ActivatedStore } from '../../model/interception-store';
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
 import { SearchBox } from '../common/search-box';
-import { WithInjectedStore } from '../../types';
+import { WithInjected } from '../../types';
 import { trackEvent } from '../../tracking';
 import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
 import { ManualInterceptOption } from './manual-intercept-config';
 
 interface InterceptPageProps {
     className?: string,
-    store: ActivatedStore,
+    interceptionStore: ActivatedStore,
 }
 
 const InterceptPageContainer = styled.section`
@@ -67,7 +67,7 @@ const InterceptSearchBox = styled(SearchBox).attrs({
     margin: 20px 0 0;
 `;
 
-@inject('store')
+@inject('interceptionStore')
 @observer
 class InterceptPage extends React.Component<InterceptPageProps> {
 
@@ -76,9 +76,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     private readonly gridRef = React.createRef<HTMLDivElement>();
 
     render(): JSX.Element {
-        let mainView: JSX.Element | undefined;
-
-        const { serverPort, certPath, activeSources, interceptors } = this.props.store;
+        const { serverPort, certPath, activeSources, interceptors } = this.props.interceptionStore;
 
         const visibleInterceptOptions = _.pickBy(interceptors, (option) =>
             !this.filter ||
@@ -145,7 +143,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: Interceptor) {
         trackEvent({ category: 'Interceptors', action: 'Activated', label: interceptor.id });
         interceptor.inProgress = true;
-        yield this.props.store.activateInterceptor(interceptor.id);
+        yield this.props.interceptionStore.activateInterceptor(interceptor.id);
         interceptor.inProgress = false;
     });
 
@@ -157,7 +155,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
 const StyledInterceptPage = styled(
     // Exclude store from the external props, as it's injected
-    InterceptPage as unknown as WithInjectedStore<typeof InterceptPage>
+    InterceptPage as unknown as WithInjected<typeof InterceptPage, 'interceptionStore'>
 )`
     height: 100%;
     overflow-y: auto;

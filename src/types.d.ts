@@ -6,10 +6,11 @@ import { ExchangeCategory } from './exchange-colors';
 
 export type DomWithProps<T, Props> = ComponentClass<React.DetailedHTMLProps<React.HTMLAttributes<T> & Props, T>>;
 
-export type WithInjectedStore<
+export type WithInjected<
     C extends React.ComponentType<any>,
+    K extends string
 > = C extends React.ComponentType<infer T> ?
-    React.ComponentType<Pick<T, Exclude<keyof T, 'store'>>> : never;
+    React.ComponentType<Pick<T, Exclude<keyof T, K>>> : never;
 
 export type HtkRequest = CompletedRequest & {
     parsedUrl: URL,
