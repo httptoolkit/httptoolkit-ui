@@ -11,7 +11,7 @@ import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
 import { App } from './components/app';
 import { ErrorBoundary } from './components/error-boundary';
 import { InterceptionStore } from './model/interception-store';
-import { AccountStore } from './model/account-store';
+import { AccountStore } from './model/account/account-store';
 import { triggerServerUpdate } from './model/htk-client';
 import { initTracking } from './tracking';
 

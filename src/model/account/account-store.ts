@@ -2,14 +2,22 @@ import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 import { configure, observable, action, flow, computed, when } from 'mobx';
 
+import { reportError } from '../../errors';
+import { delay } from '../../util';
+
 import {
-    SubscriptionPlanCode,
-    SubscriptionPlans,
-    getUser,
+    loginEvents,
     showLoginDialog,
-    openCheckout,
-    logOut
-} from './account';
+    logOut,
+    User,
+    getLatestUserData,
+    getLastUserData
+} from './auth';
+import {
+    SubscriptionPlans,
+    SubscriptionPlanCode,
+    openCheckout
+} from './subscriptions';
 
 configure({ enforceActions: 'observed' });
 
@@ -17,6 +25,15 @@ export class AccountStore {
 
     constructor() {
         this.checkForPaddle();
+
+        // Update account data automatically on login, logout & every 10 mins
+        loginEvents.on('authenticated', async () => {
+            await this.updateUser();
+            loginEvents.emit('user_data_loaded');
+        });
+        loginEvents.on('logout', this.updateUser);
+        setInterval(this.updateUser, 1000 * 60 * 10);
+        this.updateUser();
     }
 
     @action.bound
@@ -31,15 +48,20 @@ export class AccountStore {
     @observable
     private paddleLoaded: boolean = false;
 
+    @observable
+    user: User = getLastUserData();
+
+    private updateUser = flow(function * (this: AccountStore) {
+        this.user = yield getLatestUserData();
+    }.bind(this));
+
     readonly subscriptionPlans = SubscriptionPlans;
 
     @observable
-    modal: 'login' | 'pick-a-plan' | 'checkout' | undefined;
+    modal: 'login' | 'pick-a-plan' | 'checkout' | 'post-checkout' | undefined;
 
     @observable
     private selectedPlan: SubscriptionPlanCode | undefined;
-
-    user = getUser();
 
     @computed get isLoggedIn() {
         return !!this.user.email;
@@ -67,20 +89,27 @@ export class AccountStore {
     }
 
     getPro = flow(function * (this: AccountStore) {
-        const loggedIn = this.isLoggedIn || (yield this.login());
+        try {
+            if (!this.isLoggedIn) {
+                yield this.login();
+            }
 
-        if (!loggedIn || this.isPaidUser) return;
+            if (!this.isLoggedIn || this.isPaidUser) return;
 
-        const selectedPlan = yield this.pickPlan();
-        if (!selectedPlan) return;
+            const selectedPlan: SubscriptionPlanCode | undefined = yield this.pickPlan();
+            if (!selectedPlan) return;
 
-        yield this.purchasePlan(this.user.email!, selectedPlan);
-    });
+            yield this.purchasePlan(this.user.email!, selectedPlan);
+        } catch (error) {
+            reportError(error);
+            this.modal = undefined;
+        }
+    }.bind(this));
 
-    login = flow(function * (this: AccountStore) {
+    private login = flow(function * (this: AccountStore) {
         this.modal = 'login';
 
-        const loggedIn = yield showLoginDialog();
+        const loggedIn: boolean = yield showLoginDialog();
         this.modal = undefined;
         return loggedIn;
     });
@@ -91,7 +120,7 @@ export class AccountStore {
         this.modal = undefined;
     }
 
-    pickPlan = flow(function * (this: AccountStore) {
+    private pickPlan = flow(function * (this: AccountStore) {
         this.modal = 'pick-a-plan';
 
         yield when(() => this.modal !== 'pick-a-plan' || !!this.selectedPlan);
@@ -112,10 +141,21 @@ export class AccountStore {
         }
     }
 
-    purchasePlan = flow(function * (this: AccountStore, email: string, planCode: string) {
+    private purchasePlan = flow(function * (this: AccountStore, email: string, planCode: SubscriptionPlanCode) {
         this.modal = 'checkout';
 
-        const purchased = yield openCheckout(email, planCode);
+        const purchased: boolean = yield openCheckout(email, planCode);
+
+        if (purchased) {
+            this.modal = 'post-checkout';
+
+            yield this.updateUser();
+            while (!this.isPaidUser) {
+                delay(1000);
+                yield this.updateUser();
+            }
+        }
+
         this.modal = undefined;
         return purchased;
     });

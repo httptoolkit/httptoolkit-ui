@@ -5,7 +5,7 @@ import { observer, inject } from 'mobx-react';
 import { styled } from '../styles';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
-import { AccountStore } from '../model/account-store';
+import { AccountStore } from '../model/account/account-store';
 
 import { Sidebar } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
@@ -13,6 +13,7 @@ import { ViewPage } from './view/view-page';
 
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
+import { FontAwesomeIcon } from '../icons';
 
 const PAGES = [
     { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
@@ -26,6 +27,22 @@ const AppContainer = styled.div<{ inert?: boolean }>`
     > :not(:first-child) {
         flex: 1 1;
     }
+`;
+
+const Spinner = styled((p: { className?: string }) => (
+    <div className={p.className}>
+        <FontAwesomeIcon
+            icon={['fac', 'spinner-arc']}
+            spin
+            size='10x'
+        />
+    </div>
+))`
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(2);
+    z-index: 100;
 `;
 
 @inject('accountStore')
@@ -67,6 +84,8 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     plans={subscriptionPlans}
                 />
             }
+
+            { modal === 'post-checkout' && <Spinner /> }
         </>;
     }
 

@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import * as React from "react";
 import { observer } from "mobx-react";
 import { observable, action } from "mobx";
@@ -5,9 +6,8 @@ import { observable, action } from "mobx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { styled, css } from "../../styles";
-import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account";
+import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account/subscriptions";
 import { Button, ButtonLink } from "../common/inputs";
-import { Dictionary } from "lodash";
 import { CloseButton } from "../common/close-button";
 
 const PlanPickerModal = styled.dialog`
@@ -190,7 +190,7 @@ type PlanCycle = 'monthly' | 'annual';
 
 interface PlanPickerProps {
     email: string;
-    plans: Dictionary<SubscriptionPlan>;
+    plans: _.Dictionary<SubscriptionPlan>;
     onPlanPicked: (plan: SubscriptionPlanCode | undefined) => void;
     onLogOut: () => void;
 }
@@ -316,8 +316,8 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
         return plan.prices!.monthly;
     };
 
-    getPlanCode = (tierCode: string): SubscriptionPlanCode => {
-        return `${tierCode}-${this.planCycle}`;
+    getPlanCode = (tierCode: string) => {
+        return `${tierCode}-${this.planCycle}` as SubscriptionPlanCode;
     }
 
     buyPlan = (tierCode: string) => {
