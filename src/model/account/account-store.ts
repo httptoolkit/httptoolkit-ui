@@ -150,10 +150,15 @@ export class AccountStore {
             this.modal = 'post-checkout';
 
             yield this.updateUser();
-            while (!this.isPaidUser) {
-                delay(1000);
+            let retries = 30;
+            while (!this.isPaidUser && retries > 0) {
+                retries -= 1;
+                yield delay(1000);
                 yield this.updateUser();
             }
+
+            // After 30 seconds, fail - this will report an error, show an error, and then refresh
+            if (!this.isPaidUser) throw new Error('Checkout failed to complete!');
         }
 
         this.modal = undefined;
