@@ -17,6 +17,7 @@ import { faBan } from '@fortawesome/free-solid-svg-icons/faBan';
 import { faComment } from '@fortawesome/free-regular-svg-icons/faComment';
 import { faToggleOn } from '@fortawesome/free-solid-svg-icons/faToggleOn';
 import { faToggleOff } from '@fortawesome/free-solid-svg-icons/faToggleOff';
+import { faCopy } from '@fortawesome/free-regular-svg-icons/faCopy';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -62,6 +63,7 @@ library.add(
     faComment,
     faToggleOn,
     faToggleOff,
+    faCopy,
 
     faChrome,
     faFirefox,

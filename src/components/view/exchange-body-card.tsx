@@ -10,6 +10,7 @@ import { decodeContent } from '../../workers/worker-api';
 
 import { ExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
+import { CopyButton } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
 import { FontAwesomeIcon } from '../../icons';
 
@@ -49,6 +50,12 @@ const LoadingCardContent = styled.div<{ height?: string }>`
     justify-content: center;
 `;
 
+const CopyBody = styled(CopyButton)`
+    padding: 5px 10px;
+    margin-right: auto;
+    color: ${p => p.theme.mainColor};
+`;
+
 type ExchangeMessage = HtkRequest | HtkResponse;
 
 @observer
@@ -62,6 +69,13 @@ export class ExchangeBodyCard extends React.Component<{
 
     @observable
     private selectedContentType: HtkContentType | undefined;
+
+    /*
+     * Bit of a hack... We pass an observable down into the child editor component, who
+     * writes to it when they've got rendered content (or not), which automatically
+     * updates the copy button's rendered content.
+     */
+    private currentContent = observable.box<string | undefined>();
 
     private static decodedBodyCache = new WeakMap<
         ExchangeMessage, IObservableValue<undefined | Buffer>
@@ -121,12 +135,20 @@ export class ExchangeBodyCard extends React.Component<{
         const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
         const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
 
+        const currentRenderedContent = this.currentContent.get();
+
         return <ExchangeCard
             direction={direction}
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled}
         >
             <header>
+                { !collapsed && decodedBody && currentRenderedContent &&
+                    // Can't show when collapsed, because no editor means the content might be outdated...
+                    // TODO: Fine a nicer solution that doesn't depend on the editor
+                    // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
+                    <CopyBody content={currentRenderedContent} />
+                }
                 { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
                 <PillSelector<HtkContentType>
                     onChange={this.setContentType}
@@ -141,6 +163,7 @@ export class ExchangeBodyCard extends React.Component<{
                     <ContentEditor
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
+                        contentObservable={this.currentContent}
                     >
                         {decodedBody}
                     </ContentEditor>

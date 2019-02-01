@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { observer } from 'mobx-react';
-import { observable, action, computed } from 'mobx';
+import { observer, disposeOnUnmount } from 'mobx-react';
+import { observable, action, computed, IObservableValue, autorun, runInAction } from 'mobx';
 
 import {
     js as beautifyJs,
@@ -14,22 +14,20 @@ import { BaseEditor } from './base-editor';
 import { styled } from '../../styles';
 import { HtkContentType } from '../../content-types';
 
-interface EditorFormat {
+interface EditorFormatter {
     language: string;
     render(content: Buffer): string;
 }
 
-type EditorFormatComponent = React.ComponentType<{ content: Buffer, rawContentType: string }>;
+type FormatComponent = React.ComponentType<{ content: Buffer, rawContentType: string }>;
+
+type Formatter = EditorFormatter | FormatComponent;
 
 export function getContentEditorName(contentType: HtkContentType): string {
     return contentType === 'raw' ? 'Hex' : _.capitalize(contentType);
 }
 
-export const EditorFormats: {
-    [key in HtkContentType]?:
-        | EditorFormat
-        | EditorFormatComponent
-} = {
+export const Formatters: { [key in HtkContentType]?: Formatter } = {
     raw: {
         language: 'text',
         // Poor man's hex editor:
@@ -104,13 +102,14 @@ export const EditorFormats: {
         display: block;
         max-width: 100%;
         margin: 0 auto;
-    ` as EditorFormatComponent // Shouldn't be necessary, but somehow TS doesn't work this out
+    ` as FormatComponent // Shouldn't be necessary, but somehow TS doesn't work this out
 };
 
 interface ContentEditorProps {
     children: Buffer;
     rawContentType: string;
-    contentType: HtkContentType
+    contentType: HtkContentType;
+    contentObservable?: IObservableValue<string | undefined>;
 }
 
 const EditorContainer = styled.div`
@@ -118,7 +117,7 @@ const EditorContainer = styled.div`
     max-height: 560px;
 `;
 
-function isEditorFormat(input: any): input is EditorFormat {
+function isEditorFormatter(input: any): input is EditorFormatter {
     return !!input.language;
 }
 
@@ -132,14 +131,14 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
     }
 
     @computed
-    private get editorFormat() {
-        return EditorFormats[this.props.contentType] || EditorFormats.text!;
+    private get formatter() {
+        return Formatters[this.props.contentType] || Formatters.text!;
     }
 
     @computed
     private get renderedContent() {
-        if (isEditorFormat(this.editorFormat)) {
-            return this.editorFormat.render(this.props.children);
+        if (isEditorFormatter(this.formatter)) {
+            return this.formatter.render(this.props.children);
         }
     }
 
@@ -148,14 +147,22 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
         this.lineCount = newLineCount;
     }
 
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            if (this.props.contentObservable) {
+                runInAction(() => this.props.contentObservable!.set(this.renderedContent));
+            }
+        }));
+    }
+
     render() {
-        if (isEditorFormat(this.editorFormat)) {
+        if (isEditorFormatter(this.formatter)) {
             try {
                 return <EditorContainer height={this.lineCount * 22}>
                     <BaseEditor
                         // For now, we only support read only content
                         options={{readOnly: true}}
-                        language={this.editorFormat.language}
+                        language={this.formatter.language}
                         onLineCount={this.updateLineCount}
                         value={this.renderedContent!}
                     />
@@ -164,11 +171,11 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
                 return <div>
                     Failed to render {this.props.contentType} content:<br/>
                     {e.toString()}
-                </div>
+                </div>;
             }
         } else {
-            const Viewer = this.editorFormat;
-            return <Viewer content={this.props.children} rawContentType={this.props.rawContentType} />
+            const Viewer = this.formatter;
+            return <Viewer content={this.props.children} rawContentType={this.props.rawContentType} />;
         }
     }
 }
