@@ -20,7 +20,7 @@
     "test:integration": "npm run build && npm run test:integration:run",
     "test:integration:run": "TS_NODE_PROJECT=./test/tsconfig.json TS_NODE_FILES=true mocha --exit -r ts-node/register 'test/integration/**/*.spec.ts'"
   },
-  "author": "Tim Perry <pimterry@gmail.com>",
+  "author": "Tim Perry <tim@httptoolkit.tech>",
   "license": "AGPL-3.0-or-later",
   "runtimeDependencies": {
     "httptoolkit-server": "^0.1.0"
