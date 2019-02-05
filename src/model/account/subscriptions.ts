@@ -5,7 +5,7 @@ const PADDLE_VENDOR_ID = 37222;
 const waitForPaddle = new Promise<PaddleStatic>((resolve) => {
     const checkForPaddle = () => {
         if (!!(window as any).Paddle) {
-            Paddle.Setup({ vendor: PADDLE_VENDOR_ID });
+            Paddle.Setup({ vendor: PADDLE_VENDOR_ID, enableTracking: false });
             resolve(Paddle);
         } else {
             setTimeout(checkForPaddle, 500);

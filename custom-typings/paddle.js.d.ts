@@ -16,6 +16,7 @@ interface Pricing {
 interface PaddleStatic {
     Setup(options: {
         vendor: number;
+        enableTracking?: boolean;
     }): void;
 
     Product: {
