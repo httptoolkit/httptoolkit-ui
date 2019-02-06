@@ -226,7 +226,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
                         <TierLicense>
-                            Personal user license
+                            Personal user account
                         </TierLicense>
                     </TierPriceBlock>
                     <TierFeatures>
@@ -267,7 +267,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
                         <TierLicense>
-                            Transferable user license
+                            Team account
                         </TierLicense>
                     </TierPriceBlock>
                     <TierFeatures>
