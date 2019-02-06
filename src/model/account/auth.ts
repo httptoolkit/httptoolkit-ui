@@ -99,7 +99,6 @@ let tokens: {
 } | null = JSON.parse(localStorage.getItem('tokens')!);
 // ! above because actually parse(null) -> null, so it's ok
 
-
 const tokenMutex = new Mutex();
 
 function setTokens(newTokens: typeof tokens) {
@@ -119,7 +118,7 @@ loginEvents.on('authenticated', ({ accessToken, refreshToken, expiresIn }) => {
 
 loginEvents.on('logout', () => setTokens(null));
 
-// Must be run _inside_ a tokenMutex
+// Must be run inside a tokenMutex
 async function refreshToken() {
     if (!tokens) throw new Error("Can't refresh tokens if we're not logged in");
 
@@ -127,10 +126,12 @@ async function refreshToken() {
         auth0Client.oauthToken({
             refreshToken: tokens!.refreshToken,
             grantType: 'refresh_token'
-        }, (error, result: { accessToken: string }) => {
+        }, (error, result: { accessToken: string, expiresIn: number }) => {
             if (error) reject(error);
             else {
                 tokens!.accessToken = result.accessToken;
+                tokens!.accessTokenExpiry = Date.now() + (result.expiresIn * 1000);
+                localStorage.setItem('tokens', JSON.stringify(tokens));
                 resolve(result.accessToken);
             }
         })
