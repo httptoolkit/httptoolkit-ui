@@ -23,6 +23,9 @@ export function initTracking() {
         // dimension2 is version:desktop (so we can work out how many users are using which desktop shell version)
         getDesktopShellVersion().then((version) => ReactGA.set({ 'dimension2': version }));
 
+        // dimension3 is version:ui. We don't version the UI, so it's just the current commit hash
+        ReactGA.set({ 'dimension3': process.env.COMMIT_REF });
+
         ReactGA.timing({
             category: 'Initial load',
             variable: 'tracking-initialize',
