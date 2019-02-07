@@ -33,12 +33,12 @@ export const darkTheme = {
 
     primaryInputColor: '#1f83e0',
 
-    popBackground: '#000',
+    popBackground: '#111111',
     popColor: '#e1421f',
 
-    containerBackground: '#303040',
-    containerWatermark: '#606070',
-    containerBorder: '#201010',
+    containerBackground: '#2c2c31',
+    containerWatermark: '#757580',
+    containerBorder: '#000000',
 
     monacoTheme: 'vs-dark',
 

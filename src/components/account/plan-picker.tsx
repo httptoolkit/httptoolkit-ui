@@ -82,7 +82,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
     flex-direction: column;
     box-shadow: 0 4px 10px 0 rgba(0,0,0,0.1);
     border-radius: 4px;
-    border: 1px solid rgba(200, 200, 200,0.5);
+    border: 1px solid ${p => p.theme.containerBorder};
 
     > * {
         padding: 10px 20px;
@@ -120,7 +120,7 @@ const TierPriceBlock = styled.div`
     color: ${p => p.theme.mainColor};
     margin: 0 20px;
     border-style: solid;
-    border-color: rgba(0,0,0,0.3);
+    border-color: ${p => p.theme.mainColor};
     border-width: 1px 0;
 `;
 
