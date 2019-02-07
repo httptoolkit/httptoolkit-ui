@@ -10,6 +10,10 @@ module.exports = function () {
         return response.text();
     })
     .then((paddleScript) => ({
-        code: paddleScript
+        code: `
+            ${paddleScript};
+            // Paddle.js creates a global - this exports it as well, for consistency
+            module.exports = window.Paddle;
+        `
     }));
 }

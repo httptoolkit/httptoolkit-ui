@@ -1,45 +1,48 @@
-interface Pricing {
-    country: string;
-    price: {
-        gross: string;
-        net: string;
-        tax: string;
-        tax_included: boolean;
-    };
-    recurring: {
-        subscription: {
-            type: 'year' | 'month';
-        };
-    };
-}
+declare module 'val-loader!./paddle' {
+    namespace Paddle {
+        interface Pricing {
+            country: string;
+            price: {
+                gross: string;
+                net: string;
+                tax: string;
+                tax_included: boolean;
+            };
+            recurring: {
+                subscription: {
+                    type: 'year' | 'month';
+                };
+            };
+        }
 
-interface PaddleStatic {
-    Setup(options: {
-        vendor: number;
-        enableTracking?: boolean;
-    }): void;
+        interface PaddleStatic {
+            Setup(options: {
+                vendor: number;
+                enableTracking?: boolean;
+            }): void;
 
-    Product: {
-        Prices(productId: number, quantity: number, callback: (pricing: Pricing) => void): void;
-    };
+            Product: {
+                Prices(productId: number, quantity: number, callback: (pricing: Pricing) => void): void;
+            };
 
-    Checkout: {
-        open(options: {
-            product: number,
-            email?: string,
-            disableLogout?: boolean,
-            allowQuantity?: boolean,
-            successCallback?: () => void,
-            closeCallback?: () => void
+            Checkout: {
+                open(options: {
+                    product: number,
+                    email?: string,
+                    disableLogout?: boolean,
+                    allowQuantity?: boolean,
+                    successCallback?: () => void,
+                    closeCallback?: () => void
 
-            upsell?: number,
-            upsellTitle?: string,
-            upsellText?: string,
-            upsellAction?: string
-        }): void;
+                    upsell?: number,
+                    upsellTitle?: string,
+                    upsellText?: string,
+                    upsellAction?: string
+                }): void;
+            }
+        }
     }
+
+    const Paddle: Paddle.PaddleStatic;
+    export = Paddle;
 }
-
-declare const Paddle: PaddleStatic;
-
-declare module 'val-loader!./paddle' { }

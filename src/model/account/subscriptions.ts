@@ -1,26 +1,13 @@
 import * as _ from 'lodash';
 
-import('val-loader!./paddle');
+import * as Paddle from 'val-loader!./paddle';
 
 const PADDLE_VENDOR_ID = 37222;
-
-const waitForPaddle = new Promise<PaddleStatic>((resolve) => {
-    const checkForPaddle = () => {
-        if (!!(window as any).Paddle) {
-            Paddle.Setup({ vendor: PADDLE_VENDOR_ID, enableTracking: false });
-            resolve(Paddle);
-        } else {
-            setTimeout(checkForPaddle, 500);
-        }
-    };
-
-    checkForPaddle();
-});
+Paddle.Setup({ vendor: PADDLE_VENDOR_ID, enableTracking: false });
 
 async function getPlanPrices(planId: number) {
-    const paddle = await waitForPaddle;
-    return new Promise<Pricing>((resolve) => {
-        paddle.Product.Prices(planId, 1, resolve);
+    return new Promise<Paddle.Pricing>((resolve) => {
+        Paddle.Product.Prices(planId, 1, resolve);
     });
 }
 
@@ -55,10 +42,8 @@ export const getSubscriptionPlanCode = (id: number) =>
     _.findKey(SubscriptionPlans, { id: id }) as SubscriptionPlanCode | undefined;
 
 export const openCheckout = async (email: string, planCode: SubscriptionPlanCode): Promise<boolean> => {
-    const paddle = await waitForPaddle;
-
     return new Promise<boolean>((resolve) => {
-        paddle.Checkout.open({
+        Paddle.Checkout.open({
             product: SubscriptionPlans[planCode].id,
             email: email,
             disableLogout: true,
