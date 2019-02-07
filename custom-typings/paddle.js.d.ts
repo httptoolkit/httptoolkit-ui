@@ -41,3 +41,5 @@ interface PaddleStatic {
 }
 
 declare const Paddle: PaddleStatic;
+
+declare module 'val-loader!./paddle' { }

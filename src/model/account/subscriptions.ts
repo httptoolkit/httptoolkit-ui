@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
 
+import('val-loader!./paddle');
+
 const PADDLE_VENDOR_ID = 37222;
 
 const waitForPaddle = new Promise<PaddleStatic>((resolve) => {
