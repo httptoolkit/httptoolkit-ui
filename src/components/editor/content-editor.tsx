@@ -110,6 +110,7 @@ interface ContentEditorProps {
     rawContentType: string;
     contentType: HtkContentType;
     contentObservable?: IObservableValue<string | undefined>;
+    monacoTheme: string
 }
 
 const EditorContainer = styled.div`
@@ -165,6 +166,7 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
                         language={this.formatter.language}
                         onLineCount={this.updateLineCount}
                         value={this.renderedContent!}
+                        theme={this.props.monacoTheme}
                     />
                 </EditorContainer>;
             } catch (e) {

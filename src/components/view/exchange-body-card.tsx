@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { IObservableValue, observable, autorun, action } from 'mobx';
-import { disposeOnUnmount, observer } from 'mobx-react';
+import { disposeOnUnmount, observer, inject } from 'mobx-react';
 
 import { HtkRequest, HtkResponse } from '../../types';
-import { styled, css } from '../../styles';
+import { styled, css, Theme } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
 import { decodeContent } from '../../workers/worker-api';
 
@@ -58,13 +58,15 @@ const CopyBody = styled(CopyButton)`
 
 type ExchangeMessage = HtkRequest | HtkResponse;
 
+@inject('theme')
 @observer
 export class ExchangeBodyCard extends React.Component<{
     title: string,
     message: ExchangeMessage,
     direction: 'left' | 'right',
     collapsed: boolean,
-    onCollapseToggled: () => void
+    onCollapseToggled: () => void,
+    theme?: Theme
 }> {
 
     @observable
@@ -125,7 +127,8 @@ export class ExchangeBodyCard extends React.Component<{
             message,
             direction,
             collapsed,
-            onCollapseToggled
+            onCollapseToggled,
+            theme
         } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(message.contentType, message.headers['content-type']);
@@ -164,6 +167,7 @@ export class ExchangeBodyCard extends React.Component<{
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
                         contentObservable={this.currentContent}
+                        monacoTheme={theme!.monacoTheme}
                     >
                         {decodedBody}
                     </ContentEditor>

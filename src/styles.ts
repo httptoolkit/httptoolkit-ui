@@ -22,6 +22,8 @@ export const lightTheme = {
     containerWatermark: '#a0afaf',
     containerBorder: '#888',
 
+    monacoTheme: 'vs',
+
     ...fontSizes
 };
 
@@ -37,6 +39,8 @@ export const darkTheme = {
     containerBackground: '#303040',
     containerWatermark: '#606070',
     containerBorder: '#201010',
+
+    monacoTheme: 'vs-dark',
 
     ...fontSizes
 };

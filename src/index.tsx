@@ -47,7 +47,7 @@ interceptionStore.startServer().then(() => {
 
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
-        <Provider interceptionStore={interceptionStore} accountStore={accountStore}>
+        <Provider interceptionStore={interceptionStore} accountStore={accountStore} theme={theme}>
             <ThemeProvider theme={theme}>
                 <ErrorBoundary>
                     <GlobalStyles />
