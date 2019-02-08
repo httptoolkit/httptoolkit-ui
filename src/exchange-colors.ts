@@ -3,6 +3,7 @@ import { CompletedResponse } from 'mockttp';
 
 import { HttpExchange } from './types';
 import { getBaseContentType } from './content-types';
+import { Theme } from './styles';
 
 type UncategorizedExchange = Pick<HttpExchange, Exclude<keyof HttpExchange, 'category'>>;
 type CompletedExchange = Required<UncategorizedExchange>;
@@ -48,9 +49,9 @@ const isJSExchange = (exchange: SuccessfulExchange) =>
     ], getRequestBaseContentType(exchange.response));
 
 const isCSSExchange = (exchange: SuccessfulExchange) =>
-_.includes([
-    'text/css'
-], getRequestBaseContentType(exchange.response));
+    _.includes([
+        'text/css'
+    ], getRequestBaseContentType(exchange.response));
 
 const isHTMLExchange = (exchange: SuccessfulExchange) =>
     getRequestBaseContentType(exchange.response) === 'text/html';
@@ -128,10 +129,10 @@ export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | Exch
     }
 }
 
-export function getStatusColor(status: undefined | 'aborted' | number): string {
+export function getStatusColor(status: undefined | 'aborted' | number, theme: Theme): string {
     if (!status || status === 'aborted' || status < 100 || status >= 600) {
         // All odd undefined/unknown cases
-        return '#000';
+        return theme.mainColor;
     } else if (status >= 500) {
         return '#ce3939';
     } else if (status >= 400) {

@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
-import { observer } from 'mobx-react';
+import { observer, inject } from 'mobx-react';
 
 import { HttpExchange, HtkResponse } from '../../types';
-import { styled } from '../../styles';
+import { styled, Theme } from '../../styles';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
 
 import { Pill } from '../common/pill';
@@ -62,8 +62,12 @@ const SourceIcon = styled(({ source, className }: { source: TrafficSource, class
 
 type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
 
+@inject('theme')
 @observer
-export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchange | undefined }> {
+export class ExchangeDetailsPane extends React.Component<{
+    exchange: HttpExchange | undefined,
+    theme?: Theme
+}> {
 
     @observable
     private collapseState = {
@@ -80,7 +84,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
     });
 
     render() {
-        const { exchange } = this.props;
+        const { exchange, theme } = this.props;
         const cards: JSX.Element[] = [];
 
         if (exchange) {
@@ -123,7 +127,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
             if (response === 'aborted') {
                 cards.push(<ExchangeCard {...this.cardProps('response')} direction='left'>
                     <header>
-                    <Pill color={getStatusColor(response)}>Aborted</Pill>
+                    <Pill color={getStatusColor(response, theme!)}>Aborted</Pill>
                         <h1>Response</h1>
                     </header>
                     <div>
@@ -133,7 +137,7 @@ export class ExchangeDetailsPane extends React.Component<{ exchange: HttpExchang
             } else if (!!response) {
                 cards.push(<ExchangeCard {...this.cardProps('response')} direction='left'>
                     <header>
-                        <Pill color={getStatusColor(response.statusCode)}>{ response.statusCode }</Pill>
+                        <Pill color={getStatusColor(response.statusCode, theme!)}>{ response.statusCode }</Pill>
                         <h1>Response</h1>
                     </header>
                     <div>

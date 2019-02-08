@@ -36,5 +36,5 @@ export const StatusCode = styled((props: {
         padding: 5px;
     }
 
-    color: ${props => getStatusColor(props.status)};
+    color: ${props => getStatusColor(props.status, props.theme)};
 `;
