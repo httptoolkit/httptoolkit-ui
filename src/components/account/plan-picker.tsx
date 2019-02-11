@@ -108,7 +108,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
 const TierHeader = styled.div`
     width: 100%;
     padding: 30px 0;
-    color: ${p => p.theme.mainColor};
+    color: ${p => p.theme.popColor};
     text-align: center;
     font-weight: bold;
     font-size: ${p => p.theme.loudHeadingSize};
@@ -127,7 +127,7 @@ const TierPriceBlock = styled.div`
 
 const TierPrice = styled.div`
     font-size: ${p => p.theme.headingSize};
-    color: ${p => p.theme.popColor};
+    color: ${p => p.theme.mainColor};
     font-weight: bold;
 `;
 
