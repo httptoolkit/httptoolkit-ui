@@ -78,11 +78,13 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     render(): JSX.Element {
         const { serverPort, certPath, activeSources, interceptors } = this.props.interceptionStore;
 
+        const filter = this.filter ? this.filter.toLocaleLowerCase() : false;
+
         const visibleInterceptOptions = _.pickBy(interceptors, (option) =>
-            !this.filter ||
-            _.includes(option.name.toLocaleLowerCase(), this.filter) ||
-            _.includes(option.description.toLocaleLowerCase(), this.filter) ||
-            _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), this.filter))
+            !filter ||
+            _.includes(option.name.toLocaleLowerCase(), filter) ||
+            _.includes(option.description.toLocaleLowerCase(), filter) ||
+            _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), filter))
         );
 
         if (!_.some(visibleInterceptOptions, (o) => o.isActivable)) {

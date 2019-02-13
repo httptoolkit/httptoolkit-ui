@@ -50,7 +50,7 @@ export const SearchBox = styled((props: {
             autoFocus={props.autoFocus}
             value={props.value}
             placeholder={props.placeholder}
-            onChange={(e) => props.onSearch(e.currentTarget.value.toLocaleLowerCase())}
+            onChange={(e) => props.onSearch(e.currentTarget.value)}
         />
         <ClearSearchButton
             icon={['fas', 'times']}
