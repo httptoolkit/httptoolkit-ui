@@ -1,6 +1,15 @@
+import * as React from 'react';
 import { styled, css } from '../../styles';
 
 import { CollapsibleCard, CollapseIcon } from '../common/card'
+import { FontAwesomeIcon } from '../../icons';
+
+export interface ExchangeCardProps {
+    collapsed: boolean;
+    direction: 'left' | 'right';
+    onCollapseToggled: () => void;
+    children: React.ReactElement<any> | React.ReactElement<any>[];
+}
 
 // Bit of redundancy here, but just because the TS styled plugin
 // gets super confused if you use variables in property names.
@@ -26,7 +35,7 @@ export const ExchangeCard = styled(CollapsibleCard).attrs({
         }
     `}
 
-    ${(p: { direction: 'left' | 'right' }) => cardDirectionCss(p.direction)};
+    ${(p: ExchangeCardProps) => cardDirectionCss(p.direction)};
 
     &:focus {
         ${CollapseIcon} {
@@ -43,3 +52,26 @@ export const ExchangeCard = styled(CollapsibleCard).attrs({
         border-color: ${p => p.theme.popColor};
     }
 `;
+
+const LoadingCardContent = styled.div<{ height?: string }>`
+    ${p => p.height && css`
+        height: ${p.height};
+    `}
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+`;
+
+export const LoadingExchangeCard = (props:
+    ExchangeCardProps & { height?: string }
+) =>
+    <ExchangeCard {...props}>
+        <header>
+            { props.children }
+        </header>
+        <LoadingCardContent height={props.height}>
+            <FontAwesomeIcon spin icon={['fac', 'spinner-arc']} size='8x' />
+        </LoadingCardContent>
+    </ExchangeCard>;

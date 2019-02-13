@@ -8,7 +8,7 @@ import { styled, css, Theme } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
 import { decodeContent } from '../../workers/worker-api';
 
-import { ExchangeCard } from './exchange-card';
+import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButton } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
@@ -37,17 +37,6 @@ const EditorCardContent = styled.div`
     .monaco-editor-overlaymessage {
         display: none;
     }
-`;
-
-const LoadingCardContent = styled.div<{ height?: string }>`
-    ${p => p.height && css`
-        height: ${p.height};
-    `}
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
 `;
 
 const CopyBody = styled(CopyButton)`
@@ -140,28 +129,28 @@ export class ExchangeBodyCard extends React.Component<{
 
         const currentRenderedContent = this.currentContent.get();
 
-        return <ExchangeCard
-            direction={direction}
-            collapsed={collapsed}
-            onCollapseToggled={onCollapseToggled}
-        >
-            <header>
-                { !collapsed && decodedBody && currentRenderedContent &&
-                    // Can't show when collapsed, because no editor means the content might be outdated...
-                    // TODO: Fine a nicer solution that doesn't depend on the editor
-                    // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
-                    <CopyBody content={currentRenderedContent} />
-                }
-                { decodedBody && <Pill>{ getReadableSize(decodedBody.length) }</Pill> }
-                <PillSelector<HtkContentType>
-                    onChange={this.setContentType}
-                    value={contentType}
-                    options={compatibleContentTypes}
-                    nameFormatter={getContentEditorName}
-                />
-                <h1>{ title }</h1>
-            </header>
-            { decodedBody ?
+        return decodedBody ?
+            <ExchangeCard
+                direction={direction}
+                collapsed={collapsed}
+                onCollapseToggled={onCollapseToggled}
+            >
+                <header>
+                    { !collapsed && currentRenderedContent &&
+                        // Can't show when collapsed, because no editor means the content might be outdated...
+                        // TODO: Fine a nicer solution that doesn't depend on the editor
+                        // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
+                        <CopyBody content={currentRenderedContent} />
+                    }
+                    <Pill>{ getReadableSize(decodedBody.length) }</Pill>
+                    <PillSelector<HtkContentType>
+                        onChange={this.setContentType}
+                        value={contentType}
+                        options={compatibleContentTypes}
+                        nameFormatter={getContentEditorName}
+                    />
+                    <h1>{ title }</h1>
+                </header>
                 <EditorCardContent>
                     <ContentEditor
                         rawContentType={message.headers['content-type']}
@@ -172,12 +161,24 @@ export class ExchangeBodyCard extends React.Component<{
                         {decodedBody}
                     </ContentEditor>
                 </EditorCardContent>
-            :
-                <LoadingCardContent height='500px'>
-                    <FontAwesomeIcon spin icon={['fas', 'spinner']} size='8x' />
-                </LoadingCardContent>
-            }
-        </ExchangeCard>;
+            </ExchangeCard>
+        :
+            <LoadingExchangeCard
+                direction={direction}
+                collapsed={collapsed}
+                onCollapseToggled={onCollapseToggled}
+                height='500px'
+            >
+                <header>
+                    <PillSelector<HtkContentType>
+                        onChange={this.setContentType}
+                        value={contentType}
+                        options={compatibleContentTypes}
+                        nameFormatter={getContentEditorName}
+                    />
+                    <h1>{ title }</h1>
+                </header>
+            </LoadingExchangeCard>;
     }
 
 }

@@ -32,8 +32,8 @@ import { faNpm } from '@fortawesome/free-brands-svg-icons/faNpm';
 
 const customSpinnerArc: IconDefinition = {
     // Based on https://codepen.io/aurer/pen/jEGbA
-    prefix: <IconPrefix> 'fac',
-    iconName: <IconName> 'spinner-arc',
+    prefix: <IconPrefix>'fac',
+    iconName: <IconName>'spinner-arc',
     icon: [
         // height x width
         50, 50,
