@@ -65,7 +65,10 @@ export class InterceptionStore {
     @observable interceptors: _.Dictionary<Interceptor>;
 
     constructor() {
-        this.server = getLocal({ standaloneServerUrl: 'http://127.0.0.1:45456' });
+        this.server = getLocal({
+            cors: false,
+            standaloneServerUrl: 'http://127.0.0.1:45456'
+        });
         this.interceptors = getInterceptOptions([]);
     }
 
