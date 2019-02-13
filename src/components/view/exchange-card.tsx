@@ -6,20 +6,22 @@ import { FontAwesomeIcon } from '../../icons';
 
 export interface ExchangeCardProps {
     collapsed: boolean;
-    direction: 'left' | 'right';
+    direction?: 'left' | 'right';
     onCollapseToggled: () => void;
     children: React.ReactElement<any> | React.ReactElement<any>[];
 }
 
 // Bit of redundancy here, but just because the TS styled plugin
 // gets super confused if you use variables in property names.
-const cardDirectionCss = (direction: string) => direction === 'right' ? css`
-    padding-right: 15px;
-    border-right: solid 5px ${p => p.theme.containerBorder};
-` : css`
-    padding-left: 15px;
-    border-left: solid 5px ${p => p.theme.containerBorder};
-`;
+const cardDirectionCss = (direction?: string) =>
+    direction === 'right' ? css`
+        padding-right: 15px;
+        border-right: solid 5px ${p => p.theme.containerBorder};
+    ` :
+    direction === 'left' ? css`
+        padding-left: 15px;
+        border-left: solid 5px ${p => p.theme.containerBorder};
+    ` : '';
 
 export const ExchangeCard = styled(CollapsibleCard).attrs({
     tabIndex: 0
@@ -51,6 +53,23 @@ export const ExchangeCard = styled(CollapsibleCard).attrs({
         outline: none;
         border-color: ${p => p.theme.popColor};
     }
+`;
+
+export const ContentLabel = styled.div`
+    text-transform: uppercase;
+    opacity: 0.5;
+
+    margin-bottom: 10px;
+    width: 100%;
+
+    &:not(:first-child) {
+        margin-top: 10px;
+    }
+`;
+
+export const ContentMonoValue = styled.div`
+    font-family: 'Fira Mono', monospace;
+    width: 100%;
 `;
 
 const LoadingCardContent = styled.div<{ height?: string }>`

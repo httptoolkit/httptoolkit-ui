@@ -53,7 +53,7 @@ const {
     createGlobalStyle,
     keyframes,
     ThemeProvider,
-} = styledComponents as styledComponents.ThemedStyledComponentsModule<Theme>;
+} = styledComponents as unknown as styledComponents.ThemedStyledComponentsModule<Theme>;
 
 export {
     styled,

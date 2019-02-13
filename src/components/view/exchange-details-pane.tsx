@@ -1,20 +1,24 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
+import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
+import { fromPromise } from 'mobx-utils';
 
 import { HttpExchange, HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
+import { FontAwesomeIcon, Icons } from '../../icons';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
+
+import { TrafficSource } from '../../model/sources';
+import { getMatchingAPI } from '../../model/openapi';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
 import { HeaderDetails } from './header-details';
-import { ExchangeCard } from './exchange-card';
+import { ExchangeCard, ContentLabel, ContentMonoValue } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
-import { action, observable } from 'mobx';
-import { FontAwesomeIcon, Icons } from '../../icons';
-import { TrafficSource } from '../../model/sources';
+import { ExchangeApiCard } from './exchange-api-card';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -32,23 +36,6 @@ const ExchangeDetailsContainer = styled.div`
     background-color: ${p => p.theme.containerBackground};
 `;
 
-const ContentLabel = styled.div`
-    text-transform: uppercase;
-    opacity: 0.5;
-
-    margin-bottom: 10px;
-    width: 100%;
-
-    &:not(:first-child) {
-        margin-top: 10px;
-    }
-`;
-
-const ContentValue = styled.div`
-    font-family: 'Fira Mono', monospace;
-    width: 100%;
-`;
-
 const SourceIcon = styled(({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== Icons.Unknown ?
         <FontAwesomeIcon
@@ -60,7 +47,7 @@ const SourceIcon = styled(({ source, className }: { source: TrafficSource, class
     margin-right: 8px;
 `;
 
-type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
+type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'knownApi';
 
 @inject('theme')
 @observer
@@ -75,6 +62,7 @@ export class ExchangeDetailsPane extends React.Component<{
         'requestBody': false,
         'response': false,
         'responseBody': false,
+        'knownApi': false
     };
 
     private cardProps = (key: CardKey) => ({
@@ -90,6 +78,15 @@ export class ExchangeDetailsPane extends React.Component<{
         if (exchange) {
             const { request, response } = exchange;
 
+            const knownApi = getMatchingAPI(exchange);
+            if (knownApi) {
+                cards.push(<ExchangeApiCard
+                    {...this.cardProps('knownApi')}
+                    api={fromPromise(knownApi)}
+                    exchange={exchange}
+                />);
+            }
+
             cards.push(<ExchangeCard {...this.cardProps('request')} direction='right'>
                 <header>
                     <SourceIcon source={request.source} />
@@ -104,14 +101,14 @@ export class ExchangeDetailsPane extends React.Component<{
                 </header>
                 <div>
                     <ContentLabel>URL</ContentLabel>
-                    <ContentValue>{
-                        new URL(request.url, `${request.protocol}://${request.hostname}`).toString()
-                    }</ContentValue>
+                    <ContentMonoValue>{
+                        request.parsedUrl.toString()
+                    }</ContentMonoValue>
 
                     <ContentLabel>Headers</ContentLabel>
-                    <ContentValue>
+                    <ContentMonoValue>
                         <HeaderDetails headers={request.headers} />
-                    </ContentValue>
+                    </ContentMonoValue>
                 </div>
             </ExchangeCard>);
 
@@ -142,14 +139,14 @@ export class ExchangeDetailsPane extends React.Component<{
                     </header>
                     <div>
                         <ContentLabel>Status</ContentLabel>
-                        <ContentValue>
+                        <ContentMonoValue>
                             {response.statusCode}: {response.statusMessage}
-                        </ContentValue>
+                        </ContentMonoValue>
 
                         <ContentLabel>Headers</ContentLabel>
-                        <ContentValue>
+                        <ContentMonoValue>
                             <HeaderDetails headers={response.headers} />
-                        </ContentValue>
+                        </ContentMonoValue>
                     </div>
                 </ExchangeCard>);
 

@@ -18,6 +18,7 @@ import { faComment } from '@fortawesome/free-regular-svg-icons/faComment';
 import { faToggleOn } from '@fortawesome/free-solid-svg-icons/faToggleOn';
 import { faToggleOff } from '@fortawesome/free-solid-svg-icons/faToggleOff';
 import { faCopy } from '@fortawesome/free-regular-svg-icons/faCopy';
+import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons/faExternalLinkAlt';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -64,6 +65,7 @@ library.add(
     faToggleOn,
     faToggleOff,
     faCopy,
+    faExternalLinkAlt,
 
     faChrome,
     faFirefox,
@@ -94,7 +96,7 @@ export const Icons = {
     Git: { icon: ['fas', 'code-branch'], color: '#f05033' },
     Npm: { icon: ['fab', 'npm'], color: '#cc3534' },
 
-    Docker:  { icon: ['fab', 'docker'], color: '#0db7ed' },
+    Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
     Android: { icon: ['fab', 'android'], color: '#A4C639' },

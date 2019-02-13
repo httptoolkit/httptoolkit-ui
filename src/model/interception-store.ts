@@ -12,6 +12,7 @@ import * as amIUsingHtml from '../amiusing.html';
 import { getHTKContentType } from '../content-types';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
+import { getMatchingAPI } from './openapi';
 
 configure({ enforceActions: 'observed' });
 
@@ -168,6 +169,9 @@ export class InterceptionStore {
         const completeExchange = Object.assign(minimalExchange, {
             category: <ExchangeCategory>getExchangeCategory(minimalExchange)
         });
+
+        // Start loading any relevant Open API specs for this request
+        getMatchingAPI(completeExchange);
 
         this.exchanges.push(observable.object(completeExchange, {}, { deep: false }));
     }
