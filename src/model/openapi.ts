@@ -11,7 +11,7 @@ const OPENAPI_DIRECTORY_VERSION = require('../../package-lock.json')
 export interface ApiMetadata {
     spec: OpenAPIObject,
     serverMatcher: RegExp,
-    pathMatchers: Map<RegExp, PathItemObject>
+    pathMatchers: Map<RegExp, { pathData: PathItemObject, path: string }>
 }
 
 const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};
@@ -40,12 +40,12 @@ async function buildApiMetadata(specId: string): Promise<ApiMetadata> {
     // Build a single regex that matches any URL for these base servers
     const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
 
-    const pathMatchers = new Map<RegExp, PathItemObject>();
-    _.forEach(spec.paths, (pathDetails, path) => {
+    const pathMatchers = new Map<RegExp, { pathData: PathItemObject, path: string }>();
+    _.forEach(spec.paths, (pathData, path) => {
         // Build a regex that matches this path on any of those base servers
         pathMatchers.set(
             new RegExp(serverMatcher.source + templateStringToRegexString(path) + '$', 'i'),
-            pathDetails
+            { pathData: pathData, path: path }
         );
     });
 
@@ -64,7 +64,10 @@ function templateStringToRegexString(template: string): string {
         .replace(/\/$/, '');
 }
 
-export function getPath(api: ApiMetadata, exchange: HttpExchange): PathObject | undefined {
+export function getPath(api: ApiMetadata, exchange: HttpExchange): {
+    pathData: PathObject,
+    path: string
+} | undefined {
     const { parsedUrl } = exchange.request;
 
     // Request URL without query params

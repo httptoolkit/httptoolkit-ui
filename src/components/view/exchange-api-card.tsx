@@ -3,8 +3,10 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { IPromiseBasedObservable } from 'mobx-utils';
 import { OperationObject } from 'openapi-directory';
+import { get } from 'typesafe-get';
 
 import { Omit, HttpExchange } from '../../types';
+import { firstMatch } from '../../util';
 import { styled } from '../../styles';
 
 import { ApiMetadata, getPath } from '../../model/openapi';
@@ -79,37 +81,45 @@ export const ExchangeOperationDetails = (props: {
 }) => {
     const { exchange, api } = props;
 
-    const path = getPath(api, props.exchange);
-    if (!path) return null;
+    const matchingPath = getPath(api, props.exchange);
+    if (!matchingPath) return null;
 
-    const operation: OperationObject | undefined = path[exchange.request.method.toLowerCase()];
-    if (!operation) return <OperationName>Unknown endpoint</OperationName>;
+    const { pathData, path } = matchingPath;
 
-    let operationDetails = operation.description || path.description;
+    const operation: OperationObject | undefined = pathData[exchange.request.method.toLowerCase()] || {};
 
-    // Some specs use the same text for summary and description, so we
-    // fallback to the bare op id in that case
-    let operationName = operation.summary !== operationDetails ?
-        operation.summary : operation.operationId;
+    let docsUrl: string | undefined = firstMatch(
+        get(operation, 'externalDocs', 'url'),
+        get(api, 'spec', 'externalDocs', 'url')
+    );
 
-    let docsUrl: string | undefined = (
-        operation.externalDocs || api.spec.externalDocs || { } as any
-    ).url;
+    let name = firstMatch(
+        get(operation, 'summary'),
+        get(operation, 'operationId'),
+        pathData.summary,
+        `${exchange.request.method} ${path}`
+    );
+
+    let description = firstMatch(
+        [() => get(operation, 'description') !== name, get(operation, 'description')],
+        [() => get(operation, 'summary') !== name, get(operation, 'summary')],
+        pathData.description
+    );
 
     let docsLinkProps = docsUrl ? {
         href: docsUrl,
         target: '_blank',
         rel: 'noreferrer noopener'
-    } : {};
+    } : null;
 
-    return !!operationDetails ?
+    return !!description ?
         <OperationDefinition as={'details'}>
             <OperationSummary>
-                <OperationName>{ operationName }</OperationName>
+                <OperationName>{ name }</OperationName>
             </OperationSummary>
             <OperationDetails>
-                { operationDetails }
-                { docsUrl &&
+                { description }
+                { docsLinkProps &&
                     <OperationDocs {...docsLinkProps} >
                         Find out more <ExternalLinkIcon />
                     </OperationDocs>
@@ -119,10 +129,10 @@ export const ExchangeOperationDetails = (props: {
     :
         <OperationDefinition>
             <OperationName>
-                { operationName }
+                { name }
             </OperationName>
             {' '}
-            { docsUrl &&
+            { docsLinkProps &&
                 <a {...docsLinkProps}><ExternalLinkIcon /></a>
             }
         </OperationDefinition>
