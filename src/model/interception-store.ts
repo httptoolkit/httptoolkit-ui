@@ -72,7 +72,7 @@ export class InterceptionStore {
         this.interceptors = getInterceptOptions([]);
     }
 
-    startServer = flow(function * (this: InterceptionStore) {
+    startServer = flow(function* (this: InterceptionStore) {
         yield startServer(this.server);
         announceServerReady();
 
@@ -117,7 +117,7 @@ export class InterceptionStore {
         });
 
         window.addEventListener('beforeunload', () => {
-            this.server.stop().catch(() => {});
+            this.server.stop().catch(() => { });
         });
     });
 
@@ -147,25 +147,27 @@ export class InterceptionStore {
 
     @action
     private addRequest(request: CompletedRequest) {
-        const newExchange = {
+        const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
+
+        const minimalExchange = {
             id: request.id,
             request: Object.assign(request, {
-                parsedUrl: new URL(request.url, `${request.protocol}://${request.hostname}`),
+                parsedUrl,
                 source: parseSource(request.headers['user-agent']),
                 contentType: getHTKContentType(request.headers['content-type'])
             }),
-            response: undefined,
             searchIndex: observable.array(
-                [request.url]
-                .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
-            )
+                [`${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}${parsedUrl.search}`]
+                    .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
+            ),
+            response: undefined
         };
 
-        const exchangeWithCategory = Object.assign(newExchange, {
-            category: <ExchangeCategory> getExchangeCategory(newExchange)
+        const completeExchange = Object.assign(minimalExchange, {
+            category: <ExchangeCategory>getExchangeCategory(minimalExchange)
         });
 
-        this.exchanges.push(observable.object(exchangeWithCategory, {}, { deep: false }));
+        this.exchanges.push(observable.object(completeExchange, {}, { deep: false }));
     }
 
     @action
