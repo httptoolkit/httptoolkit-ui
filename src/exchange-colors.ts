@@ -5,20 +5,20 @@ import { HttpExchange } from './types';
 import { getBaseContentType } from './content-types';
 import { Theme } from './styles';
 
-type UncategorizedExchange = Pick<HttpExchange, Exclude<keyof HttpExchange, 'category'>>;
-type CompletedExchange = Required<UncategorizedExchange>;
+type MinimalExchange = Pick<HttpExchange, 'request' | 'response'>;
+type CompletedExchange = Required<MinimalExchange>;
 type SuccessfulExchange = CompletedExchange & { response: CompletedResponse };
 
 export const getRequestBaseContentType = (requestOrResponse: { headers: { [key: string]: string } }) =>
     getBaseContentType(requestOrResponse.headers['content-type']);
 
-const isCompletedExchange = (exchange: UncategorizedExchange): exchange is CompletedExchange =>
+const isCompletedExchange = (exchange: MinimalExchange): exchange is CompletedExchange =>
     !!exchange.response;
 
-const isSuccessfulExchange = (exchange: UncategorizedExchange): exchange is SuccessfulExchange =>
+const isSuccessfulExchange = (exchange: MinimalExchange): exchange is SuccessfulExchange =>
     isCompletedExchange(exchange) && exchange.response !== 'aborted';
 
-const isMutatativeExchange = (exchange: UncategorizedExchange) => _.includes([
+const isMutatativeExchange = (exchange: MinimalExchange) => _.includes([
     'POST',
     'PATCH',
     'PUT',
@@ -69,7 +69,7 @@ const isFontExchange = (exchange: SuccessfulExchange) =>
         'application/x-font-opentype',
     ], getRequestBaseContentType(exchange.response));
 
-export function getExchangeCategory(exchange: UncategorizedExchange) {
+export function getExchangeCategory(exchange: MinimalExchange) {
     if (!isCompletedExchange(exchange)) {
         if (isMutatativeExchange(exchange)) {
             return 'mutative'; // red
