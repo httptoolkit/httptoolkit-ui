@@ -165,7 +165,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
 
         let filter = this.searchFilter.toLocaleLowerCase();
         return this.props.exchanges.filter((exchange) =>
-            _.some(exchange.searchIndex, (key) => key.includes(filter))
+            exchange.searchIndex.includes(filter)
         );
     }
 

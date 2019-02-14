@@ -9,7 +9,7 @@ export type DomWithProps<T, Props> = ComponentClass<React.DetailedHTMLProps<Reac
 export type WithInjected<
     C extends React.ComponentType<any>,
     K extends string
-> = C extends React.ComponentType<infer T> ?
+    > = C extends React.ComponentType<infer T> ?
     React.ComponentType<Pick<T, Exclude<keyof T, K>>> : never;
 
 export type HtkRequest = CompletedRequest & {
@@ -25,5 +25,5 @@ export interface HttpExchange {
     request: HtkRequest;
     response: HtkResponse | 'aborted' | undefined;
     category: ExchangeCategory;
-    searchIndex: string[];
+    searchIndex: string;
 }

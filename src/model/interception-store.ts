@@ -156,10 +156,10 @@ export class InterceptionStore {
                 source: parseSource(request.headers['user-agent']),
                 contentType: getHTKContentType(request.headers['content-type'])
             }),
-            searchIndex: observable.array(
+            searchIndex:
                 [`${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}${parsedUrl.search}`]
                     .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
-            ),
+                    .join('\n'),
             response: undefined
         };
 
@@ -178,7 +178,7 @@ export class InterceptionStore {
         if (!exchange) return;
 
         exchange.response = 'aborted';
-        exchange.searchIndex.push('aborted');
+        exchange.searchIndex += ('\naborted');
     }
 
     @action
@@ -193,11 +193,11 @@ export class InterceptionStore {
         });
         exchange.category = getExchangeCategory(exchange);
 
-        exchange.searchIndex.push(
+        exchange.searchIndex += '\n' + [
             response.statusCode.toString(),
             response.statusMessage.toString(),
             ..._.map(response.headers, (value, key) => `${key}: ${value}`)
-        );
+        ].join('\n');
     }
 
     @action.bound
