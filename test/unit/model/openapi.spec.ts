@@ -30,6 +30,60 @@ describe('OpenAPI support', () => {
             ]);
         });
 
+        it('returns undefined for missing query parameters', () => {
+            expect(
+                getParameters(
+                    '/',
+                    {
+                        parameters: [{
+                            description: 'Timestamp in ISO 8601 format.',
+                            in: 'query',
+                            name: 'since',
+                            schema: { 'type': 'string' }
+                        }],
+                        responses: []
+                    },
+                    getExchange({
+                        query: ''
+                    })
+                )
+            ).to.deep.match([
+                {
+                    description: 'Timestamp in ISO 8601 format.',
+                    name: 'since',
+                    value: undefined
+                }
+            ]);
+        });
+
+        it('returns arrays of multiple query parameters', () => {
+            expect(
+                getParameters(
+                    '/',
+                    {
+                        parameters: [{
+                            description: 'Account id.',
+                            in: 'query',
+                            name: 'id',
+                            schema: { 'type': 'array' },
+                            style: 'form',
+                            explode: true
+                        }],
+                        responses: []
+                    },
+                    getExchange({
+                        query: '?id=abc&id=def'
+                    })
+                )
+            ).to.deep.match([
+                {
+                    description: 'Account id.',
+                    name: 'id',
+                    value: ['abc', 'def']
+                }
+            ]);
+        });
+
         it('can parse path parameters', () => {
             expect(
                 getParameters(

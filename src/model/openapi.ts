@@ -118,9 +118,8 @@ export function getParameters(
                     return {
                         ...commonFields,
                         value: firstMatch<string[] | string | undefined>(
-                            [() => values.length === 0, undefined],
-                            [() => values.length === 1, values[0]],
-                            [() => true, values]
+                            [() => values.length > 1, values],
+                            [() => values.length === 1, values[0]]
                         )
                     };
 
