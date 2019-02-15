@@ -1,8 +1,68 @@
 import { expect, getExchange } from '../../test-setup';
 
-import { getParameters } from '../../../src/model/openapi';
+import { getParameters, parseExchange, buildApiMetadata } from '../../../src/model/openapi';
+
+import stripeSpec from 'openapi-directory/api/stripe.com.json';
+const stripeApi = buildApiMetadata(stripeSpec);
 
 describe('OpenAPI support', () => {
+    describe('full exchange parsing', () => {
+
+        it('pulls generic service info regardless of endpoint', async () => {
+            expect(
+                parseExchange(
+                    stripeApi,
+                    getExchange({
+                        hostname: 'api.stripe.com',
+                        path: '/'
+                    }),
+                )
+            ).to.deep.match({
+                serviceTitle: 'Stripe',
+                serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
+                operationName: 'GET /',
+                operationDescription:
+                    'The Stripe REST API. Please see https://stripe.com/docs/api for more details.',
+                operationDocsUrl: undefined,
+                parameters: []
+            });
+        });
+
+        it('pulls detailed operation info for matching operations', async () => {
+            expect(
+                parseExchange(
+                    stripeApi,
+                    getExchange({
+                        hostname: 'api.stripe.com',
+                        path: '/v1/account',
+                        query: '?account=abc'
+                    }),
+                )
+            ).to.deep.match({
+                serviceTitle: 'Stripe',
+                serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
+                operationName: 'GetAccount',
+                operationDescription: '<p>Retrieves the details of the account.</p>',
+                operationDocsUrl: undefined,
+                parameters: [{
+                    "deprecated": false,
+                    "description": "Specifies which fields in the response should be expanded.",
+                    "name": "expand",
+                    "required": false,
+                    "validationErrors": [],
+                    "value": undefined
+                }, {
+                    "deprecated": false,
+                    "description": "The identifier of the account to retrieve. If none is provided, the account associated with the API key is returned.",
+                    "name": "account",
+                    "required": false,
+                    "validationErrors": [],
+                    "value": 'abc'
+                }]
+            });
+        });
+    });
+
     describe('parameter parsing', () => {
         it('can parse query parameters', () => {
             expect(

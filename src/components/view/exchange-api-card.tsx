@@ -2,14 +2,11 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import { IPromiseBasedObservable } from 'mobx-utils';
-import { OperationObject } from 'openapi-directory';
-import { get } from 'typesafe-get';
 
 import { Omit, HttpExchange } from '../../types';
-import { firstMatch } from '../../util';
 import { styled } from '../../styles';
 
-import { ApiMetadata, getPath } from '../../model/openapi';
+import { ApiMetadata, parseExchange, ApiExchange } from '../../model/openapi';
 
 import { ExchangeCardProps, ExchangeCard, ContentLabel, LoadingExchangeCard } from "./exchange-card";
 import { FontAwesomeIcon } from '../../icons';
@@ -24,7 +21,7 @@ const ApiLogo = styled.img`
     margin-right: auto;
 `;
 
-const OperationDefinition = styled.section`
+const ExchangeDetails = styled.section`
     font-size: ${p => p.theme.textSize};
     word-break: break-word;
 `;
@@ -43,7 +40,7 @@ const OperationSummary = styled.summary`
         color: ${p => p.theme.popColor};
     }
 
-    padding: 10px 5px;
+    padding: 10px 5px 0;
     margin: -10px 0 0 -5px;
 
     > svg {
@@ -51,16 +48,11 @@ const OperationSummary = styled.summary`
     }
 `;
 
-const OperationDetails = styled.p`
+const FullDetails = styled.div`
     padding-left: 10px;
     border-left: 4px solid ${p => p.theme.containerWatermark};
     font-style: italic;
     margin: 10px 0 20px;
-`;
-
-const OperationDocs = styled.a`
-    display: block;
-    margin-top: 10px;
 `;
 
 const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
@@ -75,85 +67,83 @@ const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
     }
 `;
 
-export const ExchangeOperationDetails = (props: {
-    exchange: HttpExchange,
-    api: ApiMetadata
+const ExchangeOperation = (props: {
+    apiExchange: ApiExchange
 }) => {
-    const { exchange, api } = props;
+    const { apiExchange } = props;
 
-    const matchingPath = getPath(api, props.exchange);
-    if (!matchingPath) return null;
-
-    const { pathData, path } = matchingPath;
-
-    const operation: OperationObject | undefined = pathData[exchange.request.method.toLowerCase()] || {};
-
-    let docsUrl: string | undefined = firstMatch(
-        get(operation, 'externalDocs', 'url'),
-        get(api, 'spec', 'externalDocs', 'url')
-    );
-
-    let name = firstMatch(
-        get(operation, 'summary'),
-        get(operation, 'operationId'),
-        pathData.summary,
-        `${exchange.request.method} ${path}`
-    );
-
-    let description = firstMatch(
-        [() => get(operation, 'description') !== name, get(operation, 'description')],
-        [() => get(operation, 'summary') !== name, get(operation, 'summary')],
-        pathData.description
-    );
-
-    let docsLinkProps = docsUrl ? {
-        href: docsUrl,
+    let docsLinkProps = apiExchange.operationDocsUrl ? {
+        href: apiExchange.operationDocsUrl,
         target: '_blank',
         rel: 'noreferrer noopener'
     } : null;
 
-    return !!description ?
-        <OperationDefinition as={'details'}>
+    return !!apiExchange.operationDescription ?
+        <details>
             <OperationSummary>
-                <OperationName>{ name }</OperationName>
+                <OperationName>{ apiExchange.operationName }</OperationName>
             </OperationSummary>
-            <OperationDetails>
-                { description }
+            <FullDetails>
+                <p>{ apiExchange.operationDescription }</p>
                 { docsLinkProps &&
-                    <OperationDocs {...docsLinkProps} >
-                        Find out more <ExternalLinkIcon />
-                    </OperationDocs>
+                    <p>
+                        <a {...docsLinkProps} >
+                            Find out more <ExternalLinkIcon />
+                        </a>
+                    </p>
                 }
-            </OperationDetails>
-        </OperationDefinition>
+            </FullDetails>
+        </details>
     :
-        <OperationDefinition>
+        <section>
             <OperationName>
-                { name }
+                { apiExchange.operationName }
             </OperationName>
             {' '}
             { docsLinkProps &&
                 <a {...docsLinkProps}><ExternalLinkIcon /></a>
             }
-        </OperationDefinition>
+        </section>
     ;
 }
 
+const ExchangeParameters = (props: {
+    apiExchange: ApiExchange
+}) => props.apiExchange.parameters.length ? <div>
+    <ContentLabel>Parameters</ContentLabel>
+    {
+        props.apiExchange.parameters
+        .filter((param) => !!param.value || param.required)
+        .map((param) => <details>
+            <summary>{ param.name }: { param.value }</summary>
+            <FullDetails>
+                <p>{ param.description }</p>
+                <p>Required?: { param.required.toString() }</p>
+                <p>Deprecated?: { param.deprecated.toString() }</p>
+            </FullDetails>
+        </details>)
+    }
+</div> : null
+
 export const ExchangeApiCard = observer((props: ApiCardProps) => {
     return props.api.case({
-        fulfilled: (api) =>
-            <ExchangeCard {...props}>
+        fulfilled: (api) => {
+            const apiExchange = parseExchange(api, props.exchange);
+
+            return <ExchangeCard {...props}>
 
                 <header>
-                    <ApiLogo src={api.spec.info['x-logo'].url} alt='' />
-                    <h1>{ api.spec.info.title }</h1>
+                    <ApiLogo src={ apiExchange.serviceLogoUrl } alt='' />
+                    <h1>{ apiExchange.serviceTitle }</h1>
                 </header>
 
-                <div>
-                    <ExchangeOperationDetails exchange={props.exchange} api={api} />
-                </div>
+                <ExchangeDetails>
+                    <ExchangeOperation apiExchange={apiExchange} />
+                    <ExchangeParameters apiExchange={apiExchange} />
+                </ExchangeDetails>
 
-            </ExchangeCard>,
+            </ExchangeCard>;
+        },
         pending: () =>
             <LoadingExchangeCard {...props}>
                 <h1>Loading API definition...</h1>

@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { get } from 'typesafe-get';
 
 import { OpenAPIObject, PathItemObject, PathObject, findApi, OperationObject, ParameterObject } from 'openapi-directory';
 
@@ -25,18 +26,20 @@ export function getMatchingAPI(exchange: HttpExchange): Promise<ApiMetadata> | u
     if (!specId || Array.isArray(specId)) return; // We don't bother dealing with overlapping APIs yet
 
     if (!apiCache[specId]) {
-        apiCache[specId] = buildApiMetadata(specId);
+        apiCache[specId] = fetchApiMetadata(specId).then(buildApiMetadata);
     }
 
     return apiCache[specId];
 }
 
-async function buildApiMetadata(specId: string): Promise<ApiMetadata> {
+async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
     const specResponse = await fetch(
         `https://unpkg.com/openapi-directory@${OPENAPI_DIRECTORY_VERSION}/api/${specId}.json`
     );
-    const spec: OpenAPIObject = await specResponse.json();
+    return specResponse.json();
+}
 
+export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
     const serverRegexStrings = spec.servers!.map(s => templateStringToRegexString(s.url));
     // Build a single regex that matches any URL for these base servers
     const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
@@ -103,13 +106,14 @@ export function getParameters(
 
     // Need the cast because TS doesn't know we've already dereferenced this
     return (<ParameterObject[]>parameters)
-        .map((param): Parameter | undefined => {
+        .map((param) => {
             const commonFields = {
+                specParam: param,
                 name: param.name,
                 description: param.description,
                 required: param.required || param.in === 'path',
                 deprecated: param.deprecated || false,
-                validationErrors: []
+                validationErrors: <string[]>[]
             }
 
             switch (param.in) {
@@ -149,9 +153,86 @@ export function getParameters(
                     }
 
                 // TODO: Match in:cookie too (but currently no example in the specs)
+                default:
+                    return {
+                        ...commonFields,
+                        value: undefined
+                    }
             }
-        })
-        .filter((x: any): x is Parameter =>
-            !!x && (x.value || x.required)
-        );
+        });
+}
+
+export interface ApiExchange {
+    serviceTitle: string;
+    serviceLogoUrl?: string;
+
+    operationName: string;
+    operationDescription?: string;
+    operationDocsUrl?: string;
+
+    parameters: Parameter[];
+}
+
+function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
+    const { parsedUrl } = exchange.request;
+    const url = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}`;
+    const serverMatch = api.serverMatcher.exec(url);
+
+    if (!serverMatch) {
+        return parsedUrl.pathname
+    }
+
+    // Everything after the server is our API path
+    return url.slice(serverMatch[0].length);
+}
+
+export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
+    const { info: service } = api.spec;
+
+    const serviceTitle = service.title;
+    const serviceLogoUrl = service['x-logo'].url
+
+    const matchingPath = getPath(api, exchange);
+
+    const { pathData, path } = matchingPath || {
+        pathData: {}, path: getDummyPath(api, exchange)
+    }
+
+    const operation: OperationObject | _.Dictionary<never> = get(
+        pathData, exchange.request.method.toLowerCase()
+    ) || {};
+
+    const operationDocsUrl = firstMatch(
+        get(operation, 'externalDocs', 'url'),
+        get(api, 'spec', 'externalDocs', 'url')
+    );
+
+    const operationName = firstMatch<string>(
+        get(operation, 'summary'),
+        get(operation, 'operationId'),
+        [
+            () => (get(operation, 'description', 'length') || Infinity) < 40, operation.description!
+        ],
+        pathData.summary
+    ) || `${exchange.request.method} ${path}`;
+
+    const operationDescription = firstMatch<string>(
+        [() => get(operation, 'description') !== operationName, get(operation, 'description')],
+        [() => get(operation, 'summary') !== operationName, get(operation, 'summary')],
+        pathData.description,
+        service.description
+    );
+
+    const parameters = operation ? getParameters(
+        path!, operation as OperationObject, exchange
+    ) : [];
+
+    return {
+        serviceTitle,
+        serviceLogoUrl,
+        operationName,
+        operationDescription,
+        operationDocsUrl,
+        parameters
+    };
 }
