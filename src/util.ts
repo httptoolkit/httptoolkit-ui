@@ -24,7 +24,7 @@ export function getDeferred(): {
 
 type Case<R> = [() => boolean, R | undefined];
 
-export function firstMatch<R>(...tests: Array<R | Case<R>>): R | undefined {
+export function firstMatch<R>(...tests: Array<Case<R> | R>): R | undefined {
     for (let test of tests) {
         if (_.isArray(test) && _.isFunction(test[0])) {
             const [matcher, result] = test;
