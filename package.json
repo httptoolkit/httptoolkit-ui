@@ -15,8 +15,8 @@
     "start:web": "TS_NODE_PROJECT=./automation/tsconfig.json webpack-dev-server --config ./automation/webpack.dev.ts",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "TS_NODE_PROJECT=./test/tsconfig.json karma start ./test/unit/karma.conf.js",
-    "test:unit:dev": "npm run test -- --single-run=false --auto-watch",
-    "test:unit:debug": "npm run test -- --single-run=false --browsers Chrome",
+    "test:unit:dev": "npm run test:unit -- --single-run=false --auto-watch",
+    "test:unit:debug": "npm run test:unit -- --single-run=false --browsers Chrome",
     "test:integration": "npm run build && npm run test:integration:run",
     "test:integration:run": "TS_NODE_PROJECT=./test/tsconfig.json TS_NODE_FILES=true mocha --exit -r ts-node/register 'test/integration/**/*.spec.ts'"
   },
