@@ -184,6 +184,8 @@ export interface ApiExchange {
     operationDocsUrl?: string;
 
     parameters: Parameter[];
+
+    validationErrors: string[];
 }
 
 function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
@@ -201,6 +203,8 @@ function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
 
 export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
     const { info: service } = api.spec;
+
+    const validationErrors: string[] = [];
 
     const serviceTitle = service.title;
     const serviceLogoUrl = service['x-logo'].url
@@ -236,6 +240,10 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         service.description
     );
 
+    if (operation.deprecated) validationErrors.push(
+        `The '${operationName}' operation is deprecated`
+    );
+
     const parameters = operation ? getParameters(
         path!, operation as OperationObject, exchange
     ) : [];
@@ -246,6 +254,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         operationName,
         operationDescription,
         operationDocsUrl,
-        parameters
+        parameters,
+        validationErrors
     };
 }

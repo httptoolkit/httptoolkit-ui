@@ -8,7 +8,7 @@ const stripeApi = buildApiMetadata(stripeSpec);
 describe('OpenAPI support', () => {
     describe('full exchange parsing', () => {
 
-        it('pulls generic service info regardless of endpoint', async () => {
+        it('should pull generic service info regardless of endpoint', async () => {
             expect(
                 parseExchange(
                     stripeApi,
@@ -24,11 +24,12 @@ describe('OpenAPI support', () => {
                 operationDescription:
                     'The Stripe REST API. Please see https://stripe.com/docs/api for more details.',
                 operationDocsUrl: undefined,
-                parameters: []
+                parameters: [],
+                validationErrors: []
             });
         });
 
-        it('pulls detailed operation info for matching operations', async () => {
+        it('should pull detailed operation info for matching operations', async () => {
             expect(
                 parseExchange(
                     stripeApi,
@@ -58,7 +59,26 @@ describe('OpenAPI support', () => {
                     "required": false,
                     "validationErrors": [],
                     "value": 'abc'
-                }]
+                }],
+                validationErrors: [],
+            });
+        });
+
+        it('should should report an error for deprecated operations', async () => {
+            expect(
+                parseExchange(
+                    stripeApi,
+                    getExchange({
+                        hostname: 'api.stripe.com',
+                        path: '/v1/bitcoin/transactions',
+                    }),
+                )
+            ).to.deep.match({
+                serviceTitle: 'Stripe',
+                serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
+                operationName: 'GetBitcoinTransactions',
+                operationDescription: '<p>List bitcoin transacitons for a given receiver.</p>',
+                validationErrors: [`The 'GetBitcoinTransactions' operation is deprecated`]
             });
         });
     });
