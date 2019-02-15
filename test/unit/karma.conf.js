@@ -18,7 +18,10 @@ module.exports = function(config) {
             './**/*.ts': ['webpack', 'sourcemap'],
             '../../src/**/*.ts': ['webpack', 'sourcemap'],
         },
-        reporters: ['progress'],
+        reporters: ['mocha'],
+        mochaReporter: {
+            showDiff: true
+        },
         port: 9876,
         logLevel: config.LOG_INFO,
 
