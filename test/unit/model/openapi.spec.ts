@@ -3,12 +3,14 @@ import { expect, getExchange } from '../../test-setup';
 import { getParameters, parseExchange, buildApiMetadata } from '../../../src/model/openapi';
 
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
+import slackSpec from 'openapi-directory/api/slack.com.json';
 const stripeApi = buildApiMetadata(stripeSpec);
+const slackApi = buildApiMetadata(slackSpec);
 
 describe('OpenAPI support', () => {
     describe('full exchange parsing', () => {
 
-        it('should pull generic service info regardless of endpoint', async () => {
+        it('should pull generic service info regardless of endpoint', () => {
             expect(
                 parseExchange(
                     stripeApi,
@@ -29,7 +31,7 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should pull detailed operation info for matching operations', async () => {
+        it('should pull detailed operation info for matching operations', () => {
             expect(
                 parseExchange(
                     stripeApi,
@@ -64,7 +66,7 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should should report an error for deprecated operations', async () => {
+        it('should report an error for deprecated operations', () => {
             expect(
                 parseExchange(
                     stripeApi,
@@ -79,6 +81,38 @@ describe('OpenAPI support', () => {
                 operationName: 'GetBitcoinTransactions',
                 operationDescription: '<p>List bitcoin transacitons for a given receiver.</p>',
                 validationErrors: [`The 'GetBitcoinTransactions' operation is deprecated`]
+            });
+        });
+
+        it('should include the response details', () => {
+            expect(
+                parseExchange(
+                    slackApi,
+                    getExchange({
+                        hostname: 'slack.com',
+                        path: '/api/bots.info',
+                        statusCode: 200
+                    }),
+                )
+            ).to.deep.match({
+                responseDescription: 'When successful, returns bot info by bot ID.',
+                validationErrors: []
+            });
+        });
+
+        it('should fall back to default response details', () => {
+            expect(
+                parseExchange(
+                    slackApi,
+                    getExchange({
+                        hostname: 'slack.com',
+                        path: '/api/bots.info',
+                        statusCode: 418
+                    }),
+                )
+            ).to.deep.match({
+                responseDescription: 'When no bot can be found, it returns an error.',
+                validationErrors: []
             });
         });
     });

@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 
-import { OpenAPIObject, PathItemObject, PathObject, findApi, OperationObject, ParameterObject } from 'openapi-directory';
+import { OpenAPIObject, PathItemObject, PathObject, findApi, OperationObject, ParameterObject, ResponseObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
 
-import { HttpExchange } from "../types";
+import { HttpExchange, HtkResponse } from "../types";
 import { firstMatch } from '../util';
 
 const OPENAPI_DIRECTORY_VERSION = require('../../package-lock.json')
@@ -194,11 +194,13 @@ export function getParameters(
                     `The '${param.name}' ${specParam.in} parameter is required.`
                 );
             }
+
             if (param.deprecated && !!param.value) {
                 param.validationErrors.push(
                     `The '${param.name}' ${specParam.in} parameter is deprecated.`
                 );
             }
+
             return param;
         });
 }
@@ -212,6 +214,8 @@ export interface ApiExchange {
     operationDocsUrl?: string;
 
     parameters: Parameter[];
+
+    responseDescription?: string;
 
     validationErrors: string[];
 }
@@ -229,8 +233,13 @@ function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
     return url.slice(serverMatch[0].length);
 }
 
+function isCompletedResponse(response: any): response is HtkResponse {
+    return !!response.statusCode;
+}
+
 export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
     const { info: service } = api.spec;
+    const { request, response } = exchange;
 
     const validationErrors: string[] = [];
 
@@ -244,7 +253,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     }
 
     const operation: OperationObject | _.Dictionary<never> = get(
-        pathData, exchange.request.method.toLowerCase()
+        pathData, request.method.toLowerCase()
     ) || {};
 
     const operationDocsUrl = firstMatch(
@@ -259,7 +268,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
             () => (get(operation, 'description', 'length') || Infinity) < 40, operation.description!
         ],
         pathData.summary
-    ) || `${exchange.request.method} ${path}`;
+    ) || `${request.method} ${path}`;
 
     const operationDescription = firstMatch<string>(
         [() => get(operation, 'description') !== operationName, get(operation, 'description')],
@@ -276,6 +285,14 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         path!, operation as OperationObject, exchange
     ) : [];
 
+    let responseDescription: string | undefined;
+    if (get(operation, 'responses') && isCompletedResponse(response)) {
+        const responseSpec: ResponseObject =
+            operation.responses[response.statusCode.toString()] ||
+            operation.responses.default;
+        responseDescription = responseSpec ? responseSpec.description : response.statusMessage;
+    }
+
     return {
         serviceTitle,
         serviceLogoUrl,
@@ -283,6 +300,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         operationDescription,
         operationDocsUrl,
         parameters,
+        responseDescription,
         validationErrors
     };
 }
