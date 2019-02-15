@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 
 import { OpenAPIObject, PathItemObject, PathObject, findApi, OperationObject, ParameterObject } from 'openapi-directory';
+import * as Ajv from 'ajv';
 
 import { HttpExchange } from "../types";
 import { firstMatch } from '../util';
@@ -9,6 +10,10 @@ import { firstMatch } from '../util';
 const OPENAPI_DIRECTORY_VERSION = require('../../package-lock.json')
     .dependencies['openapi-directory']
     .version;
+
+const ajv = new Ajv({
+    coerceTypes: true
+});
 
 export interface ApiMetadata {
     spec: OpenAPIObject,
@@ -161,14 +166,37 @@ export function getParameters(
             }
         })
         .map((param) => {
+            const { specParam } = param;
+            if (specParam.schema) {
+                // Validate against the schema. We wrap the value in an object
+                // so that ajv can mutate the input to coerce to the right type.
+                const valueWrapper = { value: param.value };
+                const validated = ajv.validate({
+                    "type": "object",
+                    "properties": {
+                        "value": specParam.schema
+                    }
+                }, valueWrapper);
+
+                if (!validated && ajv.errors) {
+                    param.validationErrors.push(
+                        ...ajv.errors.map(e =>
+                            `'${_.upperFirst(e.dataPath.replace(/^\.value/, param.name))}' ${e.message!}.`
+                        )
+                    );
+                }
+
+                param.value = valueWrapper.value;
+            }
+
             if (param.required && !param.value) {
                 param.validationErrors.push(
-                    `The '${param.name}' ${param.specParam.in} parameter is required.`
+                    `The '${param.name}' ${specParam.in} parameter is required.`
                 );
             }
             if (param.deprecated && !!param.value) {
                 param.validationErrors.push(
-                    `The '${param.name}' ${param.specParam.in} parameter is deprecated.`
+                    `The '${param.name}' ${specParam.in} parameter is deprecated.`
                 );
             }
             return param;

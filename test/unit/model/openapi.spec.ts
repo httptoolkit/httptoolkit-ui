@@ -105,7 +105,8 @@ describe('OpenAPI support', () => {
                 {
                     description: 'Timestamp in ISO 8601 format.',
                     name: 'since',
-                    value: '2018-09-1T12:00:00'
+                    value: '2018-09-1T12:00:00',
+                    validationErrors: []
                 }
             ]);
         });
@@ -131,7 +132,8 @@ describe('OpenAPI support', () => {
                 {
                     description: 'Timestamp in ISO 8601 format.',
                     name: 'since',
-                    value: undefined
+                    value: undefined,
+                    validationErrors: []
                 }
             ]);
         });
@@ -159,7 +161,8 @@ describe('OpenAPI support', () => {
                 {
                     description: 'Account id.',
                     name: 'id',
-                    value: ['abc', 'def']
+                    value: ['abc', 'def'],
+                    validationErrors: []
                 }
             ]);
         });
@@ -185,7 +188,8 @@ describe('OpenAPI support', () => {
                 {
                     description: 'Name of user.',
                     name: 'username',
-                    value: 'pimterry'
+                    value: 'pimterry',
+                    validationErrors: []
                 }
             ]);
         });
@@ -213,7 +217,8 @@ describe('OpenAPI support', () => {
                 {
                     description: 'Secret.',
                     name: 'X-Secret-Value',
-                    value: '1234'
+                    value: '1234',
+                    validationErrors: []
                 }
             ]);
         });
@@ -273,6 +278,60 @@ describe('OpenAPI support', () => {
                     required: false,
                     deprecated: true,
                     validationErrors: [`The 'account' query parameter is deprecated.`]
+                }
+            ]);
+        });
+
+        it('should coerce params according to their schema', () => {
+            expect(
+                getParameters(
+                    '/',
+                    {
+                        parameters: [{
+                            "description": "A number.",
+                            "in": "query",
+                            "name": "num",
+                            "schema": { "type": "number" }
+                        }],
+                        responses: []
+                    },
+                    getExchange({
+                        query: '?num=123'
+                    })
+                )
+            ).to.deep.match([
+                {
+                    description: 'A number.',
+                    name: 'num',
+                    value: 123,
+                    validationErrors: []
+                }
+            ]);
+        });
+
+        it('should validate params according to their schema', () => {
+            expect(
+                getParameters(
+                    '/',
+                    {
+                        parameters: [{
+                            "description": "A number.",
+                            "in": "query",
+                            "name": "num",
+                            "schema": { "type": "number" }
+                        }],
+                        responses: []
+                    },
+                    getExchange({
+                        query: '?num=abc'
+                    })
+                )
+            ).to.deep.match([
+                {
+                    description: 'A number.',
+                    name: 'num',
+                    value: 'abc',
+                    validationErrors: [`'Num' should be number.`]
                 }
             ]);
         });
