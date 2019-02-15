@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome",
+            "url": "http://local.httptoolkit.tech:8080",
+            "webRoot": "${workspaceFolder}",
+            "port": 9246
+        }
+    ]
+}
