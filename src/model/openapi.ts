@@ -159,6 +159,19 @@ export function getParameters(
                         value: undefined
                     }
             }
+        })
+        .map((param) => {
+            if (param.required && !param.value) {
+                param.validationErrors.push(
+                    `The '${param.name}' ${param.specParam.in} parameter is required.`
+                );
+            }
+            if (param.deprecated && !!param.value) {
+                param.validationErrors.push(
+                    `The '${param.name}' ${param.specParam.in} parameter is deprecated.`
+                );
+            }
+            return param;
         });
 }
 

@@ -197,5 +197,64 @@ describe('OpenAPI support', () => {
                 }
             ]);
         });
+
+        it('should add an error for missing required params', () => {
+            expect(
+                getParameters(
+                    '/v1/account',
+                    {
+                        parameters: [{
+                            "description": "The account id.",
+                            "in": "query",
+                            "name": "account",
+                            "required": true,
+                            "schema": { "type": "string" }
+                        }],
+                        responses: []
+                    },
+                    getExchange({
+                        query: ''
+                    })
+                )
+            ).to.deep.match([
+                {
+                    description: 'The account id.',
+                    name: 'account',
+                    value: undefined,
+                    required: true,
+                    validationErrors: [`The 'account' query parameter is required.`]
+                }
+            ]);
+        });
+
+        it('should add an error for use of deprecated params', () => {
+            expect(
+                getParameters(
+                    '/v1/account',
+                    {
+                        parameters: [{
+                            "description": "The account id.",
+                            "in": "query",
+                            "name": "account",
+                            "deprecated": true,
+                            "schema": { "type": "string" }
+                        }],
+                        responses: []
+                    },
+                    getExchange({
+                        query: '?account=qwe'
+                    })
+                )
+            ).to.deep.match([
+                {
+                    description: 'The account id.',
+                    name: 'account',
+                    value: 'qwe',
+                    required: false,
+                    deprecated: true,
+                    validationErrors: [`The 'account' query parameter is deprecated.`]
+                }
+            ]);
+        });
     });
 });
