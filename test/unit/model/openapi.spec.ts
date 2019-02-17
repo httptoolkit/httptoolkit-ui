@@ -22,9 +22,12 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 serviceTitle: 'Stripe',
                 serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: 'GET /',
-                operationDescription:
-                    'The Stripe REST API. Please see https://stripe.com/docs/api for more details.',
+                operationName: { __html: '<p>GET /</p>' },
+                operationDescription: {
+                    __html:
+                        '<p>The Stripe REST API. Please see <a href=\"https://stripe.com/docs/api\">' +
+                        'https://stripe.com/docs/api</a> for more details.</p>',
+                },
                 operationDocsUrl: undefined,
                 parameters: [],
                 validationErrors: []
@@ -44,19 +47,27 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 serviceTitle: 'Stripe',
                 serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: 'GetAccount',
-                operationDescription: '<p>Retrieves the details of the account.</p>',
+                operationName: { __html: '<p>GetAccount</p>' },
+                operationDescription: {
+                    __html: '<p>Retrieves the details of the account.</p>'
+                },
                 operationDocsUrl: undefined,
                 parameters: [{
                     "deprecated": false,
-                    "description": "Specifies which fields in the response should be expanded.",
+                    "description": {
+                        __html: "<p>Specifies which fields in the response should be expanded.</p>"
+                    },
                     "name": "expand",
                     "required": false,
                     "validationErrors": [],
                     "value": undefined
                 }, {
                     "deprecated": false,
-                    "description": "The identifier of the account to retrieve. If none is provided, the account associated with the API key is returned.",
+                    "description": {
+                        __html:
+                            "<p>The identifier of the account to retrieve. " +
+                            "If none is provided, the account associated with the API key is returned.</p>"
+                    },
                     "name": "account",
                     "required": false,
                     "validationErrors": [],
@@ -78,8 +89,12 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 serviceTitle: 'Stripe',
                 serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: 'GetBitcoinTransactions',
-                operationDescription: '<p>List bitcoin transacitons for a given receiver.</p>',
+                operationName: {
+                    __html: '<p>GetBitcoinTransactions</p>'
+                },
+                operationDescription: {
+                    __html: '<p>List bitcoin transacitons for a given receiver.</p>'
+                },
                 validationErrors: [`The 'GetBitcoinTransactions' operation is deprecated`]
             });
         });
@@ -95,7 +110,7 @@ describe('OpenAPI support', () => {
                     }),
                 )
             ).to.deep.match({
-                responseDescription: 'When successful, returns bot info by bot ID.',
+                responseDescription: { __html: '<p>When successful, returns bot info by bot ID.</p>' },
                 validationErrors: []
             });
         });
@@ -111,7 +126,7 @@ describe('OpenAPI support', () => {
                     }),
                 )
             ).to.deep.match({
-                responseDescription: 'When no bot can be found, it returns an error.',
+                responseDescription: { __html: '<p>When no bot can be found, it returns an error.</p>' },
                 validationErrors: []
             });
         });
@@ -137,7 +152,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'Timestamp in ISO 8601 format.',
+                    description: { __html: '<p>Timestamp in ISO 8601 format.</p>' },
                     name: 'since',
                     value: '2018-09-1T12:00:00',
                     validationErrors: []
@@ -164,7 +179,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'Timestamp in ISO 8601 format.',
+                    description: { __html: '<p>Timestamp in ISO 8601 format.</p>' },
                     name: 'since',
                     value: undefined,
                     validationErrors: []
@@ -178,7 +193,7 @@ describe('OpenAPI support', () => {
                     '/',
                     {
                         parameters: [{
-                            description: 'Account id.',
+                            description: '<p>Account id.</p>',
                             in: 'query',
                             name: 'id',
                             schema: { 'type': 'array' },
@@ -193,7 +208,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'Account id.',
+                    description: { __html: '<p>Account id.</p>' },
                     name: 'id',
                     value: ['abc', 'def'],
                     validationErrors: []
@@ -220,7 +235,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'Name of user.',
+                    description: { __html: '<p>Name of user.</p>' },
                     name: 'username',
                     value: 'pimterry',
                     validationErrors: []
@@ -249,7 +264,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'Secret.',
+                    description: { __html: '<p>Secret.</p>' },
                     name: 'X-Secret-Value',
                     value: '1234',
                     validationErrors: []
@@ -277,7 +292,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'The account id.',
+                    description: { __html: '<p>The account id.</p>' },
                     name: 'account',
                     value: undefined,
                     required: true,
@@ -306,7 +321,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'The account id.',
+                    description: { __html: '<p>The account id.</p>' },
                     name: 'account',
                     value: 'qwe',
                     required: false,
@@ -335,7 +350,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'A number.',
+                    description: { __html: '<p>A number.</p>' },
                     name: 'num',
                     value: 123,
                     validationErrors: []
@@ -362,7 +377,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match([
                 {
-                    description: 'A number.',
+                    description: { __html: '<p>A number.</p>' },
                     name: 'num',
                     value: 'abc',
                     validationErrors: [`'Num' should be number.`]

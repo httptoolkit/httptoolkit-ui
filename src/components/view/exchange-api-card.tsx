@@ -78,13 +78,16 @@ const ExchangeOperation = (props: {
         rel: 'noreferrer noopener'
     } : null;
 
+    // All dangerous HTML should have been sanitized by fromMarkdown in model/openapi
+    // TS enforces this, because we embed __html in the types themselves.
+
     return !!apiExchange.operationDescription ?
         <details>
             <OperationSummary>
-                <OperationName>{ apiExchange.operationName }</OperationName>
+                <OperationName dangerouslySetInnerHTML={apiExchange.operationName} />
             </OperationSummary>
             <FullDetails>
-                <p>{ apiExchange.operationDescription }</p>
+                <div dangerouslySetInnerHTML={apiExchange.operationDescription} />
                 { docsLinkProps &&
                     <p>
                         <a {...docsLinkProps} >
@@ -96,9 +99,7 @@ const ExchangeOperation = (props: {
         </details>
     :
         <section>
-            <OperationName>
-                { apiExchange.operationName }
-            </OperationName>
+            <OperationName dangerouslySetInnerHTML={apiExchange.operationName} />
             {' '}
             { docsLinkProps &&
                 <a {...docsLinkProps}><ExternalLinkIcon /></a>
@@ -117,7 +118,7 @@ const ExchangeParameters = (props: {
         .map((param) => <details>
             <summary>{ param.name }: { param.value }</summary>
             <FullDetails>
-                <p>{ param.description }</p>
+                <div dangerouslySetInnerHTML={param.description || { __html: '' }} />
                 <p>Required?: { param.required.toString() }</p>
                 <p>Deprecated?: { param.deprecated.toString() }</p>
             </FullDetails>

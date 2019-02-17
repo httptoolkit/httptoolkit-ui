@@ -3,6 +3,8 @@ import { get } from 'typesafe-get';
 
 import { OpenAPIObject, PathItemObject, PathObject, findApi, OperationObject, ParameterObject, ResponseObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
+import * as Remarkable from 'remarkable';
+import * as DOMPurify from 'dompurify';
 
 import { HttpExchange, HtkResponse } from "../types";
 import { firstMatch } from '../util';
@@ -13,6 +15,11 @@ const OPENAPI_DIRECTORY_VERSION = require('../../package-lock.json')
 
 const ajv = new Ajv({
     coerceTypes: true
+});
+
+const md = new Remarkable({
+    html: true,
+    linkify: true
 });
 
 export interface ApiMetadata {
@@ -90,9 +97,13 @@ export function getPath(api: ApiMetadata, exchange: HttpExchange): {
         .map(([_matcher, path]) => path)[0]; // Should never be ambiguous, but use the first result if it is
 }
 
+interface Html {
+    __html: string
+}
+
 export interface Parameter {
     name: string;
-    description?: string;
+    description?: Html;
     value: unknown;
     required: boolean;
     deprecated: boolean;
@@ -115,7 +126,7 @@ export function getParameters(
             const commonFields = {
                 specParam: param,
                 name: param.name,
-                description: param.description,
+                description: fromMarkdown(param.description),
                 required: param.required || param.in === 'path',
                 deprecated: param.deprecated || false,
                 validationErrors: <string[]>[]
@@ -181,7 +192,9 @@ export function getParameters(
                 if (!validated && ajv.errors) {
                     param.validationErrors.push(
                         ...ajv.errors.map(e =>
-                            `'${_.upperFirst(e.dataPath.replace(/^\.value/, param.name))}' ${e.message!}.`
+                            `'${
+                            _.upperFirst(e.dataPath.replace(/^\.value/, param.name))
+                            }' ${e.message!}.`
                         )
                     );
                 }
@@ -201,7 +214,10 @@ export function getParameters(
                 );
             }
 
-            return param;
+            return {
+                ...param,
+                validationErrors: param.validationErrors.map(stripTags)
+            };
         });
 }
 
@@ -209,13 +225,13 @@ export interface ApiExchange {
     serviceTitle: string;
     serviceLogoUrl?: string;
 
-    operationName: string;
-    operationDescription?: string;
+    operationName: Html;
+    operationDescription?: Html;
     operationDocsUrl?: string;
 
     parameters: Parameter[];
 
-    responseDescription?: string;
+    responseDescription?: Html;
 
     validationErrors: string[];
 }
@@ -235,6 +251,22 @@ function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
 
 function isCompletedResponse(response: any): response is HtkResponse {
     return !!response.statusCode;
+}
+
+function fromMarkdown(input: string): Html;
+function fromMarkdown(input: string | undefined): Html | undefined;
+function fromMarkdown(input: string | undefined): Html | undefined {
+    if (!input) return undefined;
+    else {
+        const unsafeMarkdown = md.render(input);
+        return { __html: DOMPurify.sanitize(unsafeMarkdown).replace(/\n$/, '') };
+    }
+}
+
+// Rough but effective HTML stripping regex. This is _not_ designed to produce HTML-safe
+// input, it's just designed to turn formatted text into simple text.
+function stripTags(input: string): string {
+    return input.replace(/(<([^>]+)>)/ig, '');
 }
 
 export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
@@ -278,7 +310,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     );
 
     if (operation.deprecated) validationErrors.push(
-        `The '${operationName}' operation is deprecated`
+        `The '${stripTags(fromMarkdown(operationName).__html)}' operation is deprecated`
     );
 
     const parameters = operation ? getParameters(
@@ -296,11 +328,11 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     return {
         serviceTitle,
         serviceLogoUrl,
-        operationName,
-        operationDescription,
+        operationName: fromMarkdown(operationName),
+        operationDescription: fromMarkdown(operationDescription),
         operationDocsUrl,
         parameters,
-        responseDescription,
-        validationErrors
+        responseDescription: fromMarkdown(responseDescription),
+        validationErrors: validationErrors.map(stripTags)
     };
 }
