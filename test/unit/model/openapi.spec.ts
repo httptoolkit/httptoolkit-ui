@@ -1,6 +1,6 @@
 import { expect, getExchange } from '../../test-setup';
 
-import { getParameters, parseExchange, buildApiMetadata } from '../../../src/model/openapi';
+import { getParameters, parseExchange, buildApiMetadata, getBody } from '../../../src/model/openapi';
 
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
 import slackSpec from 'openapi-directory/api/slack.com.json';
@@ -383,6 +383,212 @@ describe('OpenAPI support', () => {
                     validationErrors: [`'Num' should be number.`]
                 }
             ]);
+        });
+    });
+
+    describe('body parsing', () => {
+        it('should return the request body schema', () => {
+            expect(
+                getBody(
+                    {
+                        description: 'My request body',
+                        content: {
+                            'text/plain': {
+                                schema: {
+                                    properties: {
+                                        name: { type: "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }, getExchange({
+                        requestHeaders: {
+                            'content-type': 'text/plain'
+                        }
+                    }).request
+                )
+            ).to.deep.match({
+                description: 'My request body',
+                properties: {
+                    name: { type: "string" }
+                }
+            });
+        });
+
+        it('should return the response body schema', () => {
+            expect(
+                getBody(
+                    {
+                        content: {
+                            'text/plain': {
+                                schema: {
+                                    properties: {
+                                        matchedCorrectly: { type: "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }, getExchange({
+                        responseHeaders: {
+                            'content-type': 'text/plain'
+                        }
+                    }).response
+                )
+            ).to.deep.match({
+                properties: {
+                    matchedCorrectly: { type: "string" }
+                }
+            });
+        });
+
+        it('should match partially wildcard content types', () => {
+            expect(
+                getBody(
+                    {
+                        description: 'My request body',
+                        content: {
+                            'text/*; charset=utf8': {
+                                schema: {
+                                    properties: {
+                                        allGood: { type: "string" }
+                                    }
+                                }
+                            },
+                            'application/json': {
+                                schema: {
+                                    properties: {
+                                        matchedIncorrectly: { type: "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }, getExchange({
+                        requestHeaders: {
+                            'content-type': 'text/plain'
+                        }
+                    }).request
+                )
+            ).to.deep.match({
+                properties: {
+                    allGood: { type: "string" }
+                }
+            });
+        });
+
+        it('should match completely wildcard content types', () => {
+            expect(
+                getBody(
+                    {
+                        description: 'My request body',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    properties: {
+                                        matchedIncorrectly: { type: "string" }
+                                    }
+                                }
+                            },
+                            '*/*': {
+                                schema: {
+                                    properties: {
+                                        allGood: { type: "string" }
+                                    }
+                                }
+                            },
+                        }
+                    }, getExchange({
+                        requestHeaders: {
+                            'content-type': 'text/plain'
+                        }
+                    }).request
+                )
+            ).to.deep.match({
+                properties: {
+                    allGood: { type: "string" }
+                }
+            });
+        });
+
+        it('should match the most specific content type', () => {
+            expect(
+                getBody(
+                    {
+                        description: 'My request body',
+                        content: {
+                            'text/*': {
+                                schema: {
+                                    properties: {
+                                        matchedTextStar: { type: "string" }
+                                    }
+                                }
+                            },
+                            'text/plain': {
+                                schema: {
+                                    properties: {
+                                        matchedCorrectly: { type: "string" }
+                                    }
+                                }
+                            },
+                            '*/*': {
+                                schema: {
+                                    properties: {
+                                        matchedPureWildcard: { type: "string" }
+                                    }
+                                }
+                            },
+                        }
+                    }, getExchange({
+                        requestHeaders: {
+                            'content-type': 'text/plain'
+                        }
+                    }).request
+                )
+            ).to.deep.match({
+                properties: {
+                    matchedCorrectly: { type: "string" }
+                }
+            });
+        });
+
+        it('should match the most specific content type', () => {
+            expect(
+                getBody(
+                    {
+                        description: 'My request body',
+                        content: {
+                            'text/*': {
+                                schema: {
+                                    properties: {
+                                        matchedTextStar: { type: "string" }
+                                    }
+                                }
+                            },
+                            'text/plain': {
+                                schema: {
+                                    properties: {
+                                        matchedTextPlain: { type: "string" }
+                                    }
+                                }
+                            },
+                            '*/*': {
+                                schema: {
+                                    properties: {
+                                        matchedPureWildcard: { type: "string" }
+                                    }
+                                }
+                            },
+                        }
+                    }, getExchange({
+                        requestHeaders: {
+                            'content-type': 'text/other'
+                        }
+                    }).request
+                )
+            ).to.deep.match({
+                properties: {
+                    matchedTextStar: { type: "string" }
+                }
+            });
         });
     });
 });

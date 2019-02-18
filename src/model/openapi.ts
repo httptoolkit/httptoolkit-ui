@@ -1,12 +1,22 @@
 import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 
-import { OpenAPIObject, PathItemObject, PathObject, findApi, OperationObject, ParameterObject, ResponseObject } from 'openapi-directory';
+import {
+    findApi,
+    OpenAPIObject,
+    PathItemObject,
+    PathObject,
+    OperationObject,
+    ParameterObject,
+    ResponseObject,
+    RequestBodyObject,
+    SchemaObject
+} from 'openapi-directory';
 import * as Ajv from 'ajv';
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
-import { HttpExchange, HtkResponse } from "../types";
+import { HttpExchange, HtkResponse, HtkRequest } from "../types";
 import { firstMatch } from '../util';
 
 const OPENAPI_DIRECTORY_VERSION = require('../../package-lock.json')
@@ -222,6 +232,37 @@ export function getParameters(
         });
 }
 
+export function getBody(
+    bodyDefinition: RequestBodyObject | ResponseObject | undefined,
+    message: HtkRequest | HtkResponse | 'aborted' | undefined
+): SchemaObject {
+    if (!bodyDefinition || !message || message === 'aborted') return {};
+
+    const contentType = message.headers['content-type'] || '*/*';
+
+    const schemasByType = bodyDefinition.content;
+    if (!schemasByType) return {};
+
+    // Sort the keys by the number of *'s present
+    const mediaTypeKeys = _.sortBy(Object.keys(schemasByType),
+        (key) => _.sumBy(key, (c: string) => c === '*' ? 1 : 0)
+    );
+
+    const schemaKey = _.find<string>(mediaTypeKeys, (key) =>
+        new RegExp('^' + // Must match at the start
+            key.replace('*', '.*') // Wildcards to regex wildcard
+                .replace(/;.*/, '') // Ignore charset etc
+        ).exec(contentType) !== null
+    );
+
+    if (!schemaKey) return {};
+
+    return Object.assign(
+        { description: bodyDefinition.description },
+        schemasByType[schemaKey].schema
+    );
+}
+
 export interface ApiExchange {
     serviceTitle: string;
     serviceLogoUrl?: string;
@@ -231,8 +272,10 @@ export interface ApiExchange {
     operationDocsUrl?: string;
 
     parameters: Parameter[];
+    requestBody?: SchemaObject;
 
     responseDescription?: Html;
+    responseBody?: SchemaObject;
 
     validationErrors: string[];
 }
@@ -319,10 +362,10 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         path!, operation as OperationObject, exchange
     ) : [];
 
+    let responseSpec: ResponseObject | undefined;
     let responseDescription: string | undefined;
     if (get(operation, 'responses') && isCompletedResponse(response)) {
-        const responseSpec: ResponseObject =
-            operation.responses[response.statusCode.toString()] ||
+        responseSpec = operation.responses[response.statusCode.toString()] ||
             operation.responses.default;
         responseDescription = responseSpec ? responseSpec.description : response.statusMessage;
     }
@@ -334,7 +377,9 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         operationDescription: fromMarkdown(operationDescription),
         operationDocsUrl,
         parameters,
+        requestBody: getBody(operation.requestBody as RequestBodyObject | undefined, exchange.request),
         responseDescription: fromMarkdown(responseDescription),
+        responseBody: getBody(responseSpec, exchange.response),
         validationErrors: validationErrors.map(stripTags)
     };
 }
