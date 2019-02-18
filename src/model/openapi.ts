@@ -259,8 +259,9 @@ function fromMarkdown(input: string | undefined): Html | undefined;
 function fromMarkdown(input: string | undefined): Html | undefined {
     if (!input) return undefined;
     else {
-        const unsafeMarkdown = md.render(input);
-        return { __html: DOMPurify.sanitize(unsafeMarkdown).replace(/\n$/, '') };
+        const unsafeMarkdown = md.render(input).replace(/\n$/, '');
+        const safeHtml = DOMPurify.sanitize(unsafeMarkdown);
+        return { __html: safeHtml };
     }
 }
 
