@@ -153,7 +153,8 @@ export function getParameters(
                             // Escape any other path variables
                             .replace('{', '\{')
                             .replace('}', '\}')
-                        + '$' // Matched path must be a complete suffix.
+                        + '$', // Matched path must be a complete suffix.
+                        'i' // Match paths ignoring case (matters in theory, never in practice)
                     );
 
                     const match = paramMatcher.exec(exchange.request.path);
