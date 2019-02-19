@@ -159,8 +159,9 @@ export class InterceptionStore {
             searchIndex:
                 [`${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}${parsedUrl.search}`]
                     .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
-                    .concat(request.method.toLowerCase())
-                    .join('\n'),
+                    .concat(request.method)
+                    .join('\n')
+                    .toLowerCase(),
             response: undefined
         };
 
@@ -198,7 +199,7 @@ export class InterceptionStore {
             response.statusCode.toString(),
             response.statusMessage.toString(),
             ..._.map(response.headers, (value, key) => `${key}: ${value}`)
-        ].join('\n');
+        ].join('\n').toLowerCase();
     }
 
     @action.bound
