@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 
 import * as jwt from 'jsonwebtoken';
 import * as Auth0 from 'auth0-js';
-import { Auth0LockPasswordless } from 'auth0-lock';
+import { Auth0LockPasswordless } from '@httptoolkit/auth0-lock';
 
 import { lightTheme } from '../../styles';
 import { reportError } from '../../errors';
@@ -215,7 +215,7 @@ export async function getLatestUserData(): Promise<User> {
 function parseUserData(userJwt: string | null): User {
     if (!userJwt) return {};
 
-    const appData = <AppData> jwt.verify(userJwt, AUTH0_DATA_PUBLIC_KEY, {
+    const appData = <AppData>jwt.verify(userJwt, AUTH0_DATA_PUBLIC_KEY, {
         algorithms: ['RS256'],
         audience: 'https://httptoolkit.tech/app_data',
         issuer: 'https://httptoolkit.tech/'
