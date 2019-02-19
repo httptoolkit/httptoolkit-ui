@@ -12,8 +12,7 @@ import { ExchangeCardProps, ExchangeCard, ContentLabel, LoadingExchangeCard } fr
 import { FontAwesomeIcon } from '../../icons';
 
 interface ApiCardProps extends Omit<ExchangeCardProps, 'children'> {
-    api: IPromiseBasedObservable<ApiMetadata>;
-    exchange: HttpExchange
+    apiExchange: IPromiseBasedObservable<ApiExchange>;
 }
 
 const ApiLogo = styled.img`
@@ -115,7 +114,7 @@ const ExchangeParameters = (props: {
     {
         props.apiExchange.parameters
         .filter((param) => !!param.value || param.required)
-        .map((param) => <details>
+        .map((param) => <details key={param.name}>
             <summary>{ param.name }: { param.value }</summary>
             <FullDetails>
                 <div dangerouslySetInnerHTML={param.description || { __html: '' }} />
@@ -127,10 +126,8 @@ const ExchangeParameters = (props: {
 </div> : null
 
 export const ExchangeApiCard = observer((props: ApiCardProps) => {
-    return props.api.case({
-        fulfilled: (api) => {
-            const apiExchange = parseExchange(api, props.exchange);
-
+    return props.apiExchange.case({
+        fulfilled: (apiExchange) => {
             return <ExchangeCard {...props}>
 
                 <header>

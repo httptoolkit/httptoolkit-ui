@@ -11,7 +11,7 @@ import { FontAwesomeIcon, Icons } from '../../icons';
 import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
 
 import { TrafficSource } from '../../model/sources';
-import { getMatchingAPI } from '../../model/openapi';
+import { getMatchingAPI, parseExchange } from '../../model/openapi';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
@@ -79,11 +79,11 @@ export class ExchangeDetailsPane extends React.Component<{
             const { request, response } = exchange;
 
             const knownApi = getMatchingAPI(exchange);
-            if (knownApi) {
+            const apiExchange = knownApi && knownApi.then(api => parseExchange(api, exchange));
+            if (apiExchange) {
                 cards.push(<ExchangeApiCard
                     {...this.cardProps('knownApi')}
-                    api={fromPromise(knownApi)}
-                    exchange={exchange}
+                    apiExchange={fromPromise(apiExchange)}
                 />);
             }
 
@@ -117,6 +117,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     title='Request Body'
                     direction='right'
                     message={request}
+                    apiBody={apiExchange && fromPromise(apiExchange.then(ex => ex.requestBody))}
                     {...this.cardProps('requestBody')}
                 />);
             }
@@ -155,6 +156,7 @@ export class ExchangeDetailsPane extends React.Component<{
                         title='Response Body'
                         direction='left'
                         message={response}
+                        apiBody={apiExchange && fromPromise(apiExchange.then(ex => ex.responseBody))}
                         {...this.cardProps('responseBody')}
                     />);
                 }

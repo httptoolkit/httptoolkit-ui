@@ -13,6 +13,7 @@ import * as beautifyXml from 'xml-beautifier';
 import { BaseEditor } from './base-editor';
 import { styled } from '../../styles';
 import { HtkContentType } from '../../content-types';
+import { SchemaObject } from 'openapi3-ts';
 
 interface EditorFormatter {
     language: string;
@@ -107,6 +108,7 @@ export const Formatters: { [key in HtkContentType]?: Formatter } = {
 
 interface ContentEditorProps {
     children: Buffer;
+    schema?: SchemaObject;
     rawContentType: string;
     contentType: HtkContentType;
     contentObservable?: IObservableValue<string | undefined>;
@@ -166,6 +168,7 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
                         language={this.formatter.language}
                         onLineCount={this.updateLineCount}
                         value={this.renderedContent!}
+                        schema={this.props.schema}
                         theme={this.props.monacoTheme}
                     />
                 </EditorContainer>;

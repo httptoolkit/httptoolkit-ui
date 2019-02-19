@@ -2,6 +2,8 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { IObservableValue, observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer, inject } from 'mobx-react';
+import { IPromiseBasedObservable } from 'mobx-utils';
+import { SchemaObject } from 'openapi-directory';
 
 import { HtkRequest, HtkResponse } from '../../types';
 import { styled, css, Theme } from '../../styles';
@@ -12,7 +14,6 @@ import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButton } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
-import { FontAwesomeIcon } from '../../icons';
 
 function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;
@@ -52,6 +53,7 @@ type ExchangeMessage = HtkRequest | HtkResponse;
 export class ExchangeBodyCard extends React.Component<{
     title: string,
     message: ExchangeMessage,
+    apiBody?: IPromiseBasedObservable<SchemaObject | undefined>,
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
@@ -114,6 +116,7 @@ export class ExchangeBodyCard extends React.Component<{
         const {
             title,
             message,
+            apiBody,
             direction,
             collapsed,
             onCollapseToggled,
@@ -128,6 +131,10 @@ export class ExchangeBodyCard extends React.Component<{
         const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
 
         const currentRenderedContent = this.currentContent.get();
+
+        const bodySchema = apiBody && apiBody.case({
+            fulfilled: (schema) => schema
+        });
 
         return decodedBody ?
             <ExchangeCard
@@ -157,6 +164,7 @@ export class ExchangeBodyCard extends React.Component<{
                         contentType={contentType}
                         contentObservable={this.currentContent}
                         monacoTheme={theme!.monacoTheme}
+                        schema={bodySchema}
                     >
                         {decodedBody}
                     </ContentEditor>
