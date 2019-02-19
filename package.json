@@ -58,6 +58,7 @@
     "dompurify": "^1.0.9",
     "graphql.js": "^0.5.2",
     "js-beautify": "^1.8.8",
+    "json-schema-deref-sync": "^0.8.0",
     "jsonwebtoken": "^8.4.0",
     "lodash": "^4.17.5",
     "mobx": "^5.6.0",

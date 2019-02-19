@@ -13,6 +13,7 @@ import {
     SchemaObject
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
+import deref from 'json-schema-deref-sync';
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
@@ -58,7 +59,9 @@ async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
     const specResponse = await fetch(
         `https://unpkg.com/openapi-directory@${OPENAPI_DIRECTORY_VERSION}/api/${specId}.json`
     );
-    return specResponse.json();
+    return deref(await specResponse.json(), {
+        failOnMissing: true
+    });
 }
 
 export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
