@@ -159,6 +159,7 @@ export class InterceptionStore {
             searchIndex:
                 [`${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}${parsedUrl.search}`]
                     .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
+                    .concat(request.method.toLowerCase())
                     .join('\n'),
             response: undefined
         };
