@@ -20,9 +20,7 @@ import * as DOMPurify from 'dompurify';
 import { HttpExchange, HtkResponse, HtkRequest } from "../types";
 import { firstMatch } from '../util';
 
-const OPENAPI_DIRECTORY_VERSION = require('../../package-lock.json')
-    .dependencies['openapi-directory']
-    .version;
+const OPENAPI_DIRECTORY_VERSION = require('val-loader!../package-lock')['openapi-directory'];
 
 const ajv = new Ajv({
     coerceTypes: true
