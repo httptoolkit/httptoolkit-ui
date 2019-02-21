@@ -26,8 +26,6 @@ const cardDirectionCss = (direction?: string) =>
 export const ExchangeCard = styled(CollapsibleCard).attrs({
     tabIndex: 0
 })`
-    word-break: break-all;
-
     margin-bottom: 20px;
     transition: margin-bottom 0.1s;
 
@@ -69,6 +67,7 @@ export const ContentLabel = styled.div`
 
 export const ContentMonoValue = styled.div`
     font-family: 'Fira Mono', monospace;
+    word-break: break-all;
     width: 100%;
 `;
 
