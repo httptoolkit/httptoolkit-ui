@@ -22,12 +22,13 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 serviceTitle: 'Stripe',
                 serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: { __html: '<p>GET /</p>' },
-                operationDescription: {
+                serviceDescription: {
                     __html:
-                        '<p>The Stripe REST API. Please see <a href=\"https://stripe.com/docs/api\">' +
-                        'https://stripe.com/docs/api</a> for more details.</p>',
+                        '<p>The Stripe REST API. Please see <a href="https://stripe.com/docs/api">' +
+                        'https://stripe.com/docs/api</a> for more details.</p>'
                 },
+                operationName: { __html: '<p>GET /</p>' },
+                operationDescription: undefined,
                 operationDocsUrl: undefined,
                 parameters: [],
                 validationErrors: []

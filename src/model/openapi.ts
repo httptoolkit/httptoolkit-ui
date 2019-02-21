@@ -267,6 +267,7 @@ export function getBody(
 export interface ApiExchange {
     serviceTitle: string;
     serviceLogoUrl?: string;
+    serviceDescription?: Html;
 
     operationName: Html;
     operationDescription?: Html;
@@ -323,6 +324,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
 
     const serviceTitle = service.title;
     const serviceLogoUrl = service['x-logo'].url
+    const serviceDescription = fromMarkdown(service.description);
 
     const matchingPath = getPath(api, exchange);
 
@@ -351,8 +353,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     const operationDescription = firstMatch<string>(
         [() => get(operation, 'description') !== operationName, get(operation, 'description')],
         [() => get(operation, 'summary') !== operationName, get(operation, 'summary')],
-        pathData.description,
-        service.description
+        pathData.description
     );
 
     if (operation.deprecated) validationErrors.push(
@@ -374,6 +375,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     return {
         serviceTitle,
         serviceLogoUrl,
+        serviceDescription,
         operationName: fromMarkdown(operationName),
         operationDescription: fromMarkdown(operationDescription),
         operationDocsUrl,
