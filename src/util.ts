@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as React from 'react';
 
 export function delay(numberMs: number) {
     return new Promise((resolve) => setTimeout(resolve, numberMs));
@@ -33,4 +34,8 @@ export function firstMatch<R>(...tests: Array<Case<R> | R | undefined>): R | und
             if (test) return <R>test;
         }
     }
+}
+
+export function isReactElement(node: any): node is React.ReactElement {
+    return node && !!node.$$typeof;
 }
