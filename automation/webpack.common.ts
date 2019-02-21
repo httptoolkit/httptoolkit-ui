@@ -10,7 +10,7 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const SRC_DIR = path.resolve(__dirname, '..', 'src');
 const OUTPUT_DIR = path.resolve(__dirname, '..', 'dist');
 
-export default <Webpack.Configuration> {
+export default <Webpack.Configuration>{
     entry: path.join(SRC_DIR, 'index.tsx'),
 
     output: {
@@ -36,7 +36,7 @@ export default <Webpack.Configuration> {
             loader: 'file-loader'
         }, {
             test: /\.css$/,
-            use: [ 'style-loader', 'css-loader' ]
+            use: ['style-loader', 'css-loader']
         }, {
             test: /amiusing.html$/,
             use: 'raw-loader'
@@ -73,6 +73,7 @@ export default <Webpack.Configuration> {
                 'colorDetector',
                 'find',
                 'folding',
+                'hover',
                 'inspectTokens',
                 'links',
                 'smartSelect',
