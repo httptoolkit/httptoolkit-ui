@@ -21,8 +21,10 @@ import {
     ExchangeCollapsibleBody
 } from './exchange-card';
 import { Pill } from '../common/pill';
-import { HeaderDetails } from './header-details';
 import { CollapsibleSection } from '../common/collapsible-section';
+import { OptionalImage } from '../common/optional-image';
+
+import { HeaderDetails } from './header-details';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== Icons.Unknown ?
@@ -84,13 +86,12 @@ const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
     }
 `;
 
-const ServiceLogo = styled.img`
+const ServiceLogo = styled(OptionalImage)`
     position: absolute;
     top: 7px;
     right: 11px;
     height: 26px;
 
-    /* How to avoid this border appearing when the image fails to load? */
     border: 4px solid #ffffff;
     border-radius: 2px;
 `;
