@@ -3,6 +3,7 @@ import { styled, css } from '../../styles';
 
 import { CollapsibleCard, CollapseIcon } from '../common/card'
 import { FontAwesomeIcon } from '../../icons';
+import { CollapsibleSectionSummary, CollapsibleSectionBody } from '../common/collapsible-section';
 
 export interface ExchangeCardProps {
     collapsed: boolean;
@@ -57,12 +58,16 @@ export const ContentLabel = styled.div`
     text-transform: uppercase;
     opacity: 0.5;
 
-    margin-bottom: 10px;
-    width: 100%;
+    display: inline-block;
 
     &:not(:first-child) {
         margin-top: 10px;
     }
+`;
+
+export const ContentLabelBlock = styled(ContentLabel)`
+    margin-bottom: 10px;
+    display: block;
 `;
 
 export const ContentMonoValue = styled.div`
@@ -93,3 +98,15 @@ export const LoadingExchangeCard = (props:
             <FontAwesomeIcon spin icon={['fac', 'spinner-arc']} size='8x' />
         </LoadingCardContent>
     </ExchangeCard>;
+
+export const ExchangeCollapsibleBody = styled(CollapsibleSectionBody)`
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+`;
+
+export const ExchangeCollapsibleSummary = styled(CollapsibleSectionSummary)`
+    margin-left: -20px;
+    padding-left: 20px;
+`;

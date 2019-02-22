@@ -6,18 +6,17 @@ import { observer, inject } from 'mobx-react';
 
 import { HttpExchange, HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
-import { FontAwesomeIcon, Icons } from '../../icons';
-import { getExchangeSummaryColour, getStatusColor } from '../../exchange-colors';
+import { getStatusColor } from '../../exchange-colors';
 
-import { TrafficSource } from '../../model/sources';
 import { getMatchingAPI, parseExchange } from '../../model/openapi';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
 import { HeaderDetails } from './header-details';
-import { ExchangeCard, ContentLabel, ContentMonoValue } from './exchange-card';
+import { ExchangeCard, ContentMonoValue, ContentLabelBlock } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
-import { ExchangeApiCard } from './exchange-api-card';
+import { ExchangeRequestCard } from './exchange-request-card';
+import { reportError } from '../../errors';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -35,18 +34,7 @@ const ExchangeDetailsContainer = styled.div`
     background-color: ${p => p.theme.containerBackground};
 `;
 
-const SourceIcon = styled(({ source, className }: { source: TrafficSource, className?: string }) =>
-    source.icon !== Icons.Unknown ?
-        <FontAwesomeIcon
-            className={className}
-            title={source.description}
-            {...source.icon}
-        /> : null
-)`
-    margin-right: 8px;
-`;
-
-type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'knownApi';
+type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
 
 @inject('theme')
 @observer
@@ -60,8 +48,7 @@ export class ExchangeDetailsPane extends React.Component<{
         'request': false,
         'requestBody': false,
         'response': false,
-        'responseBody': false,
-        'knownApi': false
+        'responseBody': false
     };
 
     private cardProps = (key: CardKey) => ({
@@ -78,38 +65,18 @@ export class ExchangeDetailsPane extends React.Component<{
             const { request, response } = exchange;
 
             const knownApi = getMatchingAPI(exchange);
-            const apiExchange = knownApi && knownApi.then(api => parseExchange(api, exchange));
-            if (apiExchange) {
-                cards.push(<ExchangeApiCard
-                    {...this.cardProps('knownApi')}
-                    apiExchange={apiExchange}
-                />);
-            }
+            const apiExchange = knownApi && knownApi
+                .then(api => parseExchange(api, exchange))
+                .catch((e) => {
+                    reportError(e);
+                    throw e;
+                });
 
-            cards.push(<ExchangeCard {...this.cardProps('request')} direction='right'>
-                <header>
-                    <SourceIcon source={request.source} />
-                    <Pill color={getExchangeSummaryColour(exchange)}>
-                        { request.method } {
-                            request.hostname
-                            // Add some tiny spaces to split up parts of the hostname
-                            .replace(/\./g, '\u2008.\u2008')
-                        }
-                    </Pill>
-                    <h1>Request</h1>
-                </header>
-                <div>
-                    <ContentLabel>URL</ContentLabel>
-                    <ContentMonoValue>{
-                        request.parsedUrl.toString()
-                    }</ContentMonoValue>
-
-                    <ContentLabel>Headers</ContentLabel>
-                    <ContentMonoValue>
-                        <HeaderDetails headers={request.headers} />
-                    </ContentMonoValue>
-                </div>
-            </ExchangeCard>);
+            cards.push(<ExchangeRequestCard
+                {...this.cardProps('request')}
+                exchange={exchange}
+                apiExchange={apiExchange}
+            />);
 
             if (request.body.buffer) {
                 cards.push(<ExchangeBodyCard
@@ -138,12 +105,12 @@ export class ExchangeDetailsPane extends React.Component<{
                         <h1>Response</h1>
                     </header>
                     <div>
-                        <ContentLabel>Status</ContentLabel>
+                        <ContentLabelBlock>Status</ContentLabelBlock>
                         <ContentMonoValue>
                             {response.statusCode}: {response.statusMessage}
                         </ContentMonoValue>
 
-                        <ContentLabel>Headers</ContentLabel>
+                        <ContentLabelBlock>Headers</ContentLabelBlock>
                         <ContentMonoValue>
                             <HeaderDetails headers={response.headers} />
                         </ContentMonoValue>

@@ -135,4 +135,6 @@ export const CollapsibleSectionBody = styled.div`
     margin-bottom: 10px;
 
     word-break: break-word;
+
+    position: relative;
 `;
