@@ -110,6 +110,17 @@ const tryFromPrecacheAndRefresh = workbox.strategies.staleWhileRevalidate({
 // Webpack Dev Server goes straight to the network:
 workbox.routing.registerRoute(/\/sockjs-node\/.*/, workbox.strategies.networkOnly());
 
+// API routes aren't preloaded (there's thousands, it'd kill everything), but if we
+// try to keep your recently used ones around for offline use.
+workbox.routing.registerRoute(/api\/.*/, workbox.strategies.staleWhileRevalidate({
+    cacheName: 'api-cache',
+    plugins: [
+        new workbox.expiration.Plugin({
+            maxEntries: 20,
+        }),
+    ],
+}));
+
 // All other app code _must_ be precached - no random updates from elsewhere please.
 workbox.routing.registerRoute(/\/.*/, precacheOnly);
 

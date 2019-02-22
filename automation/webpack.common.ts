@@ -1,7 +1,9 @@
 import * as path from 'path';
-import * as HtmlWebpackPlugin from 'html-webpack-plugin';
-import { InjectManifest } from '@httptoolkit/workbox-webpack-plugin';
 import * as Webpack from 'webpack';
+
+import * as HtmlWebpackPlugin from 'html-webpack-plugin';
+import * as CopyPlugin from 'copy-webpack-plugin';
+import { InjectManifest } from '@httptoolkit/workbox-webpack-plugin';
 
 // Webpack (but not tsc) gets upset about this, so let's opt out
 // of proper typing entirely.
@@ -55,6 +57,9 @@ export default <Webpack.Configuration>{
         new HtmlWebpackPlugin({
             template: path.join(SRC_DIR, 'index.html')
         }),
+        new CopyPlugin([
+            { from: 'node_modules/openapi-directory/api', to: 'api' }
+        ]),
         new MonacoWebpackPlugin({
             languages: [
                 'html',

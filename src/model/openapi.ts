@@ -24,8 +24,6 @@ import { HttpExchange, HtkResponse, HtkRequest } from "../types";
 import { firstMatch, ObservablePromise, observablePromise } from '../util';
 import { reportError } from '../errors';
 
-const OPENAPI_DIRECTORY_VERSION = require('val-loader!../package-lock')['openapi-directory'];
-
 const paramValidator = new Ajv({
     coerceTypes: true,
     unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
@@ -68,9 +66,7 @@ export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMet
 }
 
 async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
-    const specResponse = await fetch(
-        `https://unpkg.com/openapi-directory@${OPENAPI_DIRECTORY_VERSION}/api/${specId}.json`
-    );
+    const specResponse = await fetch(`/api/${specId}.json`);
     return specResponse.json();
 }
 
