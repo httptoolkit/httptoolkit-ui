@@ -7,7 +7,7 @@ export const Button = styled.button`
     border-radius: 4px;
     border: none;
 
-    font-family: Lato, sans-serif;
+    font-family: ${p => p.theme.fontFamily};
     font-size: ${p => p.theme.headingSize};
     color: #fff;
 

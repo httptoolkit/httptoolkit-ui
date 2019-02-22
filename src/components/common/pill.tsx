@@ -52,7 +52,7 @@ const Select = styled(Pill.withComponent('select'))`
     padding: 0 4px 3px 8px;
 
     font-size: 16px;
-    font-family: Lato, Arial, sans-serif;
+    font-family: ${p => p.theme.fontFamily};
 `;
 
 export const PillSelector = <T extends {}>(props: {

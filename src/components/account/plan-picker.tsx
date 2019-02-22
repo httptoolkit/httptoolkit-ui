@@ -45,7 +45,7 @@ const PlanCycleToggle = styled.button`
     margin: 10px auto;
     padding: 10px 10px;
 
-    font-family: Lato, Arial, sans-serif;
+    font-family: ${p => p.theme.fontFamily};
     font-size: ${p => p.theme.headingSize};
     color: ${p => p.theme.mainBackground};
 

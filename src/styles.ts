@@ -10,6 +10,8 @@ const fontSizes = {
 }
 
 export const lightTheme = {
+    fontFamily: 'Lato, Arial, sans-serif',
+
     mainBackground: '#fafafa',
     mainColor: '#222',
 
@@ -28,6 +30,8 @@ export const lightTheme = {
 };
 
 export const darkTheme = {
+    fontFamily: 'Lato, Arial, sans-serif',
+
     mainBackground: '#222222',
     mainColor: '#efefef',
 
@@ -68,13 +72,13 @@ export const GlobalStyles = createGlobalStyle`
     ${reset};
 
     body {
-        font-family: Lato, Arial, sans-serif;
+        font-family: ${p => p.theme.fontFamily};
         color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.containerBackground};
     }
 
     input {
-        font-family: Lato, sans-serif;
+        font-family: ${p => p.theme.fontFamily};
     }
 
     em {
@@ -95,7 +99,7 @@ export const GlobalStyles = createGlobalStyle`
 
     /* Override Auth0's style choices to match the rest of the UI */
     .auth0-lock {
-        font-family: Lato, sans-serif !important;
+        font-family: ${p => p.theme.fontFamily} !important;
 
         .auth0-lock-overlay {
             display: none; /* We have our own overlay we'll use instead */
