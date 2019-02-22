@@ -13,6 +13,10 @@ interface CollapsibleSectionProps {
     className?: string;
 }
 
+const SummaryWrapper = styled.span`
+    margin-right: 10px;
+`;
+
 @observer
 export class CollapsibleSection extends React.Component<CollapsibleSectionProps> {
 
@@ -28,16 +32,13 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
             React.cloneElement(
                 summaryChild,
                 { open: this.open },
-                prefix ?
-                    <>
-                        <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
-                        { summaryChild.props.children }
-                    </>
-                :
-                    <>
-                        { summaryChild.props.children }
-                        <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
-                    </>
+                prefix ? <>
+                    <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
+                    <SummaryWrapper>{ summaryChild.props.children }</SummaryWrapper>
+                </> : <>
+                    <SummaryWrapper>{ summaryChild.props.children }</SummaryWrapper>
+                    <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
+                </>
             )
             : summaryChild;
 
@@ -80,6 +81,7 @@ const CollapsibleTrigger = styled((p: {
     }
 
     padding: 5px 10px;
+    margin-left: -10px;
 `;
 
 export const CollapsibleSectionSummary = styled.header`
