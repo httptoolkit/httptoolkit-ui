@@ -1,5 +1,7 @@
 import * as React from 'react';
 import * as polished from 'polished';
+import { inject } from 'mobx-react';
+
 import { styled, Theme } from '../../styles';
 
 function needsInversion(color: string) {
@@ -24,14 +26,19 @@ function getBackgroundColor(color: string) {
 
 export const Pill = styled.div`
     display: inline-block;
-    padding: 4px 8px;
-    margin: 0 8px 0 0;
     border-radius: 4px;
+    padding: 4px 8px;
+
+    margin: 0 8px 0 0;
+    * + & {
+        margin-left: 8px;
+    }
+    & + & {
+        margin-left: 0;
+    }
 
     text-transform: none;
-
     font-weight: bold;
-
     word-spacing: 3px;
 
     transition: color 0.1s;
@@ -53,6 +60,10 @@ const Select = styled(Pill.withComponent('select'))`
 
     font-size: 16px;
     font-family: ${p => p.theme.fontFamily};
+
+    ${Pill} + & {
+        margin-left: 0;
+    }
 `;
 
 export const PillSelector = <T extends {}>(props: {
@@ -70,3 +81,10 @@ export const PillSelector = <T extends {}>(props: {
         </option>
     )}
 </Select>;
+
+export const ProPill = inject('theme')(styled((p: { theme?: Theme }) =>
+    <Pill color={p.theme!.popColor}>PRO</Pill>
+)`
+    font-size: 11px;
+    padding: 4px 4px;
+`);

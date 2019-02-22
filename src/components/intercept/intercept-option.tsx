@@ -63,7 +63,7 @@ const LoadingOverlay = styled.div`
 `;
 
 const StatusPill = styled(Pill)`
-    margin-top: auto;
+    && { margin: auto 0 0 0; }
 `;
 
 function getStatusPill(interceptor: Interceptor) {

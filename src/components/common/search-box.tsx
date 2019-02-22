@@ -17,6 +17,7 @@ const SearchInput = styled.input.attrs({
     border: 1px solid ${p => p.theme.containerBorder};
     box-shadow: inset 0 2px 4px 1px rgba(0, 0, 0, 0.1);
     background-color: ${p => p.theme.popBackground};
+    color: ${p => p.theme.mainColor};
 
     font-size: ${p => p.theme.headingSize};
 `;
