@@ -101,7 +101,9 @@ const DocsLink = (p: {
     children?: React.ReactNode
 }) => p.href ?
     <a {...p} target='_blank' rel='noreferrer noopener'>
-        { p.children } <ExternalLinkIcon />
+        { /* Whitespace after children, iff we have children */ }
+        { p.children ? <>{ p.children } </> : null }
+        <ExternalLinkIcon />
     </a>
 : null
 
@@ -123,11 +125,53 @@ const ParamMetadata = styled.div`
 const Description = styled.div`
     line-height: 1.2;
 
-    p:not(:last-child) {
+    p, li, ul, ol, table, h1, h2, h3, h4, h5, h6, pre {
         margin-bottom: 10px;
     }
 
-    :last-child p:last-child {
+    ol, ul {
+        padding-left: 20px;
+    }
+
+    ol {
+        list-style: decimal;
+    }
+
+    ul {
+        list-style: circle;
+    }
+
+    table {
+        border-collapse: unset;
+        border-spacing: 5px;
+        margin-left: -5px;
+    }
+
+    th {
+        min-width: 80px;
+    }
+
+    code {
+        font-family: monospace;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        display: block;
+        border-left: 3px solid ${p => p.theme.containerWatermark};
+        padding-left: 8px;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    :last-child :last-child {
         margin-bottom: 0;
     }
 `
