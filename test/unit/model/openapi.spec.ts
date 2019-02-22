@@ -27,6 +27,7 @@ describe('OpenAPI support', () => {
                         '<p>The Stripe REST API. Please see <a href="https://stripe.com/docs/api">' +
                         'https://stripe.com/docs/api</a> for more details.</p>'
                 },
+                serviceDocsUrl: undefined,
                 operationName: 'GET /',
                 operationDescription: undefined,
                 operationDocsUrl: undefined,

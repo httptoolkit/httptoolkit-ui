@@ -10,7 +10,8 @@ import {
     ParameterObject,
     ResponseObject,
     RequestBodyObject,
-    SchemaObject
+    SchemaObject,
+    ParameterLocation
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
 import deref from 'json-schema-deref-sync';
@@ -116,6 +117,7 @@ export interface Parameter {
     name: string;
     description?: Html;
     value: unknown;
+    in: ParameterLocation;
     required: boolean;
     deprecated: boolean;
     validationErrors: string[];
@@ -137,6 +139,7 @@ export function getParameters(
             const commonFields = {
                 specParam: param,
                 name: param.name,
+                in: param.in,
                 description: fromMarkdown(param.description),
                 required: param.required || param.in === 'path',
                 deprecated: param.deprecated || false,
@@ -268,6 +271,7 @@ export interface ApiExchange {
     serviceTitle: string;
     serviceLogoUrl?: string;
     serviceDescription?: Html;
+    serviceDocsUrl?: string;
 
     operationName: string;
     operationDescription?: Html;
@@ -331,6 +335,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     const serviceTitle = service.title;
     const serviceLogoUrl = service['x-logo'].url
     const serviceDescription = fromMarkdown(service.description);
+    const serviceDocsUrl = get(api, 'spec', 'externalDocs', 'url');
 
     const matchingPath = getPath(api, exchange);
 
@@ -342,10 +347,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         pathData, request.method.toLowerCase()
     ) || {};
 
-    const operationDocsUrl = firstMatch(
-        get(operation, 'externalDocs', 'url'),
-        get(api, 'spec', 'externalDocs', 'url')
-    );
+    const operationDocsUrl = get(operation, 'externalDocs', 'url');
 
     const operationName = stripTags(fromMarkdown(
         firstMatch<string>(
@@ -384,6 +386,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         serviceTitle,
         serviceLogoUrl,
         serviceDescription,
+        serviceDocsUrl,
         operationName,
         operationDescription: fromMarkdown(operationDescription),
         operationDocsUrl,
