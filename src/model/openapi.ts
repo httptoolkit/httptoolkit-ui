@@ -22,6 +22,7 @@ import { openApiSchema } from './openapi-schema';
 
 import { HttpExchange, HtkResponse, HtkRequest } from "../types";
 import { firstMatch, ObservablePromise, observablePromise } from '../util';
+import { reportError } from '../errors';
 
 const OPENAPI_DIRECTORY_VERSION = require('val-loader!../package-lock')['openapi-directory'];
 
@@ -56,7 +57,10 @@ export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMet
 
     if (!apiCache[specId]) {
         apiCache[specId] = observablePromise(
-            fetchApiMetadata(specId).then(buildApiMetadata)
+            fetchApiMetadata(specId).then(buildApiMetadata).catch((e) => {
+                reportError(e);
+                throw e;
+            })
         );
     }
 
