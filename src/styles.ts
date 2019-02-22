@@ -13,6 +13,7 @@ export const lightTheme = {
     fontFamily: 'Lato, Arial, sans-serif',
 
     mainBackground: '#fafafa',
+    mainLowlightBackground: '#eaeaea',
     mainColor: '#222',
 
     primaryInputColor: '#1f83e0',
@@ -33,6 +34,7 @@ export const darkTheme = {
     fontFamily: 'Lato, Arial, sans-serif',
 
     mainBackground: '#222222',
+    mainLowlightBackground: '#333333',
     mainColor: '#efefef',
 
     primaryInputColor: '#1f83e0',

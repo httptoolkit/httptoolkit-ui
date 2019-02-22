@@ -98,7 +98,7 @@ export const CollapsibleSectionSummary = styled.header`
         z-index: 1;
         position: relative;
 
-        background-color: #fafafa;
+        background-color: ${p => p.theme.mainBackground};
 
         &:before {
             content: '';
@@ -125,8 +125,7 @@ export const CollapsibleSectionSummary = styled.header`
 `;
 
 export const CollapsibleSectionBody = styled.div`
-    word-break: break-word;
-    background-color: ${p => p.theme.containerWatermark};
+    background-color: ${p => p.theme.mainLowlightBackground};
     box-shadow:
         inset 0px 11px 8px -10px rgba(0,0,0,0.15),
         inset 0px -11px 8px -10px rgba(0,0,0,0.15);
@@ -134,4 +133,6 @@ export const CollapsibleSectionBody = styled.div`
     padding: 46px 10px 10px 10px;
     margin-top: -40px;
     margin-bottom: 10px;
+
+    word-break: break-word;
 `;
