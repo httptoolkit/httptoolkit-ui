@@ -1,18 +1,18 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
-import { IPromiseBasedObservable } from 'mobx-utils';
 
-import { Omit, HttpExchange } from '../../types';
+import { Omit } from '../../types';
 import { styled } from '../../styles';
 
-import { ApiMetadata, parseExchange, ApiExchange } from '../../model/openapi';
+import { ApiExchange } from '../../model/openapi';
 
 import { ExchangeCardProps, ExchangeCard, ContentLabel, LoadingExchangeCard } from "./exchange-card";
 import { FontAwesomeIcon } from '../../icons';
+import { ObservablePromise } from '../../util';
 
 interface ApiCardProps extends Omit<ExchangeCardProps, 'children'> {
-    apiExchange: IPromiseBasedObservable<ApiExchange>;
+    apiExchange: ObservablePromise<ApiExchange>;
 }
 
 const ApiLogo = styled.img`

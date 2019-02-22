@@ -19,7 +19,7 @@ import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
 import { HttpExchange, HtkResponse, HtkRequest } from "../types";
-import { firstMatch } from '../util';
+import { firstMatch, ObservablePromise, observablePromise } from '../util';
 
 const OPENAPI_DIRECTORY_VERSION = require('val-loader!../package-lock')['openapi-directory'];
 
@@ -38,9 +38,9 @@ export interface ApiMetadata {
     pathMatchers: Map<RegExp, { pathData: PathItemObject, path: string }>
 }
 
-const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};
+const apiCache: _.Dictionary<ObservablePromise<ApiMetadata>> = {};
 
-export function getMatchingAPI(exchange: HttpExchange): Promise<ApiMetadata> | undefined {
+export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMetadata> | undefined {
     const { parsedUrl } = exchange.request;
     const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
     const specId = findApi(requestUrl);
@@ -48,7 +48,9 @@ export function getMatchingAPI(exchange: HttpExchange): Promise<ApiMetadata> | u
     if (!specId || Array.isArray(specId)) return; // We don't bother dealing with overlapping APIs yet
 
     if (!apiCache[specId]) {
-        apiCache[specId] = fetchApiMetadata(specId).then(buildApiMetadata);
+        apiCache[specId] = observablePromise(
+            fetchApiMetadata(specId).then(buildApiMetadata)
+        );
     }
 
     return apiCache[specId];

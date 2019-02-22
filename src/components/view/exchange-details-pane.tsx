@@ -3,7 +3,6 @@ import * as React from 'react';
 import { get } from 'typesafe-get';
 import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
-import { fromPromise } from 'mobx-utils';
 
 import { HttpExchange, HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
@@ -83,7 +82,7 @@ export class ExchangeDetailsPane extends React.Component<{
             if (apiExchange) {
                 cards.push(<ExchangeApiCard
                     {...this.cardProps('knownApi')}
-                    apiExchange={fromPromise(apiExchange)}
+                    apiExchange={apiExchange}
                 />);
             }
 
@@ -117,7 +116,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     title='Request Body'
                     direction='right'
                     message={request}
-                    apiBody={apiExchange && fromPromise(apiExchange.then(ex => ex.requestBody))}
+                    apiBody={apiExchange && apiExchange.then(ex => ex.requestBody)}
                     {...this.cardProps('requestBody')}
                 />);
             }
@@ -156,7 +155,7 @@ export class ExchangeDetailsPane extends React.Component<{
                         title='Response Body'
                         direction='left'
                         message={response}
-                        apiBody={apiExchange && fromPromise(apiExchange.then(ex => ex.responseBody))}
+                        apiBody={apiExchange && apiExchange.then(ex => ex.responseBody)}
                         {...this.cardProps('responseBody')}
                     />);
                 }

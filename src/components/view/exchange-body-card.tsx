@@ -2,11 +2,10 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { IObservableValue, observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer, inject } from 'mobx-react';
-import { IPromiseBasedObservable } from 'mobx-utils';
 import { SchemaObject } from 'openapi-directory';
 
 import { HtkRequest, HtkResponse } from '../../types';
-import { styled, css, Theme } from '../../styles';
+import { styled, Theme } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
 import { decodeContent } from '../../workers/worker-api';
 
@@ -14,6 +13,7 @@ import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButton } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
+import { ObservablePromise } from '../../util';
 
 function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;
@@ -53,7 +53,7 @@ type ExchangeMessage = HtkRequest | HtkResponse;
 export class ExchangeBodyCard extends React.Component<{
     title: string,
     message: ExchangeMessage,
-    apiBody?: IPromiseBasedObservable<SchemaObject | undefined>,
+    apiBody?: ObservablePromise<SchemaObject | undefined>,
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
