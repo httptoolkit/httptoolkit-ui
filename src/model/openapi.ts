@@ -18,14 +18,21 @@ import deref from 'json-schema-deref-sync';
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
+import { openApiSchema } from './openapi-schema';
+
 import { HttpExchange, HtkResponse, HtkRequest } from "../types";
 import { firstMatch, ObservablePromise, observablePromise } from '../util';
 
 const OPENAPI_DIRECTORY_VERSION = require('val-loader!../package-lock')['openapi-directory'];
 
-const ajv = new Ajv({
-    coerceTypes: true
+const paramValidator = new Ajv({
+    coerceTypes: true,
+    unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
 });
+
+const filterSpec = new Ajv({
+    removeAdditional: 'failing'
+}).compile(openApiSchema);
 
 const md = new Remarkable({
     html: true,
@@ -60,12 +67,25 @@ async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
     const specResponse = await fetch(
         `https://unpkg.com/openapi-directory@${OPENAPI_DIRECTORY_VERSION}/api/${specId}.json`
     );
-    return deref(await specResponse.json(), {
-        failOnMissing: true
-    });
+    return specResponse.json();
 }
 
 export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
+    // This mutates the spec to drop unknown fields. Mainly useful to limit spec size. Stripe
+    // particularly includes huge recursive refs in its x-expansion* extension fields.
+    const isValid = filterSpec(spec);
+
+    if (!isValid) {
+        console.warn(
+            'Errors filtering spec',
+            JSON.stringify(filterSpec.errors, null, 2)
+        );
+        throw new Error('Failed to filter spec');
+    }
+
+    // Now it's relatively small & tidy, dereference everything.
+    spec = deref(spec, { failOnMissing: true, });
+
     const serverRegexStrings = spec.servers!.map(s => templateStringToRegexString(s.url));
     // Build a single regex that matches any URL for these base servers
     const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
@@ -199,16 +219,16 @@ export function getParameters(
                 // Validate against the schema. We wrap the value in an object
                 // so that ajv can mutate the input to coerce to the right type.
                 const valueWrapper = { value: param.value };
-                const validated = ajv.validate({
+                const validated = paramValidator.validate({
                     "type": "object",
                     "properties": {
                         "value": specParam.schema
                     }
                 }, valueWrapper);
 
-                if (!validated && ajv.errors) {
+                if (!validated && paramValidator.errors) {
                     param.validationErrors.push(
-                        ...ajv.errors.map(e =>
+                        ...paramValidator.errors.map(e =>
                             `'${
                             _.upperFirst(e.dataPath.replace(/^\.value/, param.name))
                             }' ${e.message!}.`

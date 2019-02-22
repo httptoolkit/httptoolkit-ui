@@ -10,10 +10,10 @@ const slackApi = buildApiMetadata(slackSpec);
 describe('OpenAPI support', () => {
     describe('full exchange parsing', () => {
 
-        it('should pull generic service info regardless of endpoint', () => {
+        it('should pull generic service info regardless of endpoint', async () => {
             expect(
                 parseExchange(
-                    stripeApi,
+                    await stripeApi,
                     getExchange({
                         hostname: 'api.stripe.com',
                         path: '/'
@@ -36,10 +36,10 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should pull detailed operation info for matching operations', () => {
+        it('should pull detailed operation info for matching operations', async () => {
             expect(
                 parseExchange(
-                    stripeApi,
+                    await stripeApi,
                     getExchange({
                         hostname: 'api.stripe.com',
                         path: '/v1/account',
@@ -79,10 +79,10 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should report an error for deprecated operations', () => {
+        it('should report an error for deprecated operations', async () => {
             expect(
                 parseExchange(
-                    stripeApi,
+                    await stripeApi,
                     getExchange({
                         hostname: 'api.stripe.com',
                         path: '/v1/bitcoin/transactions',
@@ -99,10 +99,10 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should include the response details', () => {
+        it('should include the response details', async () => {
             expect(
                 parseExchange(
-                    slackApi,
+                    await slackApi,
                     getExchange({
                         hostname: 'slack.com',
                         path: '/api/bots.info',
@@ -115,10 +115,10 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should fall back to default response details', () => {
+        it('should fall back to default response details', async () => {
             expect(
                 parseExchange(
-                    slackApi,
+                    await slackApi,
                     getExchange({
                         hostname: 'slack.com',
                         path: '/api/bots.info',
