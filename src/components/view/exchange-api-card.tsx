@@ -83,7 +83,7 @@ const ExchangeOperation = (props: {
     return !!apiExchange.operationDescription ?
         <details>
             <OperationSummary>
-                <OperationName dangerouslySetInnerHTML={apiExchange.operationName} />
+                <OperationName>{ apiExchange.operationName }</OperationName>
             </OperationSummary>
             <FullDetails>
                 <div dangerouslySetInnerHTML={apiExchange.operationDescription} />
@@ -98,7 +98,7 @@ const ExchangeOperation = (props: {
         </details>
     :
         <section>
-            <OperationName dangerouslySetInnerHTML={apiExchange.operationName} />
+            <OperationName>{ apiExchange.operationName }</OperationName>
             {' '}
             { docsLinkProps &&
                 <a {...docsLinkProps}><ExternalLinkIcon /></a>

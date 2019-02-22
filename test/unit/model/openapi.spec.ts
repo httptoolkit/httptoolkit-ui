@@ -27,7 +27,7 @@ describe('OpenAPI support', () => {
                         '<p>The Stripe REST API. Please see <a href="https://stripe.com/docs/api">' +
                         'https://stripe.com/docs/api</a> for more details.</p>'
                 },
-                operationName: { __html: '<p>GET /</p>' },
+                operationName: 'GET /',
                 operationDescription: undefined,
                 operationDocsUrl: undefined,
                 parameters: [],
@@ -48,7 +48,7 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 serviceTitle: 'Stripe',
                 serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: { __html: '<p>GetAccount</p>' },
+                operationName: 'GetAccount',
                 operationDescription: {
                     __html: '<p>Retrieves the details of the account.</p>'
                 },
@@ -90,9 +90,7 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 serviceTitle: 'Stripe',
                 serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: {
-                    __html: '<p>GetBitcoinTransactions</p>'
-                },
+                operationName: 'GetBitcoinTransactions',
                 operationDescription: {
                     __html: '<p>List bitcoin transacitons for a given receiver.</p>'
                 },

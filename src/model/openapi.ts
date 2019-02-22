@@ -228,7 +228,7 @@ export function getParameters(
 
             return {
                 ...param,
-                validationErrors: param.validationErrors.map(stripTags)
+                validationErrors: param.validationErrors.map(e => stripTags(e))
             };
         });
 }
@@ -269,7 +269,7 @@ export interface ApiExchange {
     serviceLogoUrl?: string;
     serviceDescription?: Html;
 
-    operationName: Html;
+    operationName: string;
     operationDescription?: Html;
     operationDocsUrl?: string;
 
@@ -312,8 +312,14 @@ function fromMarkdown(input: string | undefined): Html | undefined {
 
 // Rough but effective HTML stripping regex. This is _not_ designed to produce HTML-safe
 // input, it's just designed to turn formatted text into simple text.
-function stripTags(input: string): string {
-    return input.replace(/(<([^>]+)>)/ig, '');
+function stripTags(input: string): string;
+function stripTags(input: undefined): undefined;
+function stripTags(input: string | undefined): string | undefined {
+    if (!input) return input;
+
+    // Need to cast to string, as dompurify may returned TrustedHTML, in
+    // environments where that's supported.
+    return (input + '').replace(/(<([^>]+)>)/ig, '');
 }
 
 export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
@@ -341,14 +347,16 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         get(api, 'spec', 'externalDocs', 'url')
     );
 
-    const operationName = firstMatch<string>(
-        get(operation, 'summary'),
-        get(operation, 'operationId'),
-        [
-            () => (get(operation, 'description', 'length') || Infinity) < 40, operation.description!
-        ],
-        pathData.summary
-    ) || `${request.method} ${path}`;
+    const operationName = stripTags(fromMarkdown(
+        firstMatch<string>(
+            get(operation, 'summary'),
+            get(operation, 'operationId'),
+            [
+                () => (get(operation, 'description', 'length') || Infinity) < 40, operation.description!
+            ],
+            pathData.summary
+        ) || `${request.method} ${path}`
+    ).__html);
 
     const operationDescription = firstMatch<string>(
         [() => get(operation, 'description') !== operationName, get(operation, 'description')],
@@ -357,7 +365,7 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     );
 
     if (operation.deprecated) validationErrors.push(
-        `The '${stripTags(fromMarkdown(operationName).__html)}' operation is deprecated`
+        `The '${operationName}' operation is deprecated`
     );
 
     const parameters = operation ? getParameters(
@@ -376,13 +384,13 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         serviceTitle,
         serviceLogoUrl,
         serviceDescription,
-        operationName: fromMarkdown(operationName),
+        operationName,
         operationDescription: fromMarkdown(operationDescription),
         operationDocsUrl,
         parameters,
         requestBody: getBody(operation.requestBody as RequestBodyObject | undefined, exchange.request),
         responseDescription: fromMarkdown(responseDescription),
         responseBody: getBody(responseSpec, exchange.response),
-        validationErrors: validationErrors.map(stripTags)
+        validationErrors: validationErrors.map(e => stripTags(e))
     };
 }
