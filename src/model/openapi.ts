@@ -380,7 +380,9 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
 
     const operationName = stripTags(fromMarkdown(
         firstMatch<string>(
-            get(operation, 'summary'),
+            [
+                () => (get(operation, 'summary', 'length') || Infinity) < 40, operation.summary!
+            ],
             get(operation, 'operationId'),
             [
                 () => (get(operation, 'description', 'length') || Infinity) < 40, operation.description!

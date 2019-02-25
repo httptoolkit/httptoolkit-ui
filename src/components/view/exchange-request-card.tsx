@@ -131,6 +131,17 @@ const Description = styled.div`
         margin-bottom: 10px;
     }
 
+    p::first-letter,
+    li::first-letter,
+    h1::first-letter,
+    h2::first-letter,
+    h3::first-letter,
+    h4::first-letter,
+    h5::first-letter,
+    h6::first-letter {
+        text-transform: capitalize;
+    }
+
     ol, ul {
         padding-left: 20px;
     }
