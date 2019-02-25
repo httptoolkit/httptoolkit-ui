@@ -22,6 +22,12 @@ export interface HttpExchange {
     searchIndex: string;
 }
 
+// Should only be created in the process of sanitizing, so every object with an
+// __html prop must be HTML-safe.
+export interface Html {
+    __html: string
+}
+
 // Convenient funky TypeScript games
 
 export type DomWithProps<T, Props> = ComponentClass<React.DetailedHTMLProps<React.HTMLAttributes<T> & Props, T>>;

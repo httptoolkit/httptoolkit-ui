@@ -20,7 +20,7 @@ import * as DOMPurify from 'dompurify';
 
 import { openApiSchema } from './openapi-schema';
 
-import { HttpExchange, HtkResponse, HtkRequest } from "../types";
+import { HttpExchange, HtkResponse, HtkRequest, Html } from "../types";
 import { firstMatch, ObservablePromise, observablePromise } from '../util';
 import { reportError } from '../errors';
 
@@ -134,10 +134,6 @@ export function getPath(api: ApiMetadata, exchange: HttpExchange): {
         .map(([_matcher, path]) => path)[0]; // The first result is always the most specific - use it
 }
 
-interface Html {
-    __html: string
-}
-
 export interface Parameter {
     name: string;
     description?: Html;
@@ -222,6 +218,19 @@ export function getParameters(
         })
         .map((param) => {
             const { specParam } = param;
+
+            if (param.required && param.value === undefined && param.defaultValue === undefined) {
+                param.validationErrors.push(
+                    `The '${param.name}' ${specParam.in} parameter is required.`
+                );
+            }
+
+            if (param.deprecated && param.value !== undefined) {
+                param.validationErrors.push(
+                    `The '${param.name}' ${specParam.in} parameter is deprecated.`
+                );
+            }
+
             if (specParam.schema) {
                 // Validate against the schema. We wrap the value in an object
                 // so that ajv can mutate the input to coerce to the right type.
@@ -237,25 +246,13 @@ export function getParameters(
                     param.validationErrors.push(
                         ...paramValidator.errors.map(e =>
                             `'${
-                            _.upperFirst(e.dataPath.replace(/^\.value/, param.name))
+                                e.dataPath.replace(/^\.value/, param.name)
                             }' ${e.message!}.`
                         )
                     );
                 }
 
                 param.value = valueWrapper.value;
-            }
-
-            if (param.required && !param.value) {
-                param.validationErrors.push(
-                    `The '${param.name}' ${specParam.in} parameter is required.`
-                );
-            }
-
-            if (param.deprecated && !!param.value) {
-                param.validationErrors.push(
-                    `The '${param.name}' ${specParam.in} parameter is deprecated.`
-                );
             }
 
             return {
@@ -296,32 +293,13 @@ export function getBody(
     );
 }
 
-export interface ApiExchange {
-    serviceTitle: string;
-    serviceLogoUrl?: string;
-    serviceDescription?: Html;
-    serviceDocsUrl?: string;
-
-    operationName: string;
-    operationDescription?: Html;
-    operationDocsUrl?: string;
-
-    parameters: Parameter[];
-    requestBody?: SchemaObject;
-
-    responseDescription?: Html;
-    responseBody?: SchemaObject;
-
-    validationErrors: string[];
-}
-
 function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
     const { parsedUrl } = exchange.request;
     const url = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}`;
     const serverMatch = api.serverMatcher.exec(url);
 
     if (!serverMatch) {
-        return parsedUrl.pathname
+        return parsedUrl.pathname;
     }
 
     // Everything after the server is our API path
@@ -353,6 +331,25 @@ function stripTags(input: string | undefined): string | undefined {
     // Need to cast to string, as dompurify may returned TrustedHTML, in
     // environments where that's supported.
     return (input + '').replace(/(<([^>]+)>)/ig, '');
+}
+
+export interface ApiExchange {
+    serviceTitle: string;
+    serviceLogoUrl?: string;
+    serviceDescription?: Html;
+    serviceDocsUrl?: string;
+
+    operationName: string;
+    operationDescription?: Html;
+    operationDocsUrl?: string;
+
+    parameters: Parameter[];
+    requestBody?: SchemaObject;
+
+    responseDescription?: Html;
+    responseBody?: SchemaObject;
+
+    validationErrors: string[];
 }
 
 export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
@@ -397,8 +394,12 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
         pathData.description
     );
 
+    if (!matchingPath) validationErrors.push(
+        `Unknown operation '${operationName}'.`
+    );
+
     if (operation.deprecated) validationErrors.push(
-        `The '${operationName}' operation is deprecated`
+        `The '${operationName}' operation is deprecated.`
     );
 
     const parameters = operation ? getParameters(

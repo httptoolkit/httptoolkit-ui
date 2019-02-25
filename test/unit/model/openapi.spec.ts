@@ -95,7 +95,7 @@ describe('OpenAPI support', () => {
                 operationDescription: {
                     __html: '<p>List bitcoin transacitons for a given receiver.</p>'
                 },
-                validationErrors: [`The 'GetBitcoinTransactions' operation is deprecated`]
+                validationErrors: [`The 'GetBitcoinTransactions' operation is deprecated.`]
             });
         });
 
@@ -373,7 +373,7 @@ describe('OpenAPI support', () => {
                     description: { __html: '<p>A number.</p>' },
                     name: 'num',
                     value: 'abc',
-                    validationErrors: [`'Num' should be number.`]
+                    validationErrors: [`'num' should be number.`]
                 }
             ]);
         });

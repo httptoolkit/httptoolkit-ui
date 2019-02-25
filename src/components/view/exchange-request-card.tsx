@@ -2,7 +2,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
-import { HttpExchange, Omit, HtkRequest } from '../../types';
+import { HttpExchange, Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
 import { Icons, FontAwesomeIcon } from '../../icons';
 import { ObservablePromise } from '../../util';
@@ -124,6 +124,30 @@ const ParamMetadata = styled.div`
     font-style: italic;
 `;
 
+const WarningIcon = styled(FontAwesomeIcon).attrs({
+    icon: ['fas', 'exclamation-triangle']
+})`
+    color: #f1971f;
+
+    &:not(:first-child) {
+        margin-left: 9px;
+    }
+
+    &:not(:last-child) {
+        margin-right: 9px;
+    }
+`;
+
+const Warning = styled((p) => <div {...p}>
+    <WarningIcon /><span>{p.children}</span>
+</div>)`
+    color: ${p => p.theme.popColor};
+
+    :not(:last-child) {
+        margin-bottom: 10px;
+    }
+`;
+
 const Description = styled.div`
     line-height: 1.2;
 
@@ -197,12 +221,20 @@ function formatValue(value: unknown): string | undefined {
         else return JSON.stringify(value);
 }
 
+const getDetailsWithWarnings = (details: Html | undefined, warnings: string[]) => [
+    warnings.length && warnings.map((warning, i) => <Warning key={warning}>{ warning }</Warning>),
+    details && <Description key='details' dangerouslySetInnerHTML={details} />
+].filter(d => !!d);
+
 const ApiRequestDetails = (props: {
     api: ApiExchange
 }) => {
     const { api } = props;
     const relevantParameters = api.parameters
         .filter((param) => !!param.value || param.required || param.defaultValue);
+
+    const operationDetails = getDetailsWithWarnings(api.operationDescription, api.validationErrors);
+    const hasOperationDetails = !!operationDetails.length;
 
     return <>
         <CollapsibleSection prefix={false}>
@@ -227,14 +259,15 @@ const ApiRequestDetails = (props: {
         <CollapsibleSection prefix={false}>
             <ExchangeCollapsibleSummary>
                 <ContentLabel>Operation:</ContentLabel> { api.operationName }
-                { !api.operationDescription &&
+                { !hasOperationDetails &&
                     <DocsLink href={api.operationDocsUrl} />
                 }
+                { api.validationErrors.length ? <WarningIcon /> : null }
             </ExchangeCollapsibleSummary>
 
-            { api.operationDescription &&
+            { hasOperationDetails &&
                 <ExchangeCollapsibleBody>
-                    <Description dangerouslySetInnerHTML={api.operationDescription} />
+                    { operationDetails }
                     <DocsLink href={api.operationDocsUrl}>
                         Find out more
                     </DocsLink>
@@ -259,14 +292,15 @@ const ApiRequestDetails = (props: {
                             }</UnsetValue>
                         }
                     </ParamValue>
+                    { param.validationErrors.length ? <WarningIcon /> : null }
                 </ExchangeCollapsibleSummary>
 
                 <ExchangeCollapsibleBody>
-                    <div dangerouslySetInnerHTML={param.description} />
                     <ParamMetadata>
                         { param.required ? 'Required ' : 'Optional ' }
                         { param.in } parameter.
                     </ParamMetadata>
+                    { getDetailsWithWarnings(param.description, param.validationErrors) }
                 </ExchangeCollapsibleBody>
             </CollapsibleSection>
         ) }
