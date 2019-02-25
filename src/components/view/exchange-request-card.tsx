@@ -105,11 +105,17 @@ const DocsLink = (p: {
         { p.children ? <>{ p.children } </> : null }
         <ExternalLinkIcon />
     </a>
-: null
+: null;
 
 const Undefined = styled((p) =>
     <span {...p}>[not set]</span>
 )`
+    font-style: italic;
+    opacity: 0.5;
+    margin-right: 10px;
+`;
+
+const UnsetValue = styled.span`
     font-style: italic;
     opacity: 0.5;
     margin-right: 10px;
@@ -176,12 +182,20 @@ const Description = styled.div`
     }
 `
 
+function formatValue(value: unknown): string | undefined {
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number') return value.toString(10);
+        if (typeof value === 'boolean') return value.toString();
+        if (value == null) return undefined;
+        else return JSON.stringify(value);
+}
+
 const ApiRequestDetails = (props: {
     api: ApiExchange
 }) => {
     const { api } = props;
     const relevantParameters = api.parameters
-        .filter((param) => !!param.value || param.required);
+        .filter((param) => !!param.value || param.required || param.defaultValue);
 
     return <>
         <CollapsibleSection prefix={false}>
@@ -221,7 +235,7 @@ const ApiRequestDetails = (props: {
             }
         </CollapsibleSection>
 
-        { relevantParameters.length > 1 &&
+        { relevantParameters.length >= 1 &&
             <ContentLabelBlock>
                 Parameters
             </ContentLabelBlock>
@@ -229,7 +243,13 @@ const ApiRequestDetails = (props: {
         { relevantParameters.map((param) =>
             <CollapsibleSection prefix={true} key={param.name}>
                 <ExchangeCollapsibleSummary>
-                    { param.name }: { param.value || <Undefined /> }
+                    { param.name }: { formatValue(param.value) ||
+                        <UnsetValue>{
+                            param.defaultValue ?
+                                formatValue(param.defaultValue) + ' [default]' :
+                                '[not set]'
+                        }</UnsetValue>
+                    }
                 </ExchangeCollapsibleSummary>
 
                 <ExchangeCollapsibleBody>

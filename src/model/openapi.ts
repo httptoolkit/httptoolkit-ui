@@ -138,7 +138,8 @@ interface Html {
 export interface Parameter {
     name: string;
     description?: Html;
-    value: unknown;
+    value?: unknown;
+    defaultValue?: unknown;
     in: ParameterLocation;
     required: boolean;
     deprecated: boolean;
@@ -147,23 +148,27 @@ export interface Parameter {
 
 export function getParameters(
     path: string,
-    operation: OperationObject,
+    parameters: ParameterObject[],
     exchange: HttpExchange
 ): Parameter[] {
-    const { parameters } = operation;
     if (!parameters) return [];
 
     const query = exchange.request.parsedUrl.searchParams;
 
     // Need the cast because TS doesn't know we've already dereferenced this
-    return (<ParameterObject[]>parameters)
+    return _.uniqBy(<ParameterObject[]>parameters, (param) =>
+        `${param.name}::${param.in}`
+    )
         .map((param) => {
+            const schema = param.schema as SchemaObject | undefined;
+
             const commonFields = {
                 specParam: param,
                 name: param.name,
                 in: param.in,
                 description: fromMarkdown(param.description),
                 required: param.required || param.in === 'path',
+                defaultValue: schema && schema.default,
                 deprecated: param.deprecated || false,
                 validationErrors: <string[]>[]
             }
@@ -393,7 +398,9 @@ export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExch
     );
 
     const parameters = operation ? getParameters(
-        path!, operation as OperationObject, exchange
+        path!,
+        (pathData.parameters || []).concat(operation.parameters || []),
+        exchange
     ) : [];
 
     let responseSpec: ResponseObject | undefined;

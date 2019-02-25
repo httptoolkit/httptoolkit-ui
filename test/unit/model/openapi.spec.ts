@@ -137,15 +137,12 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/',
-                    {
-                        parameters: [{
-                            description: 'Timestamp in ISO 8601 format.',
-                            in: 'query',
-                            name: 'since',
-                            schema: { 'type': 'string' }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        description: 'Timestamp in ISO 8601 format.',
+                        in: 'query',
+                        name: 'since',
+                        schema: { 'type': 'string' }
+                    }],
                     getExchange({
                         query: '?since=2018-09-1T12:00:00'
                     })
@@ -164,15 +161,12 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/',
-                    {
-                        parameters: [{
-                            description: 'Timestamp in ISO 8601 format.',
-                            in: 'query',
-                            name: 'since',
-                            schema: { 'type': 'string' }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        description: 'Timestamp in ISO 8601 format.',
+                        in: 'query',
+                        name: 'since',
+                        schema: { 'type': 'string' }
+                    }],
                     getExchange({
                         query: ''
                     })
@@ -191,17 +185,14 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/',
-                    {
-                        parameters: [{
-                            description: '<p>Account id.</p>',
-                            in: 'query',
-                            name: 'id',
-                            schema: { 'type': 'array' },
-                            style: 'form',
-                            explode: true
-                        }],
-                        responses: []
-                    },
+                    [{
+                        description: '<p>Account id.</p>',
+                        in: 'query',
+                        name: 'id',
+                        schema: { 'type': 'array' },
+                        style: 'form',
+                        explode: true
+                    }],
                     getExchange({
                         query: '?id=abc&id=def'
                     })
@@ -220,15 +211,15 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/users/{username}',
-                    {
-                        parameters: [{
-                            "description": "Name of user.",
-                            "in": "path",
-                            "name": "username",
-                            "schema": { "type": "string" }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        "description": "Name of user.",
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string",
+                            "default": "me"
+                        },
+                    }],
                     getExchange({
                         path: '/users/pimterry'
                     })
@@ -238,6 +229,7 @@ describe('OpenAPI support', () => {
                     description: { __html: '<p>Name of user.</p>' },
                     name: 'username',
                     value: 'pimterry',
+                    defaultValue: 'me',
                     validationErrors: []
                 }
             ]);
@@ -247,15 +239,12 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/',
-                    {
-                        parameters: [{
-                            "description": "Secret.",
-                            "in": "header",
-                            "name": "X-Secret-Value",
-                            "schema": { "type": "string" }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        "description": "Secret.",
+                        "in": "header",
+                        "name": "X-Secret-Value",
+                        "schema": { "type": "string" }
+                    }],
                     getExchange({
                         requestHeaders: {
                             'x-secret-value': '1234'
@@ -276,16 +265,13 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/v1/account',
-                    {
-                        parameters: [{
-                            "description": "The account id.",
-                            "in": "query",
-                            "name": "account",
-                            "required": true,
-                            "schema": { "type": "string" }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        "description": "The account id.",
+                        "in": "query",
+                        "name": "account",
+                        "required": true,
+                        "schema": { "type": "string" }
+                    }],
                     getExchange({
                         query: ''
                     })
@@ -305,16 +291,13 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/v1/account',
-                    {
-                        parameters: [{
-                            "description": "The account id.",
-                            "in": "query",
-                            "name": "account",
-                            "deprecated": true,
-                            "schema": { "type": "string" }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        "description": "The account id.",
+                        "in": "query",
+                        "name": "account",
+                        "deprecated": true,
+                        "schema": { "type": "string" }
+                    }],
                     getExchange({
                         query: '?account=qwe'
                     })
@@ -335,15 +318,12 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/',
-                    {
-                        parameters: [{
-                            "description": "A number.",
-                            "in": "query",
-                            "name": "num",
-                            "schema": { "type": "number" }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        "description": "A number.",
+                        "in": "query",
+                        "name": "num",
+                        "schema": { "type": "number" }
+                    }],
                     getExchange({
                         query: '?num=123'
                     })
@@ -362,15 +342,12 @@ describe('OpenAPI support', () => {
             expect(
                 getParameters(
                     '/',
-                    {
-                        parameters: [{
-                            "description": "A number.",
-                            "in": "query",
-                            "name": "num",
-                            "schema": { "type": "number" }
-                        }],
-                        responses: []
-                    },
+                    [{
+                        "description": "A number.",
+                        "in": "query",
+                        "name": "num",
+                        "schema": { "type": "number" }
+                    }],
                     getExchange({
                         query: '?num=abc'
                     })
