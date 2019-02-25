@@ -25,7 +25,7 @@ import { firstMatch, ObservablePromise, observablePromise } from '../util';
 import { reportError } from '../errors';
 
 const paramValidator = new Ajv({
-    coerceTypes: true,
+    coerceTypes: 'array',
     unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
 });
 
