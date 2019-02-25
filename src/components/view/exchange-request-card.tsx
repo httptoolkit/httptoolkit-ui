@@ -107,18 +107,14 @@ const DocsLink = (p: {
     </a>
 : null;
 
-const Undefined = styled((p) =>
-    <span {...p}>[not set]</span>
-)`
-    font-style: italic;
-    opacity: 0.5;
-    margin-right: 10px;
-`;
-
 const UnsetValue = styled.span`
     font-style: italic;
     opacity: 0.5;
-    margin-right: 10px;
+    margin-right: 5px;
+`;
+
+const ParamValue = styled.span`
+    font-family: 'Fira Mono', monospace;
 `;
 
 const ParamMetadata = styled.div`
@@ -158,7 +154,7 @@ const Description = styled.div`
     }
 
     code {
-        font-family: monospace;
+        font-family: 'Fira Mono', monospace;
     }
 
     h1, h2, h3, h4, h5, h6 {
@@ -243,13 +239,15 @@ const ApiRequestDetails = (props: {
         { relevantParameters.map((param) =>
             <CollapsibleSection prefix={true} key={param.name}>
                 <ExchangeCollapsibleSummary>
-                    { param.name }: { formatValue(param.value) ||
-                        <UnsetValue>{
-                            param.defaultValue ?
-                                formatValue(param.defaultValue) + ' [default]' :
-                                '[not set]'
-                        }</UnsetValue>
-                    }
+                    { param.name }: <ParamValue>
+                        { formatValue(param.value) ||
+                            <UnsetValue>{
+                                param.defaultValue ?
+                                    formatValue(param.defaultValue) + ' [default]' :
+                                    '[not set]'
+                            }</UnsetValue>
+                        }
+                    </ParamValue>
                 </ExchangeCollapsibleSummary>
 
                 <ExchangeCollapsibleBody>

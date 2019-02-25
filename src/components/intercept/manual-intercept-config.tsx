@@ -71,10 +71,9 @@ const InstructionsStep = styled.div`
 `;
 
 const CopyableInstruction = styled.span`
-    font-family: monospace;
+    font-family: 'Fira Mono', monospace;
     user-select: all;
     font-weight: bold;
-    font-size: 110%;
     word-break: break-word;
 `;
 
