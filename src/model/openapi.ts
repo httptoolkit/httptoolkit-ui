@@ -129,9 +129,11 @@ export function getPath(api: ApiMetadata, exchange: HttpExchange): {
     // Test the base server up front, just to keep things quick
     if (!api.serverMatcher.exec(url)) return;
 
-    return [...api.pathMatchers.entries()]
-        .filter(([pathMatcher]) => pathMatcher.exec(url))
-        .map(([_matcher, path]) => path)[0]; // The first result is always the most specific - use it
+    for (let matcher of api.pathMatchers.keys()) {
+        if (matcher.exec(url)) {
+            return api.pathMatchers.get(matcher);
+        }
+    }
 }
 
 export interface Parameter {
@@ -231,7 +233,7 @@ export function getParameters(
                 );
             }
 
-            if (specParam.schema) {
+            if (specParam.schema && param.value !== undefined) {
                 // Validate against the schema. We wrap the value in an object
                 // so that ajv can mutate the input to coerce to the right type.
                 const valueWrapper = { value: param.value };
