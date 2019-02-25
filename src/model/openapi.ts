@@ -194,9 +194,8 @@ export function getParameters(
                         path
                             // Add a capturing group for this param
                             .replace(`{${param.name}}`, '([^/]+)')
-                            // Escape any other path variables
-                            .replace('{', '\{')
-                            .replace('}', '\}')
+                            // Add a non-capturing group for every other param
+                            .replace(/\{[^\}]+\}/g, '[^/]+')
                         + '$', // Matched path must be a complete suffix.
                         'i' // Match paths ignoring case (matters in theory, never in practice)
                     );

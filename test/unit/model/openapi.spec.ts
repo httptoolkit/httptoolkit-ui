@@ -210,18 +210,28 @@ describe('OpenAPI support', () => {
         it('can parse path parameters', () => {
             expect(
                 getParameters(
-                    '/users/{username}',
-                    [{
-                        "description": "Name of user.",
-                        "in": "path",
-                        "name": "username",
-                        "schema": {
-                            "type": "string",
-                            "default": "me"
+                    '/users/{username}/{content_id}',
+                    [
+                        {
+                            "description": "Name of user.",
+                            "in": "path",
+                            "name": "username",
+                            "schema": {
+                                "type": "string",
+                                "default": "me"
+                            },
                         },
-                    }],
+                        {
+                            "description": "Content id.",
+                            "in": "path",
+                            "name": "content_id",
+                            "schema": {
+                                "type": "number"
+                            },
+                        }
+                    ],
                     getExchange({
-                        path: '/users/pimterry'
+                        path: '/users/pimterry/123'
                     })
                 )
             ).to.deep.match([
@@ -230,6 +240,12 @@ describe('OpenAPI support', () => {
                     name: 'username',
                     value: 'pimterry',
                     defaultValue: 'me',
+                    validationErrors: []
+                },
+                {
+                    description: { __html: '<p>Content id.</p>' },
+                    name: 'content_id',
+                    value: 123,
                     validationErrors: []
                 }
             ]);
