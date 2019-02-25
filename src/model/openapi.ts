@@ -91,13 +91,16 @@ export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
     const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
 
     const pathMatchers = new Map<RegExp, { pathData: PathItemObject, path: string }>();
-    _.forEach(spec.paths, (pathData, path) => {
-        // Build a regex that matches this path on any of those base servers
-        pathMatchers.set(
-            new RegExp(serverMatcher.source + templateStringToRegexString(path) + '$', 'i'),
-            { pathData: pathData, path: path }
-        );
-    });
+    _(spec.paths).entries()
+        // Sort from most templated to least templated, so more specific paths win
+        .sortBy(([path]) => _.sumBy(path, (c: string) => c === '{' ? 1 : 0))
+        .forEach(([path, pathData]) => {
+            // Build a regex that matches this path on any of those base servers
+            pathMatchers.set(
+                new RegExp(serverMatcher.source + templateStringToRegexString(path) + '$', 'i'),
+                { pathData: pathData, path: path }
+            );
+        });
 
     return {
         spec,
@@ -109,7 +112,7 @@ export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
 function templateStringToRegexString(template: string): string {
     return template
         // Replace templates with wildcards
-        .replace(/\{([^/}]+)}/g, '([^\/]+)')
+        .replace(/\{([^/}]+)}/g, '([^\/]*)')
         // Drop trailing slashes
         .replace(/\/$/, '');
 }
@@ -128,7 +131,7 @@ export function getPath(api: ApiMetadata, exchange: HttpExchange): {
 
     return [...api.pathMatchers.entries()]
         .filter(([pathMatcher]) => pathMatcher.exec(url))
-        .map(([_matcher, path]) => path)[0]; // Should never be ambiguous, but use the first result if it is
+        .map(([_matcher, path]) => path)[0]; // The first result is always the most specific - use it
 }
 
 interface Html {
