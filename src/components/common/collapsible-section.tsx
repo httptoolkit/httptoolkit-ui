@@ -17,6 +17,16 @@ const SummaryWrapper = styled.span`
     margin-right: 10px;
 `;
 
+const SummaryAsSpacer = styled.div`
+    visibility: hidden;
+    margin-top: -2px;
+    margin-bottom: 6px;
+    display: inline-block;
+
+    max-height: 31px;
+    overflow: hidden;
+`;
+
 @observer
 export class CollapsibleSection extends React.Component<CollapsibleSectionProps> {
 
@@ -26,25 +36,46 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
     render() {
         const { children, prefix } = this.props;
 
-        const [ summaryChild, ...contentChildren ] = React.Children.toArray(children);
+        const [ sectionSummary, sectionBody, ...otherChildren ] = React.Children.toArray(children);
 
-        const summary = contentChildren.length && isReactElement(summaryChild) ?
-            React.cloneElement(
-                summaryChild,
-                { open: this.open },
-                prefix ? <>
-                    <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
-                    <SummaryWrapper>{ summaryChild.props.children }</SummaryWrapper>
-                </> : <>
-                    <SummaryWrapper>{ summaryChild.props.children }</SummaryWrapper>
-                    <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
-                </>
-            )
-            : summaryChild;
+        if (otherChildren.length) {
+            throw new Error(`Collapsible section has extra children: ${otherChildren}`);
+        } else if (!isReactElement(sectionSummary)) {
+            throw new Error('Collapsible section 1st child must be a summary element');
+        } else if (!isReactElement(sectionBody)) {
+            if (sectionBody) {
+                throw new Error('Collapsible section 2nd child must be a body element');
+            } else {
+                return <section>{ sectionSummary }</section>;
+            }
+        }
+
+        // Inject a plus/minus button into the summary section
+        const summary = React.cloneElement(
+            sectionSummary,
+            { open: this.open },
+            prefix ? <>
+                <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
+                <SummaryWrapper>{ sectionSummary.props.children }</SummaryWrapper>
+            </> : <>
+                <SummaryWrapper>{ sectionSummary.props.children }</SummaryWrapper>
+                <CollapsibleTrigger open={this.open} onClick={this.toggleOpen} />
+            </>
+        );
+
+        // Inject a header spacer into the body section
+        const body = this.open ? React.cloneElement(
+            sectionBody as React.ReactElement,
+            {},
+            <>
+                <SummaryAsSpacer>{ summary }</SummaryAsSpacer>
+                { sectionBody.props.children }
+            </>
+        ) : null;
 
         return <section>
             { summary }
-            { this.open && contentChildren }
+            { body }
         </section>;
     }
 
@@ -81,16 +112,15 @@ const CollapsibleTrigger = styled((p: {
     }
 
     padding: 5px 10px;
-    margin: -5px 0 0 -10px;
+    margin: -5px 0 -5px -10px;
     vertical-align: baseline;
 `;
 
 export const CollapsibleSectionSummary = styled.header`
     display: inline-block;
     margin: -6px 0 0 0;
-    padding: 9px 0 6px;
+    padding: 9px 0 12px;
 
-    min-height: 37px;
     box-sizing: border-box;
 
     list-style: none;
@@ -108,8 +138,8 @@ export const CollapsibleSectionSummary = styled.header`
             content: '';
             position: absolute;
             right: -1px;
-            top: 2px;
             bottom: 0;
+            height: 35px;
             width: 1px;
             background-color: rgba(0,0,0,0.1);
             box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
@@ -134,7 +164,7 @@ export const CollapsibleSectionBody = styled.div`
         inset 0px 11px 8px -10px rgba(0,0,0,0.15),
         inset 0px -11px 8px -10px rgba(0,0,0,0.15);
 
-    padding: 46px 10px 10px 10px;
+    padding: 8px 10px 10px 10px;
     margin-top: -37px;
     margin-bottom: 10px;
 

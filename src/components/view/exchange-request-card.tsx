@@ -87,9 +87,7 @@ const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
 `;
 
 const ServiceLogo = styled(OptionalImage)`
-    position: absolute;
-    top: 7px;
-    right: 11px;
+    float: right;
     height: 26px;
 
     border: 4px solid #ffffff;
@@ -107,20 +105,26 @@ const DocsLink = (p: {
     </a>
 : null;
 
+const ParamName = styled.span`
+    font-family: 'Fira Mono', monospace;
+    word-break: break-all;
+`;
+
+const ParamValue = styled.span`
+    font-family: 'Fira Mono', monospace;
+    word-break: break-all;
+`;
+
 const UnsetValue = styled.span`
     font-style: italic;
     opacity: 0.5;
     margin-right: 5px;
 `;
 
-const ParamValue = styled.span`
-    font-family: 'Fira Mono', monospace;
-`;
-
 const ParamMetadata = styled.div`
-    position: absolute;
-    top: 9px;
-    right: 15px;
+    float: right;
+    line-height: 1.2;
+    padding: 0 0 10px 10px;
     font-style: italic;
 `;
 
@@ -128,6 +132,7 @@ const WarningIcon = styled(FontAwesomeIcon).attrs({
     icon: ['fas', 'exclamation-triangle']
 })`
     color: #f1971f;
+    line-height: 1.2;
 
     &:not(:first-child) {
         margin-left: 9px;
@@ -231,7 +236,7 @@ const ApiRequestDetails = (props: {
 }) => {
     const { api } = props;
     const relevantParameters = api.parameters
-        .filter((param) => !!param.value || param.required || param.defaultValue);
+        .filter((param) => !!param.value || param.required);
 
     const operationDetails = getDetailsWithWarnings(api.operationDescription, api.validationErrors);
     const hasOperationDetails = !!operationDetails.length;
@@ -283,7 +288,8 @@ const ApiRequestDetails = (props: {
         { relevantParameters.map((param) =>
             <CollapsibleSection prefix={true} key={param.name}>
                 <ExchangeCollapsibleSummary>
-                    { param.name }: <ParamValue>
+                    <ParamName>{ param.name }: </ParamName>
+                    <ParamValue>
                         { formatValue(param.value) ||
                             <UnsetValue>{
                                 param.defaultValue ?
