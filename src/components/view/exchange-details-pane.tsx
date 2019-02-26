@@ -6,17 +6,17 @@ import { observer, inject } from 'mobx-react';
 
 import { HttpExchange, HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
+import { reportError } from '../../errors';
 import { getStatusColor } from '../../exchange-colors';
 
 import { getMatchingAPI, parseExchange } from '../../model/openapi/openapi';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
-import { HeaderDetails } from './header-details';
-import { ExchangeCard, ContentMonoValue, ContentLabelBlock } from './exchange-card';
+import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
-import { reportError } from '../../errors';
+import { ExchangeResponseCard } from './exchange-response-card';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -99,23 +99,12 @@ export class ExchangeDetailsPane extends React.Component<{
                     </div>
                 </ExchangeCard>);
             } else if (!!response) {
-                cards.push(<ExchangeCard {...this.cardProps('response')} direction='left'>
-                    <header>
-                        <Pill color={getStatusColor(response.statusCode, theme!)}>{ response.statusCode }</Pill>
-                        <h1>Response</h1>
-                    </header>
-                    <div>
-                        <ContentLabelBlock>Status</ContentLabelBlock>
-                        <ContentMonoValue>
-                            {response.statusCode}: {response.statusMessage}
-                        </ContentMonoValue>
-
-                        <ContentLabelBlock>Headers</ContentLabelBlock>
-                        <ContentMonoValue>
-                            <HeaderDetails headers={response.headers} />
-                        </ContentMonoValue>
-                    </div>
-                </ExchangeCard>);
+                cards.push(<ExchangeResponseCard
+                    {...this.cardProps('response')}
+                    response={response}
+                    apiExchange={apiExchange}
+                    theme={theme!}
+                />);
 
                 if (hasCompletedBody(response)) {
                     cards.push(<ExchangeBodyCard
