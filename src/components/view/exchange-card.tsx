@@ -59,21 +59,24 @@ export const ContentLabel = styled.div`
     opacity: 0.5;
 
     display: inline-block;
-
-    &:not(:first-child) {
-        margin-top: 10px;
-    }
 `;
 
 export const ContentLabelBlock = styled(ContentLabel)`
-    margin-bottom: 10px;
+    padding: 3px 0 11px;
     display: block;
+    box-sizing: border-box;
+    min-height: 31px;
 `;
 
 export const ContentMonoValue = styled.div`
+    padding: 3px 0 11px;
     font-family: 'Fira Mono', monospace;
     word-break: break-all;
     width: 100%;
+
+    &:last-child {
+        padding-bottom: 0;
+    }
 `;
 
 const LoadingCardContent = styled.div<{ height?: string }>`

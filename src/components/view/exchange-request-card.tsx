@@ -119,7 +119,7 @@ const ParamValue = styled.span`
 
 const ParamMetadata = styled.div`
     position: absolute;
-    top: 10px;
+    top: 9px;
     right: 15px;
     font-style: italic;
 `;
@@ -298,7 +298,7 @@ const ApiRequestDetails = (props: {
                 <ExchangeCollapsibleBody>
                     <ParamMetadata>
                         { param.required ? 'Required ' : 'Optional ' }
-                        { param.in } parameter.
+                        { param.in } parameter
                     </ParamMetadata>
                     { getDetailsWithWarnings(param.description, param.validationErrors) }
                 </ExchangeCollapsibleBody>

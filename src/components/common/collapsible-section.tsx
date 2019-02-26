@@ -81,13 +81,17 @@ const CollapsibleTrigger = styled((p: {
     }
 
     padding: 5px 10px;
-    margin-left: -10px;
+    margin: -5px 0 0 -10px;
+    vertical-align: baseline;
 `;
 
 export const CollapsibleSectionSummary = styled.header`
     display: inline-block;
-    margin: -6px 0 4px 0;
-    padding: 6px 0;
+    margin: -6px 0 0 0;
+    padding: 9px 0 6px;
+
+    min-height: 37px;
+    box-sizing: border-box;
 
     list-style: none;
     &::-webkit-details-marker {
@@ -131,7 +135,7 @@ export const CollapsibleSectionBody = styled.div`
         inset 0px -11px 8px -10px rgba(0,0,0,0.15);
 
     padding: 46px 10px 10px 10px;
-    margin-top: -40px;
+    margin-top: -37px;
     margin-bottom: 10px;
 
     word-break: break-word;
