@@ -1,6 +1,7 @@
 import { expect, getExchange } from '../../test-setup';
 
-import { getParameters, parseExchange, buildApiMetadata, getBody } from '../../../src/model/openapi';
+import { buildApiMetadata } from '../../../src/model/openapi/build-api';
+import { parseExchange, getParameters, getBody } from '../../../src/model/openapi/openapi';
 
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
 import slackSpec from 'openapi-directory/api/slack.com.json';

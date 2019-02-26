@@ -9,7 +9,7 @@ import { ObservablePromise } from '../../util';
 
 import { TrafficSource } from '../../model/sources';
 import { getExchangeSummaryColour } from '../../exchange-colors';
-import { ApiExchange } from '../../model/openapi';
+import { ApiExchange } from '../../model/openapi/openapi-types';
 
 import {
     ExchangeCard,

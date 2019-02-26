@@ -4,45 +4,23 @@ import { get } from 'typesafe-get';
 import {
     findApi,
     OpenAPIObject,
-    PathItemObject,
     PathObject,
     OperationObject,
     ParameterObject,
     ResponseObject,
     RequestBodyObject,
-    SchemaObject,
-    ParameterLocation
+    SchemaObject
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
-import deref from 'json-schema-deref-sync';
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
-import { openApiSchema } from './openapi-schema';
+import { HttpExchange, HtkResponse, HtkRequest, Html } from "../../types";
+import { firstMatch, ObservablePromise, observablePromise } from '../../util';
+import { reportError } from '../../errors';
 
-import { HttpExchange, HtkResponse, HtkRequest, Html } from "../types";
-import { firstMatch, ObservablePromise, observablePromise } from '../util';
-import { reportError } from '../errors';
-
-const paramValidator = new Ajv({
-    coerceTypes: 'array',
-    unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
-});
-
-const filterSpec = new Ajv({
-    removeAdditional: 'failing'
-}).compile(openApiSchema);
-
-const md = new Remarkable({
-    html: true,
-    linkify: true
-});
-
-export interface ApiMetadata {
-    spec: OpenAPIObject,
-    serverMatcher: RegExp,
-    pathMatchers: Map<RegExp, { pathData: PathItemObject, path: string }>
-}
+import { ApiMetadata, Parameter, ApiExchange } from './openapi-types';
+import { buildApiMetadataAsync } from '../../workers/worker-api';
 
 const apiCache: _.Dictionary<ObservablePromise<ApiMetadata>> = {};
 
@@ -55,7 +33,7 @@ export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMet
 
     if (!apiCache[specId]) {
         apiCache[specId] = observablePromise(
-            fetchApiMetadata(specId).then(buildApiMetadata).catch((e) => {
+            fetchApiMetadata(specId).then(buildApiMetadataAsync).catch((e) => {
                 reportError(e);
                 throw e;
             })
@@ -70,52 +48,16 @@ async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
     return specResponse.json();
 }
 
-export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
-    // This mutates the spec to drop unknown fields. Mainly useful to limit spec size. Stripe
-    // particularly includes huge recursive refs in its x-expansion* extension fields.
-    const isValid = filterSpec(spec);
 
-    if (!isValid) {
-        console.warn(
-            'Errors filtering spec',
-            JSON.stringify(filterSpec.errors, null, 2)
-        );
-        throw new Error('Failed to filter spec');
-    }
+const paramValidator = new Ajv({
+    coerceTypes: 'array',
+    unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
+});
 
-    // Now it's relatively small & tidy, dereference everything.
-    spec = deref(spec, { failOnMissing: true, });
-
-    const serverRegexStrings = spec.servers!.map(s => templateStringToRegexString(s.url));
-    // Build a single regex that matches any URL for these base servers
-    const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
-
-    const pathMatchers = new Map<RegExp, { pathData: PathItemObject, path: string }>();
-    _(spec.paths).entries()
-        // Sort from most templated to least templated, so more specific paths win
-        .sortBy(([path]) => _.sumBy(path, (c: string) => c === '{' ? 1 : 0))
-        .forEach(([path, pathData]) => {
-            // Build a regex that matches this path on any of those base servers
-            pathMatchers.set(
-                new RegExp(serverMatcher.source + templateStringToRegexString(path) + '$', 'i'),
-                { pathData: pathData, path: path }
-            );
-        });
-
-    return {
-        spec,
-        serverMatcher,
-        pathMatchers
-    }
-}
-
-function templateStringToRegexString(template: string): string {
-    return template
-        // Replace templates with wildcards
-        .replace(/\{([^/}]+)}/g, '([^\/]*)')
-        // Drop trailing slashes
-        .replace(/\/$/, '');
-}
+const md = new Remarkable({
+    html: true,
+    linkify: true
+});
 
 export function getPath(api: ApiMetadata, exchange: HttpExchange): {
     pathData: PathObject,
@@ -134,17 +76,6 @@ export function getPath(api: ApiMetadata, exchange: HttpExchange): {
             return api.pathMatchers.get(matcher);
         }
     }
-}
-
-export interface Parameter {
-    name: string;
-    description?: Html;
-    value?: unknown;
-    defaultValue?: unknown;
-    in: ParameterLocation;
-    required: boolean;
-    deprecated: boolean;
-    validationErrors: string[];
 }
 
 export function getParameters(
@@ -333,25 +264,6 @@ function stripTags(input: string | undefined): string | undefined {
     // Need to cast to string, as dompurify may returned TrustedHTML, in
     // environments where that's supported.
     return (input + '').replace(/(<([^>]+)>)/ig, '');
-}
-
-export interface ApiExchange {
-    serviceTitle: string;
-    serviceLogoUrl?: string;
-    serviceDescription?: Html;
-    serviceDocsUrl?: string;
-
-    operationName: string;
-    operationDescription?: Html;
-    operationDocsUrl?: string;
-
-    parameters: Parameter[];
-    requestBody?: SchemaObject;
-
-    responseDescription?: Html;
-    responseBody?: SchemaObject;
-
-    validationErrors: string[];
 }
 
 export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {

@@ -12,7 +12,7 @@ import * as amIUsingHtml from '../amiusing.html';
 import { getHTKContentType } from '../content-types';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
-import { getMatchingAPI } from './openapi';
+import { getMatchingAPI } from './openapi/openapi';
 
 configure({ enforceActions: 'observed' });
 

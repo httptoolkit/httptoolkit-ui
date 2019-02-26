@@ -8,7 +8,7 @@ import { HttpExchange, HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
 import { getStatusColor } from '../../exchange-colors';
 
-import { getMatchingAPI, parseExchange } from '../../model/openapi';
+import { getMatchingAPI, parseExchange } from '../../model/openapi/openapi';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
