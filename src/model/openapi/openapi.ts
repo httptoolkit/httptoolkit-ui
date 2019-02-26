@@ -27,9 +27,16 @@ const apiCache: _.Dictionary<ObservablePromise<ApiMetadata>> = {};
 export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMetadata> | undefined {
     const { parsedUrl } = exchange.request;
     const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
-    const specId = findApi(requestUrl);
 
-    if (!specId || Array.isArray(specId)) return; // We don't bother dealing with overlapping APIs yet
+    let specId = findApi(requestUrl);
+    if (!specId) return;
+
+    if (Array.isArray(specId)) {
+        // We shouldn't match multiple APIs, in theory. If we somehow do, report it
+        // so we can improve the specs, and arbitrarily pick the first one.
+        reportError(`Matched multiple spec ids: ${JSON.stringify(specId)}`);
+        specId = specId[0];
+    }
 
     if (!apiCache[specId]) {
         apiCache[specId] = observablePromise(
