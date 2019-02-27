@@ -26,6 +26,7 @@ import { CollapsibleSection } from '../common/collapsible-section';
 import { OptionalImage } from '../common/optional-image';
 
 import { HeaderDetails } from './header-details';
+import { ExternalContent } from '../common/external-content';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== Icons.Unknown ?
@@ -154,71 +155,6 @@ const Warning = styled((p) => <div {...p}>
     }
 `;
 
-const Description = styled.div`
-    line-height: 1.2;
-
-    p, li, ul, ol, table, h1, h2, h3, h4, h5, h6, pre {
-        margin-bottom: 10px;
-    }
-
-    p::first-letter,
-    li::first-letter,
-    h1::first-letter,
-    h2::first-letter,
-    h3::first-letter,
-    h4::first-letter,
-    h5::first-letter,
-    h6::first-letter {
-        text-transform: capitalize;
-    }
-
-    ol, ul {
-        padding-left: 20px;
-    }
-
-    ol {
-        list-style: decimal;
-    }
-
-    ul {
-        list-style: circle;
-    }
-
-    table {
-        border-collapse: unset;
-        border-spacing: 5px;
-        margin-left: -5px;
-    }
-
-    th {
-        min-width: 80px;
-    }
-
-    code {
-        font-family: 'Fira Mono', monospace;
-    }
-
-    h1, h2, h3, h4, h5, h6 {
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-
-    pre {
-        white-space: pre-wrap;
-        display: block;
-        border-left: 3px solid ${p => p.theme.containerWatermark};
-        padding-left: 8px;
-    }
-
-    img {
-        max-width: 100%;
-    }
-
-    :last-child :last-child {
-        margin-bottom: 0;
-    }
-`
-
 function formatValue(value: unknown): string | undefined {
         if (typeof value === 'string') return value;
         if (typeof value === 'number') return value.toString(10);
@@ -229,7 +165,7 @@ function formatValue(value: unknown): string | undefined {
 
 const getDetailsWithWarnings = (details: Html | undefined, warnings: string[]) => [
     warnings.length && warnings.map((warning, i) => <Warning key={warning}>{ warning }</Warning>),
-    details && <Description key='details' dangerouslySetInnerHTML={details} />
+    details && <ExternalContent key='details' content={details} />
 ].filter(d => !!d);
 
 const ApiRequestDetails = (props: {
@@ -254,7 +190,7 @@ const ApiRequestDetails = (props: {
             { api.serviceDescription &&
                 <ExchangeCollapsibleBody>
                     <ServiceLogo src={ api.serviceLogoUrl } alt='' />
-                    <Description dangerouslySetInnerHTML={api.serviceDescription} />
+                    <ExternalContent content={api.serviceDescription} />
                     <DocsLink href={api.serviceDocsUrl}>
                         Find out more
                     </DocsLink>

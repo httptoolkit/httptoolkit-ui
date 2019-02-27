@@ -1,0 +1,76 @@
+import * as React from 'react';
+import { styled } from "../../styles";
+import { Html } from '../../types';
+
+// Takes some HTML (in an __html object) and renders it with nice
+// default formatting. THIS MUST ONLY BE CALLED WITH SANITIZED HTML.
+// The __html format is intended to enforce this - those objects
+// should only be created during sanitization.
+export const ExternalContent = styled((p: React.HTMLAttributes<HTMLDivElement> & {
+    content: Html
+}) =>
+    <section {...p} dangerouslySetInnerHTML={p.content} />
+)`
+    line-height: 1.2;
+
+    p, li, ul, ol, table, h1, h2, h3, h4, h5, h6, pre {
+        margin-bottom: 10px;
+    }
+
+    p::first-letter,
+    li::first-letter,
+    h1::first-letter,
+    h2::first-letter,
+    h3::first-letter,
+    h4::first-letter,
+    h5::first-letter,
+    h6::first-letter {
+        text-transform: capitalize;
+    }
+
+    ol, ul {
+        padding-left: 20px;
+    }
+
+    ol {
+        list-style: decimal;
+    }
+
+    ul {
+        list-style: circle;
+    }
+
+    table {
+        border-collapse: unset;
+        border-spacing: 5px;
+        margin-left: -5px;
+    }
+
+    th {
+        min-width: 80px;
+    }
+
+    code {
+        font-family: 'Fira Mono', monospace;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        display: block;
+        border-left: 3px solid ${p => p.theme.containerWatermark};
+        padding-left: 8px;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    :last-child :last-child {
+        margin-bottom: 0;
+    }
+`
