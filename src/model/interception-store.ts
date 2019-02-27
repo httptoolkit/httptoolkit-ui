@@ -3,10 +3,9 @@ import * as _ from 'lodash';
 import { observable, action, configure, flow, computed, runInAction } from 'mobx';
 import { getLocal, Mockttp, CompletedRequest, CompletedResponse } from 'mockttp';
 
-import { HttpExchange } from '../types';
+import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from './htk-client';
-import { ExchangeCategory, getExchangeCategory } from '../exchange-colors';
 
 import * as amIUsingHtml from '../amiusing.html';
 import { getHTKContentType } from '../content-types';
@@ -148,62 +147,32 @@ export class InterceptionStore {
 
     @action
     private addRequest(request: CompletedRequest) {
-        const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
-
-        const minimalExchange = {
-            id: request.id,
-            request: Object.assign(request, {
-                parsedUrl,
-                source: parseSource(request.headers['user-agent']),
-                contentType: getHTKContentType(request.headers['content-type'])
-            }),
-            searchIndex:
-                [`${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}${parsedUrl.search}`]
-                    .concat(..._.map(request.headers, (value, key) => `${key}: ${value}`))
-                    .concat(request.method)
-                    .join('\n')
-                    .toLowerCase(),
-            response: undefined
-        };
-
-        const completeExchange = Object.assign(minimalExchange, {
-            category: <ExchangeCategory>getExchangeCategory(minimalExchange)
-        });
+        const exchange = new HttpExchange(request);
 
         // Start loading any relevant Open API specs for this request
-        getMatchingAPI(completeExchange);
+        getMatchingAPI(exchange);
 
-        this.exchanges.push(observable.object(completeExchange, {}, { deep: false }));
+        this.exchanges.push(exchange);
     }
 
     @action
     private markRequestAborted(request: CompletedRequest) {
-        const exchange = _.find(this.exchanges, (exchange) => exchange.request.id === request.id)!;
+        const exchange = _.find(this.exchanges, { id: request.id });
 
         // Shouldn't happen in general, but possible in some very rare cases
         if (!exchange) return;
 
-        exchange.response = 'aborted';
-        exchange.searchIndex += ('\naborted');
+        exchange.markAborted();
     }
 
     @action
     private setResponse(response: CompletedResponse) {
-        const exchange = _.find(this.exchanges, (exchange) => exchange.request.id === response.id)!;
+        const exchange = _.find(this.exchanges, { id: response.id });
 
         // Shouldn't happen in general, but possible in some very rare cases
         if (!exchange) return;
 
-        exchange.response = Object.assign(response, {
-            contentType: getHTKContentType(response.headers['content-type'])
-        });
-        exchange.category = getExchangeCategory(exchange);
-
-        exchange.searchIndex += '\n' + [
-            response.statusCode.toString(),
-            response.statusMessage.toString(),
-            ..._.map(response.headers, (value, key) => `${key}: ${value}`)
-        ].join('\n').toLowerCase();
+        exchange.setResponse(response);
     }
 
     @action.bound

@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import { observable, autorun, action, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 
-import { HttpExchange, WithInjected } from '../../types';
+import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
 import { ExchangeList } from './exchange-list';
@@ -12,6 +12,7 @@ import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from '../split-pane';
 
 import { ActivatedStore } from '../../model/interception-store';
+import { HttpExchange } from '../../model/exchange';
 
 interface ViewPageProps {
     className?: string,

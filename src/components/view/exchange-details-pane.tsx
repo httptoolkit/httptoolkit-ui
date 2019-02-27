@@ -4,10 +4,11 @@ import { get } from 'typesafe-get';
 import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { HttpExchange, HtkResponse } from '../../types';
+import { HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
 import { reportError } from '../../errors';
 import { getStatusColor } from '../../exchange-colors';
+import { HttpExchange } from '../../model/exchange';
 
 import { getMatchingAPI, parseExchange } from '../../model/openapi/openapi';
 

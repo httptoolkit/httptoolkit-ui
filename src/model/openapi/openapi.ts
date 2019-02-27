@@ -15,10 +15,11 @@ import * as Ajv from 'ajv';
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
-import { HttpExchange, HtkResponse, HtkRequest, Html } from "../../types";
+import { HtkResponse, HtkRequest, Html } from "../../types";
 import { firstMatch, ObservablePromise, observablePromise } from '../../util';
 import { reportError } from '../../errors';
 
+import { HttpExchange } from '../exchange';
 import { ApiMetadata, Parameter, ApiExchange } from './openapi-types';
 import { buildApiMetadataAsync } from '../../workers/worker-api';
 

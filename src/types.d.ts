@@ -14,14 +14,6 @@ export type HtkRequest = CompletedRequest & {
 
 export type HtkResponse = CompletedResponse & { contentType: HtkContentType };
 
-export interface HttpExchange {
-    id: string;
-    request: HtkRequest;
-    response: HtkResponse | 'aborted' | undefined;
-    category: ExchangeCategory;
-    searchIndex: string;
-}
-
 // Should only be created in the process of sanitizing, so every object with an
 // __html prop must be HTML-safe.
 export interface Html {
