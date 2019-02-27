@@ -18,6 +18,7 @@ import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeResponseCard } from './exchange-response-card';
+import { AccountStore } from '../../model/account/account-store';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -38,10 +39,13 @@ const ExchangeDetailsContainer = styled.div`
 type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
 
 @inject('theme')
+@inject('accountStore')
 @observer
 export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange | undefined,
-    theme?: Theme
+    // Injected:
+    theme?: Theme,
+    accountStore?: AccountStore
 }> {
 
     @observable
@@ -59,7 +63,7 @@ export class ExchangeDetailsPane extends React.Component<{
     });
 
     render() {
-        const { exchange, theme } = this.props;
+        const { exchange, theme, accountStore: account } = this.props;
         const cards: JSX.Element[] = [];
 
         if (exchange) {
@@ -77,6 +81,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 {...this.cardProps('request')}
                 exchange={exchange}
                 apiExchange={apiExchange}
+                isPaidUser={account!.isPaidUser}
             />);
 
             if (request.body.buffer) {

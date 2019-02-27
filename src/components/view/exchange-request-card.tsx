@@ -36,34 +36,6 @@ const SourceIcon = ({ source, className }: { source: TrafficSource, className?: 
             {...source.icon}
         /> : null;
 
-const SmartViewToggle = styled.button`
-    background: none;
-    border: none;
-    margin-right: auto;
-    padding: 0;
-
-    font-size: ${p => p.theme.textSize};
-    font-weight: bold;
-    font-family: ${p => p.theme.fontFamily};
-
-    cursor: pointer;
-    user-select: none;
-
-    outline: none;
-    &:focus {
-        color: ${p => p.theme.popColor};
-    }
-
-    color: ${p => p.theme.containerBorder};
-    &:[disabled] {
-        color: ${p => p.theme.containerWatermark};
-    }
-
-    > svg {
-        margin-right: 8px;
-    }
-`;
-
 const RawRequestDetails = (p: { request: HtkRequest }) => <div>
     <ContentLabelBlock>URL</ContentLabelBlock>
     <ContentMonoValue>{
@@ -269,55 +241,34 @@ const SmartRequestDetails = observer((p: {
 });
 
 interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'>  {
+    isPaidUser: boolean;
     exchange: HttpExchange;
     apiExchange: ObservablePromise<ApiExchange> | undefined
 }
 
-@observer
-export class ExchangeRequestCard extends React.Component<ExchangeRequestCardProps> {
+export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) => {
+    const { isPaidUser, exchange, apiExchange } = props;
+    const { request } = exchange;
 
-    @observable
-    smartView = true;
-
-    render() {
-        const { collapsed, exchange, apiExchange } = this.props;
-        const { request } = exchange;
-
-        return <ExchangeCard {...this.props} direction='right'>
-            <header>
-                { !collapsed &&
-                    <SmartViewToggle onClick={this.toggleSmartView}>
-                        <FontAwesomeIcon icon={[
-                            'fas',
-                            this.smartView ? 'toggle-on' : 'toggle-off'
-                        ]} />
-                        Smart View
-                    </SmartViewToggle>
+    return <ExchangeCard {...props} direction='right'>
+        <header>
+            <SourceIcon source={request.source} />
+            <Pill color={getExchangeSummaryColour(exchange)}>
+                { request.method } {
+                    request.hostname
+                    // Add some tiny spaces to split up parts of the hostname
+                    .replace(/\./g, '\u2008.\u2008')
                 }
-
-                <SourceIcon source={request.source} />
-                <Pill color={getExchangeSummaryColour(exchange)}>
-                    { request.method } {
-                        request.hostname
-                        // Add some tiny spaces to split up parts of the hostname
-                        .replace(/\./g, '\u2008.\u2008')
-                    }
-                </Pill>
-                <h1>Request</h1>
-            </header>
-            {
-                this.smartView ?
-                    <SmartRequestDetails
-                        request={request}
-                        apiExchange={apiExchange}
-                    /> :
-                    <RawRequestDetails request={request} />
-            }
-        </ExchangeCard>
-    }
-
-    @action.bound
-    toggleSmartView() {
-        this.smartView = !this.smartView;
-    }
-}
+            </Pill>
+            <h1>Request</h1>
+        </header>
+        {
+            isPaidUser ?
+                <SmartRequestDetails
+                    request={request}
+                    apiExchange={apiExchange}
+                /> :
+                <RawRequestDetails request={request} />
+        }
+    </ExchangeCard>;
+});
