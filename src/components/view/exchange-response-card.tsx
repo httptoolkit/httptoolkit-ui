@@ -44,7 +44,7 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
         </header>
 
         <div>
-            <CollapsibleSection prefix={false}>
+            <CollapsibleSection>
                 <ExchangeCollapsibleSummary>
                     <ContentLabel>Status:</ContentLabel>{' '}
                     {response.statusCode} {response.statusMessage}

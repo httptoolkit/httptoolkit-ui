@@ -77,9 +77,18 @@ const DocsLink = (p: {
     </a>
 : null;
 
+const ParametersGrid = styled.section`
+    display: grid;
+    grid-template-columns: 20px fit-content(50%) 1fr min-content;
+
+    grid-gap: 10px 0;
+    margin-bottom: 10px;
+`;
+
 const ParamName = styled.span`
     font-family: 'Fira Mono', monospace;
-    word-break: break-all;
+    word-break: break-word;
+    margin-right: 10px;
 `;
 
 const ParamValue = styled.span`
@@ -108,7 +117,6 @@ const ParamMetadata = styled((p: {
         } parameter
 </div>)`
     line-height: 1.2;
-    padding: 0 0 10px 10px;
     font-style: italic;
 `;
 
@@ -167,7 +175,7 @@ const ApiRequestDetails = (props: {
     const hasOperationDetails = !!operationDetails.length;
 
     return <>
-        <CollapsibleSection prefix={false}>
+        <CollapsibleSection>
             <ExchangeCollapsibleSummary>
                 <ContentLabel>Service:</ContentLabel> { api.service.name }
                 { !api.service.description &&
@@ -186,7 +194,7 @@ const ApiRequestDetails = (props: {
             }
         </CollapsibleSection>
 
-        <CollapsibleSection prefix={false}>
+        <CollapsibleSection>
             <ExchangeCollapsibleSummary>
                 <ContentLabel>Operation:</ContentLabel> { api.operation.name }
                 { !hasOperationDetails &&
@@ -205,33 +213,35 @@ const ApiRequestDetails = (props: {
             }
         </CollapsibleSection>
 
-        { relevantParameters.length >= 1 &&
+        { relevantParameters.length >= 1 && <>
             <ContentLabelBlock>
                 Parameters
             </ContentLabelBlock>
-        }
-        { relevantParameters.map((param) =>
-            <CollapsibleSection prefix={true} key={param.name}>
-                <ExchangeCollapsibleSummary>
-                    <ParamName>{ param.name }: </ParamName>
-                    <ParamValue>
-                        { formatValue(param.value) ||
-                            <UnsetValue>{
-                                param.defaultValue ?
-                                    formatValue(param.defaultValue) + ' [default]' :
-                                    '[not set]'
-                            }</UnsetValue>
-                        }
-                    </ParamValue>
-                    { param.warnings.length ? <WarningIcon /> : null }
-                </ExchangeCollapsibleSummary>
+            <ParametersGrid>
+                { relevantParameters.map((param) =>
+                    <CollapsibleSection withinGrid={true} key={param.name}>
+                        <ExchangeCollapsibleSummary>
+                            <ParamName>{ param.name }: </ParamName>
+                            <ParamValue>
+                                { formatValue(param.value) ||
+                                    <UnsetValue>{
+                                        param.defaultValue ?
+                                            formatValue(param.defaultValue) + ' [default]' :
+                                            '[not set]'
+                                    }</UnsetValue>
+                                }
+                            </ParamValue>
+                            { param.warnings.length ? <WarningIcon /> : <div/> }
+                        </ExchangeCollapsibleSummary>
 
-                <ExchangeCollapsibleBody>
-                    <ParamMetadata param={param} />
-                    { getDetailsWithWarnings(param.description, param.warnings) }
-                </ExchangeCollapsibleBody>
-            </CollapsibleSection>
-        ) }
+                        <ExchangeCollapsibleBody>
+                            { getDetailsWithWarnings(param.description, param.warnings) }
+                            <ParamMetadata param={param}/>
+                        </ExchangeCollapsibleBody>
+                    </CollapsibleSection>
+                ) }
+            </ParametersGrid>
+        </> }
     </>;
 }
 
