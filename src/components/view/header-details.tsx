@@ -23,7 +23,6 @@ const EmptyState = styled.div`
     font-style: italic;
 `;
 
-
 const HeaderInfo = styled.a`
     ${p => !!p.href && 'text-decoration: underline dotted #888'};
     opacity: ${p => !!p.href ? 1 : 0.7};

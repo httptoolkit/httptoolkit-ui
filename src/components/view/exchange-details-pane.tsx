@@ -99,6 +99,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     response={response}
                     apiExchange={exchange.api}
                     theme={theme!}
+                    isPaidUser={account!.isPaidUser}
                 />);
 
                 if (hasCompletedBody(response)) {
