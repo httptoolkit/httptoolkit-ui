@@ -105,7 +105,8 @@ export class BaseEditor extends React.Component<EditorProps> {
         }
     }
 
-    onEditorDidMount = (editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: typeof monacoTypes) => {
+    @action.bound
+    onEditorDidMount(editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: typeof monacoTypes) {
         this.editor = editor;
         this.monaco = monaco;
         this.announceLineCount(editor);

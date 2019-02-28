@@ -20,7 +20,7 @@ interface EditorFormatter {
     render(content: Buffer): string;
 }
 
-type FormatComponent = React.ComponentType<{ content: Buffer, rawContentType: string }>;
+type FormatComponent = React.ComponentType<{ content: Buffer, rawContentType: string | undefined }>;
 
 type Formatter = EditorFormatter | FormatComponent;
 
@@ -97,8 +97,8 @@ export const Formatters: { [key in HtkContentType]?: Formatter } = {
             });
         }
     },
-    image: styled.img.attrs((p: { content: Buffer, rawContentType: string }) => ({
-        src: `data:${p.rawContentType};base64,${p.content.toString('base64')}`
+    image: styled.img.attrs((p: { content: Buffer, rawContentType: string | undefined }) => ({
+        src: `data:${p.rawContentType || ''};base64,${p.content.toString('base64')}`
     }))`
         display: block;
         max-width: 100%;
@@ -109,7 +109,7 @@ export const Formatters: { [key in HtkContentType]?: Formatter } = {
 interface ContentEditorProps {
     children: Buffer;
     schema?: SchemaObject;
-    rawContentType: string;
+    rawContentType: string | undefined;
     contentType: HtkContentType;
     contentObservable?: IObservableValue<string | undefined>;
     monacoTheme: string
