@@ -4,14 +4,14 @@ import { get } from 'typesafe-get';
 import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { HtkResponse } from '../../types';
+import { HtkResponse, Omit } from '../../types';
 import { styled, Theme } from '../../styles';
 import { getStatusColor } from '../../exchange-colors';
 import { HttpExchange } from '../../model/exchange';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
-import { ExchangeCard } from './exchange-card';
+import { ExchangeCard, ExchangeCardProps } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeResponseCard } from './exchange-response-card';
@@ -46,18 +46,16 @@ export class ExchangeDetailsPane extends React.Component<{
 }> {
 
     @observable
-    private collapseState = {
-        'request': false,
-        'requestBody': false,
-        'response': false,
-        'responseBody': false
-    };
-
-    private cardProps = (key: CardKey) => ({
+    private cardProps = _.mapValues<{}, Omit<ExchangeCardProps, 'children'>>({
+        'request': {},
+        'requestBody': {},
+        'response': {},
+        'responseBody': {}
+    }, (_value, key) => ({
         key: key,
-        collapsed: this.collapseState[key],
+        collapsed: false,
         onCollapseToggled: this.toggleCollapse.bind(this, key)
-    });
+    }));
 
     render() {
         const { exchange, theme, accountStore: account } = this.props;
@@ -67,7 +65,7 @@ export class ExchangeDetailsPane extends React.Component<{
             const { request, response } = exchange;
 
             cards.push(<ExchangeRequestCard
-                {...this.cardProps('request')}
+                {...this.cardProps.request}
                 exchange={exchange}
                 apiExchange={exchange.api}
                 isPaidUser={account!.isPaidUser}
@@ -79,12 +77,12 @@ export class ExchangeDetailsPane extends React.Component<{
                     direction='right'
                     message={request}
                     apiBodySchema={get(exchange, 'api', 'request', 'bodySchema')}
-                    {...this.cardProps('requestBody')}
+                    {...this.cardProps.requestBody}
                 />);
             }
 
             if (response === 'aborted') {
-                cards.push(<ExchangeCard {...this.cardProps('response')} direction='left'>
+                cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
                     <header>
                     <Pill color={getStatusColor(response, theme!)}>Aborted</Pill>
                         <h1>Response</h1>
@@ -95,7 +93,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 </ExchangeCard>);
             } else if (!!response) {
                 cards.push(<ExchangeResponseCard
-                    {...this.cardProps('response')}
+                    {...this.cardProps.response}
                     response={response}
                     apiExchange={exchange.api}
                     theme={theme!}
@@ -108,7 +106,7 @@ export class ExchangeDetailsPane extends React.Component<{
                         direction='left'
                         message={response}
                         apiBodySchema={get(exchange, 'api', 'response', 'bodySchema')}
-                        {...this.cardProps('responseBody')}
+                        {...this.cardProps.responseBody}
                     />);
                 }
             }
@@ -130,7 +128,8 @@ export class ExchangeDetailsPane extends React.Component<{
 
     @action.bound
     private toggleCollapse(key: CardKey) {
-        this.collapseState[key] = !this.collapseState[key];
+        const cardProps = this.cardProps[key];
+        cardProps.collapsed = !cardProps.collapsed;
     }
 
 };

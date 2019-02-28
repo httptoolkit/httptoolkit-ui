@@ -158,13 +158,17 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
         }));
     }
 
+    private readonly editorOptions = {
+        readOnly: true
+    };
+
     render() {
         if (isEditorFormatter(this.formatter)) {
             try {
                 return <EditorContainer height={this.lineCount * 22}>
                     <BaseEditor
                         // For now, we only support read only content
-                        options={{readOnly: true}}
+                        options={this.editorOptions}
                         language={this.formatter.language}
                         onLineCount={this.updateLineCount}
                         value={this.renderedContent!}
