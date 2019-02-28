@@ -95,10 +95,9 @@ export class BaseEditor extends React.Component<EditorProps> {
     }
 
     private announceLineCount(editor: monacoTypes.editor.IStandaloneCodeEditor) {
-        const model = editor.getModel();
-        if (!model) return;
-
-        let lineCount = model.getLineCount();
+        // This is also available as model.getLineCount(), but the model
+        // itself doesn't take line wrapping into account.
+        let lineCount = (editor as any)._modelData.viewModel.getLineCount();
 
         if (this.props.onLineCount) {
             this.props.onLineCount(lineCount);
