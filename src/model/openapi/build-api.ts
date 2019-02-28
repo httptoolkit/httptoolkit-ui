@@ -5,7 +5,15 @@ import * as Ajv from 'ajv';
 import deref from 'json-schema-deref-sync';
 
 import { openApiSchema } from './openapi-schema';
-import { ApiMetadata } from './openapi-types';
+
+export interface ApiMetadata {
+    spec: OpenAPIObject;
+    serverMatcher: RegExp;
+    pathMatchers: Map<
+        RegExp,
+        { pathSpec: PathItemObject, path: string }
+    >;
+}
 
 const filterSpec = new Ajv({
     removeAdditional: 'failing'
@@ -39,15 +47,15 @@ export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
     // Build a single regex that matches any URL for these base servers
     const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
 
-    const pathMatchers = new Map<RegExp, { pathData: PathItemObject, path: string }>();
+    const pathMatchers = new Map<RegExp, { pathSpec: PathItemObject, path: string }>();
     _(spec.paths).entries()
         // Sort from most templated to least templated, so more specific paths win
         .sortBy(([path]) => _.sumBy(path, (c: string) => c === '{' ? 1 : 0))
-        .forEach(([path, pathData]) => {
+        .forEach(([path, pathSpec]) => {
             // Build a regex that matches this path on any of those base servers
             pathMatchers.set(
                 new RegExp(serverMatcher.source + templateStringToRegexString(path) + '$', 'i'),
-                { pathData: pathData, path: path }
+                { pathSpec: pathSpec, path: path }
             );
         });
 

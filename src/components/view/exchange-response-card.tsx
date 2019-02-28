@@ -1,10 +1,9 @@
 import * as React from 'react';
 
 import { HtkResponse, Omit } from '../../types';
-import { ObservablePromise } from '../../util';
 import { Theme } from '../../styles';
 
-import { ApiExchange } from '../../model/openapi/openapi-types';
+import { ApiExchange } from '../../model/openapi/openapi';
 import { getStatusColor } from '../../exchange-colors';
 
 import { Pill } from '../common/pill';
@@ -19,7 +18,7 @@ import {
 interface ExchangeResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {
     theme: Theme;
     response: HtkResponse;
-    apiExchange: ObservablePromise<ApiExchange> | undefined;
+    apiExchange: ApiExchange | undefined;
 }
 
 export const ExchangeResponseCard = (props: ExchangeResponseCardProps) => {

@@ -1,7 +1,7 @@
-import { expect, getExchange } from '../../test-setup';
+import { expect, getExchangeData } from '../../test-setup';
 
 import { buildApiMetadata } from '../../../src/model/openapi/build-api';
-import { parseExchange, getParameters, getBody } from '../../../src/model/openapi/openapi';
+import { ApiExchange, getParameters, getBodySchema } from '../../../src/model/openapi/openapi';
 
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
 import slackSpec from 'openapi-directory/api/slack.com.json';
@@ -13,122 +13,153 @@ describe('OpenAPI support', () => {
 
         it('should pull generic service info regardless of endpoint', async () => {
             expect(
-                parseExchange(
+                new ApiExchange(
                     await stripeApi,
-                    getExchange({
+                    getExchangeData({
                         hostname: 'api.stripe.com',
                         path: '/'
                     }),
                 )
             ).to.deep.match({
-                serviceTitle: 'Stripe',
-                serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                serviceDescription: {
-                    __html:
-                        '<p>The Stripe REST API. Please see <a href="https://stripe.com/docs/api">' +
-                        'https://stripe.com/docs/api</a> for more details.</p>'
+                service: {
+                    name: 'Stripe',
+                    logoUrl: 'https://twitter.com/stripe/profile_image?size=original',
+                    description: {
+                        __html:
+                            '<p>The Stripe REST API. Please see <a href="https://stripe.com/docs/api">' +
+                            'https://stripe.com/docs/api</a> for more details.</p>'
+                    },
+                    docsUrl: undefined,
                 },
-                serviceDocsUrl: undefined,
-                operationName: 'GET /',
-                operationDescription: undefined,
-                operationDocsUrl: undefined,
-                parameters: [],
-                validationErrors: []
+                operation: {
+                    name: 'GET /',
+                    description: undefined,
+                    docsUrl: undefined,
+                    warnings: [
+                        `Unknown operation 'GET /'.`
+                    ]
+                },
+                request: {
+                    parameters: [],
+                    bodySchema: {}
+                }
             });
         });
 
         it('should pull detailed operation info for matching operations', async () => {
             expect(
-                parseExchange(
+                new ApiExchange(
                     await stripeApi,
-                    getExchange({
+                    getExchangeData({
                         hostname: 'api.stripe.com',
                         path: '/v1/account',
                         query: '?account=abc'
                     }),
                 )
             ).to.deep.match({
-                serviceTitle: 'Stripe',
-                serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: 'GetAccount',
-                operationDescription: {
-                    __html: '<p>Retrieves the details of the account.</p>'
+                operation: {
+                    name: 'GetAccount',
+                    description: { __html: '<p>Retrieves the details of the account.</p>' },
+                    docsUrl: undefined,
+                    warnings: []
                 },
-                operationDocsUrl: undefined,
-                parameters: [{
-                    "deprecated": false,
-                    "description": {
-                        __html: "<p>Specifies which fields in the response should be expanded.</p>"
-                    },
-                    "name": "expand",
-                    "required": false,
-                    "validationErrors": [],
-                    "value": undefined
-                }, {
-                    "deprecated": false,
-                    "description": {
-                        __html:
-                            "<p>The identifier of the account to retrieve. " +
-                            "If none is provided, the account associated with the API key is returned.</p>"
-                    },
-                    "name": "account",
-                    "required": false,
-                    "validationErrors": [],
-                    "value": 'abc'
-                }],
-                validationErrors: [],
+                request: {
+                    parameters: [{
+                        deprecated: false,
+                        description: {
+                            __html: "<p>Specifies which fields in the response should be expanded.</p>"
+                        },
+                        name: "expand",
+                        required: false,
+                        warnings: [],
+                        value: undefined
+                    }, {
+                        deprecated: false,
+                        description: {
+                            __html:
+                                "<p>The identifier of the account to retrieve. " +
+                                "If none is provided, the account associated with the API key is returned.</p>"
+                        },
+                        name: "account",
+                        required: false,
+                        warnings: [],
+                        value: 'abc'
+                    }],
+                }
+            });
+        });
+
+        it('should respect x-http-method-override', async () => {
+            expect(
+                new ApiExchange(
+                    await stripeApi,
+                    getExchangeData({
+                        hostname: 'api.stripe.com',
+                        path: '/v1/account',
+                        query: '?account=abc',
+                        requestHeaders: {
+                            'x-http-method-override': 'POST'
+                        }
+                    }),
+                )
+            ).to.deep.match({
+                operation: {
+                    name: 'PostAccount',
+                }
             });
         });
 
         it('should report an error for deprecated operations', async () => {
             expect(
-                parseExchange(
+                new ApiExchange(
                     await stripeApi,
-                    getExchange({
+                    getExchangeData({
                         hostname: 'api.stripe.com',
                         path: '/v1/bitcoin/transactions',
                     }),
                 )
             ).to.deep.match({
-                serviceTitle: 'Stripe',
-                serviceLogoUrl: 'https://twitter.com/stripe/profile_image?size=original',
-                operationName: 'GetBitcoinTransactions',
-                operationDescription: {
-                    __html: '<p>List bitcoin transacitons for a given receiver.</p>'
-                },
-                validationErrors: [`The 'GetBitcoinTransactions' operation is deprecated.`]
+                operation: {
+                    name: 'GetBitcoinTransactions',
+                    description: {
+                        __html: '<p>List bitcoin transacitons for a given receiver.</p>'
+                    },
+                    warnings: [`The 'GetBitcoinTransactions' operation is deprecated.`]
+                }
             });
         });
 
         it('should include the response details', async () => {
             expect(
-                parseExchange(
+                new ApiExchange(
                     await slackApi,
-                    getExchange({
+                    getExchangeData({
                         hostname: 'slack.com',
                         path: '/api/bots.info',
                         statusCode: 200
                     }),
                 )
             ).to.deep.match({
-                responseDescription: { __html: '<p>When successful, returns bot info by bot ID.</p>' },
-                validationErrors: []
+                response: {
+                    description: { __html: '<p>When successful, returns bot info by bot ID.</p>' },
+                }
             });
         });
 
         it('should fall back to default response details', async () => {
             expect(
-                parseExchange(
+                new ApiExchange(
                     await slackApi,
-                    getExchange({
+                    getExchangeData({
                         hostname: 'slack.com',
                         path: '/api/bots.info',
                         statusCode: 418
                     }),
                 )
             ).to.deep.match({
-                responseDescription: { __html: '<p>When no bot can be found, it returns an error.</p>' },
-                validationErrors: []
+                response: {
+                    description: { __html: '<p>When no bot can be found, it returns an error.</p>' },
+                }
             });
         });
     });
@@ -144,16 +175,16 @@ describe('OpenAPI support', () => {
                         name: 'since',
                         schema: { 'type': 'string' }
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: '?since=2018-09-1T12:00:00'
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
                     description: { __html: '<p>Timestamp in ISO 8601 format.</p>' },
                     name: 'since',
                     value: '2018-09-1T12:00:00',
-                    validationErrors: []
+                    warnings: []
                 }
             ]);
         });
@@ -168,16 +199,16 @@ describe('OpenAPI support', () => {
                         name: 'since',
                         schema: { 'type': 'string' }
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: ''
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
                     description: { __html: '<p>Timestamp in ISO 8601 format.</p>' },
                     name: 'since',
                     value: undefined,
-                    validationErrors: []
+                    warnings: []
                 }
             ]);
         });
@@ -194,16 +225,16 @@ describe('OpenAPI support', () => {
                         style: 'form',
                         explode: true
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: '?id=abc&id=def'
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
                     description: { __html: '<p>Account id.</p>' },
                     name: 'id',
                     value: ['abc', 'def'],
-                    validationErrors: []
+                    warnings: []
                 }
             ]);
         });
@@ -231,9 +262,9 @@ describe('OpenAPI support', () => {
                             },
                         }
                     ],
-                    getExchange({
+                    getExchangeData({
                         path: '/users/pimterry/123'
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
@@ -241,13 +272,13 @@ describe('OpenAPI support', () => {
                     name: 'username',
                     value: 'pimterry',
                     defaultValue: 'me',
-                    validationErrors: []
+                    warnings: []
                 },
                 {
                     description: { __html: '<p>Content id.</p>' },
                     name: 'content_id',
                     value: 123,
-                    validationErrors: []
+                    warnings: []
                 }
             ]);
         });
@@ -262,18 +293,18 @@ describe('OpenAPI support', () => {
                         "name": "X-Secret-Value",
                         "schema": { "type": "string" }
                     }],
-                    getExchange({
+                    getExchangeData({
                         requestHeaders: {
                             'x-secret-value': '1234'
                         }
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
                     description: { __html: '<p>Secret.</p>' },
                     name: 'X-Secret-Value',
                     value: '1234',
-                    validationErrors: []
+                    warnings: []
                 }
             ]);
         });
@@ -289,9 +320,9 @@ describe('OpenAPI support', () => {
                         "required": true,
                         "schema": { "type": "string" }
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: ''
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
@@ -299,7 +330,7 @@ describe('OpenAPI support', () => {
                     name: 'account',
                     value: undefined,
                     required: true,
-                    validationErrors: [`The 'account' query parameter is required.`]
+                    warnings: [`The 'account' query parameter is required.`]
                 }
             ]);
         });
@@ -315,9 +346,9 @@ describe('OpenAPI support', () => {
                         "deprecated": true,
                         "schema": { "type": "string" }
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: '?account=qwe'
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
@@ -326,7 +357,7 @@ describe('OpenAPI support', () => {
                     value: 'qwe',
                     required: false,
                     deprecated: true,
-                    validationErrors: [`The 'account' query parameter is deprecated.`]
+                    warnings: [`The 'account' query parameter is deprecated.`]
                 }
             ]);
         });
@@ -341,16 +372,16 @@ describe('OpenAPI support', () => {
                         "name": "num",
                         "schema": { "type": "number" }
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: '?num=123'
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
                     description: { __html: '<p>A number.</p>' },
                     name: 'num',
                     value: 123,
-                    validationErrors: []
+                    warnings: []
                 }
             ]);
         });
@@ -365,16 +396,16 @@ describe('OpenAPI support', () => {
                         "name": "num",
                         "schema": { "type": "number" }
                     }],
-                    getExchange({
+                    getExchangeData({
                         query: '?num=abc'
-                    })
+                    }).request
                 )
             ).to.deep.match([
                 {
                     description: { __html: '<p>A number.</p>' },
                     name: 'num',
                     value: 'abc',
-                    validationErrors: [`'num' should be number.`]
+                    warnings: [`'num' should be number.`]
                 }
             ]);
         });
@@ -383,7 +414,7 @@ describe('OpenAPI support', () => {
     describe('body parsing', () => {
         it('should return the request body schema', () => {
             expect(
-                getBody(
+                getBodySchema(
                     {
                         description: 'My request body',
                         content: {
@@ -395,7 +426,7 @@ describe('OpenAPI support', () => {
                                 }
                             }
                         }
-                    }, getExchange({
+                    }, getExchangeData({
                         requestHeaders: {
                             'content-type': 'text/plain'
                         }
@@ -411,7 +442,7 @@ describe('OpenAPI support', () => {
 
         it('should return the response body schema', () => {
             expect(
-                getBody(
+                getBodySchema(
                     {
                         content: {
                             'text/plain': {
@@ -422,7 +453,7 @@ describe('OpenAPI support', () => {
                                 }
                             }
                         }
-                    }, getExchange({
+                    }, getExchangeData({
                         responseHeaders: {
                             'content-type': 'text/plain'
                         }
@@ -437,7 +468,7 @@ describe('OpenAPI support', () => {
 
         it('should match partially wildcard content types', () => {
             expect(
-                getBody(
+                getBodySchema(
                     {
                         description: 'My request body',
                         content: {
@@ -456,7 +487,7 @@ describe('OpenAPI support', () => {
                                 }
                             }
                         }
-                    }, getExchange({
+                    }, getExchangeData({
                         requestHeaders: {
                             'content-type': 'text/plain'
                         }
@@ -471,7 +502,7 @@ describe('OpenAPI support', () => {
 
         it('should match completely wildcard content types', () => {
             expect(
-                getBody(
+                getBodySchema(
                     {
                         description: 'My request body',
                         content: {
@@ -490,7 +521,7 @@ describe('OpenAPI support', () => {
                                 }
                             },
                         }
-                    }, getExchange({
+                    }, getExchangeData({
                         requestHeaders: {
                             'content-type': 'text/plain'
                         }
@@ -505,7 +536,7 @@ describe('OpenAPI support', () => {
 
         it('should match the most specific content type', () => {
             expect(
-                getBody(
+                getBodySchema(
                     {
                         description: 'My request body',
                         content: {
@@ -531,7 +562,7 @@ describe('OpenAPI support', () => {
                                 }
                             },
                         }
-                    }, getExchange({
+                    }, getExchangeData({
                         requestHeaders: {
                             'content-type': 'text/plain'
                         }
@@ -546,7 +577,7 @@ describe('OpenAPI support', () => {
 
         it('should match the most specific content type', () => {
             expect(
-                getBody(
+                getBodySchema(
                     {
                         description: 'My request body',
                         content: {
@@ -572,7 +603,7 @@ describe('OpenAPI support', () => {
                                 }
                             },
                         }
-                    }, getExchange({
+                    }, getExchangeData({
                         requestHeaders: {
                             'content-type': 'text/other'
                         }

@@ -8,10 +8,8 @@ import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from './htk-client';
 
 import * as amIUsingHtml from '../amiusing.html';
-import { getHTKContentType } from '../content-types';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
-import { getMatchingAPI } from './openapi/openapi';
 
 configure({ enforceActions: 'observed' });
 
@@ -148,9 +146,6 @@ export class InterceptionStore {
     @action
     private addRequest(request: CompletedRequest) {
         const exchange = new HttpExchange(request);
-
-        // Start loading any relevant Open API specs for this request
-        getMatchingAPI(exchange);
 
         this.exchanges.push(exchange);
     }

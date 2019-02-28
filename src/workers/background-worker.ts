@@ -4,8 +4,7 @@ const ctx: Worker = self as any;
 import * as serializeError from 'serialize-error';
 import { handleContentEncoding } from 'mockttp/dist/server/request-utils';
 import { OpenAPIObject } from 'openapi3-ts';
-import { ApiMetadata } from '../model/openapi/openapi-types';
-import { buildApiMetadata } from '../model/openapi/build-api';
+import { buildApiMetadata, ApiMetadata } from '../model/openapi/build-api';
 
 interface Message {
     id: number;

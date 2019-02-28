@@ -13,7 +13,6 @@ import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButton } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
-import { ObservablePromise } from '../../util';
 
 function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;
@@ -53,7 +52,7 @@ type ExchangeMessage = HtkRequest | HtkResponse;
 export class ExchangeBodyCard extends React.Component<{
     title: string,
     message: ExchangeMessage,
-    apiBody?: ObservablePromise<SchemaObject | undefined>,
+    apiBodySchema?: SchemaObject,
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
@@ -116,7 +115,7 @@ export class ExchangeBodyCard extends React.Component<{
         const {
             title,
             message,
-            apiBody,
+            apiBodySchema,
             direction,
             collapsed,
             onCollapseToggled,
@@ -131,10 +130,6 @@ export class ExchangeBodyCard extends React.Component<{
         const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
 
         const currentRenderedContent = this.currentContent.get();
-
-        const bodySchema = apiBody && apiBody.case({
-            fulfilled: (schema) => schema
-        });
 
         return decodedBody ?
             <ExchangeCard
@@ -164,7 +159,7 @@ export class ExchangeBodyCard extends React.Component<{
                         contentType={contentType}
                         contentObservable={this.currentContent}
                         monacoTheme={theme!.monacoTheme}
-                        schema={bodySchema}
+                        schema={apiBodySchema}
                     >
                         {decodedBody}
                     </ContentEditor>

@@ -9,24 +9,25 @@ import {
     ParameterObject,
     ResponseObject,
     RequestBodyObject,
-    SchemaObject
+    SchemaObject,
+    ParameterLocation
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
 import { HtkResponse, HtkRequest, Html } from "../../types";
-import { firstMatch, ObservablePromise, observablePromise } from '../../util';
+import { firstMatch, empty, Empty } from '../../util';
 import { reportError } from '../../errors';
 
 import { HttpExchange } from '../exchange';
-import { ApiMetadata, Parameter, ApiExchange } from './openapi-types';
+import { ApiMetadata } from './build-api';
 import { buildApiMetadataAsync } from '../../workers/worker-api';
 
-const apiCache: _.Dictionary<ObservablePromise<ApiMetadata>> = {};
+const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};
 
-export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMetadata> | undefined {
-    const { parsedUrl } = exchange.request;
+export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | undefined {
+    const { parsedUrl } = request;
     const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
 
     let specId = findApi(requestUrl);
@@ -40,12 +41,12 @@ export function getMatchingAPI(exchange: HttpExchange): ObservablePromise<ApiMet
     }
 
     if (!apiCache[specId]) {
-        apiCache[specId] = observablePromise(
-            fetchApiMetadata(specId).then(buildApiMetadataAsync).catch((e) => {
+        apiCache[specId] = fetchApiMetadata(specId)
+            .then(buildApiMetadataAsync)
+            .catch((e) => {
                 reportError(e);
                 throw e;
-            })
-        );
+            });
     }
 
     return apiCache[specId];
@@ -67,11 +68,11 @@ const md = new Remarkable({
     linkify: true
 });
 
-export function getPath(api: ApiMetadata, exchange: HttpExchange): {
-    pathData: PathObject,
+export function getPath(api: ApiMetadata, request: HtkRequest): {
+    pathSpec: PathObject,
     path: string
 } | undefined {
-    const { parsedUrl } = exchange.request;
+    const { parsedUrl } = request;
 
     // Request URL without query params
     const url = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}`;
@@ -89,11 +90,11 @@ export function getPath(api: ApiMetadata, exchange: HttpExchange): {
 export function getParameters(
     path: string,
     parameters: ParameterObject[],
-    exchange: HttpExchange
+    request: HtkRequest
 ): Parameter[] {
     if (!parameters) return [];
 
-    const query = exchange.request.parsedUrl.searchParams;
+    const query = request.parsedUrl.searchParams;
 
     // Need the cast because TS doesn't know we've already dereferenced this
     return _.uniqBy(<ParameterObject[]>parameters, (param) =>
@@ -110,7 +111,7 @@ export function getParameters(
                 required: param.required || param.in === 'path',
                 defaultValue: schema && schema.default,
                 deprecated: param.deprecated || false,
-                validationErrors: <string[]>[]
+                warnings: <string[]>[]
             }
 
             switch (param.in) {
@@ -137,7 +138,7 @@ export function getParameters(
                         'i' // Match paths ignoring case (matters in theory, never in practice)
                     );
 
-                    const match = paramMatcher.exec(exchange.request.path);
+                    const match = paramMatcher.exec(request.path);
                     return {
                         ...commonFields,
                         value: match ? match[1] : undefined
@@ -146,7 +147,7 @@ export function getParameters(
                 case 'header':
                     return {
                         ...commonFields,
-                        value: exchange.request.headers[param.name.toLowerCase()]
+                        value: request.headers[param.name.toLowerCase()]
                     }
 
                 // TODO: Match in:cookie too (but currently no example in the specs)
@@ -161,13 +162,13 @@ export function getParameters(
             const { specParam } = param;
 
             if (param.required && param.value === undefined && param.defaultValue === undefined) {
-                param.validationErrors.push(
+                param.warnings.push(
                     `The '${param.name}' ${specParam.in} parameter is required.`
                 );
             }
 
             if (param.deprecated && param.value !== undefined) {
-                param.validationErrors.push(
+                param.warnings.push(
                     `The '${param.name}' ${specParam.in} parameter is deprecated.`
                 );
             }
@@ -184,7 +185,7 @@ export function getParameters(
                 }, valueWrapper);
 
                 if (!validated && paramValidator.errors) {
-                    param.validationErrors.push(
+                    param.warnings.push(
                         ...paramValidator.errors.map(e =>
                             `'${
                                 e.dataPath.replace(/^\.value/, param.name)
@@ -198,12 +199,12 @@ export function getParameters(
 
             return {
                 ...param,
-                validationErrors: param.validationErrors.map(e => stripTags(e))
+                warnings: param.warnings.map(e => stripTags(e))
             };
         });
 }
 
-export function getBody(
+export function getBodySchema(
     bodyDefinition: RequestBodyObject | ResponseObject | undefined,
     message: HtkRequest | HtkResponse | 'aborted' | undefined
 ): SchemaObject {
@@ -234,8 +235,8 @@ export function getBody(
     );
 }
 
-function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
-    const { parsedUrl } = exchange.request;
+function getDummyPath(api: ApiMetadata, request: HtkRequest): string {
+    const { parsedUrl } = request;
     const url = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}`;
     const serverMatch = api.serverMatcher.exec(url);
 
@@ -245,10 +246,6 @@ function getDummyPath(api: ApiMetadata, exchange: HttpExchange): string {
 
     // Everything after the server is our API path
     return url.slice(serverMatch[0].length);
-}
-
-function isCompletedResponse(response: any): response is HtkResponse {
-    return !!response.statusCode;
 }
 
 function fromMarkdown(input: string): Html;
@@ -274,82 +271,161 @@ function stripTags(input: string | undefined): string | undefined {
     return (input + '').replace(/(<([^>]+)>)/ig, '');
 }
 
-export function parseExchange(api: ApiMetadata, exchange: HttpExchange): ApiExchange {
-    const { info: service } = api.spec;
-    const { request, response } = exchange;
+export class ApiExchange {
+    constructor(api: ApiMetadata, exchange: HttpExchange) {
+        const { request } = exchange;
+        this.service = new ApiService(api.spec);
 
-    const validationErrors: string[] = [];
+        this._opSpec = matchOperation(api, request);
 
-    const serviceTitle = service.title;
-    const serviceLogoUrl = service['x-logo'].url
-    const serviceDescription = fromMarkdown(service.description);
-    const serviceDocsUrl = get(api, 'spec', 'externalDocs', 'url');
+        this.operation = new ApiOperation(this._opSpec);
+        this.request = new ApiRequest(this._opSpec, request);
 
-    const matchingPath = getPath(api, exchange);
-
-    const { pathData, path } = matchingPath || {
-        pathData: {}, path: getDummyPath(api, exchange)
+        if (exchange.response) {
+            this.updateWithResponse(exchange.response);
+        }
     }
 
-    const operation: OperationObject | _.Dictionary<never> = get(
-        pathData, request.method.toLowerCase()
-    ) || {};
+    private _opSpec: MatchedOperation;
 
-    const operationDocsUrl = get(operation, 'externalDocs', 'url');
+    public readonly service: ApiService;
+    public readonly operation: ApiOperation;
+    public readonly request: ApiRequest;
 
-    const operationName = stripTags(fromMarkdown(
-        firstMatch<string>(
-            [
-                () => (get(operation, 'summary', 'length') || Infinity) < 40, operation.summary!
-            ],
-            get(operation, 'operationId'),
-            [
-                () => (get(operation, 'description', 'length') || Infinity) < 40, operation.description!
-            ],
-            pathData.summary
-        ) || `${request.method} ${path}`
-    ).__html);
+    public response: ApiResponse | undefined;
 
-    const operationDescription = firstMatch<string>(
-        [() => get(operation, 'description') !== operationName, get(operation, 'description')],
-        [() => get(operation, 'summary') !== operationName, get(operation, 'summary')],
-        pathData.description
-    );
-
-    if (!matchingPath) validationErrors.push(
-        `Unknown operation '${operationName}'.`
-    );
-
-    if (operation.deprecated) validationErrors.push(
-        `The '${operationName}' operation is deprecated.`
-    );
-
-    const parameters = operation ? getParameters(
-        path!,
-        (pathData.parameters || []).concat(operation.parameters || []),
-        exchange
-    ) : [];
-
-    let responseSpec: ResponseObject | undefined;
-    let responseDescription: string | undefined;
-    if (get(operation, 'responses') && isCompletedResponse(response)) {
-        responseSpec = operation.responses[response.statusCode.toString()] ||
-            operation.responses.default;
-        responseDescription = responseSpec ? responseSpec.description : response.statusMessage;
+    updateWithResponse(response: HtkResponse | 'aborted' | undefined): void {
+        if (response === 'aborted' || response === undefined) return;
+        this.response = new ApiResponse(this._opSpec, response);
     }
+}
+
+class ApiService {
+    constructor(spec: OpenAPIObject) {
+        const { info: service } = spec;
+
+        this.name = service.title;
+        this.logoUrl = service['x-logo'].url
+        this.description = fromMarkdown(service.description);
+        this.docsUrl = get(spec, 'externalDocs', 'url');
+    }
+
+    public readonly name: string;
+    public readonly logoUrl?: string;
+    public readonly description?: Html;
+    public readonly docsUrl?: string;
+}
+
+function matchOperation(api: ApiMetadata, request: HtkRequest) {
+    const matchingPath = getPath(api, request);
+
+    const { pathSpec, path } = matchingPath || {
+        pathSpec: empty(), path: getDummyPath(api, request)
+    }
+
+    const method = (
+        request.headers['x-http-method-override'] || request.method
+    ).toLowerCase();
+
+    const operation: OperationObject | Empty = get(pathSpec, method) || empty();
 
     return {
-        serviceTitle,
-        serviceLogoUrl,
-        serviceDescription,
-        serviceDocsUrl,
-        operationName,
-        operationDescription: fromMarkdown(operationDescription),
-        operationDocsUrl,
-        parameters,
-        requestBody: getBody(operation.requestBody as RequestBodyObject | undefined, exchange.request),
-        responseDescription: fromMarkdown(responseDescription),
-        responseBody: getBody(responseSpec, exchange.response),
-        validationErrors: validationErrors.map(e => stripTags(e))
-    };
+        method,
+        path,
+        pathSpec,
+        spec: operation
+    }
+}
+
+type MatchedOperation = ReturnType<typeof matchOperation>;
+
+class ApiOperation {
+    constructor(
+        op: MatchedOperation
+    ) {
+        this.name = stripTags(fromMarkdown(
+            firstMatch<string>(
+                [
+                    () => (get(op.spec, 'summary', 'length') || Infinity) < 40, op.spec.summary!
+                ],
+                get(op.spec, 'operationId'),
+                [
+                    () => (get(op.spec, 'description', 'length') || Infinity) < 40, op.spec.description!
+                ],
+                op.pathSpec.summary
+            ) || `${op.method.toUpperCase()} ${op.path}`
+        ).__html);
+
+        this.description = fromMarkdown(firstMatch<string>(
+            [() => get(op.spec, 'description') !== this.name, get(op.spec, 'description')],
+            [() => get(op.spec, 'summary') !== this.name, get(op.spec, 'summary')],
+            op.pathSpec.description
+        ));
+
+        if (_.isEmpty(op.spec)) this.warnings.push(
+            `Unknown operation '${this.name}'.`
+        );
+
+        if (op.spec.deprecated) this.warnings.push(
+            `The '${this.name}' operation is deprecated.`
+        );
+
+        this.docsUrl = get(op.spec, 'externalDocs', 'url');
+
+        this.warnings = this.warnings.map(e => stripTags(e));
+    }
+
+    name: string;
+    description?: Html;
+    docsUrl?: string;
+
+    warnings: string[] = [];
+}
+
+class ApiRequest {
+    constructor(
+        op: MatchedOperation,
+        request: HtkRequest
+    ) {
+        this.parameters = getParameters(
+            op.path,
+            (op.pathSpec.parameters || []).concat(op.spec.parameters || []),
+            request
+        );
+
+        this.bodySchema = getBodySchema(op.spec.requestBody as RequestBodyObject | undefined, request);
+    }
+
+    parameters: Parameter[];
+    bodySchema?: SchemaObject;
+}
+
+export interface Parameter {
+    name: string;
+    description?: Html;
+    value?: unknown;
+    defaultValue?: unknown;
+    in: ParameterLocation;
+    required: boolean;
+    deprecated: boolean;
+    warnings: string[];
+}
+
+class ApiResponse {
+    constructor(
+        op: MatchedOperation,
+        response: HtkResponse
+    ) {
+        const spec: RequestBodyObject | undefined = op.spec.responses ? (
+            op.spec.responses[response.statusCode.toString()] ||
+            op.spec.responses.default
+        ) : undefined;
+
+        this.description = spec && spec.description !== response.statusMessage ?
+            fromMarkdown(spec.description) : undefined;
+        this.bodySchema = getBodySchema(spec, response);
+    }
+
+    description?: Html;
+    bodySchema?: SchemaObject;
 }

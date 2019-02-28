@@ -1,16 +1,14 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
-import { observable, action } from 'mobx';
 
 import { Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
 import { Icons, FontAwesomeIcon } from '../../icons';
-import { ObservablePromise } from '../../util';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
 import { getExchangeSummaryColour } from '../../exchange-colors';
-import { ApiExchange } from '../../model/openapi/openapi-types';
+import { ApiExchange } from '../../model/openapi/openapi';
 
 import {
     ExchangeCard,
@@ -144,26 +142,26 @@ const ApiRequestDetails = (props: {
     api: ApiExchange
 }) => {
     const { api } = props;
-    const relevantParameters = api.parameters
+    const relevantParameters = api.request.parameters
         .filter((param) => !!param.value || param.required);
 
-    const operationDetails = getDetailsWithWarnings(api.operationDescription, api.validationErrors);
+    const operationDetails = getDetailsWithWarnings(api.operation.description, api.operation.warnings);
     const hasOperationDetails = !!operationDetails.length;
 
     return <>
         <CollapsibleSection prefix={false}>
             <ExchangeCollapsibleSummary>
-                <ContentLabel>Service:</ContentLabel> { api.serviceTitle }
-                { !api.serviceDescription &&
-                    <DocsLink href={api.serviceDocsUrl} />
+                <ContentLabel>Service:</ContentLabel> { api.service.name }
+                { !api.service.description &&
+                    <DocsLink href={api.service.docsUrl} />
                 }
             </ExchangeCollapsibleSummary>
 
-            { api.serviceDescription &&
+            { api.service.description &&
                 <ExchangeCollapsibleBody>
-                    <ServiceLogo src={ api.serviceLogoUrl } alt='' />
-                    <ExternalContent content={api.serviceDescription} />
-                    <DocsLink href={api.serviceDocsUrl}>
+                    <ServiceLogo src={ api.service.logoUrl } alt='' />
+                    <ExternalContent content={api.service.description} />
+                    <DocsLink href={api.service.docsUrl}>
                         Find out more
                     </DocsLink>
                 </ExchangeCollapsibleBody>
@@ -172,17 +170,17 @@ const ApiRequestDetails = (props: {
 
         <CollapsibleSection prefix={false}>
             <ExchangeCollapsibleSummary>
-                <ContentLabel>Operation:</ContentLabel> { api.operationName }
+                <ContentLabel>Operation:</ContentLabel> { api.operation.name }
                 { !hasOperationDetails &&
-                    <DocsLink href={api.operationDocsUrl} />
+                    <DocsLink href={api.operation.docsUrl} />
                 }
-                { api.validationErrors.length ? <WarningIcon /> : null }
+                { api.operation.warnings.length ? <WarningIcon /> : null }
             </ExchangeCollapsibleSummary>
 
             { hasOperationDetails &&
                 <ExchangeCollapsibleBody>
                     { operationDetails }
-                    <DocsLink href={api.operationDocsUrl}>
+                    <DocsLink href={api.operation.docsUrl}>
                         Find out more
                     </DocsLink>
                 </ExchangeCollapsibleBody>
@@ -207,7 +205,7 @@ const ApiRequestDetails = (props: {
                             }</UnsetValue>
                         }
                     </ParamValue>
-                    { param.validationErrors.length ? <WarningIcon /> : null }
+                    { param.warnings.length ? <WarningIcon /> : null }
                 </ExchangeCollapsibleSummary>
 
                 <ExchangeCollapsibleBody>
@@ -215,7 +213,7 @@ const ApiRequestDetails = (props: {
                         { param.required ? 'Required ' : 'Optional ' }
                         { param.in } parameter
                     </ParamMetadata>
-                    { getDetailsWithWarnings(param.description, param.validationErrors) }
+                    { getDetailsWithWarnings(param.description, param.warnings) }
                 </ExchangeCollapsibleBody>
             </CollapsibleSection>
         ) }
@@ -224,18 +222,10 @@ const ApiRequestDetails = (props: {
 
 const SmartRequestDetails = observer((p: {
     request: HtkRequest,
-    apiExchange: ObservablePromise<ApiExchange> | undefined
+    apiExchange: ApiExchange | undefined
 }) => {
     return <div>
-        { p.apiExchange && p.apiExchange.case({
-            'fulfilled': (api) => <ApiRequestDetails api={api} />,
-            'pending': () => <>
-                <ContentLabel>Service:</ContentLabel>{' '}
-                <FontAwesomeIcon spin icon={['fac', 'spinner-arc']} />
-            </>,
-            'rejected': () => null
-        }) }
-
+        { p.apiExchange && <ApiRequestDetails api={p.apiExchange} /> }
         <RawRequestDetails request={p.request} />
     </div>
 });
@@ -243,7 +233,7 @@ const SmartRequestDetails = observer((p: {
 interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'>  {
     isPaidUser: boolean;
     exchange: HttpExchange;
-    apiExchange: ObservablePromise<ApiExchange> | undefined
+    apiExchange: ApiExchange | undefined
 }
 
 export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) => {

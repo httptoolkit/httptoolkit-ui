@@ -8,9 +8,10 @@ export const expect = chai.expect;
 
 import { buildBodyReader } from 'mockttp/dist/server/request-utils';
 import { Icons } from '../src/icons';
-import { HttpExchange } from '../src/types';
+import { HttpExchange } from '../src/model/exchange';
+import { Omit } from '../src/types';
 
-export const getExchange = ({
+export const getExchangeData = ({
     hostname = 'example.com',
     protocol = 'https',
     method = 'GET',
@@ -22,7 +23,7 @@ export const getExchange = ({
     statusMessage = '',
     responseBody = '',
     responseHeaders = {}
-} = {}): HttpExchange => ({
+} = {}) => ({
     id: '',
     request: {
         id: '',
@@ -47,4 +48,4 @@ export const getExchange = ({
     },
     searchIndex: '',
     category: 'unknown'
-});
+}) as HttpExchange;

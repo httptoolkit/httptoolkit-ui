@@ -6,11 +6,8 @@ import { observer, inject } from 'mobx-react';
 
 import { HtkResponse } from '../../types';
 import { styled, Theme } from '../../styles';
-import { reportError } from '../../errors';
 import { getStatusColor } from '../../exchange-colors';
 import { HttpExchange } from '../../model/exchange';
-
-import { getMatchingAPI, parseExchange } from '../../model/openapi/openapi';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
@@ -69,18 +66,10 @@ export class ExchangeDetailsPane extends React.Component<{
         if (exchange) {
             const { request, response } = exchange;
 
-            const knownApi = getMatchingAPI(exchange);
-            const apiExchange = knownApi && knownApi
-                .then(api => parseExchange(api, exchange))
-                .catch((e) => {
-                    reportError(e);
-                    throw e;
-                });
-
             cards.push(<ExchangeRequestCard
                 {...this.cardProps('request')}
                 exchange={exchange}
-                apiExchange={apiExchange}
+                apiExchange={exchange.api}
                 isPaidUser={account!.isPaidUser}
             />);
 
@@ -89,7 +78,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     title='Request Body'
                     direction='right'
                     message={request}
-                    apiBody={apiExchange && apiExchange.then(ex => ex.requestBody)}
+                    apiBodySchema={get(exchange, 'api', 'request', 'bodySchema')}
                     {...this.cardProps('requestBody')}
                 />);
             }
@@ -108,7 +97,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 cards.push(<ExchangeResponseCard
                     {...this.cardProps('response')}
                     response={response}
-                    apiExchange={apiExchange}
+                    apiExchange={exchange.api}
                     theme={theme!}
                 />);
 
@@ -117,7 +106,7 @@ export class ExchangeDetailsPane extends React.Component<{
                         title='Response Body'
                         direction='left'
                         message={response}
-                        apiBody={apiExchange && apiExchange.then(ex => ex.responseBody)}
+                        apiBodySchema={get(exchange, 'api', 'response', 'bodySchema')}
                         {...this.cardProps('responseBody')}
                     />);
                 }

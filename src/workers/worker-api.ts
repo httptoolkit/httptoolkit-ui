@@ -5,7 +5,7 @@ import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
 import { OpenAPIObject } from 'openapi-directory';
 
-import { ApiMetadata } from '../model/openapi/openapi-types';
+import { ApiMetadata } from '../model/openapi/build-api';
 
 const worker = new Worker();
 

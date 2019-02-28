@@ -1,11 +1,17 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { IPromiseBasedObservable, fromPromise } from 'mobx-utils';
+import { IPromiseBasedObservable, fromPromise, PromiseState } from 'mobx-utils';
 
 import { Omit } from './types';
+import { observable } from 'mobx';
 
 export function delay(numberMs: number) {
     return new Promise((resolve) => setTimeout(resolve, numberMs));
+}
+
+export type Empty = _.Dictionary<undefined>;
+export function empty(): Empty {
+    return {};
 }
 
 export function getDeferred(): {
@@ -27,7 +33,11 @@ export function getDeferred(): {
 }
 
 export type ObservablePromise<T> =
-    Omit<IPromiseBasedObservable<T>, 'then' | 'catch'> & {
+    Omit<
+        IPromiseBasedObservable<T>,
+        'then' | 'catch' | 'value'
+    > & {
+        value: T | Error | undefined,
         then<TResult1 = T, TResult2 = never>(
             onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
             onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
@@ -53,6 +63,52 @@ export function observablePromise<T>(p: Promise<T>): ObservablePromise<T> {
     }
 
     return observable;
+}
+
+// Creates an observable promise which doesn't run until somebody tries
+// to check the value or wait for it to resolve somehow.
+export function lazyObservablePromise<T>(p: () => PromiseLike<T>): ObservablePromise<T> {
+    const { resolve: trigger, promise: triggerPromise } = getDeferred();
+
+    const lazyPromise = observablePromise(triggerPromise.then(p));
+
+    ([
+        'then',
+        'catch',
+        'case'
+    ] as Array<'then' | 'catch' | 'case'>).forEach((methodName) => {
+        const originalMethod = lazyPromise[methodName];
+        lazyPromise[methodName] = <any> function (this: ObservablePromise<T>) {
+            trigger();
+            return originalMethod.apply(this, arguments);
+        };
+    });
+
+    let value = observable.box<T | Error | undefined>();
+    Object.defineProperty(lazyPromise, 'value', {
+        get: () => {
+            trigger();
+            return value.get();
+        },
+        set: (newValue) => {
+            trigger();
+            value.set(newValue);
+        }
+    });
+
+    let state = observable.box<PromiseState>();
+    Object.defineProperty(lazyPromise, 'state', {
+        get: () => {
+            trigger();
+            return state.get();
+        },
+        set: (newState) => {
+            trigger();
+            state.set(newState);
+        }
+    });
+
+    return lazyPromise;
 }
 
 type Case<R> = [() => boolean, R | undefined];

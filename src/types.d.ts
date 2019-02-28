@@ -1,8 +1,8 @@
 import { CompletedRequest, CompletedResponse } from 'mockttp';
 import { ComponentClass } from 'react';
+
 import { TrafficSource } from './model/sources';
 import { HtkContentType } from './content-types';
-import { ExchangeCategory } from './exchange-colors';
 
 // Useful app specific types
 
