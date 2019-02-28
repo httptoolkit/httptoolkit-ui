@@ -114,6 +114,9 @@ const CollapsibleTrigger = styled((p: {
     padding: 5px 10px;
     margin: -5px 0 -5px -10px;
     vertical-align: baseline;
+
+    scale: 0.7;
+    color: ${p => p.theme.mainColor};
 `;
 
 export const CollapsibleSectionSummary = styled.header`
