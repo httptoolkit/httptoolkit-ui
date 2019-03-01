@@ -9,7 +9,7 @@ export interface ExchangeCardProps {
     collapsed: boolean;
     direction?: 'left' | 'right';
     onCollapseToggled: () => void;
-    children: React.ReactElement<any> | React.ReactElement<any>[];
+    children: React.ReactElement<any> | Array<React.ReactElement<any> | null>;
 }
 
 // Bit of redundancy here, but just because the TS styled plugin
@@ -68,16 +68,14 @@ export const ContentLabelBlock = styled(ContentLabel)`
     min-height: 31px;
 `;
 
-export const ContentContainer = styled.div`
+export const ContentMonoValue = styled.div`
     padding: 3px 0 11px;
     width: 100%;
 
     &:last-child {
         padding-bottom: 0;
     }
-`;
 
-export const ContentMonoValue = styled(ContentContainer)`
     font-family: 'Fira Mono', monospace;
     word-break: break-all;
 `;

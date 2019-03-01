@@ -220,24 +220,13 @@ const ApiRequestDetails = (props: {
     </>;
 }
 
-const SmartRequestDetails = observer((p: {
-    request: HtkRequest,
-    apiExchange: ApiExchange | undefined
-}) => {
-    return <div>
-        { p.apiExchange && <ApiRequestDetails api={p.apiExchange} /> }
-        <RawRequestDetails request={p.request} />
-    </div>
-});
-
 interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'>  {
-    isPaidUser: boolean;
     exchange: HttpExchange;
     apiExchange: ApiExchange | undefined
 }
 
 export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) => {
-    const { isPaidUser, exchange, apiExchange } = props;
+    const { exchange, apiExchange } = props;
     const { request } = exchange;
 
     return <ExchangeCard {...props} direction='right'>
@@ -252,13 +241,8 @@ export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) =>
             </Pill>
             <h1>Request</h1>
         </header>
-        {
-            isPaidUser ?
-                <SmartRequestDetails
-                    request={request}
-                    apiExchange={apiExchange}
-                /> :
-                <RawRequestDetails request={request} />
-        }
+
+        { apiExchange ? <ApiRequestDetails api={apiExchange} /> : null }
+        <RawRequestDetails request={request} />
     </ExchangeCard>;
 });

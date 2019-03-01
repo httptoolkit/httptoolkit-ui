@@ -58,17 +58,19 @@ export class ExchangeDetailsPane extends React.Component<{
     }));
 
     render() {
-        const { exchange, theme, accountStore: account } = this.props;
+        const { exchange, theme, accountStore } = this.props;
+        const { isPaidUser } = accountStore!;
+
         const cards: JSX.Element[] = [];
 
         if (exchange) {
             const { request, response } = exchange;
+            const apiExchange = isPaidUser ? exchange.api : undefined;
 
             cards.push(<ExchangeRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
-                apiExchange={exchange.api}
-                isPaidUser={account!.isPaidUser}
+                apiExchange={apiExchange}
             />);
 
             if (request.body.buffer) {
@@ -76,7 +78,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     title='Request Body'
                     direction='right'
                     message={request}
-                    apiBodySchema={get(exchange, 'api', 'request', 'bodySchema')}
+                    apiBodySchema={get(apiExchange, 'request', 'bodySchema')}
                     {...this.cardProps.requestBody}
                 />);
             }
@@ -95,9 +97,8 @@ export class ExchangeDetailsPane extends React.Component<{
                 cards.push(<ExchangeResponseCard
                     {...this.cardProps.response}
                     response={response}
-                    apiExchange={exchange.api}
+                    apiExchange={apiExchange}
                     theme={theme!}
-                    isPaidUser={account!.isPaidUser}
                 />);
 
                 if (hasCompletedBody(response)) {
@@ -105,7 +106,7 @@ export class ExchangeDetailsPane extends React.Component<{
                         title='Response Body'
                         direction='left'
                         message={response}
-                        apiBodySchema={get(exchange, 'api', 'response', 'bodySchema')}
+                        apiBodySchema={get(apiExchange, 'response', 'bodySchema')}
                         {...this.cardProps.responseBody}
                     />);
                 }

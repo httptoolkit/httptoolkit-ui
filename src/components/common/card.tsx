@@ -106,7 +106,7 @@ export const CollapseIcon = styled((props: CollapseIconProps) =>
 @observer
 export class CollapsibleCard extends React.Component<{
     collapsed: boolean;
-    children: React.ReactElement<any> | React.ReactElement<any>[];
+    children: React.ReactElement<any> | Array<React.ReactElement<any> | null>;
     onCollapseToggled: () => void;
 } & React.HTMLAttributes<HTMLDivElement>> {
 
