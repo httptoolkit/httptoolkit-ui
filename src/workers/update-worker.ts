@@ -67,7 +67,12 @@ async function buildPrecacheList() {
 
     return __precacheManifest.map((precacheEntry) =>
         mapPrecacheEntry(precacheEntry, 'index.html', '/')
-    ).concat(googleFontsUrls);
+    )
+    .filter((precacheEntry) => {
+        const entryUrl = typeof precacheEntry === 'object' ? precacheEntry.url : precacheEntry;
+        return !entryUrl.startsWith('api/');
+    })
+    .concat(googleFontsUrls);
 };
 
 async function precacheNewVersionIfSupported() {
