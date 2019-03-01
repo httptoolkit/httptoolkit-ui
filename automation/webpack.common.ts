@@ -24,17 +24,6 @@ export default <Webpack.Configuration>{
         globalObject: 'this'
     },
 
-    // Automatically split into source/vendor bundle chunks.
-    optimization: {
-      splitChunks: {
-        chunks: (chunk) => {
-            // React monaco editor is 99.99% vendor code, so splitting it
-            // just creates an absurdly tiny extra bundle.
-            return chunk.name !== 'react-monaco-editor';
-        },
-      },
-    },
-
     resolve: {
         extensions: ['.js', '.ts', '.tsx']
     },
