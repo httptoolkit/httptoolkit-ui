@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { get } from 'typesafe-get';
 
 import { HtkResponse, Omit } from '../../types';
-import { Theme } from '../../styles';
+import { Theme, styled } from '../../styles';
 
 import { ApiExchange } from '../../model/openapi/openapi';
 import { getStatusColor } from '../../exchange-colors';
@@ -12,6 +12,7 @@ import { Pill } from '../common/pill';
 import { HeaderDetails } from './header-details';
 import {
     ExchangeCard,
+    ContentContainer,
     ContentMonoValue,
     ContentLabelBlock,
     ExchangeCardProps,
@@ -30,11 +31,10 @@ interface ExchangeResponseCardProps extends Omit<ExchangeCardProps, 'children'> 
 }
 
 const RawResponseDetails = (p: { response: HtkResponse }) => <div>
-    <ContentLabel>Status:</ContentLabel>
-    <ContentMonoValue>
+    <ContentContainer>
+        <ContentLabel>Status:</ContentLabel>{' '}
         {p.response.statusCode} {p.response.statusMessage}
-    </ContentMonoValue>
-
+    </ContentContainer>
     <ContentLabelBlock>Headers</ContentLabelBlock>
     <ContentMonoValue>
         <HeaderDetails headers={p.response.headers} />
@@ -53,7 +53,7 @@ const SmartResponseDetails = (p: {
         <CollapsibleSection prefix={false}>
             <ExchangeCollapsibleSummary>
                 <ContentLabel>Status:</ContentLabel>{' '}
-                    {p.response.statusCode} {p.response.statusMessage}
+                {p.response.statusCode} {p.response.statusMessage}
             </ExchangeCollapsibleSummary>
 
             {

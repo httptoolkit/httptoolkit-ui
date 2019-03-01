@@ -68,15 +68,18 @@ export const ContentLabelBlock = styled(ContentLabel)`
     min-height: 31px;
 `;
 
-export const ContentMonoValue = styled.div`
+export const ContentContainer = styled.div`
     padding: 3px 0 11px;
-    font-family: 'Fira Mono', monospace;
-    word-break: break-all;
     width: 100%;
 
     &:last-child {
         padding-bottom: 0;
     }
+`;
+
+export const ContentMonoValue = styled(ContentContainer)`
+    font-family: 'Fira Mono', monospace;
+    word-break: break-all;
 `;
 
 const LoadingCardContent = styled.div<{ height?: string }>`
