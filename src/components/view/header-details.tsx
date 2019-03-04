@@ -11,7 +11,7 @@ import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from './exchange-
 
 const HeadersGrid = styled.section`
     display: grid;
-    grid-template-columns: 20px fit-content(50%) 1fr;
+    grid-template-columns: 20px fit-content(30%) 1fr;
 
     grid-gap: 5px 0;
     &:not(:last-child) {

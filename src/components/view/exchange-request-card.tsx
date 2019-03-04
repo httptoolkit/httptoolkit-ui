@@ -65,7 +65,7 @@ const DocsLink = (p: {
 
 const ParametersGrid = styled.section`
     display: grid;
-    grid-template-columns: 20px fit-content(50%) 1fr min-content;
+    grid-template-columns: 20px fit-content(40%) 1fr min-content;
 
     grid-gap: 5px 0;
     &:not(:last-child) {
