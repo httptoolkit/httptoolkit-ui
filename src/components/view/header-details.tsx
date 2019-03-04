@@ -1,21 +1,49 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { styled, css } from '../../styles';
-import { getDocsUrl, getDocsSummary } from '../../model/headers';
+import { styled } from '../../styles';
+import { ExternalLinkIcon } from '../../icons';
 
-const Cell = css`
-    padding: 0 10px 5px 0;
-    vertical-align: top;
+import { getDocs } from '../../model/headers';
+
+import { CollapsibleSection } from '../common/collapsible-section';
+import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from './exchange-card';
+
+const HeadersGrid = styled.section`
+    display: grid;
+    grid-template-columns: 20px fit-content(50%) 1fr;
+
+    grid-gap: 5px 0;
+    &:not(:last-child) {
+        margin-bottom: 10px;
+    }
 `;
 
-const NameCell = styled.td`
-    ${Cell};
-    white-space: nowrap;
+const HeaderKeyValue = styled(ExchangeCollapsibleSummary)`
+    word-break: break-all; /* Fallback for anybody without break-word */
+    word-break: break-word;
+    font-family: 'Fira Mono', monospace;
 `;
 
-const ValueCell = styled.td`
-    ${Cell};
+const HeaderName = styled.span`
+    margin-right: 10px;
+`;
+
+const HeaderDescription = styled(ExchangeCollapsibleBody)`
+    line-height: 1.2;
+`;
+
+const DocsLink = styled((p: {
+    href?: string
+}) => p.href ?
+    <a {...p} target='_blank' rel='noreferrer noopener'>
+        Find out more <ExternalLinkIcon />
+    </a>
+:
+    null
+)`
+    display: block;
+    margin-top: 10px;
 `;
 
 const EmptyState = styled.div`
@@ -23,32 +51,28 @@ const EmptyState = styled.div`
     font-style: italic;
 `;
 
-const HeaderInfo = styled.a`
-    ${p => !!p.href && 'text-decoration: underline dotted #888'};
-    opacity: ${p => !!p.href ? 1 : 0.7};
-    color: ${p => p.theme.mainColor};
+export const HeaderDetails = (props: { headers: { [key: string]: string } }) => {
+    const headerNames = Object.keys(props.headers).sort();
 
-    &[href]:active {
-        color: ${p => p.theme.popColor};
-    }
-`;
-
-export const HeaderDetails = (props: { headers: { [key: string]: string }, className?: string }) => {
-    return _.isEmpty(props.headers) ?
+    return headerNames.length === 0 ?
         <EmptyState>(None)</EmptyState>
     :
-        <table className={props.className}>
-            <tbody>
-                { _.map(props.headers, (value, name) =>
-                    <tr key={name}>
-                        <NameCell>
-                            <HeaderInfo href={getDocsUrl(name)} title={getDocsSummary(name)} target="_blank">
-                                { name }
-                            </HeaderInfo>
-                        </NameCell>
-                        <ValueCell>{ value }</ValueCell>
-                    </tr>
-                ) }
-            </tbody>
-        </table>
+        <HeadersGrid>
+            { _.map(headerNames, (headerName) => {
+                const docs = getDocs(headerName);
+                const headerValue = props.headers[headerName];
+
+                return <CollapsibleSection withinGrid={true} key={headerName}>
+                        <HeaderKeyValue>
+                            <HeaderName>{ headerName }: </HeaderName>
+                            <span>{ headerValue }</span>
+                        </HeaderKeyValue>
+
+                        { docs && <HeaderDescription>
+                            { docs.summary }
+                            <DocsLink href={docs.url} />
+                        </HeaderDescription> }
+                </CollapsibleSection>
+            }) }
+        </HeadersGrid>;
 };

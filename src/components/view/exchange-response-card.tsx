@@ -60,9 +60,7 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
             </CollapsibleSection>
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
-            <ContentMonoValue>
-                <HeaderDetails headers={response.headers} />
-            </ContentMonoValue>
+            <HeaderDetails headers={response.headers} />
         </div>
     </ExchangeCard>;
 });

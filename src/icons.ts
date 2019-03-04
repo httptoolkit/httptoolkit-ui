@@ -1,3 +1,5 @@
+import { styled } from './styles';
+
 // Import required FA icons:
 import { library, IconPrefix, IconDefinition, IconName } from '@fortawesome/fontawesome-svg-core';
 
@@ -85,7 +87,8 @@ library.add(
     faNpm
 );
 
-export { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+export { FontAwesomeIcon };
 
 export interface IconProps {
     icon: string[];
@@ -111,3 +114,15 @@ export const Icons = {
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 };
+
+export const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
+    icon: ['fas', 'external-link-alt']
+})`
+    opacity: 0.5;
+    margin-left: 5px;
+
+    &:focus {
+        outline: none;
+        color: ${p => p.theme.popColor};
+    }
+`;

@@ -41,9 +41,7 @@ const RawRequestDetails = (p: { request: HtkRequest }) => <div>
     }</ContentMonoValue>
 
     <ContentLabelBlock>Headers</ContentLabelBlock>
-    <ContentMonoValue>
-        <HeaderDetails headers={p.request.headers} />
-    </ContentMonoValue>
+    <HeaderDetails headers={p.request.headers} />
 </div>;
 
 const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
@@ -81,19 +79,20 @@ const ParametersGrid = styled.section`
     display: grid;
     grid-template-columns: 20px fit-content(50%) 1fr min-content;
 
-    grid-gap: 10px 0;
-    margin-bottom: 10px;
+    grid-gap: 5px 0;
+    &:not(:last-child) {
+        margin-bottom: 10px;
+    }
+`;
+
+const ParameterKeyValue = styled(ExchangeCollapsibleSummary)`
+    word-break: break-all; /* Fallback for anybody without break-word */
+    word-break: break-word;
+    font-family: 'Fira Mono', monospace;
 `;
 
 const ParamName = styled.span`
-    font-family: 'Fira Mono', monospace;
-    word-break: break-word;
     margin-right: 10px;
-`;
-
-const ParamValue = styled.span`
-    font-family: 'Fira Mono', monospace;
-    word-break: break-all;
 `;
 
 const UnsetValue = styled.span`
@@ -220,19 +219,19 @@ const ApiRequestDetails = (props: {
             <ParametersGrid>
                 { relevantParameters.map((param) =>
                     <CollapsibleSection withinGrid={true} key={param.name}>
-                        <ExchangeCollapsibleSummary>
+                        <ParameterKeyValue>
                             <ParamName>{ param.name }: </ParamName>
-                            <ParamValue>
-                                { formatValue(param.value) ||
-                                    <UnsetValue>{
-                                        param.defaultValue ?
-                                            formatValue(param.defaultValue) + ' [default]' :
-                                            '[not set]'
-                                    }</UnsetValue>
-                                }
-                            </ParamValue>
+
+                            <span>{ formatValue(param.value) ||
+                                <UnsetValue>{
+                                    param.defaultValue ?
+                                        formatValue(param.defaultValue) + ' [default]' :
+                                        '[not set]'
+                                }</UnsetValue>
+                            }</span>
+
                             { param.warnings.length ? <WarningIcon /> : <div/> }
-                        </ExchangeCollapsibleSummary>
+                        </ParameterKeyValue>
 
                         <ExchangeCollapsibleBody>
                             { getDetailsWithWarnings(param.description, param.warnings) }

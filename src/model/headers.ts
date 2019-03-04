@@ -16,7 +16,11 @@ const output = (_(headers.subpages)
 .mapValues((p, k) => ({
     mdnSlug: p.slug,
     name: p.title,
-    summary: p.summary.replace(/<(.|\n)*?>/g, '').split(/\.( |$)/)[0] + '.'
+    summary: p.summary
+      .replace(/<(.|\n)*?>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .split(/\.( |$)/)[0] + '.'
 }))
 .value())
 console.log(JSON.stringify(output, null, 2));
@@ -451,7 +455,7 @@ export const HEADERS: { [key: string]: HeaderInfo | undefined } = {
     "x-frame-options": {
       "mdnSlug": "Web/HTTP/Headers/X-Frame-Options",
       "name": "X-Frame-Options",
-      "summary": "The X-Frame-Options HTTP response header can be used to indicate whether or not a browser should be allowed to render a page in a &lt;frame&gt;, &lt;iframe&gt;, &lt;embed&gt; or &lt;object&gt;."
+      "summary": "The X-Frame-Options HTTP response header can be used to indicate whether or not a browser should be allowed to render a page in a <frame>, <iframe>, <embed> or <object>."
     },
     "x-xss-protection": {
       "mdnSlug": "Web/HTTP/Headers/X-XSS-Protection",
@@ -460,16 +464,12 @@ export const HEADERS: { [key: string]: HeaderInfo | undefined } = {
     }
 };
 
-export function getDocsUrl(headerName: string) {
+export function getDocs(headerName: string) {
     const headerInfo = HEADERS[headerName.toLowerCase()];
 
     if (!headerInfo) return undefined;
-    return `https://developer.mozilla.org/en-US/docs/${headerInfo.mdnSlug}`;
-}
-
-export function getDocsSummary(headerName: string) {
-    const headerInfo = HEADERS[headerName.toLowerCase()];
-
-    if (!headerInfo) return undefined;
-    return headerInfo.summary;
+    return {
+      url: `https://developer.mozilla.org/en-US/docs/${headerInfo.mdnSlug}`,
+      summary: headerInfo.summary
+    };
 }
