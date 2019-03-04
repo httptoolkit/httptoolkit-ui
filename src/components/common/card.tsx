@@ -25,6 +25,10 @@ const Card = styled.section.attrs((p: CardProps) => ({
     ${(p: CardProps) => !p.disabled && p.onClick && `
         cursor: pointer;
 
+        &:hover {
+            box-shadow: 0 2px 20px 0 rgba(0,0,0,0.3);
+        }
+
         &:active {
             box-shadow: inset 0 2px 10px 0 rgba(0,0,0,0.2);
         }
