@@ -109,6 +109,7 @@ export function getParameters(
                 in: param.in,
                 description: fromMarkdown(param.description),
                 required: param.required || param.in === 'path',
+                type: schema && schema.type,
                 defaultValue: schema && schema.default,
                 deprecated: param.deprecated || false,
                 warnings: <string[]>[]
@@ -405,6 +406,7 @@ export interface Parameter {
     description?: Html;
     value?: unknown;
     defaultValue?: unknown;
+    type?: string;
     in: ParameterLocation;
     required: boolean;
     deprecated: boolean;

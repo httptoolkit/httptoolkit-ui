@@ -8,7 +8,7 @@ import { Icons, FontAwesomeIcon } from '../../icons';
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
 import { getExchangeSummaryColour } from '../../exchange-colors';
-import { ApiExchange } from '../../model/openapi/openapi';
+import { ApiExchange, Parameter } from '../../model/openapi/openapi';
 
 import {
     ExchangeCard,
@@ -93,8 +93,20 @@ const UnsetValue = styled.span`
     margin-right: 5px;
 `;
 
-const ParamMetadata = styled.div`
-    float: right;
+const ParamMetadata = styled((p: {
+    param: Parameter,
+    className?: string
+}) => <div className={p.className}>
+        {
+            [
+                p.param.required ? 'Required' : 'Optional',
+                p.param.type,
+                p.param.in
+            ]
+            .filter((x) => !!x)
+            .join(' ')
+        } parameter
+</div>)`
     line-height: 1.2;
     padding: 0 0 10px 10px;
     font-style: italic;
@@ -215,10 +227,7 @@ const ApiRequestDetails = (props: {
                 </ExchangeCollapsibleSummary>
 
                 <ExchangeCollapsibleBody>
-                    <ParamMetadata>
-                        { param.required ? 'Required ' : 'Optional ' }
-                        { param.in } parameter
-                    </ParamMetadata>
+                    <ParamMetadata param={param} />
                     { getDetailsWithWarnings(param.description, param.warnings) }
                 </ExchangeCollapsibleBody>
             </CollapsibleSection>
