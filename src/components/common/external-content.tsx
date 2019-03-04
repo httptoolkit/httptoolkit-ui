@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { styled } from "../../styles";
 import { Html } from '../../types';
@@ -9,7 +10,7 @@ import { Html } from '../../types';
 export const ExternalContent = styled((p: React.HTMLAttributes<HTMLDivElement> & {
     content: Html
 }) =>
-    <section {...p} dangerouslySetInnerHTML={p.content} />
+    <div {..._.omit(p, 'content')} dangerouslySetInnerHTML={p.content} />
 )`
     line-height: 1.2;
 

@@ -145,7 +145,7 @@ const CollapsibleTrigger = styled((p: {
     withinGrid: boolean,
     onClick: (e: React.SyntheticEvent) => void
 }) =>
-    <button {..._.omit(p, 'open')}>
+    <button {..._.omit(p, ['open', 'canOpen', 'withinGrid'])}>
         <FontAwesomeIcon icon={[
             'fas',
             p.open ? 'minus' : 'plus'
