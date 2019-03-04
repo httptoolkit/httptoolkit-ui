@@ -142,8 +142,14 @@ const ApiRequestDetails = (props: {
     api: ApiExchange
 }) => {
     const { api } = props;
-    const relevantParameters = api.request.parameters
-        .filter((param) => !!param.value || param.required);
+    const setParameters = api.request.parameters
+        .filter((param) => !!param.value || param.required || param.defaultValue);
+
+    // If that leaves us with lots of parameters then ignore the ones that
+    // are just unset default values.
+    const relevantParameters = setParameters.length > 5 ?
+        setParameters.filter((param) => !!param.value || param.required) :
+        setParameters;
 
     const operationDetails = getDetailsWithWarnings(api.operation.description, api.operation.warnings);
     const hasOperationDetails = !!operationDetails.length;
