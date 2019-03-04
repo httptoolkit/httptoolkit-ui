@@ -165,6 +165,9 @@ const CollapsibleTrigger = styled((p: {
     &:focus {
         color: ${p => p.theme.popColor};
     }
+    &:hover {
+        color: ${p => p.theme.mainColor};
+    }
 
     padding: 5px 10px;
 
@@ -177,7 +180,7 @@ const CollapsibleTrigger = styled((p: {
     `}
 
     scale: 0.7;
-    color: ${p => p.theme.mainColor};
+    color: ${p => p.theme.containerWatermark};
 
     ${p => !p.canOpen && css`
         visibility: hidden;
