@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 
 import { Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
-import { Icons, FontAwesomeIcon } from '../../icons';
+import { Icons, FontAwesomeIcon, ExternalLinkIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
@@ -43,18 +43,6 @@ const RawRequestDetails = (p: { request: HtkRequest }) => <div>
     <ContentLabelBlock>Headers</ContentLabelBlock>
     <HeaderDetails headers={p.request.headers} />
 </div>;
-
-const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
-    icon: ['fas', 'external-link-alt']
-})`
-    opacity: 0.5;
-    margin-left: 5px;
-
-    &:focus {
-        outline: none;
-        color: ${p => p.theme.popColor};
-    }
-`;
 
 const ServiceLogo = styled(OptionalImage)`
     float: right;

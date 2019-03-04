@@ -74,6 +74,8 @@ const CopyableInstruction = styled.span`
     font-family: 'Fira Mono', monospace;
     user-select: all;
     font-weight: bold;
+
+    word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
 `;
 

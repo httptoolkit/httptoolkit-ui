@@ -249,6 +249,7 @@ export const CollapsibleSectionBody = styled.div`
 
     padding: 8px 10px 10px 10px;
 
+    word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
 
     position: relative;
