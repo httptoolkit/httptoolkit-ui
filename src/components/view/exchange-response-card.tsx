@@ -26,12 +26,13 @@ import { DocsLink } from '../common/docs-link';
 
 interface ExchangeResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {
     theme: Theme;
+    requestUrl: URL;
     response: HtkResponse;
     apiExchange: ApiExchange | undefined;
 }
 
 export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) => {
-    const { response, theme, apiExchange } = props;
+    const { response, requestUrl, theme, apiExchange } = props;
 
     const apiResponseDescription = get(apiExchange, 'response', 'description');
     const statusDocs = getStatusDocs(response.statusCode);
@@ -75,7 +76,7 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
             </CollapsibleSection>
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
-            <HeaderDetails headers={response.headers} />
+            <HeaderDetails headers={response.headers} requestUrl={requestUrl} />
         </div>
     </ExchangeCard>;
 });

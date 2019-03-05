@@ -1,15 +1,20 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as chaiDeepMatch from 'chai-deep-match';
+import * as chaiEnzyme from 'chai-enzyme';
 chai.use(chaiAsPromised);
 chai.use(chaiDeepMatch);
+chai.use(chaiEnzyme());
+
+import Enzyme from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+Enzyme.configure({ adapter: new Adapter() });
 
 export const expect = chai.expect;
 
 import { buildBodyReader } from 'mockttp/dist/server/request-utils';
 import { Icons } from '../src/icons';
 import { HttpExchange } from '../src/model/exchange';
-import { Omit } from '../src/types';
 
 export const getExchangeData = ({
     hostname = 'example.com',

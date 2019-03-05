@@ -7,16 +7,19 @@ module.exports = function(config) {
     config.set({
         frameworks: ['mocha', 'chai'],
         files: [
-            './**/*.spec.ts'
+            './**/*.spec.ts',
+            './**/*.spec.tsx'
         ],
-        mime: { 'text/x-typescript': ['ts'] },
+        mime: { 'text/x-typescript': ['ts', 'tsx'] },
         webpack: require('../../automation/webpack.test').default,
         webpackMiddleware: {
             stats: 'error-only'
         },
         preprocessors: {
             './**/*.ts': ['webpack', 'sourcemap'],
+            './**/*.tsx': ['webpack', 'sourcemap'],
             '../../src/**/*.ts': ['webpack', 'sourcemap'],
+            '../../src/**/*.tsx': ['webpack', 'sourcemap'],
         },
         reporters: ['mocha'],
         mochaReporter: {

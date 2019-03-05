@@ -41,7 +41,7 @@ const RawRequestDetails = (p: { request: HtkRequest }) => <div>
     }</ContentMonoValue>
 
     <ContentLabelBlock>Headers</ContentLabelBlock>
-    <HeaderDetails headers={p.request.headers} />
+    <HeaderDetails headers={p.request.headers} requestUrl={p.request.parsedUrl} />
 </div>;
 
 const ServiceLogo = styled(OptionalImage)`

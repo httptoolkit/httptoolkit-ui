@@ -575,7 +575,7 @@ describe('OpenAPI support', () => {
             });
         });
 
-        it('should match the most specific content type', () => {
+        it('should match the most specific content type, using wildcards where appropriate', () => {
             expect(
                 getBodySchema(
                     {

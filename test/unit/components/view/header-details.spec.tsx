@@ -1,0 +1,171 @@
+// Not clear why this is necessary, but it seems to be. Something to do with chai-enzyme?
+/// <reference path="../../../../custom-typings/chai-deep-match.d.ts" />
+
+import * as React from 'react';
+import { shallow } from 'enzyme';
+
+import { expect } from '../../../test-setup';
+import { CookieHeaderDescription } from '../../../../src/components/view/header-details';
+
+describe('Header details', () => {
+    describe('for set-cookie', () => {
+        it('should use sensible defaults for the minimal case', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').map(p => p.text())
+            ).to.deep.match([
+                `Set cookie 'a' to 'b'`,
+                'This cookie will be sent in future secure and insecure requests ' +
+                    'to example.com, but not its subdomains.',
+                'The cookie is accessible from client-side scripts running on matching ' +
+                    'pages. Matching requests triggered from other origins will also include ' +
+                    'this cookie.',
+                'The cookie expires at the end of the current session.'
+            ]);
+        });
+
+        it('should default the path to the request path', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b'
+                requestUrl={new URL('http://example.com/abc/def')}
+            />);
+
+            expect(
+                description.find('p').at(1).text()
+            ).to.equal(
+                'This cookie will be sent in future secure and insecure requests ' +
+                    'to example.com, but not its subdomains, ' +
+                    `for paths within '/abc'.`
+            );
+        });
+
+        it('should explain explicit cookie paths', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; Path=/a'
+                requestUrl={new URL('http://example.com/abc/def')}
+            />);
+
+            expect(
+                description.find('p').at(1).text()
+            ).to.equal(
+                'This cookie will be sent in future secure and insecure requests ' +
+                    'to example.com, but not its subdomains, ' +
+                    `for paths within '/a'.`
+            );
+        });
+
+        it('should explain explicit cookie domains', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; Domain=.example.com'
+                requestUrl={new URL('http://www.example.com/')}
+            />);
+
+            expect(
+                description.find('p').at(1).text()
+            ).to.equal(
+                'This cookie will be sent in future secure and insecure requests ' +
+                    'to example.com and subdomains.'
+            );
+        });
+
+        it('should explain secure cookies', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; Secure'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(1).text()
+            ).to.equal(
+                'This cookie will be sent in future secure requests ' +
+                    'to example.com, but not its subdomains.'
+            );
+        });
+
+        it('should explain HTTP-only cookies', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; HttpOnly'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(2).text()
+            ).to.equal(
+                'The cookie is not accessible from client-side scripts. ' +
+                    'Matching requests triggered from other origins will however include this cookie.'
+            );
+        });
+
+        it('should explain Expires cookie expiry', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; Expires=Fri, 1 Jan 2100 12:00:00 GMT'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(3).text()
+            ).to.match(
+                /^The cookie will expire in .* years.$/
+            );
+        });
+
+        it('should explain Max-Age cookie expiry', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; Max-Age=120'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(3).text()
+            ).to.equal(
+                'The cookie will expire in 2 minutes.'
+            );
+        });
+
+        it('should explain Max-Age cookie expiry that overrides Expires', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; Max-Age=120; Expires=Fri, 1 Jan 2100 12:00:00 GMT'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(3).text()
+            ).to.equal(
+                `The cookie will expire in 2 minutes ('max-age' overrides 'expires').`
+            );
+        });
+
+        it('should explain Strict SameSite cookies', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; SameSite=Strict'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(2).text()
+            ).to.equal(
+                'The cookie is accessible from client-side scripts running on matching pages, ' +
+                    'but matching requests triggered from other origins will not include this cookie.'
+            );
+        });
+
+        it('should explain Lax SameSite cookies', () => {
+            const description = shallow(<CookieHeaderDescription
+                value='a=b; SameSite=Lax'
+                requestUrl={new URL('http://example.com')}
+            />);
+
+            expect(
+                description.find('p').at(2).text()
+            ).to.equal(
+                'The cookie is accessible from client-side scripts running on matching pages. ' +
+                    'Matching requests triggered from other origins will include this cookie, ' +
+                    'but only if they are top-level navigations using safe HTTP methods.'
+            );
+        });
+    })
+});

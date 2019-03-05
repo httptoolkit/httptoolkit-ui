@@ -97,6 +97,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 cards.push(<ExchangeResponseCard
                     {...this.cardProps.response}
                     response={response}
+                    requestUrl={exchange.request.parsedUrl}
                     apiExchange={apiExchange}
                     theme={theme!}
                 />);
