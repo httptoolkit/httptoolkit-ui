@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { styled } from "../../styles";
 import { Html } from '../../types';
+import { fromMarkdown } from '../../model/markdown';
 
 // Takes some HTML (in an __html object) and renders it with nice
 // default formatting. THIS MUST ONLY BE CALLED WITH SANITIZED HTML.
@@ -74,4 +75,9 @@ export const ExternalContent = styled((p: React.HTMLAttributes<HTMLDivElement> &
     :last-child :last-child {
         margin-bottom: 0;
     }
-`
+`;
+
+export const Markdown = (p: { content: string | undefined }) =>
+    p.content ?
+        <ExternalContent content={fromMarkdown(p.content)} />
+    : null;

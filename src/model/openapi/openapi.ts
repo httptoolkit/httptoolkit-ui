@@ -13,8 +13,6 @@ import {
     ParameterLocation
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
-import * as Remarkable from 'remarkable';
-import * as DOMPurify from 'dompurify';
 
 import { HtkResponse, HtkRequest, Html } from "../../types";
 import { firstMatch, empty, Empty } from '../../util';
@@ -23,6 +21,7 @@ import { reportError } from '../../errors';
 import { HttpExchange } from '../exchange';
 import { ApiMetadata } from './build-api';
 import { buildApiMetadataAsync } from '../../workers/worker-api';
+import { fromMarkdown } from '../markdown';
 
 const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};
 
@@ -61,11 +60,6 @@ async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
 const paramValidator = new Ajv({
     coerceTypes: 'array',
     unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
-});
-
-const md = new Remarkable({
-    html: true,
-    linkify: true
 });
 
 export function getPath(api: ApiMetadata, request: HtkRequest): {
@@ -247,17 +241,6 @@ function getDummyPath(api: ApiMetadata, request: HtkRequest): string {
 
     // Everything after the server is our API path
     return url.slice(serverMatch[0].length);
-}
-
-function fromMarkdown(input: string): Html;
-function fromMarkdown(input: string | undefined): Html | undefined;
-function fromMarkdown(input: string | undefined): Html | undefined {
-    if (!input) return undefined;
-    else {
-        const unsafeMarkdown = md.render(input).replace(/\n$/, '');
-        const safeHtml = DOMPurify.sanitize(unsafeMarkdown);
-        return { __html: safeHtml };
-    }
 }
 
 // Rough but effective HTML stripping regex. This is _not_ designed to produce HTML-safe

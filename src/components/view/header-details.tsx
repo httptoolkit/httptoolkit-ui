@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import { styled } from '../../styles';
 
-import { getDocs } from '../../model/headers';
+import { getHeaderDocs } from '../../model/http-docs';
 
 import { CollapsibleSection } from '../common/collapsible-section';
 import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from './exchange-card';
@@ -51,7 +51,7 @@ export const HeaderDetails = (props: { headers: { [key: string]: string } }) => 
     :
         <HeadersGrid>
             { _.map(headerNames, (headerName) => {
-                const docs = getDocs(headerName);
+                const docs = getHeaderDocs(headerName);
                 const headerValue = props.headers[headerName];
 
                 return <CollapsibleSection withinGrid={true} key={headerName}>
