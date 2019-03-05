@@ -76,7 +76,7 @@ export const ContentMonoValue = styled.div`
         padding-bottom: 0;
     }
 
-    font-family: 'Fira Mono', monospace;
+    font-family: ${p => p.theme.monoFontFamily};
     word-break: break-all;
 `;
 

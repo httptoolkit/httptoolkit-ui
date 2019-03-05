@@ -53,7 +53,7 @@ export const ExternalContent = styled((p: React.HTMLAttributes<HTMLDivElement> &
     }
 
     code {
-        font-family: 'Fira Mono', monospace;
+        font-family: ${p => p.theme.monoFontFamily};
     }
 
     h1, h2, h3, h4, h5, h6 {

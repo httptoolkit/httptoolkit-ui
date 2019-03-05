@@ -71,7 +71,7 @@ const InstructionsStep = styled.div`
 `;
 
 const CopyableInstruction = styled.span`
-    font-family: 'Fira Mono', monospace;
+    font-family: ${p => p.theme.monoFontFamily};
     user-select: all;
     font-weight: bold;
 

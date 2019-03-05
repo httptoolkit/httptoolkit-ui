@@ -11,6 +11,7 @@ const fontSizes = {
 
 export const lightTheme = {
     fontFamily: 'Lato, Arial, sans-serif',
+    monoFontFamily: "'Fira Mono', monospace",
 
     mainBackground: '#fafafa',
     mainLowlightBackground: '#eaeaea',
@@ -32,6 +33,7 @@ export const lightTheme = {
 
 export const darkTheme = {
     fontFamily: 'Lato, Arial, sans-serif',
+    monoFontFamily: "'Fira Mono', monospace",
 
     mainBackground: '#222222',
     mainLowlightBackground: '#333333',

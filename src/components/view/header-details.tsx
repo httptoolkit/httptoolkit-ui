@@ -22,7 +22,7 @@ const HeadersGrid = styled.section`
 const HeaderKeyValue = styled(ExchangeCollapsibleSummary)`
     word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
-    font-family: 'Fira Mono', monospace;
+    font-family: ${p => p.theme.monoFontFamily};
 `;
 
 const HeaderName = styled.span`
