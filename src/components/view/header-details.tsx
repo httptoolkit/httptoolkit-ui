@@ -43,21 +43,35 @@ const EmptyState = styled.div`
     font-style: italic;
 `;
 
-export const HeaderDetails = (props: { headers: { [key: string]: string } }) => {
+export const HeaderDetails = (props: { headers: { [key: string]: string | string[] } }) => {
     const headerNames = Object.keys(props.headers).sort();
 
     return headerNames.length === 0 ?
         <EmptyState>(None)</EmptyState>
     :
         <HeadersGrid>
-            { _.map(headerNames, (headerName) => {
-                const docs = getHeaderDocs(headerName);
-                const headerValue = props.headers[headerName];
+            { _.flatMap(headerNames, (name) => {
+                const headerValue = props.headers[name];
+                if (typeof headerValue === 'string') {
+                    return {
+                        name,
+                        value: headerValue,
+                        key: name
+                    };
+                } else {
+                    return headerValue.map((value, i) => ({
+                        name,
+                        value,
+                        key: name + i
+                    }));
+                }
+            }).map(({ name, value, key }) => {
+                const docs = getHeaderDocs(name);
 
-                return <CollapsibleSection withinGrid={true} key={headerName}>
+                return <CollapsibleSection withinGrid={true} key={key}>
                         <HeaderKeyValue>
-                            <HeaderName>{ headerName }: </HeaderName>
-                            <span>{ headerValue }</span>
+                            <HeaderName>{ name }: </HeaderName>
+                            <span>{ value }</span>
                         </HeaderKeyValue>
 
                         { docs && <HeaderDescription>
