@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 
 import { Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
-import { Icons, FontAwesomeIcon, ExternalLinkIcon } from '../../icons';
+import { Icons, FontAwesomeIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
@@ -22,9 +22,9 @@ import {
 import { Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
 import { OptionalImage } from '../common/optional-image';
-
-import { HeaderDetails } from './header-details';
 import { ExternalContent } from '../common/external-content';
+import { DocsLink } from '../common/docs-link';
+import { HeaderDetails } from './header-details';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== Icons.Unknown ?
@@ -51,17 +51,6 @@ const ServiceLogo = styled(OptionalImage)`
     border: 4px solid #ffffff;
     border-radius: 2px;
 `;
-
-const DocsLink = (p: {
-    href?: string,
-    children?: React.ReactNode
-}) => p.href ?
-    <a {...p} target='_blank' rel='noreferrer noopener'>
-        { /* Whitespace after children, iff we have children */ }
-        { p.children ? <>{ p.children } </> : null }
-        <ExternalLinkIcon />
-    </a>
-: null;
 
 const ParametersGrid = styled.section`
     display: grid;

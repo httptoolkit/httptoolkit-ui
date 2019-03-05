@@ -114,15 +114,3 @@ export const Icons = {
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 };
-
-export const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
-    icon: ['fas', 'external-link-alt']
-})`
-    opacity: 0.5;
-    margin-left: 5px;
-
-    &:focus {
-        outline: none;
-        color: ${p => p.theme.popColor};
-    }
-`;

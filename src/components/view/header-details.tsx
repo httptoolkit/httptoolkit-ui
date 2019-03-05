@@ -2,12 +2,12 @@ import * as _ from 'lodash';
 import * as React from 'react';
 
 import { styled } from '../../styles';
-import { ExternalLinkIcon } from '../../icons';
 
 import { getDocs } from '../../model/headers';
 
 import { CollapsibleSection } from '../common/collapsible-section';
 import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from './exchange-card';
+import { DocsLink } from '../common/docs-link';
 
 const HeadersGrid = styled.section`
     display: grid;
@@ -33,15 +33,7 @@ const HeaderDescription = styled(ExchangeCollapsibleBody)`
     line-height: 1.2;
 `;
 
-const DocsLink = styled((p: {
-    href?: string
-}) => p.href ?
-    <a {...p} target='_blank' rel='noreferrer noopener'>
-        Find out more <ExternalLinkIcon />
-    </a>
-:
-    null
-)`
+const HeaderDocsLink = styled(DocsLink)`
     display: block;
     margin-top: 10px;
 `;
@@ -70,7 +62,9 @@ export const HeaderDetails = (props: { headers: { [key: string]: string } }) => 
 
                         { docs && <HeaderDescription>
                             { docs.summary }
-                            <DocsLink href={docs.url} />
+                            <HeaderDocsLink href={docs.url}>
+                                Find out more
+                            </HeaderDocsLink>
                         </HeaderDescription> }
                 </CollapsibleSection>
             }) }
