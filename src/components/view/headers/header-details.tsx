@@ -67,8 +67,10 @@ const getHeaderDescription = (
         }
     }
 
-    return <p>
-        { get(getHeaderDocs(name), 'summary') }
+    const headerDocs = get(getHeaderDocs(name), 'summary');
+
+    return headerDocs && <p>
+        { headerDocs }
     </p>
 };
 
