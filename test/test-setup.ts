@@ -8,7 +8,11 @@ chai.use(chaiEnzyme());
 
 import Enzyme from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
-Enzyme.configure({ adapter: new Adapter() });
+
+if (Enzyme) {
+    // Not defined in node-based (e.g. integration) tests
+    Enzyme.configure({ adapter: new Adapter() });
+}
 
 export const expect = chai.expect;
 
