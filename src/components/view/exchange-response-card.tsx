@@ -11,7 +11,7 @@ import { getStatusColor } from '../../exchange-colors';
 import { getStatusDocs } from '../../model/http-docs';
 
 import { Pill } from '../common/pill';
-import { HeaderDetails } from './header-details';
+import { HeaderDetails } from './headers/header-details';
 import {
     ExchangeCard,
     ContentLabelBlock,

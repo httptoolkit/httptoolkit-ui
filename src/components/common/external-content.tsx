@@ -8,11 +8,12 @@ import { fromMarkdown } from '../../model/markdown';
 // default formatting. THIS MUST ONLY BE CALLED WITH SANITIZED HTML.
 // The __html format is intended to enforce this - those objects
 // should only be created during sanitization.
-export const ExternalContent = styled((p: React.HTMLAttributes<HTMLDivElement> & {
+export const ExternalContent = (p:  React.HTMLAttributes<HTMLDivElement> & {
     content: Html
-}) =>
-    <div {..._.omit(p, 'content')} dangerouslySetInnerHTML={p.content} />
-)`
+}) => <Content {..._.omit(p, 'content')} dangerouslySetInnerHTML={p.content} />
+
+// Format blocks of readable text/docs/etc.
+export const Content = styled.div`
     line-height: 1.2;
 
     p, li, ul, ol, table, h1, h2, h3, h4, h5, h6, pre {
@@ -53,6 +54,8 @@ export const ExternalContent = styled((p: React.HTMLAttributes<HTMLDivElement> &
     }
 
     code {
+        word-break: break-all; /* Fallback for anybody without break-word */
+        word-break: break-word;
         font-family: ${p => p.theme.monoFontFamily};
     }
 

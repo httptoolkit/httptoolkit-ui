@@ -24,13 +24,13 @@ import { CollapsibleSection } from '../common/collapsible-section';
 import { OptionalImage } from '../common/optional-image';
 import { ExternalContent } from '../common/external-content';
 import { DocsLink } from '../common/docs-link';
-import { HeaderDetails } from './header-details';
+import { HeaderDetails } from './headers/header-details';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== Icons.Unknown ?
         <FontAwesomeIcon
             className={className}
-            title={source.description}
+            title={source.summary}
             {...source.icon}
         /> : null;
 

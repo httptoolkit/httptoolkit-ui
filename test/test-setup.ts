@@ -45,7 +45,7 @@ export const getExchangeData = ({
         headers: requestHeaders,
         body: buildBodyReader(Buffer.from(requestBody), requestHeaders),
         contentType: 'text',
-        source: { ua: '', description: 'Unknown client', icon: Icons.Unknown }
+        source: { ua: '', summary: 'Unknown client', icon: Icons.Unknown }
     },
     response: {
         id: '',

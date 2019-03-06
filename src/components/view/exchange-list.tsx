@@ -293,7 +293,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 flexGrow={0}
                                 cellRenderer={({ rowData }) =>
                                     <FontAwesomeIcon
-                                        title={rowData.request.source.description}
+                                        title={rowData.request.source.summary}
                                         {...rowData.request.source.icon}
                                         fixedWidth={true}
                                     />
