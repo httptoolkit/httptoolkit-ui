@@ -1,18 +1,25 @@
 import { CompletedRequest, CompletedResponse } from 'mockttp';
 import { ComponentClass } from 'react';
+import { ObservableMap } from 'mobx';
+
 
 import { TrafficSource } from './model/sources';
 import { HtkContentType } from './content-types';
-
 // Useful app specific types
 
 export type HtkRequest = CompletedRequest & {
     parsedUrl: URL,
     source: TrafficSource,
-    contentType: HtkContentType
+    contentType: HtkContentType,
+    cache: ObservableMap<string, unknown>
 };
 
-export type HtkResponse = CompletedResponse & { contentType: HtkContentType };
+export type HtkResponse = CompletedResponse & {
+    contentType: HtkContentType,
+    cache: ObservableMap<string, unknown>
+};
+
+export type ExchangeMessage = HtkRequest | HtkResponse;
 
 // Should only be created in the process of sanitizing, so every object with an
 // __html prop must be HTML-safe.

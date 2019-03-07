@@ -14,7 +14,7 @@ import {
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
 
-import { HtkResponse, HtkRequest, Html } from "../../types";
+import { HtkResponse, HtkRequest, Html, ExchangeMessage } from "../../types";
 import { firstMatch, empty, Empty } from '../../util';
 import { reportError } from '../../errors';
 
@@ -201,7 +201,7 @@ export function getParameters(
 
 export function getBodySchema(
     bodyDefinition: RequestBodyObject | ResponseObject | undefined,
-    message: HtkRequest | HtkResponse | 'aborted' | undefined
+    message: ExchangeMessage | 'aborted' | undefined
 ): SchemaObject {
     if (!bodyDefinition || !message || message === 'aborted') return {};
 

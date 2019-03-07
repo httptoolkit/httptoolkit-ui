@@ -20,7 +20,7 @@ worker.addEventListener('message', (event) => {
     emitter.emit(event.data.id.toString(), event.data);
 });
 
-export async function decodeContent(body: Buffer, encoding?: string) {
+export async function decodeContent(body: Buffer, encoding: string | undefined) {
     if (!encoding || encoding === 'identity') return body;
     const id = getId();
 

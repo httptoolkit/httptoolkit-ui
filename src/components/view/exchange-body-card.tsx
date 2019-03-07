@@ -1,33 +1,18 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { IObservableValue, observable, autorun, action } from 'mobx';
+import { observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer, inject } from 'mobx-react';
 import { SchemaObject } from 'openapi-directory';
 
-import { HtkRequest, HtkResponse } from '../../types';
+import { ExchangeMessage } from '../../types';
 import { styled, Theme } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
-import { decodeContent } from '../../workers/worker-api';
+import { getReadableSize, getDecodedBody } from '../../model/bodies';
 
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButton } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
-
-function getReadableSize(bytes: number, siUnits = true) {
-    let thresh = siUnits ? 1000 : 1024;
-
-    let units = siUnits
-        ? ['bytes', 'kB','MB','GB','TB','PB','EB','ZB','YB']
-        : ['bytes', 'KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
-
-    let unitIndex = bytes === 0 ? 0 :
-        Math.floor(Math.log(bytes) / Math.log(thresh));
-
-    let unitName = bytes === 1 ? 'byte' : units[unitIndex];
-
-    return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
-}
 
 const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
@@ -44,8 +29,6 @@ const CopyBody = styled(CopyButton)`
     margin-right: auto;
     color: ${p => p.theme.mainColor};
 `;
-
-type ExchangeMessage = HtkRequest | HtkResponse;
 
 @inject('theme')
 @observer
@@ -69,10 +52,6 @@ export class ExchangeBodyCard extends React.Component<{
      */
     private currentContent = observable.box<string | undefined>();
 
-    private static decodedBodyCache = new WeakMap<
-        ExchangeMessage, IObservableValue<undefined | Buffer>
-    >();
-
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
             const message = this.props.message;
@@ -80,24 +59,6 @@ export class ExchangeBodyCard extends React.Component<{
             if (!message) {
                 this.setContentType(undefined);
                 return;
-            }
-
-            if (ExchangeBodyCard.decodedBodyCache.get(message) === undefined) {
-                const observableResult = observable.box<undefined | Buffer>(undefined);
-                ExchangeBodyCard.decodedBodyCache.set(message, observableResult);
-
-                decodeContent(message.body.buffer, message.headers['content-encoding'])
-                .then(action<(result: Buffer) => void>((decodingResult) => {
-                    observableResult.set(decodingResult);
-
-                    // Necessary as a read for this key before the observable was
-                    // created will not be subscribed to this update.
-                    if (this.props.message === message) {
-                        this.forceUpdate();
-                    }
-                }))
-                // Ignore errors for now - for broken encodings just spin forever
-                .catch(() => {});
             }
         }));
     }
@@ -126,8 +87,7 @@ export class ExchangeBodyCard extends React.Component<{
         const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
             this.selectedContentType! : message.contentType;
 
-        const decodedBodyCache = ExchangeBodyCard.decodedBodyCache.get(message);
-        const decodedBody = decodedBodyCache ? decodedBodyCache.get() : undefined;
+        const decodedBody = getDecodedBody(message);
 
         const currentRenderedContent = this.currentContent.get();
 

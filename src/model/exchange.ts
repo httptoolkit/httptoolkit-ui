@@ -18,13 +18,15 @@ function addRequestMetadata(request: CompletedRequest): HtkRequest {
     return Object.assign(request, {
         parsedUrl,
         source: parseSource(request.headers['user-agent']),
-        contentType: getHTKContentType(request.headers['content-type'])
+        contentType: getHTKContentType(request.headers['content-type']),
+        cache: observable.map(new Map<string, unknown>(), { deep: false })
     });
 }
 
 function addResponseMetadata(response: CompletedResponse): HtkResponse {
     return Object.assign(response, {
-        contentType: getHTKContentType(response.headers['content-type'])
+        contentType: getHTKContentType(response.headers['content-type']),
+        cache: observable.map(new Map<string, unknown>(), { deep: false })
     });
 }
 
@@ -50,6 +52,12 @@ export class HttpExchange {
         // Start loading the relevant Open API specs for this request, if any.
         this._apiMetadataPromise = getMatchingAPI(this.request);
     }
+
+    // Logic elsewhere can put values into these caches to cache calculations
+    // about this exchange weakly, so they GC with the exchange
+    // Keys should be unique strings. TODO: It'd be nice to use symbols, but
+    // we can't due to https://github.com/mobxjs/mobx/issues/1925
+    public cache = observable.map(new Map<string, unknown>(), { deep: false });
 
     public readonly request: HtkRequest
     public readonly id: string;

@@ -6,7 +6,7 @@ import { decodeContent } from '../../../src/workers/worker-api';
 
 describe('Worker decoding', () => {
     it('should decode a response with no encoding', async () => {
-        const result = await decodeContent(Buffer.from('hello world'));
+        const result = await decodeContent(Buffer.from('hello world'), undefined);
         expect(result.toString('utf8')).to.equal('hello world');
     });
 
