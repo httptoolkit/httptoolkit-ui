@@ -221,7 +221,7 @@ const ApiRequestDetails = (props: {
     </>;
 }
 
-interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'>  {
+interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
     apiExchange: ApiExchange | undefined
 }

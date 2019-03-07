@@ -16,14 +16,15 @@ import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeResponseCard } from './exchange-response-card';
 import { AccountStore } from '../../model/account/account-store';
+import { ExchangePerformanceCard } from './exchange-performance-card';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
 }
 
-const ExchangeDetailsContainer = styled.div`
+const ExchangeDetailsScrollContainer = styled.div`
     position: relative;
-    overflow-y: auto;
+    overflow-y: scroll;
 
     height: 100%;
     width: 100%;
@@ -33,7 +34,19 @@ const ExchangeDetailsContainer = styled.div`
     background-color: ${p => p.theme.containerBackground};
 `;
 
-type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody';
+const ExchangeDetailsContentContainer = styled.div`
+    min-height: 100%;
+
+    display: flex;
+    flex-direction: column;
+`;
+
+// Used to push all cards below it to the bottom (when less than 100% height)
+const CardDivider = styled.div`
+    margin-top: auto;
+`;
+
+type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'performance';
 
 @inject('theme')
 @inject('accountStore')
@@ -50,10 +63,12 @@ export class ExchangeDetailsPane extends React.Component<{
         'request': {},
         'requestBody': {},
         'response': {},
-        'responseBody': {}
-    }, (_value, key) => ({
+        'responseBody': {},
+
+        'performance': { collapsed: true }
+    }, (_value: { collapsed?: boolean }, key) => ({
         key: key,
-        collapsed: false,
+        collapsed: _value.collapsed || false,
         onCollapseToggled: this.toggleCollapse.bind(this, key)
     }));
 
@@ -112,6 +127,14 @@ export class ExchangeDetailsPane extends React.Component<{
                     />);
                 }
             }
+
+            // Push all cards below this point to the bottom
+            cards.push(<CardDivider key='divider' />);
+
+            cards.push(<ExchangePerformanceCard
+                exchange={exchange}
+                {...this.cardProps.performance}
+            />);
         } else {
             cards.push(
                 <EmptyState
@@ -123,9 +146,11 @@ export class ExchangeDetailsPane extends React.Component<{
             );
         }
 
-        return <ExchangeDetailsContainer>
-            {cards}
-        </ExchangeDetailsContainer>;
+        return <ExchangeDetailsScrollContainer>
+            <ExchangeDetailsContentContainer>
+                {cards}
+            </ExchangeDetailsContentContainer>
+        </ExchangeDetailsScrollContainer>;
     }
 
     @action.bound
