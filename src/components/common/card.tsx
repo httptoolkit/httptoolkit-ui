@@ -117,7 +117,7 @@ export class CollapsibleCard extends React.Component<{
     private cardRef = React.createRef<HTMLElement>();
 
     render() {
-        const { children, collapsed, onCollapseToggled } = this.props;
+        const { children, collapsed } = this.props;
 
         return <MediumCard
             {..._.omit(this.props, ['onCollapseToggled', 'collapsed'])}
@@ -131,7 +131,7 @@ export class CollapsibleCard extends React.Component<{
                             <CollapseIcon
                                 key='collapse-icon'
                                 collapsed={collapsed}
-                                onClick={onCollapseToggled}
+                                onClick={this.toggleCollapse}
                             />
                         )
                     )
@@ -140,13 +140,26 @@ export class CollapsibleCard extends React.Component<{
         }</MediumCard>;
     }
 
+    toggleCollapse = () => {
+        // Scroll the element into view, after giving it a moment to rerender
+        requestAnimationFrame(() => {
+            if (!this.cardRef.current) return;
+
+            this.cardRef.current.scrollIntoView({
+                block: 'nearest'
+            })
+        });
+
+        this.props.onCollapseToggled();
+    }
+
     onKeyDown = (event: React.KeyboardEvent) => {
         if (event.target !== this.cardRef.current) {
             return;
         }
 
         if (event.key === 'Enter') {
-            this.props.onCollapseToggled();
+            this.toggleCollapse();
         }
     }
 
