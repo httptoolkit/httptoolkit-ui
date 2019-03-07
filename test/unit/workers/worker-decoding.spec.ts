@@ -2,25 +2,31 @@ import * as zlib from 'zlib';
 
 import { expect } from '../../test-setup';
 
-import { decodeContent } from '../../../src/workers/worker-api';
+import { decodeBody } from '../../../src/workers/worker-api';
+
+function body(content: Buffer) {
+    return {
+        buffer: content
+    };
+}
 
 describe('Worker decoding', () => {
     it('should decode a response with no encoding', async () => {
-        const result = await decodeContent(Buffer.from('hello world'), undefined);
+        const result = await decodeBody(body(Buffer.from('hello world')), undefined);
         expect(result.toString('utf8')).to.equal('hello world');
     });
 
     it('should decode a response with an encoding', async () => {
         const content = Buffer.from(zlib.gzipSync('Gzipped response'));
 
-        const result = await decodeContent(content, 'gzip');
+        const result = await decodeBody(body(content), 'gzip');
 
         expect(result.toString('utf8')).to.equal('Gzipped response');
     });
 
     it('should fail to decode a response with the wrong encoding', () => {
         return expect(
-            decodeContent(Buffer.from('hello world'), 'randomized')
+            decodeBody(body(Buffer.from('hello world')), 'randomized')
         ).to.be.rejectedWith('Unknown encoding');
     });
 });

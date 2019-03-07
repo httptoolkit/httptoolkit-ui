@@ -1,5 +1,5 @@
 
-import { decodeContent } from '../workers/worker-api';
+import { decodeBody } from '../workers/worker-api';
 import { ExchangeMessage } from '../types';
 import { IObservableValue, observable, action } from 'mobx';
 
@@ -32,7 +32,7 @@ export function getDecodedBody(message: ExchangeMessage): Buffer | undefined {
         const bodyObservable = observable.box<Buffer | undefined>(undefined);
         bodyCache.set(DecodedBodyCacheKey, bodyObservable);
 
-        decodeContent(message.body.buffer, message.headers['content-encoding'])
+        decodeBody(message.body, message.headers['content-encoding'])
         .then(action<(result: Buffer) => void>((decodingResult) => {
             bodyObservable.set(decodingResult);
         }))

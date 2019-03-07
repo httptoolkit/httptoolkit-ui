@@ -18,7 +18,8 @@ export interface DecodeRequest extends Message {
 
 export interface DecodeResponse extends Message {
     error?: Error;
-    buffer: ArrayBuffer;
+    inputBuffer: ArrayBuffer; // Send the input back, since we transferred it
+    decodedBuffer: ArrayBuffer;
 }
 
 export interface BuildApiRequest extends Message {
@@ -36,7 +37,11 @@ type Request = DecodeRequest | BuildApiRequest;
 function decodeContent(request: DecodeRequest): DecodeResponse {
     const { id, buffer, encoding } = request;
     const result = handleContentEncoding(Buffer.from(buffer), encoding);
-    return { id, buffer: result.buffer };
+    return {
+        id,
+        inputBuffer: buffer,
+        decodedBuffer: result.buffer
+    };
 }
 
 function buildApi(request: BuildApiRequest): BuildApiResponse {
@@ -49,7 +54,10 @@ ctx.addEventListener('message', (event: { data: Request }) => {
         switch (event.data.type) {
             case 'decode':
                 const result = decodeContent(event.data);
-                ctx.postMessage(result, [result.buffer]);
+                ctx.postMessage(result, [
+                    result.inputBuffer,
+                    result.decodedBuffer
+                ]);
                 break;
 
             case 'build-api':

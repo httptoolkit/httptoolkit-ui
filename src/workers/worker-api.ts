@@ -20,23 +20,35 @@ worker.addEventListener('message', (event) => {
     emitter.emit(event.data.id.toString(), event.data);
 });
 
-export async function decodeContent(body: Buffer, encoding: string | undefined) {
-    if (!encoding || encoding === 'identity') return body;
+/**
+ * Takes a body, asynchronously decodes it and returns the decoded buffer.
+ *
+ * Note that this requires transferring the _encoded_ body to a web worker,
+ * so whilst this is running body.buffer will temporarily appear empty.
+ * Before resolving the original encoded buffer will be put back.
+ */
+export async function decodeBody(body: { buffer: Buffer }, encoding: string | undefined) {
+    if (!encoding || encoding === 'identity') return body.buffer;
     const id = getId();
+
+    const encodedBuffer = body.buffer.buffer;
 
     return new Promise<Buffer>((resolve, reject) => {
         worker.postMessage(<DecodeRequest> {
             id,
             type: 'decode',
-            buffer: body.buffer,
+            buffer: encodedBuffer,
             encoding
-        }, [body.buffer]);
+        }, [encodedBuffer]);
 
         emitter.once(id.toString(), (data: DecodeResponse) => {
             if (data.error) {
                 reject(deserializeError(data.error));
             } else {
-                resolve(Buffer.from(data.buffer));
+                // Put the transferred encoded buffer back
+                body.buffer = Buffer.from(data.inputBuffer);
+
+                resolve(Buffer.from(data.decodedBuffer));
             }
         });
     });
