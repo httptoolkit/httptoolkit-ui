@@ -82,9 +82,9 @@ export const PillSelector = <T extends {}>(props: {
     )}
 </Select>;
 
-export const ProPill = inject('theme')(styled((p: { theme?: Theme }) =>
-    <Pill color={p.theme!.popColor}>PRO</Pill>
-)`
+export const ProPill = styled(inject('theme')((p: { theme?: Theme, className?: string }) =>
+    <Pill className={p.className} color={p.theme!.popColor}>PRO</Pill>
+))`
     font-size: 11px;
     padding: 4px 4px;
-`);
+`;
