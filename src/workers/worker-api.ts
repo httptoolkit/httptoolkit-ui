@@ -1,10 +1,20 @@
-import { DecodeRequest, DecodeResponse, BuildApiResponse, BuildApiRequest } from './background-worker';
-import Worker from 'worker-loader!./background-worker';
-
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
 import { OpenAPIObject } from 'openapi-directory';
 
+import {
+    BackgroundRequest,
+    BackgroundResponse,
+    DecodeRequest,
+    DecodeResponse,
+    BuildApiResponse,
+    BuildApiRequest,
+    TestEncodingsRequest,
+    TestEncodingsResponse
+} from './background-worker';
+import Worker from 'worker-loader!./background-worker';
+
+import { Omit } from '../types';
 import { ApiMetadata } from '../model/openapi/build-api';
 
 const worker = new Worker();
@@ -20,6 +30,25 @@ worker.addEventListener('message', (event) => {
     emitter.emit(event.data.id.toString(), event.data);
 });
 
+function callApi<
+    T extends BackgroundRequest,
+    R extends BackgroundResponse
+>(request: Omit<T, 'id'>, transfer: any[] = []): Promise<R> {
+    const id = getId();
+
+    return new Promise<R>((resolve, reject) => {
+        worker.postMessage(Object.assign({ id }, request), transfer);
+
+        emitter.once(id.toString(), (data: R) => {
+            if (data.error) {
+                reject(deserializeError(data.error));
+            } else {
+                resolve(data);
+            }
+        });
+    });
+}
+
 /**
  * Takes a body, asynchronously decodes it and returns the decoded buffer.
  *
@@ -29,47 +58,30 @@ worker.addEventListener('message', (event) => {
  */
 export async function decodeBody(body: { buffer: Buffer }, encoding: string | undefined) {
     if (!encoding || encoding === 'identity') return body.buffer;
-    const id = getId();
 
     const encodedBuffer = body.buffer.buffer;
+    const result = await callApi<DecodeRequest, DecodeResponse>({
+        type: 'decode',
+        buffer: encodedBuffer,
+        encoding
+    }, [encodedBuffer]);
 
-    return new Promise<Buffer>((resolve, reject) => {
-        worker.postMessage(<DecodeRequest> {
-            id,
-            type: 'decode',
-            buffer: encodedBuffer,
-            encoding
-        }, [encodedBuffer]);
+    // Put the transferred encoded buffer back
+    body.buffer = Buffer.from(result.inputBuffer);
 
-        emitter.once(id.toString(), (data: DecodeResponse) => {
-            if (data.error) {
-                reject(deserializeError(data.error));
-            } else {
-                // Put the transferred encoded buffer back
-                body.buffer = Buffer.from(data.inputBuffer);
-
-                resolve(Buffer.from(data.decodedBuffer));
-            }
-        });
-    });
+    return Buffer.from(result.decodedBuffer);
 }
 
-export function buildApiMetadataAsync(spec: OpenAPIObject): Promise<ApiMetadata> {
-    const id = getId();
+export async function testEncodingsAsync(decodedBuffer: Buffer) {
+    return (await callApi<TestEncodingsRequest, TestEncodingsResponse>({
+        type: 'test-encodings',
+        decodedBuffer: decodedBuffer
+    })).encodingSizes;
+}
 
-    return new Promise<ApiMetadata>((resolve, reject) => {
-        worker.postMessage(<BuildApiRequest> {
-            id,
-            type: 'build-api',
-            spec
-        });
-
-        emitter.once(id.toString(), (data: BuildApiResponse) => {
-            if (data.error) {
-                reject(deserializeError(data.error));
-            } else {
-                resolve(data.api);
-            }
-        });
-    });
+export async function buildApiMetadataAsync(spec: OpenAPIObject): Promise<ApiMetadata> {
+    return (await callApi<BuildApiRequest, BuildApiResponse>({
+        type: 'build-api',
+        spec
+    })).api;
 }

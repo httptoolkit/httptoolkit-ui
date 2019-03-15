@@ -24,7 +24,7 @@ function getBackgroundColor(color: string) {
     }
 }
 
-export const Pill = styled.div`
+export const Pill = styled.span`
     display: inline-block;
     border-radius: 4px;
     padding: 4px 8px;

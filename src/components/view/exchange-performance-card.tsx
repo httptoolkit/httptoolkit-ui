@@ -10,9 +10,9 @@ import { HttpExchange } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
 
 import { ExchangeCard, ExchangeCardProps, ContentLabelBlock } from './exchange-card';
-import { ProPill } from '../common/pill';
+import { ProPill, Pill } from '../common/pill';
 import { Content } from '../common/external-content';
-import { getDecodedBody, getReadableSize } from '../../model/bodies';
+import { getDecodedBody, getReadableSize, testEncodings } from '../../model/bodies';
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
@@ -21,6 +21,20 @@ interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children
 
 const PerformanceProPill = styled(ProPill)`
     margin-right: auto;
+`;
+
+const Suggestion = styled(
+    (p) => <FontAwesomeIcon icon={['fas', 'lightbulb']} {...p} />
+)`
+    margin-right: 6px;
+    color: #f1971f;
+`;
+
+const Warning = styled(
+    (p) => <FontAwesomeIcon icon={['fas', 'exclamation-triangle']} {...p} />
+)`
+    margin-right: 6px;
+    color: #f1971f;
 `;
 
 export const ExchangePerformanceCard = inject('accountStore')(observer((props: ExchangePerformanceCardProps) => {
@@ -51,40 +65,38 @@ function getEncodingName(key: string): string {
         return 'gzip';
     }
     if (key === 'deflate' || key === 'x-deflate') {
-        return 'DEFLATE';
+        return 'zlib';
     }
 
     return _.upperFirst(key);
 }
 
 function getEncodings(message: ExchangeMessage | 'aborted' | undefined) {
-    if (!message || message === 'aborted') return;
+    if (!message || message === 'aborted') return [];
 
-    const encodings = (message.headers['content-encoding'] || '')
+    return (message.headers['content-encoding'] || '')
         .split(', ')
         .filter((encoding) => !!encoding && encoding !== 'identity')
         .map(getEncodingName);
-
-    return _.isEmpty(encodings) ? undefined : encodings;
 }
 
 const CompressionDescription = observer((p: {
-    encodings: string[] | undefined,
-    message: ExchangeMessage
+    encodings: string[],
+    encodedBody: Buffer,
+    decodedBody: Buffer | undefined
 }) => {
-    const encodedBody = p.message.body.buffer;
-    const decodedBody = getDecodedBody(p.message);
+    const { encodings, encodedBody, decodedBody } = p;
 
     const compressionRatio = decodedBody ? Math.round(100 * (
         1 - (encodedBody.byteLength / decodedBody.byteLength)
     )) : undefined;
 
     return <>
-        { p.encodings ? <>
+        { encodings.length ? <>
             compressed with <strong>{
-                p.encodings.length > 1 ?
-                    `${p.encodings.slice(0, -1).join(', ')} and then ${p.encodings.slice(-1)[0]} encodings`
-                : `${p.encodings[0]} encoding`
+                encodings.length > 1 ?
+                    `${encodings.slice(0, -1).join(', ')} and then ${encodings.slice(-1)[0]}`
+                : `${encodings[0]}`
             }</strong>, making it {
                 compressionRatio !== undefined && decodedBody ? <>
                     <strong>
@@ -106,33 +118,128 @@ const CompressionDescription = observer((p: {
     </>;
 });
 
+const CompressionOptions = observer((p: {
+    encodings: string[],
+    encodedBodySize: number,
+    decodedBodySize: number | undefined,
+    encodingTestResults: { [encoding: string]: number } | undefined
+}) => {
+    const { encodings, encodedBodySize, decodedBodySize, encodingTestResults } = p;
+
+    if (!_.isEmpty(encodingTestResults) && decodedBodySize) {
+        const realCompressionRatio = Math.round(100 * (
+            1 - (encodedBodySize / decodedBodySize)
+        ));
+
+        return <>{
+            _(encodingTestResults)
+            .omitBy((_size, encoding) =>
+                encodings.length === 1 && encoding === encodings[0]
+            ).map((size, encoding) => {
+                const testedCompressionRatio = Math.round(100 * (
+                    1 - (size / decodedBodySize)
+                ));
+
+                return <Pill key={encoding} title={
+                        `${
+                            getReadableSize(decodedBodySize)
+                        } would compress to ${
+                            getReadableSize(size)
+                        } using ${encoding}`
+                    }
+                    color={
+                        testedCompressionRatio > realCompressionRatio! &&
+                        testedCompressionRatio > 0 ?
+                            '#4caf7d' : '#888'
+                    }
+                >
+                    { _.upperFirst(encoding) }: { testedCompressionRatio }%
+                </Pill>
+            }).valueOf()
+        }</>
+    } else {
+        return <FontAwesomeIcon icon={['fas', 'spinner']} spin />;
+    }
+});
+
 export const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
-    const requestEncodings = getEncodings(p.exchange.request);
-    const responseEncodings = getEncodings(p.exchange.response);
+    const messageTypes: Array<'request' | 'response'> = ['request', 'response'];
+    const clientAcceptedEncodings = (p.exchange.request.headers['accept-encoding'] || '')
+        .split(', ').map(getEncodingName);
 
-    return <>
-        { p.exchange.request.body && <>
-            <ContentLabelBlock>Request Compression</ContentLabelBlock>
+    return <>{ messageTypes.map((messageType) => {
+        const message = p.exchange[messageType];
+        const encodings = getEncodings(message);
+
+        if (typeof message !== 'object' || !message.body || !message.body.buffer) return null;
+
+        const encodedBody = message.body.buffer;
+        const decodedBody = getDecodedBody(message);
+        const decodedBodySize = decodedBody ? decodedBody.byteLength : 0;
+
+        const encodingTestResults = _.mapKeys(testEncodings(message),
+            (_size, encoding) => getEncodingName(encoding)
+        );
+
+        let bestOtherEncoding = _.minBy(
+            Object.keys(encodingTestResults),
+            (encoding) => encodingTestResults[encoding]
+        );
+
+        const betterEncodingAvailable =
+            decodedBodySize &&
+            bestOtherEncoding &&
+            !(encodings.length === 1 && bestOtherEncoding === encodings[0]) &&
+            encodingTestResults[bestOtherEncoding] < Math.min(encodedBody.byteLength, decodedBodySize);
+
+        return <React.Fragment key={messageType}>
+            <ContentLabelBlock>{ _.upperFirst(messageType) } Compression</ContentLabelBlock>
             <Content>
                 <p>
-                    The request body was <CompressionDescription
-                        encodings={requestEncodings}
-                        message={p.exchange.request}
+                    The {messageType} body was <CompressionDescription
+                        encodings={encodings}
+                        encodedBody={encodedBody}
+                        decodedBody={decodedBody}
                     />.
                 </p>
-            </Content>
-        </> }
-
-        { typeof p.exchange.response === 'object' && p.exchange.response.body.buffer && <>
-            <ContentLabelBlock>Response Compression</ContentLabelBlock>
-            <Content>
                 <p>
-                    The response body was <CompressionDescription
-                        encodings={responseEncodings}
-                        message={p.exchange.response}
-                    />.
+                    <CompressionOptions
+                        encodings={encodings}
+                        encodedBodySize={encodedBody.byteLength}
+                        decodedBodySize={decodedBodySize}
+                        encodingTestResults={encodingTestResults}
+                    />
+                    {
+                        betterEncodingAvailable &&
+                        <em>
+                            <Suggestion />
+                            This would be {
+                                Math.round(100 * (
+                                    1 - (encodingTestResults[bestOtherEncoding!] / encodedBody.byteLength)
+                                ))
+                            }% smaller { decodedBodySize !== encodedBody.byteLength &&
+                                `(${
+                                    Math.round(100 * (
+                                        1 - (encodingTestResults[bestOtherEncoding!] / decodedBodySize)
+                                    ))
+                                }% total compression)`
+                            } with { bestOtherEncoding }{
+                                messageType === 'response' &&
+                                clientAcceptedEncodings &&
+                                !_.includes(clientAcceptedEncodings, bestOtherEncoding) &&
+                                    ` (not supported by this client)`
+                            }.
+                        </em>
+                    } {
+                        decodedBodySize &&
+                        !betterEncodingAvailable &&
+                        decodedBodySize < encodedBody.byteLength && <em>
+                            <Warning />
+                            This { messageType } would be smaller without compression.
+                        </em>
+                    }
                 </p>
             </Content>
-        </> }
-    </>;
+        </React.Fragment>
+    }) }</>;
 });

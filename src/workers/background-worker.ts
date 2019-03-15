@@ -1,10 +1,25 @@
 // Worker.ts
 const ctx: Worker = self as any;
 
+import * as util from 'util';
 import * as serializeError from 'serialize-error';
 import { handleContentEncoding } from 'mockttp/dist/server/request-utils';
 import { OpenAPIObject } from 'openapi3-ts';
+
+import { compress as brotliCompress } from 'wasm-brotli';
+import * as zlib from 'zlib';
+
 import { buildApiMetadata, ApiMetadata } from '../model/openapi/build-api';
+
+const gzipCompress = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
+    new Promise<Buffer>((resolve, reject) => {
+        zlib.gzip(buffer, options, (error, result) => error ? reject(error) : resolve(result))
+    });
+
+const deflate = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
+    new Promise<Buffer>((resolve, reject) => {
+        zlib.deflate(buffer, options, (error, result) => error ? reject(error) : resolve(result))
+    });
 
 interface Message {
     id: number;
@@ -22,6 +37,16 @@ export interface DecodeResponse extends Message {
     decodedBuffer: ArrayBuffer;
 }
 
+export interface TestEncodingsRequest extends Message {
+    type: 'test-encodings';
+    decodedBuffer: Buffer;
+}
+
+export interface TestEncodingsResponse extends Message {
+    error?: Error;
+    encodingSizes: { [encoding: string]: number };
+}
+
 export interface BuildApiRequest extends Message {
     type: 'build-api';
     spec: OpenAPIObject
@@ -32,7 +57,8 @@ export interface BuildApiResponse extends Message {
     api: ApiMetadata
 }
 
-type Request = DecodeRequest | BuildApiRequest;
+export type BackgroundRequest = DecodeRequest | TestEncodingsRequest | BuildApiRequest;
+export type BackgroundResponse = DecodeResponse | TestEncodingsResponse | BuildApiResponse;
 
 function decodeContent(request: DecodeRequest): DecodeResponse {
     const { id, buffer, encoding } = request;
@@ -44,12 +70,25 @@ function decodeContent(request: DecodeRequest): DecodeResponse {
     };
 }
 
+async function testEncodings(request: TestEncodingsRequest) {
+    const { decodedBuffer } = request;
+
+    return {
+        id: request.id,
+        encodingSizes: {
+            'br': (await brotliCompress(decodedBuffer)).length,
+            'gzip': (await gzipCompress(decodedBuffer, { level: 9 })).length,
+            'deflate': (await deflate(decodedBuffer, { level: 9 })).length
+        }
+    };
+}
+
 function buildApi(request: BuildApiRequest): BuildApiResponse {
     const { id, spec } = request;
     return { id, api: buildApiMetadata(spec) };
 }
 
-ctx.addEventListener('message', (event: { data: Request }) => {
+ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
     try {
         switch (event.data.type) {
             case 'decode':
@@ -58,6 +97,11 @@ ctx.addEventListener('message', (event: { data: Request }) => {
                     result.inputBuffer,
                     result.decodedBuffer
                 ]);
+                break;
+
+            case 'test-encodings':
+                const { data } = event;
+                ctx.postMessage(await testEncodings(data));
                 break;
 
             case 'build-api':

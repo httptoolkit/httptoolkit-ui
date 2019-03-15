@@ -1,5 +1,4 @@
-
-import { decodeBody } from '../workers/worker-api';
+import { decodeBody, testEncodingsAsync } from '../workers/worker-api';
 import { ExchangeMessage } from '../types';
 import { IObservableValue, observable, action } from 'mobx';
 
@@ -29,11 +28,11 @@ export function getDecodedBody(message: ExchangeMessage): Buffer | undefined {
 
     if (existingObservable) return existingObservable.get();
     else {
-        const bodyObservable = observable.box<Buffer | undefined>(undefined);
+        const bodyObservable = observable.box<Buffer | undefined>();
         bodyCache.set(DecodedBodyCacheKey, bodyObservable);
 
         decodeBody(message.body, message.headers['content-encoding'])
-        .then(action<(result: Buffer) => void>((decodingResult) => {
+        .then(action((decodingResult: Buffer) => {
             bodyObservable.set(decodingResult);
         }))
         // Ignore errors for now - broken encodings etc stay undefined forever
@@ -41,5 +40,35 @@ export function getDecodedBody(message: ExchangeMessage): Buffer | undefined {
 
         // Will be undefined, but ensures we're subscribed to the observable
         return bodyObservable.get();
+    }
+}
+
+const EncodedSizesCacheKey = 'bodies-encoded-body-test';
+type EncodedBodySizes = { [encoding: string]: number };
+type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,
+    IObservableValue<EncodedBodySizes | undefined> | undefined
+>;
+
+export function testEncodings(message: ExchangeMessage): EncodedBodySizes | undefined {
+    const realDecoding = getDecodedBody(message);
+    if (!realDecoding) return;
+
+    const encodedSizesCache = <EncodedSizesCache> message.cache;
+    const existingObservable = encodedSizesCache.get(EncodedSizesCacheKey);
+
+    if (existingObservable) return existingObservable.get();
+    else {
+        const sizesObservable = observable.box<EncodedBodySizes | undefined>();
+        encodedSizesCache.set(EncodedSizesCacheKey, sizesObservable);
+
+        testEncodingsAsync(realDecoding)
+        .then(action((testResults: EncodedBodySizes) => {
+            sizesObservable.set(testResults)
+        }))
+        // Ignore errors for now - we just never resolve if testing something unencodable
+        .catch(() => {});
+
+        // Will be undefined, but ensures we're subscribed to the observable
+        return sizesObservable.get();
     }
 }
