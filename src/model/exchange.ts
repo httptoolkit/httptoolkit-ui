@@ -11,6 +11,7 @@ import { getExchangeCategory, ExchangeCategory } from '../exchange-colors';
 
 import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
+import { TimingEvents } from 'mockttp/dist/types';
 
 function addRequestMetadata(request: CompletedRequest): HtkRequest {
     try {
@@ -39,6 +40,7 @@ export class HttpExchange {
 
     constructor(request: CompletedRequest) {
         this.request = addRequestMetadata(request);
+        this.timingEvents = request.timingEvents;
 
         this.id = this.request.id;
         this.searchIndex = [
@@ -67,6 +69,9 @@ export class HttpExchange {
     public readonly request: HtkRequest
     public readonly id: string;
 
+    @observable
+    public readonly timingEvents: TimingEvents;
+
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;
 
@@ -76,13 +81,16 @@ export class HttpExchange {
     @observable
     public category: ExchangeCategory;
 
-    markAborted() {
+    markAborted(request: CompletedRequest) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
+        Object.assign(this.timingEvents, request.timingEvents);
     }
 
     setResponse(response: CompletedResponse) {
         this.response = addResponseMetadata(response);
+        Object.assign(this.timingEvents, response.timingEvents);
+
         this.category = getExchangeCategory(this);
         this.searchIndex = [
             this.searchIndex,

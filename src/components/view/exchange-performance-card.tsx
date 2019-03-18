@@ -23,6 +23,27 @@ const PerformanceProPill = styled(ProPill)`
     margin-right: auto;
 `;
 
+function sigFig(num: number, figs: number): number {
+    return parseFloat(num.toFixed(figs));
+}
+
+const TimingPill = observer((p: { className?: string, exchange: HttpExchange }) => {
+    const { timingEvents } = p.exchange;
+
+    // We can't show timing info if the request is still going
+    const doneTimestamp = timingEvents.responseSentTimestamp || timingEvents.abortedTimestamp;
+    if (!doneTimestamp) return null;
+
+    const durationMs = doneTimestamp - timingEvents.startTimestamp;
+
+    return <Pill className={p.className}>{
+        durationMs < 100 ? sigFig(durationMs, 2) + 'ms' : // 22.34ms
+        durationMs < 1000 ? sigFig(durationMs, 1) + 'ms' : // 999.5ms
+        durationMs < 10000 ? sigFig(durationMs / 1000, 2) + ' seconds' : // 3.04 seconds
+        sigFig(durationMs / 1000, 1) + ' seconds' // 11.2 seconds
+    }</Pill>;
+});
+
 const Suggestion = styled(
     (p) => <FontAwesomeIcon icon={['fas', 'lightbulb']} {...p} />
 )`
@@ -43,7 +64,10 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
 
     return <ExchangeCard {...props}>
         <header>
-            { !isPaidUser && <PerformanceProPill /> }
+            { isPaidUser ?
+                <TimingPill exchange={exchange} /> :
+                <PerformanceProPill />
+            }
             <h1>Performance</h1>
         </header>
 

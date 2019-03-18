@@ -157,7 +157,7 @@ export class InterceptionStore {
         // Shouldn't happen in general, but possible in some very rare cases
         if (!exchange) return;
 
-        exchange.markAborted();
+        exchange.markAborted(request);
     }
 
     @action
