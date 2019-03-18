@@ -1,21 +1,23 @@
 import * as _ from 'lodash';
-import { CompletedResponse } from 'mockttp';
+import { CompletedRequest, CompletedResponse } from 'mockttp';
 
+import { Omit } from './types';
 import { getBaseContentType } from './content-types';
 import { Theme } from './styles';
 import { HttpExchange } from './model/exchange';
 
 type MinimalExchange = Pick<HttpExchange, 'request' | 'response'>;
+type MinimalMessage = CompletedRequest | CompletedResponse;
 type CompletedExchange = Required<MinimalExchange>;
-type SuccessfulExchange = CompletedExchange & { response: CompletedResponse };
+type SuccessfulExchange = Omit<CompletedExchange, 'response'> & { response: CompletedResponse };
 
-export const getRequestBaseContentType = (requestOrResponse: { headers: { [key: string]: string } }) =>
+export const getRequestBaseContentType = (requestOrResponse: MinimalMessage) =>
     getBaseContentType(requestOrResponse.headers['content-type']);
 
 const isCompletedExchange = (exchange: MinimalExchange): exchange is CompletedExchange =>
     !!exchange.response;
 
-const isSuccessfulExchange = (exchange: MinimalExchange): exchange is SuccessfulExchange =>
+const isSuccessfulExchange = (exchange: any): exchange is SuccessfulExchange =>
     isCompletedExchange(exchange) && exchange.response !== 'aborted';
 
 const isMutatativeExchange = (exchange: MinimalExchange) => _.includes([

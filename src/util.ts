@@ -127,3 +127,19 @@ export function firstMatch<R>(...tests: Array<Case<R> | R | undefined>): R | und
 export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
 }
+
+// This fairly meaningless override combo seems to be
+// required to make it ok to use this when T = X | undefined.
+export function last<T>(val: T | T[]): T;
+export function last<T>(val: T | T[] | undefined): T | undefined;
+export function last<T>(val: T | T[] | undefined): T | undefined {
+    if (_.isArray(val)) return val[val.length - 1];
+    else return val;
+}
+
+export function join(val: string | string[], sep?: string): string;
+export function join(val: string | string[] | undefined, sep?: string): string | undefined;
+export function join(val: string | string[] | undefined, sep = ', '): string | undefined {
+    if (_.isArray(val)) return val.join(sep);
+    else return val;
+}

@@ -1,6 +1,8 @@
+import { IObservableValue, observable, action } from 'mobx';
+
 import { decodeBody, testEncodingsAsync } from '../workers/worker-api';
 import { ExchangeMessage } from '../types';
-import { IObservableValue, observable, action } from 'mobx';
+import { join } from '../util';
 
 export function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;
@@ -31,7 +33,7 @@ export function getDecodedBody(message: ExchangeMessage): Buffer | undefined {
         const bodyObservable = observable.box<Buffer | undefined>();
         bodyCache.set(DecodedBodyCacheKey, bodyObservable);
 
-        decodeBody(message.body, message.headers['content-encoding'])
+        decodeBody(message.body, join(message.headers['content-encoding']))
         .then(action((decodingResult: Buffer) => {
             bodyObservable.set(decodingResult);
         }))

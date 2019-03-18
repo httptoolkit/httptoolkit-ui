@@ -15,7 +15,7 @@ import {
 import * as Ajv from 'ajv';
 
 import { HtkResponse, HtkRequest, Html, ExchangeMessage } from "../../types";
-import { firstMatch, empty, Empty } from '../../util';
+import { firstMatch, empty, Empty, last } from '../../util';
 import { reportError } from '../../errors';
 
 import { HttpExchange } from '../exchange';
@@ -308,7 +308,7 @@ function matchOperation(api: ApiMetadata, request: HtkRequest) {
     }
 
     const method = (
-        request.headers['x-http-method-override'] || request.method
+        last(request.headers['x-http-method-override']) || request.method
     ).toLowerCase();
 
     const operation: OperationObject | Empty = get(pathSpec, method) || empty();

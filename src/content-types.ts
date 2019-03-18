@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
 // Simplify a mime type as much as we can, without throwing any errors
-export const getBaseContentType = (mimeType: string) =>
+export const getBaseContentType = (mimeType: string | undefined) =>
     (mimeType || '').split(';')[0].split('+')[0];
 
 export type HtkContentType =
@@ -16,7 +16,7 @@ export type HtkContentType =
     | 'yaml'
     | 'image'
 
-export function getHTKContentType(mimeType: string): HtkContentType {
+export function getHTKContentType(mimeType: string | undefined): HtkContentType {
     switch (getBaseContentType(mimeType)) {
         case 'application/json':
         case 'text/json':

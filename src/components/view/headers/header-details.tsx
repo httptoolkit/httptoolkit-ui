@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
+import { Headers } from 'mockttp/dist/types';
 
 import { styled } from '../../../styles';
 
@@ -75,7 +76,7 @@ const getHeaderDescription = (
 };
 
 export const HeaderDetails = inject('accountStore')(observer((props: {
-    headers: { [key: string]: string | string[] },
+    headers: Headers,
     requestUrl: URL,
     accountStore?: AccountStore
 }) => {
@@ -86,7 +87,7 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
     :
         <HeadersGrid>
             { _.flatMap(headerNames, (name) => {
-                const headerValue = props.headers[name];
+                const headerValue = props.headers[name]!;
                 if (typeof headerValue === 'string') {
                     return {
                         name,

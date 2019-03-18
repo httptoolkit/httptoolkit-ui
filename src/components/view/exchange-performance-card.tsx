@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { styled } from '../../styles';
 import { Omit, ExchangeMessage } from '../../types';
+import { join } from '../../util';
 
 import { HttpExchange } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
@@ -74,7 +75,7 @@ function getEncodingName(key: string): string {
 function getEncodings(message: ExchangeMessage | 'aborted' | undefined) {
     if (!message || message === 'aborted') return [];
 
-    return (message.headers['content-encoding'] || '')
+    return join(message.headers['content-encoding'] || '')
         .split(', ')
         .filter((encoding) => !!encoding && encoding !== 'identity')
         .map(getEncodingName);
@@ -164,7 +165,7 @@ const CompressionOptions = observer((p: {
 
 export const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
     const messageTypes: Array<'request' | 'response'> = ['request', 'response'];
-    const clientAcceptedEncodings = (p.exchange.request.headers['accept-encoding'] || '')
+    const clientAcceptedEncodings = join(p.exchange.request.headers['accept-encoding'] || '')
         .split(', ').map(getEncodingName);
 
     return <>{ messageTypes.map((messageType) => {
