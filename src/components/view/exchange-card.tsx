@@ -54,7 +54,7 @@ export const ExchangeCard = styled(CollapsibleCard).attrs({
     }
 `;
 
-export const ContentLabel = styled.div`
+export const ContentLabel = styled.h2`
     text-transform: uppercase;
     opacity: 0.5;
 

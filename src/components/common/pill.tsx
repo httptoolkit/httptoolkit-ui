@@ -37,6 +37,7 @@ export const Pill = styled.span`
         margin-left: 0;
     }
 
+    text-align: center;
     text-transform: none;
     font-weight: bold;
     word-spacing: 3px;

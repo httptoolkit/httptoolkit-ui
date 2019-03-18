@@ -12,7 +12,6 @@ import { AccountStore } from '../../model/account/account-store';
 
 import { ExchangeCard, ExchangeCardProps, ContentLabelBlock } from './exchange-card';
 import { ProPill, Pill } from '../common/pill';
-import { Content } from '../common/external-content';
 import { getDecodedBody, getReadableSize, testEncodings } from '../../model/bodies';
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
@@ -163,6 +162,29 @@ const CompressionOptions = observer((p: {
     }
 });
 
+const CompressionOptionsContainer = styled.div`
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 10px;
+    &:last-child {
+        margin-bottom: 0;
+    }
+`;
+
+const PerformanceExplanation = styled.p`
+    margin-bottom: 10px;
+    line-height: 1.2;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+`;
+
+const CompressionOptionsTips = styled(PerformanceExplanation)`
+    font-style: italic;
+`;
+
 export const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
     const messageTypes: Array<'request' | 'response'> = ['request', 'response'];
     const clientAcceptedEncodings = join(p.exchange.request.headers['accept-encoding'] || '')
@@ -195,52 +217,49 @@ export const CompressionPerformance = observer((p: { exchange: HttpExchange }) =
 
         return <React.Fragment key={messageType}>
             <ContentLabelBlock>{ _.upperFirst(messageType) } Compression</ContentLabelBlock>
-            <Content>
-                <p>
-                    The {messageType} body was <CompressionDescription
-                        encodings={encodings}
-                        encodedBody={encodedBody}
-                        decodedBody={decodedBody}
-                    />.
-                </p>
-                <p>
-                    <CompressionOptions
-                        encodings={encodings}
-                        encodedBodySize={encodedBody.byteLength}
-                        decodedBodySize={decodedBodySize}
-                        encodingTestResults={encodingTestResults}
-                    />
-                    {
-                        betterEncodingAvailable &&
-                        <em>
-                            <Suggestion />
-                            This would be {
+            <PerformanceExplanation>
+                The {messageType} body was <CompressionDescription
+                    encodings={encodings}
+                    encodedBody={encodedBody}
+                    decodedBody={decodedBody}
+                />.
+            </PerformanceExplanation>
+            <CompressionOptionsContainer>
+                <CompressionOptions
+                    encodings={encodings}
+                    encodedBodySize={encodedBody.byteLength}
+                    decodedBodySize={decodedBodySize}
+                    encodingTestResults={encodingTestResults}
+                />
+                <CompressionOptionsTips> {
+                    betterEncodingAvailable && <>
+                        <Suggestion />
+                        This would be {
+                            Math.round(100 * (
+                                1 - (encodingTestResults[bestOtherEncoding!] / encodedBody.byteLength)
+                            ))
+                        }% smaller { decodedBodySize !== encodedBody.byteLength &&
+                            `(${
                                 Math.round(100 * (
-                                    1 - (encodingTestResults[bestOtherEncoding!] / encodedBody.byteLength)
+                                    1 - (encodingTestResults[bestOtherEncoding!] / decodedBodySize)
                                 ))
-                            }% smaller { decodedBodySize !== encodedBody.byteLength &&
-                                `(${
-                                    Math.round(100 * (
-                                        1 - (encodingTestResults[bestOtherEncoding!] / decodedBodySize)
-                                    ))
-                                }% total compression)`
-                            } with { bestOtherEncoding }{
-                                messageType === 'response' &&
-                                clientAcceptedEncodings &&
-                                !_.includes(clientAcceptedEncodings, bestOtherEncoding) &&
-                                    ` (not supported by this client)`
-                            }.
-                        </em>
-                    } {
-                        decodedBodySize &&
-                        !betterEncodingAvailable &&
-                        decodedBodySize < encodedBody.byteLength && <em>
-                            <Warning />
-                            This { messageType } would be smaller without compression.
-                        </em>
-                    }
-                </p>
-            </Content>
+                            }% total compression)`
+                        } with { bestOtherEncoding }{
+                            messageType === 'response' &&
+                            clientAcceptedEncodings &&
+                            !_.includes(clientAcceptedEncodings, bestOtherEncoding) &&
+                                ` (not supported by this client)`
+                        }.
+                    </>
+                } {
+                    decodedBodySize &&
+                    !betterEncodingAvailable &&
+                    decodedBodySize < encodedBody.byteLength && <>
+                        <Warning />
+                        This { messageType } would be smaller without compression.
+                    </>
+                } </CompressionOptionsTips>
+            </CompressionOptionsContainer>
         </React.Fragment>
     }) }</>;
 });
