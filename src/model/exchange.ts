@@ -13,14 +13,19 @@ import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
 
 function addRequestMetadata(request: CompletedRequest): HtkRequest {
-    const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
+    try {
+        const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
 
-    return Object.assign(request, {
-        parsedUrl,
-        source: parseSource(request.headers['user-agent']),
-        contentType: getHTKContentType(request.headers['content-type']),
-        cache: observable.map(new Map<string, unknown>(), { deep: false })
-    });
+        return Object.assign(request, {
+            parsedUrl,
+            source: parseSource(request.headers['user-agent']),
+            contentType: getHTKContentType(request.headers['content-type']),
+            cache: observable.map(new Map<string, unknown>(), { deep: false })
+        });
+    } catch (e) {
+        console.log(`Failed to parse request for ${request.url} (${request.protocol}://${request.hostname})`);
+        throw e;
+    }
 }
 
 function addResponseMetadata(response: CompletedResponse): HtkResponse {
