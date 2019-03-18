@@ -36,6 +36,8 @@ export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & 
     height: 100%;
     width: 100%;
 
+    margin: auto 0;
+
     > svg {
         font-size: 150px;
     }
