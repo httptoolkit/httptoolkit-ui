@@ -23,7 +23,7 @@
   "author": "Tim Perry <tim@httptoolkit.tech>",
   "license": "AGPL-3.0-or-later",
   "runtimeDependencies": {
-    "httptoolkit-server": "^0.1.0"
+    "httptoolkit-server": "^0.1.7"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.6",
@@ -116,7 +116,7 @@
     "enzyme-adapter-react-16": "^1.10.0",
     "file-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
-    "httptoolkit-server": "^0.1.5",
+    "httptoolkit-server": "^0.1.7",
     "json-loader": "^0.5.7",
     "karma": "^3.1.1",
     "karma-chai": "^0.1.0",
