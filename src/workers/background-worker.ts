@@ -1,7 +1,6 @@
 // Worker.ts
 const ctx: Worker = self as any;
 
-import * as util from 'util';
 import * as serializeError from 'serialize-error';
 import { handleContentEncoding } from 'mockttp/dist/server/request-utils';
 import { OpenAPIObject } from 'openapi3-ts';
@@ -28,7 +27,7 @@ interface Message {
 export interface DecodeRequest extends Message {
     type: 'decode';
     buffer: ArrayBuffer;
-    encoding: string;
+    encodings: string[];
 }
 
 export interface DecodeResponse extends Message {
@@ -61,8 +60,8 @@ export type BackgroundRequest = DecodeRequest | TestEncodingsRequest | BuildApiR
 export type BackgroundResponse = DecodeResponse | TestEncodingsResponse | BuildApiResponse;
 
 function decodeContent(request: DecodeRequest): DecodeResponse {
-    const { id, buffer, encoding } = request;
-    const result = handleContentEncoding(Buffer.from(buffer), encoding);
+    const { id, buffer, encodings } = request;
+    const result = handleContentEncoding(Buffer.from(buffer), encodings);
     return {
         id,
         inputBuffer: buffer,

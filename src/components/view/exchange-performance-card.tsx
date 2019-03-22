@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { styled } from '../../styles';
 import { Omit, ExchangeMessage } from '../../types';
-import { join } from '../../util';
+import { asHeaderArray } from '../../util';
 
 import { HttpExchange } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
@@ -98,8 +98,7 @@ function getEncodingName(key: string): string {
 function getEncodings(message: ExchangeMessage | 'aborted' | undefined) {
     if (!message || message === 'aborted') return [];
 
-    return join(message.headers['content-encoding'] || '')
-        .split(', ')
+    return asHeaderArray(message.headers['content-encoding'])
         .filter((encoding) => !!encoding && encoding !== 'identity')
         .map(getEncodingName);
 }
@@ -209,10 +208,10 @@ const CompressionOptionsTips = styled(PerformanceExplanation)`
     font-style: italic;
 `;
 
-export const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
+const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
     const messageTypes: Array<'request' | 'response'> = ['request', 'response'];
-    const clientAcceptedEncodings = join(p.exchange.request.headers['accept-encoding'] || '')
-        .split(', ').map(getEncodingName);
+    const clientAcceptedEncodings = asHeaderArray(p.exchange.request.headers['accept-encoding'])
+        .map(getEncodingName);
 
     return <>{ messageTypes.map((messageType) => {
         const message = p.exchange[messageType];

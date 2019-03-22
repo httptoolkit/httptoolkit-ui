@@ -56,14 +56,16 @@ function callApi<
  * so whilst this is running body.buffer will temporarily appear empty.
  * Before resolving the original encoded buffer will be put back.
  */
-export async function decodeBody(body: { buffer: Buffer }, encoding: string | undefined) {
-    if (!encoding || encoding === 'identity') return body.buffer;
+export async function decodeBody(body: { buffer: Buffer }, encodings: string[]) {
+    if (encodings.length === 0 || (encodings.length === 1 && encodings[0] === 'identity')) {
+        return body.buffer;
+    }
 
     const encodedBuffer = body.buffer.buffer;
     const result = await callApi<DecodeRequest, DecodeResponse>({
         type: 'decode',
         buffer: encodedBuffer,
-        encoding
+        encodings
     }, [encodedBuffer]);
 
     // Put the transferred encoded buffer back
