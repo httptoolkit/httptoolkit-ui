@@ -255,7 +255,7 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
                     encodingTestResults={encodingTestResults}
                 />
                 <CompressionOptionsTips> {
-                    betterEncodingAvailable && <>
+                    !!betterEncodingAvailable && <>
                         <Suggestion />
                         This would be {
                             Math.round(100 * (
@@ -275,7 +275,7 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
                         }.
                     </>
                 } {
-                    decodedBodySize &&
+                    !!decodedBodySize &&
                     !betterEncodingAvailable &&
                     decodedBodySize < encodedBody.byteLength && <>
                         <Warning />
