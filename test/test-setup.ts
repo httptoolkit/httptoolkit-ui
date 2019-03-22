@@ -16,6 +16,7 @@ if (Enzyme) {
 
 export const expect = chai.expect;
 
+import * as dateFns from 'date-fns';
 import { buildBodyReader } from 'mockttp/dist/server/request-utils';
 import { Icons } from '../src/icons';
 import { HttpExchange } from '../src/model/exchange';
@@ -59,3 +60,8 @@ export const getExchangeData = ({
     searchIndex: '',
     category: 'unknown'
 }) as HttpExchange;
+
+export function httpDate(date: Date) {
+    const utcDate = dateFns.addMinutes(date, -1 * date.getTimezoneOffset());
+    return dateFns.format(utcDate, 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+}

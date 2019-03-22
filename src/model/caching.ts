@@ -211,7 +211,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
                 record their own response time, but it's typically preferable to
                 explicitly specify it in the response.
             `;
-        } else if (differenceInSeconds(responseDateHeader, requestReceivedDate) > 60) {
+        } else if (Math.abs(differenceInSeconds(responseDateHeader, requestReceivedDate)) > 60) {
             warning = dedent`
                 The Date header included here however appears to be incorrect (compared to
                 your local clock). This value is used in combination with the \`max-age\`

@@ -1,6 +1,6 @@
 import * as dedent from "dedent";
 
-import { getExchangeData, expect } from "../../test-setup";
+import { getExchangeData, expect, httpDate } from "../../test-setup";
 
 import { explainCacheability } from "../../../src/model/caching";
 
@@ -28,7 +28,7 @@ describe('Caching explanations', () => {
     describe('given a GET 200 with an explicit max age and etag', () => {
         const exchange = getExchangeData({
             responseHeaders: {
-                'date': 'Fri, 22 Mar 2019 15:26:00 GMT',
+                'date': httpDate(new Date()),
                 'etag': 'tagtagtag',
                 'cache-control': 'max-age=60'
             }
@@ -51,7 +51,7 @@ describe('Caching explanations', () => {
     describe('given a GET 200 with an explicit max age', () => {
         const exchange = getExchangeData({
             responseHeaders: {
-                'date': 'Fri, 22 Mar 2019 15:26:00 GMT',
+                'date': httpDate(new Date()),
                 'cache-control': 'max-age=60'
             }
         });
