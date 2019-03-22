@@ -346,6 +346,17 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
                 `
             }
         }
+    } else if (responseCCDirectives['s-maxage'] !== undefined) {
+        // We're not locally cacheable at all, but we are proxy cacheable???!!! Super funky
+        return {
+            summary: 'Not cacheable by private (HTTP client) caches',
+            explanation: dedent`
+                This response is cacheable because it specifies an explicit expiry time,
+                using an \`s-maxage\` Cache-Control directive. This only applies to shared
+                caches (e.g. proxies and CDNs), and this response would otherwise not be
+                cacheable, so it won't be cached by any HTTP user agents (e.g. browsers).
+            `
+        };
     } else {
         return {
             summary: 'Not cacheable',

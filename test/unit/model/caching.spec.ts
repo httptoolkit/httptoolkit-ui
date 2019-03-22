@@ -155,6 +155,27 @@ describe('Caching explanations', () => {
         });
     });
 
+    describe('given a GET 500 with only a s-maxage', () => {
+        const exchange = getExchangeData({
+            statusCode: 500,
+            responseHeaders: {
+                'cache-control': 's-maxage=60'
+            }
+        });
+
+        it("should say that it's not cacheable by clients", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.summary).to.equal(
+                'Not cacheable by private (HTTP client) caches'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('s-maxage');
+        });
+    });
+
     describe('given a GET 200 with conflicting max age & Expires', () => {
         const exchange = getExchangeData({
             responseHeaders: {
