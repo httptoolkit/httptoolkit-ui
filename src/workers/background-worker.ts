@@ -65,7 +65,7 @@ function decodeContent(request: DecodeRequest): DecodeResponse {
     return {
         id,
         inputBuffer: buffer,
-        decodedBuffer: result.buffer
+        decodedBuffer: result.buffer as ArrayBuffer
     };
 }
 

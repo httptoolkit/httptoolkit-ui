@@ -64,7 +64,7 @@ export async function decodeBody(body: { buffer: Buffer }, encodings: string[]) 
     const encodedBuffer = body.buffer.buffer;
     const result = await callApi<DecodeRequest, DecodeResponse>({
         type: 'decode',
-        buffer: encodedBuffer,
+        buffer: encodedBuffer as ArrayBuffer,
         encodings
     }, [encodedBuffer]);
 
