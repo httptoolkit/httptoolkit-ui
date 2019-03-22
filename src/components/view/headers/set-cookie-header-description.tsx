@@ -1,16 +1,20 @@
 import * as React from 'react';
 
 import { parse as parseCookie, Cookie } from 'set-cookie-parser';
-import * as dateFns from 'date-fns';
+import {
+    isFuture,
+    addSeconds,
+    format as formatDate,
+    distanceInWordsToNow
+} from 'date-fns';
 
 import { Content } from '../../common/external-content';
 
 function getExpiryExplanation(date: Date) {
-    const isFuture = dateFns.isFuture(date);
-    const exactTime = dateFns.format(date, 'YYYY-MM-DD [at] HH:mm:ss');
-    const relativeTime = dateFns.distanceInWordsToNow(date);
+    const exactTime = formatDate(date, 'YYYY-MM-DD [at] HH:mm:ss');
+    const relativeTime = distanceInWordsToNow(date);
 
-    if (isFuture) {
+    if (isFuture(date)) {
         return <>
             will expire <span title={exactTime}>in {relativeTime}</span>
         </>
@@ -76,7 +80,7 @@ export const CookieHeaderDescription = (p: { value: string, requestUrl: URL }) =
             <p>
                 The cookie {
                     cookie.maxAge ? <>
-                        { getExpiryExplanation(dateFns.addSeconds(new Date(), cookie.maxAge)) }
+                        { getExpiryExplanation(addSeconds(new Date(), cookie.maxAge)) }
                         { cookie.expires && ` ('max-age' overrides 'expires')` }
                     </> :
                     cookie.expires ?
