@@ -55,6 +55,7 @@ export const getExchangeData = ({
         body: buildBodyReader(Buffer.from(responseBody), responseHeaders),
         contentType: 'text'
     },
+    timingEvents: { startTime: Date.now() },
     searchIndex: '',
     category: 'unknown'
 }) as HttpExchange;
