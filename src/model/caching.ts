@@ -102,12 +102,13 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
     const responseCCDirectives = parseCCDirectives(response);
 
     const hasRevalidationOptions = response.headers['etag'] || response.headers['last-modified'];
-    const revalidationSuggestion = !hasRevalidationOptions ? dedent`
-        This response doesn't however include any validation headers. That means that once
-        it expires, the content must be requested again from scratch. If a Last-Modified
-        or ETag header was included, these could be used to make conditional HTTP requests
-        to revalidate cached content without re-requesting it, saving time and bandwidth.
-    ` : '';
+    const revalidationSuggestion = !hasRevalidationOptions && !responseCCDirectives['immutable'] ?
+        dedent`
+            This response doesn't however include any validation headers. That means that once
+            it expires, the content must be requested again from scratch. If a Last-Modified
+            or ETag header were included then these could be used to make conditional HTTP requests
+            and revalidate cached content without re-requesting it, saving time and bandwidth.
+        ` : '';
 
     if (!!responseCCDirectives['no-store']) {
         return {
@@ -221,29 +222,41 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             `;
         } else if (response.headers['expires'] && Math.abs(differenceInSeconds(
             parseDate(lastHeader(response.headers['expires']!)),
-            addSeconds(responseDateHeader, responseCCDirectives['max-age'] as number)
+            addSeconds(responseDateHeader, responseCCDirectives['max-age'])
         )) > 60) {
             warning = dedent`
                 This response also includes an Expires header, which appears to disagree
                 with the expiry time calculated from the \`max-age\` directive. The Cache-Control
-                headers takes precedence, so this will only be used by clients that don't
+                headers take precedence, so this will only be used by clients that don't
                 support that, but this may cause unpredictable behaviour. It's typically
                 better than ensure these values agree on a single expiry time.
             `;
         }
 
+        const shouldSuggestImmutable = !responseCCDirectives['immutable'] &&
+            responseCCDirectives['max-age'] >= 31536000; // 1 year
+
         return {
             summary: 'Cacheable',
-            type: warning ? 'warning' :
-                    revalidationSuggestion ? 'suggestion' :
-                        undefined,
+            type:
+                warning ? 'warning' :
+                (revalidationSuggestion || shouldSuggestImmutable) ? 'suggestion' :
+                undefined,
             explanation: dedent`
                 This response is cacheable because it specifies an explicit expiry time,
                 using a \`max-age\` directive in its Cache-Control header.
-                ${warning ?
-                    '\n' + warning :
-                    revalidationSuggestion ?
-                        '\n' + revalidationSuggestion : ''}
+                ${
+                    warning ? '\n' + warning :
+                    revalidationSuggestion ? '\n' + revalidationSuggestion :
+                    shouldSuggestImmutable ? '\n' + dedent`
+                        This expiry time is more than a year away, suggesting the content
+                        effectively never changes. This could be made more effective using the
+                        \`immutable\` Cache-Control directive, which avoids revalidation
+                        requests for this content in more cases such as explicit page refreshes,
+                        saving validation time.
+                    ` :
+                    ''
+                }
             `
         };
     }

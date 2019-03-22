@@ -25,7 +25,7 @@ describe('Caching explanations', () => {
         });
     });
 
-    describe('given a GET 200 with an explicit max age and etag', () => {
+    describe('given a GET 200 with an explicit max-age and etag', () => {
         const exchange = getExchangeData({
             responseHeaders: {
                 'date': httpDate(new Date()),
@@ -48,7 +48,7 @@ describe('Caching explanations', () => {
         });
     });
 
-    describe('given a GET 200 with an explicit max age', () => {
+    describe('given a GET 200 with an explicit max-age', () => {
         const exchange = getExchangeData({
             responseHeaders: {
                 'date': httpDate(new Date()),
@@ -75,7 +75,35 @@ describe('Caching explanations', () => {
         });
     });
 
-    describe('given a GET 200 with an explicit max age but no Date header', () => {
+    describe('given a GET 200 with a max-age of one year', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'date': httpDate(new Date()),
+                'etag': 'fedcba',
+                'cache-control': 'max-age=31536000'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('max-age');
+        });
+
+        it("should suggest adding an immutable directive", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('immutable');
+            expect(result!.type).to.equal('suggestion');
+        });
+    });
+
+    describe('given a GET 200 with an explicit max-age but no Date header', () => {
         const exchange = getExchangeData({
             responseHeaders: {
                 'cache-control': 'max-age=60'
