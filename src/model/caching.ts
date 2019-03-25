@@ -401,3 +401,87 @@ export function explainCacheability(exchange: HttpExchange): (
         `
     };
 }
+
+const ALL_CACHES = 'May be cached in client *private caches* and proxy or CDN *shared caches*.';
+const PRIVATE_ONLY = 'May only be cached in client *private caches*, not by proxies or CDNs.'
+const SHARED_ONLY = 'May only be cached in proxy or CDN *shared caches*, not in private client caches';
+
+/**
+ * Explains the details of which types of cache can be store this response,
+ * and why. This assumes that explainCacheability has returned cacheability: true,
+ * and doesn't fully repeat the checks included there.
+ */
+export function explainValidCacheTypes(exchange: HttpExchange): Explanation | undefined {
+    const { request, response } = exchange;
+    if (typeof response !== 'object') return;
+
+    if (request.method === 'OPTIONS') {
+        return {
+            summary: PRIVATE_ONLY,
+            explanation: dedent`
+                OPTIONS responses are not cached through the normal HTTP response caching mechanisms.
+                Only the CORS metadata for the resource is cached, and only by HTTP clients that
+                implement CORS checks, such as browsers, not by intermediate caches.
+            `
+        };
+    }
+
+    const responseCCDirectives = parseCCDirectives(response);
+
+    if (responseCCDirectives['private'] !== undefined) {
+        return {
+            summary: PRIVATE_ONLY,
+            explanation: dedent`
+                This response may only be cached by private caches, such as your browser cache,
+                because it includes an explicit \`private\` Cache-Control directive.
+            `
+        };
+    }
+
+    if (
+        request.headers['authorization'] !== undefined && !(
+            responseCCDirectives['s-maxage'] !== undefined ||
+            responseCCDirectives['must-revalidate'] !== undefined ||
+            responseCCDirectives['public'] !== undefined
+        )
+    ) {
+        return {
+            summary: PRIVATE_ONLY,
+            explanation: dedent`
+                This response may only be cached by private caches, such as your browser cache,
+                because it includes an Authorization header, and doesn't include the explicit
+                directives that would allow it to be stored by shared caches.
+
+                Shared caches would be allowed to store this response if it contained an
+                \`s-maxage\`, \`must-revalidate\` or \`public\` Cache-Control directive.
+            `
+        };
+    }
+
+    if (responseCCDirectives['s-maxage'] !== undefined && !(
+            responseCCDirectives['max-age'] !== undefined ||
+            response.headers['expires'] !== undefined ||
+            responseCCDirectives['public'] !== undefined ||
+            CACHEABLE_STATUSES.includes(response.statusCode)
+        )
+    ) {
+        return {
+            summary: SHARED_ONLY,
+            explanation: dedent`
+                This response may only be cached by shared caches, such as proxies & CDNs,
+                not by private caches, because it includes an \`s-maxage\` Cache-Control
+                directive, but is otherwise not cacheable by default, and does not include
+                any other explicit caching directives.
+            `
+        };
+    }
+
+    return {
+        summary: ALL_CACHES,
+        explanation: dedent`
+            This response may be cached by both private & shared caches, because it is
+            cacheable and does not include either a \`private\` Cache-Control
+            directive or an Authorization header.
+        `
+    };
+}

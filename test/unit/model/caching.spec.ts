@@ -2,7 +2,7 @@ import * as dedent from "dedent";
 
 import { getExchangeData, expect, httpDate } from "../../test-setup";
 
-import { explainCacheability } from "../../../src/model/caching";
+import { explainCacheability, explainValidCacheTypes } from "../../../src/model/caching";
 
 describe('Caching explanations', () => {
     describe('given a GET 200 with no explicit headers', () => {
@@ -48,6 +48,14 @@ describe('Caching explanations', () => {
             expect(result!.type).to.equal(undefined);
             expect(result!.explanation).not.to.include('validation');
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
+
     });
 
     describe('given a GET 200 with an explicit max-age', () => {
@@ -75,6 +83,13 @@ describe('Caching explanations', () => {
             const result = explainCacheability(exchange);
             expect(result!.type).to.equal('suggestion');
             expect(result!.explanation).to.include('ETag');
+        });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
         });
     });
 
@@ -105,6 +120,13 @@ describe('Caching explanations', () => {
             expect(result!.explanation).to.include('immutable');
             expect(result!.type).to.equal('suggestion');
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
     });
 
     describe('given a GET 200 with an explicit max-age but no Date header', () => {
@@ -131,6 +153,13 @@ describe('Caching explanations', () => {
             const result = explainCacheability(exchange);
             expect(result!.type).to.equal('warning');
             expect(result!.explanation).to.include('Date');
+        });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
         });
     });
 
@@ -159,6 +188,13 @@ describe('Caching explanations', () => {
             expect(result!.type).to.equal('suggestion');
             expect(result!.explanation).to.include('max-age');
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
     });
 
     describe('given a GET 500 with only a s-maxage', () => {
@@ -180,6 +216,13 @@ describe('Caching explanations', () => {
         it("should explain why it's cacheable", () => {
             const result = explainCacheability(exchange);
             expect(result!.explanation).to.include('s-maxage');
+        });
+
+        it("should say it's only cacheable by shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'May only be cached in proxy'
+            );
         });
     });
 
@@ -208,6 +251,105 @@ describe('Caching explanations', () => {
             const result = explainCacheability(exchange);
             expect(result!.explanation).to.include('max-age');
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
+    });
+
+    describe('given a GET 200 with an explicit max-age and a private flag', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'date': httpDate(new Date()),
+                'cache-control': 'max-age=60, private'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('max-age');
+        });
+
+        it("should say it's cacheable only by private caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'only be cached in client private caches'
+            );
+        });
+    });
+
+    describe('given a GET 200 with an authorization header', () => {
+        const exchange = getExchangeData({
+            requestHeaders: {
+                authorization: 'bearer abcdabcd'
+            },
+            responseHeaders: {
+                etag: '12341234'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Probably cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('200');
+        });
+
+        it("should say it's cacheable only by private caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'only be cached in client private caches'
+            );
+        });
+    });
+
+    describe('given a GET 200 with an authorization header but required validation', () => {
+        const exchange = getExchangeData({
+            requestHeaders: {
+                authorization: 'bearer abcdabcd'
+            },
+            responseHeaders: {
+                etag: '12341234',
+                'cache-control': 'no-cache, must-revalidate'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('200');
+        });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'client private caches and proxy'
+            );
+        });
     });
 
     describe('given a 401 GET with an explicit public directive and ETag', () => {
@@ -235,6 +377,13 @@ describe('Caching explanations', () => {
                 'expiry behaviour is not well defined'
             );
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
     });
 
     describe('given a 200 GET with a Last-Modified header', () => {
@@ -260,6 +409,13 @@ describe('Caching explanations', () => {
                 'expiry behaviour is not well defined'
             );
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
     });
 
     describe('given a 200 GET with a Last-Modified header and no-cache', () => {
@@ -283,6 +439,13 @@ describe('Caching explanations', () => {
             expect(result!.type).to.equal(undefined);
             expect(result!.explanation).to.include('200 responses are cacheable by default');
             expect(result!.explanation).to.include('no-cache');
+        });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
         });
     });
 
@@ -403,6 +566,13 @@ describe('Caching explanations', () => {
                 'This response fulfills those conditions'
             );
         });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
     });
 
     describe('given a DELETE with no explicit headers', () => {
@@ -476,6 +646,13 @@ describe('Caching explanations', () => {
                 'will be cached if a Access-Control-Max-Age header is provided, as here'
             );
         });
+
+        it("should say it's cacheable by private caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'only be cached in client private caches'
+            );
+        });
     });
 
     describe('given a permanent redirect with no explicit headers', () => {
@@ -496,6 +673,13 @@ describe('Caching explanations', () => {
             );
             expect(result!.explanation.replace(/\n/g, ' ')).to.include(
                 'clients will cache it forever'
+            );
+        });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
             );
         });
     });
