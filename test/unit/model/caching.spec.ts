@@ -2,7 +2,7 @@ import * as dedent from "dedent";
 
 import { getExchangeData, expect, httpDate } from "../../test-setup";
 
-import { explainCacheability, explainValidCacheTypes } from "../../../src/model/caching";
+import { explainCacheability, explainValidCacheTypes, explainCacheMatching } from "../../../src/model/caching";
 
 describe('Caching explanations', () => {
     describe('given a GET 200 with no explicit headers', () => {
@@ -573,6 +573,21 @@ describe('Caching explanations', () => {
                 'private caches and proxy'
             );
         });
+
+        it("should summarize the resulting cache matching", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.summary).to.equal(
+                'Will match future GET & HEAD requests to this URL'
+            );
+        });
+
+        it("should explain the result matching explicitly", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.explanation.replace(/\n/g, ' ')).to.include(dedent`
+                may be used for future safe requests for the resource
+                updated by this POST, regardless of header values
+            `.replace(/\n/g, ' '));
+        });
     });
 
     describe('given a DELETE with no explicit headers', () => {
@@ -628,7 +643,9 @@ describe('Caching explanations', () => {
                 origin: 'http://example2.com'
             },
             responseHeaders: {
-                'access-control-max-age': '600'
+                'access-control-max-age': '600',
+                'access-control-allow-methods': 'GET, POST, DELETE',
+                'access-control-allow-headers': 'x-header',
             }
         });
 
@@ -652,6 +669,22 @@ describe('Caching explanations', () => {
             expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
                 'only be cached in client private caches'
             );
+        });
+
+        it("should summarize the CORS cache matching", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.summary).to.equal(
+                'Will match corresponding future CORS requests for this URL'
+            );
+        });
+
+        it("should explain the detailed CORS matching behaviour", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.explanation).to.include('The origin is \`http://example2.com\`');
+            expect(result!.explanation).to.include(
+                'The request method would be GET, HEAD, POST or DELETE'
+            );
+            expect(result!.explanation).to.include('X-Header');
         });
     });
 
@@ -684,11 +717,12 @@ describe('Caching explanations', () => {
         });
     });
 
-    describe('given a 200 GET with an ETag and Vary: *', () => {
+    describe('given a 200 GET with a max-age and Vary: *', () => {
         const exchange = getExchangeData({
             responseHeaders: {
-                etag: '123abc',
-                vary: '*'
+                vary: '*',
+                date: httpDate(new Date()),
+                'cache-control': 'max-age=60'
             }
         });
 
@@ -701,6 +735,74 @@ describe('Caching explanations', () => {
         it("should explain why it's not cacheable", () => {
             const result = explainCacheability(exchange);
             expect(result!.explanation).to.include('Vary');
+        });
+    });
+
+    describe('given a 200 GET with an ETag and a Vary-ing header', () => {
+        const exchange = getExchangeData({
+            requestHeaders: {
+                cookie: 'abc'
+            },
+            responseHeaders: {
+                vary: 'Cookie',
+                date: httpDate(new Date()),
+                'cache-control': 'max-age=60'
+            }
+        });
+
+        it("should say it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal('Cacheable');
+        });
+
+        it("should include the Vary in the cache key", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.summary).to.include(
+                'this URL, with the same Cookie header'
+            );
+        });
+
+        it("should explain the Vary in the cache key", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.explanation).to.include(
+                'as long as those requests have a Cookie header set to `abc`'
+            );
+        });
+    });
+
+    describe('given a 200 GET with an ETag and multiple Vary-ing headers', () => {
+        const exchange = getExchangeData({
+            requestHeaders: {
+                'accept-language': 'en',
+                cookie: 'abc'
+            },
+            responseHeaders: {
+                vary: 'Cookie, accept-Language, accept',
+                date: httpDate(new Date()),
+                'cache-control': 'max-age=60'
+            }
+        });
+
+        it("should say it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal('Cacheable');
+        });
+
+        it("should include the Vary in the cache key", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.summary).to.include(
+                'this URL, with the same Cookie, Accept-Language and Accept headers'
+            );
+        });
+
+        it("should explain the Vary in the cache key", () => {
+            const result = explainCacheMatching(exchange);
+            expect(result!.explanation).to.include(dedent`
+                as long as those requests have a Cookie header set to \`abc\`,
+                a Accept-Language header set to \`en\` and no Accept header
+            `.replace(/\n/g, ' '));
         });
     });
 });

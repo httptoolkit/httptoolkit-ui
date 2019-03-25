@@ -7,7 +7,7 @@ import {
 } from 'date-fns';
 
 import { HttpExchange } from "./exchange";
-import { lastHeader, asHeaderArray } from "../util";
+import { lastHeader, asHeaderArray, joinAnd } from "../util";
 import { ExchangeMessage } from '../types';
 
 // https://tools.ietf.org/html/draft-ietf-httpbis-semantics-04#section-7.2.3
@@ -37,6 +37,23 @@ const PERMANENTLY_CACHEABLE_STATUSES = [
     308,
     410
 ];
+
+// The set of CORS methods/headers which do never require preflight
+// requests (and so don't block cache matches)
+const CORS_SIMPLE_METHODS = ['GET', 'HEAD', 'POST'];
+const CORS_SIMPLE_HEADERS = [
+    'Cache-Control',
+    'Content-Language',
+    'Content-Type',
+    'Expires',
+    'Last-Modified',
+    'Pragma'
+];
+
+function formatHeader(headerName: string): string {
+    // Upper case the first letter of each word (including hyphenated parts)
+    return headerName.toLowerCase().replace(/(\b\w)/g, v => v.toUpperCase())
+}
 
 interface Explanation {
     summary: string,
@@ -172,7 +189,7 @@ export function explainCacheability(exchange: HttpExchange): (
             * Explicit freshness information is included (e.g. a \`max-age\` Cache-Control
                 directive), and
             * a Content-Location header is included, set to the same
-                URI as this request, and
+                URI as this request
         `;
 
         const contentLocationUrl = response.headers['content-location'] ?
@@ -415,7 +432,7 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
     const { request, response } = exchange;
     if (typeof response !== 'object') return;
 
-    if (request.method === 'OPTIONS') {
+    if (request.method === 'OPTIONS' && request.headers['origin']) {
         return {
             summary: PRIVATE_ONLY,
             explanation: dedent`
@@ -482,6 +499,87 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
             This response may be cached by both private & shared caches, because it is
             cacheable and does not include either a \`private\` Cache-Control
             directive or an Authorization header.
+        `
+    };
+}
+
+/**
+ * Explains how this response will be matched against future requests and why.
+ * This assumes that explainCacheability has returned cacheability: true,
+ * so doesn't fully repeat the checks included there.
+ */
+export function explainCacheMatching(exchange: HttpExchange): Explanation | undefined {
+    const { request, response } = exchange;
+    if (typeof response !== 'object') return;
+
+    if (request.method === 'OPTIONS' && request.headers['origin']) {
+        const allowedMethods = _.union(
+            CORS_SIMPLE_METHODS,
+            asHeaderArray(response.headers['access-control-allow-methods'])
+                .map(m => m.toUpperCase()),
+        );
+        const allowedHeaders = _.union(
+            CORS_SIMPLE_HEADERS,
+            asHeaderArray(response.headers['access-control-allow-headers'])
+                .map(formatHeader)
+        );
+        const allowsCredentials = response.headers['Access-Control-Allow-Credentials'] === 'true';
+
+        return {
+            summary: 'Will match corresponding future CORS requests for this URL',
+            explanation: dedent`
+                The CORS configuration returned here may be used to avoid a preflight
+                request for future CORS requests, when:
+
+                * The CORS request would be sent to the same URL
+                * The origin is \`${request.headers['origin']}\`
+                ${!allowsCredentials ? '* No credentials are being sent' : ''
+                }* The request method would be ${joinAnd(allowedMethods, ', ', ' or ')}
+                * There are no extra request headers other than ${joinAnd(allowedHeaders)}
+            `
+        };
+    }
+
+    const varyHeaders = asHeaderArray(response.headers['vary']).map(formatHeader);
+
+    const hasVaryHeaders = varyHeaders.length > 0;
+
+    // Don't need to handle Vary: *, as that would've excluded cacheability entirely.
+
+    const varySummary = hasVaryHeaders ? dedent`
+        , with the same ${joinAnd(varyHeaders)} header${varyHeaders.length > 1 ? 's' : ''}
+    ` : '';
+
+    const varyExplanation = hasVaryHeaders ? dedent`
+        , as long as those requests have ${joinAnd(varyHeaders.map(headerName => {
+            const realHeaderValue = request.headers[headerName.toLowerCase()];
+
+            return realHeaderValue === undefined ?
+                `no ${headerName} header` :
+                `a ${headerName} header set to \`${realHeaderValue}\``
+        }))}.
+    ` : dedent`
+        , regardless of header values or other factors.
+
+        If this response is only valid for certain header configurations (e.g.
+        Accept-Encoding or Accept-Language headers), it should include a Vary header.
+    `;
+
+    if (request.method === 'POST') {
+        return {
+            summary: `Will match future GET & HEAD requests to this URL${varySummary}`,
+            explanation: dedent`
+                The response content & headers returned here may be used for future safe requests
+                for the resource updated by this POST${varyExplanation}
+            `
+        };
+    }
+
+    return {
+        summary: `Will match future GET & HEAD requests to this URL${varySummary}`,
+        explanation: dedent`
+            The response content & headers returned here may be used for future safe requests
+            for the same resource${varyExplanation}
         `
     };
 }

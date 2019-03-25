@@ -149,3 +149,9 @@ export function asHeaderArray(val: string | string[] | undefined, sep = ','): st
         return val.split(sep).map(value => value.trim());
     }
 }
+
+export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
+    if (val.length === 1) return val[0];
+
+    return val.slice(0, -1).join(initialSep) + finalSep + val[val.length - 1];
+}
