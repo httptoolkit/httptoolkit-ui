@@ -10,6 +10,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's probably not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal(
                 'Typically not cacheable'
             );
@@ -36,6 +37,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -58,6 +60,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -86,6 +89,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -112,6 +116,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -138,6 +143,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -165,6 +171,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's not cacheable by clients", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Not cacheable by private (HTTP client) caches'
             );
@@ -186,6 +193,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -213,6 +221,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's probably cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Probably cacheable'
             );
@@ -237,6 +246,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's probably cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Probably cacheable'
             );
@@ -262,6 +272,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -282,6 +293,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal('Not cacheable');
         });
 
@@ -300,6 +312,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal(
                 'Not cacheable'
             );
@@ -320,6 +333,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal(
                 'Not cacheable'
             );
@@ -344,6 +358,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal(
                 'Not cacheable'
             );
@@ -373,6 +388,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's possibly cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'May be cacheable for future GET/HEAD requests'
             );
@@ -396,6 +412,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal(
                 'Not cacheable'
             );
@@ -419,6 +436,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's only briefly cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal(
                 'Very briefly cacheable'
             );
@@ -446,6 +464,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Cacheable'
             );
@@ -466,6 +485,7 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal('Cacheable');
         });
 
@@ -490,6 +510,7 @@ describe('Caching explanations', () => {
 
         it("should say it's not cacheable", () => {
             const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
             expect(result!.summary).to.equal('Not cacheable');
         });
 

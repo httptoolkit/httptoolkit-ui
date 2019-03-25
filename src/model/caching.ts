@@ -57,7 +57,9 @@ function parseCCDirectives(message: ExchangeMessage): {
         }, {});
 }
 
-export function explainCacheability(exchange: HttpExchange): Explanation | undefined {
+export function explainCacheability(exchange: HttpExchange): (
+    Explanation & { cacheable: boolean }
+) | undefined {
     const { request, response } = exchange;
 
     if (typeof response !== 'object') return;
@@ -71,6 +73,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             // own separate funky mechanism.
             if (response.headers['access-control-max-age']) {
                 return {
+                    cacheable: true,
                     summary: 'Cacheable',
                     explanation: dedent`
                         OPTIONS preflight requests are not normally cacheable, and don't observe
@@ -83,6 +86,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
                 };
             } else {
                 return {
+                    cacheable: false,
                     summary: 'Very briefly cacheable',
                     explanation: dedent`
                         OPTIONS preflight requests are not cacheable, unless an Access-Control-Max-Age
@@ -93,6 +97,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             }
         } else {
             return {
+                cacheable: false,
                 summary: 'Not cacheable',
                 explanation: `${request.method} requests are never cacheable.`
             };
@@ -112,6 +117,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
 
     if (!!responseCCDirectives['no-store']) {
         return {
+            cacheable: false,
             summary: 'Not cacheable',
             explanation: dedent`
                 The response includes a \`no-store\` directive in its Cache-Control
@@ -125,6 +131,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
 
     if (asHeaderArray(response.headers['pragma']).includes('no-store')) {
         return {
+            cacheable: false,
             summary: 'Not cacheable',
             type: 'suggestion',
             explanation: dedent`
@@ -142,6 +149,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
 
     if (asHeaderArray(response.headers['vary']).includes('*')) {
         return {
+            cacheable: false,
             summary: 'Not cacheable',
             explanation: dedent`
                 The response includes a \`*\` value in its Vary header. This tells caches
@@ -179,6 +187,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
 
         if (hasFreshnessInfo && contentLocationIsCurrentUri) {
             return {
+                cacheable: true,
                 summary: 'May be cacheable for future GET/HEAD requests',
                 type: revalidationSuggestion ? 'suggestion' : undefined,
                 explanation: [
@@ -189,6 +198,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             };
         } else {
             return {
+                cacheable: false,
                 summary: 'Not cacheable',
                 explanation: postExplanation + '\n\n' +
                     'This response does not fulfill those conditions, so is not cacheable by anybody.'
@@ -237,6 +247,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             responseCCDirectives['max-age'] >= 31536000; // 1 year
 
         return {
+            cacheable: true,
             summary: 'Cacheable',
             type:
                 warning ? 'warning' :
@@ -264,6 +275,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
     if (lastHeader(response.headers['expires']) !== undefined) {
         // Expires set, but not max-age (checked above).
         return {
+            cacheable: true,
             summary: 'Cacheable',
             type: 'suggestion',
             explanation: dedent`
@@ -283,6 +295,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
 
         if (PERMANENTLY_CACHEABLE_STATUSES.includes(response.statusCode)) {
             return {
+                cacheable: true,
                 summary: 'Cacheable',
                 explanation: dedent`
                     ${response.statusCode} responses are cacheable by default. The lifetime of the
@@ -302,6 +315,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
         if (!hasRevalidationOptions) {
             // We're cacheable, but with no clear expiry *and* no way to revalidate.
             return {
+                cacheable: false,
                 summary: 'Typically not cacheable',
                 type: 'warning',
                 explanation: dedent`
@@ -322,6 +336,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
         } else if (responseCCDirectives['no-cache']) {
             // We're cacheable and revalidateable, with forced revalidation every time, so 0 expiry
             return {
+                cacheable: true,
                 summary: 'Cacheable',
                 explanation: dedent`
                     ${cacheableReason}.
@@ -337,6 +352,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             const lastModified = response.headers['last-modified'];
 
             return {
+                cacheable: true,
                 summary: 'Probably cacheable',
                 type: 'warning',
                 explanation: dedent`
@@ -364,6 +380,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
     if (responseCCDirectives['s-maxage'] !== undefined) {
         // We're not locally cacheable at all, but we are proxy cacheable???!!! Super funky
         return {
+            cacheable: true,
             summary: 'Not cacheable by private (HTTP client) caches',
             explanation: dedent`
                 This response is cacheable because it specifies an explicit expiry time,
@@ -372,14 +389,15 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
                 cacheable, so it won't be cached by any HTTP user agents (e.g. browsers).
             `
         };
-    } else {
-        return {
-            summary: 'Not cacheable',
-            explanation: dedent`
-                ${response.statusCode} responses are not cacheable by default.
-                This could become cacheable if explicit caching headers were added,
-                such as a \`max-age\` Cache-Control directive.
-            `
-        };
     }
+
+    return {
+        cacheable: false,
+        summary: 'Not cacheable',
+        explanation: dedent`
+            ${response.statusCode} responses are not cacheable by default.
+            This could become cacheable if explicit caching headers were added,
+            such as a \`max-age\` Cache-Control directive.
+        `
+    };
 }
