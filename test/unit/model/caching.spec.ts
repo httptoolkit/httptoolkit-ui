@@ -223,7 +223,7 @@ describe('Caching explanations', () => {
             expect(result!.type).to.equal('warning');
             expect(result!.explanation).to.include('`public` Cache-Control directive');
             expect(result!.explanation.replace('\n', ' ')).to.include(
-                'expiry behaviour is not well specified'
+                'expiry behaviour is not well defined'
             );
         });
     });
@@ -247,8 +247,31 @@ describe('Caching explanations', () => {
             expect(result!.type).to.equal('warning');
             expect(result!.explanation).to.include('200 responses are cacheable by default');
             expect(result!.explanation.replace('\n', ' ')).to.include(
-                'expiry behaviour is not well specified'
+                'expiry behaviour is not well defined'
             );
+        });
+    });
+
+    describe('given a 200 GET with a Last-Modified header and no-cache', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'last-modified': 'Fri, 22 Mar 2019 11:54:00 GMT',
+                'cache-control': 'no-cache'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.type).to.equal(undefined);
+            expect(result!.explanation).to.include('200 responses are cacheable by default');
+            expect(result!.explanation).to.include('no-cache');
         });
     });
 

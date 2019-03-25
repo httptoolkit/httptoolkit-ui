@@ -299,33 +299,7 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
             `${response.statusCode} responses are cacheable by default` :
             `This response includes a \`public\` Cache-Control directive, explicitly marking it cacheable`;
 
-        if (hasRevalidationOptions) {
-            // We're cacheable and revalidateable, but there's no clear expiry
-            const lastModified = response.headers['last-modified'];
-
-            return {
-                summary: 'Probably cacheable',
-                type: 'warning',
-                explanation: dedent`
-                    ${cacheableReason}. However this response does not explicitly
-                    specify when it expires (e.g. with a \`max-age\` Cache-Control
-                    directive), so its expiry behaviour is not well specified. Clients
-                    will use a heuristic to decide when this response is no longer considered
-                    fresh, typically some percentage of the time since the content was
-                    last modified, according to the Last-Modified header value${
-                        lastModified ? ` (${lastModified})` : ''
-                    }. Some clients may refuse to cache the response entirely.
-
-                    It's typically better to be explicit about how responses should be cached
-                    and expired, rather than depending on this unpredictable behaviour.
-
-                    If an explicit expiry time was set (e.g. using a \`max-age\` Cache-Control
-                    directive), this would take precedence over any heuristics, and provide
-                    reliable cache expiry. Alternatively this content would be reliably
-                    excluded from caching if a \`no-store\` Cache-Control directive was present.
-                `
-            };
-        } else {
+        if (!hasRevalidationOptions) {
             // We're cacheable, but with no clear expiry *and* no way to revalidate.
             return {
                 summary: 'Typically not cacheable',
@@ -345,8 +319,49 @@ export function explainCacheability(exchange: HttpExchange): Explanation | undef
                     was present.
                 `
             }
+        } else if (responseCCDirectives['no-cache']) {
+            // We're cacheable and revalidateable, with forced revalidation every time, so 0 expiry
+            return {
+                summary: 'Cacheable',
+                explanation: dedent`
+                    ${cacheableReason}.
+
+                    The response does not include any explicit expiry information,
+                    but does include a \`no-cache\` directive, meaning the cached content will
+                    be revalidated with the origin server on every request, making
+                    expiry irrelevant.
+                `
+            };
+        } else {
+            // We're cacheable and revalidateable, but there's no clear expiry
+            const lastModified = response.headers['last-modified'];
+
+            return {
+                summary: 'Probably cacheable',
+                type: 'warning',
+                explanation: dedent`
+                    ${cacheableReason}. However this response does not explicitly
+                    specify when it expires (e.g. with a \`max-age\` Cache-Control
+                    directive), so its expiry behaviour is not well defined. Clients
+                    will use a heuristic to decide when this response is no longer considered
+                    fresh, typically some percentage of the time since the content was
+                    last modified, according to the Last-Modified header value${
+                        lastModified ? ` (${lastModified})` : ''
+                    }. Some clients may refuse to cache the response entirely.
+
+                    It's typically better to be explicit about how responses should be cached
+                    and expired, rather than depending on this unpredictable behaviour.
+
+                    If an explicit expiry time was set (e.g. using a \`max-age\` Cache-Control
+                    directive), this would take precedence over any heuristics, and provide
+                    reliable cache expiry. Alternatively this content would be reliably
+                    excluded from caching if a \`no-store\` Cache-Control directive was present.
+                `
+            };
         }
-    } else if (responseCCDirectives['s-maxage'] !== undefined) {
+    }
+
+    if (responseCCDirectives['s-maxage'] !== undefined) {
         // We're not locally cacheable at all, but we are proxy cacheable???!!! Super funky
         return {
             summary: 'Not cacheable by private (HTTP client) caches',
