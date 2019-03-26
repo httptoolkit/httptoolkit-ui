@@ -88,30 +88,49 @@ export function explainCacheability(exchange: HttpExchange): (
             // This is a CORS preflight request - it's not really cacheable, but the CORS
             // headers specifically (probably the only interesting bit) are, via their
             // own separate funky mechanism.
-            if (response.headers['access-control-max-age']) {
+            const maxAgeHeader = lastHeader(response.headers['access-control-max-age']);
+            const maxAge = maxAgeHeader ? parseInt(maxAgeHeader, 10) : undefined;
+
+            if (maxAge !== undefined && maxAge >= 1) {
                 return {
                     cacheable: true,
                     summary: 'Cacheable',
                     explanation: dedent`
                         OPTIONS preflight requests are not normally cacheable, and don't observe
-                        standard Cache-Control mechanisms, but the CORS response itself will be
+                        standard Cache-Control mechanisms, but the CORS result itself will be
                         cached if a Access-Control-Max-Age header is provided, as here.
 
                         This only affects CORS behaviour for cross-origin requests, and should be
                         ignored (so not cached at all) by all other clients and proxies.
                     `
                 };
-            } else {
+            }
+
+            if (maxAge !== undefined && maxAge <= 0) {
                 return {
                     cacheable: false,
-                    summary: 'Very briefly cacheable',
+                    summary: 'Not cacheable',
                     explanation: dedent`
-                        OPTIONS preflight requests are not cacheable, unless an Access-Control-Max-Age
-                        header is provided. Many clients will very briefly cache the CORS response
-                        though, for example Chrome will cache this for 5 seconds.
+                        OPTIONS preflight requests don't observe standard Cache-Control
+                        mechanisms, but the CORS result itself can be cached if a
+                        Access-Control-Max-Age header is provided.
+
+                        In this case that header is set to ${maxAgeHeader}, explicitly
+                        requesting that this result should not be cached, and that clients
+                        should not reuse this CORS response in future.
                     `
                 };
             }
+
+            return {
+                cacheable: true,
+                summary: 'Very briefly cacheable',
+                explanation: dedent`
+                    OPTIONS preflight requests are not cacheable, unless an Access-Control-Max-Age
+                    header is provided. Many clients will very briefly cache the CORS response
+                    though, for example Chrome will cache this for 5 seconds.
+                `
+            };
         } else {
             return {
                 cacheable: false,

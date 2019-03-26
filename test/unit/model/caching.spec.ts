@@ -621,7 +621,7 @@ describe('Caching explanations', () => {
 
         it("should say that it's only briefly cacheable", () => {
             const result = explainCacheability(exchange);
-            expect(result!.cacheable).to.equal(false);
+            expect(result!.cacheable).to.equal(true);
             expect(result!.summary).to.equal(
                 'Very briefly cacheable'
             );
@@ -685,6 +685,33 @@ describe('Caching explanations', () => {
                 'The request method would be GET, HEAD, POST or DELETE'
             );
             expect(result!.explanation).to.include('X-Header');
+        });
+    });
+
+    describe('given an OPTIONS CORS response with 0 Access-Control-Max-Age', () => {
+        const exchange = getExchangeData({
+            method: 'OPTIONS',
+            requestHeaders: {
+                origin: 'http://example2.com'
+            },
+            responseHeaders: {
+                'access-control-max-age': '0'
+            }
+        });
+
+        it("should say that it's only briefly cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(false);
+            expect(result!.summary).to.equal(
+                'Not cacheable'
+            );
+        });
+
+        it("should explain why it's not cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation.replace('\n', ' ')).to.include(dedent`
+                that header is set to 0
+            `.replace('\n', ' '));
         });
     });
 
