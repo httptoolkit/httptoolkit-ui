@@ -273,14 +273,6 @@ export function explainCacheability(exchange: HttpExchange): (
                 record their own response time, but it's typically preferable to
                 explicitly specify it in the response.
             `;
-        } else if (Math.abs(differenceInSeconds(responseDateHeader, requestReceivedDate)) > 60) {
-            warning = dedent`
-                The Date header included here however appears to be incorrect (compared to
-                your local clock). This value is used in combination with the \`max-age\`
-                value to calculate the exact time to expire the content. This probably means
-                either your machine or the server's clock is incorrect, and might cause
-                unpredictable cache expiry issues.
-            `;
         } else if (response.headers['expires'] && Math.abs(differenceInSeconds(
             parseDate(lastHeader(response.headers['expires']!)),
             addSeconds(responseDateHeader, responseCCDirectives['max-age'])
