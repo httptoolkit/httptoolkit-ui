@@ -62,6 +62,6 @@ export const getExchangeData = ({
 }) as HttpExchange;
 
 export function httpDate(date: Date) {
-    const utcDate = dateFns.addMinutes(date, -1 * date.getTimezoneOffset());
+    const utcDate = dateFns.addMinutes(date, date.getTimezoneOffset());
     return dateFns.format(utcDate, 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 }
