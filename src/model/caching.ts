@@ -446,9 +446,9 @@ export function explainCacheability(exchange: HttpExchange): (
     };
 }
 
-const ALL_CACHES = 'May be cached in client *private caches* and proxy or CDN *shared caches*.';
-const PRIVATE_ONLY = 'May only be cached in client *private caches*, not by proxies or CDNs.'
-const SHARED_ONLY = 'May only be cached in proxy or CDN *shared caches*, not in private client caches';
+const ALL_CACHES = 'May be cached in both private and shared caches';
+const PRIVATE_ONLY = 'May only be cached in private caches'
+const SHARED_ONLY = 'May only be cached in shared caches';
 
 /**
  * Explains the details of which types of cache can be store this response,
@@ -482,6 +482,17 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
         };
     }
 
+    if (responseCCDirectives['public'] !== undefined) {
+        return {
+            summary: ALL_CACHES,
+            explanation: dedent`
+                This response may be cached by both private HTTP client caches and shared caches
+                such as CDNs and proxies, because it includes an explicit \`public\` Cache-Control
+                directive.
+            `
+        };
+    }
+
     if (
         request.headers['authorization'] !== undefined && !(
             responseCCDirectives['s-maxage'] !== undefined ||
@@ -496,8 +507,9 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
                 because it includes an Authorization header, and doesn't include the explicit
                 directives that would allow it to be stored by shared caches.
 
-                Shared caches would be allowed to store this response if it contained an
-                \`s-maxage\`, \`must-revalidate\` or \`public\` Cache-Control directive.
+                Shared caches, such as CDNs and proxies, would only be allowed to store this
+                response if it contained \`s-maxage\`, \`must-revalidate\` or \`public\`
+                Cache-Control directives.
             `
         };
     }
@@ -513,8 +525,8 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
             summary: SHARED_ONLY,
             explanation: dedent`
                 This response may only be cached by shared caches, such as proxies & CDNs,
-                not by private caches, because it includes an \`s-maxage\` Cache-Control
-                directive, but is otherwise not cacheable by default, and does not include
+                not by private client caches, because it includes an \`s-maxage\` Cache-Control
+                directive but is otherwise not cacheable by default, and does not include
                 any other explicit caching directives.
             `
         };
@@ -523,9 +535,9 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
     return {
         summary: ALL_CACHES,
         explanation: dedent`
-            This response may be cached by both private & shared caches, because it is
-            cacheable and does not include either a \`private\` Cache-Control
-            directive or an Authorization header.
+            This response may be cached by both private client caches & shared
+            CDN or proxy caches, because it is cacheable and does not include
+            either a \`private\` Cache-Control directive or an Authorization header.
         `
     };
 }

@@ -51,8 +51,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -93,8 +93,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
     });
@@ -129,8 +129,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -165,8 +165,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -206,8 +206,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
     });
@@ -240,8 +240,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -275,8 +275,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by all caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -312,8 +312,8 @@ describe('Caching explanations', () => {
 
         it("should say it's only cacheable by shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'May only be cached in proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'May only be cached in shared'
             );
         });
 
@@ -355,8 +355,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -390,8 +390,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable only by private caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'only be cached in client private caches'
+            expect(validCacheTypes!.summary).to.include(
+                'only be cached in private caches'
             );
         });
     });
@@ -421,8 +421,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable only by private caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'only be cached in client private caches'
+            expect(validCacheTypes!.summary).to.include(
+                'only be cached in private caches'
             );
         });
     });
@@ -453,8 +453,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'client private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -493,8 +493,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
     });
@@ -525,8 +525,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -562,8 +562,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -694,8 +694,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
@@ -802,8 +802,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'only be cached in client private caches'
+            expect(validCacheTypes!.summary).to.include(
+                'only be cached in private caches'
             );
         });
 
@@ -880,8 +880,8 @@ describe('Caching explanations', () => {
 
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
-            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
-                'private caches and proxy'
+            expect(validCacheTypes!.summary).to.include(
+                'both private and shared caches'
             );
         });
 
