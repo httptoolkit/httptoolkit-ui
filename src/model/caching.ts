@@ -156,7 +156,7 @@ export function explainCacheability(exchange: HttpExchange): (
             cacheable: false,
             summary: 'Not cacheable',
             explanation: dedent`
-                The response includes a \`no-store\` directive in its Cache-Control
+                This response includes a \`no-store\` directive in its Cache-Control
                 header. This explicitly tells all caches that this response should
                 never be cached. It should never be persistently stored, should
                 be removed from any volatile/temporary storage as soon as possible,
@@ -171,7 +171,7 @@ export function explainCacheability(exchange: HttpExchange): (
             summary: 'Not cacheable',
             type: 'suggestion',
             explanation: dedent`
-                The response includes a \`no-store\` directive in its Pragma
+                This response includes a \`no-store\` directive in its Pragma
                 header. This explicitly tells all caches that this response should
                 never be cached. It should never be persistently stored, should
                 be removed from any volatile/temporary storage as soon as possible,
@@ -188,10 +188,10 @@ export function explainCacheability(exchange: HttpExchange): (
             cacheable: false,
             summary: 'Not cacheable',
             explanation: dedent`
-                The response includes a \`*\` value in its Vary header. This tells caches
+                This response includes a \`*\` value in its Vary header. This tells caches
                 that the response content may vary unpredictably, possibly including factors
                 outside the request's content (e.g. the client's network address),
-                and so must not be cached.
+                and so must never be cached.
             `
         };
     }
@@ -263,7 +263,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 The Date header included here however appears to be incorrect (compared to
                 your local clock). This value is used in combination with the \`max-age\`
                 value to calculate the exact time to expire the content. This probably means
-                either your machine or the server's clock are incorrect, and might cause
+                either your machine or the server's clock is incorrect, and might cause
                 unpredictable cache expiry issues.
             `;
         } else if (response.headers['expires'] && Math.abs(differenceInSeconds(
@@ -385,7 +385,6 @@ export function explainCacheability(exchange: HttpExchange): (
             };
         } else {
             // We're cacheable and revalidateable, but there's no clear expiry
-            const lastModified = response.headers['last-modified'];
 
             return {
                 cacheable: true,
@@ -394,12 +393,10 @@ export function explainCacheability(exchange: HttpExchange): (
                 explanation: dedent`
                     ${cacheableReason}. However this response does not explicitly
                     specify when it expires (e.g. with a \`max-age\` Cache-Control
-                    directive), so its expiry behaviour is not well defined. Clients
-                    will use a heuristic to decide when this response is no longer considered
-                    fresh, typically some percentage of the time since the content was
-                    last modified, according to the Last-Modified header value${
-                        lastModified ? ` (${lastModified})` : ''
-                    }. Some clients may refuse to cache the response entirely.
+                    directive), so its expiry behaviour is not well defined. Caches
+                    may use a heuristic to decide when this response is no longer
+                    considered fresh, and some clients may refuse to cache the response
+                    entirely.
 
                     It's typically better to be explicit about how responses should be cached
                     and expired, rather than depending on this unpredictable behaviour.
