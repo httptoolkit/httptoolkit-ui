@@ -2,7 +2,7 @@ import * as dedent from "dedent";
 
 import { getExchangeData, expect, httpDate } from "../../test-setup";
 
-import { explainCacheability, explainValidCacheTypes, explainCacheMatching } from "../../../src/model/caching";
+import { explainCacheability, explainValidCacheTypes, explainCacheMatching, explainCacheLifetime } from "../../../src/model/caching";
 
 describe('Caching explanations', () => {
     describe('given a GET 200 with no explicit headers', () => {
@@ -56,9 +56,15 @@ describe('Caching explanations', () => {
             );
         });
 
+        it("should say when it will require revalidation", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires after 1 minute');
+            expect(result!.explanation).to.include('max-age');
+        });
+
     });
 
-    describe('given a GET 200 with an explicit max-age', () => {
+    describe('given a GET 200 with an explicit max-age and no etag', () => {
         const exchange = getExchangeData({
             responseHeaders: {
                 'date': httpDate(new Date()),
@@ -127,7 +133,50 @@ describe('Caching explanations', () => {
                 'private caches and proxy'
             );
         });
+
+        it("should say it will require revalidation in one year", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires after 1 year');
+            expect(result!.explanation).to.include('max-age');
+        });
     });
+
+    describe('given a GET 200 with a max-age of 0', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'date': httpDate(new Date()),
+                'etag': 'fedcba',
+                'cache-control': 'max-age=0'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('max-age');
+        });
+
+        it("should say it's cacheable by private & shared caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
+
+        it("should say it requires immediate revalidation", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires immediately');
+            expect(result!.explanation).to.include('max-age');
+        });
+    });
+
 
     describe('given a GET 200 with an explicit max-age but no Date header', () => {
         const exchange = getExchangeData({
@@ -195,6 +244,49 @@ describe('Caching explanations', () => {
                 'private caches and proxy'
             );
         });
+
+        it("should say it will require revalidation in many years", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.match(/^Expires after \d\d years$/);
+            expect(result!.explanation).to.include('Expires header');
+        });
+    });
+
+    describe('given a GET 500 with max-age and s-maxage', () => {
+        const exchange = getExchangeData({
+            statusCode: 500,
+            responseHeaders: {
+                'cache-control': 'max-age=60, s-maxage=30'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain why it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.explanation).to.include('max-age');
+        });
+
+        it("should say it's cacheable by all caches", () => {
+            const validCacheTypes = explainValidCacheTypes(exchange);
+            expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
+                'private caches and proxy'
+            );
+        });
+
+        it("should say when it will require revalidation", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal(
+                'Expires after 1 minute (30 seconds for shared caches)'
+            );
+            expect(result!.explanation).to.include('shared caches');
+        });
     });
 
     describe('given a GET 500 with only a s-maxage', () => {
@@ -223,6 +315,15 @@ describe('Caching explanations', () => {
             expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
                 'May only be cached in proxy'
             );
+        });
+
+        it("should say when it will require revalidation", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal(dedent`
+                Expires unpredictably for private caches, or
+                after 1 minute for shared caches
+            `.replace(/\n/g, ' '));
+            expect(result!.explanation).to.include('s-maxage');
         });
     });
 
@@ -257,6 +358,12 @@ describe('Caching explanations', () => {
             expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
                 'private caches and proxy'
             );
+        });
+
+        it("should say when it requires revalidation after <max-age> seconds", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires after 1 minute');
+            expect(result!.explanation).to.include('max-age');
         });
     });
 
@@ -350,6 +457,12 @@ describe('Caching explanations', () => {
                 'client private caches and proxy'
             );
         });
+
+        it("should say it always requires revalidation", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal("Must be revalidated every time it's used");
+            expect(result!.explanation).to.include('no-cache');
+        });
     });
 
     describe('given a 401 GET with an explicit public directive and ETag', () => {
@@ -416,6 +529,12 @@ describe('Caching explanations', () => {
                 'private caches and proxy'
             );
         });
+
+        it("should say when it expires unpredictably", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires unpredictably');
+            expect(result!.explanation).to.include('Last-Modified');
+        });
     });
 
     describe('given a 200 GET with a Last-Modified header and no-cache', () => {
@@ -446,6 +565,12 @@ describe('Caching explanations', () => {
             expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
                 'private caches and proxy'
             );
+        });
+
+        it("should say it will require revalidation at all times", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal("Must be revalidated every time it's used");
+            expect(result!.explanation).to.include('no-cache');
         });
     });
 
@@ -588,6 +713,12 @@ describe('Caching explanations', () => {
                 updated by this POST, regardless of header values
             `.replace(/\n/g, ' '));
         });
+
+        it("should explain when it will require revalidation", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires after 2 hours');
+            expect(result!.explanation).to.include('max-age');
+        });
     });
 
     describe('given a DELETE with no explicit headers', () => {
@@ -633,6 +764,11 @@ describe('Caching explanations', () => {
                 OPTIONS preflight requests are not cacheable, unless an
                 Access-Control-Max-Age header is provided
             `.replace('\n', ' '));
+        });
+
+        it("should explain that it's only briefly cacheable", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal('Expires unpredictably, around 5 seconds');
         });
     });
 
@@ -685,6 +821,12 @@ describe('Caching explanations', () => {
                 'The request method would be GET, HEAD, POST or DELETE'
             );
             expect(result!.explanation).to.include('X-Header');
+        });
+
+        it("should say when it expires", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal("Expires after 10 minutes");
+            expect(result!.explanation).to.include('Access-Control-Max-Age');
         });
     });
 
@@ -741,6 +883,12 @@ describe('Caching explanations', () => {
             expect(validCacheTypes!.summary.replace(/\*/g, '')).to.include(
                 'private caches and proxy'
             );
+        });
+
+        it("should say it will never expire", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal("Never expires");
+            expect(result!.explanation).to.include('301');
         });
     });
 
@@ -829,6 +977,96 @@ describe('Caching explanations', () => {
             expect(result!.explanation).to.include(dedent`
                 as long as those requests have a Cookie header set to \`abc\`,
                 a Accept-Language header set to \`en\` and no Accept header
+            `.replace(/\n/g, ' '));
+        });
+    });
+
+    describe('given a GET 200 with a max-age and stale-while-revalidate', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'date': httpDate(new Date()),
+                'etag': 'fedcba',
+                'cache-control': 'max-age=600, stale-while-revalidate=60'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain stale behaviour", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal(dedent`
+                Expires after 10 minutes, then can be served stale
+                whilst revalidating for 1 minute
+            `.replace(/\n/g, ' '));
+            expect(result!.explanation).to.include('max-age');
+            expect(result!.explanation).to.include('max-age');
+        });
+    });
+
+    describe('given a GET 200 with a max-age and stale-if-error', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'date': httpDate(new Date()),
+                'etag': 'fedcba',
+                'cache-control': 'max-age=600, stale-if-error=60'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain stale behaviour", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal(dedent`
+                Expires after 10 minutes, then can be served stale
+                if errors are received for 1 minute
+            `.replace(/\n/g, ' '));
+            expect(result!.explanation).to.include('max-age');
+        });
+    });
+
+    describe('given a GET 200 with a max-age and stale-<while/if>-<revalidate/error>', () => {
+        const exchange = getExchangeData({
+            responseHeaders: {
+                'date': httpDate(new Date()),
+                'etag': 'fedcba',
+                'cache-control':
+                    'max-age=600, stale-if-error=60, stale-while-revalidate=120'
+            }
+        });
+
+        it("should say that it's cacheable", () => {
+            const result = explainCacheability(exchange);
+            expect(result!.cacheable).to.equal(true);
+            expect(result!.summary).to.equal(
+                'Cacheable'
+            );
+        });
+
+        it("should explain stale behaviour", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.summary).to.equal(dedent`
+                Expires after 10 minutes, then can be served stale temporarily
+                whilst revalidating or if receiving errors
+            `.replace(/\n/g, ' '));
+            expect(result!.explanation).to.include('max-age');
+            expect(result!.explanation.replace(/\n/g, ' ')).to.include(
+                'can still be served in the meantime, for 2 minutes extra'
+            );
+            expect(result!.explanation.replace(/\n/g, ' ')).to.include(dedent`
+                can still be served in the meantime if any errors are
+                encountered, for 1 minute after the response expires
             `.replace(/\n/g, ' '));
         });
     });

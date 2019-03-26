@@ -3,7 +3,8 @@ import * as dedent from "dedent";
 import {
     parse as parseDate,
     differenceInSeconds,
-    addSeconds
+    addSeconds,
+    distanceInWordsStrict
 } from 'date-fns';
 
 import { HttpExchange } from "./exchange";
@@ -55,6 +56,14 @@ function formatHeader(headerName: string): string {
     return headerName.toLowerCase().replace(/(\b\w)/g, v => v.toUpperCase())
 }
 
+const THE_DAWN_OF_TIME = parseDate(0);
+function formatDuration(seconds: number): string {
+    return distanceInWordsStrict(
+        THE_DAWN_OF_TIME,
+        parseDate(seconds * 1000)
+    )
+}
+
 interface Explanation {
     summary: string,
     explanation: string,
@@ -64,6 +73,8 @@ interface Explanation {
 function parseCCDirectives(message: ExchangeMessage): {
     'max-age'?: number;
     's-maxage'?: number;
+    'stale-while-revalidate'?: number;
+    'stale-if-error'?: number;
     [name: string]: true | number | undefined;
 } {
     return asHeaderArray(message.headers['cache-control'])
@@ -596,6 +607,329 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
         explanation: dedent`
             The response content & headers returned here may be used for future safe requests
             for the same resource${varyExplanation}
+        `
+    };
+}
+
+/**
+ * Explains when response will be matched against future requests, why,
+ * and what will happen after that time passes.
+ * This assumes that explainCacheability has returned cacheability: true,
+ * so doesn't fully repeat the checks included there.
+ */
+export function explainCacheLifetime(exchange: HttpExchange): Explanation | undefined {
+    const { request, response } = exchange;
+    if (typeof response !== 'object') return;
+
+    const responseCCDirectives = parseCCDirectives(response);
+
+    if (request.method === 'OPTIONS') {
+        const maxAgeHeader = lastHeader(response.headers['access-control-max-age']);
+
+        if (maxAgeHeader) {
+            const maxAge = parseInt(maxAgeHeader!, 10);
+
+            return {
+                summary: `Expires after ${formatDuration(maxAge)}`,
+                explanation: dedent`
+                    This CORS response includes an Access-Control-Max-Age header explicitly
+                    set to ${maxAge} seconds, which defines the valid lifetime for the
+                    cached response. Once this expires it will immediately cease to be used.
+                `
+            };
+        }
+
+        // Don't need to deal with negative max age, as we exclude that as non-cacheable
+        // in explainCacheability
+
+        return {
+            summary: `Expires unpredictably, around 5 seconds`,
+            explanation: dedent`
+                This CORS response does not include an Access-Control-Max-Age header, so
+                does not explicitly specify when it should expire. That means the
+                exact expiry is left up to the client implementation. This may be a
+                small number of seconds, or it may be considered expired immediately.
+            `
+        };
+    }
+
+    if (responseCCDirectives['no-cache']) {
+        return {
+            summary: "Must be revalidated every time it's used",
+            explanation: dedent`
+                This response includes an explicit \`no-cache\` directive. This means that
+                before the cached content can be used, the matching requests must always be
+                forwarded to the origin server, and the response content must be revalidated.
+
+                This requires a request to the origin server for every client request, but
+                does still offer performance benefits compared to not caching at all,
+                because conditional requests can be used to avoid redownloading the
+                full response from scratch if it hasn't changed.
+            `
+        };
+    }
+
+    const dateHeader = lastHeader(response.headers['date']);
+    const expiresHeader = lastHeader(response.headers['expires']);
+    const maxAge = responseCCDirectives['max-age'];
+    const sharedMaxAge = responseCCDirectives['s-maxage'] !== undefined ?
+        responseCCDirectives['s-maxage'] : maxAge;
+
+    const hasExplicitLifetime = maxAge !== undefined || expiresHeader !== undefined;
+    const lifetime =
+        maxAge !== undefined ? maxAge :
+        expiresHeader !== undefined ? differenceInSeconds(
+            expiresHeader,
+            dateHeader ? parseDate(dateHeader) : parseDate(exchange.timingEvents.startTime)
+        )
+        : undefined;
+    const hasNegativeLifetime = lifetime !== undefined && lifetime <= 0;
+
+    if (
+        !hasExplicitLifetime &&
+        PERMANENTLY_CACHEABLE_STATUSES.includes(response.statusCode)
+    ) {
+        return {
+            summary: 'Never expires' + (sharedMaxAge !== maxAge ?
+                ` from private caches, expires from shared caches after ${
+                    formatDuration(sharedMaxAge!)
+                }` : ''
+            ),
+            explanation: dedent`
+                This ${response.statusCode} response is intended to describe a permanent state,
+                and has no explicitly defined expiry time, so by default most clients will
+                cache it forever.
+
+                ${sharedMaxAge !== maxAge ? dedent`
+                    The response does include a \`s-maxage\` directive however, set to ${
+                        sharedMaxAge
+                    } seconds, which overrides this for shared caches such as CDNs and
+                    proxies. In that specific case, the response will be considered stale
+                    after ${formatDuration(sharedMaxAge!)}. As there is no \`proxy-revalidate\`
+                    directive, it may still be used whilst stale if necessary or explicitly
+                    allowed by a client.
+
+                    If the response included a specific expiry time for private caches, e.g.
+                    with a \`max-age\` Cache-Control directive, that typically would limit the
+                    lifetime of this response in those caches too. In general though in that
+                    case it would be better to use a more accurate status code.
+                ` : dedent`
+                    If this response did include a specific expiry time, e.g. with a max-age
+                    Cache-Control directive, that would typically override this. In general
+                    though in that case it would be better to use a more accurate status code.
+                `}
+            `
+        };
+    }
+
+    const explainSharedCacheLifetime = sharedMaxAge !== maxAge ? dedent`
+        .
+
+        This response also includes a \`s-maxage\` directive, set to ${
+            formatDuration(sharedMaxAge!)
+        } seconds which overrides this expiry for shared caches such as CDNs or proxies.
+        This means in that case, the response will become stale in ${
+            formatDuration(sharedMaxAge!)
+        }
+    ` : '';
+
+    const explainLifetime =
+        !hasExplicitLifetime ? dedent`
+            ${sharedMaxAge === maxAge ? dedent `
+                This response does not explicitly declare its expiry time. Caches
+            `: dedent `
+                This response only declares an explicit expiry time for shared caches, such
+                as proxies or CDNs, not for private caches. Content in shared caches will
+                expire after ${formatDuration(sharedMaxAge!)}, as declared by the \`s-maxage\`
+                Cache-Control directive, whilst content in private caches may expire
+                unpredictably.
+
+                Private caches
+            `} may
+            use a heuristic to decide when this response is considered stale, typically
+            some percentage of the time since the content was last modified, often using
+            to the Last-Modified header value${
+                response.headers['last-modified'] ?
+                    ` (${response.headers['last-modified']})`
+                    : ', although that is not explicitly defined in this response either'
+            }
+        ` :
+        hasNegativeLifetime ? dedent`
+            This response expires immediately because it has ${
+                maxAge! <= 0 ? dedent`
+                    a \`max-age\` directive set to ${maxAge} seconds
+                ` :
+                dateHeader ? dedent `
+                    an Expires header set to ${expiresHeader}, which is
+                    before its Date header value (${dateHeader})
+                `
+                : dedent`
+                    an Expires header set to ${expiresHeader}, which is
+                    before the response was received
+                `
+            }${explainSharedCacheLifetime}
+        ` :
+        maxAge !== undefined ? dedent`
+            This response expires in ${maxAge} seconds (${formatDuration(maxAge)}),
+            as explicitly specified by its \`max-age\` directive${explainSharedCacheLifetime}
+        `
+        : dedent`
+            This response expires at ${expiresHeader} (${formatDuration(lifetime!)}),
+            as explicitly specified by its Expires header${explainSharedCacheLifetime}
+        `;
+
+    if (hasNegativeLifetime && responseCCDirectives['must-revalidate']) {
+        return {
+            summary: "Must be revalidated every time it's used" + (sharedMaxAge !== maxAge ?
+                ` (or after ${formatDuration(sharedMaxAge!)} for shared caches)`
+                : ''
+            ),
+            explanation: dedent`
+                ${explainLifetime}.
+
+                In addition, it includes a \`must-revalidate\` directive.
+
+                Together, these means that before the cached content can be used${
+                    sharedMaxAge !== maxAge && sharedMaxAge! > 0 ?
+                        ' by private caches' : ''
+                } the matching requests must _always_ be forwarded to the origin server,
+                and the response content must be revalidated.
+
+                This requires a request to the origin server for every client request, but
+                does still offer performance benefits compared to not caching at all,
+                because conditional requests can be used to avoid redownloading the
+                full response from scratch if it hasn't changed.
+            `
+        };
+    }
+
+    const staleBonusBehaviourSummary = (
+            responseCCDirectives['stale-while-revalidate'] !== undefined &&
+            responseCCDirectives['stale-if-error'] !== undefined
+        ) ?
+            `can be served stale temporarily whilst revalidating or if receiving errors` :
+        responseCCDirectives['stale-while-revalidate'] !== undefined ?
+            `can be served stale whilst revalidating for ${
+                formatDuration(responseCCDirectives['stale-while-revalidate'])
+            }` :
+        responseCCDirectives['stale-if-error'] !== undefined ?
+            `can be served stale if errors are received for ${
+                formatDuration(responseCCDirectives['stale-if-error'])
+            }` :
+        '';
+
+    const revalidationSummary =
+        responseCCDirectives['must-revalidate'] ?
+            `, then must always be revalidated` :
+        responseCCDirectives['proxy-revalidate'] && staleBonusBehaviourSummary ?
+            `, then ${staleBonusBehaviourSummary} (but must be revalidated by shared caches)` :
+        responseCCDirectives['proxy-revalidate'] ?
+            `, then must always be revalidated by shared caches, but may be used privately` :
+        staleBonusBehaviourSummary ?
+            `, then ${staleBonusBehaviourSummary}`
+        : '';
+
+    const staleBonusBehaviour = (
+            responseCCDirectives['stale-while-revalidate'] !== undefined &&
+            responseCCDirectives['stale-if-error'] !== undefined
+        ) ? dedent`
+            The response does include both \`stale-while-revalidate\` and \`stale-if-error\`
+            directives, set to ${
+                responseCCDirectives['stale-while-revalidate']
+            } seconds and ${responseCCDirectives['stale-if-error']} seconds respectively.
+
+            \`stale-while-revalidate\` means that after the response has expired, new
+            requests should trigger revalidation, but the stale content can still be served
+            in the meantime, for ${
+                formatDuration(responseCCDirectives['stale-while-revalidate']!)
+            } extra.
+
+            \`stale-if-error\` means that after the response has expired, new
+            requests should trigger revalidation, but the stale content can still be served
+            in the meantime if any errors are encountered, for ${
+                formatDuration(responseCCDirectives['stale-if-error']!)
+            } after the response expires.
+        ` :
+        responseCCDirectives['stale-while-revalidate'] !== undefined ? dedent`
+            The response does include a \`stale-while-revalidate\` directive set to ${
+                responseCCDirectives['stale-while-revalidate']
+            } seconds. This means that after the response has expired, new requests
+            should trigger revalidation, but the stale content can still be served in
+            the meantime, for ${
+                formatDuration(responseCCDirectives['stale-while-revalidate']!)
+            } extra.
+        ` :
+        responseCCDirectives['stale-if-error'] !== undefined ? dedent`
+            The response does include a \`stale-if-error\` directive set to ${
+                responseCCDirectives['stale-if-error']
+            } seconds. This means that after the response has expired, new
+            requests should trigger revalidation, but the stale content can still be
+            served in the meantime if any errors are encountered, for ${
+                formatDuration(responseCCDirectives['stale-if-error']!)
+            } after the response expires.
+        ` : '';
+
+    const explainRevalidation =
+        responseCCDirectives['must-revalidate'] ? dedent`
+            This response includes a \`must-revalidate\` directive, which means caches must
+            ensure expired content is _always_ forwarded to & revalidated by the origin server,
+            and expired content must never be used, even if the server is unavailable, if
+            requested explicitly, or if serving stale content has been enabled elsewhere.
+        ` :
+        responseCCDirectives['proxy-revalidate'] ? dedent`
+            This response includes a \`proxy-revalidate\` directive, which means shared
+            caches (e.g. CDNs or proxies) must ensure expired content is always forwarded
+            to & revalidated by the origin server, and expired content must never be used,
+            even if the server is unavailable, if requested explicitly, or if serving
+            stale content has been enabled elsewhere.
+
+            ${staleBonusBehaviour ? staleBonusBehaviour : dedent`
+                It does not include a \`must-revalidate\` directive, so private client caches
+                are still allowed to use stale responses if necessary.
+            `}
+        ` : dedent`
+            ${staleBonusBehaviour}
+
+            As the response does not include a \`must-revalidate\` directive,
+            expired responses may be used if explicitly requested or necessary, for
+            example if the origin server is not responding.
+        `;
+
+    if (hasNegativeLifetime) {
+        return {
+            summary: `Expires immediately${
+                sharedMaxAge !== maxAge ?
+                    ` (or after ${formatDuration(sharedMaxAge!)} for shared caches)`
+                    : ''
+            }${revalidationSummary}`,
+            explanation: dedent`
+                ${explainLifetime}.
+
+                ${explainRevalidation}
+            `
+        };
+    }
+
+    return {
+        summary:
+            lifetime !== undefined ?
+                `Expires after ${formatDuration(lifetime)}${
+                    sharedMaxAge !== maxAge ?
+                        ` (${formatDuration(sharedMaxAge!)} for shared caches)`
+                        : ''
+                }${revalidationSummary}`
+            :
+                `Expires unpredictably${
+                    sharedMaxAge !== maxAge ?
+                        ` for private caches, or after ${
+                            formatDuration(sharedMaxAge!)
+                        } for shared caches`
+                        : ''
+                }${revalidationSummary}`,
+        explanation: dedent`
+            ${explainLifetime}.
+
+            ${explainRevalidation}
         `
     };
 }
