@@ -13,7 +13,7 @@ module.exports = function(config) {
         mime: { 'text/x-typescript': ['ts', 'tsx'] },
         webpack: require('../../automation/webpack.test').default,
         webpackMiddleware: {
-            stats: 'error-only'
+            stats: 'errors-only'
         },
         preprocessors: {
             './**/*.ts': ['webpack', 'sourcemap'],

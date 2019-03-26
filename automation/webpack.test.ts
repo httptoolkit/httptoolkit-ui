@@ -8,6 +8,7 @@ commonConfig.entry = undefined;
 commonConfig.plugins = undefined;
 commonConfig.output = {
     path: tmp.dirSync(),
-}
+};
+commonConfig.stats = 'errors-only';
 
 export default commonConfig;
