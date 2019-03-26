@@ -935,7 +935,7 @@ describe('Caching explanations', () => {
         it("should include the Vary in the cache key", () => {
             const result = explainCacheMatching(exchange);
             expect(result!.summary).to.include(
-                'this URL, with the same Cookie header'
+                'this URL that have the same Cookie header'
             );
         });
 
@@ -969,7 +969,7 @@ describe('Caching explanations', () => {
         it("should include the Vary in the cache key", () => {
             const result = explainCacheMatching(exchange);
             expect(result!.summary).to.include(
-                'this URL, with the same Cookie, Accept-Language and Accept headers'
+                'this URL that have the same Cookie, Accept-Language and Accept headers'
             );
         });
 

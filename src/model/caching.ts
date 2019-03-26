@@ -267,11 +267,14 @@ export function explainCacheability(exchange: HttpExchange): (
 
         if (!responseDateHeader) {
             warning = dedent`
-                This response does not include a Date header however. That value
+                However, this response does not include a Date header. That value
                 would be used in combination with the \`max-age\` value to calculate
-                the exact time to expire this content. Clients may infer and
-                record their own response time, but it's typically preferable to
-                explicitly specify it in the response.
+                the exact time to expire this content.
+
+                Clients may infer their own expiry start time, potentially using the time they
+                received this response, but it's strongly recommended to explicitly specify
+                one in the response instead, to ensure this content expires reliably and
+                predictably.
             `;
         } else if (response.headers['expires'] && Math.abs(differenceInSeconds(
             parseDate(lastHeader(response.headers['expires']!)),
@@ -281,7 +284,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 This response also includes an Expires header, which appears to disagree
                 with the expiry time calculated from the \`max-age\` directive. The Cache-Control
                 headers take precedence, so this will only be used by clients that don't
-                support that, but this may cause unpredictable behaviour. It's typically
+                support that, but this could cause unpredictable behaviour. It's typically
                 better than ensure these values agree on a single expiry time.
             `;
         }
@@ -316,7 +319,8 @@ export function explainCacheability(exchange: HttpExchange): (
                 using an Expires header.
 
                 The Expires header is commonly supported, but officially deprecated.
-                It's typically better to use \`Cache-Control: max-age=<seconds>\` instead.
+                It's typically better to use \`Cache-Control: max-age=<seconds>\` instead,
+                or as well.
             `
         };
     }
@@ -558,7 +562,7 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
 
                 * The CORS request would be sent to the same URL
                 * The origin is \`${request.headers['origin']}\`
-                ${!allowsCredentials ? '* No credentials are being sent' : ''
+                ${!allowsCredentials ? '* No credentials are being sent\n' : ''
                 }* The request method would be ${joinAnd(allowedMethods, ', ', ' or ')}
                 * There are no extra request headers other than ${joinAnd(allowedHeaders)}
             `
@@ -571,9 +575,11 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
 
     // Don't need to handle Vary: *, as that would've excluded cacheability entirely.
 
-    const varySummary = hasVaryHeaders ? dedent`
-        , with the same ${joinAnd(varyHeaders)} header${varyHeaders.length > 1 ? 's' : ''}
-    ` : '';
+    const varySummary = hasVaryHeaders ?
+        ` that have the same ${
+            joinAnd(varyHeaders)
+        } header${varyHeaders.length > 1 ? 's' : ''}`
+        : '';
 
     const varyExplanation = hasVaryHeaders ? dedent`
         , as long as those requests have ${joinAnd(varyHeaders.map(headerName => {
@@ -583,6 +589,10 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
                 `no ${headerName} header` :
                 `a ${headerName} header set to \`${realHeaderValue}\``
         }))}.
+
+        ${varyHeaders.length > 1 ? 'These headers are' : 'This header is'}
+        required because ${varyHeaders.length > 1 ? "they're" : "it's"} listed in
+        the Vary header of the response.
     ` : dedent`
         , regardless of header values or other factors.
 
@@ -759,7 +769,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
                 ` :
                 dateHeader ? dedent `
                     an Expires header set to ${expiresHeader}, which is
-                    before its Date header value (${dateHeader})
+                    not after its Date header value (${dateHeader})
                 `
                 : dedent`
                     an Expires header set to ${expiresHeader}, which is
@@ -768,12 +778,12 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             }${explainSharedCacheLifetime}
         ` :
         maxAge !== undefined ? dedent`
-            This response expires in ${maxAge} seconds (${formatDuration(maxAge)}),
-            as explicitly specified by its \`max-age\` directive${explainSharedCacheLifetime}
+            This response expires after ${maxAge} seconds (${formatDuration(maxAge)}),
+            as specified by its \`max-age\` directive${explainSharedCacheLifetime}
         `
         : dedent`
-            This response expires at ${expiresHeader} (${formatDuration(lifetime!)}),
-            as explicitly specified by its Expires header${explainSharedCacheLifetime}
+            This response expires at ${expiresHeader} (after ${formatDuration(lifetime!)}),
+            as specified by its Expires header${explainSharedCacheLifetime}
         `;
 
     if (hasNegativeLifetime && responseCCDirectives['must-revalidate']) {
@@ -787,10 +797,10 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
 
                 In addition, it includes a \`must-revalidate\` directive.
 
-                Together, these means that before the cached content can be used${
+                Together, these mean that before the cached content can be used${
                     sharedMaxAge !== maxAge && sharedMaxAge! > 0 ?
                         ' by private caches' : ''
-                } the matching requests must _always_ be forwarded to the origin server,
+                } the matching requests must always be forwarded to the origin server,
                 and the response content must be revalidated.
 
                 This requires a request to the origin server for every client request, but
@@ -831,7 +841,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             responseCCDirectives['stale-while-revalidate'] !== undefined &&
             responseCCDirectives['stale-if-error'] !== undefined
         ) ? dedent`
-            The response does include both \`stale-while-revalidate\` and \`stale-if-error\`
+            The response includes both \`stale-while-revalidate\` and \`stale-if-error\`
             directives, set to ${
                 responseCCDirectives['stale-while-revalidate']
             } seconds and ${responseCCDirectives['stale-if-error']} seconds respectively.
@@ -849,7 +859,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             } after the response expires.
         ` :
         responseCCDirectives['stale-while-revalidate'] !== undefined ? dedent`
-            The response does include a \`stale-while-revalidate\` directive set to ${
+            The response includes a \`stale-while-revalidate\` directive set to ${
                 responseCCDirectives['stale-while-revalidate']
             } seconds. This means that after the response has expired, new requests
             should trigger revalidation, but the stale content can still be served in
@@ -858,7 +868,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             } extra.
         ` :
         responseCCDirectives['stale-if-error'] !== undefined ? dedent`
-            The response does include a \`stale-if-error\` directive set to ${
+            The response includes a \`stale-if-error\` directive set to ${
                 responseCCDirectives['stale-if-error']
             } seconds. This means that after the response has expired, new
             requests should trigger revalidation, but the stale content can still be
