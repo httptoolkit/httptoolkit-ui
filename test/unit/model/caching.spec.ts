@@ -69,7 +69,8 @@ describe('Caching explanations', () => {
             responseHeaders: {
                 'date': httpDate(new Date()),
                 'cache-control': 'max-age=60'
-            }
+            },
+            responseBody: 'a body'
         });
 
         it("should say that it's cacheable", () => {

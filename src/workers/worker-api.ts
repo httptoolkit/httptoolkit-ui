@@ -61,7 +61,13 @@ export async function decodeBody(body: { buffer: Buffer }, encodings: string[]) 
         return body.buffer;
     }
 
+    const encodedLength = body.buffer.byteLength;
     const encodedBuffer = body.buffer.buffer;
+    // Temporary fake buffer, whilst we decode the real one
+    // Bit of a hack. Could use a real empty buffer? Expensive &
+    // unnecessary for very large bodies though.
+    body.buffer = <Buffer> { byteLength: encodedLength };
+
     const result = await callApi<DecodeRequest, DecodeResponse>({
         type: 'decode',
         buffer: encodedBuffer as ArrayBuffer,

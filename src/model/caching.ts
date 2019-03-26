@@ -154,7 +154,11 @@ export function explainCacheability(exchange: HttpExchange): (
     const responseCCDirectives = parseCCDirectives(response);
 
     const hasRevalidationOptions = response.headers['etag'] || response.headers['last-modified'];
-    const revalidationSuggestion = !hasRevalidationOptions && !responseCCDirectives['immutable'] ?
+    const revalidationSuggestion =
+        !hasRevalidationOptions &&
+        // Revalidation makes no sense without a body
+        response.body.buffer && response.body.buffer.byteLength &&
+        !responseCCDirectives['immutable'] ?
         dedent`
             This response doesn't however include any validation headers. That means that once
             it expires, the content must be requested again from scratch. If a Last-Modified
