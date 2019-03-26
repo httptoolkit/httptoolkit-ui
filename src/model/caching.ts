@@ -290,15 +290,12 @@ export function explainCacheability(exchange: HttpExchange): (
             `;
         }
 
-        const shouldSuggestImmutable = !responseCCDirectives['immutable'] &&
-            responseCCDirectives['max-age'] >= 31536000; // 1 year
-
         return {
             cacheable: true,
             summary: 'Cacheable',
             type:
                 warning ? 'warning' :
-                (revalidationSuggestion || shouldSuggestImmutable) ? 'suggestion' :
+                revalidationSuggestion ? 'suggestion' :
                 undefined,
             explanation: dedent`
                 This response is cacheable because it specifies an explicit expiry time,
@@ -306,13 +303,6 @@ export function explainCacheability(exchange: HttpExchange): (
                 ${
                     warning ? '\n' + warning :
                     revalidationSuggestion ? '\n' + revalidationSuggestion :
-                    shouldSuggestImmutable ? '\n' + dedent`
-                        This expiry time is more than a year away, suggesting the content
-                        effectively never changes. This could be made more effective using the
-                        \`immutable\` Cache-Control directive, which avoids revalidation
-                        requests for this content in more cases such as explicit page refreshes,
-                        saving validation time.
-                    ` :
                     ''
                 }
             `
@@ -922,6 +912,10 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
         };
     }
 
+    const shouldSuggestImmutable =
+        !responseCCDirectives['immutable'] &&
+        (lifetime && lifetime >= 31536000); // 1 year
+
     return {
         summary:
             lifetime !== undefined ?
@@ -938,10 +932,20 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
                         } for shared caches`
                         : ''
                 }${revalidationSummary}`,
+        type: shouldSuggestImmutable ? 'suggestion' : undefined,
         explanation: dedent`
             ${explainLifetime}.
 
             ${explainRevalidation}
+
+            ${shouldSuggestImmutable ? dedent`
+                This expiry time is more than a year away, which suggests that the content
+                never changes. This could be more effective with the \`immutable\`
+                Cache-Control directive, which completely avoids revalidation
+                requests for this content in extra cases, such as explicit page refreshes,
+                saving validation time.
+            `
+            : ''}
         `
     };
 }

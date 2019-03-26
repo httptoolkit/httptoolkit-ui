@@ -121,12 +121,6 @@ describe('Caching explanations', () => {
             expect(result!.explanation).to.include('max-age');
         });
 
-        it("should suggest adding an immutable directive", () => {
-            const result = explainCacheability(exchange);
-            expect(result!.explanation).to.include('immutable');
-            expect(result!.type).to.equal('suggestion');
-        });
-
         it("should say it's cacheable by private & shared caches", () => {
             const validCacheTypes = explainValidCacheTypes(exchange);
             expect(validCacheTypes!.summary).to.include(
@@ -138,6 +132,12 @@ describe('Caching explanations', () => {
             const result = explainCacheLifetime(exchange);
             expect(result!.summary).to.equal('Expires after 1 year');
             expect(result!.explanation).to.include('max-age');
+        });
+
+        it("should suggest adding an immutable directive", () => {
+            const result = explainCacheLifetime(exchange);
+            expect(result!.explanation).to.include('immutable');
+            expect(result!.type).to.equal('suggestion');
         });
     });
 
