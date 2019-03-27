@@ -10,10 +10,25 @@ import { WarningIcon, SuggestionIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
-
-import { ExchangeCard, ExchangeCardProps, ContentLabelBlock } from './exchange-card';
-import { ProPill, Pill } from '../common/pill';
 import { getDecodedBody, getReadableSize, testEncodings } from '../../model/bodies';
+import {
+    explainCacheability,
+    explainCacheLifetime,
+    explainCacheMatching,
+    explainValidCacheTypes
+} from '../../model/caching';
+
+import {
+    ExchangeCard,
+    ExchangeCardProps,
+    ContentLabelBlock,
+    ExchangeCollapsibleSummary,
+    ExchangeCollapsibleBody
+} from './exchange-card';
+import { ProPill, Pill } from '../common/pill';
+import { CollapsibleSection } from '../common/collapsible-section';
+import { Markdown } from '../common/external-content';
+
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
@@ -61,6 +76,7 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
         { isPaidUser ?
             <div>
                 <CompressionPerformance exchange={exchange} />
+                <CachingPerformance exchange={exchange} />
             </div>
         :
             <div>
@@ -269,4 +285,39 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
             </CompressionOptionsContainer>
         </React.Fragment>
     }) }</>;
+});
+
+const CachingPerformance = observer((p: { exchange: HttpExchange }) => {
+    if (typeof p.exchange.response !== 'object') return null;
+
+    const cacheability = explainCacheability(p.exchange);
+
+    if (!cacheability) return null;
+
+    const cacheDetails = cacheability.cacheable ? [
+        cacheability,
+        explainCacheMatching(p.exchange)!,
+        explainValidCacheTypes(p.exchange)!,
+        explainCacheLifetime(p.exchange)!
+    ] : [
+        cacheability
+    ];
+
+    return <>
+        <ContentLabelBlock>
+            Caching
+        </ContentLabelBlock>
+        { cacheDetails.map((details, i) =>
+            <CollapsibleSection prefixTrigger={true} key={i}>
+                <ExchangeCollapsibleSummary>
+                    { details.summary }{' '}
+                    { details.type === 'warning' && <WarningIcon /> }
+                    { details.type === 'suggestion' && <SuggestionIcon /> }
+                </ExchangeCollapsibleSummary>
+                <ExchangeCollapsibleBody>
+                    <Markdown content={ details.explanation } />
+                </ExchangeCollapsibleBody>
+            </CollapsibleSection>
+        ) }
+    </>;
 });
