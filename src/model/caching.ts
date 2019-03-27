@@ -160,10 +160,11 @@ export function explainCacheability(exchange: HttpExchange): (
         response.body.buffer && response.body.buffer.byteLength &&
         !responseCCDirectives['immutable'] ?
         dedent`
-            This response doesn't however include any validation headers. That means that once
-            it expires, the content must be requested again from scratch. If a Last-Modified
-            or ETag header were included then these could be used to make conditional HTTP requests
-            and revalidate cached content without re-requesting it, saving time and bandwidth.
+            :suggestion: This response doesn't however include any validation headers. That
+            means that once it expires, the content must be requested again from scratch. If
+            a Last-Modified or ETag header were included then these could be used to make
+            conditional HTTP requests and revalidate cached content without re-requesting
+            it, saving time and bandwidth.
         ` : '';
 
     if (!!responseCCDirectives['no-store']) {
@@ -192,8 +193,8 @@ export function explainCacheability(exchange: HttpExchange): (
                 be removed from any volatile/temporary storage as soon as possible,
                 and should requested fresh from the network in future.
 
-                This Pragma header is commonly supported, but officially deprecated.
-                It's typically better to use \`Cache-Control: no-store\` instead.
+                :suggestion: This Pragma header is commonly supported, but officially
+                deprecated. It's typically better to use \`Cache-Control: no-store\` instead.
             `
         }
     }
@@ -263,11 +264,10 @@ export function explainCacheability(exchange: HttpExchange): (
         const responseDateHeader = response.headers['date'] ?
             parseDate(lastHeader(response.headers['date'])!)
             : undefined;
-        const requestReceivedDate = parseDate(exchange.timingEvents.startTime);
 
         if (!responseDateHeader) {
             warning = dedent`
-                However, this response does not include a Date header. That value
+                :warning: However, this response does not include a Date header. That value
                 would be used in combination with the \`max-age\` value to calculate
                 the exact time to expire this content.
 
@@ -281,7 +281,7 @@ export function explainCacheability(exchange: HttpExchange): (
             addSeconds(responseDateHeader, responseCCDirectives['max-age'])
         )) > 60) {
             warning = dedent`
-                This response also includes an Expires header, which appears to disagree
+                :warning: This response also includes an Expires header, which appears to disagree
                 with the expiry time calculated from the \`max-age\` directive. The Cache-Control
                 headers take precedence, so this will only be used by clients that don't
                 support that, but this could cause unpredictable behaviour. It's typically
@@ -318,7 +318,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 This response is cacheable because it specifies an explicit expiry time,
                 using an Expires header.
 
-                The Expires header is commonly supported, but officially deprecated.
+                :suggestion: The Expires header is commonly supported, but officially deprecated.
                 It's typically better to use \`Cache-Control: max-age=<seconds>\` instead,
                 or as well.
             `
@@ -360,8 +360,8 @@ export function explainCacheability(exchange: HttpExchange): (
                     like this, which has no explicit expiry time and no way to revalidate
                     the content in future.
 
-                    It's typically better to be explicit about if and how responses should
-                    be cached, rather than depending on the unpredictable behaviour this
+                    :warning: It's typically better to be explicit about if and how responses
+                    should be cached, rather than depending on the unpredictable behaviour this
                     can cause.
 
                     This request would be reliably cached if an explicit expiry was set (e.g.
@@ -399,8 +399,8 @@ export function explainCacheability(exchange: HttpExchange): (
                     considered fresh, and some clients may refuse to cache the response
                     entirely.
 
-                    It's typically better to be explicit about how responses should be cached
-                    and expired, rather than depending on this unpredictable behaviour.
+                    :warning: It's typically better to be explicit about how responses should
+                    be cached and expired, rather than depending on this unpredictable behaviour.
 
                     If an explicit expiry time was set (e.g. using a \`max-age\` Cache-Control
                     directive), this would take precedence over any heuristics, and provide
@@ -945,8 +945,8 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             ${explainRevalidation}
 
             ${shouldSuggestImmutable ? dedent`
-                This expiry time is more than a year away, which suggests that the content
-                never changes. This could be more effective with the \`immutable\`
+                :suggestion: This expiry time is more than a year away, which suggests that the
+                content never changes. This could be more effective with the \`immutable\`
                 Cache-Control directive, which completely avoids revalidation
                 requests for this content in extra cases, such as explicit page refreshes,
                 saving validation time.
