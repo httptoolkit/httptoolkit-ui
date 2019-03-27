@@ -11,6 +11,7 @@ interface CollapsibleSectionProps {
     children: React.ReactNode;
     className?: string;
     withinGrid?: boolean;
+    prefixTrigger?: boolean;
 }
 
 const CollapsibleSectionWrapper = styled.section`
@@ -67,7 +68,11 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
     open = false;
 
     render() {
-        const { children, withinGrid = false } = this.props;
+        const {
+            children,
+            withinGrid = false,
+        } = this.props;
+        const prefixTrigger = withinGrid || this.props.prefixTrigger;
 
         const [ sectionSummary, sectionBody, ...otherChildren ] = React.Children.toArray(children);
 
@@ -95,14 +100,16 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
         const summary = React.cloneElement(
             sectionSummary,
             { open: this.open, withinGrid: withinGrid },
-            // In a grid, we always prepend a trigger, but it may be invisible
-            withinGrid ? <>
+
+            // In a grid or if requested, we always prepend the trigger (but it may be hidden)
+            prefixTrigger ? <>
                 { trigger }
                 <SummaryWrapper withinGrid={withinGrid}>
                     { sectionSummary.props.children }
                 </SummaryWrapper>
             </>
-            // Outside the grid, we append a trigger, and only if it's usable.
+
+            // Outside the grid we append triggers by default, and only if they're usable.
             : <>
                 <SummaryWrapper withinGrid={withinGrid}>
                     { sectionSummary.props.children }
