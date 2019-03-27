@@ -1,7 +1,15 @@
 import { styled } from './styles';
 
 // Import required FA icons:
-import { library, IconPrefix, IconDefinition, IconName } from '@fortawesome/fontawesome-svg-core';
+import {
+    library,
+    IconPrefix,
+    IconDefinition,
+    IconName,
+    IconLookup,
+    icon,
+    IconParams
+} from '@fortawesome/fontawesome-svg-core';
 
 import { faSpinner } from '@fortawesome/free-solid-svg-icons/faSpinner';
 import { faTrashAlt } from '@fortawesome/free-regular-svg-icons/faTrashAlt';
@@ -124,9 +132,33 @@ export const SuggestionIcon = styled(FontAwesomeIcon).attrs({
     color: #2fb4e0;
 `;
 
+export const suggestionIconHtml = iconHtml(
+    { prefix: 'fas', iconName: 'lightbulb' },
+    {
+        styles: {
+            margin: '0 6px',
+            color: '#2fb4e0'
+        }
+    }
+);
+
 export const WarningIcon = styled(FontAwesomeIcon).attrs({
     icon: ['fas', 'exclamation-triangle']
 })`
     margin: 0 6px;
     color: #f1971f;
 `;
+
+export const warningIconHtml = iconHtml(
+    { prefix: 'fas', iconName: 'exclamation-triangle' },
+    {
+        styles: {
+            margin: '0 6px',
+            color: '#f1971f'
+        }
+    }
+);
+
+function iconHtml(iconLookup: IconLookup, options?: IconParams): string {
+    return icon(iconLookup, options).html.join('');
+}
