@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { styled } from '../../styles';
 import { Omit, ExchangeMessage } from '../../types';
-import { asHeaderArray } from '../../util';
+import { asHeaderArray, joinAnd } from '../../util';
 import { WarningIcon, SuggestionIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
@@ -103,11 +103,8 @@ const CompressionDescription = observer((p: {
 
     return <>
         { encodings.length ? <>
-            compressed with <strong>{
-                encodings.length > 1 ?
-                    `${encodings.slice(0, -1).join(', ')} and then ${encodings.slice(-1)[0]}`
-                : `${encodings[0]}`
-            }</strong>, making it {
+            compressed with <strong>{joinAnd(encodings, ', ', ' and then ')}</strong>,
+            making it {
                 compressionRatio !== undefined && decodedBody ? <>
                     <strong>
                         { compressionRatio >= 0 ?
