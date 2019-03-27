@@ -89,9 +89,6 @@ library.add(
     faNpm
 );
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-export { FontAwesomeIcon };
-
 export interface IconProps {
     icon: string[];
     color: string;
@@ -116,3 +113,20 @@ export const Icons = {
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 };
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+export { FontAwesomeIcon };
+
+export const SuggestionIcon = styled(FontAwesomeIcon).attrs({
+    icon: ['fas', 'lightbulb']
+})`
+    margin: 0 6px;
+    color: #2fb4e0;
+`;
+
+export const WarningIcon = styled(FontAwesomeIcon).attrs({
+    icon: ['fas', 'exclamation-triangle']
+})`
+    margin: 0 6px;
+    color: #f1971f;
+`;

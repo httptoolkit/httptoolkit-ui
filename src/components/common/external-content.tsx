@@ -1,7 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+
 import { styled } from "../../styles";
 import { Html } from '../../types';
+import { suggestionIconHtml, warningIconHtml } from '../../icons';
+
 import { fromMarkdown } from '../../model/markdown';
 
 // Takes some HTML (in an __html object) and renders it with nice
@@ -82,5 +85,9 @@ export const Content = styled.div`
 
 export const Markdown = (p: { content: string | undefined }) =>
     p.content ?
-        <ExternalContent content={fromMarkdown(p.content)} />
+        <ExternalContent content={fromMarkdown(
+            p.content
+                .replace(/:suggestion:/g, suggestionIconHtml)
+                .replace(/:warning:/g, warningIconHtml)
+        )} />
     : null;

@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { styled } from '../../styles';
 import { Omit, ExchangeMessage } from '../../types';
 import { asHeaderArray } from '../../util';
+import { WarningIcon, SuggestionIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
@@ -43,20 +44,6 @@ const TimingPill = observer((p: { className?: string, exchange: HttpExchange }) 
         sigFig(durationMs / 1000, 1) + ' seconds' // 11.2 seconds
     }</Pill>;
 });
-
-const Suggestion = styled(
-    (p) => <FontAwesomeIcon icon={['fas', 'lightbulb']} {...p} />
-)`
-    margin-right: 6px;
-    color: #f1971f;
-`;
-
-const Warning = styled(
-    (p) => <FontAwesomeIcon icon={['fas', 'exclamation-triangle']} {...p} />
-)`
-    margin-right: 6px;
-    color: #f1971f;
-`;
 
 export const ExchangePerformanceCard = inject('accountStore')(observer((props: ExchangePerformanceCardProps) => {
     const { exchange, accountStore } = props;
@@ -254,9 +241,9 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
                     decodedBodySize={decodedBodySize}
                     encodingTestResults={encodingTestResults}
                 />
-                <CompressionOptionsTips> {
+                <CompressionOptionsTips>{
                     !!betterEncodingAvailable && <>
-                        <Suggestion />
+                        <SuggestionIcon />
                         This would be {
                             Math.round(100 * (
                                 1 - (encodingTestResults[bestOtherEncoding!] / encodedBody.byteLength)
@@ -274,14 +261,14 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
                                 ` (not supported by this client)`
                         }.
                     </>
-                } {
+                }{
                     !!decodedBodySize &&
                     !betterEncodingAvailable &&
                     decodedBodySize < encodedBody.byteLength && <>
-                        <Warning />
+                        <WarningIcon />
                         This { messageType } would be smaller without compression.
                     </>
-                } </CompressionOptionsTips>
+                }</CompressionOptionsTips>
             </CompressionOptionsContainer>
         </React.Fragment>
     }) }</>;
