@@ -335,6 +335,36 @@ describe('OpenAPI support', () => {
             ]);
         });
 
+        it('should not add an error for empty required-empty params', () => {
+            expect(
+                getParameters(
+                    '/v1/account',
+                    [{
+                        "name": "isTest",
+                        "description": "Is this for testing?",
+                        "in": "query",
+                        "required": true,
+                        "allowEmptyValue": true,
+                        "schema": {
+                            "type": "boolean",
+                            "enum": [true]
+                        }
+                    }],
+                    getExchangeData({
+                        query: '?isTest'
+                    }).request
+                )
+            ).to.deep.match([
+                {
+                    description: { __html: '<p>Is this for testing?</p>' },
+                    name: 'isTest',
+                    value: true,
+                    required: true,
+                    warnings: []
+                }
+            ]);
+        });
+
         it('should add an error for use of deprecated params', () => {
             expect(
                 getParameters(

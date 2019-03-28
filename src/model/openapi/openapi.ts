@@ -125,10 +125,16 @@ export function getParameters(
 
             switch (param.in) {
                 case 'query':
-                    const values = query.getAll(param.name);
+                    let values: Array<string | boolean> = query.getAll(param.name);
+
+                    // For a boolean field, empty-but-set (?myParam) means true
+                    if (commonFields.type && commonFields.type === 'boolean' && param.allowEmptyValue) {
+                        values = values.map((v) => v === '' ? true : v);
+                    }
+
                     return {
                         ...commonFields,
-                        value: firstMatch<string[] | string | undefined>(
+                        value: firstMatch<Array<string | boolean> | string | boolean | undefined>(
                             [() => values.length > 1, values],
                             [() => values.length === 1, values[0]]
                         )
