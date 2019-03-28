@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 
 import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
-import deref from 'json-schema-deref-sync';
+import * as refParser from 'json-schema-ref-parser';
 
 import { openApiSchema } from './openapi-schema';
 
@@ -27,7 +27,7 @@ function templateStringToRegexString(template: string): string {
         .replace(/\/$/, '');
 }
 
-export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
+export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata> {
     // This mutates the spec to drop unknown fields. Mainly useful to limit spec size. Stripe
     // particularly includes huge recursive refs in its x-expansion* extension fields.
     const isValid = filterSpec(spec);
@@ -41,7 +41,10 @@ export function buildApiMetadata(spec: OpenAPIObject): ApiMetadata {
     }
 
     // Now it's relatively small & tidy, dereference everything.
-    spec = deref(spec, { failOnMissing: true, });
+    spec = <OpenAPIObject> await refParser.dereference(spec, {
+        dereference: { circular: "ignore" },
+        resolve: { external: false }
+    });
 
     const serverRegexStrings = spec.servers!.map(s => templateStringToRegexString(s.url));
     // Build a single regex that matches any URL for these base servers

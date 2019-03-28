@@ -82,9 +82,9 @@ async function testEncodings(request: TestEncodingsRequest) {
     };
 }
 
-function buildApi(request: BuildApiRequest): BuildApiResponse {
+async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
     const { id, spec } = request;
-    return { id, api: buildApiMetadata(spec) };
+    return { id, api: await buildApiMetadata(spec) };
 }
 
 ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
@@ -104,7 +104,7 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
                 break;
 
             case 'build-api':
-                ctx.postMessage(buildApi(event.data));
+                ctx.postMessage(await buildApi(event.data));
                 break;
 
             default:
