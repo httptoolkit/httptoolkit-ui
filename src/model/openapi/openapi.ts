@@ -56,13 +56,12 @@ async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
     return specResponse.json();
 }
 
-
 const paramValidator = new Ajv({
     coerceTypes: 'array',
     unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
 });
 
-export function getPath(api: ApiMetadata, request: HtkRequest): {
+function getPath(api: ApiMetadata, request: HtkRequest): {
     pathSpec: PathObject,
     path: string
 } | undefined {
@@ -74,10 +73,25 @@ export function getPath(api: ApiMetadata, request: HtkRequest): {
     // Test the base server up front, just to keep things quick
     if (!api.serverMatcher.exec(url)) return;
 
-    for (let matcher of api.pathMatchers.keys()) {
-        if (matcher.exec(url)) {
-            return api.pathMatchers.get(matcher);
-        }
+    for (let matcher of api.requestMatchers.keys()) {
+        // Check the path matches
+        if (!matcher.pathMatcher.exec(url)) continue;
+
+        // Check the query fragment matches (if there is one)
+        if (!_.every(matcher.queryMatcher, (expectedValue, query) => {
+            const queryValues = parsedUrl.searchParams.getAll(query);
+            if (!expectedValue) {
+                return queryValues.length > 0;
+            } else if (typeof expectedValue === 'string') {
+                return _.includes(queryValues, expectedValue);
+            } else {
+                return _.intersection(queryValues, expectedValue).length === expectedValue.length;
+            }
+        })) continue;
+
+        // First match is the right one (we sort in build-api to
+        // guarantee more specific matches always come first).
+        return api.requestMatchers.get(matcher)!;
     }
 }
 

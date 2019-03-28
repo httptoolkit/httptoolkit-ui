@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as querystring from 'querystring';
 
 import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
@@ -6,13 +7,20 @@ import * as refParser from 'json-schema-ref-parser';
 
 import { openApiSchema } from './openapi-schema';
 
+interface Path {
+    path: string;
+    pathSpec: PathItemObject;
+}
+
+interface RequestMatcher {
+    pathMatcher: RegExp;
+    queryMatcher: querystring.ParsedUrlQuery;
+}
+
 export interface ApiMetadata {
     spec: OpenAPIObject;
     serverMatcher: RegExp;
-    pathMatchers: Map<
-        RegExp,
-        { pathSpec: PathItemObject, path: string }
-    >;
+    requestMatchers: Map<RequestMatcher, Path>;
 }
 
 const filterSpec = new Ajv({
@@ -50,21 +58,66 @@ export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata
     // Build a single regex that matches any URL for these base servers
     const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
 
-    const pathMatchers = new Map<RegExp, { pathSpec: PathItemObject, path: string }>();
-    _(spec.paths).entries()
-        // Sort from most templated to least templated, so more specific paths win
-        .sortBy(([path]) => _.sumBy(path, (c: string) => c === '{' ? 1 : 0))
-        .forEach(([path, pathSpec]) => {
-            // Build a regex that matches this path on any of those base servers
-            pathMatchers.set(
-                new RegExp(serverMatcher.source + templateStringToRegexString(path) + '$', 'i'),
-                { pathSpec: pathSpec, path: path }
+    const requestMatchers = new Map<RequestMatcher, Path>();
+    _.entries(spec.paths)
+        // Sort path & pathspec pairs to ensure that more specific paths are
+        // always listed first, so that later on we can always use the first match
+        // This should sort to, for example: /qwe#a&b, /qwe#a, /{param}#a, /{param}, /
+        .sort(([pathA], [pathB]) => {
+            const charPairs = _.zip(
+                // For char comparison, normalize param names and drop fragments
+                pathA.replace(/\{[^}]+\}/g, '{param}').split('#')[0],
+                pathB.replace(/\{[^}]+\}/g, '{param}').split('#')[0]
             );
+
+            for (let [charA, charB] of charPairs) {
+                if (charA === charB) continue;
+
+                // If one string has a param here and the other does not,
+                // the non-param string should come first
+                if (charB === '{') return -1; // A comes first
+                if (charA === '{') return 1; // B comes first
+
+                // If one string is a prefix of the other, it
+                // should come last
+                if (charB === undefined) return -1;
+                if (charA === undefined) return 1;
+
+                // Otherwise, fall back to the real string difference
+                return (charA < charB) ? -1 : 1;
+            }
+
+            // The paths (ignoring param names & fragments) are equal.
+            // Put the one with the most fragment params first
+            const [pathAParamCount, pathBParamCount] = [pathA, pathB].map(p => {
+                const fragment = p.split('#')[1];
+                if (!fragment) return 0;
+                else return 1 + _.sumBy(fragment, c => c === '&' ? 1 : 0);
+            });
+
+            if (pathAParamCount === pathBParamCount) return 0;
+            else return pathAParamCount < pathBParamCount ? 1 : -1;
+        })
+        .forEach(([path, pathSpec]) => {
+            const [realPath, pathFragment] = path.split('#');
+
+            requestMatchers.set({
+                // Build a regex that matches this path on any of those base servers
+                pathMatcher: new RegExp(
+                    serverMatcher.source + templateStringToRegexString(realPath) + '/?$',
+                    'i'
+                ),
+                // Some specs (AWS) also match requests by specific params
+                queryMatcher: querystring.parse(pathFragment)
+            }, {
+                path: realPath,
+                pathSpec: pathSpec
+            });
         });
 
     return {
         spec,
         serverMatcher,
-        pathMatchers
+        requestMatchers
     }
 }
