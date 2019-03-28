@@ -756,7 +756,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             `} may
             use a heuristic to decide when this response is considered stale, typically
             some percentage of the time since the content was last modified, often using
-            to the Last-Modified header value${
+            the Last-Modified header value${
                 response.headers['last-modified'] ?
                     ` (${response.headers['last-modified']})`
                     : ', although that is not explicitly defined in this response either'
