@@ -353,7 +353,8 @@ function matchOperation(api: ApiMetadata, request: HtkRequest) {
         lastHeader(request.headers['x-http-method-override']) || request.method
     ).toLowerCase();
 
-    const operation: OperationObject | undefined = get(pathSpec, method);
+    let operation: OperationObject | undefined = get(pathSpec, method);
+    if (!operation && method === 'head') operation = get(pathSpec, 'get');
 
     return {
         method,
