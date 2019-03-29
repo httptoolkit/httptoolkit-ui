@@ -25,20 +25,7 @@ import { fromMarkdown } from '../markdown';
 
 const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};
 
-export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | undefined {
-    const { parsedUrl } = request;
-    const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
-
-    let specId = findApi(requestUrl);
-    if (!specId) return;
-
-    if (Array.isArray(specId)) {
-        // We shouldn't match multiple APIs, in theory. If we somehow do, report it
-        // so we can improve the specs, and arbitrarily pick the first one.
-        reportError(`Matched multiple spec ids: ${JSON.stringify(specId)}`);
-        specId = specId[0];
-    }
-
+async function getApi(specId: string) {
     if (!apiCache[specId]) {
         apiCache[specId] = fetchApiMetadata(specId)
             .then(buildApiMetadataAsync)
@@ -47,8 +34,43 @@ export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | unde
                 throw e;
             });
     }
-
     return apiCache[specId];
+}
+
+export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | undefined {
+    const { parsedUrl } = request;
+    const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
+
+    let specId = findApi(requestUrl);
+    if (!specId) return;
+
+    if (!Array.isArray(specId)) {
+        return getApi(specId);
+    }
+
+    // If we match multiple APIs, build all of them, try to match each one
+    // against the request, and return only the matching one. This happens if
+    // multiple services have the exact same base request URL (rds.amazonaws.com)
+    return Promise.all(specId.map(getApi)).then((apis) => {
+        const matchingApis = apis.filter((api) => matchOperation(api, request).matched);
+
+        // If we've successfully found one matching API, return it
+        if (matchingApis.length === 1) return matchingApis[0];
+
+        // If this is a non-matching request to one of these APIs, but we're not
+        // sure which, return the one with the most paths (as a best guess metric of
+        // which is the most popular service)
+        if (matchingApis.length === 0) return _.maxBy(apis, a => a.spec.paths.length)!;
+
+        // Otherwise we've matched multiple APIs which all define operations that
+        // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
+
+        // Report this so we can try to improve & avoid in future.
+        reportError(`Overlapping APIs: ${JSON.stringify(matchingApis)}`);
+
+        // Return our guess of the most popular service, from the matching services only
+        return _.maxBy(matchingApis, a => a.spec.paths.length)!;
+    });
 }
 
 async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
@@ -331,14 +353,15 @@ function matchOperation(api: ApiMetadata, request: HtkRequest) {
         lastHeader(request.headers['x-http-method-override']) || request.method
     ).toLowerCase();
 
-    const operation: OperationObject | Empty = get(pathSpec, method) || empty();
+    const operation: OperationObject | undefined = get(pathSpec, method);
 
     return {
         method,
         path,
         pathSpec,
-        spec: operation
-    }
+        spec: operation || empty(),
+        matched: operation !== undefined
+    };
 }
 
 type MatchedOperation = ReturnType<typeof matchOperation>;
