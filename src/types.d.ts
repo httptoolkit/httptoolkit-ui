@@ -11,12 +11,12 @@ export type HtkRequest = CompletedRequest & {
     parsedUrl: URL,
     source: TrafficSource,
     contentType: HtkContentType,
-    cache: ObservableMap<string, unknown>
+    cache: ObservableMap<symbol, unknown>
 };
 
 export type HtkResponse = CompletedResponse & {
     contentType: HtkContentType,
-    cache: ObservableMap<string, unknown>
+    cache: ObservableMap<symbol, unknown>
 };
 
 export type ExchangeMessage = HtkRequest | HtkResponse;

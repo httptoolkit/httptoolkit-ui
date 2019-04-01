@@ -19,7 +19,7 @@ export function getReadableSize(bytes: number, siUnits = true) {
     return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
 }
 
-const DecodedBodyCacheKey = 'bodies-decoded-body';
+const DecodedBodyCacheKey = Symbol('decoded-body');
 type DecodedBodyCache = Map<typeof DecodedBodyCacheKey,
     IObservableValue<Buffer | undefined> | undefined
 >;
@@ -45,7 +45,7 @@ export function getDecodedBody(message: ExchangeMessage): Buffer | undefined {
     }
 }
 
-const EncodedSizesCacheKey = 'bodies-encoded-body-test';
+const EncodedSizesCacheKey = Symbol('encoded-body-test');
 type EncodedBodySizes = { [encoding: string]: number };
 type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,
     IObservableValue<EncodedBodySizes | undefined> | undefined

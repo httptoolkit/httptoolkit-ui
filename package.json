@@ -66,7 +66,7 @@
     "json-schema-ref-parser": "^6.1.0",
     "jsonwebtoken": "^8.4.0",
     "lodash": "^4.17.5",
-    "mobx": "^5.6.0",
+    "mobx": "^5.9.4",
     "mobx-react": "^5.4.0",
     "mobx-utils": "^5.1.0",
     "mockttp": "^0.13.0",
