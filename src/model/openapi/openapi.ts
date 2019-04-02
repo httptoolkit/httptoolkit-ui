@@ -15,7 +15,7 @@ import {
 import * as Ajv from 'ajv';
 
 import { HtkResponse, HtkRequest, Html, ExchangeMessage } from "../../types";
-import { firstMatch, empty, Empty, lastHeader } from '../../util';
+import { firstMatch, empty, lastHeader } from '../../util';
 import { reportError } from '../../errors';
 
 import { HttpExchange } from '../exchange';
@@ -197,6 +197,28 @@ export function getParameters(
         })
         .map((param) => {
             const { specParam } = param;
+
+            const serializationStyle = specParam.style || ({
+                query: 'form',
+                path: 'simple',
+                header: 'simple',
+                cookie: 'form'
+            }[specParam.in]);
+
+            if (param.type === 'array') {
+                if (
+                    serializationStyle === 'simple' ||
+                    (serializationStyle === 'form' && specParam.explode === false)
+                ) {
+                    param.value = _.isString(param.value) ? param.value.split(',') : param.value;
+                }
+                if (serializationStyle === 'spaceDelimited') {
+                    param.value = _.isString(param.value) ? param.value.split(' ') : param.value;
+                }
+                if (serializationStyle === 'pipeDelimited') {
+                    param.value = _.isString(param.value) ? param.value.split('|') : param.value;
+                }
+            }
 
             if (param.required && param.value === undefined && param.defaultValue === undefined) {
                 param.warnings.push(

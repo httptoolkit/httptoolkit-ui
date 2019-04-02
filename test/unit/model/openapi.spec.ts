@@ -189,6 +189,66 @@ describe('OpenAPI support', () => {
             ]);
         });
 
+        it('can parse exploded query parameters', () => {
+            expect(
+                getParameters(
+                    '/',
+                    [{
+                        description: 'List of formats.',
+                        in: 'query',
+                        name: 'formats',
+                        schema: {
+                            type: 'array',
+                            items: {
+                                type: 'string'
+                            }
+                        }
+                    }],
+                    getExchangeData({
+                        query: '?formats=json&formats=xml'
+                    }).request
+                )
+            ).to.deep.match([
+                {
+                    description: { __html: '<p>List of formats.</p>' },
+                    name: 'formats',
+                    value: ['json', 'xml'],
+                    warnings: []
+                }
+            ]);
+        });
+
+        it('can parse CSV query parameters', () => {
+            expect(
+                getParameters(
+                    '/',
+                    [{
+                        description: 'List of formats.',
+                        in: 'query',
+                        name: 'formats',
+                        style: 'form',
+                        explode: false,
+                        schema: {
+                            type: 'array',
+                            items: {
+                                type: 'string'
+                            }
+                        }
+                    }],
+                    getExchangeData({
+                        query: '?formats=json,xml'
+                    }).request
+                )
+            ).to.deep.match([
+                {
+                    description: { __html: '<p>List of formats.</p>' },
+                    name: 'formats',
+                    value: ['json', 'xml'],
+                    warnings: []
+                }
+            ]);
+        });
+
         it('returns undefined for missing query parameters', () => {
             expect(
                 getParameters(
