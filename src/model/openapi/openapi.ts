@@ -141,6 +141,7 @@ export function getParameters(
                 required: param.required || param.in === 'path',
                 type: schema && schema.type,
                 defaultValue: schema && schema.default,
+                enum: schema && (schema.enum || (schema.items && (schema.items as SchemaObject).enum)),
                 deprecated: param.deprecated || false,
                 warnings: <string[]>[]
             }
@@ -455,6 +456,7 @@ export interface Parameter {
     description?: Html;
     value?: unknown;
     defaultValue?: unknown;
+    enum?: string[];
     type?: string;
     in: ParameterLocation;
     required: boolean;

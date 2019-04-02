@@ -25,6 +25,7 @@ import { OptionalImage } from '../common/optional-image';
 import { ExternalContent } from '../common/external-content';
 import { DocsLink } from '../common/docs-link';
 import { HeaderDetails } from './headers/header-details';
+import { joinAnd } from '../../util';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== Icons.Unknown ?
@@ -91,6 +92,19 @@ const ParamMetadata = styled((p: {
             .filter((x) => !!x)
             .join(' ')
         } parameter
+        {
+            p.param.defaultValue !== undefined ?
+                `. Defaults to ${p.param.defaultValue}`
+                : ''
+        }
+        {
+            p.param.enum !== undefined && p.param.enum.length > 0 ?
+                <>
+                    .<br/>
+                    Valid values: {joinAnd(p.param.enum)}
+                </>
+                : ''
+        }.
 </div>)`
     line-height: 1.2;
     font-style: italic;
