@@ -101,7 +101,9 @@ const ParamMetadata = styled((p: {
             p.param.enum !== undefined && p.param.enum.length > 0 ?
                 <>
                     .<br/>
-                    Valid values: {joinAnd(p.param.enum)}
+                    Valid values: {joinAnd(
+                        p.param.enum.map(v => JSON.stringify(v))
+                    )}
                 </>
                 : ''
         }.

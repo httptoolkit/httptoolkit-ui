@@ -456,7 +456,7 @@ export interface Parameter {
     description?: Html;
     value?: unknown;
     defaultValue?: unknown;
-    enum?: string[];
+    enum?: unknown[];
     type?: string;
     in: ParameterLocation;
     required: boolean;
