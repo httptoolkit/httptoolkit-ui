@@ -1,4 +1,5 @@
 import * as styledComponents from 'styled-components';
+import * as polished from 'polished';
 import { ThemeProps } from 'styled-components';
 
 import reset from 'styled-reset'
@@ -28,7 +29,9 @@ export const lightTheme = {
 
     monacoTheme: 'vs',
 
-    ...fontSizes
+    ...fontSizes,
+
+    globalCss: ''
 };
 
 export const darkTheme = {
@@ -36,7 +39,7 @@ export const darkTheme = {
     monoFontFamily: "'Fira Mono', monospace",
 
     mainBackground: '#222222',
-    mainLowlightBackground: '#333333',
+    mainLowlightBackground: '#3f3f3f',
     mainColor: '#efefef',
 
     primaryInputColor: '#1f83e0',
@@ -44,13 +47,27 @@ export const darkTheme = {
     popBackground: '#111111',
     popColor: '#e1421f',
 
-    containerBackground: '#2c2c31',
+    containerBackground: '#3c3c41',
     containerWatermark: '#757580',
     containerBorder: '#000000',
 
     monacoTheme: 'vs-dark',
 
-    ...fontSizes
+    ...fontSizes,
+
+    /* In dark theme, we need to override the scrollbars or they stick out like a sore thumb */
+    globalCss: styledComponents.css`
+        ::-webkit-scrollbar {
+            background-color: ${p => polished.darken(0.2, p.theme.containerBackground)};
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: ${p => polished.lighten(0.2, p.theme.containerBackground)};
+        }
+
+        /* Standard, but poorly supported: */
+        scrollbar-color: dark;
+    `
 };
 
 export type Theme = typeof lightTheme | typeof darkTheme;
@@ -123,4 +140,6 @@ export const GlobalStyles = createGlobalStyle`
             }
         }
     }
+
+    ${p => p.theme.globalCss}
 `;
