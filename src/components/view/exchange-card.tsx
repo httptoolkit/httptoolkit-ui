@@ -1,15 +1,20 @@
 import * as React from 'react';
+
 import { styled, css } from '../../styles';
-
-import { CollapsibleCard, CollapseIcon } from '../common/card'
 import { FontAwesomeIcon } from '../../icons';
-import { CollapsibleSectionSummary, CollapsibleSectionBody } from '../common/collapsible-section';
 
-export interface ExchangeCardProps {
-    collapsed: boolean;
+import {
+    CollapsibleCard,
+    CollapseIcon,
+    CollapsibleCardProps
+} from '../common/card'
+import {
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../common/collapsible-section';
+
+export interface ExchangeCardProps extends CollapsibleCardProps {
     direction?: 'left' | 'right';
-    onCollapseToggled: () => void;
-    children: React.ReactElement<any> | Array<React.ReactElement<any> | null>;
 }
 
 // Bit of redundancy here, but just because the TS styled plugin
@@ -27,15 +32,6 @@ const cardDirectionCss = (direction?: string) =>
 export const ExchangeCard = styled(CollapsibleCard).attrs({
     tabIndex: 0
 })`
-    margin-bottom: 20px;
-    transition: margin-bottom 0.1s;
-
-    ${p => p.collapsed && css`
-        :not(:last-child) {
-            margin-bottom: -16px;
-        }
-    `}
-
     ${(p: ExchangeCardProps) => cardDirectionCss(p.direction)};
 
     &:focus {

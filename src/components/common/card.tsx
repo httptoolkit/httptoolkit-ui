@@ -2,9 +2,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled, Theme, ThemeProps } from '../../styles';
+import { styled, Theme, ThemeProps, css } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
-import { filterProps } from '../component-utils';
+import { Omit } from '../../types';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
@@ -107,20 +107,35 @@ export const CollapseIcon = styled((props: CollapseIconProps) =>
     }
 `;
 
-@observer
-export class CollapsibleCard extends React.Component<{
+export interface CollapsibleCardProps {
     collapsed: boolean;
-    children: React.ReactElement<any> | Array<React.ReactElement<any> | null>;
     onCollapseToggled: () => void;
-} & React.HTMLAttributes<HTMLDivElement>> {
+    children: React.ReactElement<any> | Array<React.ReactElement<any> | null>;
+}
+
+const CollapsibleCardContainer = styled(MediumCard)`
+    margin-bottom: 20px;
+    transition: margin-bottom 0.1s;
+
+    ${(p: Omit<CollapsibleCardProps, 'children'>) => p.collapsed && css`
+        :not(:last-child) {
+            margin-bottom: -16px;
+        }
+    `}
+`;
+
+@observer
+export class CollapsibleCard extends React.Component<
+    CollapsibleCardProps & React.HTMLAttributes<HTMLDivElement>
+> {
 
     private cardRef = React.createRef<HTMLElement>();
 
     render() {
         const { children, collapsed } = this.props;
 
-        return <MediumCard
-            {..._.omit(this.props, ['onCollapseToggled', 'collapsed'])}
+        return <CollapsibleCardContainer
+            {..._.omit(this.props, ['onCollapseToggled'])}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}
         >{
@@ -137,7 +152,7 @@ export class CollapsibleCard extends React.Component<{
                     )
                     : !collapsed && child
             )
-        }</MediumCard>;
+        }</CollapsibleCardContainer>;
     }
 
     toggleCollapse = () => {
