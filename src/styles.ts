@@ -143,3 +143,10 @@ export const GlobalStyles = createGlobalStyle`
 
     ${p => p.theme.globalCss}
 `;
+
+export function initStyles(theme: Theme) {
+    // Update the HTML background to the current theme (should be set already, just in case)
+    document.querySelector('html')!.style.backgroundColor = theme.containerBackground;
+    // Persist the theme background, so the loading screen can get it before the app starts.
+    localStorage.setItem('theme-background-color', theme.containerBackground);
+}

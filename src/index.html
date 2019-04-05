@@ -8,7 +8,6 @@
     <title>HTTP Toolkit</title>
     <style>
         html, body {
-            background-color: #d8e2e6;
             height: 100%;
             overflow: hidden;
 
@@ -68,6 +67,9 @@
     </div>
 
     <script>
+        const bgColor = localStorage.getItem('theme-background-color') || '#d8e2e6';
+        document.querySelector('html').style.backgroundColor = bgColor;
+
         let progressElement = document.getElementById('progress-logo');
         let errorElement = document.getElementById('app-loading-error');
         let errorDetailsElement = document.getElementById('app-loading-error-details');

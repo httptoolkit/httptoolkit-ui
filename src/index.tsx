@@ -7,7 +7,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Provider } from 'mobx-react';
 
-import { GlobalStyles, ThemeProvider, lightTheme as theme } from './styles';
+import { GlobalStyles, ThemeProvider, darkTheme as theme, initStyles } from './styles';
 import { App } from './components/app';
 import { ErrorBoundary } from './components/error-boundary';
 import { InterceptionStore } from './model/interception-store';
@@ -60,6 +60,7 @@ appStartupPromise.then(() => {
     triggerServerUpdate();
 
     document.dispatchEvent(new Event('load:rendering'));
+    initStyles(theme);
     ReactDOM.render(
         <Provider interceptionStore={interceptionStore} accountStore={accountStore} theme={theme}>
             <ThemeProvider theme={theme}>
