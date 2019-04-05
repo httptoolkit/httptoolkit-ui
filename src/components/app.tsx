@@ -1,5 +1,6 @@
+import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action } from 'mobx';
+import { observable, action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled } from '../styles';
@@ -7,18 +8,13 @@ import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
 import { AccountStore } from '../model/account/account-store';
 
-import { Sidebar } from './sidebar';
+import { Sidebar, SidebarItem } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
 
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
 import { FontAwesomeIcon } from '../icons';
-
-const PAGES = [
-    { name: 'Intercept', icon: ['fas', 'plug'], component: InterceptPage },
-    { name: 'View', icon: ['fas', 'search'], component: ViewPage }
-];
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -45,15 +41,43 @@ const Spinner = styled((p: { className?: string }) => (
     z-index: 100;
 `;
 
+type Page = typeof InterceptPage | typeof ViewPage;
+
 @inject('accountStore')
 @observer
 class App extends React.Component<{ accountStore: AccountStore }> {
 
-    @observable selectedPageIndex: number = 0;
+    @observable.ref selectedPage: Page = InterceptPage;
+
+    @computed
+    get menuItems() {
+        return [
+            {
+                name: 'Intercept',
+                icon: ['fas', 'plug'],
+                position: 'top',
+                page: InterceptPage
+            },
+            {
+                name: 'View',
+                icon: ['fas', 'search'],
+                position: 'top',
+                page: ViewPage
+            },
+        ];
+    }
 
     render() {
-        const { modal, setSelectedPlan, subscriptionPlans, user, logOut } = this.props.accountStore;
-        const PageComponent = PAGES[this.selectedPageIndex].component;
+        const {
+            modal,
+            setSelectedPlan,
+            subscriptionPlans,
+            user,
+            logOut
+        } = this.props.accountStore;
+
+        const PageComponent = this.selectedPage;
+        const selectedPageIndex = _.findIndex(this.menuItems, (i) => i.page === PageComponent);
 
         return <>
             <AppContainer
@@ -65,15 +89,22 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 )}
             >
                 <Sidebar
-                    pages={PAGES}
-                    selectedPageIndex={this.selectedPageIndex}
-                    onSelectPage={this.onSelectPage}
+                    items={(this.menuItems as SidebarItem[]).concat({
+                        name: 'Give feedback',
+                        icon: ['far', 'comment'],
+                        position: 'bottom',
+                        highlight: true,
+                        url: 'https://github.com/httptoolkit/feedback/issues/new'
+                    })}
+                    selectedItemIndex={selectedPageIndex}
+                    onSelectItem={this.onSelectItem}
                 />
                 <PageComponent />
             </AppContainer>
 
             { !!modal && <ModalOverlay opacity={
-                modal === 'checkout' ? 0.5 : undefined // Override for checkout, as it has an independent overlay
+                // Override for checkout, as it has an independent overlay
+                modal === 'checkout' ? 0.5 : undefined
             } /> }
 
             { modal === 'pick-a-plan' &&
@@ -90,9 +121,11 @@ class App extends React.Component<{ accountStore: AccountStore }> {
     }
 
     @action.bound
-    onSelectPage(selectedPageIndex: number) {
-        this.selectedPageIndex = selectedPageIndex;
-        trackPage(PAGES[selectedPageIndex].name);
+    onSelectItem(selectedItemIndex: number) {
+        const selectedItem = this.menuItems[selectedItemIndex];
+
+        this.selectedPage = selectedItem.page;
+        trackPage(selectedItem.name);
     }
 }
 

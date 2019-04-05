@@ -1,16 +1,21 @@
 import * as React from 'react';
 
 import * as logo from '../images/logo-stacked.svg';
-import { styled, css } from '../styles';
+import { styled, css, Theme } from '../styles';
 import { FontAwesomeIcon } from '../icons';
 
+export interface SidebarItem {
+    name: string;
+    icon: string[];
+    position: 'top' | 'bottom';
+    highlight?: true;
+    url?: string;
+}
+
 interface SidebarProps {
-    selectedPageIndex: number;
-    pages: Array<{
-        name: string,
-        icon: string[]
-    }>;
-    onSelectPage: (selectedPageIndex: number) => void;
+    selectedItemIndex: number;
+    items: Array<SidebarItem>;
+    onSelectItem: (selectedItemIndex: number) => void;
 }
 
 const SidebarNav = styled.nav`
@@ -50,7 +55,7 @@ const SidebarLogo = styled.img.attrs({
     ${sidebarItemStyles}
 `
 
-const SidebarItem = styled.div<{ selected: boolean }>`
+const SidebarSelectableItem = styled.div<{ selected: boolean }>`
     ${sidebarItemStyles}
 
     width: calc(100% + 2px);
@@ -76,14 +81,19 @@ const SidebarItem = styled.div<{ selected: boolean }>`
     }
 `;
 
-const FeedbackButton = styled.a`
+const Separator = styled.div`
+    margin-top: auto;
+`;
+
+const SidebarLink = styled.a<{ highlight?: true }>`
     ${sidebarItemStyles}
 
-    color: ${p => p.theme.popColor};
-    font-weight: bold;
+    ${(p) => p.highlight && css`
+        color:  ${p.theme.popColor};
+        font-weight: bold;
+    `};
     text-decoration: none;
 
-    margin-top: auto;
     margin-bottom: 5px;
 
     > svg {
@@ -91,24 +101,48 @@ const FeedbackButton = styled.a`
     }
 `;
 
-export const Sidebar = (props: SidebarProps) =>
-    <SidebarNav>
+export const Sidebar = (props: SidebarProps) => {
+    const items = props.items.map((item, i) => {
+        const itemContent = <>
+            <FontAwesomeIcon size='2x' icon={item.icon} />
+            {item.name}
+        </>;
+
+        if (item.url) {
+            return {
+                position: item.position,
+                component: <SidebarLink
+                    key={item.name}
+                    highlight={item.highlight}
+                    href='https://github.com/httptoolkit/feedback/issues/new'
+                    target='_blank'
+                >
+                    { itemContent }
+                </SidebarLink>
+            }
+        } else {
+            return {
+                position: item.position,
+                component: <SidebarSelectableItem
+                    key={item.name}
+                    selected={i === props.selectedItemIndex}
+                    onClick={() => props.onSelectItem(i)}
+                >
+                    { itemContent }
+                </SidebarSelectableItem>
+            };
+        }
+    });
+
+    return <SidebarNav>
         <SidebarLogo />
-        {props.pages.map((page, i) =>
-            <SidebarItem
-                key={page.name}
-                selected={i === props.selectedPageIndex}
-                onClick={() => props.onSelectPage(i)}
-            >
-                <FontAwesomeIcon size='2x' icon={page.icon} />
-                {page.name}
-            </SidebarItem>
-        )}
-        <FeedbackButton
-            href='https://github.com/httptoolkit/feedback/issues/new'
-            target='_blank'
-        >
-            <FontAwesomeIcon size='2x' icon={['far', 'comment']} />
-            Give feedback
-        </FeedbackButton>
+
+        {
+            items.filter(i => i.position === 'top').map((item) => item.component)
+        }
+        <Separator />
+        {
+            items.filter(i => i.position === 'bottom').map((item) => item.component)
+        }
     </SidebarNav>;
+}
