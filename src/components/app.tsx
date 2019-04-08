@@ -72,7 +72,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             modal,
             setSelectedPlan,
             subscriptionPlans,
-            user,
+            userEmail,
             logOut
         } = this.props.accountStore;
 
@@ -109,7 +109,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
 
             { modal === 'pick-a-plan' &&
                 <PlanPicker
-                    email={user.email!}
+                    email={userEmail!}
                     onPlanPicked={setSelectedPlan}
                     onLogOut={logOut}
                     plans={subscriptionPlans}

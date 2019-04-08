@@ -50,7 +50,17 @@ export class AccountStore {
     private paddleLoaded: boolean = false;
 
     @observable
-    user: User = getLastUserData();
+    private user: User = getLastUserData();
+
+    @computed get userEmail() {
+        return this.user.email;
+    }
+
+    @computed get userSubscription() {
+        return this.isPaidUser
+            ? this.user.subscription
+            : undefined;
+    }
 
     private updateUser = flow(function * (this: AccountStore) {
         this.user = yield getLatestUserData();
@@ -79,8 +89,8 @@ export class AccountStore {
         // ------------------------------------------------------------------
 
         // Set with the last known subscription details
-        const subscriptionExpiry = get(this, 'user', 'subscription', 'expiry');
-        const subscriptionStatus = get(this, 'user', 'subscription', 'status');
+        const subscriptionExpiry = get(this.user.subscription, 'expiry');
+        const subscriptionStatus = get(this.user.subscription, 'status');
 
         // If we're offline during subscription renewal, and the sub was active last
         // we checked, then we might just have outdated data, so leave some slack.
