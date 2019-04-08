@@ -11,7 +11,8 @@ import {
     logOut,
     User,
     getLatestUserData,
-    getLastUserData
+    getLastUserData,
+    SubscriptionStatus
 } from './auth';
 import {
     SubscriptionPlans,
@@ -68,6 +69,7 @@ export class AccountStore {
     }
 
     @computed get isPaidUser() {
+        // ------------------------------------------------------------------
         // You could set this to true to become a paid user for free.
         // I'd rather you didn't. HTTP Toolkit takes time & love to build,
         // and I can't do that if it doesn't pay my bills!
@@ -76,13 +78,17 @@ export class AccountStore {
         // Can't afford it? Get in touch: tim@httptoolkit.tech.
         // ------------------------------------------------------------------
 
-        // Set with the last known active subscription details
+        // Set with the last known subscription details
         const subscriptionExpiry = get(this, 'user', 'subscription', 'expiry');
+        const subscriptionStatus = get(this, 'user', 'subscription', 'status');
 
-        // If we're offline during subscription renewal, we might be outdated, so
-        // leave some slack. This gives a week of offline usage. Should be enough,
-        // given that most HTTP development needs network connectivity anyway.
-        const expiryMargin = 1000 * 60 * 60 * 24 * 7;
+        // If we're offline during subscription renewal, and the sub was active last
+        // we checked, then we might just have outdated data, so leave some slack.
+        // This gives a week of offline usage. Should be enough, given that most HTTP
+        // development needs network connectivity anyway.
+        const expiryMargin = subscriptionStatus === 'active'
+            ? 1000 * 60 * 60 * 24 * 7
+            : 0;
 
         return !!subscriptionExpiry &&
             subscriptionExpiry.valueOf() + expiryMargin > Date.now();

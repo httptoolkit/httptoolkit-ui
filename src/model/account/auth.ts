@@ -159,8 +159,11 @@ function getToken() {
     });
 };
 
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'deleted';
+
 interface AppData {
     email: string;
+    subscription_status: SubscriptionStatus;
     subscription_id: number;
     subscription_plan_id: number;
     subscription_expiry: number;
@@ -170,6 +173,7 @@ export type User = {
     email?: string
     subscription?: {
         id: number;
+        status: SubscriptionStatus;
         plan: SubscriptionPlanCode;
         expiry: Date;
     };
@@ -223,6 +227,7 @@ function parseUserData(userJwt: string | null): User {
 
     const subscription = {
         id: appData.subscription_id,
+        status: appData.subscription_status,
         plan: getSubscriptionPlanCode(appData.subscription_plan_id)!,
         expiry: new Date(appData.subscription_expiry)
     };
