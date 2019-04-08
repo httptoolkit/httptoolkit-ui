@@ -124,8 +124,12 @@ class App extends React.Component<{ accountStore: AccountStore }> {
     onSelectItem(selectedItemIndex: number) {
         const selectedItem = this.menuItems[selectedItemIndex];
 
-        this.selectedPage = selectedItem.page;
-        trackPage(selectedItem.name);
+        if (selectedItem.onSelected) {
+            selectedItem.onSelected();
+        } else if (selectedItem.page) {
+            this.selectedPage = selectedItem.page;
+            trackPage(selectedItem.name);
+        }
     }
 }
 
