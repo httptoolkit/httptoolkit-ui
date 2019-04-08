@@ -67,7 +67,15 @@
     </div>
 
     <script>
-        const bgColor = localStorage.getItem('theme-background-color') || '#d8e2e6';
+        const uiSettings = localStorage.getItem('ui-store');
+        let bgColor = '#d8e2e6';
+        if (uiSettings) {
+            try {
+                bgColor = JSON.parse(uiSettings).theme.containerBackground;
+            } catch (e) {
+                console.log('Failed to load background color at startup', e);
+            }
+        }
         document.querySelector('html').style.backgroundColor = bgColor;
 
         let progressElement = document.getElementById('progress-logo');

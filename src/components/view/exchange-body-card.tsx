@@ -5,9 +5,10 @@ import { disposeOnUnmount, observer, inject } from 'mobx-react';
 import { SchemaObject } from 'openapi-directory';
 
 import { ExchangeMessage } from '../../types';
-import { styled, Theme } from '../../styles';
+import { styled } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
 import { getReadableSize, getDecodedBody } from '../../model/bodies';
+import { UiStore } from '../../model/ui-store';
 
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
@@ -30,7 +31,7 @@ const CopyBody = styled(CopyButton)`
     color: ${p => p.theme.mainColor};
 `;
 
-@inject('theme')
+@inject('uiStore')
 @observer
 export class ExchangeBodyCard extends React.Component<{
     title: string,
@@ -39,7 +40,7 @@ export class ExchangeBodyCard extends React.Component<{
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
-    theme?: Theme
+    uiStore?: UiStore
 }> {
 
     @observable
@@ -80,7 +81,7 @@ export class ExchangeBodyCard extends React.Component<{
             direction,
             collapsed,
             onCollapseToggled,
-            theme
+            uiStore
         } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(message.contentType, message.headers['content-type']);
@@ -118,7 +119,7 @@ export class ExchangeBodyCard extends React.Component<{
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
                         contentObservable={this.currentContent}
-                        monacoTheme={theme!.monacoTheme}
+                        monacoTheme={uiStore!.theme.monacoTheme}
                         schema={apiBodySchema}
                     >
                         {decodedBody}

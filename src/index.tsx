@@ -7,8 +7,9 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Provider } from 'mobx-react';
 
-import { GlobalStyles, ThemeProvider, darkTheme as theme, initStyles } from './styles';
+import { GlobalStyles } from './styles';
 import { App } from './components/app';
+import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
 import { ErrorBoundary } from './components/error-boundary';
 import { InterceptionStore } from './model/interception-store';
 import { AccountStore } from './model/account/account-store';
@@ -16,6 +17,7 @@ import { triggerServerUpdate } from './model/htk-client';
 import { initTracking } from './tracking';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
+import { UiStore } from './model/ui-store';
 
 import { delay } from './util';
 
@@ -50,9 +52,13 @@ registerUpdateWorker({ scope: '/' })
 initTracking();
 
 const accountStore = new AccountStore();
+const uiStore = new UiStore();
 const interceptionStore = new InterceptionStore();
 
-const appStartupPromise = interceptionStore.startServer();
+const appStartupPromise = Promise.all([
+    interceptionStore.startServer(),
+    uiStore.loadSettings()
+]);
 
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
@@ -60,15 +66,14 @@ appStartupPromise.then(() => {
     triggerServerUpdate();
 
     document.dispatchEvent(new Event('load:rendering'));
-    initStyles(theme);
     ReactDOM.render(
-        <Provider interceptionStore={interceptionStore} accountStore={accountStore} theme={theme}>
-            <ThemeProvider theme={theme}>
+        <Provider interceptionStore={interceptionStore} accountStore={accountStore} uiStore={uiStore}>
+            <StorePoweredThemeProvider>
                 <ErrorBoundary>
                     <GlobalStyles />
                     <App />
                 </ErrorBoundary>
-            </ThemeProvider>
+            </StorePoweredThemeProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR))
 });

@@ -36,7 +36,7 @@ export type Omit<T, K> = Pick<T, Exclude<keyof T, K>>;
 export type WithInjected<
     C extends React.ComponentType<any>,
     K extends string
-    > = C extends React.ComponentType<infer T> ?
+> = C extends React.ComponentType<infer T> ?
     React.ComponentType<Omit<T, K>> : never;
 
 // This lets us filter a type for only readonly/writable keys.

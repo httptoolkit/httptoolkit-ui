@@ -3,6 +3,7 @@ import * as polished from 'polished';
 import { inject } from 'mobx-react';
 
 import { styled, Theme } from '../../styles';
+import { UiStore } from '../../model/ui-store';
 
 function needsInversion(color: string) {
     return color && polished.getLuminance(color) > 0.45;
@@ -83,8 +84,8 @@ export const PillSelector = <T extends {}>(props: {
     )}
 </Select>;
 
-export const ProPill = styled(inject('theme')((p: { theme?: Theme, className?: string }) =>
-    <Pill className={p.className} color={p.theme!.popColor}>PRO</Pill>
+export const ProPill = styled(inject('uiStore')((p: { uiStore?: UiStore, className?: string }) =>
+    <Pill className={p.className} color={p.uiStore!.theme.popColor}>PRO</Pill>
 ))`
     font-size: 11px;
     padding: 4px 4px;

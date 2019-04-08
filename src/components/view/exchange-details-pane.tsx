@@ -5,9 +5,10 @@ import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { HtkResponse, Omit } from '../../types';
-import { styled, Theme } from '../../styles';
+import { styled } from '../../styles';
 import { getStatusColor } from '../../exchange-colors';
 import { HttpExchange } from '../../model/exchange';
+import { UiStore } from '../../model/ui-store';
 
 import { Pill } from '../common/pill';
 import { EmptyState } from '../common/empty-state';
@@ -48,13 +49,13 @@ const CardDivider = styled.div`
 
 type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'performance';
 
-@inject('theme')
+@inject('uiStore')
 @inject('accountStore')
 @observer
 export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange | undefined,
     // Injected:
-    theme?: Theme,
+    uiStore?: UiStore,
     accountStore?: AccountStore
 }> {
 
@@ -73,7 +74,7 @@ export class ExchangeDetailsPane extends React.Component<{
     }));
 
     render() {
-        const { exchange, theme, accountStore } = this.props;
+        const { exchange, uiStore, accountStore } = this.props;
         const { isPaidUser } = accountStore!;
 
         const cards: JSX.Element[] = [];
@@ -101,7 +102,7 @@ export class ExchangeDetailsPane extends React.Component<{
             if (response === 'aborted') {
                 cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
                     <header>
-                    <Pill color={getStatusColor(response, theme!)}>Aborted</Pill>
+                    <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
                         <h1>Response</h1>
                     </header>
                     <div>
@@ -114,7 +115,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     response={response}
                     requestUrl={exchange.request.parsedUrl}
                     apiExchange={apiExchange}
-                    theme={theme!}
+                    theme={uiStore!.theme!}
                 />);
 
                 if (hasCompletedBody(response)) {
