@@ -128,6 +128,7 @@ export const GlobalStyles = createGlobalStyle`
 
         .auth0-lock-widget {
             box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2) !important;
+            overflow: visible !important;
         }
 
         .auth0-lock-form {
