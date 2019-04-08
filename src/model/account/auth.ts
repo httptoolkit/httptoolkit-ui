@@ -167,6 +167,8 @@ interface AppData {
     subscription_id: number;
     subscription_plan_id: number;
     subscription_expiry: number;
+    update_url: string;
+    last_receipt_url?: string;
 }
 
 export type User = {
@@ -176,6 +178,8 @@ export type User = {
         status: SubscriptionStatus;
         plan: SubscriptionPlanCode;
         expiry: Date;
+        updateBillingDetailsUrl: string;
+        lastReceiptUrl?: string;
     };
 };
 
@@ -229,12 +233,15 @@ function parseUserData(userJwt: string | null): User {
         id: appData.subscription_id,
         status: appData.subscription_status,
         plan: getSubscriptionPlanCode(appData.subscription_plan_id)!,
-        expiry: new Date(appData.subscription_expiry)
+        expiry: new Date(appData.subscription_expiry),
+        updateBillingDetailsUrl: appData.update_url,
+        lastReceiptUrl: appData.last_receipt_url
     };
 
     return {
         email: appData.email,
-        subscription: _.every(subscription) ? subscription : undefined
+        // Use undefined rather than {} when there's no subscription data.
+        subscription: _.some(subscription) ? subscription : undefined
     };
 }
 
