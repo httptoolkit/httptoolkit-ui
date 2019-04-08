@@ -20,10 +20,10 @@ export interface SubscriptionPlan {
 }
 
 export const SubscriptionPlans = {
-    'pro-monthly': { id: 550380 },
-    'pro-annual': { id: 550382 },
-    'team-monthly': { id: 550789 },
-    'team-annual': { id: 550788 },
+    'pro-monthly': { id: 550380, name: 'Pro (monthly)' },
+    'pro-annual': { id: 550382, name: 'Pro (annual)' },
+    'team-monthly': { id: 550789, name: 'Team (monthly)' },
+    'team-annual': { id: 550788, name: 'Team (annual)' },
 };
 
 _.map(SubscriptionPlans, async (PlanDetails: SubscriptionPlan) => {

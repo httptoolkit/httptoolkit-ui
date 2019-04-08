@@ -11,6 +11,7 @@ import { AccountStore } from '../model/account/account-store';
 import { Sidebar, SidebarItem } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
+import { SettingsPage } from './settings/settings-page';
 
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
@@ -41,7 +42,7 @@ const Spinner = styled((p: { className?: string }) => (
     z-index: 100;
 `;
 
-type Page = typeof InterceptPage | typeof ViewPage;
+type Page = typeof InterceptPage | typeof ViewPage | typeof SettingsPage;
 
 @inject('accountStore')
 @observer
@@ -64,6 +65,20 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 position: 'top',
                 page: ViewPage
             },
+
+            this.props.accountStore.isPaidUser
+                ? {
+                    name: 'Settings',
+                    icon: ['fas', 'cog'],
+                    position: 'bottom',
+                    page: SettingsPage
+                }
+                : {
+                    name: 'Get Pro',
+                    icon: ['far', 'star'],
+                    position: 'bottom',
+                    onSelected: () => this.props.accountStore.getPro()
+                }
         ];
     }
 
