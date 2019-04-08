@@ -14,14 +14,17 @@ import { Pill } from '../common/pill';
 import { HeaderDetails } from './headers/header-details';
 import {
     ExchangeCard,
-    ContentLabelBlock,
     ExchangeCardProps,
-    ContentLabel,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
 } from './exchange-card';
 import { CollapsibleSection } from '../common/collapsible-section';
-import { ExternalContent, Markdown } from '../common/external-content';
+import {
+    ContentLabel,
+    ContentLabelBlock,
+    ExternalContent,
+    Markdown
+} from '../common/text-content';
 import { DocsLink } from '../common/docs-link';
 
 interface ExchangeResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {

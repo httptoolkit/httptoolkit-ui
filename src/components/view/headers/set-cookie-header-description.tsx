@@ -8,7 +8,7 @@ import {
     distanceInWordsToNow
 } from 'date-fns';
 
-import { Content } from '../../common/external-content';
+import { Content } from '../../common/text-content';
 
 function getExpiryExplanation(date: Date) {
     const exactTime = formatDate(date, 'YYYY-MM-DD [at] HH:mm:ss');

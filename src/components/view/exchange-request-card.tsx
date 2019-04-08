@@ -13,16 +13,18 @@ import { ApiExchange, Parameter } from '../../model/openapi/openapi';
 import {
     ExchangeCard,
     ExchangeCardProps,
-    ContentLabel,
-    ContentLabelBlock,
-    ContentMonoValue,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
 } from './exchange-card';
 import { Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
 import { OptionalImage } from '../common/optional-image';
-import { ExternalContent } from '../common/external-content';
+import {
+    ContentLabel,
+    ContentLabelBlock,
+    ContentMonoValue,
+    ExternalContent
+} from '../common/text-content';
 import { DocsLink } from '../common/docs-link';
 import { HeaderDetails } from './headers/header-details';
 import { joinAnd } from '../../util';

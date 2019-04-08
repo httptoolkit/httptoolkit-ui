@@ -50,32 +50,6 @@ export const ExchangeCard = styled(CollapsibleCard).attrs({
     }
 `;
 
-export const ContentLabel = styled.h2`
-    text-transform: uppercase;
-    opacity: 0.5;
-
-    display: inline-block;
-`;
-
-export const ContentLabelBlock = styled(ContentLabel)`
-    padding: 3px 0 11px;
-    display: block;
-    box-sizing: border-box;
-    min-height: 31px;
-`;
-
-export const ContentMonoValue = styled.div`
-    padding: 3px 0 11px;
-    width: 100%;
-
-    &:last-child {
-        padding-bottom: 0;
-    }
-
-    font-family: ${p => p.theme.monoFontFamily};
-    word-break: break-all;
-`;
-
 const LoadingCardContent = styled.div<{ height?: string }>`
     ${p => p.height && css`
         height: ${p.height};

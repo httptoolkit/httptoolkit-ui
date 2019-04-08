@@ -3,7 +3,7 @@ import * as React from 'react';
 import { parseSource } from '../../../model/sources';
 import { getHeaderDocs } from '../../../model/http-docs';
 
-import { Content } from '../../common/external-content';
+import { Content } from '../../common/text-content';
 
 export const UserAgentHeaderDescription = (p: { value: string }) => {
     const { description } = parseSource(p.value);

@@ -7,6 +7,36 @@ import { suggestionIconHtml, warningIconHtml } from '../../icons';
 
 import { fromMarkdown } from '../../model/markdown';
 
+export const ContentLabel = styled.h2`
+    text-transform: uppercase;
+    opacity: 0.5;
+
+    display: inline-block;
+`;
+
+export const ContentValue = styled.div`
+    display: inline-block;
+`;
+
+export const ContentLabelBlock = styled(ContentLabel)`
+    padding: 3px 0 11px;
+    display: block;
+    box-sizing: border-box;
+    min-height: 31px;
+`;
+
+export const ContentMonoValue = styled.div`
+    padding: 3px 0 11px;
+    width: 100%;
+
+    &:last-child {
+        padding-bottom: 0;
+    }
+
+    font-family: ${p => p.theme.monoFontFamily};
+    word-break: break-all;
+`;
+
 // Takes some HTML (in an __html object) and renders it with nice
 // default formatting. THIS MUST ONLY BE CALLED WITH SANITIZED HTML.
 // The __html format is intended to enforce this - those objects

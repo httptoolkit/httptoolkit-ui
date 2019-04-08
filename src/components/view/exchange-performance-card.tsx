@@ -21,13 +21,12 @@ import {
 import {
     ExchangeCard,
     ExchangeCardProps,
-    ContentLabelBlock,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
 } from './exchange-card';
 import { ProPill, Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
-import { Markdown } from '../common/external-content';
+import { ContentLabelBlock, Markdown } from '../common/text-content';
 
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
