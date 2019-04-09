@@ -121,7 +121,8 @@ const ListContainer = styled.div`
         }
 
         &.selected {
-            background-color: ${p => p.theme.popBackground};
+            background-color: ${p => p.theme.highlightBackground};
+            color: ${p => p.theme.highlightColor};
             font-weight: bold;
         }
 

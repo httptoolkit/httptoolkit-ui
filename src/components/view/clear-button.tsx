@@ -21,6 +21,7 @@ export const ClearArrayButton = styled(observer((props: {
 }))`
     border: none;
     background-color: transparent;
+    color: ${p => p.theme.mainColor};
     font-size: 20px;
     cursor: pointer;
     padding: 5px 10px;

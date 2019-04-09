@@ -25,7 +25,7 @@ const PlanPickerModal = styled.dialog`
 
     display: flex;
     flex-direction: column;
-    color: ${p => p.theme.popBackground};
+    color: ${p => p.theme.mainBackground};
 
     background-color: transparent;
     border: none;
@@ -89,7 +89,8 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
     }
 
     ${p => p.highlighted ? css`
-        background-color: ${p => p.theme.popBackground};
+        background-color: ${p => p.theme.mainBackground};
+        color: ${p => p.theme.mainColor};
 
         z-index: 1;
         margin: -15px -5px -15px 0;
@@ -98,7 +99,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
             padding: 37.5px 0;
         }
     ` : css`
-        background-color: ${p => p.theme.mainBackground};
+        background-color: ${p => p.theme.mainLowlightBackground};
         opacity: 0.9;
     `}
 

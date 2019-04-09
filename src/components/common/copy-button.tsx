@@ -23,6 +23,7 @@ export const CopyButton = styled((p: CopyProps) =>
     /> : null
 )`
     cursor: pointer;
+    color: ${p => p.theme.mainColor};
 
     &:hover {
         color: ${p => p.theme.popColor};

@@ -18,7 +18,8 @@ import { ContentEditor, getContentEditorName } from '../editor/content-editor';
 const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
     border-top: solid 1px ${p => p.theme.containerBorder};
-    background-color: ${p => p.theme.popBackground};
+    background-color: ${p => p.theme.highlightBackground};
+    color: ${p => p.theme.highlightColor};
 
     .monaco-editor-overlaymessage {
         display: none;

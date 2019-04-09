@@ -18,11 +18,14 @@ export const lightTheme = {
     mainLowlightBackground: '#eaeaea',
     mainColor: '#222',
 
-    primaryInputColor: '#1f83e0',
-
     pillContrast: 0.8,
 
-    popBackground: '#ffffff',
+    primaryInputBackground: '#1f83e0',
+    primaryInputColor: '#fafafa',
+
+    highlightBackground: '#ffffff',
+    highlightColor: '#222',
+
     popColor: '#e1421f',
 
     containerBackground: '#d8e2e6',
@@ -30,6 +33,8 @@ export const lightTheme = {
     containerBorder: '#888',
 
     monacoTheme: 'vs',
+
+    modalGradient: 'radial-gradient(#40404b, #111118)',
 
     ...fontSizes,
 
@@ -41,14 +46,17 @@ export const darkTheme = {
     monoFontFamily: "'Fira Mono', monospace",
 
     mainBackground: '#222222',
-    mainLowlightBackground: '#3f3f3f',
+    mainLowlightBackground: '#303030',
     mainColor: '#efefef',
-
-    primaryInputColor: '#1f83e0',
 
     pillContrast: 0.8,
 
-    popBackground: '#111111',
+    primaryInputBackground: '#0868c1',
+    primaryInputColor: '#fafafa',
+
+    highlightBackground: '#111111',
+    highlightColor: '#efefef',
+
     popColor: '#e1421f',
 
     containerBackground: '#3c3c41',
@@ -56,6 +64,8 @@ export const darkTheme = {
     containerBorder: '#000000',
 
     monacoTheme: 'vs-dark',
+
+    modalGradient: 'radial-gradient(#ffffff,#9c9c9c)',
 
     ...fontSizes,
 

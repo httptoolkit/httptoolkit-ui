@@ -7,7 +7,8 @@ export const ModalOverlay = styled.div<{ opacity?: number }>`
     bottom: 0;
     left: 0;
 
-    background: radial-gradient(#40404b, #111118) rgba(34,34,40,0.8);
+    background: ${p => p.theme.modalGradient};
+
     z-index: 10;
     opacity: ${p => p.opacity || 0.9};
 `;

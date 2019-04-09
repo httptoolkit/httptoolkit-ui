@@ -24,6 +24,8 @@ const ErrorOverlay = styled((props: {
     align-items: center;
     justify-content: center;
 
+    color: ${p => p.theme.mainColor};
+
     h1 {
         font-size: 300px;
         font-weight: bold;
@@ -40,6 +42,7 @@ const ErrorOverlay = styled((props: {
         display: block;
         margin: 0 auto 40px;
 
+        color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.mainBackground};
         box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
         border-radius: 4px;

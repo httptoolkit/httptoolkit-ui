@@ -9,12 +9,13 @@ export const Button = styled.button`
 
     font-family: ${p => p.theme.fontFamily};
     font-size: ${p => p.theme.headingSize};
-    color: #fff;
+    color: ${p => p.theme.primaryInputColor};
 
     display: block;
     text-decoration: none;
     text-align: center;
     font-weight: inherit;
+    line-height: normal;
 
     &[disabled] {
         cursor: default;
@@ -22,7 +23,7 @@ export const Button = styled.button`
     }
 
     &:not([disabled]) {
-        background-color: ${p => p.theme.primaryInputColor};
+        background-color: ${p => p.theme.primaryInputBackground};
         &:hover {
             background-image: linear-gradient(transparent, rgba(0,0,0,.05) 40%, rgba(0,0,0,.1));
         }
