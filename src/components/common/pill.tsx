@@ -51,8 +51,6 @@ export const Pill = styled.span`
     font-weight: bold;
     word-spacing: 3px;
 
-    transition: color 0.1s;
-
     color: ${(p: { color?: string, theme?: Theme }) =>
         getTextColor(p.color || getDefaultColor(p.theme!), p.theme!)
     };
