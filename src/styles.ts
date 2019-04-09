@@ -20,6 +20,8 @@ export const lightTheme = {
 
     primaryInputColor: '#1f83e0',
 
+    pillContrast: 0.8,
+
     popBackground: '#ffffff',
     popColor: '#e1421f',
 
@@ -43,6 +45,8 @@ export const darkTheme = {
     mainColor: '#efefef',
 
     primaryInputColor: '#1f83e0',
+
+    pillContrast: 0.8,
 
     popBackground: '#111111',
     popColor: '#e1421f',

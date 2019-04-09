@@ -5,23 +5,31 @@ import { inject } from 'mobx-react';
 import { styled, Theme } from '../../styles';
 import { UiStore } from '../../model/ui-store';
 
-function needsInversion(color: string) {
-    return color && polished.getLuminance(color) > 0.45;
+// Given a base colour, returns a constrasting (but related hue) text colour
+function getTextColor(baseColor: string, theme: Theme) {
+    // Effective BG colour (as it's very transparent - assume on a main-ish bg)
+    const bgColor = polished.mix(0.3, baseColor, theme.mainBackground);
+
+    const lightOption = polished.setLightness(theme.pillContrast, baseColor);
+    const darkOption = polished.setLightness(1 - theme.pillContrast, baseColor);
+
+    return polished.rgba(polished.readableColor(
+        bgColor,
+        darkOption,
+        lightOption,
+    ), theme.pillContrast);
 }
 
-function getColor(color: string) {
-    if (needsInversion(color)) {
-        return polished.setLightness(0.25, color);
-    } else {
-        return color;
-    }
+// Given a base colour, returns a semi-transparent background
+function getBackgroundColor(baseColor: string) {
+    return polished.rgba(baseColor, 0.3);
 }
 
-function getBackgroundColor(color: string) {
-    if (needsInversion(color)) {
-        return polished.darken(0.2, polished.rgba(color, 0.4));
+function getDefaultColor(theme: Theme) {
+    if (polished.getLuminance(theme.mainBackground) > 0.5) {
+        return polished.darken(0.4, theme.mainBackground);
     } else {
-        return polished.lighten(0.2, polished.rgba(color, 0.2));
+        return polished.lighten(0.4, theme.mainBackground);
     }
 }
 
@@ -46,11 +54,11 @@ export const Pill = styled.span`
     transition: color 0.1s;
 
     color: ${(p: { color?: string, theme?: Theme }) =>
-        getColor(p.color || polished.lighten(0.1, p.theme!.mainColor))
+        getTextColor(p.color || getDefaultColor(p.theme!), p.theme!)
     };
 
     background-color: ${(p: { color?: string, theme?: Theme }) =>
-        getBackgroundColor(p.color || polished.lighten(0.1, p.theme!.mainColor))
+        getBackgroundColor(p.color || getDefaultColor(p.theme!))
     };
 `;
 
