@@ -3,6 +3,8 @@ import * as React from 'react';
 import * as logo from '../images/logo-stacked.svg';
 import { styled, css, Theme } from '../styles';
 import { FontAwesomeIcon } from '../icons';
+import { UnstyledButton } from './common/inputs';
+import { StyledComponent } from 'styled-components';
 
 export interface SidebarItem {
     name: string;
@@ -55,7 +57,9 @@ const SidebarLogo = styled.img.attrs({
     ${sidebarItemStyles}
 `
 
-const SidebarSelectableItem = styled.div<{ selected: boolean }>`
+const SidebarSelectableItem = styled(
+    UnstyledButton as StyledComponent<"button", Theme, { selected: boolean }>
+)`
     ${sidebarItemStyles}
 
     width: calc(100% + 2px);
@@ -63,6 +67,10 @@ const SidebarSelectableItem = styled.div<{ selected: boolean }>`
 
     cursor: pointer;
     user-select: none;
+    &:hover, &:focus {
+        outline: none;
+        color: ${p => p.theme.popColor};
+    }
 
     border-width: 0 5px;
     border-style: solid;
@@ -72,8 +80,7 @@ const SidebarSelectableItem = styled.div<{ selected: boolean }>`
 
     ${(p) => p.selected && css`
         opacity: 1;
-        /* TODO: ! here is a bit of a hack to make the prop typings work */
-        border-right-color: ${p.theme!.popColor};
+        border-right-color: ${p.theme.popColor};
     `}
 
     > svg {

@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { FontAwesomeIcon } from '../../icons';
 import { styled, css } from '../../styles';
+import { UnstyledButton } from './inputs';
 
 export const TabbedOptionsContainer = styled.div`
     display: flex;
@@ -16,7 +17,7 @@ export const TabsContainer = styled((p: {
     onClick: (tabValue: any) => void,
     isSelected: (value: any) => boolean,
     children: Array<React.ReactElement<any, typeof Tab>>
-}) => <div
+}) => <nav
     {...p}
     onClick={(event: TabClickEvent) => {
         if (event.tabValue) p.onClick(event.tabValue);
@@ -29,9 +30,8 @@ export const TabsContainer = styled((p: {
             })
         )
     }
-</div>)`
+</nav>)`
     width: 80px;
-    padding-right: 20px;
     border-right: solid 2px ${p => p.theme.containerBackground};
 
     display: flex;
@@ -47,7 +47,7 @@ export const Tab = styled((p: {
     value: any,
     children: React.ReactNode
 }) =>
-    <div
+    <UnstyledButton
         className={p.className}
         onClick={(event: TabClickEvent) => {
             // Attach our value to the event before it bubbles to the container
@@ -56,7 +56,7 @@ export const Tab = styled((p: {
     >
         <FontAwesomeIcon icon={p.icon} size='2x' />
         { p.children }
-    </div>
+    </UnstyledButton>
 )`
     display: flex;
     flex-direction: column;
@@ -65,16 +65,25 @@ export const Tab = styled((p: {
 
     width: 100%;
     font-size: ${p => p.theme.textSize};
-    padding: 10px 0;
     box-sizing: border-box;
 
+    padding: 10px 20px 10px 0;
+
     cursor: pointer;
-    &:hover {
-        font-weight: bold;
+    user-select: none;
+    &:hover, &:focus {
+        outline: none;
+        color: ${p => p.theme.popColor};
     }
 
+    opacity: 0.6;
     ${p => p.selected && css`
-        color: ${p.theme.popColor};
+        opacity: 1;
+        font-weight: bold;
+        border-right: solid 3px ${p.theme.popColor};
+        padding-right: 22px;
+        position: relative;
+        right: -2px;
     `}
 
     > svg {

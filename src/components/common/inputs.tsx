@@ -1,5 +1,14 @@
 import { styled } from "../../styles";
 
+export const UnstyledButton = styled.button`
+    /* Reset styles that get broken because <button> overrides them: */
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+`;
+
 export const Button = styled.button`
     -webkit-appearance: none;
     cursor: pointer;
