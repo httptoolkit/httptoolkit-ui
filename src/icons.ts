@@ -35,6 +35,9 @@ import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons/faExcla
 import { faLightbulb } from '@fortawesome/free-solid-svg-icons/faLightbulb';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
 import { faStar } from '@fortawesome/free-regular-svg-icons/faStar';
+import { faSun } from '@fortawesome/free-solid-svg-icons/faSun';
+import { faMoon } from '@fortawesome/free-solid-svg-icons/faMoon';
+import { faAdjust } from '@fortawesome/free-solid-svg-icons/faAdjust';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -88,6 +91,9 @@ library.add(
     faLightbulb,
     faCog,
     faStar,
+    faSun,
+    faMoon,
+    faAdjust,
 
     faChrome,
     faFirefox,

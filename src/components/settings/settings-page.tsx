@@ -8,18 +8,24 @@ import {
 } from 'date-fns';
 
 import { Omit, WithInjected } from '../../types';
-import { styled, css } from '../../styles';
+import { styled, css, Theme, ThemeName } from '../../styles';
 import { firstMatch } from '../../util';
 
 import { AccountStore } from '../../model/account/account-store';
+import { UiStore } from '../../model/ui-store';
 
 import { CollapsibleCard, CollapsibleCardProps } from '../common/card';
 import { ContentLabel, ContentValue } from '../common/text-content';
 import { Pill } from '../common/pill';
 import { Button, ButtonLink } from '../common/inputs';
+import { TabbedOptionsContainer, Tab, TabsContainer } from '../common/tabbed-options';
+import { BaseEditor } from '../editor/base-editor';
+
+import * as amIUsingHtml from '../../amiusing.html';
 
 interface SettingsPageProps {
     accountStore: AccountStore;
+    uiStore: UiStore;
 }
 
 type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'performance';
@@ -37,6 +43,10 @@ const SettingPageContainer = styled.section`
     max-width: 800px;
     overflow-y: auto;
     position: relative;
+
+    * {
+        transition: background-color 0.3s, margin-bottom 0.1s;
+    }
 `;
 
 const SettingsHeading = styled.h1`
@@ -74,7 +84,27 @@ const AccountContactFooter = styled.div`
     }
 `
 
+const ThemeColors = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 3px solid #999;
+    margin: 0 20px;
+`;
+
+const ThemeColorBlock = styled.div<{ themeColor: keyof Theme }>`
+    width: 60px;
+    height: 60px;
+    background-color: ${p => p.theme[p.themeColor]};
+`;
+
+const EditorContainer = styled.div`
+    border: 3px solid #999;
+    height: 300px;
+    flex-grow: 1;
+`;
+
 @inject('accountStore')
+@inject('uiStore')
 @observer
 class SettingsPage extends React.Component<SettingsPageProps> {
 
@@ -95,6 +125,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
     }
 
     render() {
+        const { uiStore } = this.props;
         const {
             isPaidUser,
             userEmail,
@@ -205,6 +236,63 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     Questions? Email <strong>billing@httptoolkit.tech</strong>
                 </AccountContactFooter>
             </CollapsibleCard>
+
+            <CollapsibleCard {...this.cardProps.themes}>
+                <header>
+                    <h1>Themes</h1>
+                </header>
+                <TabbedOptionsContainer>
+                    <TabsContainer
+                        onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
+                        isSelected={(value: ThemeName | Theme) => {
+                            if (typeof value === 'string') {
+                                return uiStore.themeName === value
+                            } else {
+                                return _.isEqual(value, uiStore.theme);
+                            }
+                        }}
+                    >
+                        <Tab
+                            icon={['fas', 'sun']}
+                            value='light'
+                        >
+                            Light
+                        </Tab>
+                        <Tab
+                            icon={['fas', 'moon']}
+                            value='dark'
+                        >
+                            Dark
+                        </Tab>
+                        <Tab
+                            icon={['fas', 'adjust']}
+                            value={'high-contrast'}
+                        >
+                            High Contrast
+                        </Tab>
+                    </TabsContainer>
+                    <ThemeColors>
+                        <ThemeColorBlock themeColor='mainColor' />
+                        <ThemeColorBlock themeColor='mainBackground' />
+                        <ThemeColorBlock themeColor='highlightColor' />
+                        <ThemeColorBlock themeColor='highlightBackground' />
+                        <ThemeColorBlock themeColor='primaryInputColor' />
+                        <ThemeColorBlock themeColor='primaryInputBackground' />
+                        <ThemeColorBlock themeColor='containerWatermark' />
+                        <ThemeColorBlock themeColor='containerBorder' />
+                        <ThemeColorBlock themeColor='mainLowlightBackground' />
+                        <ThemeColorBlock themeColor='containerBackground' />
+                    </ThemeColors>
+
+                    <EditorContainer>
+                        <BaseEditor
+                            language='html'
+                            theme={uiStore.theme.monacoTheme}
+                            defaultValue={amIUsingHtml}
+                        />
+                    </EditorContainer>
+                </TabbedOptionsContainer>
+            </CollapsibleCard>
         </SettingPageContainer>;
     }
 }
@@ -212,6 +300,6 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 // Annoying cast required to handle the store prop nicely in our types
 const InjectedSettingsPage = SettingsPage as unknown as WithInjected<
     typeof SettingsPage,
-    'accountStore'
+    'accountStore' | 'uiStore'
 >;
 export { InjectedSettingsPage as SettingsPage };
