@@ -18,6 +18,7 @@ export const lightTheme = {
     mainLowlightBackground: '#eaeaea',
     mainColor: '#222',
 
+    lowlightTextOpacity: 0.8,
     pillContrast: 0.8,
 
     primaryInputBackground: '#1f83e0',
@@ -53,6 +54,7 @@ export const darkTheme = {
     mainLowlightBackground: '#303030',
     mainColor: '#efefef',
 
+    lowlightTextOpacity: 0.6,
     pillContrast: 0.8,
 
     primaryInputBackground: '#0868c1',
@@ -91,7 +93,49 @@ export const darkTheme = {
     `
 };
 
-export type Theme = typeof lightTheme | typeof darkTheme;
+export const highContrastTheme = {
+    fontFamily: 'Lato, Arial, sans-serif',
+    monoFontFamily: "'Fira Mono', monospace",
+
+    mainBackground: '#000000',
+    mainLowlightBackground: '#262626',
+    mainColor: '#ffffff',
+
+    lowlightTextOpacity: 0.8,
+    pillContrast: 0.95,
+
+    primaryInputBackground: '#0868c1',
+    primaryInputColor: '#ffffff',
+
+    highlightBackground: '#ffffff',
+    highlightColor: '#000',
+
+    popColor: '#e1421f',
+
+    containerBackground: '#404045',
+    containerWatermark: '#a0a0b0',
+    containerBorder: '#000000',
+
+    linkColor: '#8699ff',
+    visitedLinkColor: '#ac7ada',
+
+    monacoTheme: 'hc-black',
+
+    modalGradient: '#c0c0c0',
+
+    ...fontSizes,
+
+    globalCss: ``
+};
+
+export const Themes = {
+    'light': lightTheme,
+    'dark': darkTheme,
+    'high-contrast': highContrastTheme
+};
+
+export type ThemeName = keyof typeof Themes;
+export type Theme = typeof Themes[ThemeName];
 
 const {
     default: styled,

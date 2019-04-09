@@ -45,7 +45,7 @@ const HeaderDocsLink = styled(DocsLink)`
 `;
 
 const EmptyState = styled.div`
-    opacity: 0.5;
+    opacity: ${p => p.theme.lowlightTextOpacity};
     font-style: italic;
 `;
 

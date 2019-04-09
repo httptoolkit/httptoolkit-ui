@@ -77,7 +77,7 @@ const ParamName = styled.span`
 
 const UnsetValue = styled.span`
     font-style: italic;
-    opacity: 0.5;
+    opacity: ${p => p.theme.lowlightTextOpacity};
     margin-right: 5px;
 `;
 
