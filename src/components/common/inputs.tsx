@@ -9,7 +9,14 @@ export const Button = styled.button`
 
     font-family: ${p => p.theme.fontFamily};
     font-size: ${p => p.theme.headingSize};
-    color: ${p => p.theme.primaryInputColor};
+
+    /*
+     * Need both to ensure link button colours have higher
+     * specificity than the a:visited default.
+     */
+    &, &:visited {
+        color: ${p => p.theme.primaryInputColor};
+    }
 
     display: block;
     text-decoration: none;

@@ -8,7 +8,7 @@ const fontSizes = {
     textSize: '16px',
     headingSize: '22px',
     loudHeadingSize: '40px',
-}
+};
 
 export const lightTheme = {
     fontFamily: 'Lato, Arial, sans-serif',
@@ -31,6 +31,10 @@ export const lightTheme = {
     containerBackground: '#d8e2e6',
     containerWatermark: '#a0afaf',
     containerBorder: '#888',
+
+    // These are the same as the standard defaults
+    linkColor: '#0000EE',
+    visitedLinkColor: '#551A8B',
 
     monacoTheme: 'vs',
 
@@ -62,6 +66,9 @@ export const darkTheme = {
     containerBackground: '#3c3c41',
     containerWatermark: '#757580',
     containerBorder: '#000000',
+
+    linkColor: '#8699ff',
+    visitedLinkColor: '#ac7ada',
 
     monacoTheme: 'vs-dark',
 
@@ -130,6 +137,14 @@ export const GlobalStyles = createGlobalStyle`
 
     .slow-spin {
         animation: fa-spin 5s infinite linear;
+    }
+
+    a {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
     }
 
     /* Override Auth0's style choices to match the rest of the UI */
