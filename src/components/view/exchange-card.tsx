@@ -29,25 +29,8 @@ const cardDirectionCss = (direction?: string) =>
         border-left: solid 5px ${p => p.theme.containerBorder};
     ` : '';
 
-export const ExchangeCard = styled(CollapsibleCard).attrs({
-    tabIndex: 0
-})`
+export const ExchangeCard = styled(CollapsibleCard)`
     ${(p: ExchangeCardProps) => cardDirectionCss(p.direction)};
-
-    &:focus {
-        ${CollapseIcon} {
-            color: ${p => p.theme.popColor};
-        }
-    }
-
-    &:focus-within {
-        header h1 {
-            color: ${p => p.theme.popColor};
-        }
-
-        outline: none;
-        border-color: ${p => p.theme.popColor};
-    }
 `;
 
 const LoadingCardContent = styled.div<{ height?: string }>`

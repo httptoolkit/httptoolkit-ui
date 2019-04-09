@@ -122,6 +122,21 @@ const CollapsibleCardContainer = styled(MediumCard)`
             margin-bottom: -16px;
         }
     `}
+
+    &:focus {
+        ${CollapseIcon} {
+            color: ${p => p.theme.popColor};
+        }
+    }
+
+    &:focus-within {
+        header h1 {
+            color: ${p => p.theme.popColor};
+        }
+
+        outline: none;
+        border-color: ${p => p.theme.popColor};
+    }
 `;
 
 @observer
@@ -136,6 +151,7 @@ export class CollapsibleCard extends React.Component<
 
         return <CollapsibleCardContainer
             {..._.omit(this.props, ['onCollapseToggled'])}
+            tabIndex={0}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}
         >{
