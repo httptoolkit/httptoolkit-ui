@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { FontAwesomeIcon } from '../../icons';
 import { styled, css } from '../../styles';
+import { omit } from 'lodash';
 import { UnstyledButton } from './inputs';
 
 export const TabbedOptionsContainer = styled.div`
@@ -18,7 +19,7 @@ export const TabsContainer = styled((p: {
     isSelected: (value: any) => boolean,
     children: Array<React.ReactElement<any, typeof Tab>>
 }) => <nav
-    {...p}
+    {...omit(p, 'isSelected')}
     onClick={(event: TabClickEvent) => {
         if (event.tabValue) p.onClick(event.tabValue);
     }}
@@ -26,6 +27,7 @@ export const TabsContainer = styled((p: {
     {
         p.children.map((tab) =>
             React.cloneElement(tab, {
+                key: tab.props.value,
                 selected: p.isSelected(tab.props.value)
             })
         )
