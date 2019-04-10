@@ -8,18 +8,19 @@ import * as ReactDOM from 'react-dom';
 import { Provider } from 'mobx-react';
 
 import { GlobalStyles } from './styles';
-import { App } from './components/app';
-import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
-import { ErrorBoundary } from './components/error-boundary';
-import { InterceptionStore } from './model/interception-store';
-import { AccountStore } from './model/account/account-store';
-import { triggerServerUpdate } from './model/htk-client';
+import { delay } from './util';
 import { initTracking } from './tracking';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
+
+import { InterceptionStore } from './model/interception-store';
+import { AccountStore } from './model/account/account-store';
+import { triggerServerUpdate } from './model/htk-client';
 import { UiStore } from './model/ui-store';
 
-import { delay } from './util';
+import { App } from './components/app';
+import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
+import { ErrorBoundary } from './components/error-boundary';
 
 const APP_ELEMENT_SELECTOR = '#app';
 
