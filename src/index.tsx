@@ -17,6 +17,8 @@ import { initTracking } from './tracking';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
 
+import { delay } from './util';
+
 const APP_ELEMENT_SELECTOR = '#app';
 
 registerUpdateWorker({ scope: '/' })
@@ -41,7 +43,11 @@ initTracking();
 
 const accountStore = new AccountStore();
 const interceptionStore = new InterceptionStore();
-interceptionStore.startServer().then(() => {
+
+const appStartupPromise = interceptionStore.startServer();
+
+// Once the app is loaded, show the app
+appStartupPromise.then(() => {
     // We now know that the server is running - tell it to check for updates
     triggerServerUpdate();
 
@@ -56,8 +62,21 @@ interceptionStore.startServer().then(() => {
             </ThemeProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR))
-}).catch((e) => {
+});
+
+const STARTUP_TIMEOUT = 10000;
+
+// If loading fails, or we hit a timeout, show an error (but if we timeout,
+// don't stop trying to load in the background anyway). If we do eventually
+// succeed later on, the above render() will still happen and hide the error.
+Promise.race([
+    appStartupPromise,
+    delay(STARTUP_TIMEOUT).then(() => { throw new Error('Failed to initialize application'); })
+]).catch((e) => {
     document.dispatchEvent(new Event('load:failed'));
-    console.error('Failed to initialize application.', e);
     reportError(e);
+
+    appStartupPromise.then(() => {
+        reportError('Successfully initialized application, but after timeout')
+    });
 });

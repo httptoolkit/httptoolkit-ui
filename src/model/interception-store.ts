@@ -17,15 +17,15 @@ configure({ enforceActions: 'observed' });
 // all undefined/nullable fields have been set.
 export type ActivatedStore = { [P in keyof InterceptionStore]: NonNullable<InterceptionStore[P]> };
 
-// Start the server, with slowly decreasing retry frequency. Total time to failure about 10s.
-// Sum calculation: (initialDelayMs * (1 - delayRatio ^ maxRetries))/(1 - delayRatio)
-function startServer(server: Mockttp, retries = 10, delayMs = 250): Promise<void> {
+// Start the server, with slowly decreasing retry frequency (up to a limit).
+// Note that this never fails - any timeout to this process needs to happen elsewhere.
+function startServer(server: Mockttp, maxDelay = 1000, delayMs = 200): Promise<void> {
     return server.start().catch((e) => {
-        if (retries > 0) {
-            return delay(delayMs).then(() => startServer(server, retries - 1, delayMs * 1.3));
-        } else {
-            throw e;
-        }
+        console.log('Server initialization failed', e);
+        return delay(Math.min(delayMs, maxDelay))
+            .then(() =>
+                startServer(server, maxDelay, delayMs * 1.2)
+            );
     });
 }
 

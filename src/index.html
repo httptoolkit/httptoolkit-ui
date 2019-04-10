@@ -43,9 +43,14 @@
         }
 
         #app-loading-error {
-            margin-top: 460px;
+            margin-top: 500px;
             font-weight: bold;
             font-size: 40pt;
+        }
+
+        #app-loading-error-details {
+            margin-top: 10px;
+            font-size: 20pt;
         }
 
         #app {
@@ -107,9 +112,9 @@
 
             document.addEventListener('load:failed', function () {
                 setProgress(100);
-                errorElement.innerText = 'Could not start. Is the server running?';
+                errorElement.innerText = 'Failing to start. Is the server running?';
                 errorDetailsElement.innerHTML = 'This could be caused firewall issues, or a broken installation. ' +
-                    'Please <a href="https://github.com/httptoolkit/feedback/issues/new">file an issue</a>.';
+                    'Please <a href="https://github.com/httptoolkit/feedback/issues/new">file an issue</a>!';
             });
         }, 0);
     </script>
