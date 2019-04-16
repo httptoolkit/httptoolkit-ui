@@ -72,7 +72,7 @@ const PlanCycle = styled.span<{selected: boolean}>`
 const PricingTable = styled.div`
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
     margin-top: 20px;
     color: ${p => p.theme.mainColor};
 `;
@@ -103,7 +103,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
         opacity: 0.9;
     `}
 
-    width: 50%;
+    width: 40%;
 `;
 
 const TierHeader = styled.div`
@@ -235,17 +235,13 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             <em>All free features, and:</em>
                         </Feature>
                         <Feature>
-                            Deeper inspection of request/response data
+                            In-depth debugging integrations for 1400+ APIs, including AWS, Github and Stripe
                         </Feature>
                         <Feature>
-                            Security & performance analysis, warnings and metrics.
+                            Detailed performance, caching & compression analysis & warnings
                         </Feature>
                         <Feature>
-                            Import/export requests, responses,
-                            and code snippets.
-                        </Feature>
-                        <Feature>
-                            Customize with colour themes
+                            Light, dark & high-contrast UI themes
                         </Feature>
                         <Feature>
                             <strong>Support ongoing development!</strong>
