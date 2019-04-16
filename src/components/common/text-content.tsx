@@ -108,6 +108,14 @@ export const Content = styled.div`
         max-width: 100%;
     }
 
+    a[href] {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
+    }
+
     :last-child :last-child {
         margin-bottom: 0;
     }

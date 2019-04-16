@@ -183,14 +183,6 @@ export const GlobalStyles = createGlobalStyle`
         animation: fa-spin 5s infinite linear;
     }
 
-    a {
-        color: ${p => p.theme.linkColor};
-
-        &:visited {
-            color: ${p => p.theme.visitedLinkColor};
-        }
-    }
-
     /* Override Auth0's style choices to match the rest of the UI */
     .auth0-lock {
         font-family: ${p => p.theme.fontFamily} !important;

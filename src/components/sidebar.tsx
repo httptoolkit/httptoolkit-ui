@@ -96,10 +96,7 @@ const SidebarLink = styled.a<{ highlight?: true }>`
     ${sidebarItemStyles}
 
     ${(p) => p.highlight && css`
-        /* Need both to be more specific than a:visited */
-        &, &:visited {
-            color:  ${p.theme.popColor};
-        }
+        color:  ${p.theme.popColor};
         font-weight: bold;
     `};
     text-decoration: none;
