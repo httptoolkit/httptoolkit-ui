@@ -176,7 +176,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 header. This explicitly tells all caches that this response should
                 never be cached. It should never be persistently stored, should
                 be removed from any volatile/temporary storage as soon as possible,
-                and should requested fresh from the network in future.
+                and should be requested fresh from the network in future.
             `
         }
     }
@@ -191,7 +191,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 header. This explicitly tells all caches that this response should
                 never be cached. It should never be persistently stored, should
                 be removed from any volatile/temporary storage as soon as possible,
-                and should requested fresh from the network in future.
+                and should be requested fresh from the network in future.
 
                 :suggestion: This Pragma header is commonly supported, but officially
                 deprecated. It's typically better to use \`Cache-Control: no-store\` instead.
@@ -285,7 +285,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 with the expiry time calculated from the \`max-age\` directive. The Cache-Control
                 headers take precedence, so this will only be used by clients that don't
                 support that, but this could cause unpredictable behaviour. It's typically
-                better than ensure these values agree on a single expiry time.
+                better to ensure these values agree on a single expiry time.
             `;
         }
 
@@ -320,7 +320,7 @@ export function explainCacheability(exchange: HttpExchange): (
 
                 :suggestion: The Expires header is commonly supported, but officially deprecated.
                 It's typically better to use \`Cache-Control: max-age=<seconds>\` instead,
-                or as well.
+                or in addition.
             `
         };
     }
@@ -861,9 +861,9 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
         responseCCDirectives['stale-while-revalidate'] !== undefined ? dedent`
             The response includes a \`stale-while-revalidate\` directive set to ${
                 responseCCDirectives['stale-while-revalidate']
-            } seconds. This means that after the response has expired, new requests
+            } seconds. This means that after the response has expired new requests
             should trigger revalidation, but the stale content can still be served in
-            the meantime, for ${
+            the meantime for ${
                 formatDuration(responseCCDirectives['stale-while-revalidate']!)
             } extra.
         ` :
