@@ -9,7 +9,6 @@ import {
 
 import { Omit, WithInjected } from '../../types';
 import { styled, css, Theme, ThemeName } from '../../styles';
-import { firstMatch } from '../../util';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui-store';
@@ -165,10 +164,10 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     </ContentLabel>
                     <ContentValue>
                         {
-                            firstMatch<string | JSX.Element>(
-                                [() => sub.status === 'active', 'Active'],
-                                [() => sub.status === 'trialing', 'Active (trial)'],
-                                [() => sub.status === 'past_due', <>
+                            ({
+                                'active': 'Active',
+                                'trialing': 'Active (trial)',
+                                'past_due': <>
                                     Active <Pill
                                         color='#fff'
                                         title={dedent`
@@ -178,9 +177,9 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                     >
                                         PAST DUE
                                     </Pill>
-                                </>],
-                                [() => sub.status === 'deleted', 'Cancelled'],
-                            ) || 'Unknown'
+                                </>,
+                                'deleted': 'Cancelled'
+                            }[sub.status]) || 'Unknown'
                         }
                     </ContentValue>
 
@@ -193,12 +192,12 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
                     <ContentLabel>
                         {
-                            firstMatch(
-                                [() => sub.status === 'active', 'Next renews'],
-                                [() => sub.status === 'trialing', 'Renews'],
-                                [() => sub.status === 'past_due', 'Next payment attempt'],
-                                [() => sub.status === 'deleted', 'Ends'],
-                            ) || 'Current period ends'
+                            ({
+                                'active': 'Next renews',
+                                'trialing': 'Renews',
+                                'past_due': 'Next payment attempt',
+                                'deleted': 'Ends',
+                            }[sub.status]) || 'Current period ends'
                         }
                     </ContentLabel>
                     <ContentValue>
