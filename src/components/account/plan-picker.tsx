@@ -178,12 +178,16 @@ const PlanFooter = styled.div`
     color: ${p => p.theme.mainBackground};
     font-size: ${p => p.theme.textSize};
 
-    margin-top: 40px;
+    margin-top: 30px;
     text-align: center;
 
-    > a {
+    a {
         color: ${p => p.theme.mainBackground};
         font-weight: bold;
+    }
+
+    p {
+        margin-top: 10px;
     }
 `;
 
@@ -226,7 +230,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <TierPriceCaveats>
                             plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
-                        <TierLicense>
+                        <TierLicense title='Licensed for a specific person. See the terms of service for more details.'>
                             Personal user account
                         </TierLicense>
                     </TierPriceBlock>
@@ -263,7 +267,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <TierPriceCaveats>
                             plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
-                        <TierLicense>
+                        <TierLicense title='Licensed for many individuals, and may be transferred. See the terms of service for more details.'>
                             Team account
                         </TierLicense>
                     </TierPriceBlock>
@@ -297,7 +301,14 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
             />
 
             <PlanFooter>
-                Logged in as { email }. <a href='#' onClick={onLogOut}>Log out</a>
+                <p>
+                    Logged in as { email }. <a href='#' onClick={onLogOut}>Log out</a>
+                </p>
+                <p>
+                    By subscribing to a paid plan, you accept <a href="https://httptoolkit.tech/terms-of-service">
+                        the HTTP Toolkit Terms of Service
+                    </a>.
+                </p>
             </PlanFooter>
         </PlanPickerModal>
     }
