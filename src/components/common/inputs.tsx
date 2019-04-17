@@ -1,4 +1,6 @@
-import { styled } from "../../styles";
+
+import { StyledComponent } from "styled-components";
+import { styled, Theme } from "../../styles";
 
 export const UnstyledButton = styled.button`
     /* Reset styles that get broken because <button> overrides them: */
@@ -7,7 +9,7 @@ export const UnstyledButton = styled.button`
     font-family: inherit;
     font-size: inherit;
     color: inherit;
-`;
+` as StyledComponent<"button", Theme>;
 
 export const Button = styled.button`
     -webkit-appearance: none;

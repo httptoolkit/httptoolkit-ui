@@ -27,7 +27,7 @@ import {
 import { ProPill, Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
 import { ContentLabelBlock, Markdown } from '../common/text-content';
-
+import { UnstyledButton } from '../common/inputs';
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
@@ -36,6 +36,47 @@ interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children
 
 const PerformanceProPill = styled(ProPill)`
     margin-right: auto;
+`;
+
+const SalesPitch = styled.div`
+    padding: 20px 25%;
+    margin: 0 -20px -20px -20px;
+    background-color: ${p => p.theme.mainLowlightBackground};
+    box-shadow: inset 0px 12px 8px -10px rgba(0,0,0,0.15);
+
+    p {
+        color: ${p => p.theme.mainColor};
+        line-height: 1.2;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+`;
+
+const GetProButton = styled(UnstyledButton)`
+    width: 120px;
+    box-sizing: border-box;
+    padding: 20px;
+
+    margin: 0 auto;
+
+    cursor: pointer;
+    user-select: none;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    font-weight: bold;
+    color: ${p => p.theme.popColor};
+    background-color: ${p => p.theme.highlightBackground};
+    border-radius: 4px;
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.3);
+
+    > svg {
+        margin-bottom: 5px;
+    }
 `;
 
 function sigFig(num: number, figs: number): number {
@@ -78,9 +119,17 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
                 <CachingPerformance exchange={exchange} />
             </div>
         :
-            <div>
-                <button onClick={getPro}>Buy HTTP Toolkit Pro</button>
-            </div>
+            <SalesPitch>
+                <p>
+                    See timing info, and dive into the compression & caching of every exchange,
+                    for a full performance overview.
+                </p>
+
+                <GetProButton onClick={getPro}>
+                    <FontAwesomeIcon icon={['far', 'star']} size='2x' />
+                    Get HTTP Toolkit Pro
+                </GetProButton>
+            </SalesPitch>
         }
     </ExchangeCard>;
 }));
