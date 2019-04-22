@@ -688,7 +688,13 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
         maxAge !== undefined ? maxAge :
         expiresHeader !== undefined ? differenceInSeconds(
             expiresHeader,
-            dateHeader ? parseDate(dateHeader) : parseDate(exchange.timingEvents.startTime)
+            dateHeader
+                ? parseDate(dateHeader)
+                : parseDate(
+                    'startTime' in exchange.timingEvents
+                        ? exchange.timingEvents.startTime
+                        : Date.now()
+                )
         )
         : undefined;
     const hasNegativeLifetime = lifetime !== undefined && lifetime <= 0;

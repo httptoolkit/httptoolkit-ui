@@ -13,6 +13,8 @@ import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
 import { TimingEvents } from 'mockttp/dist/types';
 
+export { TimingEvents };
+
 function addRequestMetadata(request: CompletedRequest): HtkRequest {
     try {
         const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
@@ -69,7 +71,7 @@ export class HttpExchange {
     public readonly id: string;
 
     @observable
-    public readonly timingEvents: TimingEvents;
+    public readonly timingEvents: TimingEvents | {};  // May be {} if using an old server (<0.1.7)
 
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;

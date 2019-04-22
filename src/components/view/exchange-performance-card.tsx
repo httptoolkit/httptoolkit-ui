@@ -8,7 +8,7 @@ import { Omit, ExchangeMessage } from '../../types';
 import { asHeaderArray, joinAnd } from '../../util';
 import { WarningIcon, SuggestionIcon } from '../../icons';
 
-import { HttpExchange } from '../../model/exchange';
+import { HttpExchange, TimingEvents } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
 import { getDecodedBody, getReadableSize, testEncodings } from '../../model/bodies';
 import {
@@ -83,14 +83,12 @@ function sigFig(num: number, figs: number): number {
     return parseFloat(num.toFixed(figs));
 }
 
-const TimingPill = observer((p: { className?: string, exchange: HttpExchange }) => {
-    const { timingEvents } = p.exchange;
-
+const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents }) => {
     // We can't show timing info if the request is still going
-    const doneTimestamp = timingEvents.responseSentTimestamp || timingEvents.abortedTimestamp;
+    const doneTimestamp = p.timingEvents.responseSentTimestamp || p.timingEvents.abortedTimestamp;
     if (!doneTimestamp) return null;
 
-    const durationMs = doneTimestamp - timingEvents.startTimestamp;
+    const durationMs = doneTimestamp - p.timingEvents.startTimestamp;
 
     return <Pill className={p.className}>{
         durationMs < 100 ? sigFig(durationMs, 2) + 'ms' : // 22.34ms
@@ -106,9 +104,11 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
 
     return <ExchangeCard {...props}>
         <header>
-            { isPaidUser ?
-                <TimingPill exchange={exchange} /> :
-                <PerformanceProPill />
+            { isPaidUser
+                ? ('startTime' in exchange.timingEvents
+                    ? <TimingPill timingEvents={exchange.timingEvents} />
+                    : null)
+                : <PerformanceProPill />
             }
             <h1>Performance</h1>
         </header>
