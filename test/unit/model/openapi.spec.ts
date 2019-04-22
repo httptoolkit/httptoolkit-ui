@@ -59,7 +59,7 @@ describe('OpenAPI support', () => {
             ).to.deep.match({
                 operation: {
                     name: 'GetAccount',
-                    description: { __html: '<p>Retrieves the details of the account.</p>' },
+                    description: { __html: '<p>Retrieves the details of an account.</p>' },
                     docsUrl: undefined,
                     warnings: []
                 },
@@ -73,18 +73,7 @@ describe('OpenAPI support', () => {
                         required: false,
                         warnings: [],
                         value: undefined
-                    }, {
-                        deprecated: false,
-                        description: {
-                            __html:
-                                "<p>The identifier of the account to retrieve. " +
-                                "If none is provided, the account associated with the API key is returned.</p>"
-                        },
-                        name: "account",
-                        required: false,
-                        warnings: [],
-                        value: 'abc'
-                    }],
+                    }]
                 }
             });
         });
