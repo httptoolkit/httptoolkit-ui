@@ -3,6 +3,7 @@ import { get } from 'typesafe-get';
 import { configure, observable, action, flow, computed, when } from 'mobx';
 
 import { reportError } from '../../errors';
+import { trackEvent } from '../../tracking';
 import { delay } from '../../util';
 
 import {
@@ -106,16 +107,37 @@ export class AccountStore {
 
     getPro = flow(function * (this: AccountStore) {
         try {
+            trackEvent({ category: 'Account', action: 'Get Pro' });
             if (!this.isLoggedIn) {
                 yield this.login();
+
+                if (!this.isLoggedIn) {
+                    trackEvent({ category: 'Account', action: 'Login failed' });
+                    return;
+                }
+
+                trackEvent({ category: 'Account', action: 'Login success' });
             }
 
-            if (!this.isLoggedIn || this.isPaidUser) return;
+            if (this.isPaidUser) {
+                trackEvent({ category: 'Account', action: 'Paid user login' });
+                return;
+            }
 
             const selectedPlan: SubscriptionPlanCode | undefined = yield this.pickPlan();
-            if (!selectedPlan) return;
+            if (!selectedPlan) {
+                trackEvent({ category: 'Account', action: 'Plans rejected' });
+                return;
+            }
+            trackEvent({ category: 'Account', action: 'Plan selected', label: selectedPlan });
 
-            yield this.purchasePlan(this.user.email!, selectedPlan);
+            const purchased = yield this.purchasePlan(this.user.email!, selectedPlan);
+
+            if (purchased) {
+                trackEvent({ category: 'Account', action: 'Checkout complete', label: selectedPlan });
+            } else {
+                trackEvent({ category: 'Account', action: 'Checkout cancelled', label: selectedPlan });
+            }
         } catch (error) {
             reportError(error);
             this.modal = undefined;
