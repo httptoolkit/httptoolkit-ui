@@ -12,8 +12,7 @@ import {
     logOut,
     User,
     getLatestUserData,
-    getLastUserData,
-    SubscriptionStatus
+    getLastUserData
 } from './auth';
 import {
     SubscriptionPlans,

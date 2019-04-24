@@ -14,6 +14,15 @@ export function empty(): Empty {
     return {};
 }
 
+export function attempt<T>(fn: () => T): Promise<T> {
+    try {
+        const result = fn();
+        return Promise.resolve(result);
+    } catch (e) {
+        return Promise.reject(e);
+    }
+}
+
 export function getDeferred(): {
     resolve: () => void,
     reject: () => void,

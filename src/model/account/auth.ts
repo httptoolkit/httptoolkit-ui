@@ -10,6 +10,7 @@ import { lightTheme } from '../../styles';
 import { reportError } from '../../errors';
 
 import { SubscriptionPlanCode, getSubscriptionPlanCode } from './subscriptions';
+import { attempt } from '../../util';
 
 const AUTH0_CLIENT_ID = 'KAJyF1Pq9nfBrv5l3LHjT9CrSQIleujj';
 const AUTH0_DOMAIN = 'login.httptoolkit.tech';
@@ -96,8 +97,17 @@ let tokens: {
     refreshToken: string;
     accessToken: string;
     accessTokenExpiry: number; // time in ms
-} | null = JSON.parse(localStorage.getItem('tokens')!);
-// ! above because actually parse(null) -> null, so it's ok
+} | null;
+
+attempt(
+    // ! because actually parse(null) -> null, so it's ok
+    () => JSON.parse(localStorage.getItem('tokens')!)
+)
+.then((t) => tokens = t)
+.catch((e) => {
+    console.log('Invalid token', localStorage.getItem('tokens'), e);
+    reportError('Failed to parse tokens');
+});
 
 const tokenMutex = new Mutex();
 
