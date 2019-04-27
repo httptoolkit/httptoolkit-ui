@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import * as jwt from 'jsonwebtoken';
 import * as Auth0 from 'auth0-js';
 import { Auth0LockPasswordless } from '@httptoolkit/auth0-lock';
+import * as dedent from 'dedent';
 
 import { lightTheme } from '../../styles';
 import { reportError } from '../../errors';
@@ -53,7 +54,10 @@ const auth0Lock = new Auth0LockPasswordless(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
         logo: 'https://httptoolkit.tech/icon-600.png'
     },
     languageDictionary: {
-        title: 'Log in / Sign up'
+        title: 'Log in / Sign up',
+        signUpTerms: dedent`
+            No spam, this will only be used as your account login. By signing up, you agree to our ToS & privacy policy.
+        `
     }
 });
 
