@@ -35,12 +35,16 @@ const SettingsPagePlaceholder = styled.section`
     justify-content: center;
 `;
 
-const SettingPageContainer = styled.section`
+const SettingsPageScrollContainer = styled.div`
     height: 100%;
+    width: 100%;
+    overflow-y: auto;
+`;
+
+const SettingPageContainer = styled.section`
     margin: 0px auto 20px;
     padding: 40px;
     max-width: 800px;
-    overflow-y: auto;
     position: relative;
 
     * {
@@ -144,155 +148,157 @@ class SettingsPage extends React.Component<SettingsPageProps> {
         // ! because we know this is set, as we have a paid user
         const sub = userSubscription!;
 
-        return <SettingPageContainer>
-            <SettingsHeading>Settings</SettingsHeading>
+        return <SettingsPageScrollContainer>
+            <SettingPageContainer>
+                <SettingsHeading>Settings</SettingsHeading>
 
-            <CollapsibleCard {...this.cardProps.account}>
-                <header>
-                    <h1>Account</h1>
-                </header>
-                <AccountDetailsContainer>
-                    <ContentLabel>
-                        Account email
-                    </ContentLabel>
-                    <ContentValue>
-                        { userEmail }
-                    </ContentValue>
+                <CollapsibleCard {...this.cardProps.account}>
+                    <header>
+                        <h1>Account</h1>
+                    </header>
+                    <AccountDetailsContainer>
+                        <ContentLabel>
+                            Account email
+                        </ContentLabel>
+                        <ContentValue>
+                            { userEmail }
+                        </ContentValue>
 
-                    <ContentLabel>
-                        Subscription status
-                    </ContentLabel>
-                    <ContentValue>
-                        {
-                            ({
-                                'active': 'Active',
-                                'trialing': 'Active (trial)',
-                                'past_due': <>
-                                    Active <Pill
-                                        color='#fff'
-                                        title={dedent`
-                                            Your subscription payment failed, and will be reattempted.
-                                            If retried payments fail your subscription will be cancelled.
-                                        `}
-                                    >
-                                        PAST DUE
-                                    </Pill>
-                                </>,
-                                'deleted': 'Cancelled'
-                            }[sub.status]) || 'Unknown'
-                        }
-                    </ContentValue>
+                        <ContentLabel>
+                            Subscription status
+                        </ContentLabel>
+                        <ContentValue>
+                            {
+                                ({
+                                    'active': 'Active',
+                                    'trialing': 'Active (trial)',
+                                    'past_due': <>
+                                        Active <Pill
+                                            color='#fff'
+                                            title={dedent`
+                                                Your subscription payment failed, and will be reattempted.
+                                                If retried payments fail your subscription will be cancelled.
+                                            `}
+                                        >
+                                            PAST DUE
+                                        </Pill>
+                                    </>,
+                                    'deleted': 'Cancelled'
+                                }[sub.status]) || 'Unknown'
+                            }
+                        </ContentValue>
 
-                    <ContentLabel>
-                        Subscription plan
-                    </ContentLabel>
-                    <ContentValue>
-                        { subscriptionPlans[sub.plan].name }
-                    </ContentValue>
+                        <ContentLabel>
+                            Subscription plan
+                        </ContentLabel>
+                        <ContentValue>
+                            { subscriptionPlans[sub.plan].name }
+                        </ContentValue>
 
-                    <ContentLabel>
-                        {
-                            ({
-                                'active': 'Next renews',
-                                'trialing': 'Renews',
-                                'past_due': 'Next payment attempt',
-                                'deleted': 'Ends',
-                            }[sub.status]) || 'Current period ends'
-                        }
-                    </ContentLabel>
-                    <ContentValue>
-                        {
-                            distanceInWordsStrict(new Date(), sub.expiry, {
-                                addSuffix: true
+                        <ContentLabel>
+                            {
+                                ({
+                                    'active': 'Next renews',
+                                    'trialing': 'Renews',
+                                    'past_due': 'Next payment attempt',
+                                    'deleted': 'Ends',
+                                }[sub.status]) || 'Current period ends'
+                            }
+                        </ContentLabel>
+                        <ContentValue>
+                            {
+                                distanceInWordsStrict(new Date(), sub.expiry, {
+                                    addSuffix: true
+                                })
+                            } ({
+                                format(sub.expiry.toString(), 'Do [of] MMMM YYYY')
                             })
-                        } ({
-                            format(sub.expiry.toString(), 'Do [of] MMMM YYYY')
-                        })
-                    </ContentValue>
-                </AccountDetailsContainer>
+                        </ContentValue>
+                    </AccountDetailsContainer>
 
-                <AccountControls>
-                    { sub.lastReceiptUrl &&
+                    <AccountControls>
+                        { sub.lastReceiptUrl &&
+                            <AccountButtonLink
+                                href={ sub.lastReceiptUrl }
+                                target='_blank'
+                                rel='noreferrer noopener'
+                            >
+                                View latest invoice
+                            </AccountButtonLink>
+                        }
                         <AccountButtonLink
-                            href={ sub.lastReceiptUrl }
+                            href={ sub.updateBillingDetailsUrl }
                             target='_blank'
                             rel='noreferrer noopener'
                         >
-                            View latest invoice
+                            Update billing details
                         </AccountButtonLink>
-                    }
-                    <AccountButtonLink
-                        href={ sub.updateBillingDetailsUrl }
-                        target='_blank'
-                        rel='noreferrer noopener'
-                    >
-                        Update billing details
-                    </AccountButtonLink>
-                    <AccountButton onClick={logOut}>Log out</AccountButton>
-                </AccountControls>
+                        <AccountButton onClick={logOut}>Log out</AccountButton>
+                    </AccountControls>
 
-                <AccountContactFooter>
-                    Questions? Email <strong>billing@httptoolkit.tech</strong>
-                </AccountContactFooter>
-            </CollapsibleCard>
+                    <AccountContactFooter>
+                        Questions? Email <strong>billing@httptoolkit.tech</strong>
+                    </AccountContactFooter>
+                </CollapsibleCard>
 
-            <CollapsibleCard {...this.cardProps.themes}>
-                <header>
-                    <h1>Themes</h1>
-                </header>
-                <TabbedOptionsContainer>
-                    <TabsContainer
-                        onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
-                        isSelected={(value: ThemeName | Theme) => {
-                            if (typeof value === 'string') {
-                                return uiStore.themeName === value
-                            } else {
-                                return _.isEqual(value, uiStore.theme);
-                            }
-                        }}
-                    >
-                        <Tab
-                            icon={['fas', 'sun']}
-                            value='light'
+                <CollapsibleCard {...this.cardProps.themes}>
+                    <header>
+                        <h1>Themes</h1>
+                    </header>
+                    <TabbedOptionsContainer>
+                        <TabsContainer
+                            onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
+                            isSelected={(value: ThemeName | Theme) => {
+                                if (typeof value === 'string') {
+                                    return uiStore.themeName === value
+                                } else {
+                                    return _.isEqual(value, uiStore.theme);
+                                }
+                            }}
                         >
-                            Light
-                        </Tab>
-                        <Tab
-                            icon={['fas', 'moon']}
-                            value='dark'
-                        >
-                            Dark
-                        </Tab>
-                        <Tab
-                            icon={['fas', 'adjust']}
-                            value={'high-contrast'}
-                        >
-                            High Contrast
-                        </Tab>
-                    </TabsContainer>
-                    <ThemeColors>
-                        <ThemeColorBlock themeColor='mainColor' />
-                        <ThemeColorBlock themeColor='mainBackground' />
-                        <ThemeColorBlock themeColor='highlightColor' />
-                        <ThemeColorBlock themeColor='highlightBackground' />
-                        <ThemeColorBlock themeColor='primaryInputColor' />
-                        <ThemeColorBlock themeColor='primaryInputBackground' />
-                        <ThemeColorBlock themeColor='containerWatermark' />
-                        <ThemeColorBlock themeColor='containerBorder' />
-                        <ThemeColorBlock themeColor='mainLowlightBackground' />
-                        <ThemeColorBlock themeColor='containerBackground' />
-                    </ThemeColors>
+                            <Tab
+                                icon={['fas', 'sun']}
+                                value='light'
+                            >
+                                Light
+                            </Tab>
+                            <Tab
+                                icon={['fas', 'moon']}
+                                value='dark'
+                            >
+                                Dark
+                            </Tab>
+                            <Tab
+                                icon={['fas', 'adjust']}
+                                value={'high-contrast'}
+                            >
+                                High Contrast
+                            </Tab>
+                        </TabsContainer>
+                        <ThemeColors>
+                            <ThemeColorBlock themeColor='mainColor' />
+                            <ThemeColorBlock themeColor='mainBackground' />
+                            <ThemeColorBlock themeColor='highlightColor' />
+                            <ThemeColorBlock themeColor='highlightBackground' />
+                            <ThemeColorBlock themeColor='primaryInputColor' />
+                            <ThemeColorBlock themeColor='primaryInputBackground' />
+                            <ThemeColorBlock themeColor='containerWatermark' />
+                            <ThemeColorBlock themeColor='containerBorder' />
+                            <ThemeColorBlock themeColor='mainLowlightBackground' />
+                            <ThemeColorBlock themeColor='containerBackground' />
+                        </ThemeColors>
 
-                    <EditorContainer>
-                        <BaseEditor
-                            language='html'
-                            theme={uiStore.theme.monacoTheme}
-                            defaultValue={amIUsingHtml}
-                        />
-                    </EditorContainer>
-                </TabbedOptionsContainer>
-            </CollapsibleCard>
-        </SettingPageContainer>;
+                        <EditorContainer>
+                            <BaseEditor
+                                language='html'
+                                theme={uiStore.theme.monacoTheme}
+                                defaultValue={amIUsingHtml}
+                            />
+                        </EditorContainer>
+                    </TabbedOptionsContainer>
+                </CollapsibleCard>
+            </SettingPageContainer>
+        </SettingsPageScrollContainer>;
     }
 }
 
