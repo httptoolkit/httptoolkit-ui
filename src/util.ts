@@ -164,3 +164,16 @@ export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
 
     return val.slice(0, -1).join(initialSep) + finalSep + val[val.length - 1];
 }
+
+export function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
+    // In theory params.entries() should exist, but TS disagrees
+    if ('entries' in params) {
+        return Array.from((params as any).entries());
+    }
+
+    const entries: Array<[string, string]> = [];
+    params.forEach((value, key) => {
+        entries.push([key, value]);
+    });
+    return entries;
+}
