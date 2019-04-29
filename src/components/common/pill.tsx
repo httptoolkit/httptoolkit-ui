@@ -89,12 +89,3 @@ export const PillSelector = <T extends {}>(props: {
         </option>
     )}
 </Select>;
-
-export const ProPill = styled(inject('uiStore')((p: { uiStore?: UiStore, className?: string }) =>
-    <Pill className={p.className} color={p.uiStore!.theme.popColor}>PRO</Pill>
-))`
-    font-size: ${p => p.theme.textSize};
-
-    color: #e1421f;
-    background-color: rgba(225,66,31,0.2);
-`;

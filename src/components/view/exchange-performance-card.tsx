@@ -24,60 +24,16 @@ import {
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
 } from './exchange-card';
-import { ProPill, Pill } from '../common/pill';
+import { Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
 import { ContentLabelBlock, Markdown } from '../common/text-content';
 import { UnstyledButton } from '../common/inputs';
+import { ProHeaderPill, CardSalesPitch } from '../common/pro-placeholders';
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
     accountStore?: AccountStore;
 }
-
-const PerformanceProPill = styled(ProPill)`
-    margin-right: auto;
-`;
-
-const SalesPitch = styled.div`
-    padding: 20px 25%;
-    margin: 0 -20px -20px -20px;
-    background-color: ${p => p.theme.mainLowlightBackground};
-    box-shadow: inset 0px 12px 8px -10px rgba(0,0,0,0.15);
-
-    p {
-        color: ${p => p.theme.mainColor};
-        line-height: 1.2;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-`;
-
-const GetProButton = styled(UnstyledButton)`
-    width: 120px;
-    box-sizing: border-box;
-    padding: 20px;
-
-    margin: 0 auto;
-
-    cursor: pointer;
-    user-select: none;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-
-    font-weight: bold;
-    color: ${p => p.theme.popColor};
-    background-color: ${p => p.theme.highlightBackground};
-    border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.3);
-
-    > svg {
-        margin-bottom: 5px;
-    }
-`;
 
 function sigFig(num: number, figs: number): number {
     return parseFloat(num.toFixed(figs));
@@ -100,7 +56,7 @@ const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents
 
 export const ExchangePerformanceCard = inject('accountStore')(observer((props: ExchangePerformanceCardProps) => {
     const { exchange, accountStore } = props;
-    const { isPaidUser, getPro } = accountStore!;
+    const { isPaidUser } = accountStore!;
 
     return <ExchangeCard {...props}>
         <header>
@@ -108,7 +64,7 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
                 ? ('startTime' in exchange.timingEvents
                     ? <TimingPill timingEvents={exchange.timingEvents} />
                     : null)
-                : <PerformanceProPill />
+                : <ProHeaderPill />
             }
             <h1>Performance</h1>
         </header>
@@ -119,17 +75,12 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
                 <CachingPerformance exchange={exchange} />
             </div>
         :
-            <SalesPitch>
+            <CardSalesPitch>
                 <p>
                     See timing info, and dive into the compression & caching of every exchange,
                     for a full performance overview.
                 </p>
-
-                <GetProButton onClick={getPro}>
-                    <FontAwesomeIcon icon={['far', 'star']} size='2x' />
-                    Get HTTP Toolkit Pro
-                </GetProButton>
-            </SalesPitch>
+            </CardSalesPitch>
         }
     </ExchangeCard>;
 }));
