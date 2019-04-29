@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import { observer, disposeOnUnmount } from 'mobx-react';
-import { observable, action, computed, IObservableValue, autorun, runInAction } from 'mobx';
+import { computed, IObservableValue, autorun, runInAction } from 'mobx';
 
 import {
     js as beautifyJs,
@@ -10,7 +10,7 @@ import {
 } from 'js-beautify/js/lib/beautifier';
 import * as beautifyXml from 'xml-beautifier';
 
-import { BaseEditor } from './base-editor';
+import { SelfSizedBaseEditor } from './base-editor';
 import { styled } from '../../styles';
 import { HtkContentType } from '../../content-types';
 import { SchemaObject } from 'openapi3-ts';
@@ -115,19 +115,12 @@ interface ContentEditorProps {
     monacoTheme: string
 }
 
-const EditorContainer = styled.div`
-    height: ${(p: { height: number }) => p.height}px;
-    max-height: 560px;
-`;
-
 function isEditorFormatter(input: any): input is EditorFormatter {
     return !!input.language;
 }
 
 @observer
 export class ContentEditor extends React.Component<ContentEditorProps> {
-
-    @observable lineCount: number = 0;
 
     constructor(props: ContentEditorProps) {
         super(props);
@@ -145,11 +138,6 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
         }
     }
 
-    @action.bound
-    updateLineCount(newLineCount: number) {
-        this.lineCount = newLineCount;
-    }
-
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
             if (this.props.contentObservable) {
@@ -159,23 +147,20 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
     }
 
     private readonly editorOptions = {
+        // For now, we only support read only content
         readOnly: true
     };
 
     render() {
         if (isEditorFormatter(this.formatter)) {
             try {
-                return <EditorContainer height={this.lineCount * 22}>
-                    <BaseEditor
-                        // For now, we only support read only content
-                        options={this.editorOptions}
-                        language={this.formatter.language}
-                        onLineCount={this.updateLineCount}
-                        value={this.renderedContent!}
-                        schema={this.props.schema}
-                        theme={this.props.monacoTheme}
-                    />
-                </EditorContainer>;
+                return <SelfSizedBaseEditor
+                    options={this.editorOptions}
+                    language={this.formatter.language}
+                    value={this.renderedContent!}
+                    schema={this.props.schema}
+                    theme={this.props.monacoTheme}
+                />;
             } catch (e) {
                 return <div>
                     Failed to render {this.props.contentType} content:<br/>

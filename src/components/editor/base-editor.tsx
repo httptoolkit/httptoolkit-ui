@@ -9,7 +9,8 @@ import _MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
 
 import { reportError } from '../../errors';
 import { delay } from '../../util';
-import { WritableKeys } from '../../types';
+import { WritableKeys, Omit } from '../../types';
+import { styled } from '../../styles';
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
@@ -63,6 +64,33 @@ interface SchemaMapping {
     readonly uri: string;
     readonly fileMatch?: string[];
     readonly schema?: any;
+}
+
+const EditorContainer = styled.div`
+    height: ${(p: { height: number }) => p.height}px;
+    max-height: 560px;
+`;
+
+@observer
+export class SelfSizedBaseEditor extends React.Component<
+    Omit<EditorProps, 'onLineCount'>
+> {
+
+    @action.bound
+    updateLineCount(newLineCount: number) {
+        this.lineCount = newLineCount;
+    }
+
+    @observable lineCount: number = 0;
+
+    render() {
+        return <EditorContainer height={this.lineCount * 22}>
+            <BaseEditor
+                {...this.props}
+                onLineCount={this.updateLineCount}
+            />
+        </EditorContainer>
+    }
 }
 
 @observer
