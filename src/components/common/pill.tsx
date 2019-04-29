@@ -24,6 +24,10 @@ function getBackgroundColor(baseColor: string) {
     return polished.rgba(baseColor, 0.3);
 }
 
+function getNonTransparentBackground(baseColor: string, theme: Theme) {
+    return polished.mix(0.3, baseColor, theme.mainBackground);
+}
+
 function getDefaultColor(theme: Theme) {
     if (polished.getLuminance(theme.mainBackground) > 0.5) {
         return polished.darken(0.4, theme.mainBackground);
@@ -70,6 +74,15 @@ const Select = styled(Pill.withComponent('select'))`
 
     ${Pill} + & {
         margin-left: 0;
+    }
+
+    * {
+        background-color: ${(p: { color?: string, theme?: Theme }) =>
+            getNonTransparentBackground(
+                p.color || getDefaultColor(p.theme!),
+                p.theme!
+            )
+        };
     }
 `;
 
