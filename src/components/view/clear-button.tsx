@@ -23,11 +23,18 @@ export const ClearArrayButton = styled(observer((props: {
     background-color: transparent;
     color: ${p => p.theme.mainColor};
     font-size: 20px;
-    cursor: pointer;
     padding: 5px 10px;
 
-    &:hover, &:focus {
-        outline: none;
-        color: ${p => p.theme.popColor};
+    &:disabled {
+        opacity: 0.5;
+    }
+
+    &:not([disabled]) {
+        cursor: pointer;
+
+        &:hover, &:focus {
+            outline: none;
+            color: ${p => p.theme.popColor};
+        }
     }
 `;
