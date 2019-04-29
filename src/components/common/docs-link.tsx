@@ -15,13 +15,23 @@ const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
     }
 `;
 
+const DocsA = styled.a`
+    &[href] {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
+    }
+`;
+
 export const DocsLink = (p: {
     href?: string,
     children?: React.ReactNode
 }) => p.href ?
-    <a {...p} target='_blank' rel='noreferrer noopener'>
+    <DocsA {...p} target='_blank' rel='noreferrer noopener'>
         { /* Whitespace after children, iff we have children */ }
         { p.children ? <>{ p.children } </> : null }
         <ExternalLinkIcon />
-    </a>
+    </DocsA>
 : null;
