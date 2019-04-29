@@ -7,7 +7,6 @@ declare module 'httpsnippet' {
             | "clojure"
             | "csharp"
             | "go"
-            | "http"
             | "java"
             | "javascript"
             | "node"
@@ -22,7 +21,7 @@ declare module 'httpsnippet' {
 
         export type Client = string; // Could be worth doing later, not for now
 
-        export function availableTargets(): Array<{
+        export type TargetObject = {
             key: Target,
             title: string,
             extname: string,
@@ -33,7 +32,9 @@ declare module 'httpsnippet' {
                 link: string,
                 description: string
             }>
-        }>
+        };
+
+        export function availableTargets(): TargetObject[];
     }
 
     class HTTPSnippet {

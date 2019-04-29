@@ -1,9 +1,8 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import * as polished from 'polished';
-import { inject } from 'mobx-react';
 
 import { styled, Theme } from '../../styles';
-import { UiStore } from '../../model/ui-store';
 
 // Given a base colour, returns a constrasting (but related hue) text colour
 function getTextColor(baseColor: string, theme: Theme) {
@@ -74,18 +73,38 @@ const Select = styled(Pill.withComponent('select'))`
     }
 `;
 
-export const PillSelector = <T extends {}>(props: {
+export const PillSelector = <
+    T extends {},
+    K extends string = T extends string ? T : string
+>(props: {
     value: T,
-    options: T[],
-    onChange: (option: T) => void
-    nameFormatter: (key: T) => string
-}) => <Select
-    onChange={(e: any) => props.onChange(e.target.value)}
-    value={ props.value as any }
->
-    {props.options.map((option: any) =>
-        <option key={option} value={option}>
-            { props.nameFormatter ? props.nameFormatter(option) : option }
-        </option>
-    )}
-</Select>;
+    onChange: (optionKey: K) => void
+    nameFormatter: (key: T) => string,
+    keyFormatter?: (key: T) => K,
+} & ({ options: T[] } | { optGroups: { [groupName: string]: T[] } })
+) => {
+    const asKey = props.keyFormatter || ((k: T) => k.toString() as K);
+    const asName = props.nameFormatter || ((k: T) => k.toString());
+
+    return <Select
+        onChange={(e) => props.onChange(e.target.value as K)}
+        value={asKey(props.value)}
+    >
+        {'options' in props
+            ? props.options.map((option: T) =>
+                <option key={asKey(option)} value={asKey(option)}>
+                    { asName(option) }
+                </option>
+            )
+            : _.map(props.optGroups, (options: T[], groupName: string) =>
+                <optgroup key={groupName} label={groupName}>{
+                    options.map((option: T) =>
+                        <option key={asKey(option)} value={asKey(option)}>
+                            { asName(option) }
+                        </option>
+                    )
+                }</optgroup>
+            )
+        }
+    </Select>
+};

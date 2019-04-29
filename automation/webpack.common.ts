@@ -68,6 +68,7 @@ export default <Webpack.Configuration>{
                 'typescript', // required for JS
                 'json',
                 'markdown',
+                'shell',
                 'xml',
                 'yaml'
             ],

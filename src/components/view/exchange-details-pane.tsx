@@ -18,6 +18,7 @@ import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeResponseCard } from './exchange-response-card';
 import { AccountStore } from '../../model/account/account-store';
 import { ExchangePerformanceCard } from './exchange-performance-card';
+import { ExchangeExportCard } from './exchange-export-card';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!get(res as any, 'body', 'buffer');
@@ -66,7 +67,8 @@ export class ExchangeDetailsPane extends React.Component<{
         'response': {},
         'responseBody': {},
 
-        'performance': { collapsed: true }
+        'performance': { collapsed: true },
+        'export': { collapsed: true }
     }, (_value: { collapsed?: boolean }, key) => ({
         key: key,
         collapsed: _value.collapsed || false,
@@ -135,6 +137,11 @@ export class ExchangeDetailsPane extends React.Component<{
             cards.push(<ExchangePerformanceCard
                 exchange={exchange}
                 {...this.cardProps.performance}
+            />);
+
+            cards.push(<ExchangeExportCard
+                exchange={exchange}
+                {...this.cardProps.export}
             />);
         } else {
             cards.push(
