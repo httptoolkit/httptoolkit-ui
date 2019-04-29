@@ -1,6 +1,23 @@
 
 import { StyledComponent } from "styled-components";
-import { styled, Theme } from "../../styles";
+import { styled, Theme, css } from "../../styles";
+
+export const interactiveMouseoverStyles = css`
+    &[disabled] {
+        cursor: default;
+    }
+
+    &:not([disabled]) {
+        cursor: pointer;
+        &:hover {
+            background-image: linear-gradient(transparent, rgba(0,0,0,.05) 40%, rgba(0,0,0,.1));
+        }
+
+        &:active {
+            background-image: linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.05) 40%, transparent);
+        }
+    }
+`;
 
 export const UnstyledButton = styled.button`
     /* Reset styles that get broken because <button> overrides them: */
@@ -35,20 +52,14 @@ export const Button = styled.button`
     font-weight: inherit;
     line-height: normal;
 
+    ${interactiveMouseoverStyles}
+
     &[disabled] {
-        cursor: default;
         background-color: ${p => p.theme.containerWatermark};
     }
 
     &:not([disabled]) {
         background-color: ${p => p.theme.primaryInputBackground};
-        &:hover {
-            background-image: linear-gradient(transparent, rgba(0,0,0,.05) 40%, rgba(0,0,0,.1));
-        }
-
-        &:active {
-            background-image: linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.05) 40%, transparent);
-        }
     }
 `;
 

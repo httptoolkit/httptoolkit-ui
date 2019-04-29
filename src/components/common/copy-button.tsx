@@ -4,32 +4,11 @@ import { FontAwesomeIcon } from "../../icons";
 import { styled } from '../../styles';
 import { reportError } from '../../errors';
 import { UnstyledButton } from './inputs';
+import { PillButton } from './pill';
 
 const clipboardSupported = !!navigator.clipboard;
 
-interface CopyProps {
-    className?: string;
-    children?: React.ReactNode;
-    content: string;
-}
-
-export const CopyButton = styled((p: CopyProps) =>
-    clipboardSupported
-        ? <UnstyledButton
-                className={p.className}
-                tabIndex={0}
-                onKeyDown={(event: React.KeyboardEvent) => {
-                    if (event.key === 'Enter') copyToClipboard(p.content)
-                }}
-                onClick={() => copyToClipboard(p.content)}
-            >
-                <FontAwesomeIcon
-                    icon={['far', 'copy']}
-                />
-                { p.children }
-            </UnstyledButton>
-        : null
-)`
+const CopyButtonIconBase = styled(UnstyledButton)`
     cursor: pointer;
     color: ${p => p.theme.mainColor};
 
@@ -43,6 +22,27 @@ export const CopyButton = styled((p: CopyProps) =>
         color: ${p => p.theme.mainColor};
     }
 `;
+
+const buildCopyComponent = (BaseComponent: typeof CopyButtonIconBase | typeof PillButton) =>
+    (p: { className?: string, content: string, children?: React.ReactNode }) =>
+        clipboardSupported
+            ? <BaseComponent
+                    className={p.className}
+                    tabIndex={0}
+                    onKeyDown={(event: React.KeyboardEvent) => {
+                        if (event.key === 'Enter') copyToClipboard(p.content)
+                    }}
+                    onClick={() => copyToClipboard(p.content)}
+                >
+                    <FontAwesomeIcon
+                        icon={['far', 'copy']}
+                    />
+                    { p.children }
+                </BaseComponent>
+            : null;
+
+export const CopyButtonIcon = buildCopyComponent(CopyButtonIconBase);
+export const CopyButtonPill = buildCopyComponent(PillButton);
 
 async function copyToClipboard(content: string) {
     try {

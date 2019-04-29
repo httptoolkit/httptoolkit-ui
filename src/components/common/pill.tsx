@@ -2,7 +2,8 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import * as polished from 'polished';
 
-import { styled, Theme } from '../../styles';
+import { styled, Theme, css } from '../../styles';
+import { UnstyledButton, interactiveMouseoverStyles } from './inputs';
 
 // Given a base colour, returns a constrasting (but related hue) text colour
 function getTextColor(baseColor: string, theme: Theme) {
@@ -36,7 +37,7 @@ function getDefaultColor(theme: Theme) {
     }
 }
 
-export const Pill = styled.span`
+const pillStyles = css`
     display: inline-block;
     border-radius: 4px;
     padding: 4px 8px;
@@ -63,6 +64,19 @@ export const Pill = styled.span`
     };
 `;
 
+export const Pill = styled.span`
+    ${pillStyles}
+`;
+
+export const PillButton = styled(UnstyledButton)`
+    ${pillStyles}
+    ${interactiveMouseoverStyles}
+
+    &[disabled] {
+        opacity: 0.5;
+    }
+`;
+
 const Select = styled(Pill.withComponent('select'))`
     border: none;
 
@@ -75,6 +89,8 @@ const Select = styled(Pill.withComponent('select'))`
     ${Pill} + & {
         margin-left: 0;
     }
+
+    ${interactiveMouseoverStyles}
 
     * {
         background-color: ${(p: { color?: string, theme?: Theme }) =>

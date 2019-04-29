@@ -14,7 +14,7 @@ import { generateHarRequest } from "../../model/har";
 
 import { ProHeaderPill, CardSalesPitch } from "../common/pro-placeholders";
 import { PillSelector, Pill } from "../common/pill";
-import { CopyButton } from '../common/copy-button';
+import { CopyButtonPill } from '../common/copy-button';
 import { DocsLink } from '../common/docs-link';
 import { ExchangeCard, ExchangeCardProps } from "./exchange-card";
 import { SelfSizedBaseEditor } from '../editor/base-editor';
@@ -63,10 +63,6 @@ const SnippetDescriptionContainer = styled.div`
     }
 `;
 
-const CopySnippetPill = styled(Pill)`
-    display: inline-block;
-`;
-
 const SnippetEditorContainer = styled.div`
     margin: 0 -20px -20px -20px;
     border-top: solid 1px ${p => p.theme.containerBorder};
@@ -79,7 +75,7 @@ const snippetEditorOptions = {
     hover: { enabled: false }
 };
 
-export const ExportSnippetEditor = inject('uiStore')(observer((p: {
+const ExportSnippetEditor = inject('uiStore')(observer((p: {
     exchange: HttpExchange
     exportOption: SnippetOption
     uiStore?: UiStore
@@ -98,9 +94,9 @@ export const ExportSnippetEditor = inject('uiStore')(observer((p: {
             <p>
                 <DocsLink href={link}>
                     Find out more
-                </DocsLink> <CopySnippetPill>
-                    <CopyButton content={snippet}> Copy snippet</CopyButton>
-                </CopySnippetPill>
+                </DocsLink> <CopyButtonPill content={snippet}>
+                    {' '}Copy snippet
+                </CopyButtonPill>
             </p>
         </SnippetDescriptionContainer>
         <SnippetEditorContainer>

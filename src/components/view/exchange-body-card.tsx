@@ -12,7 +12,7 @@ import { UiStore } from '../../model/ui-store';
 
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
-import { CopyButton } from '../common/copy-button';
+import { CopyButtonIcon } from '../common/copy-button';
 import { ContentEditor, getContentEditorName } from '../editor/content-editor';
 
 const EditorCardContent = styled.div`
@@ -26,7 +26,7 @@ const EditorCardContent = styled.div`
     }
 `;
 
-const CopyBody = styled(CopyButton)`
+const CopyBody = styled(CopyButtonIcon)`
     padding: 5px 10px;
     margin-right: auto;
     color: ${p => p.theme.mainColor};
