@@ -66,17 +66,22 @@ export const TableFooter = styled(observer((props: {
         exchangeCount={props.allExchanges.length}
         filteredExchangeCount={props.filteredExchanges.length}
     />
-    <DownloadAsHarButton exchanges={props.filteredExchanges} />
-    <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
+    <div>
+        <DownloadAsHarButton exchanges={props.filteredExchanges} />
+        <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
+    </div>
 </div>))`
     position: absolute;
     bottom: 0;
 
-    width: 100%;
     height: ${HEADER_FOOTER_HEIGHT}px;
+    width: 100%;
+    padding-left: 5px;
+    box-sizing: border-box;
+
     background-color: ${p => p.theme.mainBackground};
 
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: space-between;
 `;
