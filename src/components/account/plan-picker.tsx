@@ -147,20 +147,23 @@ const TierLicense = styled.div`
 const TierFeatures = styled.ul`
     padding: 30px 20px;
     font-size: ${p => p.theme.textSize};
+
+    list-style-type: circle;
+`;
+
+const FeatureHeading = styled.li`
+    margin-top: 20px;
+    margin-left: 0;
+    list-style-type: none;
+
+    &:first-child {
+        margin-top: 0;
+    }
 `;
 
 const Feature = styled.li`
     margin-top: 20px;
-    &:first-child {
-        margin-top: 0;
-    }
-    ul {
-        list-style-type: circle;
-        list-style-position: inside;
-        li {
-            margin-top: 20px;
-        }
-    }
+    margin-left: 20px;
 `;
 
 const PricingCTA = styled.div`
@@ -235,14 +238,20 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         </TierLicense>
                     </TierPriceBlock>
                     <TierFeatures>
-                        <Feature>
+                        <FeatureHeading>
                             <em>All free features, and:</em>
+                        </FeatureHeading>
+                        <Feature>
+                            <strong>Integration with 1400+ APIs</strong>, including
+                            AWS, Github & Stripe, for live validation and documentation
                         </Feature>
                         <Feature>
-                            In-depth debugging integrations for 1400+ APIs, including AWS, Github and Stripe
+                            In-depth <strong>performance analysis</strong>, including<br/>
+                            compression and caching explanations & warnings
                         </Feature>
                         <Feature>
-                            Detailed performance, caching & compression analysis & warnings
+                            <strong>Export requests & responses</strong> to HAR, or as<br/>
+                            ready-to-use code for 20+ languages & tools
                         </Feature>
                         <Feature>
                             Light, dark & high-contrast UI themes
@@ -272,18 +281,18 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         </TierLicense>
                     </TierPriceBlock>
                     <TierFeatures>
-                        <Feature><em>All Professional features, and:</em></Feature>
+                        <FeatureHeading>
+                            <em>All Professional features, and:</em>
+                        </FeatureHeading>
                         <Feature>Pass licenses between team members as required</Feature>
                         <Feature>Team workspaces for low-friction collaboration</Feature>
-                        <Feature>
+                        <FeatureHeading>
                             Options available on request:
-                            <ul>
-                                <li>Self-hosted infrastructure</li>
-                                <li>Private support</li>
-                                <li>Training & consultancy</li>
-                                <li>Bulk discounts</li>
-                            </ul>
-                        </Feature>
+                        </FeatureHeading>
+                        <Feature>Self-hosted infrastructure</Feature>
+                        <Feature>Private support</Feature>
+                        <Feature>Training & consultancy</Feature>
+                        <Feature>Bulk discounts</Feature>
                     </TierFeatures>
                     <PricingCTA>
                         <ButtonLink href='mailto:contact@httptoolkit.tech?subject=HTTP Toolkit Team'>
