@@ -38,6 +38,8 @@ import { faStar } from '@fortawesome/free-regular-svg-icons/faStar';
 import { faSun } from '@fortawesome/free-solid-svg-icons/faSun';
 import { faMoon } from '@fortawesome/free-solid-svg-icons/faMoon';
 import { faAdjust } from '@fortawesome/free-solid-svg-icons/faAdjust';
+import { faDownload } from '@fortawesome/free-solid-svg-icons/faDownload';
+
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -94,6 +96,7 @@ library.add(
     faSun,
     faMoon,
     faAdjust,
+    faDownload,
 
     faChrome,
     faFirefox,

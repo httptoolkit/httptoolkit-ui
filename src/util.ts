@@ -5,6 +5,8 @@ import { IPromiseBasedObservable, fromPromise, PromiseState } from 'mobx-utils';
 import { Omit } from './types';
 import { observable } from 'mobx';
 
+export const UI_VERSION = process.env.COMMIT_REF || "Unknown";
+
 export function delay(numberMs: number) {
     return new Promise((resolve) => setTimeout(resolve, numberMs));
 }
@@ -163,17 +165,4 @@ export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
     if (val.length === 1) return val[0];
 
     return val.slice(0, -1).join(initialSep) + finalSep + val[val.length - 1];
-}
-
-export function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
-    // In theory params.entries() should exist, but TS disagrees
-    if ('entries' in params) {
-        return Array.from((params as any).entries());
-    }
-
-    const entries: Array<[string, string]> = [];
-    params.forEach((value, key) => {
-        entries.push([key, value]);
-    });
-    return entries;
 }

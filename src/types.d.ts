@@ -1,7 +1,7 @@
 import { CompletedRequest, CompletedResponse } from 'mockttp';
+import { Headers } from 'mockttp/dist/types';
 import { ComponentClass } from 'react';
 import { ObservableMap } from 'mobx';
-
 
 import { TrafficSource } from './model/sources';
 import { HtkContentType } from './content-types';
@@ -20,6 +20,8 @@ export type HtkResponse = CompletedResponse & {
 };
 
 export type ExchangeMessage = HtkRequest | HtkResponse;
+
+export { Headers };
 
 // Should only be created in the process of sanitizing, so every object with an
 // __html prop must be HTML-safe.

@@ -6,14 +6,15 @@ import * as HTTPSnippet from "httpsnippet";
 
 import { Omit } from "../../types";
 import { styled } from '../../styles';
+import { FontAwesomeIcon } from '../../icons';
 
 import { AccountStore } from "../../model/account/account-store";
 import { UiStore } from '../../model/ui-store';
 import { HttpExchange } from "../../model/exchange";
-import { generateHarRequest } from "../../model/har";
+import { generateHarRequest, generateHar } from "../../model/har";
 
 import { ProHeaderPill, CardSalesPitch } from "../common/pro-placeholders";
-import { PillSelector, Pill } from "../common/pill";
+import { PillSelector, PillButton } from "../common/pill";
 import { CopyButtonPill } from '../common/copy-button';
 import { DocsLink } from '../common/docs-link';
 import { ExchangeCard, ExchangeCardProps } from "./exchange-card";
@@ -116,6 +117,45 @@ const ExportSnippetEditor = inject('uiStore')(observer((p: {
     </>;
 }));
 
+const downloadHar = (exchange: HttpExchange) => {
+    const harContent = JSON.stringify(
+        generateHar([exchange])
+    );
+    const filename = `${
+        exchange.request.method
+    } ${
+        exchange.request.parsedUrl.hostname
+    }.har`;
+
+    const element = document.createElement('a');
+    element.setAttribute('href',
+        'data:application/har+json;charset=utf-8,' + encodeURIComponent(harContent)
+    );
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+};
+
+const DownloadHarPill = styled(observer((p: {
+    className?: string,
+    exchange: HttpExchange
+}) =>
+    <PillButton
+        className={p.className}
+        onClick={() => downloadHar(p.exchange)}
+        disabled={!p.exchange.response || p.exchange.response === 'aborted'}
+    >
+        <FontAwesomeIcon icon={['fas', 'download']} /> Save as HAR
+    </PillButton>
+))`
+    margin-right: auto;
+    padding: 2px 8px 3px;
+`;
+
 @inject('accountStore')
 @observer
 export class ExchangeExportCard extends React.Component<ExportCardProps> {
@@ -126,7 +166,10 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
 
         return <ExchangeCard {...this.props}>
             <header>
-                { !isPaidUser && <ProHeaderPill /> }
+                { isPaidUser
+                    ? <DownloadHarPill exchange={exchange} />
+                    : <ProHeaderPill />
+                }
 
                 <PillSelector<SnippetOption>
                     onChange={this.setSnippetOption}

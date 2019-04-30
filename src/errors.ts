@@ -1,6 +1,8 @@
 import * as Sentry from '@sentry/browser';
 
+import { UI_VERSION } from './util';
 import { getDesktopShellVersion } from './tracking';
+
 import { waitUntilServerReady, getVersion as getServerVersion } from './model/htk-client';
 
 let sentryInitialized = false;
@@ -13,7 +15,7 @@ export { Sentry };
 
 export function initSentry(dsn: string | undefined) {
     if (dsn) {
-        Sentry.init({ dsn: dsn, release: process.env.COMMIT_REF });
+        Sentry.init({ dsn: dsn, release: UI_VERSION });
 
         waitUntilServerReady().then(async () => {
             const version = await getServerVersion();

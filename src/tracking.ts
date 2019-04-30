@@ -1,4 +1,7 @@
 import * as ReactGA from 'react-ga';
+
+import { UI_VERSION } from './util';
+
 import { waitUntilServerReady, getVersion as getServerVersion } from './model/htk-client';
 
 const GA_ID = process.env.GA_ID;
@@ -24,7 +27,7 @@ export function initTracking() {
         getDesktopShellVersion().then((version) => ReactGA.set({ 'dimension2': version }));
 
         // dimension3 is version:ui. We don't version the UI, so it's just the current commit hash
-        ReactGA.set({ 'dimension3': process.env.COMMIT_REF });
+        ReactGA.set({ 'dimension3': UI_VERSION });
 
         ReactGA.timing({
             category: 'Initial load',

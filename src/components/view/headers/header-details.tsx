@@ -1,9 +1,9 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
-import { Headers } from 'mockttp/dist/types';
 
 import { styled } from '../../../styles';
+import { Headers } from '../../../types';
 
 import { getHeaderDocs } from '../../../model/http-docs';
 
