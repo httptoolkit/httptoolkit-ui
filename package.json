@@ -63,7 +63,7 @@
     "deserialize-error": "0.0.3",
     "dompurify": "^1.0.9",
     "graphql.js": "^0.5.2",
-    "httpsnippet": "^1.18.0",
+    "httpsnippet": "^1.19.0",
     "js-beautify": "^1.8.8",
     "json-schema-ref-parser": "^6.1.0",
     "jsonwebtoken": "^8.4.0",
