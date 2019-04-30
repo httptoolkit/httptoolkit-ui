@@ -7,7 +7,7 @@ import { UI_VERSION, asHeaderArray } from '../util';
 import { Headers } from '../types';
 
 import { HttpExchange } from "./exchange";
-import { HtkRequest, HtkResponse } from '../types';
+import { HtkRequest } from '../types';
 
 export type Har = HarFormat.Har;
 export type HarEntry = HarFormat.Entry;
@@ -80,10 +80,23 @@ export function generateHarRequest(request: HtkRequest): HarFormat.Request {
 const harResponseDecoder = new TextDecoder('utf8', { fatal: true });
 
 function generateHarResponse(exchange: HttpExchange): HarFormat.Response {
-    const { request } = exchange;
-    const response = exchange.response as HtkResponse;
+    const { request, response } = exchange;
 
-    const decodedBuffer = get(response.body, 'decodedBuffer');
+    if (!response || response === 'aborted') {
+        return {
+            status: 0,
+            statusText: "",
+            httpVersion: "",
+            headers: [],
+            cookies: [],
+            content: { size: 0, mimeType: "application/x-unknown" },
+            redirectURL: "",
+            headersSize: -1,
+            bodySize: -1
+        };
+    }
+
+    const { decodedBuffer } = response.body;
 
     let responseContent: { text: string, encoding?: string } | {};
     try {
