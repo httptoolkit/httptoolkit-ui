@@ -166,3 +166,17 @@ export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
 
     return val.slice(0, -1).join(initialSep) + finalSep + val[val.length - 1];
 }
+
+export function saveFile(filename: string, mimeType: string, content: string): void {
+    const element = document.createElement('a');
+    element.setAttribute('href',
+        `data:${mimeType},${encodeURIComponent(content)}`
+    );
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}

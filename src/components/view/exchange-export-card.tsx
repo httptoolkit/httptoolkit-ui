@@ -7,6 +7,7 @@ import * as HTTPSnippet from "httpsnippet";
 import { Omit } from "../../types";
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
+import { saveFile } from '../../util';
 
 import { AccountStore } from "../../model/account/account-store";
 import { UiStore } from '../../model/ui-store';
@@ -127,17 +128,7 @@ const downloadHar = (exchange: HttpExchange) => {
         exchange.request.parsedUrl.hostname
     }.har`;
 
-    const element = document.createElement('a');
-    element.setAttribute('href',
-        'data:application/har+json;charset=utf-8,' + encodeURIComponent(harContent)
-    );
-    element.setAttribute('download', filename);
-
-    element.style.display = 'none';
-
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    saveFile(filename, 'application/har+json;charset=utf-8', harContent);
 };
 
 const DownloadHarPill = styled(observer((p: {
@@ -195,6 +186,11 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
                         Instantly export requests as code, for languages and tools including cURL, wget, JS
                         (XHR, Node HTTP, Request, ...), Python (native or Requests), Ruby, Java (OkHttp
                         or Unirest), Go, PHP, Swift, HTTPie, and a whole lot more.
+                    </p>
+                    <p>
+                        Want to save the exchange itself? Export one or all requests as HAR (the{' '}
+                        <a href="https://en.wikipedia.org/wiki/.har">HTTP Archive Format</a>), to import
+                        and examine elsewhere, share with your team, or store for future reference.
                     </p>
                 </CardSalesPitch>
             }

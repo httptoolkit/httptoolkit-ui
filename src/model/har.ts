@@ -83,7 +83,7 @@ function generateHarResponse(exchange: HttpExchange): HarFormat.Response {
     const { request } = exchange;
     const response = exchange.response as HtkResponse;
 
-    const { decodedBuffer } = response.body;
+    const decodedBuffer = get(response.body, 'decodedBuffer');
 
     let responseContent: { text: string, encoding?: string } | {};
     try {
@@ -108,7 +108,8 @@ function generateHarResponse(exchange: HttpExchange): HarFormat.Response {
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
         cookies: [],
         headers: asHarHeaders(response.headers),
-        content: Object.assign({
+        content: Object.assign(
+            {
                 mimeType: response.headers['content-type'] || 'application/octet-stream',
                 size: get(response.body.decodedBuffer, 'byteLength') || 0
             },

@@ -180,8 +180,8 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
             <TableFooter
-                exchangeCount={exchanges.length}
-                filteredExchangeCount={filteredExchanges.length}
+                allExchanges={exchanges}
+                filteredExchanges={filteredExchanges}
                 currentSearch={this.searchFilter || ''}
                 onSearch={this.onSearchInput}
                 onClear={onClear}

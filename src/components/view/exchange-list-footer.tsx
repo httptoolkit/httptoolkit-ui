@@ -3,7 +3,9 @@ import { observer } from 'mobx-react';
 
 import { styled } from '../../styles'
 
-import { ClearArrayButton } from './clear-button';
+import { HttpExchange } from '../../model/exchange';
+
+import { ClearAllButton, DownloadAsHarButton } from './exchange-list-buttons';
 import { SearchBox } from '../common/search-box';
 
 export const HEADER_FOOTER_HEIGHT = 38;
@@ -52,8 +54,8 @@ export const TableFooter = styled(observer((props: {
     currentSearch: string,
     onSearch: (input: string) => void,
 
-    exchangeCount: number,
-    filteredExchangeCount: number
+    allExchanges: HttpExchange[],
+    filteredExchanges: HttpExchange[]
 }) => <div className={props.className}>
     <ExchangeSearchBox
         value={props.currentSearch}
@@ -61,10 +63,14 @@ export const TableFooter = styled(observer((props: {
         placeholder='Filter by URL, headers, status...'
     />
     <RequestCounter
-        exchangeCount={props.exchangeCount}
-        filteredExchangeCount={props.filteredExchangeCount}
+        exchangeCount={props.allExchanges.length}
+        filteredExchangeCount={props.filteredExchanges.length}
     />
-    <ClearArrayButton count={props.exchangeCount} onClear={props.onClear} />
+    <DownloadAsHarButton
+        exchanges={props.filteredExchanges}
+        exchangesAreFiltered={props.filteredExchanges.length !== props.allExchanges.length}
+    />
+    <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
 </div>))`
     position: absolute;
     bottom: 0;
