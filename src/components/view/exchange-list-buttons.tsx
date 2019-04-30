@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { observer } from 'mobx-react';
+import { observer, inject } from 'mobx-react';
 import * as dateFns from 'date-fns';
 
 import { styled } from '../../styles'
@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '../../icons';
 import { HttpExchange } from '../../model/exchange';
 import { generateHar } from '../../model/har';
 import { saveFile } from '../../util';
+import { AccountStore } from '../../model/account/account-store';
 
 const IconButton = styled((p: {
     className?: string,
@@ -58,19 +59,24 @@ export const ClearAllButton = observer((props: {
     />
 });
 
-export const DownloadAsHarButton = observer((props: {
+export const DownloadAsHarButton = inject('accountStore')(observer((props: {
     className?: string,
-    exchanges: HttpExchange[],
-    exchangesAreFiltered: boolean
+    accountStore?: AccountStore,
+    exchanges: HttpExchange[]
 }) => {
+    const { isPaidUser } = props.accountStore!;
+
     return <IconButton
         icon={['fas', 'download']}
         title={
-            props.exchangesAreFiltered
-                ? 'Download the currently filtered requests as a HAR file'
-                : 'Download all requests as a HAR file'
+            isPaidUser
+                ? 'Download these requests & responses as a HAR file'
+                : (
+                    'Pro-only: Export requests & responses as a HAR file, ' +
+                    'to save for later or share with others'
+                )
         }
-        disabled={props.exchanges.length === 0}
+        disabled={!isPaidUser || props.exchanges.length === 0}
         onClick={() => {
             const harContent = JSON.stringify(
                 generateHar(props.exchanges)
@@ -82,4 +88,4 @@ export const DownloadAsHarButton = observer((props: {
             saveFile(filename, 'application/har+json;charset=utf-8', harContent);
         }}
     />
-});
+}));

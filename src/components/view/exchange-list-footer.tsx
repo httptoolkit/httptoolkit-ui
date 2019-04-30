@@ -66,10 +66,7 @@ export const TableFooter = styled(observer((props: {
         exchangeCount={props.allExchanges.length}
         filteredExchangeCount={props.filteredExchanges.length}
     />
-    <DownloadAsHarButton
-        exchanges={props.filteredExchanges}
-        exchangesAreFiltered={props.filteredExchanges.length !== props.allExchanges.length}
-    />
+    <DownloadAsHarButton exchanges={props.filteredExchanges} />
     <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
 </div>))`
     position: absolute;
