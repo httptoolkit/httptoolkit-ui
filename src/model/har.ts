@@ -188,10 +188,14 @@ function generateHarEntry(exchange: HttpExchange): HarEntry {
             blocked: -1,
             dns: -1,
             connect: -1,
-            send: sendDuration,
-            wait: waitDuration,
-            receive: receiveDuration,
-            ssl: -1
+            ssl: -1,
+            // These can be negative when events overlap. E.g. if we mock a response we may
+            // send the response before the request has been completed. In that case, we
+            // just 0 the values for now, because these 3 are required >= 0 by the HAR spec
+            // TODO: In future, more clearly express that.
+            send: Math.max(sendDuration, 0),
+            wait: Math.max(waitDuration, 0),
+            receive: Math.max(receiveDuration, 0)
         }
     };
 }
