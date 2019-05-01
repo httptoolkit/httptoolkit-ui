@@ -18,24 +18,31 @@ const RequestCounter = styled(observer((props: {
     <div className={props.className}>
         <span className='count'>
             { props.filteredExchangeCount }
-            { props.exchangeCount !== props.filteredExchangeCount && `
-                / ${ props.exchangeCount }
-            `}
+            { props.exchangeCount !== props.filteredExchangeCount &&
+                ` / ${ props.exchangeCount }`
+            }
         </span>
         <span className='label'>requests</span>
 </div>
 ))`
-    min-width: 120px;
+    margin-left: auto;
+    padding: 0 10px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 
     .count {
         font-size: 20px;
         font-weight: bold;
+        white-space: nowrap;
     }
 
     .label {
+        margin-top: -4px;
         font-size: ${p => p.theme.textSize};
+        opacity: 0.8;
         font-weight: lighter;
-        margin-left: 5px;
     }
 `;
 
@@ -46,6 +53,10 @@ const ExchangeSearchBox = styled(SearchBox)`
         font-size: ${p => p.theme.textSize};
         padding: 5px 12px;
     }
+`;
+
+const ButtonsContainer = styled.div`
+    display: flex;
 `;
 
 export const TableFooter = styled(observer((props: {
@@ -66,10 +77,10 @@ export const TableFooter = styled(observer((props: {
         exchangeCount={props.allExchanges.length}
         filteredExchangeCount={props.filteredExchanges.length}
     />
-    <div>
+    <ButtonsContainer>
         <DownloadAsHarButton exchanges={props.filteredExchanges} />
         <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
-    </div>
+    </ButtonsContainer>
 </div>))`
     position: absolute;
     bottom: 0;
