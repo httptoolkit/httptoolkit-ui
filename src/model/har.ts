@@ -3,7 +3,7 @@ import { get } from 'typesafe-get';
 import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 
-import { UI_VERSION, asHeaderArray } from '../util';
+import { UI_VERSION } from '../util';
 import { Headers } from '../types';
 
 import { HttpExchange } from "./exchange";
@@ -32,7 +32,9 @@ export function generateHar(exchanges: HttpExchange[]): Har {
 function asHarHeaders(headers: Headers) {
     return _.map(headers, (headerValue, headerKey) => ({
         name: headerKey,
-        value: asHeaderArray(headerValue).join(',')
+        value: _.isArray(headerValue)
+            ? headerValue.join(',')
+            : headerValue!
     }))
 }
 
