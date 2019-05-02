@@ -62,8 +62,11 @@ export class ExchangeBody implements MessageBody {
     ) {
         if (!message.body) {
             this._encoded = Buffer.from("");
-        } else {
+        } else if ('buffer' in message.body) {
             this._encoded = message.body.buffer;
+        } else {
+            this._encoded = fakeBuffer(message.body.encodedLength);
+            this._decoded = message.body.decoded;
         }
 
         this._contentEncoding = asHeaderArray(headers['content-encoding']);
@@ -75,7 +78,11 @@ export class ExchangeBody implements MessageBody {
         return this._encoded;
     }
 
+    private _decoded: Buffer | undefined;
+
     decodedPromise: ObservablePromise<Buffer | undefined> = lazyObservablePromise(async () => {
+        // Exactly one of _encoded & _decoded is a buffer, never neither/both.
+        if (this._decoded) return this._decoded;
         const encodedBuffer = this.encoded as Buffer;
 
         // Temporarily change to a fake buffer, while the web worker takes the data to decode

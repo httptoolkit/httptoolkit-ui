@@ -2,12 +2,13 @@ import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
+import * as HarValidator from 'har-validator';
 
 import { UI_VERSION, ObservablePromise } from '../util';
 import { Headers } from '../types';
 
-import { HttpExchange } from "./exchange";
-import { HtkRequest } from '../types';
+import { HttpExchange, TimingEvents } from "./exchange";
+import { HtkRequest, HarRequest, HarResponse } from '../types';
 
 export type Har = HarFormat.Har;
 export type HarEntry = HarFormat.Entry;
@@ -36,6 +37,13 @@ function asHarHeaders(headers: Headers) {
             ? headerValue.join(',')
             : headerValue!
     }))
+}
+
+function asHtkHeaders(headers: HarFormat.Header[]) {
+    return _(headers)
+        .keyBy((header) => header.name)
+        .mapValues((header) => header.value)
+        .value() as Headers;
 }
 
 function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
@@ -217,4 +225,136 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
             receive: Math.max(receiveDuration, 0)
         }
     };
+}
+
+export type ParsedHar = {
+    requests: HarRequest[],
+    responses: HarResponse[],
+    aborts: HarRequest[]
+};
+
+const sumTimings = (
+    timings: HarFormat.Timings,
+    ...keys: Array<keyof HarFormat.Timings>
+): number =>
+    _.sumBy(keys, (k) => {
+        const v = Number(timings[k]);
+        if (!v || v < 0) return 0;
+        else return v;
+    });
+
+export async function parseHar(harContents: unknown): Promise<ParsedHar> {
+    const har = await HarValidator.har(cleanRawHarData(harContents));
+
+    const baseId = _.random(1_000_000) + '-';
+
+    const requests: HarRequest[] = [];
+    const responses: HarResponse[] = [];
+    const aborts: HarRequest[] = [];
+
+    har.log.entries.forEach((entry, i) => {
+        const id = baseId + i;
+
+        const timingEvents: TimingEvents = Object.assign({
+            startTime: dateFns.parse(entry.startedDateTime).getTime(),
+            startTimestamp: 0,
+            bodyReceivedTimestamp: sumTimings(entry.timings,
+                'blocked',
+                'dns',
+                'connect',
+                'send'
+            ),
+            headersSentTimestamp: sumTimings(entry.timings,
+                'blocked',
+                'dns',
+                'connect',
+                'send',
+                'wait'
+            )
+        }, entry.response.status !== 0
+            ? { responseSentTimestamp: entry.time }
+            : { abortedTimestamp: entry.time }
+        );
+
+        const request = parseHarRequest(id, entry.request, timingEvents);
+        requests.push(request);
+
+        if (entry.response.status !== 0) {
+            responses.push(parseHarResponse(id, entry.response, timingEvents));
+        } else {
+            aborts.push(request);
+        }
+    });
+
+    return { requests, responses, aborts };
+}
+
+// Mutatively cleans & returns the HAR, to tidy up irrelevant but potentially
+// problematic details & ensure we can parse it, if at all possible.
+function cleanRawHarData(harContents: any) {
+    const entries = get(harContents, 'log', 'entries');
+    if (!entries) return;
+
+    // Some HAR exports include invalid serverIPAddresses, which fail validation.
+    // Somebody is wrong here, but we don't really care - just drop it entirely.
+    entries.forEach((entry: any) => {
+        if (entry.serverIPAddress === "") {
+            delete entry.serverIPAddress;
+        }
+
+        if (entry.serverIPAddress === "[::1]") {
+            entry.serverIPAddress = "::1";
+        }
+    });
+
+    return harContents;
+}
+
+function parseHarRequest(
+    id: string,
+    request: HarFormat.Request,
+    timingEvents: TimingEvents
+): HarRequest {
+    const parsedUrl = new URL(request.url);
+
+    return {
+        id,
+        timingEvents,
+        protocol: request.url.split(':')[0],
+        method: request.method,
+        url: request.url,
+        path: parsedUrl.pathname,
+        hostname: parsedUrl.hostname,
+        // We need to promise it has a 'host' header (i.e. the headers are
+        // legal for an HTTP request):
+        headers: asHtkHeaders(request.headers) as Headers & { host: string },
+        body: {
+            decoded: Buffer.from(
+                request.postData ? request.postData.text : '',
+                'utf8'
+            ),
+            encodedLength: request.bodySize
+        }
+    }
+}
+
+function parseHarResponse(
+    id: string,
+    response: HarFormat.Response,
+    timingEvents: TimingEvents
+): HarResponse {
+    return {
+        id,
+        timingEvents,
+        statusCode: response.status,
+        statusMessage: response.statusText,
+        headers: asHtkHeaders(response.headers),
+        body: {
+            decoded: Buffer.from(
+                response.content.text || '',
+                response.content.encoding || 'utf8'
+            ),
+            encodedLength: response.bodySize
+        }
+    }
 }

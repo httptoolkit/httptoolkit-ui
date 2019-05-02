@@ -6,8 +6,9 @@ import { styled } from '../../styles'
 import { FontAwesomeIcon } from '../../icons';
 import { HttpExchange } from '../../model/exchange';
 import { generateHar } from '../../model/har';
-import { saveFile } from '../../util';
+import { saveFile, uploadFile } from '../../util';
 import { AccountStore } from '../../model/account/account-store';
+import { InterceptionStore } from '../../model/interception-store';
 
 const IconButton = styled((p: {
     className?: string,
@@ -89,3 +90,29 @@ export const DownloadAsHarButton = inject('accountStore')(observer((props: {
         }}
     />
 }));
+
+export const ImportHarButton = inject('interceptionStore', 'accountStore')(
+    observer((props: {
+        accountStore?: AccountStore,
+        interceptionStore?: InterceptionStore
+    }) => {
+        const { isPaidUser } = props.accountStore!;
+
+        return <IconButton
+            icon={['fas', 'upload']}
+            title={
+                isPaidUser
+                    ? 'Import exchanges from a HAR file'
+                    : (
+                        'Pro-only: Imports requests & responses from HAR files, ' +
+                        'to examine past recordings or data from other tools'
+                    )
+            }
+            disabled={!isPaidUser}
+            onClick={async () => {
+                const uploadedFile = await uploadFile('text', ['.har', 'application/har', 'application/har+json']);
+                if (uploadedFile) props.interceptionStore!.loadFromHar(JSON.parse(uploadedFile));
+            }}
+        />
+    })
+);

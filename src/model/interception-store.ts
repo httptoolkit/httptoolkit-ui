@@ -11,6 +11,7 @@ import { getInterceptors, activateInterceptor, getConfig, announceServerReady } 
 import * as amIUsingHtml from '../amiusing.html';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
+import { parseHar } from './har';
 
 configure({ enforceActions: 'observed' });
 
@@ -180,6 +181,21 @@ export class InterceptionStore {
     @action.bound
     clearExchanges() {
         this.exchanges.clear();
+    }
+
+    async loadFromHar(harContents: {}) {
+        const { requests, responses, aborts } = await parseHar(harContents);
+
+        // Arguably we could call addRequest/setResponse directly, but this is a little
+        // nicer just in case the UI thread is already under strain.
+        requests.forEach(r => this.requestQueue.push(r));
+        responses.forEach(r => this.responseQueue.push(r));
+        aborts.forEach(r => this.abortQueue.push(r));
+
+        if (!this.isFlushQueued) {
+            this.isFlushQueued = true;
+            requestAnimationFrame(this.flushQueuedUpdates);
+        }
     }
 
     async activateInterceptor(interceptorId: string) {

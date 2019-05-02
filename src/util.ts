@@ -190,3 +190,45 @@ export function saveFile(filename: string, mimeType: string, content: string): v
     element.click();
     document.body.removeChild(element);
 }
+
+type FileReaderType = 'text' | 'arraybuffer';
+
+export function uploadFile(type: 'arraybuffer', acceptedMimeTypes: string[]): Promise<ArrayBuffer | null>
+export function uploadFile(type: 'text', acceptedMimeTypes: string[]): Promise<string | null>;
+export function uploadFile(
+    type: FileReaderType = 'arraybuffer',
+    acceptedMimeTypes: string[]
+): Promise<ArrayBuffer | string | null> {
+    const fileInput = document.createElement('input');
+    fileInput.setAttribute('type', 'file');
+    if (acceptedMimeTypes.length > 0) {
+        fileInput.setAttribute('accept', acceptedMimeTypes.join(','));
+    }
+
+    const fileReader = new FileReader();
+    fileInput.addEventListener('change', () => {
+        if (!fileInput.files || !fileInput.files.length) {
+            return Promise.resolve(null);
+        }
+
+        const file = fileInput.files[0];
+
+        if (type === 'text') {
+            fileReader.readAsText(file);
+        } else {
+            fileReader.readAsArrayBuffer(file);
+        }
+    });
+
+    fileInput.click();
+
+    return new Promise((resolve, reject) => {
+        fileReader.addEventListener('load', () => {
+            resolve(fileReader.result);
+        });
+
+        fileReader.addEventListener('error', (error) => {
+            reject(error);
+        });
+    });
+}

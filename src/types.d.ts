@@ -10,9 +10,12 @@ import { TrafficSource } from './model/sources';
 import { HtkContentType } from './content-types';
 import { ObservablePromise } from './util';
 
+export type HarBody = { encodedLength: number, decoded: Buffer };
+export type HarRequest = Omit<MockttpRequest, 'body'> & { body: HarBody; };
+export type HarResponse = Omit<MockttpResponse, 'body'> & { body: HarBody; };
 
-export type InputRequest = MockttpRequest;
-export type InputResponse = MockttpResponse;
+export type InputRequest = MockttpRequest | HarRequest;
+export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 
 export type HtkRequest = Omit<InputRequest, 'body'> & {

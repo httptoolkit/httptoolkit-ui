@@ -5,7 +5,7 @@ import { styled } from '../../styles'
 
 import { HttpExchange } from '../../model/exchange';
 
-import { ClearAllButton, DownloadAsHarButton } from './exchange-list-buttons';
+import { ClearAllButton, DownloadAsHarButton, ImportHarButton } from './exchange-list-buttons';
 import { SearchBox } from '../common/search-box';
 
 export const HEADER_FOOTER_HEIGHT = 38;
@@ -79,6 +79,7 @@ export const TableFooter = styled(observer((props: {
     />
     <ButtonsContainer>
         <DownloadAsHarButton exchanges={props.filteredExchanges} />
+        <ImportHarButton />
         <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
     </ButtonsContainer>
 </div>))`
