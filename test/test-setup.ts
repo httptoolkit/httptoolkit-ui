@@ -17,9 +17,9 @@ if (Enzyme) {
 export const expect = chai.expect;
 
 import * as dateFns from 'date-fns';
-import { buildBodyReader } from 'mockttp/dist/server/request-utils';
 import { Icons } from '../src/icons';
-import { HttpExchange } from '../src/model/exchange';
+import { HttpExchange, ExchangeBody } from '../src/model/exchange';
+import { HtkRequest, HtkResponse } from '../src/types';
 
 export const getExchangeData = ({
     hostname = 'example.com',
@@ -37,28 +37,40 @@ export const getExchangeData = ({
     id: '',
     request: {
         id: '',
+        httpVersion: '1.1',
         method,
         url: `${protocol}://${hostname}${path}${query}`,
         parsedUrl: new URL(`${protocol}://${hostname}${path}${query}`),
         protocol,
         hostname,
         path,
-        headers: requestHeaders,
-        body: buildBodyReader(Buffer.from(requestBody), requestHeaders),
+        headers: requestHeaders as { host: string },
+        body: new ExchangeBody(
+            { body: { buffer: Buffer.from(requestBody) } } as any,
+            requestHeaders
+        ),
         contentType: 'text',
-        source: { ua: '', summary: 'Unknown client', icon: Icons.Unknown }
-    },
+        source: { ua: '', summary: 'Unknown client', icon: Icons.Unknown },
+        timingEvents: { startTime: Date.now() },
+        cache: new Map() as any
+    } as HtkRequest,
     response: {
         id: '',
         statusCode,
         statusMessage,
         headers: responseHeaders,
-        body: buildBodyReader(Buffer.from(responseBody), responseHeaders),
-        contentType: 'text'
-    },
+        body: new ExchangeBody(
+            { body: { buffer: Buffer.from(responseBody) } } as any,
+            responseHeaders
+        ),
+        contentType: 'text',
+        timingEvents: { startTime: Date.now() },
+        cache: new Map()  as any
+    } as HtkResponse,
     timingEvents: { startTime: Date.now() },
     searchIndex: '',
-    category: 'unknown'
+    category: 'unknown',
+    cache: new Map() as any
 }) as HttpExchange;
 
 export function httpDate(date: Date) {

@@ -4,29 +4,28 @@ import { expect } from '../../test-setup';
 
 import { decodeBody } from '../../../src/workers/worker-api';
 
-function body(content: Buffer) {
-    return {
-        buffer: content
-    };
-}
-
 describe('Worker decoding', () => {
     it('should decode a response with no encoding', async () => {
-        const result = await decodeBody(body(Buffer.from('hello world')), []);
-        expect(result.toString('utf8')).to.equal('hello world');
+        const body = Buffer.from('hello world');
+        const { decoded, encoded } = await decodeBody(body, []);
+
+        expect(decoded.toString('utf8')).to.equal('hello world');
+        expect(encoded.toString('utf8')).to.equal('hello world');
     });
 
     it('should decode a response with an encoding', async () => {
-        const content = Buffer.from(zlib.gzipSync('Gzipped response'));
+        const gzippedContent = zlib.gzipSync('Gzipped response');
+        const body = Buffer.from(gzippedContent);
 
-        const result = await decodeBody(body(content), ['gzip']);
+        const { decoded, encoded } = await decodeBody(body, ['gzip']);
 
-        expect(result.toString('utf8')).to.equal('Gzipped response');
+        expect(decoded.toString('utf8')).to.equal('Gzipped response');
+        expect(encoded.toString('utf8')).to.equal(gzippedContent.toString('utf8'));
     });
 
     it('should fail to decode a response with the wrong encoding', () => {
         return expect(
-            decodeBody(body(Buffer.from('hello world')), ['randomized'])
+            decodeBody(Buffer.from('hello world'), ['randomized'])
         ).to.be.rejectedWith('Unknown encoding');
     });
 });
