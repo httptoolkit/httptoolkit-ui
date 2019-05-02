@@ -1,27 +1,46 @@
-import { CompletedRequest, CompletedResponse } from 'mockttp';
-import { Headers } from 'mockttp/dist/types';
+import {
+    CompletedRequest as MockttpRequest,
+    CompletedResponse as MockttpResponse
+} from 'mockttp';
+import { Headers, TimingEvents } from 'mockttp/dist/types';
 import { ComponentClass } from 'react';
 import { ObservableMap } from 'mobx';
 
 import { TrafficSource } from './model/sources';
 import { HtkContentType } from './content-types';
-// Useful app specific types
+import { ObservablePromise } from './util';
 
-export type HtkRequest = CompletedRequest & {
+
+export type InputRequest = MockttpRequest;
+export type InputResponse = MockttpResponse;
+export type InputMessage = InputRequest | InputResponse;
+
+export type HtkRequest = Omit<InputRequest, 'body'> & {
     parsedUrl: URL,
     source: TrafficSource,
     contentType: HtkContentType,
-    cache: ObservableMap<symbol, unknown>
+    cache: ObservableMap<symbol, unknown>,
+    body: MessageBody
 };
 
-export type HtkResponse = CompletedResponse & {
+export type HtkResponse = Omit<InputResponse, 'body'> & {
     contentType: HtkContentType,
-    cache: ObservableMap<symbol, unknown>
+    cache: ObservableMap<symbol, unknown>,
+    body: MessageBody
+};
+
+export type MessageBody = {
+    encoded: { byteLength: number } | Buffer,
+    decoded: Buffer | undefined,
+    decodedPromise: ObservablePromise<Buffer | undefined>
 };
 
 export type ExchangeMessage = HtkRequest | HtkResponse;
 
-export { Headers };
+export {
+    Headers,
+    TimingEvents
+};
 
 // Should only be created in the process of sanitizing, so every object with an
 // __html prop must be HTML-safe.

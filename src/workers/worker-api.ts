@@ -53,31 +53,31 @@ function callApi<
  * Takes a body, asynchronously decodes it and returns the decoded buffer.
  *
  * Note that this requires transferring the _encoded_ body to a web worker,
- * so whilst this is running body.buffer will temporarily appear empty.
- * Before resolving the original encoded buffer will be put back.
+ * so after this is run the encoded the buffer will become empty, if any
+ * decoding is actually required.
+ *
+ * The method returns an object containing the new decoded buffer and the
+ * original encoded data (transferred back) in a new buffer.
  */
-export async function decodeBody(body: { buffer: Buffer }, encodings: string[]) {
-    if (encodings.length === 0 || (encodings.length === 1 && encodings[0] === 'identity')) {
-        return body.buffer;
+export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
+    if (
+        encodings.length === 0 ||
+        (encodings.length === 1 && encodings[0] === 'identity')
+    ) {
+        // Shortcut to skip decoding when we know it's not required
+        return { encoded: encodedBuffer, decoded: encodedBuffer };
     }
-
-    const encodedLength = body.buffer.byteLength;
-    const encodedBuffer = body.buffer.buffer;
-    // Temporary fake buffer, whilst we decode the real one
-    // Bit of a hack. Could use a real empty buffer? Expensive &
-    // unnecessary for very large bodies though.
-    body.buffer = <Buffer> { byteLength: encodedLength };
 
     const result = await callApi<DecodeRequest, DecodeResponse>({
         type: 'decode',
-        buffer: encodedBuffer as ArrayBuffer,
+        buffer: encodedBuffer.buffer as ArrayBuffer,
         encodings
-    }, [encodedBuffer]);
+    }, [encodedBuffer.buffer]);
 
-    // Put the transferred encoded buffer back
-    body.buffer = Buffer.from(result.inputBuffer);
-
-    return Buffer.from(result.decodedBuffer);
+    return {
+        encoded: Buffer.from(result.inputBuffer),
+        decoded: Buffer.from(result.decodedBuffer)
+    };
 }
 
 export async function testEncodingsAsync(decodedBuffer: Buffer) {

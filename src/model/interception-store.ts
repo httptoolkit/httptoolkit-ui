@@ -1,8 +1,9 @@
 import * as _ from 'lodash';
 
 import { observable, action, configure, flow, computed, runInAction } from 'mobx';
-import { getLocal, Mockttp, CompletedRequest, CompletedResponse } from 'mockttp';
+import { getLocal, Mockttp } from 'mockttp';
 
+import { InputRequest, InputResponse } from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from './htk-client';
@@ -46,9 +47,10 @@ export class InterceptionStore {
     }
 
     // TODO: Combine into a batchedEvent queue of callbacks
-    private requestQueue: CompletedRequest[] = [];
-    private responseQueue: CompletedResponse[] = [];
-    private abortedQueue: CompletedRequest[] = [];
+    private requestQueue: InputRequest[] = [];
+    private responseQueue: InputResponse[] = [];
+    private abortQueue: InputRequest[] = [];
+    private isFlushQueued = false;
 
     readonly exchanges = observable.array<HttpExchange>([], { deep: false });
 
@@ -93,25 +95,28 @@ export class InterceptionStore {
         console.log(`Server started on port ${this.server.port}`);
 
         this.server.on('request', (req) => {
-            if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+            if (!this.isFlushQueued) {
+                this.isFlushQueued = true;
                 requestAnimationFrame(this.flushQueuedUpdates);
             }
 
             this.requestQueue.push(req);
         });
         this.server.on('response', (res) => {
-            if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+            if (!this.isFlushQueued) {
+                this.isFlushQueued = true;
                 requestAnimationFrame(this.flushQueuedUpdates);
             }
 
             this.responseQueue.push(res);
         });
         this.server.on('abort', (req) => {
-            if (this.requestQueue.length === 0 && this.responseQueue.length === 0) {
+            if (!this.isFlushQueued) {
+                this.isFlushQueued = true;
                 requestAnimationFrame(this.flushQueuedUpdates);
             }
 
-            this.abortedQueue.push(req);
+            this.abortQueue.push(req);
         });
 
         window.addEventListener('beforeunload', () => {
@@ -121,6 +126,8 @@ export class InterceptionStore {
 
     @action.bound
     private flushQueuedUpdates() {
+        this.isFlushQueued = false;
+
         // We batch request updates until here. This runs in a mobx transaction, and
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
@@ -131,8 +138,8 @@ export class InterceptionStore {
         this.responseQueue.forEach((res) => this.setResponse(res));
         this.responseQueue = [];
 
-        this.abortedQueue.forEach((req) => this.markRequestAborted(req));
-        this.abortedQueue = [];
+        this.abortQueue.forEach((req) => this.markRequestAborted(req));
+        this.abortQueue = [];
     }
 
     async refreshInterceptors() {
@@ -144,14 +151,14 @@ export class InterceptionStore {
     }
 
     @action
-    private addRequest(request: CompletedRequest) {
+    private addRequest(request: InputRequest) {
         const exchange = new HttpExchange(request);
 
         this.exchanges.push(exchange);
     }
 
     @action
-    private markRequestAborted(request: CompletedRequest) {
+    private markRequestAborted(request: InputRequest) {
         const exchange = _.find(this.exchanges, { id: request.id });
 
         // Shouldn't happen in general, but possible in some very rare cases
@@ -161,7 +168,7 @@ export class InterceptionStore {
     }
 
     @action
-    private setResponse(response: CompletedResponse) {
+    private setResponse(response: InputResponse) {
         const exchange = _.find(this.exchanges, { id: response.id });
 
         // Shouldn't happen in general, but possible in some very rare cases

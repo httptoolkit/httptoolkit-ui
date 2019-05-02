@@ -1,8 +1,7 @@
 import { IObservableValue, observable, action } from 'mobx';
 
-import { decodeBody, testEncodingsAsync } from '../workers/worker-api';
+import { testEncodingsAsync } from '../workers/worker-api';
 import { ExchangeMessage } from '../types';
-import { asHeaderArray } from '../util';
 
 export function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;
@@ -19,32 +18,6 @@ export function getReadableSize(bytes: number, siUnits = true) {
     return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
 }
 
-const DecodedBodyCacheKey = Symbol('decoded-body');
-type DecodedBodyCache = Map<typeof DecodedBodyCacheKey,
-    IObservableValue<Buffer | undefined> | undefined
->;
-
-export function getDecodedBody(message: ExchangeMessage): Buffer | undefined {
-    const bodyCache = <DecodedBodyCache> message.cache;
-    const existingObservable = bodyCache.get(DecodedBodyCacheKey);
-
-    if (existingObservable) return existingObservable.get();
-    else {
-        const bodyObservable = observable.box<Buffer | undefined>();
-        bodyCache.set(DecodedBodyCacheKey, bodyObservable);
-
-        decodeBody(message.body, asHeaderArray(message.headers['content-encoding']))
-        .then(action((decodingResult: Buffer) => {
-            bodyObservable.set(decodingResult);
-        }))
-        // Ignore errors for now - broken encodings etc stay undefined forever
-        .catch(() => {});
-
-        // Will be undefined, but ensures we're subscribed to the observable
-        return bodyObservable.get();
-    }
-}
-
 const EncodedSizesCacheKey = Symbol('encoded-body-test');
 type EncodedBodySizes = { [encoding: string]: number };
 type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,
@@ -52,8 +25,7 @@ type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,
 >;
 
 export function testEncodings(message: ExchangeMessage): EncodedBodySizes | undefined {
-    const realDecoding = getDecodedBody(message);
-    if (!realDecoding) return;
+    if (!message.body.decoded) return;
 
     const encodedSizesCache = <EncodedSizesCache> message.cache;
     const existingObservable = encodedSizesCache.get(EncodedSizesCacheKey);
@@ -63,7 +35,7 @@ export function testEncodings(message: ExchangeMessage): EncodedBodySizes | unde
         const sizesObservable = observable.box<EncodedBodySizes | undefined>();
         encodedSizesCache.set(EncodedSizesCacheKey, sizesObservable);
 
-        testEncodingsAsync(realDecoding)
+        testEncodingsAsync(message.body.decoded)
         .then(action((testResults: EncodedBodySizes) => {
             sizesObservable.set(testResults)
         }))

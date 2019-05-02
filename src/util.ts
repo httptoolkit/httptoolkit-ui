@@ -167,6 +167,16 @@ export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
     return val.slice(0, -1).join(initialSep) + finalSep + val[val.length - 1];
 }
 
+// In some places, we need a Buffer in theory, but we know for sure that it'll never
+// be read, we just need to know its size (e.g. calculating compression stats).
+// For those cases, it can be useful to *carefully* provide this fake buffer instead.
+// Could actually allocate an empty buffer, but that's much more expensive if the
+// buffer is large, and probably a waste.
+export function fakeBuffer(byteLength: number): FakeBuffer {
+    return { byteLength: byteLength };
+}
+export type FakeBuffer = { byteLength: number };
+
 export function saveFile(filename: string, mimeType: string, content: string): void {
     const element = document.createElement('a');
     element.setAttribute('href',

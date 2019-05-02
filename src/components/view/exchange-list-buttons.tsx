@@ -77,9 +77,9 @@ export const DownloadAsHarButton = inject('accountStore')(observer((props: {
                 )
         }
         disabled={!isPaidUser || props.exchanges.length === 0}
-        onClick={() => {
+        onClick={async () => {
             const harContent = JSON.stringify(
-                generateHar(props.exchanges)
+                await generateHar(props.exchanges)
             );
             const filename = `HTTPToolkit_${
                 dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')

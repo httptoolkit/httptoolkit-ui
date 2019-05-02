@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { get } from 'typesafe-get';
 
 import { styled } from '../../styles';
 import { Omit, ExchangeMessage } from '../../types';
@@ -10,7 +11,7 @@ import { WarningIcon, SuggestionIcon } from '../../icons';
 
 import { HttpExchange, TimingEvents } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
-import { getDecodedBody, getReadableSize, testEncodings } from '../../model/bodies';
+import { getReadableSize, testEncodings } from '../../model/bodies';
 import {
     explainCacheability,
     explainCacheLifetime,
@@ -27,7 +28,6 @@ import {
 import { Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
 import { ContentLabelBlock, Markdown } from '../common/text-content';
-import { UnstyledButton } from '../common/inputs';
 import { ProHeaderPill, CardSalesPitch } from '../common/pro-placeholders';
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
@@ -107,20 +107,20 @@ function getEncodings(message: ExchangeMessage | 'aborted' | undefined) {
 
 const CompressionDescription = observer((p: {
     encodings: string[],
-    encodedBody: Buffer,
-    decodedBody: Buffer | undefined
+    encodedBodyLength: number,
+    decodedBodyLength: number | undefined
 }) => {
-    const { encodings, encodedBody, decodedBody } = p;
+    const { encodings, encodedBodyLength, decodedBodyLength } = p;
 
-    const compressionRatio = decodedBody ? Math.round(100 * (
-        1 - (encodedBody.byteLength / decodedBody.byteLength)
+    const compressionRatio = decodedBodyLength ? Math.round(100 * (
+        1 - (encodedBodyLength / decodedBodyLength)
     )) : undefined;
 
     return <>
         { encodings.length ? <>
             compressed with <strong>{joinAnd(encodings, ', ', ' and then ')}</strong>,
             making it {
-                compressionRatio !== undefined && decodedBody ? <>
+                compressionRatio !== undefined && decodedBodyLength ? <>
                     <strong>
                         { compressionRatio >= 0 ?
                             `${compressionRatio}% smaller`
@@ -128,9 +128,9 @@ const CompressionDescription = observer((p: {
                             `${-compressionRatio}% bigger`
                         }
                     </strong> ({
-                        getReadableSize(decodedBody.byteLength)
+                        getReadableSize(decodedBodyLength)
                     } to {
-                        getReadableSize(encodedBody.byteLength)
+                        getReadableSize(encodedBodyLength)
                     })
                 </> : <FontAwesomeIcon icon={['fas', 'spinner']} spin />
             }
@@ -142,15 +142,15 @@ const CompressionDescription = observer((p: {
 
 const CompressionOptions = observer((p: {
     encodings: string[],
-    encodedBodySize: number,
-    decodedBodySize: number | undefined,
+    encodedBodyLength: number,
+    decodedBodyLength: number | undefined,
     encodingTestResults: { [encoding: string]: number } | undefined
 }) => {
-    const { encodings, encodedBodySize, decodedBodySize, encodingTestResults } = p;
+    const { encodings, encodedBodyLength, decodedBodyLength, encodingTestResults } = p;
 
-    if (!_.isEmpty(encodingTestResults) && decodedBodySize) {
+    if (!_.isEmpty(encodingTestResults) && decodedBodyLength) {
         const realCompressionRatio = Math.round(100 * (
-            1 - (encodedBodySize / decodedBodySize)
+            1 - (encodedBodyLength / decodedBodyLength)
         ));
 
         return <>{
@@ -159,12 +159,12 @@ const CompressionOptions = observer((p: {
                 encodings.length === 1 && encoding === encodings[0]
             ).map((size, encoding) => {
                 const testedCompressionRatio = Math.round(100 * (
-                    1 - (size / decodedBodySize)
+                    1 - (size / decodedBodyLength)
                 ));
 
                 return <Pill key={encoding} title={
                         `${
-                            getReadableSize(decodedBodySize)
+                            getReadableSize(decodedBodyLength)
                         } would compress to ${
                             getReadableSize(size)
                         } using ${encoding}`
@@ -216,11 +216,12 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
         const message = p.exchange[messageType];
         const encodings = getEncodings(message);
 
-        if (typeof message !== 'object' || !message.body || !message.body.buffer) return null;
+        if (typeof message !== 'object' || !message.body.encoded.byteLength) return null;
 
-        const encodedBody = message.body.buffer;
-        const decodedBody = getDecodedBody(message);
+        const encodedBody = message.body.encoded;
+        const decodedBody = message.body.decoded;
         const decodedBodySize = decodedBody ? decodedBody.byteLength : 0;
+        const encodedBodySize = encodedBody.byteLength;
 
         const encodingTestResults = _.mapKeys(testEncodings(message),
             (_size, encoding) => getEncodingName(encoding)
@@ -235,22 +236,22 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
             decodedBodySize &&
             bestOtherEncoding &&
             !(encodings.length === 1 && bestOtherEncoding === encodings[0]) &&
-            encodingTestResults[bestOtherEncoding] < Math.min(encodedBody.byteLength, decodedBodySize);
+            encodingTestResults[bestOtherEncoding] < Math.min(encodedBodySize, decodedBodySize);
 
         return <React.Fragment key={messageType}>
             <ContentLabelBlock>{ _.upperFirst(messageType) } Compression</ContentLabelBlock>
             <PerformanceExplanation>
                 The {messageType} body was <CompressionDescription
                     encodings={encodings}
-                    encodedBody={encodedBody}
-                    decodedBody={decodedBody}
+                    encodedBodyLength={encodedBodySize}
+                    decodedBodyLength={get(decodedBody, 'byteLength')}
                 />.
             </PerformanceExplanation>
             <CompressionOptionsContainer>
                 <CompressionOptions
                     encodings={encodings}
-                    encodedBodySize={encodedBody.byteLength}
-                    decodedBodySize={decodedBodySize}
+                    encodedBodyLength={encodedBodySize}
+                    decodedBodyLength={get(decodedBody, 'byteLength')}
                     encodingTestResults={encodingTestResults}
                 />
                 <CompressionOptionsTips>{
@@ -258,9 +259,9 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
                         <SuggestionIcon />
                         This would be {
                             Math.round(100 * (
-                                1 - (encodingTestResults[bestOtherEncoding!] / encodedBody.byteLength)
+                                1 - (encodingTestResults[bestOtherEncoding!] / encodedBodySize)
                             ))
-                        }% smaller { decodedBodySize !== encodedBody.byteLength &&
+                        }% smaller { decodedBodySize !== encodedBodySize &&
                             `(${
                                 Math.round(100 * (
                                     1 - (encodingTestResults[bestOtherEncoding!] / decodedBodySize)
@@ -276,7 +277,7 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
                 }{
                     !!decodedBodySize &&
                     !betterEncodingAvailable &&
-                    decodedBodySize < encodedBody.byteLength && <>
+                    decodedBodySize < encodedBodySize && <>
                         <WarningIcon />
                         This { messageType } would be smaller without compression.
                     </>

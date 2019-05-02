@@ -7,7 +7,7 @@ import { SchemaObject } from 'openapi-directory';
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../content-types';
-import { getReadableSize, getDecodedBody } from '../../model/bodies';
+import { getReadableSize } from '../../model/bodies';
 import { UiStore } from '../../model/ui-store';
 
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
@@ -89,7 +89,7 @@ export class ExchangeBodyCard extends React.Component<{
         const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
             this.selectedContentType! : message.contentType;
 
-        const decodedBody = getDecodedBody(message);
+        const decodedBody = message.body.decoded;
 
         const currentRenderedContent = this.currentContent.get();
 
@@ -106,7 +106,7 @@ export class ExchangeBodyCard extends React.Component<{
                         // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
                         <CopyBody content={currentRenderedContent} />
                     }
-                    <Pill>{ getReadableSize(decodedBody.length) }</Pill>
+                    <Pill>{ getReadableSize(decodedBody.byteLength) }</Pill>
                     <PillSelector<HtkContentType>
                         onChange={this.setContentType}
                         value={contentType}

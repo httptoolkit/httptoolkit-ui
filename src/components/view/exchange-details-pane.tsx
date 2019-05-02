@@ -21,7 +21,7 @@ import { ExchangePerformanceCard } from './exchange-performance-card';
 import { ExchangeExportCard } from './exchange-export-card';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
-    return !!get(res as any, 'body', 'buffer');
+    return !!res && res !== 'aborted' && !!res.body.encoded.byteLength;
 }
 
 const ExchangeDetailsScrollContainer = styled.div`
@@ -91,7 +91,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 apiExchange={apiExchange}
             />);
 
-            if (request.body.buffer) {
+            if (request.body.encoded.byteLength) {
                 cards.push(<ExchangeBodyCard
                     title='Request Body'
                     direction='right'

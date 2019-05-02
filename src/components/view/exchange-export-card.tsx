@@ -118,9 +118,9 @@ const ExportSnippetEditor = inject('uiStore')(observer((p: {
     </>;
 }));
 
-const downloadHar = (exchange: HttpExchange) => {
+const downloadHar = async (exchange: HttpExchange) => {
     const harContent = JSON.stringify(
-        generateHar([exchange])
+        await generateHar([exchange])
     );
     const filename = `${
         exchange.request.method

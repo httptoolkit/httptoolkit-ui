@@ -3,7 +3,7 @@ import { get } from 'typesafe-get';
 import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 
-import { UI_VERSION } from '../util';
+import { UI_VERSION, ObservablePromise } from '../util';
 import { Headers } from '../types';
 
 import { HttpExchange } from "./exchange";
@@ -12,9 +12,9 @@ import { HtkRequest } from '../types';
 export type Har = HarFormat.Har;
 export type HarEntry = HarFormat.Entry;
 
-export function generateHar(exchanges: HttpExchange[]): Har {
+export async function generateHar(exchanges: HttpExchange[]): Promise<Har> {
     const sourcePages = getSourcesAsHarPages(exchanges);
-    const entries = exchanges.map(generateHarEntry);
+    const entries = await Promise.all(exchanges.map(generateHarEntry));
 
     return {
         log: {
@@ -54,7 +54,26 @@ function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
 // We only include request/response bodies that are under 40KB
 const HAR_BODY_SIZE_LIMIT = 40960;
 
-export function generateHarRequest(request: HtkRequest): HarFormat.Request {
+export function generateHarRequest(request: HtkRequest, waitForDecoding?: false): HarFormat.Request;
+export function generateHarRequest(
+    request: HtkRequest,
+    waitForDecoding: true
+): HarFormat.Request | ObservablePromise<HarFormat.Request>;
+export function generateHarRequest(
+    request: HtkRequest,
+    waitForDecoding = false
+): HarFormat.Request | ObservablePromise<HarFormat.Request> {
+    if (waitForDecoding && (
+        !request.body.decodedPromise.state ||
+        request.body.decodedPromise.state === 'pending'
+    )) {
+        return request.body.decodedPromise.then(() => generateHarRequest(request));
+    }
+
+    const bodyText = !!request.body.decoded &&
+        request.body.decoded.byteLength <= HAR_BODY_SIZE_LIMIT &&
+        request.body.decoded.toString('utf8');
+
     return {
         method: request.method,
         url: request.parsedUrl.toString(),
@@ -67,21 +86,21 @@ export function generateHarRequest(request: HtkRequest): HarFormat.Request {
                 value: paramValue
             })
         ),
-        postData: request.body.text && request.body.text.length < HAR_BODY_SIZE_LIMIT
+        postData: bodyText
             ? {
                 mimeType: request.headers['content-type'] || 'application/octet-stream',
-                text: request.body.text,
+                text: bodyText,
                 params: []
             }
             : undefined,
         headersSize: -1,
-        bodySize: get(request.body.buffer, 'byteLength') || 0
+        bodySize: request.body.encoded.byteLength
     };
 }
 
 const harResponseDecoder = new TextDecoder('utf8', { fatal: true });
 
-function generateHarResponse(exchange: HttpExchange): HarFormat.Response {
+async function generateHarResponse(exchange: HttpExchange): Promise<HarFormat.Response> {
     const { request, response } = exchange;
 
     if (!response || response === 'aborted') {
@@ -98,21 +117,21 @@ function generateHarResponse(exchange: HttpExchange): HarFormat.Response {
         };
     }
 
-    const { decodedBuffer } = response.body;
+    const decoded = await response.body.decodedPromise;
 
     let responseContent: { text: string, encoding?: string } | {};
     try {
-        if (!decodedBuffer || decodedBuffer.byteLength > HAR_BODY_SIZE_LIMIT) {
-            // If no body/body too large, don't include it
+        if (!decoded || decoded.byteLength > HAR_BODY_SIZE_LIMIT) {
+            // If no body or the body is too large, don't include it
             responseContent = {};
         } else {
             // If body decodes as text, keep it as text
-            responseContent = { text: harResponseDecoder.decode(decodedBuffer) };
+            responseContent = { text: harResponseDecoder.decode(decoded) };
         }
     } catch (e) {
         // If body doesn't decode as text, base64 encode it
         responseContent = {
-            text: decodedBuffer!.toString('base64'),
+            text: decoded!.toString('base64'),
             encoding: 'base64'
         };
     }
@@ -126,13 +145,13 @@ function generateHarResponse(exchange: HttpExchange): HarFormat.Response {
         content: Object.assign(
             {
                 mimeType: response.headers['content-type'] || 'application/octet-stream',
-                size: get(response.body.decodedBuffer, 'byteLength') || 0
+                size: get(response.body.decoded, 'byteLength') || 0
             },
             responseContent
         ),
         redirectURL: "",
         headersSize: -1,
-        bodySize: get(response.body.buffer, 'byteLength') || 0
+        bodySize: response.body.encoded.byteLength || 0
     };
 }
 
@@ -157,7 +176,7 @@ function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
     });
 }
 
-function generateHarEntry(exchange: HttpExchange): HarEntry {
+async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
     const { timingEvents } = exchange;
 
     const startTime = 'startTime' in timingEvents
@@ -181,8 +200,8 @@ function generateHarEntry(exchange: HttpExchange): HarEntry {
         pageref: exchange.request.source.summary,
         startedDateTime: dateFns.format(startTime),
         time: totalDuration,
-        request: generateHarRequest(exchange.request),
-        response: generateHarResponse(exchange),
+        request: await generateHarRequest(exchange.request, true),
+        response: await generateHarResponse(exchange),
         cache: {},
         timings: {
             blocked: -1,

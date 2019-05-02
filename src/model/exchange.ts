@@ -1,9 +1,23 @@
 import * as _ from 'lodash';
-import { CompletedRequest, CompletedResponse } from 'mockttp';
 import { observable } from 'mobx';
 
-import { HtkRequest, HtkResponse } from "../types";
-import { lazyObservablePromise } from '../util';
+import {
+    HtkRequest,
+    HtkResponse,
+    Headers,
+    MessageBody,
+    InputRequest,
+    InputResponse,
+    TimingEvents,
+    InputMessage
+} from "../types";
+import {
+    lazyObservablePromise,
+    ObservablePromise,
+    fakeBuffer,
+    FakeBuffer,
+    asHeaderArray
+} from '../util';
 
 import { parseSource } from './sources';
 import { getHTKContentType } from '../content-types';
@@ -11,36 +25,80 @@ import { getExchangeCategory, ExchangeCategory } from '../exchange-colors';
 
 import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
-import { TimingEvents } from 'mockttp/dist/types';
+import { decodeBody } from '../workers/worker-api';
 
 export { TimingEvents };
 
-function addRequestMetadata(request: CompletedRequest): HtkRequest {
+function addRequestMetadata(request: InputRequest): HtkRequest {
     try {
         const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
 
         return Object.assign(request, {
             parsedUrl,
             source: parseSource(request.headers['user-agent']),
+            body: new ExchangeBody(request, request.headers),
             contentType: getHTKContentType(request.headers['content-type']),
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })
-        });
+        }) as HtkRequest;
     } catch (e) {
         console.log(`Failed to parse request for ${request.url} (${request.protocol}://${request.hostname})`);
         throw e;
     }
 }
 
-function addResponseMetadata(response: CompletedResponse): HtkResponse {
+function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
+        body: new ExchangeBody(response, response.headers),
         contentType: getHTKContentType(response.headers['content-type']),
         cache: observable.map(new Map<symbol, unknown>(), { deep: false })
+    }) as HtkResponse;
+}
+
+export class ExchangeBody implements MessageBody {
+
+    constructor(
+        message: InputMessage,
+        headers: Headers
+    ) {
+        if (!message.body) {
+            this._encoded = Buffer.from("");
+        } else {
+            this._encoded = message.body.buffer;
+        }
+
+        this._contentEncoding = asHeaderArray(headers['content-encoding']);
+    }
+
+    private _contentEncoding: string[];
+    private _encoded: FakeBuffer | Buffer;
+    get encoded() {
+        return this._encoded;
+    }
+
+    decodedPromise: ObservablePromise<Buffer | undefined> = lazyObservablePromise(async () => {
+        const encodedBuffer = this.encoded as Buffer;
+
+        // Temporarily change to a fake buffer, while the web worker takes the data to decode
+        const encodedLength = encodedBuffer.byteLength;
+        this._encoded = fakeBuffer(encodedLength);
+
+        try {
+            const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
+            this._encoded = encoded;
+            return decoded;
+        } catch {
+            return undefined;
+        }
     });
+    get decoded() {
+        // We exclude 'Error' from the value - errors should always become undefined
+        return this.decodedPromise.value as Buffer | undefined;
+    }
 }
 
 export class HttpExchange {
 
-    constructor(request: CompletedRequest) {
+    constructor(request: InputRequest) {
         this.request = addRequestMetadata(request);
         this.timingEvents = request.timingEvents;
 
@@ -82,13 +140,13 @@ export class HttpExchange {
     @observable
     public category: ExchangeCategory;
 
-    markAborted(request: CompletedRequest) {
+    markAborted(request: InputRequest) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
         Object.assign(this.timingEvents, request.timingEvents);
     }
 
-    setResponse(response: CompletedResponse) {
+    setResponse(response: InputResponse) {
         this.response = addResponseMetadata(response);
         Object.assign(this.timingEvents, response.timingEvents);
 
