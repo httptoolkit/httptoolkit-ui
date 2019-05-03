@@ -1,4 +1,5 @@
-import { expect, getExchangeData } from '../../test-setup';
+import { expect } from '../../test-setup';
+import { getExchangeData } from '../unit-test-helpers';
 
 import { buildApiMetadata } from '../../../src/model/openapi/build-api';
 import { ApiExchange, getParameters, getBodySchema } from '../../../src/model/openapi/openapi';

@@ -1,6 +1,7 @@
 import * as dedent from "dedent";
 
-import { getExchangeData, expect, httpDate } from "../../test-setup";
+import { expect } from "../../test-setup";
+import { getExchangeData, httpDate } from '../unit-test-helpers';
 
 import { explainCacheability, explainValidCacheTypes, explainCacheMatching, explainCacheLifetime } from "../../../src/model/caching";
 
