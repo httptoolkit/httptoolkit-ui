@@ -1,14 +1,29 @@
-import { initSentry, reportError } from '../errors';
+import { initSentry, reportError, Sentry } from '../errors';
 initSentry(process.env.SENTRY_DSN);
 
 import WorkboxNamespace from 'workbox-sw';
 import * as semver from 'semver';
+import * as kv from 'idb-keyval';
 
 import * as appPackage from '../../package.json';
 import { getVersion as getServerVersion } from '../model/htk-client';
 
-const appVersion = appPackage.version;
+const appVersion = process.env.COMMIT_REF || "Unknown";
+const SW_LOG = 'sw-log';
 const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css?family=Fira+Mono|Lato';
+
+async function readLog(): Promise<Array<any>> {
+    const currentLog = await kv.get<Array<any>>(SW_LOG);
+    return currentLog || [];
+}
+
+async function writeToLog(data: any) {
+    const logData = await readLog();
+    logData.push(data);
+    kv.set(SW_LOG, logData);
+}
+
+writeToLog({ type: 'startup', v: appVersion, dt: Date.now() });
 
 type PrecacheEntry = {
     url: string;
@@ -95,15 +110,23 @@ async function precacheNewVersionIfSupported() {
 }
 
 self.addEventListener('install', (event: ExtendableEvent) => {
+    writeToLog({ type: 'install', v: appVersion, dt: Date.now() });
     console.log(`SW installing for version ${appVersion}`);
     event.waitUntil(precacheNewVersionIfSupported());
 });
 
 self.addEventListener('activate', (event) => {
+    writeToLog({ type: 'activate', v: appVersion, dt: Date.now() });
     console.log(`SW activating for version ${appVersion}`);
     // We assume here that the server version is still good. It could not be if
     // it's been downgraded, but now that the app is running, it's the app's problem.
-    event.waitUntil(precacheController.activate({}));
+    event.waitUntil(
+        precacheController.activate({})
+        .then(() => {
+            writeToLog({ type: 'activated', v: appVersion, dt: Date.now() })
+            return null; // Don't wait for logging
+        })
+    );
 });
 
 const precacheOnly = workbox.strategies.cacheOnly({ cacheName: precacheName });
@@ -143,11 +166,16 @@ router.handleRequest = function (event: FetchEvent) {
     if (responsePromise) {
         return responsePromise.then((result: any) => {
             if (result == null && !resettingSw) {
-                // Somehow we're returning a broken null/undefined response.
-                // This can happen if the precache somehow disappears. Though in theory
-                // that shouldn't happen, it does seem to very occasionally, and it
-                // then breaks app loading. If this does somehow happen, refresh everything:
-                reportError(`Null result for ${event.request.url}, resetting SW.`);
+                Sentry.withScope(scope => {
+                    const swLogData = readLog();
+                    scope.setExtra('sw-log', swLogData);
+
+                    // Somehow we're returning a broken null/undefined response.
+                    // This can happen if the precache somehow disappears. Though in theory
+                    // that shouldn't happen, it does seem to very occasionally, and it
+                    // then breaks app loading. If this does somehow happen, refresh everything:
+                    reportError(`Null result for ${event.request.url}, resetting SW.`);
+                });
 
                 // Refresh the SW (won't take effect until after all pages unload).
                 self.registration.unregister();
@@ -161,6 +189,9 @@ router.handleRequest = function (event: FetchEvent) {
                 // Fallback to a real network request until the SW cache is rebuilt
                 return fetch(event.request);
             } else {
+                if (event.request.url === 'https://app.httptoolkit.tech/') {
+                    writeToLog({ type: 'load-root-ok', v: appVersion, dt: Date.now() });
+                }
                 return result;
             }
         });
