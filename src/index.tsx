@@ -24,14 +24,6 @@ import { ErrorBoundary } from './components/error-boundary';
 
 const APP_ELEMENT_SELECTOR = '#app';
 
-if (navigator.storage && navigator.storage.persist) {
-    navigator.storage.persist()
-    .then((persisted) => {
-        console.log(persisted ? 'Could not persist storage' : 'Storage is persisted');
-    })
-    .catch((e) => reportError(e));
-}
-
 registerUpdateWorker({ scope: '/' })
 .then((registration) => {
     console.log('Service worker loaded');
