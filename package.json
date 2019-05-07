@@ -26,6 +26,7 @@
     "httptoolkit-server": "^0.1.7"
   },
   "dependencies": {
+    "@beyonk/google-fonts-webpack-plugin": "^1.2.3",
     "@fortawesome/fontawesome-svg-core": "^1.2.6",
     "@fortawesome/free-brands-svg-icons": "^5.4.0",
     "@fortawesome/free-regular-svg-icons": "^5.5.0",

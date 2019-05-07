@@ -10,7 +10,6 @@ import { getVersion as getServerVersion } from '../model/htk-client';
 
 const appVersion = process.env.COMMIT_REF || "Unknown";
 const SW_LOG = 'sw-log';
-const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css?family=Fira+Mono|Lato';
 
 async function readLog(): Promise<Array<any>> {
     const currentLog = await kv.get<Array<any>>(SW_LOG);
@@ -53,41 +52,16 @@ function mapPrecacheEntry(entry: PrecacheEntry, url: string, targetUrl: string) 
     }
 }
 
-function getAllRegexGroupMatches(input: string, regex: RegExp, groupIndex = 1): string[] {
-    const matches: string[] = [];
-    let match = regex.exec(input);
-    while (match !== null) {
-        matches.push(match[groupIndex]);
-        match = regex.exec(input);
-    }
-    return matches;
-}
-
 const precacheController = new workbox.precaching.PrecacheController();
 
-async function getGoogleFontsUrlsToPrecache() {
-    const fontsCssResponse = await fetch(GOOGLE_FONTS_URL);
-    const fontsCss = await fontsCssResponse.text();
-    const fontUrls = getAllRegexGroupMatches(fontsCss, /url\(([^\)]+)\)/g);
-
-    // Tiny race condition here: the above could return different font CSS than
-    // the later request for the fonts URL. Very unlikely though, and not a major problem.
-    return [GOOGLE_FONTS_URL, ...fontUrls];
-}
-
 async function buildPrecacheList() {
-    // If we fail to precache google fonts, don't worry about it too much, it's ok.
-    // Doesn't cause problems because this is served with stale-while-revalidate.
-    const googleFontsUrls = await getGoogleFontsUrlsToPrecache().catch(() => []);
-
     return __precacheManifest.map((precacheEntry) =>
         mapPrecacheEntry(precacheEntry, 'index.html', '/')
     )
     .filter((precacheEntry) => {
         const entryUrl = typeof precacheEntry === 'object' ? precacheEntry.url : precacheEntry;
         return !entryUrl.startsWith('api/');
-    })
-    .concat(googleFontsUrls);
+    });
 };
 
 async function precacheNewVersionIfSupported() {
@@ -151,10 +125,6 @@ workbox.routing.registerRoute(/api\/.*/, workbox.strategies.staleWhileRevalidate
 
 // All other app code _must_ be precached - no random updates from elsewhere please.
 workbox.routing.registerRoute(/\/.*/, precacheOnly);
-
-// We allow new fonts to come in automatically, but use the cache first
-workbox.routing.registerRoute(/https:\/\/fonts\.googleapis\.com\/.*/, tryFromPrecacheAndRefresh);
-workbox.routing.registerRoute(/https:\/\/fonts\.gstatic\.com\/.*/, tryFromPrecacheAndRefresh);
 
 // Patch the workbox router to handle disappearing precaches:
 const router = workbox.routing as any;

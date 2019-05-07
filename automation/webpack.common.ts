@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as Webpack from 'webpack';
 
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
+import * as GoogleFontsPlugin from '@beyonk/google-fonts-webpack-plugin';
 import * as CopyPlugin from 'copy-webpack-plugin';
 import { InjectManifest } from '@httptoolkit/workbox-webpack-plugin';
 
@@ -85,6 +86,13 @@ export default <Webpack.Configuration>{
                 'smartSelect',
                 'wordHighlighter'
             ]
+        }),
+        new GoogleFontsPlugin({
+            fonts: [
+                { family: "Fira Mono" },
+                { family: "Lato" }
+            ],
+            formats: ['woff2'] // Supported by Chrome, FF, Edge, Safari 12+
         }),
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null,
