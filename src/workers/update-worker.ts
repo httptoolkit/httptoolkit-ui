@@ -16,13 +16,29 @@ async function readLog(): Promise<Array<any>> {
     return currentLog || [];
 }
 
+async function getCacheUrls(cacheName: string): Promise<string[]> {
+    return (
+        await (
+            await caches.open(cacheName)
+        ).keys()
+    ).map(r => r.url);
+}
+
 async function writeToLog(data: any) {
     const logData = await readLog();
+
+    data.v = appVersion;
+    data.dt = Date.now();
+    data.quota = await navigator.storage.estimate();
+
+    data.precached = await getCacheUrls(precacheName);
+    data.tmpPrecached = await getCacheUrls(precacheName + '-temp');
+
     logData.push(data);
     kv.set(SW_LOG, logData);
 }
 
-writeToLog({ type: 'startup', v: appVersion, dt: Date.now() });
+writeToLog({ type: 'startup' });
 
 type PrecacheEntry = {
     url: string;
@@ -84,20 +100,20 @@ async function precacheNewVersionIfSupported() {
 }
 
 self.addEventListener('install', (event: ExtendableEvent) => {
-    writeToLog({ type: 'install', v: appVersion, dt: Date.now() });
+    writeToLog({ type: 'install' });
     console.log(`SW installing for version ${appVersion}`);
     event.waitUntil(precacheNewVersionIfSupported());
 });
 
 self.addEventListener('activate', (event) => {
-    writeToLog({ type: 'activate', v: appVersion, dt: Date.now() });
+    writeToLog({ type: 'activate' });
     console.log(`SW activating for version ${appVersion}`);
     // We assume here that the server version is still good. It could not be if
     // it's been downgraded, but now that the app is running, it's the app's problem.
     event.waitUntil(
         precacheController.activate({})
         .then(() => {
-            writeToLog({ type: 'activated', v: appVersion, dt: Date.now() })
+            writeToLog({ type: 'activated' })
             return null; // Don't wait for logging
         })
     );
@@ -160,7 +176,7 @@ router.handleRequest = function (event: FetchEvent) {
                 return fetch(event.request);
             } else {
                 if (event.request.url === 'https://app.httptoolkit.tech/') {
-                    writeToLog({ type: 'load-root-ok', v: appVersion, dt: Date.now() });
+                    writeToLog({ type: 'load-root-ok' });
                 }
                 return result;
             }
