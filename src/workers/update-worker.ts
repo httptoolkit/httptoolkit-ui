@@ -51,12 +51,6 @@ declare const self: ServiceWorkerGlobalScope;
 declare const workbox: typeof WorkboxNamespace;
 declare const __precacheManifest: Array<PrecacheEntry>;
 
-workbox.core.setLogLevel(workbox.core.LOG_LEVELS.silent);
-workbox.core.setCacheNameDetails({
-    prefix: 'http-toolkit',
-    precache: 'precache',
-    runtime: 'runtime'
-});
 const precacheName = workbox.core.cacheNames.precache;
 
 function mapPrecacheEntry(entry: PrecacheEntry, url: string, targetUrl: string) {
@@ -72,10 +66,7 @@ function mapPrecacheEntry(entry: PrecacheEntry, url: string, targetUrl: string) 
 const precacheController = new workbox.precaching.PrecacheController();
 
 async function buildPrecacheList() {
-    return __precacheManifest.map((precacheEntry) =>
-        mapPrecacheEntry(precacheEntry, 'index.html', '/')
-    )
-    .filter((precacheEntry) => {
+    return __precacheManifest.filter((precacheEntry) => {
         const entryUrl = typeof precacheEntry === 'object' ? precacheEntry.url : precacheEntry;
         return !entryUrl.startsWith('api/');
     });
@@ -96,8 +87,24 @@ async function precacheNewVersionIfSupported() {
 
     precacheController.addToCacheList(precacheList);
 
-    const result = await precacheController.install();
-    console.log(`New precache installed, ${result.updatedEntries.length} files updated.`);
+    // Any required as the install return types haven't been updated for v4, so still use 'updatedEntries'
+    const result: any = await precacheController.install();
+    console.log(`New precache installed, ${result.updatedURLs.length} files updated.`);
+}
+
+// Async, drop leftover caches from previous workbox versions:
+function deleteOldWorkboxCaches() {
+    caches.keys().then((cacheKeys) => {
+        cacheKeys.forEach(async (cacheKey) => {
+            if (!cacheKey.startsWith('http-toolkit-precache-http')) return;
+
+            // Drop the content cache & revisions DB
+            console.log(`Deleting SW cache ${cacheKey}`);
+            caches.delete(cacheKey);
+            const dbName = cacheKey.replace(/[:\/]/g, '_');
+            indexedDB.deleteDatabase(dbName);
+        });
+    });
 }
 
 self.addEventListener('install', (event: ExtendableEvent) => {
@@ -109,10 +116,12 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 self.addEventListener('activate', (event) => {
     writeToLog({ type: 'activate' });
     console.log(`SW activating for version ${appVersion}`);
-    // We assume here that the server version is still good. It could not be if
-    // it's been downgraded, but now that the app is running, it's the app's problem.
+
+    // This can be removed only once we know that _nobody_ is using SWs from before 2019-05-09
+    deleteOldWorkboxCaches();
+
     event.waitUntil(
-        precacheController.activate({})
+        precacheController.activate()
         .then(() => {
             writeToLog({ type: 'activated' })
             return null; // Don't wait for logging
@@ -120,18 +129,12 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-const precacheOnly = workbox.strategies.cacheOnly({ cacheName: precacheName });
-
-const tryFromPrecacheAndRefresh = workbox.strategies.staleWhileRevalidate({
-    cacheName: precacheName
-});
-
 // Webpack Dev Server goes straight to the network:
-workbox.routing.registerRoute(/\/sockjs-node\/.*/, workbox.strategies.networkOnly());
+workbox.routing.registerRoute(/\/sockjs-node\/.*/, new workbox.strategies.NetworkOnly());
 
-// API routes aren't preloaded (there's thousands, it'd kill everything), but if we
+// API routes aren't preloaded (there's thousands, it'd kill everything), but we
 // try to keep your recently used ones around for offline use.
-workbox.routing.registerRoute(/api\/.*/, workbox.strategies.staleWhileRevalidate({
+workbox.routing.registerRoute(/api\/.*/, new workbox.strategies.StaleWhileRevalidate({
     cacheName: 'api-cache',
     plugins: [
         new workbox.expiration.Plugin({
@@ -141,50 +144,62 @@ workbox.routing.registerRoute(/api\/.*/, workbox.strategies.staleWhileRevalidate
 }));
 
 // All other app code _must_ be precached - no random updates from elsewhere please.
-workbox.routing.registerRoute(/\/.*/, precacheOnly);
-
-// Patch the workbox router to handle disappearing precaches:
-const router = workbox.routing as any;
-const handleReq = router.handleRequest;
-
+// The below is broadly based on the precaching.addRoute, but resetting the cache
+// 100% if any requests ever fail to match.
 let resettingSw = false;
-router.handleRequest = function (event: FetchEvent) {
-    const responsePromise = handleReq.call(router, event);
-    if (responsePromise) {
-        return responsePromise.then((result: any) => {
-            if (result == null && !resettingSw) {
-                writeToLog({ type: 'load-failed' })
-                .then(readLog)
-                .then((swLogData) => {
-                    Sentry.withScope(scope => {
-                        scope.setExtra('sw-log', swLogData);
+workbox.routing.registerRoute(/\/.*/, async ({ event }) => {
+    if (resettingSw) return fetch(event.request);
 
-                        // Somehow we're returning a broken null/undefined response.
-                        // This can happen if the precache somehow disappears. Though in theory
-                        // that shouldn't happen, it does seem to very occasionally, and it
-                        // then breaks app loading. If this does somehow happen, refresh everything:
-                        reportError(`Null result for ${event.request.url}, resetting SW.`);
-                    });
-                });
+    const urlsToCacheKeys = precacheController.getURLsToCacheKeys();
+    const requestUrl = new URL(event.request.url, self.location.toString());
+    requestUrl.hash = '';
 
-                // Refresh the SW (won't take effect until after all pages unload).
-                self.registration.unregister();
-                // Drop the precache entirely in the meantime, since it's corrupt.
-                caches.delete(precacheName);
+    const precachedUrl = (
+        ([
+            requestUrl.href,
+            requestUrl.href + '.html', // Support .html requests without extension
+            requestUrl.href.endsWith('/') ? requestUrl.href + 'index.html' : false, // Allow index.html for /
+        ] as Array<string | false>)
+        .map((cacheUrl) => cacheUrl && urlsToCacheKeys.get(cacheUrl))
+        .filter((x): x is string => !!x)
+    )[0]; // Use the first matching URL
 
-                resettingSw = true;
-            }
+    // We have a /<something> URL that isn't in the cache at all - something is very wrong
+    if (!precachedUrl) return brokenCacheResponse(event);
 
-            if (resettingSw) {
-                // Fallback to a real network request until the SW cache is rebuilt
-                return fetch(event.request);
-            } else {
-                if (event.request.url === 'https://app.httptoolkit.tech/') {
-                    writeToLog({ type: 'load-root-ok' });
-                }
-                return result;
-            }
+    const cache = await caches.open(precacheName);
+    const cachedResponse = await cache.match(precachedUrl);
+
+    // If the cache is all good, use it. If not, reset everything.
+    if (cachedResponse) return cachedResponse;
+    else return brokenCacheResponse(event);
+});
+
+// The precache has failed: kill it, report that, and start falling back to the network
+function brokenCacheResponse(event: FetchEvent): Promise<Response> {
+    console.log('SW cache has failed', event);
+
+    writeToLog({ type: 'load-failed' })
+    .then(readLog)
+    .then((swLogData) => {
+        Sentry.withScope(scope => {
+            scope.setExtra('sw-log', swLogData);
+
+            // Somehow we're returning a broken null/undefined response.
+            // This can happen if the precache somehow disappears. Though in theory
+            // that shouldn't happen, it does seem to very occasionally, and it
+            // then breaks app loading. If this does somehow happen, refresh everything:
+            reportError(`Null result for ${event.request.url}, resetting SW.`);
         });
-    }
-    return responsePromise;
+    });
+
+    // Refresh the SW (won't take effect until after all pages unload).
+    self.registration.unregister();
+    // Drop the precache entirely in the meantime, since it's corrupt.
+    caches.delete(precacheName);
+    // Ensure all requests for now bypass the cache logic entirely
+    resettingSw = true;
+
+    // Fallback to a real network request until the SW cache is rebuilt
+    return fetch(event.request);
 }

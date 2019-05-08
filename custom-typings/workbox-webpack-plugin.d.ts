@@ -1,1 +1,0 @@
-declare module '@httptoolkit/workbox-webpack-plugin';

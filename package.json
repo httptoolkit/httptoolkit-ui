@@ -55,7 +55,8 @@
     "@types/set-cookie-parser": "0.0.3",
     "@types/styled-components": "^4.0.3",
     "@types/ua-parser-js": "^0.7.32",
-    "@types/workbox-sw": "^3.2.0",
+    "@types/workbox-sw": "^4.2.0",
+    "@types/workbox-webpack-plugin": "^4.1.0",
     "ajv": "^6.9.1",
     "async-mutex": "^0.1.3",
     "auth0-js": "^9.10.0",
@@ -99,7 +100,6 @@
     "xml-beautifier": "^0.4.0"
   },
   "devDependencies": {
-    "@httptoolkit/workbox-webpack-plugin": "^3.6.4-pr1765.1",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
     "@types/chai-enzyme": "^0.6.6",
@@ -153,6 +153,7 @@
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.10",
     "webpack-merge": "^4.1.4",
+    "workbox-webpack-plugin": "^4.3.1",
     "worker-loader": "^2.0.0"
   }
 }
