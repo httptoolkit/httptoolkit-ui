@@ -25,10 +25,11 @@ async function getCacheUrls(cacheName: string): Promise<string[]> {
 }
 
 async function writeToLog(data: any) {
-    const logData = await readLog();
-
     data.v = appVersion;
     data.dt = Date.now();
+
+    const logData = await readLog();
+
     data.quota = await navigator.storage.estimate();
 
     data.precached = await getCacheUrls(precacheName);
@@ -152,15 +153,18 @@ router.handleRequest = function (event: FetchEvent) {
     if (responsePromise) {
         return responsePromise.then((result: any) => {
             if (result == null && !resettingSw) {
-                Sentry.withScope(scope => {
-                    const swLogData = readLog();
-                    scope.setExtra('sw-log', swLogData);
+                writeToLog({ type: 'load-failed' })
+                .then(readLog)
+                .then((swLogData) => {
+                    Sentry.withScope(scope => {
+                        scope.setExtra('sw-log', swLogData);
 
-                    // Somehow we're returning a broken null/undefined response.
-                    // This can happen if the precache somehow disappears. Though in theory
-                    // that shouldn't happen, it does seem to very occasionally, and it
-                    // then breaks app loading. If this does somehow happen, refresh everything:
-                    reportError(`Null result for ${event.request.url}, resetting SW.`);
+                        // Somehow we're returning a broken null/undefined response.
+                        // This can happen if the precache somehow disappears. Though in theory
+                        // that shouldn't happen, it does seem to very occasionally, and it
+                        // then breaks app loading. If this does somehow happen, refresh everything:
+                        reportError(`Null result for ${event.request.url}, resetting SW.`);
+                    });
                 });
 
                 // Refresh the SW (won't take effect until after all pages unload).
