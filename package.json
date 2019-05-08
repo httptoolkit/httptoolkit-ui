@@ -141,6 +141,7 @@
     "puppeteer": "^1.11.0",
     "raw-loader": "^0.5.1",
     "rimraf": "^2.6.2",
+    "robotstxt-webpack-plugin": "^5.0.0",
     "service-worker-loader": "^2.1.0",
     "source-map-loader": "^0.2.4",
     "static-server": "^2.2.1",
