@@ -165,7 +165,10 @@ workbox.routing.registerRoute(/\/.*/, async ({ event }) => {
     )[0]; // Use the first matching URL
 
     // We have a /<something> URL that isn't in the cache at all - something is very wrong
-    if (!precachedUrl) return brokenCacheResponse(event);
+    if (!precachedUrl) {
+        console.log(`${requestUrl.href} did not match any of ${[...urlsToCacheKeys.keys()]}`);
+        return brokenCacheResponse(event);
+    }
 
     const cache = await caches.open(precacheName);
     const cachedResponse = await cache.match(precachedUrl);
