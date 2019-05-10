@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { styled, css } from "../../styles";
 import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account/subscriptions";
-import { Button, ButtonLink } from "../common/inputs";
+import { Button } from "../common/inputs";
 import { CloseButton } from "../common/close-button";
 
 const PlanPickerModal = styled.dialog`
@@ -103,7 +103,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
         opacity: 0.9;
     `}
 
-    width: 40%;
+    width: 60%;
 `;
 
 const TierHeader = styled.div`
@@ -264,40 +264,6 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <Button onClick={() => buyPlan('pro')}>
                             Get Pro Now
                         </Button>
-                    </PricingCTA>
-                </PricingTier>
-
-                <PricingTier>
-                    <TierHeader>
-                        Team
-                    </TierHeader>
-                    <TierPriceBlock>
-                        <TierPrice>{getPlanMonthlyPrice('team')} / user / month</TierPrice>
-                        <TierPriceCaveats>
-                            plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
-                        </TierPriceCaveats>
-                        <TierLicense title='Licensed for many individuals, and may be transferred. See the terms of service for more details.'>
-                            Team account
-                        </TierLicense>
-                    </TierPriceBlock>
-                    <TierFeatures>
-                        <FeatureHeading>
-                            <em>All Professional features, and:</em>
-                        </FeatureHeading>
-                        <Feature>Pass licenses between team members as required</Feature>
-                        <Feature>Team workspaces for low-friction collaboration</Feature>
-                        <FeatureHeading>
-                            Options available on request:
-                        </FeatureHeading>
-                        <Feature>Self-hosted infrastructure</Feature>
-                        <Feature>Private support</Feature>
-                        <Feature>Training & consultancy</Feature>
-                        <Feature>Bulk discounts</Feature>
-                    </TierFeatures>
-                    <PricingCTA>
-                        <ButtonLink href='mailto:contact@httptoolkit.tech?subject=HTTP Toolkit Team'>
-                            Get in touch
-                        </ButtonLink>
                     </PricingCTA>
                 </PricingTier>
             </PricingTable>
