@@ -53,27 +53,22 @@ declare const __precacheManifest: Array<PrecacheEntry>;
 
 const precacheName = workbox.core.cacheNames.precache;
 
-function mapPrecacheEntry(entry: PrecacheEntry, url: string, targetUrl: string) {
-    if (typeof entry === 'string' && entry === url) {
-        return targetUrl;
-    } else if (typeof entry === 'object' && entry.url === url) {
-        return { url: targetUrl, revision: entry.revision };
-    } else {
-        return entry;
-    }
-}
+function getPrecacheController() {
+    const controller = new workbox.precaching.PrecacheController();
 
-const precacheController = new workbox.precaching.PrecacheController();
-
-async function buildPrecacheList() {
-    return __precacheManifest.filter((precacheEntry) => {
+    const precacheList = __precacheManifest.filter((precacheEntry) => {
         const entryUrl = typeof precacheEntry === 'object' ? precacheEntry.url : precacheEntry;
         return !entryUrl.startsWith('api/');
     });
-};
+
+    controller.addToCacheList(precacheList);
+    return controller;
+}
+
+const precacheController = getPrecacheController();
 
 async function precacheNewVersionIfSupported() {
-    const [precacheList, serverVersion] = await Promise.all([buildPrecacheList(), getServerVersion()]);
+    const serverVersion = await getServerVersion();
     console.log(`Connected httptoolkit-server version is ${serverVersion}.`);
     console.log(`App requires server version satisfying ${appPackage.runtimeDependencies['httptoolkit-server']}.`);
 
@@ -84,8 +79,6 @@ async function precacheNewVersionIfSupported() {
     } else {
         console.log('Server version is sufficient, continuing install...');
     }
-
-    precacheController.addToCacheList(precacheList);
 
     // Any required as the install return types haven't been updated for v4, so still use 'updatedEntries'
     const result: any = await precacheController.install();
