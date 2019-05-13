@@ -45,6 +45,7 @@ interface ExchangeListProps {
     onSelected: (request: HttpExchange | undefined) => void;
     onClear: () => void;
     exchanges: HttpExchange[];
+    isPaused: boolean;
 }
 
 const ListContainer = styled.div`
@@ -174,7 +175,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
     private tableRef: Table | null | undefined;
 
     render() {
-        const { exchanges, className, onClear } = this.props;
+        const { exchanges, className, onClear, isPaused } = this.props;
         const { selectedExchangeId, filteredExchanges } = this;
 
         return <ListContainer>
@@ -215,11 +216,13 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 (selectedExchangeId === (filteredExchanges[index] || {}).id) ? 'selected' : ''
                             }
                             noRowsRenderer={() =>
-                                <EmptyStateOverlay
-                                    icon={['fac', 'spinner-arc']}
-                                    spin
-                                    message='Requests will appear here, once you send some...'
-                                />
+                                isPaused
+                                    ? <EmptyStateOverlay icon={['fas', 'pause']}>
+                                        Interception is paused, resume it to collect intercepted requests
+                                    </EmptyStateOverlay>
+                                    : <EmptyStateOverlay icon={['fas', 'plug']}>
+                                        Connect a client and intercept some requests, and they'll appear here
+                                    </EmptyStateOverlay>
                             }
                             rowRenderer={(({
                                 columns,

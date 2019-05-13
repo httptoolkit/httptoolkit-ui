@@ -8,7 +8,7 @@ export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & 
     className?: string,
     icon: string[],
     spin?: true | 'slow',
-    message?: string
+    children?: React.ReactNode
 }) => (
     <div {..._.omit(props, ['message', 'icon', 'spin'])}>
         <FontAwesomeIcon
@@ -16,9 +16,9 @@ export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & 
             spin={props.spin === true}
             className={props.spin === 'slow' ? 'slow-spin' : undefined}
         />
-        { props.message && <>
+        { props.children && <>
             <br/>
-            { props.message }
+            { props.children }
         </> }
     </div>
 ))`

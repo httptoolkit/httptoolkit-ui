@@ -34,7 +34,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     render(): JSX.Element {
-        const { exchanges, clearExchanges } = this.props.interceptionStore;
+        const { exchanges, clearExchanges, isPaused } = this.props.interceptionStore;
 
         return <div className={this.props.className}>
             <SplitPane
@@ -48,6 +48,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                     onSelected={this.onSelected}
                     onClear={clearExchanges}
                     exchanges={exchanges}
+                    isPaused={isPaused}
                 />
                 <ExchangeDetailsPane exchange={this.selectedExchange}></ExchangeDetailsPane>
             </SplitPane>

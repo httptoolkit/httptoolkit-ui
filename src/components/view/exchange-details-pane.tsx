@@ -145,12 +145,9 @@ export class ExchangeDetailsPane extends React.Component<{
             />);
         } else {
             cards.push(
-                <EmptyState
-                    key='empty'
-                    tabIndex={0}
-                    icon={['fas', 'arrow-left']}
-                    message='Select an exchange to see the full details.'
-                />
+                <EmptyState key='empty' tabIndex={0} icon={['fas', 'arrow-left']}>
+                    Select an exchange to see the full details.
+                </EmptyState>
             );
         }
 
