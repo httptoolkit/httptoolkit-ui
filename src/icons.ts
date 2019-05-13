@@ -40,6 +40,8 @@ import { faMoon } from '@fortawesome/free-solid-svg-icons/faMoon';
 import { faAdjust } from '@fortawesome/free-solid-svg-icons/faAdjust';
 import { faUpload } from '@fortawesome/free-solid-svg-icons/faUpload';
 import { faDownload } from '@fortawesome/free-solid-svg-icons/faDownload';
+import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay';
+import { faPause } from '@fortawesome/free-solid-svg-icons/faPause';
 
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
@@ -99,6 +101,8 @@ library.add(
     faAdjust,
     faUpload,
     faDownload,
+    faPlay,
+    faPause,
 
     faChrome,
     faFirefox,

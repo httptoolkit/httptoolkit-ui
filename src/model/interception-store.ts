@@ -47,6 +47,9 @@ export class InterceptionStore {
         }
     }
 
+    @observable
+    isPaused = false;
+
     // TODO: Combine into a batchedEvent queue of callbacks
     private requestQueue: InputRequest[] = [];
     private responseQueue: InputResponse[] = [];
@@ -96,6 +99,8 @@ export class InterceptionStore {
         console.log(`Server started on port ${this.server.port}`);
 
         this.server.on('request', (req) => {
+            if (this.isPaused) return;
+
             if (!this.isFlushQueued) {
                 this.isFlushQueued = true;
                 requestAnimationFrame(this.flushQueuedUpdates);
@@ -104,6 +109,8 @@ export class InterceptionStore {
             this.requestQueue.push(req);
         });
         this.server.on('response', (res) => {
+            if (this.isPaused) return;
+
             if (!this.isFlushQueued) {
                 this.isFlushQueued = true;
                 requestAnimationFrame(this.flushQueuedUpdates);
@@ -112,6 +119,8 @@ export class InterceptionStore {
             this.responseQueue.push(res);
         });
         this.server.on('abort', (req) => {
+            if (this.isPaused) return;
+
             if (!this.isFlushQueued) {
                 this.isFlushQueued = true;
                 requestAnimationFrame(this.flushQueuedUpdates);
@@ -143,6 +152,11 @@ export class InterceptionStore {
         this.abortQueue = [];
     }
 
+    @action.bound
+    togglePause() {
+        this.isPaused = !this.isPaused;
+    }
+
     async refreshInterceptors() {
         const serverInterceptors = await getInterceptors(this.server.port);
 
@@ -162,7 +176,7 @@ export class InterceptionStore {
     private markRequestAborted(request: InputRequest) {
         const exchange = _.find(this.exchanges, { id: request.id });
 
-        // Shouldn't happen in general, but possible in some very rare cases
+        // Should only happen in rare cases - e.g. paused for req, unpaused before res
         if (!exchange) return;
 
         exchange.markAborted(request);
@@ -172,7 +186,7 @@ export class InterceptionStore {
     private setResponse(response: InputResponse) {
         const exchange = _.find(this.exchanges, { id: response.id });
 
-        // Shouldn't happen in general, but possible in some very rare cases
+        // Should only happen in rare cases - e.g. paused for req, unpaused before res
         if (!exchange) return;
 
         exchange.setResponse(response);

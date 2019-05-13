@@ -14,7 +14,7 @@ const IconButton = styled((p: {
     className?: string,
     title: string,
     icon: string[],
-    disabled: boolean,
+    disabled?: boolean,
     onClick: () => void
 }) =>
     <button
@@ -113,6 +113,20 @@ export const ImportHarButton = inject('interceptionStore', 'accountStore')(
                 const uploadedFile = await uploadFile('text', ['.har', 'application/har', 'application/har+json']);
                 if (uploadedFile) props.interceptionStore!.loadFromHar(JSON.parse(uploadedFile));
             }}
+        />
+    })
+);
+
+export const PlayPauseButton = inject('interceptionStore')(
+    observer((props: {
+        interceptionStore?: InterceptionStore
+    }) => {
+        const { isPaused, togglePause } = props.interceptionStore!;
+
+        return <IconButton
+            icon={['fas', isPaused ? 'play' : 'pause']}
+            title={`${isPaused ? 'Resume' : 'Pause'} collecting intercepted messages`}
+            onClick={togglePause}
         />
     })
 );
