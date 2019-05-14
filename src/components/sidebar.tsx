@@ -1,10 +1,17 @@
 import * as React from 'react';
+import { StyledComponent } from 'styled-components';
+import { observer } from 'mobx-react';
+import * as dedent from 'dedent';
 
-import * as logo from '../images/logo-stacked.svg';
 import { styled, css, Theme } from '../styles';
 import { FontAwesomeIcon } from '../icons';
+import { lazyObservablePromise, UI_VERSION } from '../util';
+
+import { getDesktopShellVersion } from '../tracking';
+import { getVersion as getServerVersion } from '../model/htk-client';
+
 import { UnstyledButton } from './common/inputs';
-import { StyledComponent } from 'styled-components';
+import * as logo from '../images/logo-stacked.svg';
 
 export interface SidebarItem {
     name: string;
@@ -108,7 +115,10 @@ const SidebarLink = styled.a<{ highlight?: true }>`
     }
 `;
 
-export const Sidebar = (props: SidebarProps) => {
+const serverVersionPromise = lazyObservablePromise(() => getServerVersion());
+const desktopVersionPromise = lazyObservablePromise(() => getDesktopShellVersion());
+
+export const Sidebar = observer((props: SidebarProps) => {
     const items = props.items.map((item, i) => {
         const itemContent = <>
             <FontAwesomeIcon size='2x' icon={item.icon} />
@@ -141,8 +151,21 @@ export const Sidebar = (props: SidebarProps) => {
         }
     });
 
+    const serverVersion = serverVersionPromise.state === 'fulfilled'
+        ? serverVersionPromise.value
+        : 'Unknown';
+    const desktopVersion = desktopVersionPromise.state === 'fulfilled'
+        ? desktopVersionPromise.value
+        : 'Unknown';
+
     return <SidebarNav>
-        <SidebarLogo />
+        <SidebarLogo
+            title={dedent`
+                UI version: ${UI_VERSION.slice(0, 8)}
+                Desktop version: ${desktopVersion}
+                Server version: ${serverVersion}
+            `}
+        />
 
         {
             items.filter(i => i.position === 'top').map((item) => item.component)
@@ -152,4 +175,4 @@ export const Sidebar = (props: SidebarProps) => {
             items.filter(i => i.position === 'bottom').map((item) => item.component)
         }
     </SidebarNav>;
-}
+});
