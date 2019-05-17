@@ -12,6 +12,7 @@ import * as amIUsingHtml from '../amiusing.html';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
 import { parseHar } from './har';
+import { reportError } from '../errors';
 
 configure({ enforceActions: 'observed' });
 
@@ -167,29 +168,40 @@ export class InterceptionStore {
 
     @action
     private addRequest(request: InputRequest) {
-        const exchange = new HttpExchange(request);
-
-        this.exchanges.push(exchange);
+        try {
+            const exchange = new HttpExchange(request);
+            this.exchanges.push(exchange);
+        } catch (e) {
+            reportError(e);
+        }
     }
 
     @action
     private markRequestAborted(request: InputRequest) {
-        const exchange = _.find(this.exchanges, { id: request.id });
+        try {
+            const exchange = _.find(this.exchanges, { id: request.id });
 
-        // Should only happen in rare cases - e.g. paused for req, unpaused before res
-        if (!exchange) return;
+            // Should only happen in rare cases - e.g. paused for req, unpaused before res
+            if (!exchange) return;
 
-        exchange.markAborted(request);
+            exchange.markAborted(request);
+        } catch (e) {
+            reportError(e);
+        }
     }
 
     @action
     private setResponse(response: InputResponse) {
-        const exchange = _.find(this.exchanges, { id: response.id });
+        try {
+            const exchange = _.find(this.exchanges, { id: response.id });
 
-        // Should only happen in rare cases - e.g. paused for req, unpaused before res
-        if (!exchange) return;
+            // Should only happen in rare cases - e.g. paused for req, unpaused before res
+            if (!exchange) return;
 
-        exchange.setResponse(response);
+            exchange.setResponse(response);
+        } catch (e) {
+            reportError(e);
+        }
     }
 
     @action.bound
