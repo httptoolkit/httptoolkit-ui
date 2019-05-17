@@ -2,8 +2,9 @@ import * as _ from 'lodash';
 
 import { observable, action, configure, flow, computed, runInAction } from 'mobx';
 import { getLocal, Mockttp } from 'mockttp';
+import * as uuid from 'uuid/v4';
 
-import { InputRequest, InputResponse } from '../types';
+import { InputRequest, InputResponse, FailedTlsRequest, InputTlsRequest } from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from './htk-client';
@@ -55,9 +56,17 @@ export class InterceptionStore {
     private requestQueue: InputRequest[] = [];
     private responseQueue: InputResponse[] = [];
     private abortQueue: InputRequest[] = [];
+    private tlsErrorQueue: InputTlsRequest[] = [];
     private isFlushQueued = false;
 
-    readonly exchanges = observable.array<HttpExchange>([], { deep: false });
+    readonly events = observable.array<HttpExchange | FailedTlsRequest>([], { deep: false });
+
+    @computed
+    get exchanges(): Array<HttpExchange> {
+        return this.events.filter(
+            (event: any): event is HttpExchange => !!event.request
+        );
+    }
 
     @computed get activeSources() {
         return _(this.exchanges)
@@ -129,6 +138,16 @@ export class InterceptionStore {
 
             this.abortQueue.push(req);
         });
+        this.server.on('tlsClientError', (req: InputTlsRequest) => {
+            if (this.isPaused) return;
+
+            if (!this.isFlushQueued) {
+                this.isFlushQueued = true;
+                requestAnimationFrame(this.flushQueuedUpdates);
+            }
+
+            this.tlsErrorQueue.push(req);
+        });
 
         window.addEventListener('beforeunload', () => {
             this.server.stop().catch(() => { });
@@ -151,6 +170,9 @@ export class InterceptionStore {
 
         this.abortQueue.forEach((req) => this.markRequestAborted(req));
         this.abortQueue = [];
+
+        this.tlsErrorQueue.forEach((req) => this.addFailedTlsRequest(req));
+        this.tlsErrorQueue = [];
     }
 
     @action.bound
@@ -170,7 +192,7 @@ export class InterceptionStore {
     private addRequest(request: InputRequest) {
         try {
             const exchange = new HttpExchange(request);
-            this.exchanges.push(exchange);
+            this.events.push(exchange);
         } catch (e) {
             reportError(e);
         }
@@ -204,9 +226,28 @@ export class InterceptionStore {
         }
     }
 
+    @action
+    private addFailedTlsRequest(request: InputTlsRequest) {
+        try {
+            if (_.some(this.events, (event) =>
+                'hostname' in event &&
+                event.hostname === request.hostname &&
+                event.remoteIpAddress === request.remoteIpAddress
+            )) return; // Drop duplicate TLS failures
+
+            this.events.push(Object.assign(request, {
+                id: uuid(),
+                searchIndex: [request.hostname, request.remoteIpAddress]
+                    .filter((x): x is string => !!x)
+            }));
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
     @action.bound
-    clearExchanges() {
-        this.exchanges.clear();
+    clearInterceptedData() {
+        this.events.clear();
     }
 
     async loadFromHar(harContents: {}) {

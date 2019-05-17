@@ -2,7 +2,7 @@ import {
     CompletedRequest as MockttpRequest,
     CompletedResponse as MockttpResponse
 } from 'mockttp';
-import { Headers, TimingEvents } from 'mockttp/dist/types';
+import { Headers, TimingEvents, TlsRequest } from 'mockttp/dist/types';
 import { ComponentClass } from 'react';
 import { ObservableMap } from 'mobx';
 
@@ -14,9 +14,15 @@ export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpRequest, 'body'> & { body: HarBody; };
 export type HarResponse = Omit<MockttpResponse, 'body'> & { body: HarBody; };
 
+export type InputTlsRequest = TlsRequest;
 export type InputRequest = MockttpRequest | HarRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
+
+export type FailedTlsRequest = InputTlsRequest & {
+    id: string;
+    searchIndex: string[];
+}
 
 export type HtkRequest = Omit<InputRequest, 'body'> & {
     parsedUrl: URL,

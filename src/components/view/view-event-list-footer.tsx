@@ -1,25 +1,26 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled } from '../../styles'
+import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/exchange';
 
-import { ClearAllButton, DownloadAsHarButton, ImportHarButton, PlayPauseButton } from './exchange-list-buttons';
+import { ClearAllButton, DownloadAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchBox } from '../common/search-box';
+import { CollectedEvent } from './view-event-list';
 
 export const HEADER_FOOTER_HEIGHT = 38;
 
 const RequestCounter = styled(observer((props: {
     className?: string,
-    exchangeCount: number,
-    filteredExchangeCount: number
+    eventCount: number,
+    filteredEventCount: number
 }) =>
     <div className={props.className}>
         <span className='count'>
-            { props.filteredExchangeCount }
-            { props.exchangeCount !== props.filteredExchangeCount &&
-                ` / ${ props.exchangeCount }`
+            { props.filteredEventCount }
+            { props.eventCount !== props.filteredEventCount &&
+                ` / ${ props.eventCount }`
             }
         </span>
         <span className='label'>requests</span>
@@ -46,7 +47,7 @@ const RequestCounter = styled(observer((props: {
     }
 `;
 
-const ExchangeSearchBox = styled(SearchBox)`
+const EventSearchBox = styled(SearchBox)`
     flex-basis: 60%;
 
     > input {
@@ -65,23 +66,28 @@ export const TableFooter = styled(observer((props: {
     currentSearch: string,
     onSearch: (input: string) => void,
 
-    allExchanges: HttpExchange[],
-    filteredExchanges: HttpExchange[]
+    allEvents: CollectedEvent[],
+    filteredEvents: CollectedEvent[]
 }) => <div className={props.className}>
-    <ExchangeSearchBox
+    <EventSearchBox
         value={props.currentSearch}
         onSearch={props.onSearch}
         placeholder='Filter by URL, headers, status...'
     />
     <RequestCounter
-        exchangeCount={props.allExchanges.length}
-        filteredExchangeCount={props.filteredExchanges.length}
+        eventCount={props.allEvents.length}
+        filteredEventCount={props.filteredEvents.length}
     />
     <ButtonsContainer>
         <PlayPauseButton />
-        <DownloadAsHarButton exchanges={props.filteredExchanges} />
+        <DownloadAsHarButton exchanges={
+            props.filteredEvents.filter(
+                // Drop TLS errors from HAR exports
+                (event): event is HttpExchange => 'request' in event
+            )
+        } />
         <ImportHarButton />
-        <ClearAllButton disabled={props.allExchanges.length === 0} onClear={props.onClear} />
+        <ClearAllButton disabled={props.allEvents.length === 0} onClear={props.onClear} />
     </ButtonsContainer>
 </div>))`
     position: absolute;

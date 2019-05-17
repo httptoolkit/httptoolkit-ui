@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '../../icons';
 
 import {
     CollapsibleCard,
-    CollapseIcon,
     CollapsibleCardProps
 } from '../common/card'
 import {

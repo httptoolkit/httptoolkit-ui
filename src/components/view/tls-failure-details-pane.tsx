@@ -1,0 +1,168 @@
+import * as _ from 'lodash';
+import * as React from 'react';
+
+import { FailedTlsRequest } from '../../types';
+import { styled } from '../../styles';
+import { MediumCard } from '../common/card';
+import { getReadableIP } from '../../model/network';
+import { ContentLabelBlock, Content, CopyableMonoValue } from '../common/text-content';
+
+const TlsFailureContainer = styled.div`
+    position: relative;
+    overflow-y: scroll;
+
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px 20px 0 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    background-color: ${p => p.theme.containerBackground};
+`;
+
+export class TlsFailureDetailsPane extends React.Component<{
+    failure: FailedTlsRequest,
+    certPath: string
+}> {
+    render() {
+        const { failure, certPath } = this.props;
+
+        const sourceDetailParts = getReadableIP(failure.remoteIpAddress).split(' ');
+        const sourceIp = sourceDetailParts[0];
+        const sourceDetails = sourceDetailParts.slice(1).join(' ');
+
+        return <TlsFailureContainer>
+            <MediumCard>
+                <header>
+                    <h1>Failed HTTPS Request</h1>
+                </header>
+
+                <ContentLabelBlock>Details</ContentLabelBlock>
+                <Content>
+                    <p>{
+                        ({
+                            'closed': <>
+                                This connection was aborted and closed before any HTTP request was sent.
+                            </>,
+                            'reset': <>
+                                This connection was aborted and reset before any HTTP request was sent.
+                            </>,
+                            'cert-rejected': <>
+                                This connection was aborted, before any HTTP request was sent,
+                                because the client did not trust the HTTP Toolkit certificate.
+                            </>,
+                            'no-shared-cipher': <>
+                                This connection was aborted, before any HTTP request was sent,
+                                because the client failed to agree on a TLS configuration.
+                            </>,
+                            'unknown': <>
+                                This connection was aborted, before any HTTP request was sent,
+                                due to a TLS error.
+                            </>,
+                        } as _.Dictionary<JSX.Element>)[failure.failureCause]
+                    }</p>
+                    <p>
+                        The request was sent by <CopyableMonoValue>
+                            { sourceIp }
+                        </CopyableMonoValue> { sourceDetails }.
+                    </p>
+                </Content>
+
+                <ContentLabelBlock>Cause</ContentLabelBlock>
+                <Content>{
+                    failure.failureCause === 'cert-rejected'
+                        ? <p>
+                            This means that the client hasn't yet been 100% configured
+                            to work with HTTP Toolkit. It has the proxy settings,
+                            but it doesn't trust our certificate authority (CA), so we
+                            can't imitate HTTPS sites and we can't collect or see its
+                            HTTPS traffic.
+                        </p>
+                    : failure.failureCause === 'no-shared-cipher'
+                        ? <>
+                            <p>
+                                This usually means that the client hasn't yet been 100% configured
+                                to work with HTTP Toolkit, although it's also possible that
+                                it has an unusual TLS setup.
+                            </p>
+                            <p>
+                                The former case is much more likely. That would mean that the
+                                client has the right proxy settings, but doesn't trust our
+                                certificate authority (CA), so we can't imitate HTTPS sites and
+                                we can't collect or see its HTTPS traffic.
+                            </p>
+                        </>
+                    : <>
+                        <p>This could be caused by a few things:</p>
+                        <ul>
+                            <li>The client might no longer want to make the request</li>
+                            <li>The client might have connection issues</li>
+                            <li>The client might not trust our HTTPS certificate</li>
+                        </ul>
+                    </>
+                }</Content>
+                <ContentLabelBlock>Solutions</ContentLabelBlock>
+                <Content>
+                    <p>
+                        {
+                            failure.failureCause === 'cert-rejected'
+                                ? <>
+                                    To resolve this, you need to configure the client to trust
+                                    your HTTP Toolkit CA.
+                                </>
+                            : failure.failureCause === 'no-shared-cipher'
+                                ? <>
+                                    You probably need to ensure the client is configured to trust the
+                                    HTTP Toolkit CA.
+                                </>
+                            : <>
+                                In the first two cases, this is not related to HTTP Toolkit.
+                                In the third case, you need to configure the client to trust your
+                                HTTP Toolkit CA.
+                            </>
+                        }
+                    </p>
+                    <p>
+                        How you do this depends on the specific client. Opening the certificate file
+                        on the device may prompt you to trust it device-wide, or you may need a
+                        specific option for the HTTP library or tool that's being used.
+                    </p>
+
+                    <p>
+                        Your HTTP Toolkit certificate is stored on your machine at <CopyableMonoValue>
+                            { certPath }
+                        </CopyableMonoValue>
+                    </p>
+                    <p>
+                        <strong>For Android devices specifically</strong>, note that apps may not
+                        trust your installed CA certificates by default. For apps targeting
+                        API level 24+, the app must opt in to doing so. To resolve this, you need
+                        to edit the app's network security configuration so that it trusts the
+                        user certificate store, or root your device. See <a
+                            href="https://developer.android.com/training/articles/security-config"
+                        >Android's network security documentation</a> for more details.
+                    </p>
+                </Content>
+            </MediumCard>
+        </TlsFailureContainer>;
+    }
+}
+
+/*
+
+The request was sent by 127.0.0.1 (this machine/a device on your local network/a docker container/)
+
+This can be caused by a few things:
+* The client might no longer want to make the request
+* The client might have connection issues
+* The client might not trust our HTTPS certificate
+
+This means that this client is not fully configured to work with HTTP Toolkit, as it hasn't been configured to trust our certificate authority.
+or
+This could be caused by the client not being fully configured to work with HTTP Toolkit.
+
+
+
+*/

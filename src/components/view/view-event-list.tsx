@@ -8,6 +8,7 @@ import { AutoSizer, Table, Column, TableRowProps } from 'react-virtualized';
 
 import { styled } from '../../styles'
 import { FontAwesomeIcon } from '../../icons';
+import { FailedTlsRequest } from '../../types';
 
 import { HttpExchange } from '../../model/exchange';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-colors';
@@ -15,7 +16,7 @@ import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-color
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
-import { TableFooter, HEADER_FOOTER_HEIGHT } from './exchange-list-footer';
+import { TableFooter, HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 
 const RowMarker = styled.div`
     transition: color 0.1s;
@@ -40,11 +41,13 @@ const EmptyStateOverlay = styled(EmptyState)`
     height: auto;
 `;
 
-interface ExchangeListProps {
+export type CollectedEvent = HttpExchange | FailedTlsRequest
+
+interface ViewEventListProps {
     className?: string;
-    onSelected: (request: HttpExchange | undefined) => void;
+    onSelected: (event: CollectedEvent | undefined) => void;
     onClear: () => void;
-    exchanges: HttpExchange[];
+    events: CollectedEvent[];
     isPaused: boolean;
 }
 
@@ -109,26 +112,51 @@ const ListContainer = styled.div`
         user-select: none;
         cursor: pointer;
 
-        background-color: ${props => props.theme.mainBackground};
-
-        border-width: 2px 0;
-        border-style: solid;
-        border-color: transparent;
-        background-clip: padding-box;
-        box-sizing: border-box;
-
-        &:hover ${RowMarker}, &.selected ${RowMarker} {
-            border-color: currentColor;
+        &:focus {
+            outline: thin dotted ${p => p.theme.popColor};
         }
 
         &.selected {
-            background-color: ${p => p.theme.highlightBackground};
-            color: ${p => p.theme.highlightColor};
             font-weight: bold;
         }
 
-        &:focus {
-            outline: thin dotted ${p => p.theme.popColor};
+        &.exchange-row {
+            background-color: ${props => props.theme.mainBackground};
+
+            border-width: 2px 0;
+            border-style: solid;
+            border-color: transparent;
+            background-clip: padding-box;
+            box-sizing: border-box;
+
+            &:hover ${RowMarker}, &.selected ${RowMarker} {
+                border-color: currentColor;
+            }
+
+            &.selected {
+                color: ${p => p.theme.highlightColor};
+                background-color: ${p => p.theme.highlightBackground};
+            }
+        }
+
+        &.tls-failure-row {
+            height: 28px !important; /* Important required to override virtualized's style attr */
+            margin: 2px 0;
+
+            justify-content: center;
+            font-style: italic;
+
+            opacity: 0.7;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            &.selected {
+                opacity: 1;
+                color: ${p => p.theme.mainColor};
+                background-color: ${p => p.theme.mainBackground};
+            }
         }
     }
 
@@ -154,35 +182,51 @@ const ListContainer = styled.div`
     }
 `;
 
-@observer
-export class ExchangeList extends React.Component<ExchangeListProps> {
+const FailedRequestRow = (p: { failure: FailedTlsRequest }) =>
+    <div>
+        {
+            ({
+                'closed': 'Aborted ',
+                'reset': 'Aborted ',
+                'unknown': 'Aborted ',
+                'cert-rejected': 'Certificate rejected for ',
+                'no-shared-cipher': 'HTTPS setup failed for ',
+            } as _.Dictionary<string>)[p.failure.failureCause]
+        }
+        connection to { p.failure.hostname || 'unknown domain' }
+    </div>
 
-    @observable selectedExchangeId: string | undefined;
+@observer
+export class ViewEventList extends React.Component<ViewEventListProps> {
+
+    @observable selectedEventId: string | undefined;
 
     @observable searchFilter: string | false = false;
 
     @computed
-    private get filteredExchanges() {
-        if (!this.searchFilter) return this.props.exchanges;
+    private get filteredEvents() {
+        if (!this.searchFilter) return this.props.events;
 
         let filter = this.searchFilter.toLocaleLowerCase();
-        return this.props.exchanges.filter((exchange) =>
-            exchange.searchIndex.includes(filter)
-        );
+        return this.props.events.filter((event) => {
+            return event.searchIndex.includes(filter)
+        });
     }
 
     private tableContainerRef: HTMLDivElement | null | undefined;
     private tableRef: Table | null | undefined;
 
     render() {
-        const { exchanges, className, onClear, isPaused } = this.props;
-        const { selectedExchangeId, filteredExchanges } = this;
+        const { events, className, onClear, isPaused } = this.props;
+        const { selectedEventId, filteredEvents } = this;
+
+        console.log(events);
 
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
             <TableFooter
-                allExchanges={exchanges}
-                filteredExchanges={filteredExchanges}
+                allEvents={events}
+                filteredEvents={filteredEvents}
                 currentSearch={this.searchFilter || ''}
                 onSearch={this.onSearchInput}
                 onClear={onClear}
@@ -202,19 +246,32 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                             rowHeight={32}
                             headerHeight={HEADER_FOOTER_HEIGHT}
                             // Unset tabindex if a row is selected
-                            tabIndex={selectedExchangeId != null ? -1 : 0}
-                            rowCount={filteredExchanges.length}
-                            rowGetter={({ index }) => filteredExchanges[index]}
+                            tabIndex={selectedEventId != null ? -1 : 0}
+                            rowCount={filteredEvents.length}
+                            rowGetter={({ index }) => filteredEvents[index]}
                             onRowClick={({ rowData, index }) => {
-                                if (selectedExchangeId !== rowData.id) {
-                                    this.onExchangeSelected(index);
+                                if (selectedEventId !== rowData.id) {
+                                    this.onEventSelected(index);
                                 } else {
-                                    this.onExchangeDeselected();
+                                    this.onEventDeselected();
                                 }
                             }}
-                            rowClassName={({ index }) =>
-                                (selectedExchangeId === (filteredExchanges[index] || {}).id) ? 'selected' : ''
-                            }
+                            rowClassName={({ index }) => {
+                                const classes = [];
+                                const event = filteredEvents[index] || {};
+
+                                if (selectedEventId === event.id) {
+                                    classes.push('selected');
+                                }
+
+                                if ('request' in event) {
+                                    classes.push('exchange-row');
+                                } else {
+                                    classes.push('tls-failure-row');
+                                }
+
+                                return classes.join(' ');
+                            }}
                             noRowsRenderer={() =>
                                 isPaused
                                     ? <EmptyStateOverlay icon={['fas', 'pause']}>
@@ -232,13 +289,13 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 index,
                                 rowData,
                                 key
-                            }: TableRowProps & { key: string }) =>
+                            }: TableRowProps & { key: string, rowData: CollectedEvent }) =>
                                 <div
                                     key={key}
                                     aria-label='row'
                                     aria-rowindex={index + 1}
-                                    tabIndex={selectedExchangeId === rowData.id ? 0 : -1}
-                                    data-exchange-id={rowData.id}
+                                    tabIndex={selectedEventId === rowData.id ? 0 : -1}
+                                    data-event-id={rowData.id}
 
                                     className={className}
                                     role="row"
@@ -247,7 +304,10 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                         onRowClick && onRowClick({ event, index, rowData })
                                     }
                                 >
-                                    {columns}
+                                    { 'request' in rowData
+                                        ? columns
+                                        : <FailedRequestRow failure={rowData} />
+                                    }
                                 </div>
                             ) as any /* Required so we can hack the 'key' in here */}
                         >
@@ -257,9 +317,11 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 className="marker"
                                 headerClassName="marker"
                                 headerRenderer={() => <MarkerHeader />}
-                                cellRenderer={({ rowData }: { rowData: HttpExchange }) => <Observer>{() =>
-                                    <RowMarker category={rowData.category} />
-                                }</Observer>}
+                                cellRenderer={({ rowData }: { rowData: CollectedEvent }) =>
+                                    'category' in rowData
+                                        ? <Observer>{() => <RowMarker category={rowData.category} />}</Observer>
+                                        : null
+                                }
                                 width={10}
                                 flexShrink={0}
                                 flexGrow={0}
@@ -267,7 +329,11 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                             <Column
                                 label="Verb"
                                 dataKey="method"
-                                cellDataGetter={({ rowData }) => rowData.request.method}
+                                cellDataGetter={({ rowData }) =>
+                                    'request' in rowData
+                                        ? rowData.request.method
+                                        : null
+                                }
                                 width={71}
                                 flexShrink={0}
                                 flexGrow={0}
@@ -280,12 +346,14 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 flexShrink={0}
                                 flexGrow={0}
                                 cellRenderer={({ rowData }) =>
-                                    <Observer>{() =>
-                                        <StatusCode
-                                            status={get(rowData, 'response', 'statusCode') || rowData.response}
-                                            message={get(rowData, 'response', 'statusMessage')}
-                                        />
-                                    }</Observer>
+                                    'request' in rowData
+                                        ? <Observer>{() =>
+                                            <StatusCode
+                                                status={get(rowData, 'response', 'statusCode') || rowData.response}
+                                                message={get(rowData, 'response', 'statusMessage')}
+                                            />
+                                        }</Observer>
+                                        : null
                                 }
                             />
                             <Column
@@ -296,24 +364,35 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                                 flexShrink={0}
                                 flexGrow={0}
                                 cellRenderer={({ rowData }) =>
-                                    <FontAwesomeIcon
-                                        title={rowData.request.source.summary}
-                                        {...rowData.request.source.icon}
-                                        fixedWidth={true}
-                                    />
+
+                                    'request' in rowData
+                                        ? <FontAwesomeIcon
+                                            title={rowData.request.source.summary}
+                                            {...rowData.request.source.icon}
+                                            fixedWidth={true}
+                                        />
+                                        : null
                                 }
                             />
                             <Column
                                 label="Host"
                                 dataKey="host"
                                 width={500}
-                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.host}
+                                cellDataGetter={({ rowData }) =>
+                                    'request' in rowData
+                                        ? rowData.request.parsedUrl.host
+                                        : null
+                                }
                             />
                             <Column
                                 label="Path and query"
                                 dataKey="path"
                                 width={1000}
-                                cellDataGetter={({ rowData }) => rowData.request.parsedUrl.pathname + rowData.request.parsedUrl.search}
+                                cellDataGetter={({ rowData }) =>
+                                    'request' in rowData
+                                        ? rowData.request.parsedUrl.pathname + rowData.request.parsedUrl.search
+                                        : null
+                                }
                             />
                         </Table>
                     </div>
@@ -322,7 +401,7 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
         </ListContainer>;
     }
 
-    focusSelectedExchange = () => {
+    focusSelectedEvent = () => {
         if (
             !this.tableRef ||
             !this.tableContainerRef ||
@@ -331,9 +410,9 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
 
         // Something in the table is focused - make sure it's the correct thing.
 
-        if (this.selectedExchangeId != null) {
+        if (this.selectedEventId != null) {
             const rowElement = this.tableContainerRef.querySelector(
-                `[data-exchange-id='${this.selectedExchangeId}']`
+                `[data-event-id='${this.selectedEventId}']`
             ) as HTMLDivElement;
             if (rowElement) {
                 rowElement.focus();
@@ -347,52 +426,52 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
     componentDidMount() {
         if (this.tableContainerRef) {
             const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.addEventListener('focus', this.focusSelectedExchange);
+            tableElement.addEventListener('focus', this.focusSelectedEvent);
         }
     }
 
     componentWillUnmount() {
         if (this.tableContainerRef) {
             const tableElement = this.tableContainerRef.querySelector('.ReactVirtualized__Table__Grid') as HTMLDivElement;
-            tableElement.removeEventListener('focus', this.focusSelectedExchange);
+            tableElement.removeEventListener('focus', this.focusSelectedEvent);
         }
     }
 
     componentDidUpdate() {
-        this.focusSelectedExchange();
+        this.focusSelectedEvent();
     }
 
     @action.bound
-    onExchangeSelected(index: number) {
-        this.selectedExchangeId = this.filteredExchanges[index].id;
-        this.props.onSelected(this.filteredExchanges[index]);
+    onEventSelected(index: number) {
+        this.selectedEventId = this.filteredEvents[index].id;
+        this.props.onSelected(this.filteredEvents[index]);
     }
 
     @action.bound
-    onExchangeDeselected() {
-        this.selectedExchangeId = undefined;
+    onEventDeselected() {
+        this.selectedEventId = undefined;
         this.props.onSelected(undefined);
     }
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        if (this.filteredExchanges.length === 0) return;
+        if (this.filteredEvents.length === 0) return;
 
-        const { filteredExchanges } = this;
+        const { filteredEvents } = this;
 
-        let currentIndex = _.findIndex(filteredExchanges, { id: this.selectedExchangeId });
+        let currentIndex = _.findIndex(filteredEvents, { id: this.selectedEventId });
         let targetIndex: number | undefined;
 
         switch (event.key) {
             case 'j':
             case 'ArrowDown':
                 targetIndex = currentIndex === undefined ?
-                    0 : Math.min(currentIndex + 1, filteredExchanges.length - 1);
+                    0 : Math.min(currentIndex + 1, filteredEvents.length - 1);
                 break;
             case 'k':
             case 'ArrowUp':
                 targetIndex = currentIndex === undefined ?
-                    filteredExchanges.length - 1 : Math.max(currentIndex - 1, 0);
+                filteredEvents.length - 1 : Math.max(currentIndex - 1, 0);
                 break;
             case 'PageUp':
                 targetIndex = currentIndex === undefined ?
@@ -400,13 +479,13 @@ export class ExchangeList extends React.Component<ExchangeListProps> {
                 break;
             case 'PageDown':
                 targetIndex = currentIndex === undefined ?
-                    undefined : Math.min(currentIndex + 10, filteredExchanges.length - 1);
+                    undefined : Math.min(currentIndex + 10, filteredEvents.length - 1);
                 break;
         }
 
         if (targetIndex !== undefined) {
-            this.onExchangeSelected(targetIndex);
-            this.focusSelectedExchange();
+            this.onEventSelected(targetIndex);
+            this.focusSelectedEvent();
             this.tableRef!.scrollToRow(targetIndex);
             event.preventDefault();
         }

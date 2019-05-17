@@ -7,13 +7,14 @@ import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
-import { ExchangeList } from './exchange-list';
-import { ExchangeDetailsPane } from './exchange-details-pane';
+import { ActivatedStore } from '../../model/interception-store';
+
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
 
-import { ActivatedStore } from '../../model/interception-store';
-import { HttpExchange } from '../../model/exchange';
+import { ViewEventList, CollectedEvent } from './view-event-list';
+import { ExchangeDetailsPane } from './exchange-details-pane';
+import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 
 interface ViewPageProps {
     className?: string,
@@ -24,26 +25,33 @@ interface ViewPageProps {
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    @observable.ref selectedExchange: HttpExchange | undefined = undefined;
+    @observable.ref selectedEvent: CollectedEvent | undefined = undefined;
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            if (!_.includes(this.props.interceptionStore.exchanges, this.selectedExchange)) {
-                runInAction(() => this.selectedExchange = undefined);
+            if (!_.includes(this.props.interceptionStore.events, this.selectedEvent)) {
+                runInAction(() => this.selectedEvent = undefined);
             }
         }));
     }
 
     render(): JSX.Element {
-        const { exchanges, clearExchanges, isPaused } = this.props.interceptionStore;
+        const {
+            events,
+            clearInterceptedData,
+            isPaused,
+            certPath
+        } = this.props.interceptionStore;
 
         let rightPane: JSX.Element;
-        if (!this.selectedExchange) {
+        if (!this.selectedEvent) {
             rightPane = <EmptyState icon={['fas', 'arrow-left']}>
                 Select an exchange to see the full details.
             </EmptyState>;
+        } else if ('request' in this.selectedEvent) {
+            rightPane = <ExchangeDetailsPane exchange={this.selectedEvent} />;
         } else {
-            rightPane = <ExchangeDetailsPane exchange={this.selectedExchange} />;
+            rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
         }
 
         return <div className={this.props.className}>
@@ -54,10 +62,10 @@ class ViewPage extends React.Component<ViewPageProps> {
                 minSize={300}
                 maxSize={-300}
             >
-                <ExchangeList
+                <ViewEventList
                     onSelected={this.onSelected}
-                    onClear={clearExchanges}
-                    exchanges={exchanges}
+                    onClear={clearInterceptedData}
+                    events={events}
                     isPaused={isPaused}
                 />
                 { rightPane }
@@ -66,8 +74,8 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onSelected(exchange: HttpExchange | undefined) {
-        this.selectedExchange = exchange;
+    onSelected(event: CollectedEvent | undefined) {
+        this.selectedEvent = event;
     }
 }
 
