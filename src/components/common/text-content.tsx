@@ -37,6 +37,16 @@ export const ContentMonoValue = styled.div`
     word-break: break-all;
 `;
 
+export const CopyableMonoValue = styled.span`
+    font-family: ${p => p.theme.monoFontFamily};
+    font-size: 90%;
+    user-select: all;
+    font-weight: bold;
+
+    word-break: break-all; /* Fallback for anybody without break-word */
+    word-break: break-word;
+`;
+
 // Takes some HTML (in an __html object) and renders it with nice
 // default formatting. THIS MUST ONLY BE CALLED WITH SANITIZED HTML.
 // The __html format is intended to enforce this - those objects

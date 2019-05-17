@@ -4,11 +4,11 @@ import { observer } from 'mobx-react';
 
 import { styled, css } from '../../styles';
 import { trackEvent } from '../../tracking';
-import { FontAwesomeIcon } from '../../icons';
 
 import { Interceptor, MANUAL_INTERCEPT_ID } from '../../model/interceptors';
 import { InterceptOption } from './intercept-option';
 import { CloseButton } from '../common/close-button';
+import { CopyableMonoValue } from '../common/text-content';
 
 interface ManualInterceptOptionCardProps {
     expanded: boolean;
@@ -70,15 +70,6 @@ const InstructionsStep = styled.div`
     }
 `;
 
-const CopyableInstruction = styled.span`
-    font-family: ${p => p.theme.monoFontFamily};
-    user-select: all;
-    font-weight: bold;
-
-    word-break: break-all; /* Fallback for anybody without break-word */
-    word-break: break-word;
-`;
-
 export interface ManualInterceptOptionProps {
     index: number;
     interceptor: Interceptor;
@@ -125,7 +116,7 @@ export class ManualInterceptOption extends React.Component<ManualInterceptOption
                     <h2>1. Send traffic via HTTP Toolkit</h2>
                     <p>
                         To intercept an HTTP client on this machine, configure it to send traffic via{' '}
-                        <CopyableInstruction>http://localhost:{serverPort}</CopyableInstruction>.
+                        <CopyableMonoValue>http://localhost:{serverPort}</CopyableMonoValue>.
                     </p>
                     <p>
                         Most tools can be configured to do so by using the above address as an HTTP or
@@ -148,7 +139,7 @@ export class ManualInterceptOption extends React.Component<ManualInterceptOption
                     </p>
                     <p>
                         HTTP Toolkit has generated a certificate authority (CA) on your machine,
-                        and stored the certificate at <CopyableInstruction>{ certPath}</CopyableInstruction>.
+                        and stored the certificate at <CopyableMonoValue>{ certPath }</CopyableMonoValue>.
                         All intercepted HTTPS exchanges use certificates from this CA.
                     </p>
                     <p>
