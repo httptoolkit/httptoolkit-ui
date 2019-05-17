@@ -10,6 +10,7 @@ import { styled } from '../../styles';
 import { ExchangeList } from './exchange-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { SplitPane } from '../split-pane';
+import { EmptyState } from '../common/empty-state';
 
 import { ActivatedStore } from '../../model/interception-store';
 import { HttpExchange } from '../../model/exchange';
@@ -36,6 +37,15 @@ class ViewPage extends React.Component<ViewPageProps> {
     render(): JSX.Element {
         const { exchanges, clearExchanges, isPaused } = this.props.interceptionStore;
 
+        let rightPane: JSX.Element;
+        if (!this.selectedExchange) {
+            rightPane = <EmptyState icon={['fas', 'arrow-left']}>
+                Select an exchange to see the full details.
+            </EmptyState>;
+        } else {
+            rightPane = <ExchangeDetailsPane exchange={this.selectedExchange} />;
+        }
+
         return <div className={this.props.className}>
             <SplitPane
                 split='vertical'
@@ -50,7 +60,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                     exchanges={exchanges}
                     isPaused={isPaused}
                 />
-                <ExchangeDetailsPane exchange={this.selectedExchange}></ExchangeDetailsPane>
+                { rightPane }
             </SplitPane>
         </div>;
     }

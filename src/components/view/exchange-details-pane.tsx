@@ -11,7 +11,6 @@ import { HttpExchange } from '../../model/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { Pill } from '../common/pill';
-import { EmptyState } from '../common/empty-state';
 import { ExchangeCard, ExchangeCardProps } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
@@ -54,7 +53,7 @@ type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'perfor
 @inject('accountStore')
 @observer
 export class ExchangeDetailsPane extends React.Component<{
-    exchange: HttpExchange | undefined,
+    exchange: HttpExchange,
     // Injected:
     uiStore?: UiStore,
     accountStore?: AccountStore
@@ -81,75 +80,67 @@ export class ExchangeDetailsPane extends React.Component<{
 
         const cards: JSX.Element[] = [];
 
-        if (exchange) {
-            const { request, response } = exchange;
-            const apiExchange = isPaidUser ? exchange.api : undefined;
+        const { request, response } = exchange;
+        const apiExchange = isPaidUser ? exchange.api : undefined;
 
-            cards.push(<ExchangeRequestCard
-                {...this.cardProps.request}
-                exchange={exchange}
-                apiExchange={apiExchange}
+        cards.push(<ExchangeRequestCard
+            {...this.cardProps.request}
+            exchange={exchange}
+            apiExchange={apiExchange}
+        />);
+
+        if (request.body.encoded.byteLength) {
+            cards.push(<ExchangeBodyCard
+                title='Request Body'
+                direction='right'
+                message={request}
+                apiBodySchema={get(apiExchange, 'request', 'bodySchema')}
+                {...this.cardProps.requestBody}
             />);
-
-            if (request.body.encoded.byteLength) {
-                cards.push(<ExchangeBodyCard
-                    title='Request Body'
-                    direction='right'
-                    message={request}
-                    apiBodySchema={get(apiExchange, 'request', 'bodySchema')}
-                    {...this.cardProps.requestBody}
-                />);
-            }
-
-            if (response === 'aborted') {
-                cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
-                    <header>
-                    <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
-                        <h1>Response</h1>
-                    </header>
-                    <div>
-                        The request was aborted before the response was completed.
-                    </div>
-                </ExchangeCard>);
-            } else if (!!response) {
-                cards.push(<ExchangeResponseCard
-                    {...this.cardProps.response}
-                    response={response}
-                    requestUrl={exchange.request.parsedUrl}
-                    apiExchange={apiExchange}
-                    theme={uiStore!.theme!}
-                />);
-
-                if (hasCompletedBody(response)) {
-                    cards.push(<ExchangeBodyCard
-                        title='Response Body'
-                        direction='left'
-                        message={response}
-                        apiBodySchema={get(apiExchange, 'response', 'bodySchema')}
-                        {...this.cardProps.responseBody}
-                    />);
-                }
-            }
-
-            // Push all cards below this point to the bottom
-            cards.push(<CardDivider key='divider' />);
-
-            cards.push(<ExchangePerformanceCard
-                exchange={exchange}
-                {...this.cardProps.performance}
-            />);
-
-            cards.push(<ExchangeExportCard
-                exchange={exchange}
-                {...this.cardProps.export}
-            />);
-        } else {
-            cards.push(
-                <EmptyState key='empty' tabIndex={0} icon={['fas', 'arrow-left']}>
-                    Select an exchange to see the full details.
-                </EmptyState>
-            );
         }
+
+        if (response === 'aborted') {
+            cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
+                <header>
+                <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
+                    <h1>Response</h1>
+                </header>
+                <div>
+                    The request was aborted before the response was completed.
+                </div>
+            </ExchangeCard>);
+        } else if (!!response) {
+            cards.push(<ExchangeResponseCard
+                {...this.cardProps.response}
+                response={response}
+                requestUrl={exchange.request.parsedUrl}
+                apiExchange={apiExchange}
+                theme={uiStore!.theme!}
+            />);
+
+            if (hasCompletedBody(response)) {
+                cards.push(<ExchangeBodyCard
+                    title='Response Body'
+                    direction='left'
+                    message={response}
+                    apiBodySchema={get(apiExchange, 'response', 'bodySchema')}
+                    {...this.cardProps.responseBody}
+                />);
+            }
+        }
+
+        // Push all cards below this point to the bottom
+        cards.push(<CardDivider key='divider' />);
+
+        cards.push(<ExchangePerformanceCard
+            exchange={exchange}
+            {...this.cardProps.performance}
+        />);
+
+        cards.push(<ExchangeExportCard
+            exchange={exchange}
+            {...this.cardProps.export}
+        />);
 
         return <ExchangeDetailsScrollContainer>
             <ExchangeDetailsContentContainer>
