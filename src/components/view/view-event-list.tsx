@@ -220,8 +220,6 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const { events, className, onClear, isPaused } = this.props;
         const { selectedEventId, filteredEvents } = this;
 
-        console.log(events);
-
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
             <TableFooter
