@@ -110,11 +110,18 @@ const isValidIconName = (name: string | undefined): name is keyof typeof Icons =
 }
 
 const getIcon = (useragent: IUAParser.IResult) => {
-    const clientName = get(useragent, 'browser', 'name') ||
-        _.upperFirst((useragent.ua.match(/\w+/) || [])[0]);
+    const browserName = get(useragent, 'browser', 'name');
+    if (isValidIconName(browserName)) return Icons[browserName];
 
-    if (isValidIconName(clientName)) {
-        return Icons[clientName];
+    const uaStrings = useragent.ua.match(/[A-Za-z]+/g) || [];
+
+    const recognizedUaPart = <keyof typeof Icons> _.find(
+        uaStrings.map((s) => _.upperFirst(s.toLowerCase())),
+        (s) => isValidIconName(s)
+    );
+
+    if (recognizedUaPart) {
+        return Icons[recognizedUaPart];
     } else {
         return Icons.Unknown;
     }

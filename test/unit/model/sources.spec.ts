@@ -15,6 +15,7 @@ const IPHONE_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_4_1 like Mac OS X) 
 
 const LINUX_NPM = 'npm/6.4.1 node/v10.13.0 linux x64';
 const GIT = 'git/2.20.1';
+const GUZZLE_PHP = 'GuzzleHttp/6.3.3 curl/7.58.0 PHP/7.2.17-0ubuntu0.18.04.1';
 const JAVA_APACHE = 'Apache-HttpClient/4.5.2 (Java/1.8.0_60)';
 const WGET = 'Wget/1.12 (linux-gnu)';
 
@@ -61,6 +62,13 @@ describe('HTTP source parsing', () => {
 
                 expect(source.summary).to.equal('Npm/6.4.1 (Linux x64)');
                 expect(source.icon).to.equal(Icons.Npm);
+            });
+
+            it('should parse a PHP-based UA', () => {
+                const source = parseSource(GUZZLE_PHP);
+
+                expect(source.summary).to.equal('GuzzleHttp/6.3.3 (Ubuntu 0.18)');
+                expect(source.icon).to.equal(Icons.Php);
             });
 
         });

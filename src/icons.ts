@@ -54,6 +54,7 @@ import { faEdge } from '@fortawesome/free-brands-svg-icons/faEdge';
 import { faInternetExplorer } from '@fortawesome/free-brands-svg-icons/faInternetExplorer';
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons/faCodeBranch';
 import { faNpm } from '@fortawesome/free-brands-svg-icons/faNpm';
+import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
 
 const customSpinnerArc: IconDefinition = {
     // Based on https://codepen.io/aurer/pen/jEGbA
@@ -113,7 +114,8 @@ library.add(
     faEdge,
     faInternetExplorer,
     faCodeBranch,
-    faNpm
+    faNpm,
+    faPhp
 );
 
 export interface IconProps {
@@ -130,6 +132,7 @@ export const Icons = {
     IE: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
     Git: { icon: ['fas', 'code-branch'], color: '#f05033' },
     Npm: { icon: ['fab', 'npm'], color: '#cc3534' },
+    Php: { icon: ['fab', 'php'], color: '#8892bf' },
 
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
