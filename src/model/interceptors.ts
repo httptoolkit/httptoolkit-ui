@@ -65,7 +65,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorUiConfig> = {
         name: 'Terminal',
         description: 'Open a new terminal preconfigured using proxy environment variables',
         iconProps: Icons.Terminal,
-        tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell']
+        tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'laravel', 'guzzle']
     },
     'android-device': {
         name: 'An Android device',
