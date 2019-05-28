@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { styled } from '../../styles'
 import { FontAwesomeIcon } from '../../icons';
-import { getStatusColor } from '../../exchange-colors';
+import { getStatusColor } from '../../model/exchange-colors';
 
 export const StatusCode = styled((props: {
     status: undefined | 'aborted' | number,

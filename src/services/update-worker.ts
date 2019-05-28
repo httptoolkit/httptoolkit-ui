@@ -6,7 +6,7 @@ import * as semver from 'semver';
 import * as kv from 'idb-keyval';
 
 import * as appPackage from '../../package.json';
-import { getVersion as getServerVersion } from '../model/htk-client';
+import { getServerVersion } from './server-api';
 
 const appVersion = process.env.COMMIT_REF || "Unknown";
 const SW_LOG = 'sw-log';
@@ -74,7 +74,9 @@ async function precacheNewVersionIfSupported() {
 
     if (!semver.satisfies(serverVersion, appPackage.runtimeDependencies['httptoolkit-server'])) {
         throw new Error(
-            `New app version ${appVersion} available, but server ${serverVersion} is out of date - aborting`
+            `New app version ${appVersion} available, but server ${
+                await serverVersion
+            } is out of date - aborting`
         );
     } else {
         console.log('Server version is sufficient, continuing install...');

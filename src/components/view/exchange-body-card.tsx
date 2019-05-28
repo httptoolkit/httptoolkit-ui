@@ -6,7 +6,7 @@ import { SchemaObject } from 'openapi-directory';
 
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
-import { HtkContentType, getCompatibleTypes } from '../../content-types';
+import { HtkContentType, getCompatibleTypes } from '../../model/content-types';
 import { getReadableSize } from '../../model/bodies';
 import { UiStore } from '../../model/ui-store';
 

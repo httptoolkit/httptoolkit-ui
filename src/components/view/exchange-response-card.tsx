@@ -7,7 +7,7 @@ import { HtkResponse, Omit } from '../../types';
 import { Theme } from '../../styles';
 
 import { ApiExchange } from '../../model/openapi/openapi';
-import { getStatusColor } from '../../exchange-colors';
+import { getStatusColor } from '../../model/exchange-colors';
 import { getStatusDocs } from '../../model/http-docs';
 
 import { Pill } from '../common/pill';

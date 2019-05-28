@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from '../../icons';
 import { FailedTlsRequest } from '../../types';
 
 import { HttpExchange } from '../../model/exchange';
-import { getExchangeSummaryColour, ExchangeCategory } from '../../exchange-colors';
+import { getExchangeSummaryColour, ExchangeCategory } from '../../model/exchange-colors';
 
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';

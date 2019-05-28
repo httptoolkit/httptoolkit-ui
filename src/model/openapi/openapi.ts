@@ -20,7 +20,7 @@ import { reportError } from '../../errors';
 
 import { HttpExchange } from '../exchange';
 import { ApiMetadata } from './build-api';
-import { buildApiMetadataAsync } from '../../workers/worker-api';
+import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 import { fromMarkdown } from '../markdown';
 
 const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};

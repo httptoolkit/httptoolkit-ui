@@ -11,8 +11,8 @@ import {
     BuildApiRequest,
     TestEncodingsRequest,
     TestEncodingsResponse
-} from './background-worker';
-import Worker from 'worker-loader!./background-worker';
+} from './ui-worker';
+import Worker from 'worker-loader!./ui-worker';
 
 import { Omit } from '../types';
 import { ApiMetadata } from '../model/openapi/build-api';

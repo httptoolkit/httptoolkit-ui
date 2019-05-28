@@ -39,7 +39,7 @@ const serverReady = getDeferred();
 export const announceServerReady = () => serverReady.resolve();
 export const waitUntilServerReady = () => serverReady.promise;
 
-export async function getVersion(): Promise<string> {
+export async function getServerVersion(): Promise<string> {
     const response = await graphql(`
         query getVersion {
             version

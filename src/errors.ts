@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/browser';
 import { UI_VERSION } from './util';
 import { getDesktopShellVersion } from './tracking';
 
-import { waitUntilServerReady, getVersion as getServerVersion } from './model/htk-client';
+import { waitUntilServerReady, getServerVersion } from './services/server-api';
 
 let sentryInitialized = false;
 

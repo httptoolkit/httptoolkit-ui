@@ -7,7 +7,7 @@ import { Icons, FontAwesomeIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
-import { getExchangeSummaryColour } from '../../exchange-colors';
+import { getExchangeSummaryColour } from '../../model/exchange-colors';
 import { ApiExchange, Parameter } from '../../model/openapi/openapi';
 
 import {

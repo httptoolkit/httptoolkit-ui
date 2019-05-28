@@ -2,7 +2,7 @@ import * as zlib from 'zlib';
 
 import { expect } from '../../test-setup';
 
-import { decodeBody } from '../../../src/workers/worker-api';
+import { decodeBody } from '../../../src/services/ui-worker-api';
 
 describe('Worker decoding', () => {
     it('should decode a response with no encoding', async () => {

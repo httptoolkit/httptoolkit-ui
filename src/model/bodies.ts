@@ -1,6 +1,6 @@
 import { IObservableValue, observable, action } from 'mobx';
 
-import { testEncodingsAsync } from '../workers/worker-api';
+import { testEncodingsAsync } from '../services/ui-worker-api';
 import { ExchangeMessage } from '../types';
 
 export function getReadableSize(bytes: number, siUnits = true) {

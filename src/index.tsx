@@ -11,11 +11,11 @@ import { GlobalStyles } from './styles';
 import { delay } from './util';
 import { initTracking } from './tracking';
 
-import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./workers/update-worker';
+import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./services/update-worker';
 
 import { InterceptionStore } from './model/interception-store';
 import { AccountStore } from './model/account/account-store';
-import { triggerServerUpdate } from './model/htk-client';
+import { triggerServerUpdate } from './services/server-api';
 import { UiStore } from './model/ui-store';
 
 import { App } from './components/app';

@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as _ from 'lodash';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import { computed, IObservableValue, autorun, runInAction } from 'mobx';
+import { SchemaObject } from 'openapi3-ts';
 
 import {
     js as beautifyJs,
@@ -12,8 +13,7 @@ import * as beautifyXml from 'xml-beautifier';
 
 import { SelfSizedBaseEditor } from './base-editor';
 import { styled } from '../../styles';
-import { HtkContentType } from '../../content-types';
-import { SchemaObject } from 'openapi3-ts';
+import { HtkContentType } from '../../model/content-types';
 
 interface EditorFormatter {
     language: string;

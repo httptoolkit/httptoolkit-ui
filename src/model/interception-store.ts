@@ -4,12 +4,12 @@ import { observable, action, configure, flow, computed, runInAction } from 'mobx
 import { getLocal, Mockttp } from 'mockttp';
 import * as uuid from 'uuid/v4';
 
+import * as amIUsingHtml from '../amiusing.html';
+
 import { InputRequest, InputResponse, FailedTlsRequest, InputTlsRequest } from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
-import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from './htk-client';
-
-import * as amIUsingHtml from '../amiusing.html';
+import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from '../services/server-api';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
 import { parseHar } from './har';

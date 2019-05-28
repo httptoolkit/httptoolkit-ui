@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 
-import { ServerInterceptor } from "./htk-client";
+import { ServerInterceptor } from "../services/server-api";
 import { IconProps, Icons } from "../icons";
 
 interface InterceptorUiConfig {

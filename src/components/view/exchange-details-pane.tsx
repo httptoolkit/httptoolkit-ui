@@ -6,7 +6,7 @@ import { observer, inject } from 'mobx-react';
 
 import { HtkResponse, Omit } from '../../types';
 import { styled } from '../../styles';
-import { getStatusColor } from '../../exchange-colors';
+import { getStatusColor } from '../../model/exchange-colors';
 import { HttpExchange } from '../../model/exchange';
 import { UiStore } from '../../model/ui-store';
 

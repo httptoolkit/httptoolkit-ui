@@ -2,7 +2,7 @@ import * as ReactGA from 'react-ga';
 
 import { UI_VERSION } from './util';
 
-import { waitUntilServerReady, getVersion as getServerVersion } from './model/htk-client';
+import { waitUntilServerReady, getServerVersion } from './services/server-api';
 
 const GA_ID = process.env.GA_ID;
 

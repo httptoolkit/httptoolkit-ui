@@ -1,9 +1,9 @@
 import * as _ from 'lodash';
 
-import { Omit, InputMessage, InputResponse } from './types';
+import { Omit, InputMessage, InputResponse } from '../types';
 import { getBaseContentType } from './content-types';
-import { Theme } from './styles';
-import { HttpExchange } from './model/exchange';
+import { Theme } from '../styles';
+import { HttpExchange } from './exchange';
 
 type MinimalExchange = Pick<HttpExchange, 'request' | 'response'>;
 type CompletedExchange = Required<MinimalExchange>;

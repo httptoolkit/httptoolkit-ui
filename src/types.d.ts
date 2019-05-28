@@ -7,7 +7,7 @@ import { ComponentClass } from 'react';
 import { ObservableMap } from 'mobx';
 
 import { TrafficSource } from './model/sources';
-import { HtkContentType } from './content-types';
+import { HtkContentType } from './model/content-types';
 import { ObservablePromise } from './util';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };

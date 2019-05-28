@@ -20,12 +20,12 @@ import {
 } from '../util';
 
 import { parseSource } from './sources';
-import { getHTKContentType } from '../content-types';
-import { getExchangeCategory, ExchangeCategory } from '../exchange-colors';
+import { getHTKContentType } from './content-types';
+import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
 
 import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
-import { decodeBody } from '../workers/worker-api';
+import { decodeBody } from '../services/ui-worker-api';
 
 export { TimingEvents };
 

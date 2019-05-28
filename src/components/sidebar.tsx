@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '../icons';
 import { lazyObservablePromise, UI_VERSION } from '../util';
 
 import { getDesktopShellVersion } from '../tracking';
-import { getVersion as getServerVersion } from '../model/htk-client';
+import { getServerVersion } from '../services/server-api';
 
 import { UnstyledButton } from './common/inputs';
 import * as logo from '../images/logo-stacked.svg';
