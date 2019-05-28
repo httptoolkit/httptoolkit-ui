@@ -1,9 +1,6 @@
 import * as Sentry from '@sentry/browser';
 
-import { UI_VERSION } from './util';
-import { getDesktopShellVersion } from './tracking';
-
-import { waitUntilServerReady, getServerVersion } from './services/server-api';
+import { UI_VERSION, serverVersion, desktopVersion } from './services/service-versions';
 
 let sentryInitialized = false;
 
@@ -17,12 +14,11 @@ export function initSentry(dsn: string | undefined) {
     if (dsn) {
         Sentry.init({ dsn: dsn, release: UI_VERSION });
 
-        waitUntilServerReady().then(async () => {
-            const version = await getServerVersion();
+        serverVersion.then((version) => {
             Sentry.configureScope((scope) => scope.setExtra('version:server', version))
         });
 
-        getDesktopShellVersion().then((version) =>
+        desktopVersion.then((version) =>
             Sentry.configureScope((scope) => scope.setExtra('version:desktop', version))
         );
 

@@ -4,11 +4,10 @@ import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
 
-import { UI_VERSION, ObservablePromise } from '../util';
-import { Headers } from '../types';
-
+import { ObservablePromise } from '../util';
+import { Headers, HtkRequest, HarRequest, HarResponse } from '../types';
 import { HttpExchange, TimingEvents } from "./exchange";
-import { HtkRequest, HarRequest, HarResponse } from '../types';
+import { UI_VERSION } from '../services/service-versions';
 
 export type Har = HarFormat.Har;
 export type HarEntry = HarFormat.Entry;

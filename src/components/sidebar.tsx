@@ -5,10 +5,7 @@ import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
 import { FontAwesomeIcon } from '../icons';
-import { lazyObservablePromise, UI_VERSION } from '../util';
-
-import { getDesktopShellVersion } from '../tracking';
-import { getServerVersion } from '../services/server-api';
+import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
 import * as logo from '../images/logo-stacked.svg';
@@ -115,9 +112,6 @@ const SidebarLink = styled.a<{ highlight?: true }>`
     }
 `;
 
-const serverVersionPromise = lazyObservablePromise(() => getServerVersion());
-const desktopVersionPromise = lazyObservablePromise(() => getDesktopShellVersion());
-
 export const Sidebar = observer((props: SidebarProps) => {
     const items = props.items.map((item, i) => {
         const itemContent = <>
@@ -151,19 +145,20 @@ export const Sidebar = observer((props: SidebarProps) => {
         }
     });
 
-    const serverVersion = serverVersionPromise.state === 'fulfilled'
-        ? serverVersionPromise.value
-        : 'Unknown';
-    const desktopVersion = desktopVersionPromise.state === 'fulfilled'
-        ? desktopVersionPromise.value
-        : 'Unknown';
-
     return <SidebarNav>
         <SidebarLogo
             title={dedent`
                 UI version: ${UI_VERSION.slice(0, 8)}
-                Desktop version: ${desktopVersion}
-                Server version: ${serverVersion}
+                Desktop version: ${
+                    desktopVersion.state === 'fulfilled'
+                        ? desktopVersion.value
+                        : 'Unknown'
+                }
+                Server version: ${
+                    serverVersion.state === 'fulfilled'
+                        ? serverVersion.value
+                        : 'Unknown'
+                }
             `}
         />
 

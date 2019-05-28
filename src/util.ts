@@ -5,8 +5,6 @@ import { IPromiseBasedObservable, fromPromise, PromiseState } from 'mobx-utils';
 import { Omit } from './types';
 import { observable } from 'mobx';
 
-export const UI_VERSION = process.env.COMMIT_REF || "Unknown";
-
 export function delay(numberMs: number) {
     return new Promise((resolve) => setTimeout(resolve, numberMs));
 }
