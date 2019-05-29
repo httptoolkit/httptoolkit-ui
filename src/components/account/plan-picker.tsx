@@ -254,7 +254,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             ready-to-use code for 20+ languages & tools
                         </Feature>
                         <Feature>
-                            Light, dark & high-contrast UI themes
+                            <strong>Extra customization</strong>, including light, dark & high-contrast UI themes, and proxy port ranges.
                         </Feature>
                         <Feature>
                             <strong>Support ongoing development!</strong>
