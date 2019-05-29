@@ -32,3 +32,5 @@ export const desktopVersion = lazyObservablePromise(async () => {
 export const serverVersion = lazyObservablePromise(() =>
     waitUntilServerReady().then(getServerVersion)
 );
+
+export const PORT_RANGE_SERVER_RANGE = '^0.1.14';

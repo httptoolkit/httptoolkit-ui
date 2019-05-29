@@ -1,17 +1,22 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, inject } from "mobx-react";
-import { observable, action } from 'mobx';
+import { observable, action, computed } from 'mobx';
 import * as dedent from 'dedent';
 import {
     distanceInWordsStrict, format
 } from 'date-fns';
+import { get } from 'typesafe-get';
+import * as semver from 'semver';
 
 import { Omit, WithInjected } from '../../types';
 import { styled, css, Theme, ThemeName } from '../../styles';
+import { WarningIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui-store';
+import { InterceptionStore, isValidPortConfiguration } from '../../model/interception-store';
+import { serverVersion, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
 import { CollapsibleCard, CollapsibleCardProps } from '../common/card';
 import { ContentLabel, ContentValue } from '../common/text-content';
@@ -25,6 +30,7 @@ import * as amIUsingHtml from '../../amiusing.html';
 interface SettingsPageProps {
     accountStore: AccountStore;
     uiStore: UiStore;
+    interceptionStore: InterceptionStore;
 }
 
 type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'performance';
@@ -85,7 +91,58 @@ const AccountContactFooter = styled.div`
     strong {
         user-select: all;
     }
-`
+`;
+
+const ProxySettingsContainer = styled.div`
+    display: grid;
+    grid-template-columns: fit-content(45%) fit-content(45%) fit-content(10%);
+    align-items: baseline;
+
+    grid-gap: 10px;
+    margin-bottom: 10px;
+
+    input {
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: solid 1px ${p => p.theme.containerBorder};
+
+        & + ${WarningIcon} {
+            visibility: hidden;
+            align-self: center;
+        }
+
+        &:invalid {
+            border-color: #f1971f;
+            background-color: #f1971f40;
+            color: ${p => p.theme.mainColor};
+
+            & + ${WarningIcon} {
+                visibility: visible;
+            }
+        }
+    }
+`;
+
+const ProxyPortStateExplanation = styled.p`
+    margin-bottom: 10px;
+`;
+
+const ReloadServer = styled((props: {
+    className?: string,
+    children: React.ReactNode
+}) => <a
+    className={props.className}
+    children={props.children}
+    onClick={() => window.location.reload()}
+/>)`
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: bold;
+`;
+
+const ProxyPortExplanation = styled.p`
+    font-style: italic;
+`;
 
 const ThemeColors = styled.div`
     display: grid;
@@ -108,12 +165,14 @@ const EditorContainer = styled.div`
 
 @inject('accountStore')
 @inject('uiStore')
+@inject('interceptionStore')
 @observer
 class SettingsPage extends React.Component<SettingsPageProps> {
 
     @observable
     private cardProps = _.mapValues<{}, Omit<CollapsibleCardProps, 'children'>>({
         'account': {},
+        'proxy': {},
         'themes': {}
     }, (_value: { collapsed?: boolean }, key) => ({
         key: key,
@@ -127,8 +186,56 @@ class SettingsPage extends React.Component<SettingsPageProps> {
         cardProps.collapsed = !cardProps.collapsed;
     }
 
+    @observable
+    minPortValue = (get(this.props.interceptionStore.portConfig, 'startPort') || 8000).toString();
+
+    @observable
+    maxPortValue = (get(this.props.interceptionStore.portConfig, 'endPort') || 65535).toString();
+
+    @action.bound
+    onMinPortChange({ target: { value } }: React.ChangeEvent<HTMLInputElement>) {
+        this.minPortValue = value;
+        this.updatePortConfig();
+    }
+
+    @action.bound
+    onMaxPortChange({ target: { value } }: React.ChangeEvent<HTMLInputElement>) {
+        this.maxPortValue = value;
+        this.updatePortConfig();
+    }
+
+    @computed
+    get isCurrentPortInRange() {
+        const { serverPort, portConfig } = this.props.interceptionStore;
+
+        if (!portConfig) {
+            return serverPort >= 8000;
+        } else {
+            return serverPort >= portConfig.startPort && serverPort <= portConfig.endPort;
+        }
+    }
+
+    @computed
+    get portConfig() {
+        return {
+            startPort: parseInt(this.minPortValue, 10),
+            endPort: parseInt(this.maxPortValue, 10)
+        };
+    }
+
+    @computed
+    get isCurrentPortConfigValid() {
+        return isValidPortConfiguration(this.portConfig);
+    }
+
+    updatePortConfig() {
+        if (!this.isCurrentPortConfigValid) return;
+        else this.props.interceptionStore.setPortConfig(this.portConfig);
+    }
+
     render() {
         const { uiStore } = this.props;
+        const { serverPort } = this.props.interceptionStore;
         const {
             isPaidUser,
             userEmail,
@@ -240,6 +347,61 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         Questions? Email <strong>billing@httptoolkit.tech</strong>
                     </AccountContactFooter>
                 </CollapsibleCard>
+
+                {
+                    _.isString(serverVersion.value) &&
+                    semver.satisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
+                    <CollapsibleCard {...this.cardProps.proxy}>
+                        <header>
+                            <h1>Proxy settings</h1>
+                        </header>
+                        <ProxySettingsContainer>
+                            <ContentLabel>
+                                Minimum port
+                            </ContentLabel>
+                            <input
+                                type="number"
+                                required
+                                min="1"
+                                max="65535"
+                                value={this.minPortValue}
+                                onChange={this.onMinPortChange}
+                            />
+                            <WarningIcon />
+
+                            <ContentLabel>
+                                Maximum port
+                            </ContentLabel>
+                            <input
+                                type="number"
+                                required
+                                min={this.minPortValue}
+                                max="65535"
+                                value={this.maxPortValue}
+                                onChange={this.onMaxPortChange}
+                            />
+                            <WarningIcon />
+                        </ProxySettingsContainer>
+                        <ProxyPortStateExplanation>
+                            The proxy is currently using port <strong>
+                                { serverPort }
+                            </strong>{
+                                (this.isCurrentPortConfigValid && !this.isCurrentPortInRange)
+                                ? <>
+                                    , outside this range. <ReloadServer>
+                                        Restart the app now to use this configuration
+                                    </ReloadServer>.
+                                </>
+                                : <>.</>
+                            }
+                        </ProxyPortStateExplanation>
+                        <ProxyPortExplanation>
+                            When opening HTTP Toolkit, it will start the proxy on the first port in
+                            this range that is available. If all ports in the range are in use, the
+                            first free port above 8000 will be used instead.
+                        </ProxyPortExplanation>
+                    </CollapsibleCard>
+                }
 
                 <CollapsibleCard {...this.cardProps.themes}>
                     <header>

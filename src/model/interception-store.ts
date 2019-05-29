@@ -1,8 +1,11 @@
 import * as _ from 'lodash';
 
-import { observable, action, configure, flow, computed, runInAction } from 'mobx';
+import { observable, action, configure, flow, computed, runInAction, observe } from 'mobx';
+import { persist, create } from 'mobx-persist';
 import { getLocal, Mockttp } from 'mockttp';
+import { PortRange } from 'mockttp/dist/mockttp';
 import * as uuid from 'uuid/v4';
+import { get } from 'typesafe-get';
 
 import * as amIUsingHtml from '../amiusing.html';
 
@@ -10,10 +13,12 @@ import { InputRequest, InputResponse, FailedTlsRequest, InputTlsRequest } from '
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from '../services/server-api';
+import { AccountStore } from './account/account-store';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
+import { isValidPort } from './network';
 
 configure({ enforceActions: 'observed' });
 
@@ -23,14 +28,30 @@ export type ActivatedStore = { [P in keyof InterceptionStore]: NonNullable<Inter
 
 // Start the server, with slowly decreasing retry frequency (up to a limit).
 // Note that this never fails - any timeout to this process needs to happen elsewhere.
-function startServer(server: Mockttp, maxDelay = 1000, delayMs = 200): Promise<void> {
-    return server.start().catch((e) => {
+function startServer(server: Mockttp, portConfig: PortRange | undefined, maxDelay = 1000, delayMs = 200): Promise<void> {
+    return server.start(portConfig).catch((e) => {
         console.log('Server initialization failed', e);
-        return delay(Math.min(delayMs, maxDelay))
-            .then(() =>
-                startServer(server, maxDelay, delayMs * 1.2)
-            );
+
+        if (e.response) {
+            // Server is listening, but failed to start as requested. Almost
+            // certainly means our port config is bad - retry immediately without it.
+            return startServer(server, undefined, maxDelay, delayMs);
+        }
+
+        // For anything else (unknown errors, or more likely server not listening yet),
+        // wait briefly and then retry the same config:
+        return delay(Math.min(delayMs, maxDelay)).then(() =>
+            startServer(server, portConfig, maxDelay, delayMs * 1.2)
+        );
     });
+}
+
+export function isValidPortConfiguration(portConfig: PortRange | undefined) {
+    return portConfig === undefined || (
+        portConfig.endPort >= portConfig.startPort &&
+        isValidPort(portConfig.startPort) &&
+        isValidPort(portConfig.endPort)
+    );
 }
 
 export class InterceptionStore {
@@ -42,11 +63,7 @@ export class InterceptionStore {
     certPath: string | undefined;
 
     @computed get serverPort() {
-        if (this.server) {
-            return this.server.port;
-        } else {
-            return undefined;
-        }
+        return this.server.port;
     }
 
     @observable
@@ -86,8 +103,45 @@ export class InterceptionStore {
         this.interceptors = getInterceptOptions([]);
     }
 
-    startServer = flow(function* (this: InterceptionStore) {
-        yield startServer(this.server);
+    @persist('object') @observable
+    private _portConfig: PortRange | undefined;
+
+    @computed get portConfig() {
+        return this._portConfig;
+    }
+
+    @action
+    setPortConfig(value: PortRange | undefined) {
+        if (!isValidPortConfiguration(value)) {
+            throw new TypeError(`Invalid port config: ${JSON.stringify(value)}`);
+        } else if (!value || (value.startPort === 8000 && value.endPort === 65535)) {
+            // If unset, or set to the default equivalent value, then
+            // we delegate to the server itself.
+            this._portConfig = undefined;
+        } else {
+            this._portConfig = value;
+        }
+    }
+
+    async initialize(accountStore: AccountStore) {
+        await this.loadSettings(accountStore);
+        await this.startIntercepting();
+    }
+
+    private loadSettings(accountStore: AccountStore) {
+        // Every time the user account data is updated from the server, consider resetting
+        // the port configuration to the free version. This ensures that it's reset on
+        // logout & subscription expiration (even if that happened while the app was
+        // closed), but doesn't get reset when the app starts with stale account data.
+        observe(accountStore, 'accountDataLastUpdated', () => {
+            if (!accountStore.isPaidUser) this.setPortConfig(undefined);
+        });
+
+        return create()('interception-store', this);
+    }
+
+    private startIntercepting = flow(function* (this: InterceptionStore) {
+        yield startServer(this.server, this._portConfig);
         announceServerReady();
 
         yield Promise.all([

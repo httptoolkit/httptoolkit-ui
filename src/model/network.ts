@@ -1,6 +1,10 @@
 import * as ipaddr from 'ipaddr.js';
 import { reportError } from '../errors';
 
+export function isValidPort(port: number): boolean {
+    return port > 0 && port <= 65535;
+}
+
 function isIPv6(ip: ipaddr.IPv4 | ipaddr.IPv6): ip is ipaddr.IPv6 {
     return ip.kind() === 'ipv6';
 }

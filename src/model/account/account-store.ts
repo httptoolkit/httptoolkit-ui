@@ -52,6 +52,9 @@ export class AccountStore {
     @observable
     private user: User = getLastUserData();
 
+    @observable
+    accountDataLastUpdated = 0;
+
     @computed get userEmail() {
         return this.user.email;
     }
@@ -64,6 +67,7 @@ export class AccountStore {
 
     private updateUser = flow(function * (this: AccountStore) {
         this.user = yield getLatestUserData();
+        this.accountDataLastUpdated = Date.now();
     }.bind(this));
 
     readonly subscriptionPlans = SubscriptionPlans;

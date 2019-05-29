@@ -49,7 +49,7 @@ const uiStore = new UiStore();
 const interceptionStore = new InterceptionStore();
 
 const appStartupPromise = Promise.all([
-    interceptionStore.startServer(),
+    interceptionStore.initialize(accountStore),
     uiStore.loadSettings()
 ]);
 
