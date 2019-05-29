@@ -52,7 +52,8 @@ export default <Webpack.Configuration>{
 
     node: {
         process: true,
-        fs: 'empty'
+        fs: 'empty',
+        net: 'empty'
     },
 
     plugins: [
