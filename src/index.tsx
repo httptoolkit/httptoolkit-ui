@@ -21,6 +21,7 @@ import { UiStore } from './model/ui-store';
 import { App } from './components/app';
 import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
 import { ErrorBoundary } from './components/error-boundary';
+import { serverVersion } from './services/service-versions';
 
 const APP_ELEMENT_SELECTOR = '#app';
 
@@ -43,6 +44,8 @@ registerUpdateWorker({ scope: '/' })
 });
 
 initTracking();
+const lastServerVersion = localStorage.getItem('last-server-version');
+serverVersion.then((version) => localStorage.setItem('last-server-version', version));
 
 const accountStore = new AccountStore();
 const uiStore = new UiStore();
@@ -78,12 +81,18 @@ const STARTUP_TIMEOUT = 10000;
 // succeed later on, the above render() will still happen and hide the error.
 Promise.race([
     appStartupPromise,
-    delay(STARTUP_TIMEOUT).then(() => { throw new Error('Failed to initialize application'); })
+    delay(STARTUP_TIMEOUT).then(() => {
+        console.log('Previous server version was', lastServerVersion);
+        throw new Error('Failed to initialize application');
+    })
 ]).catch((e) => {
     document.dispatchEvent(new Event('load:failed'));
     reportError(e);
 
     appStartupPromise.then(() => {
-        reportError('Successfully initialized application, but after timeout')
+        serverVersion.then((currentVersion) => {
+            console.log('Server version was', lastServerVersion, 'now started late with', currentVersion);
+            reportError('Successfully initialized application, but after timeout');
+        });
     });
 });
