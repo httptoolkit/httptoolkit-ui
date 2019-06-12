@@ -42,7 +42,7 @@ import { faUpload } from '@fortawesome/free-solid-svg-icons/faUpload';
 import { faDownload } from '@fortawesome/free-solid-svg-icons/faDownload';
 import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay';
 import { faPause } from '@fortawesome/free-solid-svg-icons/faPause';
-
+import { faGem } from '@fortawesome/free-solid-svg-icons/faGem';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -104,6 +104,7 @@ library.add(
     faDownload,
     faPlay,
     faPause,
+    faGem,
 
     faChrome,
     faFirefox,
@@ -133,6 +134,11 @@ export const Icons = {
     Git: { icon: ['fas', 'code-branch'], color: '#f05033' },
     Npm: { icon: ['fab', 'npm'], color: '#cc3534' },
     Php: { icon: ['fab', 'php'], color: '#8892bf' },
+
+    Ruby: { icon: ['fas', 'gem'], color: '#CC342D' },
+    Faraday: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
+    Excon: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
+    Typhoeus: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
 
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
