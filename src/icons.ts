@@ -139,6 +139,7 @@ export const Icons = {
     Faraday: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
     Excon: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
     Typhoeus: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
+    Rubybindings: { icon: ['fas', 'gem'], color: '#CC342D' }, // Stripe's Ruby HTTP lib
 
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
