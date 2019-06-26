@@ -54,6 +54,7 @@ import { faEdge } from '@fortawesome/free-brands-svg-icons/faEdge';
 import { faInternetExplorer } from '@fortawesome/free-brands-svg-icons/faInternetExplorer';
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons/faCodeBranch';
 import { faNpm } from '@fortawesome/free-brands-svg-icons/faNpm';
+import { faNodeJs } from '@fortawesome/free-brands-svg-icons/faNodeJs';
 import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
 
 const customSpinnerArc: IconDefinition = {
@@ -116,6 +117,7 @@ library.add(
     faInternetExplorer,
     faCodeBranch,
     faNpm,
+    faNodeJs,
     faPhp
 );
 
@@ -132,7 +134,6 @@ export const Icons = {
     Edge: { icon: ['fab', 'edge'], color: '#2c75be' },
     IE: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
     Git: { icon: ['fas', 'code-branch'], color: '#f05033' },
-    Npm: { icon: ['fab', 'npm'], color: '#cc3534' },
     Php: { icon: ['fab', 'php'], color: '#8892bf' },
 
     Ruby: { icon: ['fas', 'gem'], color: '#CC342D' },
@@ -140,6 +141,12 @@ export const Icons = {
     Excon: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
     Typhoeus: { icon: ['fas', 'gem'], color: '#CC342D' }, // Popular Ruby HTTP lib
     Rubybindings: { icon: ['fas', 'gem'], color: '#CC342D' }, // Stripe's Ruby HTTP lib
+
+    Npm: { icon: ['fab', 'npm'], color: '#cc3534' },
+    Node: { icon: ['fab', 'node-js'], color: '#3c873a' },
+    Got: { icon: ['fab', 'node-js'], color: '#3c873a' }, // Popular Node.js HTTP lib
+    Axios: { icon: ['fab', 'node-js'], color: '#3c873a' }, // Popular Node.js HTTP lib
+    Nodebindings: { icon: ['fab', 'node-js'], color: '#3c873a' }, // Stripe's Node.js HTTP lib
 
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
