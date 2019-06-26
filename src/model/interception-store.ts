@@ -90,6 +90,7 @@ export class InterceptionStore {
             .map(e => e.request.headers['user-agent'])
             .uniq()
             .map(parseSource)
+            .uniqBy(s => s.summary)
             .value();
     }
 
