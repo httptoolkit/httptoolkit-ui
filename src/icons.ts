@@ -56,6 +56,7 @@ import { faCodeBranch } from '@fortawesome/free-solid-svg-icons/faCodeBranch';
 import { faNpm } from '@fortawesome/free-brands-svg-icons/faNpm';
 import { faNodeJs } from '@fortawesome/free-brands-svg-icons/faNodeJs';
 import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
+import { faPython } from '@fortawesome/free-brands-svg-icons/faPython';
 
 const customSpinnerArc: IconDefinition = {
     // Based on https://codepen.io/aurer/pen/jEGbA
@@ -118,7 +119,8 @@ library.add(
     faCodeBranch,
     faNpm,
     faNodeJs,
-    faPhp
+    faPhp,
+    faPython
 );
 
 export interface IconProps {
@@ -147,6 +149,12 @@ export const Icons = {
     Got: { icon: ['fab', 'node-js'], color: '#3c873a' }, // Popular Node.js HTTP lib
     Axios: { icon: ['fab', 'node-js'], color: '#3c873a' }, // Popular Node.js HTTP lib
     Nodebindings: { icon: ['fab', 'node-js'], color: '#3c873a' }, // Stripe's Node.js HTTP lib
+
+    Pip: { icon: ['fab', 'python'], color: '#646464' },
+    Python: { icon: ['fab', 'python'], color: '#4584b6' },
+    Urlfetch: { icon: ['fab', 'python'], color: '#4584b6' }, // Popular Python HTTP lib
+    Pycurl: { icon: ['fab', 'python'], color: '#4584b6' }, // Popular Python HTTP lib
+    Pythonbindings: { icon: ['fab', 'python'], color: '#4584b6' }, // Stripe's Python HTTP lib
 
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
