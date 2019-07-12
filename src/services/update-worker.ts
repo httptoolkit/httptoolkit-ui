@@ -30,7 +30,9 @@ async function writeToLog(data: any) {
 
     const logData = await readLog();
 
-    data.quota = await navigator.storage.estimate();
+    data.quota = navigator.storage && navigator.storage.estimate
+        ? await navigator.storage.estimate()
+        : {};
 
     data.precached = await getCacheUrls(precacheName);
     data.tmpPrecached = await getCacheUrls(precacheName + '-temp');
