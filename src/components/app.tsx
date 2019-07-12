@@ -11,6 +11,7 @@ import { AccountStore } from '../model/account/account-store';
 import { Sidebar, SidebarItem } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
+import { MockPage } from './mock/mock-page';
 import { SettingsPage } from './settings/settings-page';
 
 import { PlanPicker } from './account/plan-picker';
@@ -64,6 +65,12 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 icon: ['fas', 'search'],
                 position: 'top',
                 page: ViewPage
+            },
+            {
+                name: 'Mock',
+                icon: ['fas', 'theater-masks'],
+                position: 'top',
+                page: MockPage
             },
 
             this.props.accountStore.isPaidUser
