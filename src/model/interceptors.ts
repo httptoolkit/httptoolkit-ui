@@ -63,7 +63,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorUiConfig> = {
     },
     'fresh-terminal': {
         name: 'Terminal',
-        description: 'Open a new terminal preconfigured using proxy environment variables',
+        description: 'Open a new terminal preconfigured to intercept all launched processes',
         iconProps: Icons.Terminal,
         tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
     },
