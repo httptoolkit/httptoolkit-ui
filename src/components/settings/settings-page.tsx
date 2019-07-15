@@ -299,7 +299,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             Subscription plan
                         </ContentLabel>
                         <ContentValue>
-                            { subscriptionPlans[sub.plan].name }
+                            { get(subscriptionPlans, sub.plan, 'name') || 'Unknown' }
                         </ContentValue>
 
                         <ContentLabel>
