@@ -257,7 +257,7 @@ function parseUserData(userJwt: string | null): User {
     if (_.some(subscription) && !subscription.plan) {
         // No plan means no recognized plan, i.e. an unknown id. This should never happen,
         // but error reports suggest it's happened at least once.
-        reportError(`Invalid subscription data: ${JSON.stringify(appData)}`);
+        reportError('Invalid subscription data', appData);
     }
 
     return {

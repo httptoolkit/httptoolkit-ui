@@ -36,7 +36,7 @@ export function reportErrorsAsUser(email: string | undefined) {
     });
 }
 
-export function addErrorTag(key: string, value: string) {
+function addErrorTag(key: string, value: string) {
     if (!sentryInitialized) return;
 
     Sentry.configureScope((scope) => {
@@ -44,13 +44,19 @@ export function addErrorTag(key: string, value: string) {
     });
 }
 
-export function reportError(error: Error | string) {
+export function reportError(error: Error | string, metadata: object = {}) {
     console.log('Reporting error:', error);
     if (!sentryInitialized) return;
 
-    if (typeof error === 'string') {
-        Sentry.captureMessage(error);
-    } else {
-        Sentry.captureException(error);
-    }
+    Sentry.withScope((scope) => {
+        Object.entries(metadata).forEach(([key, value]) => {
+            scope.setExtra(key, value);
+        });
+
+        if (typeof error === 'string') {
+            Sentry.captureMessage(error);
+        } else {
+            Sentry.captureException(error);
+        }
+    });
 }

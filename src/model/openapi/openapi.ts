@@ -66,7 +66,7 @@ export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | unde
         // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
 
         // Report this so we can try to improve & avoid in future.
-        reportError(`Overlapping APIs: ${JSON.stringify(matchingApis)}`);
+        reportError('Overlapping APIs', matchingApis);
 
         // Return our guess of the most popular service, from the matching services only
         return _.maxBy(matchingApis, a => a.spec.paths.length)!;

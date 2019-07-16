@@ -23,7 +23,7 @@ export function getReadableIP(ip: string) {
     try {
         parsedIp = ipaddr.parse(ip);
     } catch (e) {
-        reportError(`Failed to parse IP: ${ip}`);
+        reportError('Failed to parse IP', { ip: ip });
         return ip;
     }
 
