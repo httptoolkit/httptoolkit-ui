@@ -17,7 +17,7 @@ export const desktopVersion = lazyObservablePromise(async () => {
         // If it's already been set, just return it
         return window.httpToolkitDesktopVersion;
     } else {
-        return new Promise((resolve) => {
+        return new Promise<string>((resolve) => {
             // If not, it might still be coming (there's race here), so listen out
             window.addEventListener('message', (message) => {
                 if (message.data.httpToolkitDesktopVersion) {

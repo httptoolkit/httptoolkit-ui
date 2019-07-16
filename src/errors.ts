@@ -13,16 +13,10 @@ export { Sentry };
 export function initSentry(dsn: string | undefined) {
     if (dsn) {
         Sentry.init({ dsn: dsn, release: UI_VERSION });
-
-        serverVersion.then((version) => {
-            Sentry.configureScope((scope) => scope.setExtra('version:server', version))
-        });
-
-        desktopVersion.then((version) =>
-            Sentry.configureScope((scope) => scope.setExtra('version:desktop', version))
-        );
-
         sentryInitialized = true;
+
+        serverVersion.then((version) => addErrorTag('version:server', version));
+        desktopVersion.then((version) => addErrorTag('version:desktop', version));
 
         // If we're running in the main window (not the SW),
         // stop reporting errors after the page starts unloading
@@ -32,6 +26,22 @@ export function initSentry(dsn: string | undefined) {
             });
         }
     }
+}
+
+export function reportErrorsAsUser(email: string | undefined) {
+    if (!sentryInitialized) return;
+
+    Sentry.configureScope((scope) => {
+        scope.setUser({ email: email });
+    });
+}
+
+export function addErrorTag(key: string, value: string) {
+    if (!sentryInitialized) return;
+
+    Sentry.configureScope((scope) => {
+        scope.setTag(key, value);
+    });
 }
 
 export function reportError(error: Error | string) {

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 import { configure, observable, action, flow, computed, when } from 'mobx';
 
-import { reportError } from '../../errors';
+import { reportError, reportErrorsAsUser } from '../../errors';
 import { trackEvent } from '../../tracking';
 import { delay } from '../../util';
 
@@ -68,6 +68,10 @@ export class AccountStore {
     private updateUser = flow(function * (this: AccountStore) {
         this.user = yield getLatestUserData();
         this.accountDataLastUpdated = Date.now();
+
+        // Include the user email in error reports whilst they're logged in.
+        // Useful generally, but especially for checkout/subscription issues.
+        reportErrorsAsUser(this.user.email);
     }.bind(this));
 
     readonly subscriptionPlans = SubscriptionPlans;
