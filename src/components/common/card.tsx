@@ -30,7 +30,7 @@ const Card = styled.section.attrs((p: CardProps) => ({
         }
 
         &:active {
-            box-shadow: inset 0 2px 10px 0 rgba(0,0,0,0.2);
+            box-shadow: unset;
         }
     `}
 
