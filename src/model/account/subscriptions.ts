@@ -46,7 +46,7 @@ _.map(SubscriptionPlans, async (PlanDetails: SubscriptionPlan) => {
 
 export type SubscriptionPlanCode = keyof typeof SubscriptionPlans;
 
-export const getSubscriptionPlanCode = (id: number) =>
+export const getSubscriptionPlanCode = (id: number | undefined) =>
     _.findKey(SubscriptionPlans, { id: id }) as SubscriptionPlanCode | undefined;
 
 export const openCheckout = async (email: string, planCode: SubscriptionPlanCode): Promise<boolean> => {

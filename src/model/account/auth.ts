@@ -175,26 +175,28 @@ function getToken() {
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'deleted';
 
-interface AppData {
+type AppData = {
     email: string;
-    subscription_status: SubscriptionStatus;
-    subscription_id: number;
-    subscription_plan_id: number;
-    subscription_expiry: number;
-    update_url: string;
+    subscription_status?: SubscriptionStatus;
+    subscription_id?: number;
+    subscription_plan_id?: number;
+    subscription_expiry?: number;
+    update_url?: string;
     last_receipt_url?: string;
 }
 
+type SubscriptionData = {
+    id: number;
+    status: SubscriptionStatus;
+    plan: SubscriptionPlanCode;
+    expiry: Date;
+    updateBillingDetailsUrl: string;
+    lastReceiptUrl?: string;
+};
+
 export type User = {
-    email?: string
-    subscription?: {
-        id: number;
-        status: SubscriptionStatus;
-        plan: SubscriptionPlanCode;
-        expiry: Date;
-        updateBillingDetailsUrl: string;
-        lastReceiptUrl?: string;
-    };
+    email?: string;
+    subscription?: SubscriptionData;
 };
 
 /*
@@ -246,16 +248,24 @@ function parseUserData(userJwt: string | null): User {
     const subscription = {
         id: appData.subscription_id,
         status: appData.subscription_status,
-        plan: getSubscriptionPlanCode(appData.subscription_plan_id)!,
-        expiry: new Date(appData.subscription_expiry),
+        plan: getSubscriptionPlanCode(appData.subscription_plan_id),
+        expiry: appData.subscription_expiry ? new Date(appData.subscription_expiry) : undefined,
         updateBillingDetailsUrl: appData.update_url,
         lastReceiptUrl: appData.last_receipt_url
     };
 
+    if (_.some(subscription) && !subscription.plan) {
+        // No plan means no recognized plan, i.e. an unknown id. This should never happen,
+        // but error reports suggest it's happened at least once.
+        reportError(`Invalid subscription data: ${JSON.stringify(appData)}`);
+    }
+
     return {
         email: appData.email,
-        // Use undefined rather than {} when there's no subscription data.
-        subscription: _.some(subscription) ? subscription : undefined
+        // Use undefined rather than {} when there's any missing sub fields other than the receipt
+        subscription: _.every(_.omit(subscription, 'lastReceiptUrl'))
+            ? subscription as SubscriptionData
+            : undefined
     };
 }
 
