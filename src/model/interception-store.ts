@@ -159,7 +159,9 @@ export class InterceptionStore {
             })
         ]);
 
-        setInterval(() => this.refreshInterceptors(), 10000);
+        const refreshInterceptorInterval = setInterval(() =>
+            this.refreshInterceptors()
+        , 10000);
 
         console.log(`Server started on port ${this.server.port}`);
 
@@ -205,6 +207,7 @@ export class InterceptionStore {
         });
 
         window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterceptorInterval);
             this.server.stop().catch(() => { });
         });
     });
