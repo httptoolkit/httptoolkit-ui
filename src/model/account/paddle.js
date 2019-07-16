@@ -10,9 +10,17 @@ module.exports = function () {
         return response.text();
     })
     .then((paddleScript) => ({
+        // We wrap Paddle.js to ensure everything is registered globally, because _half_ of
+        // Paddle.js assumes that that's the case, and mobile-detecting viewport management
+        // breaks if module or define are defined.
         code: `
-            ${paddleScript};
-            // Paddle.js creates a global - this exports it as well, for consistency
+            (function () {
+                const define = undefined;
+                const module = undefined;
+                ${paddleScript}
+            })();
+
+            // Paddle.js creates a global - this exports it as well, for easy usage
             module.exports = window.Paddle;
         `
     }));
