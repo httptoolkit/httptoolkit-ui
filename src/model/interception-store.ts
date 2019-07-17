@@ -2,13 +2,11 @@ import * as _ from 'lodash';
 
 import { observable, action, configure, flow, computed, runInAction, observe } from 'mobx';
 import { persist, create } from 'mobx-persist';
-import { getLocal, Mockttp } from 'mockttp';
-import { PortRange } from 'mockttp/dist/mockttp';
 import * as uuid from 'uuid/v4';
 
-import * as amIUsingHtml from '../amiusing.html';
+import { getLocal, Mockttp, MockRuleData } from 'mockttp';
 
-import { InputRequest, InputResponse, FailedTlsRequest, InputTlsRequest, InputInitiatedRequest } from '../types';
+import { InputResponse, FailedTlsRequest, InputTlsRequest, PortRange, InputInitiatedRequest, InputRequest } from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from '../services/server-api';
@@ -18,6 +16,7 @@ import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
+import { DefaultRules } from './rules';
 
 configure({ enforceActions: 'observed' });
 
@@ -64,6 +63,12 @@ export class InterceptionStore {
     @computed get serverPort() {
         return this.server.port;
     }
+
+    @observable.shallow
+    interceptionRules: MockRuleData[] = [
+        DefaultRules.amIUsingHTKRule,
+        DefaultRules.wildcardPassThroughRule(['localhost'])
+    ];
 
     @observable
     isPaused = false;
@@ -128,7 +133,7 @@ export class InterceptionStore {
         await this.startIntercepting();
     }
 
-    private loadSettings(accountStore: AccountStore) {
+    private async loadSettings(accountStore: AccountStore) {
         // Every time the user account data is updated from the server, consider resetting
         // paid settings to the free defaults. This ensures that they're reset on
         // logout & subscription expiration (even if that happened while the app was
@@ -140,7 +145,15 @@ export class InterceptionStore {
             }
         });
 
-        return create()('interception-store', this);
+        // Load all persisted settings from storage
+        await create()('interception-store', this);
+
+        // Rebuild any other data that depends on persisted settings:
+        this.interceptionRules = [
+            DefaultRules.amIUsingHTKRule,
+            DefaultRules.wildcardPassThroughRule(this.whitelistedCertificateHosts)
+        ];
+        this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
 
     @persist('list') @observable
@@ -154,19 +167,12 @@ export class InterceptionStore {
         announceServerReady();
 
         yield Promise.all([
-            this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech\/?$/).always().thenReply(
-                200, amIUsingHtml, { 'content-type': 'text/html' }
-            ).then(() =>
-                this.server.anyRequest().always().thenPassThrough({
-                    ignoreHostCertificateErrors: this.whitelistedCertificateHosts
-                })
-            ),
+            this.server.setRules(...this.interceptionRules),
             this.refreshInterceptors(),
             getConfig().then((config) => {
                 this.certPath = config.certificatePath
             })
         ]);
-        this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
 
         const refreshInterceptorInterval = setInterval(() =>
             this.refreshInterceptors()

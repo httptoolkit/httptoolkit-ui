@@ -1,11 +1,13 @@
+import { ComponentClass } from 'react';
+import { ObservableMap } from 'mobx';
+
 import {
     InitiatedRequest as MockttpInitiatedRequest,
     CompletedRequest as MockttpCompletedRequest,
     CompletedResponse as MockttpResponse
 } from 'mockttp';
 import { Headers, TimingEvents, TlsRequest } from 'mockttp/dist/types';
-import { ComponentClass } from 'react';
-import { ObservableMap } from 'mobx';
+import { PortRange } from 'mockttp/dist/mockttp';
 
 import { TrafficSource } from './model/sources';
 import { HtkContentType } from './model/content-types';
@@ -53,6 +55,7 @@ export type ExchangeMessage = HtkRequest | HtkResponse;
 
 export {
     Headers,
+    PortRange,
     TimingEvents
 };
 

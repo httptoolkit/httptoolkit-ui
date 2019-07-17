@@ -43,7 +43,7 @@ const Spinner = styled((p: { className?: string }) => (
     z-index: 100;
 `;
 
-type Page = typeof InterceptPage | typeof ViewPage | typeof SettingsPage;
+type Page = typeof InterceptPage | typeof ViewPage | typeof SettingsPage | typeof MockPage;
 
 @inject('accountStore')
 @observer
