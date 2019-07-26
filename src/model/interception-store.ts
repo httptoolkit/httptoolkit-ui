@@ -54,51 +54,7 @@ export function isValidPortConfiguration(portConfig: PortRange | undefined) {
 
 export class InterceptionStore {
 
-    @observable.ref
-    private server: Mockttp;
-
-    @observable
-    certPath: string | undefined;
-
-    @computed get serverPort() {
-        return this.server.port;
-    }
-
-    @observable.shallow
-    interceptionRules: MockRuleData[] = [
-        DefaultRules.amIUsingHTKRule,
-        DefaultRules.wildcardPassThroughRule(['localhost'])
-    ];
-
-    @observable
-    isPaused = false;
-
-    // TODO: Combine into a batchedEvent queue of callbacks
-    private requestQueue: InputRequest[] = [];
-    private responseQueue: InputResponse[] = [];
-    private abortQueue: InputInitiatedRequest[] = [];
-    private tlsErrorQueue: InputTlsRequest[] = [];
-    private isFlushQueued = false;
-
-    readonly events = observable.array<HttpExchange | FailedTlsRequest>([], { deep: false });
-
-    @computed
-    get exchanges(): Array<HttpExchange> {
-        return this.events.filter(
-            (event: any): event is HttpExchange => !!event.request
-        );
-    }
-
-    @computed get activeSources() {
-        return _(this.exchanges)
-            .map(e => e.request.headers['user-agent'])
-            .uniq()
-            .map(parseSource)
-            .uniqBy(s => s.summary)
-            .value();
-    }
-
-    @observable interceptors: _.Dictionary<Interceptor>;
+    // ** Overall setup & startup:
 
     constructor() {
         this.server = getLocal({
@@ -106,26 +62,6 @@ export class InterceptionStore {
             standaloneServerUrl: 'http://127.0.0.1:45456'
         });
         this.interceptors = getInterceptOptions([]);
-    }
-
-    @persist('object') @observable
-    private _portConfig: PortRange | undefined;
-
-    @computed get portConfig() {
-        return this._portConfig;
-    }
-
-    @action
-    setPortConfig(value: PortRange | undefined) {
-        if (!isValidPortConfiguration(value)) {
-            throw new TypeError(`Invalid port config: ${JSON.stringify(value)}`);
-        } else if (!value || (value.startPort === 8000 && value.endPort === 65535)) {
-            // If unset, or set to the default equivalent value, then
-            // we delegate to the server itself.
-            this._portConfig = undefined;
-        } else {
-            this._portConfig = value;
-        }
     }
 
     async initialize(accountStore: AccountStore) {
@@ -155,12 +91,6 @@ export class InterceptionStore {
         ];
         this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
-
-    @persist('list') @observable
-    whitelistedCertificateHosts: string[] = ['localhost'];
-
-    // Saved when the server starts, so we can compare to the current list later
-    initiallyWhitelistedCertificateHosts: string[] = ['localhost'];
 
     private startIntercepting = flow(function* (this: InterceptionStore) {
         yield startServer(this.server, this._portConfig);
@@ -227,6 +157,99 @@ export class InterceptionStore {
         });
     });
 
+    // ** Core server config
+
+    @observable.ref
+    private server: Mockttp;
+
+    @observable
+    certPath: string | undefined;
+
+    @persist('object') @observable
+    private _portConfig: PortRange | undefined;
+
+    @computed get portConfig() {
+        return this._portConfig;
+    }
+
+    @action
+    setPortConfig(value: PortRange | undefined) {
+        if (!isValidPortConfiguration(value)) {
+            throw new TypeError(`Invalid port config: ${JSON.stringify(value)}`);
+        } else if (!value || (value.startPort === 8000 && value.endPort === 65535)) {
+            // If unset, or set to the default equivalent value, then
+            // we delegate to the server itself.
+            this._portConfig = undefined;
+        } else {
+            this._portConfig = value;
+        }
+    }
+
+    @computed get serverPort() {
+        return this.server.port;
+    }
+
+    @persist('list') @observable
+    whitelistedCertificateHosts: string[] = ['localhost'];
+
+    // Saved when the server starts, so we can compare to the current list later
+    initiallyWhitelistedCertificateHosts: string[] = ['localhost'];
+
+    // ** Rule management:
+
+    @observable.shallow
+    interceptionRules: MockRuleData[] = [
+        DefaultRules.amIUsingHTKRule,
+        DefaultRules.wildcardPassThroughRule(['localhost'])
+    ];
+
+    // ** Interceptors:
+
+    @observable interceptors: _.Dictionary<Interceptor>;
+
+    async refreshInterceptors() {
+        const serverInterceptors = await getInterceptors(this.server.port);
+
+        runInAction(() => {
+            this.interceptors = getInterceptOptions(serverInterceptors);
+        });
+    }
+
+    async activateInterceptor(interceptorId: string) {
+        await activateInterceptor(interceptorId, this.server.port).catch(console.warn);
+        await this.refreshInterceptors();
+    }
+
+    // ** Server event subscriptions:
+
+    @observable
+    isPaused = false;
+
+    // TODO: Combine into a batchedEvent queue of callbacks
+    private requestQueue: InputRequest[] = [];
+    private responseQueue: InputResponse[] = [];
+    private abortQueue: InputInitiatedRequest[] = [];
+    private tlsErrorQueue: InputTlsRequest[] = [];
+    private isFlushQueued = false;
+
+    readonly events = observable.array<HttpExchange | FailedTlsRequest>([], { deep: false });
+
+    @computed
+    get exchanges(): Array<HttpExchange> {
+        return this.events.filter(
+            (event: any): event is HttpExchange => !!event.request
+        );
+    }
+
+    @computed get activeSources() {
+        return _(this.exchanges)
+            .map(e => e.request.headers['user-agent'])
+            .uniq()
+            .map(parseSource)
+            .uniqBy(s => s.summary)
+            .value();
+    }
+
     @action.bound
     private flushQueuedUpdates() {
         this.isFlushQueued = false;
@@ -251,14 +274,6 @@ export class InterceptionStore {
     @action.bound
     togglePause() {
         this.isPaused = !this.isPaused;
-    }
-
-    async refreshInterceptors() {
-        const serverInterceptors = await getInterceptors(this.server.port);
-
-        runInAction(() => {
-            this.interceptors = getInterceptOptions(serverInterceptors);
-        });
     }
 
     @action
@@ -336,11 +351,6 @@ export class InterceptionStore {
             this.isFlushQueued = true;
             requestAnimationFrame(this.flushQueuedUpdates);
         }
-    }
-
-    async activateInterceptor(interceptorId: string) {
-        await activateInterceptor(interceptorId, this.server.port).catch(console.warn);
-        await this.refreshInterceptors();
     }
 
 }
