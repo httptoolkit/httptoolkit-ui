@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 
-import { observable, action, configure, flow, computed, runInAction, observe } from 'mobx';
+import { observable, action, configure, flow, computed, runInAction, observe, autorun } from 'mobx';
 import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
 
-import { getLocal, Mockttp, MockRuleData } from 'mockttp';
+import { getLocal, Mockttp } from 'mockttp';
 
 import { InputResponse, FailedTlsRequest, InputTlsRequest, PortRange, InputInitiatedRequest, InputRequest } from '../types';
 import { HttpExchange } from './exchange';
@@ -16,7 +16,7 @@ import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
-import { DefaultRules } from './rules';
+import { buildDefaultRules, HtkMockRule } from './rules';
 
 configure({ enforceActions: 'observed' });
 
@@ -85,10 +85,7 @@ export class InterceptionStore {
         await create()('interception-store', this);
 
         // Rebuild any other data that depends on persisted settings:
-        this.interceptionRules = [
-            DefaultRules.amIUsingHTKRule,
-            DefaultRules.wildcardPassThroughRule(this.whitelistedCertificateHosts)
-        ];
+        this.interceptionRules = buildDefaultRules(this.whitelistedCertificateHosts);
         this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
 
@@ -97,7 +94,16 @@ export class InterceptionStore {
         announceServerReady();
 
         yield Promise.all([
-            this.server.setRules(...this.interceptionRules),
+            new Promise((resolve) => {
+                // Autorun server rule configuration, so its rerun if rules change later
+                autorun(() =>
+                    // Interception setup waits on this, i.e. until setRules first succeeds
+                    resolve(
+                        // Set the mocking rules that will be used by the server
+                        this.server.setRules(...this.interceptionRules)
+                    )
+                )
+            }),
             this.refreshInterceptors(),
             getConfig().then((config) => {
                 this.certPath = config.certificatePath
@@ -198,10 +204,21 @@ export class InterceptionStore {
     // ** Rule management:
 
     @observable.shallow
-    interceptionRules: MockRuleData[] = [
-        DefaultRules.amIUsingHTKRule,
-        DefaultRules.wildcardPassThroughRule(['localhost'])
-    ];
+    interceptionRules: HtkMockRule[] = buildDefaultRules(['localhost']);
+
+    @observable
+    unsavedInterceptionRules: HtkMockRule[] = _.cloneDeep(this.interceptionRules);
+
+    @action.bound
+    saveInterceptionRules() {
+        this.interceptionRules = this.unsavedInterceptionRules;
+        this.unsavedInterceptionRules = _.cloneDeep(this.interceptionRules);
+    }
+
+    @computed
+    get areSomeRulesUnsaved() {
+        return !_.isEqual(this.interceptionRules, this.unsavedInterceptionRules);
+    }
 
     // ** Interceptors:
 

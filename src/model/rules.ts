@@ -1,94 +1,77 @@
 import * as _ from 'lodash';
 
 import {
-    Method,
     handlers,
     matchers,
     completionCheckers,
-    MockRuleData
+    MockRuleData,
 } from 'mockttp';
 
 import * as amIUsingHtml from '../amiusing.html';
-
-function withFirstCharUppercased(input: string): string {
-    return input[0].toUpperCase() + input.slice(1);
-}
-
-export function summarizeMatcher(rule: MockRuleData): string {
-    const firstMatcher = rule.matchers[0];
-
-    // Reformat the explanation for the first matcher to make it noun-y ('for /' to 'Requests for /'),
-    // unless it's already been overridden with its own special case.
-    const matcherWithNounExplanation = _.some(OverriddenExplanationClasses, c => firstMatcher instanceof c)
-        ? firstMatcher
-        : { explain: () => `Requests ${firstMatcher.explain()}` } as matchers.RequestMatcher
-
-    return matchers.explainMatchers([matcherWithNounExplanation, ...rule.matchers.slice(1)]);
-}
-
-export function summarizeAction(rule: MockRuleData): string {
-    return withFirstCharUppercased(rule.handler.explain());
-}
-
-
-class MethodMatcher extends matchers.MethodMatcher {
-    explain() {
-        return `${Method[this.method]} requests`;
-    }
-}
-
-class WildcardMatcher extends matchers.WildcardMatcher {
-    explain() {
-        return 'Any requests';
-    }
-}
-
-class DefaultWildcardMatcher extends matchers.WildcardMatcher {
-    explain() {
-        return 'Any other requests';
-    }
-}
-
-class AmIUsingMatcher extends matchers.RegexPathMatcher {
-
-    constructor() {
-        super(/^https?:\/\/amiusing\.httptoolkit\.tech\/?$/);
-    }
-
-    explain() {
-        return 'for amiusing.httptoolkit.tech';
-    }
-}
-
-class StaticResponseHandler extends handlers.SimpleHandler {
-    explain() {
-        return `Respond with status ${this.status} and static content`;
-    }
-}
-
-const OverriddenExplanationClasses = [
-    MethodMatcher,
+import {
+    MethodMatchers,
     WildcardMatcher,
-    DefaultWildcardMatcher,
+    StaticResponseHandler,
     AmIUsingMatcher,
-    StaticResponseHandler
-];
+    DefaultWildcardMatcher
+} from './rules/rule-definitions';
 
-export const DefaultRules = {
-    amIUsingHTKRule: {
+export type HtkMockRule = MockRuleData & {
+    matchers: Array<matchers.RequestMatcher> & { 0?: InitialMatcher }
+}
+
+export const MatcherLookup = Object.assign(
+    {},
+    matchers.MatcherLookup,
+    MethodMatchers,
+    { wildcard: WildcardMatcher } // Replace the wildcard matcher with our own
+);
+
+export type MatcherClassKey = keyof typeof MatcherLookup;
+export type MatcherClass = typeof MatcherLookup[MatcherClassKey];
+export type Matcher = InstanceType<MatcherClass>;
+
+export const MatcherKeys = new Map<MatcherClass, MatcherClassKey>(
+    Object.entries(MatcherLookup)
+    .map(
+        ([key, matcher]) => [matcher, key]
+    ) as Array<[MatcherClass, MatcherClassKey]>
+);
+
+export function getNewRule(): HtkMockRule {
+    return {
+        matchers: [ ],
+        completionChecker: new completionCheckers.Always(),
+        handler: new StaticResponseHandler(200)
+    };
+}
+
+export const InitialMatcherClasses = [
+    WildcardMatcher,
+    ...Object.values(MethodMatchers)
+];
+export type InitialMatcherClass = typeof InitialMatcherClasses[0];
+export type InitialMatcher = InstanceType<InitialMatcherClass>;
+
+export const buildDefaultRules = (hostWhitelist: string[]) => [
+    // Respond to amiusing.httptoolkit.tech with an emphatic YES
+    {
         matchers: [
-            new MethodMatcher(Method.GET),
+            new MethodMatchers.GET(),
             new AmIUsingMatcher()
         ],
         completionChecker: new completionCheckers.Always(),
-        handler: new StaticResponseHandler(200, undefined, amIUsingHtml, { 'content-type': 'text/html' })
+        handler: new StaticResponseHandler(200, undefined, amIUsingHtml, {
+            'content-type': 'text/html'
+        })
     },
 
-    wildcardPassThroughRule: (hostWhitelist: string[]) => ({
+    // Pass through all other traffic to the real target
+    {
         matchers: [new DefaultWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
         handler: new handlers.PassThroughHandler({
             ignoreHostCertificateErrors: hostWhitelist
         })
-    })
-};
+    }
+];
