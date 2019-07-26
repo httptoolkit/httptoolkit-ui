@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "../../icons";
 import { filterProps } from '../component-utils';
 
 interface CloseButtonProps {
-    onClose?: () => void;
+    onClose: () => void;
     inverted?: boolean;
     top?: string;
     right?: string;
@@ -18,10 +18,10 @@ export const CloseButton = styled(
     icon: ['fas', 'times'],
     size: '2x',
 
-    tabIndex: !!props.onClose ? 0 : -1,
+    tabIndex: 0,
     onClick: props.onClose,
     onKeyPress: (event: React.KeyboardEvent) => {
-        if (event.key === 'Enter' && props.onClose) {
+        if (event.key === 'Enter') {
             props.onClose();
         }
     }
