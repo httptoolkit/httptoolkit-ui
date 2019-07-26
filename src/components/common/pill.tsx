@@ -83,7 +83,7 @@ const Select = styled(Pill.withComponent('select'))`
     height: 24px;
     padding: 0 4px 3px 8px;
 
-    font-size: 16px;
+    font-size: ${p => p.theme.textSize};
     font-family: ${p => p.theme.fontFamily};
 
     ${Pill} + & {
