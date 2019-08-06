@@ -6,6 +6,7 @@ import {
     HtkResponse,
     Headers,
     MessageBody,
+    InputInitiatedRequest,
     InputRequest,
     InputResponse,
     TimingEvents,
@@ -147,7 +148,7 @@ export class HttpExchange {
     @observable
     public category: ExchangeCategory;
 
-    markAborted(request: InputRequest) {
+    markAborted(request: InputInitiatedRequest) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
         Object.assign(this.timingEvents, request.timingEvents);

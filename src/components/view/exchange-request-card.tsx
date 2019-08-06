@@ -253,7 +253,7 @@ export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) =>
             <SourceIcon source={request.source} />
             <Pill color={getExchangeSummaryColour(exchange)}>
                 { request.method } {
-                    request.hostname
+                    (request.hostname || '')
                     // Add some tiny spaces to split up parts of the hostname
                     .replace(/\./g, '\u2008.\u2008')
                 }

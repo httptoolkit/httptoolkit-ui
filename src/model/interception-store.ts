@@ -8,7 +8,7 @@ import * as uuid from 'uuid/v4';
 
 import * as amIUsingHtml from '../amiusing.html';
 
-import { InputRequest, InputResponse, FailedTlsRequest, InputTlsRequest } from '../types';
+import { InputRequest, InputResponse, FailedTlsRequest, InputTlsRequest, InputInitiatedRequest } from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from '../services/server-api';
@@ -71,7 +71,7 @@ export class InterceptionStore {
     // TODO: Combine into a batchedEvent queue of callbacks
     private requestQueue: InputRequest[] = [];
     private responseQueue: InputResponse[] = [];
-    private abortQueue: InputRequest[] = [];
+    private abortQueue: InputInitiatedRequest[] = [];
     private tlsErrorQueue: InputTlsRequest[] = [];
     private isFlushQueued = false;
 
@@ -154,7 +154,7 @@ export class InterceptionStore {
         announceServerReady();
 
         yield Promise.all([
-            this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech$/).always().thenReply(
+            this.server.get(/^https?:\/\/amiusing\.httptoolkit\.tech\/?$/).always().thenReply(
                 200, amIUsingHtml, { 'content-type': 'text/html' }
             ).then(() =>
                 this.server.anyRequest().always().thenPassThrough({
@@ -266,7 +266,7 @@ export class InterceptionStore {
     }
 
     @action
-    private markRequestAborted(request: InputRequest) {
+    private markRequestAborted(request: InputInitiatedRequest) {
         try {
             const exchange = _.find(this.exchanges, { id: request.id });
 

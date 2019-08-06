@@ -1,5 +1,6 @@
 import {
-    CompletedRequest as MockttpRequest,
+    InitiatedRequest as MockttpInitiatedRequest,
+    CompletedRequest as MockttpCompletedRequest,
     CompletedResponse as MockttpResponse
 } from 'mockttp';
 import { Headers, TimingEvents, TlsRequest } from 'mockttp/dist/types';
@@ -11,11 +12,15 @@ import { HtkContentType } from './model/content-types';
 import { ObservablePromise } from './util';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
-export type HarRequest = Omit<MockttpRequest, 'body'> & { body: HarBody; };
-export type HarResponse = Omit<MockttpResponse, 'body'> & { body: HarBody; };
+export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents'> &
+    { body: HarBody; timingEvents: TimingEvents };
+export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
+    { body: HarBody; timingEvents: TimingEvents };
+
 
 export type InputTlsRequest = TlsRequest;
-export type InputRequest = MockttpRequest | HarRequest;
+export type InputInitiatedRequest = MockttpInitiatedRequest;
+export type InputRequest = MockttpCompletedRequest | HarRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 
