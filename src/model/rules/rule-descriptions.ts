@@ -48,9 +48,24 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
 };
 
 // Summarize the matchers of an instantiated rule
+// Slight varation on the Mockttp explanation to make the
+// comma positioning more consistent for UX of changing rules
 export function summarizeMatcher(rule: MockRuleData): string {
-    if (rule.matchers.length === 0) return 'Never';
-    return matchers.explainMatchers(rule.matchers);
+    const { matchers } = rule;
+
+    if (matchers.length === 0) return 'Never';
+    if (matchers.length === 1) return matchers[0].explain();
+    if (matchers.length === 2) {
+        // With just two explanations you can just combine them
+        return `${matchers[0].explain()} ${matchers[1].explain()}`;
+    }
+
+    // With 3+, we need to oxford comma separate the later
+    // explanations, to make them readable
+    return matchers[0].explain() + ' ' +
+        matchers.slice(1, -1)
+        .map((m) => m.explain())
+        .join(', ') + ', and ' + matchers.slice(-1)[0].explain();
 }
 
 // Summarize the action of an instantiated rule

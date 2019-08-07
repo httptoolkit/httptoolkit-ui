@@ -90,6 +90,10 @@ const Summary = styled.h3`
     ${(p: { collapsed: boolean }) => !p.collapsed && css`
         opacity: 0.3;
     `}
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const Details = styled.div`
