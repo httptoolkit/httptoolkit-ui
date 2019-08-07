@@ -99,8 +99,9 @@ export class InterceptionStore {
                 autorun(() =>
                     // Interception setup waits on this, i.e. until setRules first succeeds
                     resolve(
-                        // Set the mocking rules that will be used by the server
-                        this.server.setRules(...this.interceptionRules)
+                        // Set the mocking rules that will be used by the server. We have to
+                        // clone so that we retain the pre-serialization definitions.
+                        this.server.setRules(..._.cloneDeep(this.interceptionRules))
                     )
                 )
             }),
