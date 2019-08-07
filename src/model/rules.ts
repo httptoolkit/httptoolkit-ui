@@ -19,6 +19,7 @@ import {
 } from './rules/rule-definitions';
 
 export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
+    id: string;
     matchers: Array<Matcher> & { 0?: InitialMatcher }
 };
 
@@ -42,6 +43,7 @@ export const MatcherKeys = new Map<MatcherClass, MatcherClassKey>(
 
 export function getNewRule(): HtkMockRule {
     return {
+        id: _.uniqueId(), // Just used for us, for keys
         matchers: [ ],
         completionChecker: new completionCheckers.Always(),
         handler: new StaticResponseHandler(200)
@@ -58,6 +60,7 @@ export type InitialMatcher = InstanceType<InitialMatcherClass>;
 export const buildDefaultRules = (hostWhitelist: string[]) => [
     // Respond to amiusing.httptoolkit.tech with an emphatic YES
     {
+        id: 'default-amiusing',
         matchers: [
             new MethodMatchers.GET(),
             new AmIUsingMatcher()
@@ -70,6 +73,7 @@ export const buildDefaultRules = (hostWhitelist: string[]) => [
 
     // Pass through all other traffic to the real target
     {
+        id: 'default-wildcard',
         matchers: [new DefaultWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
         handler: new handlers.PassThroughHandler({

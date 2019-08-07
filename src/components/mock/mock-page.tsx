@@ -77,10 +77,19 @@ class MockPage extends React.Component<MockPageProps> {
                 })} />
 
                 { unsavedInterceptionRules.map((rule, i) =>
-                    <RuleRow key={i} rule={rule} />
+                    <RuleRow
+                        key={rule.id}
+                        rule={rule}
+                        deleteRule={() => this.deleteRule(i)}
+                    />
                 ) }
             </MockRuleList>
         </MockPageContainer>
+    }
+
+    @action.bound
+    deleteRule(ruleIndex: number) {
+        this.props.interceptionStore.unsavedInterceptionRules.splice(ruleIndex, 1);
     }
 }
 

@@ -26,13 +26,13 @@ import {
 } from '../../model/rules/rule-descriptions';
 
 import { LittleCard } from '../common/card';
-import { CloseButton } from '../common/close-button';
 import { Button, interactiveMouseoverStyles } from '../common/inputs';
 import { InitialMatcher } from '../../model/rules';
 import { MatcherConfiguration } from './matcher-config';
 
 interface RuleRowProps {
     rule: HtkMockRule;
+    deleteRule: () => void;
 }
 
 const RowContainer = styled(LittleCard)`
@@ -328,6 +328,41 @@ class NewMatcherRow extends React.Component<{
     }
 }
 
+const MenuContainer = styled.div`
+    position: absolute;
+    top: 15px;
+    right: 15px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    background-image: radial-gradient(
+        ${p => p.theme.mainBackground},
+        transparent
+    );
+
+    > svg {
+        margin-left: 15px;
+        padding: 5px;
+        margin-top: -7px;
+        margin-right: -5px;
+
+        cursor: pointer;
+        color: ${p => p.theme.primaryInputBackground};
+
+        font-size: 1.2em;
+    }
+`;
+
+const RuleMenu = (p: {
+    onClose: () => void,
+    onDelete: () => void,
+}) => <MenuContainer>
+    <FontAwesomeIcon icon={['far', 'trash-alt']} onClick={p.onDelete} />
+    <FontAwesomeIcon icon={['fas', 'times']} onClick={p.onClose} />
+</MenuContainer>
+
 @observer
 export class RuleRow extends React.Component<RuleRowProps> {
 
@@ -398,7 +433,10 @@ export class RuleRow extends React.Component<RuleRowProps> {
             </RuleAction>
 
             { !this.collapsed &&
-                <CloseButton onClose={this.toggleCollapse} />
+                <RuleMenu
+                    onClose={this.toggleCollapse}
+                    onDelete={this.props.deleteRule}
+                />
             }
         </RowContainer>;
     }
