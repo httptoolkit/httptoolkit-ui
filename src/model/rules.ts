@@ -7,6 +7,8 @@ import {
     MockRuleData,
 } from 'mockttp';
 
+import { Omit } from '../types';
+
 import * as amIUsingHtml from '../amiusing.html';
 import {
     MethodMatchers,
@@ -16,9 +18,9 @@ import {
     DefaultWildcardMatcher
 } from './rules/rule-definitions';
 
-export type HtkMockRule = MockRuleData & {
-    matchers: Array<matchers.RequestMatcher> & { 0?: InitialMatcher }
-}
+export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
+    matchers: Array<Matcher> & { 0?: InitialMatcher }
+};
 
 export const MatcherLookup = Object.assign(
     {},

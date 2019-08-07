@@ -29,7 +29,7 @@ import { LittleCard } from '../common/card';
 import { CloseButton } from '../common/close-button';
 import { Button, interactiveMouseoverStyles } from '../common/inputs';
 import { InitialMatcher } from '../../model/rules';
-import { getMatcherConfigComponent } from './matcher-config';
+import { MatcherConfiguration } from './matcher-config';
 
 interface RuleRowProps {
     rule: HtkMockRule;
@@ -104,6 +104,8 @@ const Select = styled.select`
 
     font-size: ${p => p.theme.headingSize};
     font-family: ${p => p.theme.fontFamily};
+
+    width: 100%;
 `;
 
 const MatchersList = styled.ul`
@@ -172,25 +174,25 @@ const InitialMatcherRow = (p: {
 };
 
 interface ExistingMatcherRowProps {
-    matcher: matchers.RequestMatcher,
-    onDelete: () => void
+    matcher: Matcher;
+    onDelete: () => void;
+    onChange: (m: Matcher) => void;
 }
 
 @observer
 class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps> {
     render() {
-        const { matcher } = this.props;
-
-        const MatcherConfiguration = getMatcherConfigComponent(
-            matchers.MatcherLookup[matcher.type]
-        );
+        const { matcher, onChange, onDelete } = this.props;
 
         return <MatcherRow>
             <RulePart>
-                <MatcherConfiguration />
+                <MatcherConfiguration
+                    matcher={matcher}
+                    onChange={onChange}
+                />
             </RulePart>
 
-            <RuleButton>
+            <RuleButton onClick={onDelete}>
                 <FontAwesomeIcon icon={['far', 'trash-alt']} />
             </RuleButton>
         </MatcherRow>;
@@ -211,43 +213,111 @@ const MatcherOptions = (p: { matchers: Array<MatcherClass> }) => <>{
     })
 }</>
 
+const NewMatcherConfigContainer = styled.form`
+    :not(:empty) {
+        margin-top: 5px;
+    }
+`;
+
 @observer
 class NewMatcherRow extends React.Component<{
-    onAdd: (matcher: matchers.RequestMatcher) => void
+    onAdd: (matcher: Matcher) => void
 }> {
 
     @observable
-    selectedMatcher: MatcherClass | undefined;
+    matcherClass: MatcherClass | undefined;
+
+    @observable
+    draftMatcher: Matcher | undefined;
+
+    @observable
+    invalidMatcherState = false;
+
+    private dropdownRef = React.createRef<HTMLSelectElement>();
 
     @action.bound
     selectMatcher(event: React.ChangeEvent<HTMLSelectElement>) {
         const matcherKey = event.target.value as MatcherClassKey;
-        this.selectedMatcher = MatcherLookup[matcherKey];
+        this.matcherClass = MatcherLookup[matcherKey];
+        this.updateDraftMatcher(undefined);
+    }
+
+    @action.bound
+    updateDraftMatcher(matcher: Matcher | undefined) {
+        this.draftMatcher = matcher;
+        this.invalidMatcherState = false;
+    }
+
+    @action.bound
+    markMatcherInvalid() {
+        this.invalidMatcherState = true;
+    }
+
+    @action.bound
+    saveMatcher(e?: React.FormEvent) {
+        if (e) e.preventDefault();
+
+        if (!this.draftMatcher) return;
+        this.props.onAdd(this.draftMatcher);
+
+        this.matcherClass = undefined;
+        this.draftMatcher = undefined;
+        this.invalidMatcherState = false;
+
+        // Reset the focus ready to add another element
+        const dropdown = this.dropdownRef.current;
+        if (dropdown) dropdown.focus();
     }
 
     render() {
-        const { selectedMatcher } = this;
-        const MatcherConfiguration = getMatcherConfigComponent(this.selectedMatcher);
+        const {
+            matcherClass,
+            draftMatcher,
+            updateDraftMatcher,
+            invalidMatcherState,
+            markMatcherInvalid,
+            saveMatcher
+        } = this;
 
         return <MatcherRow>
             <RulePart>
                 <Select
                     onChange={this.selectMatcher}
-                    value={getMatcherKey(selectedMatcher)}
+                    value={getMatcherKey(matcherClass)}
+                    ref={this.dropdownRef}
                 >
                     <option value={''}>Add another matcher</option>
 
                     <MatcherOptions matchers={[
                         matchers.SimplePathMatcher,
-                        matchers.RegexPathMatcher,
-                        matchers.HeaderMatcher
+                        matchers.RegexPathMatcher
                     ]} />
                 </Select>
 
-                <MatcherConfiguration />
+                <NewMatcherConfigContainer onSubmit={
+                    !invalidMatcherState && draftMatcher
+                        ? saveMatcher
+                        : (e) => e.preventDefault()
+                }>
+                    { draftMatcher
+                        ? <MatcherConfiguration
+                            matcher={draftMatcher}
+                            onChange={updateDraftMatcher}
+                            onInvalidState={markMatcherInvalid}
+                        />
+                        : <MatcherConfiguration
+                            matcherClass={matcherClass}
+                            onChange={updateDraftMatcher}
+                            onInvalidState={markMatcherInvalid}
+                        />
+                    }
+                </NewMatcherConfigContainer>
             </RulePart>
 
-            <RuleButton>
+            <RuleButton
+                disabled={!draftMatcher || invalidMatcherState}
+                onClick={saveMatcher}
+            >
                 <FontAwesomeIcon icon={['fas', 'plus']} />
             </RuleButton>
         </MatcherRow>;
@@ -284,11 +354,12 @@ export class RuleRow extends React.Component<RuleRowProps> {
                                     ? <InitialMatcherRow
                                         key={i}
                                         matcher={matcher as InitialMatcher}
-                                        onChange={this.setFirstMatcher}
+                                        onChange={(m) => this.updateMatcher(i, m)}
                                     />
                                     : <ExistingMatcherRow
                                         key={i}
                                         matcher={matcher}
+                                        onChange={(m) => this.updateMatcher(i, m)}
                                         onDelete={() => this.deleteMatcher(matcher)}
                                     />
                             )}
@@ -296,7 +367,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
                             { rule.matchers.length === 0 &&
                                 <InitialMatcherRow
                                     matcher={undefined}
-                                    onChange={this.setFirstMatcher}
+                                    onChange={(m) => this.updateMatcher(0, m)}
                                 />
                             }
 
@@ -329,17 +400,17 @@ export class RuleRow extends React.Component<RuleRowProps> {
     }
 
     @action.bound
-    addMatcher(matcher: matchers.RequestMatcher) {
+    addMatcher(matcher: Matcher) {
         this.props.rule.matchers.push(matcher);
     }
 
     @action.bound
-    setFirstMatcher(matcher: InitialMatcher) {
-        this.props.rule.matchers[0] = matcher;
+    updateMatcher(index: number, matcher: Matcher) {
+        this.props.rule.matchers[index] = matcher;
     }
 
     @action.bound
-    deleteMatcher(matcher: matchers.RequestMatcher) {
+    deleteMatcher(matcher: Matcher) {
         const { rule } = this.props;
         rule.matchers = rule.matchers.filter(m => m !== matcher);
     }

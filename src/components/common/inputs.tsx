@@ -1,4 +1,3 @@
-
 import { StyledComponent } from "styled-components";
 import { styled, Theme, css } from "../../styles";
 
@@ -64,3 +63,27 @@ export const Button = styled.button`
 `;
 
 export const ButtonLink = Button.withComponent('a');
+
+const invalidTextCss = css`
+    border-color: #f1971f;
+    background-color: #f1971f40;
+    color: ${p => p.theme.mainColor};
+`;
+
+type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+    invalid?: boolean
+}
+
+export const TextInput = styled.input.attrs({
+    type: 'text'
+})`
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: solid 1px ${p => p.theme.containerBorder};
+
+    &:invalid {
+        ${invalidTextCss}
+    }
+
+    ${(p: TextInputProps) => p.invalid && invalidTextCss}
+` as StyledComponent<'input', Theme, TextInputProps>;
