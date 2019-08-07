@@ -4,31 +4,22 @@ import * as polished from 'polished';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
-import { matchers } from 'mockttp';
-
 import { styled, css } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 
+import { HtkMockRule, Matcher } from '../../model/rules';
 import {
-    HtkMockRule,
-    Matcher,
-    MatcherClass,
-    MatcherKeys,
-    MatcherLookup,
-    MatcherClassKey,
-    InitialMatcherClass,
-    InitialMatcherClasses
-} from '../../model/rules';
-import {
-    summarizeMatcherClass,
     summarizeMatcher,
     summarizeAction
 } from '../../model/rules/rule-descriptions';
 
 import { LittleCard } from '../common/card';
-import { Button, interactiveMouseoverStyles } from '../common/inputs';
 import { InitialMatcher } from '../../model/rules';
-import { MatcherConfiguration } from './matcher-config';
+import {
+    InitialMatcherRow,
+    ExistingMatcherRow,
+    NewMatcherRow
+} from './matcher-selection';
 
 interface RuleRowProps {
     rule: HtkMockRule;
@@ -103,230 +94,12 @@ const Details = styled.div`
     flex-direction: column;
 `;
 
-const Select = styled.select`
-    ${interactiveMouseoverStyles}
-
-    font-size: ${p => p.theme.headingSize};
-    font-family: ${p => p.theme.fontFamily};
-
-    width: 100%;
-`;
-
 const MatchersList = styled.ul`
     margin: 10px;
     padding: 10px;
-    border-left: 5px solid ${p => p.theme.containerBorder};
+    border-left: 5px solid ${p => p.theme.containerWatermark};
 `;
 
-const MatcherRow = styled.li`
-    display: flex;
-    flex-direction: row;
-    margin: 5px 0;
-
-    &:first-child {
-        margin-top: 0;
-    }
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-`;
-
-const RulePart = styled.div`
-    flex: 1 1 100%;
-`;
-
-const RuleButton = styled(Button)`
-    font-size: ${p => p.theme.textSize};
-    padding: 6px 10px;
-    display: inline-block;
-    margin-left: 5px;
-`;
-
-const getMatcherKey = (m: MatcherClass | Matcher | undefined) =>
-    m === undefined
-        ? ''
-        : MatcherKeys.get(m as any) || MatcherKeys.get(m.constructor as any);
-const getMatcherClassByKey = (k: MatcherClassKey) => MatcherLookup[k];
-
-const InitialMatcherRow = (p: {
-    matcher?: InitialMatcher,
-    onChange: (m: InitialMatcher) => void
-}) => {
-    return <MatcherRow>
-        <RulePart>
-            <Select
-                value={getMatcherKey(p.matcher)}
-                onChange={(event) => {
-                    const value = event.currentTarget.value as MatcherClassKey | undefined;
-                    if (value) {
-                        const MatcherCls = getMatcherClassByKey(value) as InitialMatcherClass;
-                        p.onChange(new MatcherCls());
-                    }
-                }}
-            >
-                <MatcherOptions matchers={InitialMatcherClasses} />
-
-                { p.matcher === undefined &&
-                    <option value={''}>
-                        Never
-                    </option>
-                }
-            </Select>
-        </RulePart>
-    </MatcherRow>
-};
-
-interface ExistingMatcherRowProps {
-    matcher: Matcher;
-    onDelete: () => void;
-    onChange: (m: Matcher) => void;
-}
-
-@observer
-class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps> {
-    render() {
-        const { matcher, onChange, onDelete } = this.props;
-
-        return <MatcherRow>
-            <RulePart>
-                <MatcherConfiguration
-                    matcher={matcher}
-                    onChange={onChange}
-                />
-            </RulePart>
-
-            <RuleButton onClick={onDelete}>
-                <FontAwesomeIcon icon={['far', 'trash-alt']} />
-            </RuleButton>
-        </MatcherRow>;
-    }
-}
-
-
-const MatcherOptions = (p: { matchers: Array<MatcherClass> }) => <>{
-    p.matchers.map((matcher): JSX.Element | null => {
-        const key = getMatcherKey(matcher);
-        const description = summarizeMatcherClass(matcher);
-
-        return description
-            ? <option key={key} value={key}>{
-                description
-            }</option>
-            : null;
-    })
-}</>
-
-const NewMatcherConfigContainer = styled.form`
-    :not(:empty) {
-        margin-top: 5px;
-    }
-`;
-
-@observer
-class NewMatcherRow extends React.Component<{
-    onAdd: (matcher: Matcher) => void
-}> {
-
-    @observable
-    matcherClass: MatcherClass | undefined;
-
-    @observable
-    draftMatcher: Matcher | undefined;
-
-    @observable
-    invalidMatcherState = false;
-
-    private dropdownRef = React.createRef<HTMLSelectElement>();
-
-    @action.bound
-    selectMatcher(event: React.ChangeEvent<HTMLSelectElement>) {
-        const matcherKey = event.target.value as MatcherClassKey;
-        this.matcherClass = MatcherLookup[matcherKey];
-        this.updateDraftMatcher(undefined);
-    }
-
-    @action.bound
-    updateDraftMatcher(matcher: Matcher | undefined) {
-        this.draftMatcher = matcher;
-        this.invalidMatcherState = false;
-    }
-
-    @action.bound
-    markMatcherInvalid() {
-        this.invalidMatcherState = true;
-    }
-
-    @action.bound
-    saveMatcher(e?: React.FormEvent) {
-        if (e) e.preventDefault();
-
-        if (!this.draftMatcher) return;
-        this.props.onAdd(this.draftMatcher);
-
-        this.matcherClass = undefined;
-        this.draftMatcher = undefined;
-        this.invalidMatcherState = false;
-
-        // Reset the focus ready to add another element
-        const dropdown = this.dropdownRef.current;
-        if (dropdown) dropdown.focus();
-    }
-
-    render() {
-        const {
-            matcherClass,
-            draftMatcher,
-            updateDraftMatcher,
-            invalidMatcherState,
-            markMatcherInvalid,
-            saveMatcher
-        } = this;
-
-        return <MatcherRow>
-            <RulePart>
-                <Select
-                    onChange={this.selectMatcher}
-                    value={getMatcherKey(matcherClass)}
-                    ref={this.dropdownRef}
-                >
-                    <option value={''}>Add another matcher:</option>
-
-                    <MatcherOptions matchers={[
-                        matchers.SimplePathMatcher,
-                        matchers.RegexPathMatcher
-                    ]} />
-                </Select>
-
-                <NewMatcherConfigContainer onSubmit={
-                    !invalidMatcherState && draftMatcher
-                        ? saveMatcher
-                        : (e) => e.preventDefault()
-                }>
-                    { draftMatcher
-                        ? <MatcherConfiguration
-                            matcher={draftMatcher}
-                            onChange={updateDraftMatcher}
-                            onInvalidState={markMatcherInvalid}
-                        />
-                        : <MatcherConfiguration
-                            matcherClass={matcherClass}
-                            onChange={updateDraftMatcher}
-                            onInvalidState={markMatcherInvalid}
-                        />
-                    }
-                </NewMatcherConfigContainer>
-            </RulePart>
-
-            <RuleButton
-                disabled={!draftMatcher || invalidMatcherState}
-                onClick={saveMatcher}
-            >
-                <FontAwesomeIcon icon={['fas', 'plus']} />
-            </RuleButton>
-        </MatcherRow>;
-    }
-}
 
 const MenuContainer = styled.div`
     position: absolute;

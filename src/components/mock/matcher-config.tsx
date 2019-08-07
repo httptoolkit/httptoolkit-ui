@@ -34,13 +34,10 @@ export function MatcherConfiguration(props:
     };
 
     switch (matcherClass) {
-        // We cast all matchers here, rather than might to show it's always
-        // an instance of matcherClass.
         case SimplePathMatcher:
             return <SimplePathMatcherConfig {...configProps} />;
         case RegexPathMatcher:
             return <RegexPathMatcherConfig {...configProps} />;
-
         default:
             return null;
     }
