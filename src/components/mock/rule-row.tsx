@@ -290,7 +290,7 @@ class NewMatcherRow extends React.Component<{
                     value={getMatcherKey(matcherClass)}
                     ref={this.dropdownRef}
                 >
-                    <option value={''}>Add another matcher</option>
+                    <option value={''}>Add another matcher:</option>
 
                     <MatcherOptions matchers={[
                         matchers.SimplePathMatcher,

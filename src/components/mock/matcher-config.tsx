@@ -153,7 +153,7 @@ class RegexPathMatcherConfig extends React.Component<MatcherConfigProps<matchers
                 invalid={!!this.error}
                 value={this.pattern}
                 onChange={this.onChange}
-                placeholder='Any regular expression: https?://example.com\/?.*'
+                placeholder='Any regular expression: https?://abc.com/.*'
             />
         </PathMatcherContainer>;
     }
