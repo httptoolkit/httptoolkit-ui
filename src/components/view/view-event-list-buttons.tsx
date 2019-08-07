@@ -60,7 +60,7 @@ export const ClearAllButton = observer((props: {
     />
 });
 
-export const DownloadAsHarButton = inject('accountStore')(observer((props: {
+export const ExportAsHarButton = inject('accountStore')(observer((props: {
     className?: string,
     accountStore?: AccountStore,
     exchanges: HttpExchange[]
@@ -71,7 +71,7 @@ export const DownloadAsHarButton = inject('accountStore')(observer((props: {
         icon={['fas', 'download']}
         title={
             isPaidUser
-                ? 'Download these requests & responses as a HAR file'
+                ? 'Export these requests & responses as a HAR file'
                 : (
                     'Pro-only: Export requests & responses as a HAR file, ' +
                     'to save for later or share with others'

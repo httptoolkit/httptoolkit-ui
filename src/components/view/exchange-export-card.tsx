@@ -118,7 +118,7 @@ const ExportSnippetEditor = inject('uiStore')(observer((p: {
     </>;
 }));
 
-const downloadHar = async (exchange: HttpExchange) => {
+const exportHar = async (exchange: HttpExchange) => {
     const harContent = JSON.stringify(
         await generateHar([exchange])
     );
@@ -131,13 +131,13 @@ const downloadHar = async (exchange: HttpExchange) => {
     saveFile(filename, 'application/har+json;charset=utf-8', harContent);
 };
 
-const DownloadHarPill = styled(observer((p: {
+const ExportHarPill = styled(observer((p: {
     className?: string,
     exchange: HttpExchange
 }) =>
     <PillButton
         className={p.className}
-        onClick={() => downloadHar(p.exchange)}
+        onClick={() => exportHar(p.exchange)}
         disabled={!p.exchange.response || p.exchange.response === 'aborted'}
     >
         <FontAwesomeIcon icon={['fas', 'download']} /> Save as HAR
@@ -158,7 +158,7 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
         return <ExchangeCard {...this.props}>
             <header>
                 { isPaidUser
-                    ? <DownloadHarPill exchange={exchange} />
+                    ? <ExportHarPill exchange={exchange} />
                     : <ProHeaderPill />
                 }
 

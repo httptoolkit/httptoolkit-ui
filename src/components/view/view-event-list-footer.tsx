@@ -5,7 +5,7 @@ import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/exchange';
 
-import { ClearAllButton, DownloadAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
+import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchBox } from '../common/search-box';
 import { CollectedEvent } from './view-event-list';
 
@@ -80,7 +80,7 @@ export const TableFooter = styled(observer((props: {
     />
     <ButtonsContainer>
         <PlayPauseButton />
-        <DownloadAsHarButton exchanges={
+        <ExportAsHarButton exchanges={
             props.filteredEvents.filter(
                 // Drop TLS errors from HAR exports
                 (event): event is HttpExchange => 'request' in event
