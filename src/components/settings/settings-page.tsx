@@ -181,7 +181,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
     }));
 
     @action.bound
-    private toggleCollapse(key: CardKey) {
+    private toggleCollapse(key: string) {
         const cardProps = this.cardProps[key];
         cardProps.collapsed = !cardProps.collapsed;
     }
@@ -467,6 +467,6 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 // Annoying cast required to handle the store prop nicely in our types
 const InjectedSettingsPage = SettingsPage as unknown as WithInjected<
     typeof SettingsPage,
-    'accountStore' | 'uiStore'
+    'accountStore' | 'uiStore' | 'interceptionStore'
 >;
 export { InjectedSettingsPage as SettingsPage };

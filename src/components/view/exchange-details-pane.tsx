@@ -47,8 +47,6 @@ const CardDivider = styled.div`
     margin-top: auto;
 `;
 
-type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'performance';
-
 @inject('uiStore')
 @inject('accountStore')
 @observer
@@ -150,7 +148,7 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     @action.bound
-    private toggleCollapse(key: CardKey) {
+    private toggleCollapse(key: string) {
         const cardProps = this.cardProps[key];
         cardProps.collapsed = !cardProps.collapsed;
     }

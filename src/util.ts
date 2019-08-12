@@ -56,18 +56,18 @@ export type ObservablePromise<T> =
         ): ObservablePromise<T | TResult>;
     };
 
-export function observablePromise<T>(p: Promise<T>): ObservablePromise<T> {
+export function observablePromise<T>(p: Promise<T> |  ObservablePromise<T>): ObservablePromise<T> {
     const observable = fromPromise(p) as ObservablePromise<T>;
 
     const originalThen = observable.then;
-    observable.then = <any>function (this: ObservablePromise<T>) {
-        const result = originalThen.apply(this, arguments);
+    observable.then = function (this: ObservablePromise<T>): any {
+        const result = originalThen.apply(this, arguments as any);
         return observablePromise(result);
     }
 
     const originalCatch = observable.catch;
     observable.catch = <any>function (this: ObservablePromise<T>) {
-        const result = originalCatch.apply(this, arguments);
+        const result = originalCatch.apply(this, arguments as any);
         return observablePromise(result);
     }
 
@@ -86,8 +86,8 @@ export function lazyObservablePromise<T>(p: () => PromiseLike<T>): ObservablePro
         'catch',
         'case'
     ] as Array<'then' | 'catch' | 'case'>).forEach((methodName) => {
-        const originalMethod = lazyPromise[methodName];
-        lazyPromise[methodName] = <any> function (this: ObservablePromise<T>) {
+        const originalMethod = lazyPromise[methodName] as Function;
+        lazyPromise[methodName] = function (this: ObservablePromise<T>): any {
             trigger();
             return originalMethod.apply(this, arguments);
         };

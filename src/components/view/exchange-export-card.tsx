@@ -203,7 +203,9 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
 
     @action.bound
     setSnippetOption(optionKey: string) {
-        const [target, client] = optionKey.split(KEY_SEPARATOR);
+        const [target, client] = optionKey.split(KEY_SEPARATOR) as
+            [HTTPSnippet.Target, HTTPSnippet.Client];
+
         this.snippetOption = _(snippetExportOptions)
             .values()
             .flatten()

@@ -113,9 +113,9 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
                 <h1>{ interceptor.name }</h1>
 
-                { children ?
-                    children :
-                    <>
+                { children
+                    ? children
+                    : <>
                         <p>{ interceptor.description }</p>
 
                         { getStatusPill(interceptor) }

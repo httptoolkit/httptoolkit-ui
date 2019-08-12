@@ -47,7 +47,7 @@ function enableMarkers(model: monacoTypes.editor.ITextModel | null) {
     ];
 
     methodsToFix.forEach(([functionName, maxArgs]) => {
-        const originalMethod = model[functionName];
+        const originalMethod = model[functionName] as Function;
         model[functionName] = function() {
             return originalMethod.apply(this, Array.from(arguments).slice(0, maxArgs));
         };
