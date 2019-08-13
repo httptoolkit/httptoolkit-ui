@@ -18,18 +18,24 @@ interface MockPageProps {
 }
 
 const MockPageContainer = styled.section`
-    height: 100%;
     overflow-y: auto;
     position: relative;
 
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px;
+    box-sizing: border-box;
+    height: 100%;
 `;
 
 const MockPageHeader = styled.header`
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    box-sizing: border-box;
     width: 100%;
-    margin-bottom: 40px;
+    padding: 20px 40px;
+    background-color: ${p => p.theme.containerBackground};
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+    box-sizing: border-box;
 
     display: flex;
     flex-direction: row;
@@ -50,6 +56,7 @@ const SaveButton = styled(Button)`
 `;
 
 const MockRuleList = styled.ol`
+    padding: 0 40px 20px;
 `;
 
 @inject('interceptionStore')

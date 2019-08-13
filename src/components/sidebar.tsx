@@ -28,7 +28,7 @@ const SidebarNav = styled.nav`
     width: 90px;
     background-color: ${p => p.theme.mainBackground};
     color: ${p => p.theme.mainColor};
-    z-index: 1;
+    z-index: 5;
 
     border-right: 1px solid rgba(0,0,0,0.12);
     box-sizing: border-box;
