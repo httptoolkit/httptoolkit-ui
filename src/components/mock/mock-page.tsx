@@ -90,14 +90,13 @@ class MockPage extends React.Component<MockPageProps> {
     render(): JSX.Element {
         const {
             unsavedInterceptionRules,
-            areSomeRulesUnsaved,
-            saveInterceptionRules
+            areSomeRulesUnsaved
         } = this.props.interceptionStore;
 
         return <MockPageContainer>
             <MockPageHeader>
                 <MockHeading>Mock & Rewrite HTTP</MockHeading>
-                <SaveButton disabled={!areSomeRulesUnsaved} onClick={saveInterceptionRules}>
+                <SaveButton disabled={!areSomeRulesUnsaved} onClick={this.saveAll}>
                     Save changes
                 </SaveButton>
             </MockPageHeader>
@@ -116,6 +115,16 @@ class MockPage extends React.Component<MockPageProps> {
                 ) }
             </MockRuleList>
         </MockPageContainer>
+    }
+
+    @action.bound
+    saveAll() {
+        this.props.interceptionStore.saveInterceptionRules();
+
+        // Collapse everything
+        Object.keys(this.collapsedRulesMap).forEach((ruleId) => {
+            this.collapsedRulesMap[ruleId] = true;
+        })
     }
 
     @action.bound
