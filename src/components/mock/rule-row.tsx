@@ -34,7 +34,7 @@ interface RuleRowProps {
 const RowContainer = styled<React.ComponentType<{
     collapsed: boolean,
     borderColor: string
-} & React.HTMLAttributes<HTMLElement>>>(LittleCard)`
+} & React.ComponentProps<'section'>>>(LittleCard)`
     width: 100%;
     margin: 20px 0;
 
@@ -119,7 +119,6 @@ const MatchersList = styled.ul`
     border-left: 5px solid ${p => p.theme.containerWatermark};
 `;
 
-
 const MenuContainer = styled.div`
     position: absolute;
     top: 15px;
@@ -158,8 +157,10 @@ const RuleMenu = (p: {
 @observer
 export class RuleRow extends React.Component<RuleRowProps> {
 
+    containerRef = React.createRef<HTMLElement>();
+
     render() {
-        const { rule, collapsed, toggleCollapse } = this.props;
+        const { rule, collapsed } = this.props;
 
         const methodMatcher = rule.matchers[0];
 
@@ -177,8 +178,9 @@ export class RuleRow extends React.Component<RuleRowProps> {
                 ? getMethodColor(method)
                 : 'transparent'
             }
+            ref={this.containerRef}
             collapsed={collapsed}
-            onClick={collapsed ? toggleCollapse : undefined}
+            onClick={collapsed ? this.toggleCollapse : undefined}
         >
             <RuleMatcher>
                 <Summary collapsed={collapsed}>
@@ -247,11 +249,24 @@ export class RuleRow extends React.Component<RuleRowProps> {
 
             { !collapsed &&
                 <RuleMenu
-                    onClose={toggleCollapse}
+                    onClose={this.toggleCollapse}
                     onDelete={this.props.deleteRule}
                 />
             }
         </RowContainer>;
+    }
+
+    toggleCollapse = () => {
+        // Scroll the row into view, after giving it a moment to rerender
+        requestAnimationFrame(() => {
+            if (!this.containerRef.current) return;
+            this.containerRef.current.scrollIntoView({
+                block: 'nearest',
+                behavior: 'smooth'
+            })
+        });
+
+        this.props.toggleCollapse();
     }
 
     @action.bound

@@ -177,7 +177,8 @@ export class CollapsibleCard extends React.Component<
             if (!this.cardRef.current) return;
 
             this.cardRef.current.scrollIntoView({
-                block: 'nearest'
+                block: 'nearest',
+                behavior: 'smooth'
             })
         });
 
