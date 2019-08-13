@@ -86,6 +86,10 @@ const Summary = styled.h3`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    /* Required to avoid overflow trimming hanging chars */
+    padding: 5px;
+    margin: -5px;
 `;
 
 const Details = styled.div`
@@ -112,8 +116,8 @@ const MenuContainer = styled.div`
     align-items: center;
 
     background-image: radial-gradient(
-        ${p => p.theme.mainBackground},
-        transparent
+        ${p => polished.rgba(p.theme.mainBackground, 0.9)} 50%,
+        transparent 100%
     );
 
     > svg {
