@@ -86,7 +86,8 @@ export default <Webpack.Configuration>{
                 'inspectTokens',
                 'links',
                 'smartSelect',
-                'wordHighlighter'
+                'wordHighlighter',
+                'wordOperations'
             ]
         }),
         new GoogleFontsPlugin({
