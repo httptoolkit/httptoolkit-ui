@@ -117,9 +117,9 @@ const MatcherOptions = (p: { matchers: Array<MatcherClass> }) => <>{
         const description = summarizeMatcherClass(matcher);
 
         return description
-            ? <option key={key} value={key}>{
-                description
-            }</option>
+            ? <option key={key} value={key}>
+                { description }
+            </option>
             : null;
     })
 }</>

@@ -744,3 +744,10 @@ export function getHeaderDocs(headerName: string) {
 export function getStatusDocs(statusCode: string | number) {
     return getDocs(STATUSES, statusCode.toString());
 }
+
+export function getStatusMessage(statusCode: string | number) {
+    const statusData = STATUSES[statusCode.toString()];
+
+    if (!statusData) return '';
+    return statusData.name.slice(4); // Drop the 'XXX ' prefix.
+}

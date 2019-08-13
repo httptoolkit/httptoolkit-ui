@@ -12,7 +12,7 @@ import { getMethodColor } from '../../model/exchange-colors';
 import { HtkMockRule, Matcher, Handler, InitialMatcher } from '../../model/rules/rules';
 import {
     summarizeMatcher,
-    summarizeAction
+    summarizeHandler
 } from '../../model/rules/rule-descriptions';
 
 import { LittleCard } from '../common/card';
@@ -21,6 +21,8 @@ import {
     ExistingMatcherRow,
     NewMatcherRow
 } from './matcher-selection';
+import { HandlerSelector } from './handler-selection';
+import { HandlerConfiguration } from './handler-config';
 
 interface RuleRowProps {
     rule: HtkMockRule;
@@ -70,18 +72,18 @@ export const AddRuleRow = styled((p: React.HTMLAttributes<HTMLDivElement>) =>
     box-shadow: 0 0 4px 0 rgba(0,0,0,0.2);
 `;
 
-const MatcherOrAction = styled.section`
+const MatcherOrHandler = styled.section`
     align-self: stretch;
     flex-grow: 1;
     flex-basis: 0;
     max-width: calc(50% - 12px);
 `;
 
-const RuleMatcher = styled(MatcherOrAction)`
+const RuleMatcher = styled(MatcherOrHandler)`
     text-align: left;
 `
 
-const RuleAction = styled(MatcherOrAction)`
+const RuleHandler = styled(MatcherOrHandler)`
     text-align: right;
 `
 
@@ -104,6 +106,11 @@ const Details = styled.div`
 
     display: flex;
     flex-direction: column;
+`;
+
+const HandlerDetails = styled(Details)`
+    padding-left: 20px;
+    text-align: left;
 `;
 
 const MatchersList = styled.ul`
@@ -217,17 +224,26 @@ export class RuleRow extends React.Component<RuleRowProps> {
 
             <FontAwesomeIcon icon={['fas', 'arrow-left']} rotation={180} />
 
-            <RuleAction>
+            <RuleHandler>
                 <Summary collapsed={collapsed}>
-                    { summarizeAction(rule) }
+                    { summarizeHandler(rule) }
                 </Summary>
 
                 {
-                    !collapsed && <Details>
-                        Then { rule.handler.explain() }
-                    </Details>
+                    !collapsed && <HandlerDetails>
+                        <div>Then:</div>
+                        <HandlerSelector
+                            value={rule.handler}
+                            onChange={this.updateHandler}
+                        />
+
+                        <HandlerConfiguration
+                            handler={rule.handler}
+                            onChange={this.updateHandler}
+                        />
+                    </HandlerDetails>
                 }
-            </RuleAction>
+            </RuleHandler>
 
             { !collapsed &&
                 <RuleMenu
@@ -254,4 +270,8 @@ export class RuleRow extends React.Component<RuleRowProps> {
         rule.matchers = rule.matchers.filter(m => m !== matcher);
     }
 
+    @action.bound
+    updateHandler(handler: Handler) {
+        this.props.rule.handler = handler;
+    }
 }

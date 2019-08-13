@@ -67,3 +67,23 @@ export class StaticResponseHandler extends handlers.SimpleHandler {
         }`;
     }
 }
+
+export class PassThroughHandler extends handlers.PassThroughHandler {
+
+    constructor(hostWhitelist: string[]) {
+        super({
+            ignoreHostCertificateErrors: hostWhitelist
+        });
+    }
+
+}
+
+export class ForwardToHostHandler extends handlers.PassThroughHandler {
+
+    constructor(forwardToLocation: string) {
+        super({
+            ignoreHostCertificateErrors: ['localhost']
+        }, forwardToLocation);
+    }
+
+}

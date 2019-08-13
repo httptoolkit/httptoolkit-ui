@@ -1,8 +1,15 @@
 import * as _ from 'lodash';
 import { MockRuleData, matchers } from "mockttp";
 
-import { MatcherClass } from "./rules";
-import { WildcardMatcher, DefaultWildcardMatcher, MethodMatchers } from './rule-definitions';
+import { MatcherClass, HandlerClass } from "./rules";
+import {
+    WildcardMatcher,
+    DefaultWildcardMatcher,
+    MethodMatchers,
+    StaticResponseHandler,
+    ForwardToHostHandler,
+    PassThroughHandler
+} from './rule-definitions';
 
 function withFirstCharUppercased(input: string): string {
     return input[0].toUpperCase() + input.slice(1);
@@ -47,6 +54,19 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
     return undefined;
 };
 
+export function summarizeHandlerClass(handler: HandlerClass): string | undefined {
+    switch (handler) {
+        case StaticResponseHandler:
+            return "Return a fixed response";
+        case ForwardToHostHandler:
+            return "Forward the request to a different host";
+        case PassThroughHandler:
+            return "Pass the request on to its destination";
+        default:
+            return undefined;
+    }
+}
+
 // Summarize the matchers of an instantiated rule
 // Slight varation on the Mockttp explanation to make the
 // comma positioning more consistent for UX of changing rules
@@ -68,7 +88,7 @@ export function summarizeMatcher(rule: MockRuleData): string {
         .join(', ') + ', and ' + matchers.slice(-1)[0].explain();
 }
 
-// Summarize the action of an instantiated rule
-export function summarizeAction(rule: MockRuleData): string {
+// Summarize the handler of an instantiated rule
+export function summarizeHandler(rule: MockRuleData): string {
     return withFirstCharUppercased(rule.handler.explain());
 }
