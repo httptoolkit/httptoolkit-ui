@@ -76,16 +76,8 @@ const MatcherOrHandler = styled.section`
     align-self: stretch;
     flex-grow: 1;
     flex-basis: 0;
-    max-width: calc(50% - 12px);
+    max-width: calc(50% - 30px);
 `;
-
-const RuleMatcher = styled(MatcherOrHandler)`
-    text-align: left;
-`
-
-const RuleHandler = styled(MatcherOrHandler)`
-    text-align: right;
-`
 
 const Summary = styled.h3`
     ${(p: { collapsed: boolean }) => !p.collapsed && css`
@@ -99,6 +91,13 @@ const Summary = styled.h3`
     /* Required to avoid overflow trimming hanging chars */
     padding: 5px;
     margin: -5px;
+`;
+
+const ArrowIcon = styled(FontAwesomeIcon).attrs({
+    icon: ['fas', 'arrow-left']
+})`
+    transform: rotate(180deg);
+    padding: 0 15px;
 `;
 
 const Details = styled.div`
@@ -182,7 +181,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
             collapsed={collapsed}
             onClick={collapsed ? this.toggleCollapse : undefined}
         >
-            <RuleMatcher>
+            <MatcherOrHandler>
                 <Summary collapsed={collapsed}>
                     { summarizeMatcher(rule) }
                 </Summary>
@@ -222,11 +221,11 @@ export class RuleRow extends React.Component<RuleRowProps> {
                         </MatchersList>
                     </Details>
                 }
-            </RuleMatcher>
+            </MatcherOrHandler>
 
-            <FontAwesomeIcon icon={['fas', 'arrow-left']} rotation={180} />
+            <ArrowIcon />
 
-            <RuleHandler>
+            <MatcherOrHandler>
                 <Summary collapsed={collapsed}>
                     { summarizeHandler(rule) }
                 </Summary>
@@ -245,7 +244,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
                         />
                     </HandlerDetails>
                 }
-            </RuleHandler>
+            </MatcherOrHandler>
 
             { !collapsed &&
                 <RuleMenu
