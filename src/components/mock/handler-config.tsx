@@ -92,7 +92,7 @@ const HeadersContainer = styled.div`
 
     display: grid;
     grid-gap: 5px;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2fr;
 
     > span:first-child {
         grid-column: 1 / span 2;
@@ -177,8 +177,18 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                     <TextInput value={key} key={`${i}-key`} onChange={(e) => this.updateHeaderName(i, e)} />,
                     <TextInput value={value} key={`${i}-val`} onChange={(e) => this.updateHeaderValue(i, e)}  />
                 ]).concat([
-                    <TextInput value='' key={`${headers.length}-key`} onChange={this.addHeaderByName} />,
-                    <TextInput value='' key={`${headers.length}-val`} onChange={this.addHeaderByValue} />
+                    <TextInput
+                        value=''
+                        placeholder='Header name'
+                        key={`${headers.length}-key`}
+                        onChange={this.addHeaderByName}
+                    />,
+                    <TextInput
+                        value=''
+                        placeholder='Header value'
+                        key={`${headers.length}-val`}
+                        onChange={this.addHeaderByValue}
+                    />
                 ]) }
             </HeadersContainer>
 
