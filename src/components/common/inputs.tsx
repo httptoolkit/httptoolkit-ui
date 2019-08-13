@@ -87,3 +87,13 @@ export const TextInput = styled.input.attrs({
 
     ${(p: TextInputProps) => p.invalid && invalidTextCss}
 ` as StyledComponent<'input', Theme, TextInputProps>;
+
+export const Select = styled.select`
+    ${interactiveMouseoverStyles}
+
+    font-size: ${p => p.theme.headingSize};
+    font-family: ${p => p.theme.fontFamily};
+
+    width: 100%;
+    border-radius: 4px;
+`;

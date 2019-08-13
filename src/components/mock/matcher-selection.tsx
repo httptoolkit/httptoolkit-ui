@@ -7,7 +7,7 @@ import { matchers } from 'mockttp';
 
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
-import { interactiveMouseoverStyles, Button } from '../common/inputs';
+import { Button, Select } from '../common/inputs';
 
 import {
     Matcher,
@@ -43,16 +43,6 @@ const MatcherRow = styled.li`
     &:last-child {
         margin-bottom: 0;
     }
-`;
-
-const Select = styled.select`
-    ${interactiveMouseoverStyles}
-
-    font-size: ${p => p.theme.headingSize};
-    font-family: ${p => p.theme.fontFamily};
-
-    width: 100%;
-    border-radius: 4px;
 `;
 
 const MatcherInputsContainer = styled.div`
