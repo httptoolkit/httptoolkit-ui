@@ -109,7 +109,7 @@ class MockPage extends React.Component<MockPageProps> {
             </MockPageHeader>
 
             <MockRuleList>
-                <AddRuleRow onClick={this.addRule} />
+                <AddRuleRow onAdd={this.addRule} />
 
                 { unsavedInterceptionRules.map((rule, i) =>
                     <RuleRow

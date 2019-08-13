@@ -59,8 +59,22 @@ const RowContainer = styled<React.ComponentType<{
     border-left: 5px solid ${(p) => p.borderColor};
 `;
 
-export const AddRuleRow = styled((p: React.HTMLAttributes<HTMLDivElement>) =>
-    <RowContainer collapsed={true} borderColor='transparent' {...p}>
+export const AddRuleRow = styled((p: {
+    onAdd: () => void
+} & React.HTMLAttributes<HTMLDivElement>) =>
+    <RowContainer
+        collapsed={true}
+        borderColor='transparent'
+        {..._.omit(p, 'onAdd')}
+
+        tabIndex={0}
+        onClick={p.onAdd}
+        onKeyPress={(event) => {
+            if (event.key === 'Enter') {
+                p.onAdd();
+            }
+        }}
+    >
         <FontAwesomeIcon icon={['fas', 'plus']} />
         Add a new rule to rewrite requests or responses
     </RowContainer>
@@ -179,7 +193,9 @@ export class RuleRow extends React.Component<RuleRowProps> {
             }
             ref={this.containerRef}
             collapsed={collapsed}
+            tabIndex={collapsed ? 0 : undefined}
             onClick={collapsed ? this.toggleCollapse : undefined}
+            onKeyPress={this.onKeyPress}
         >
             <MatcherOrHandler>
                 <Summary collapsed={collapsed}>
@@ -266,6 +282,16 @@ export class RuleRow extends React.Component<RuleRowProps> {
         });
 
         this.props.toggleCollapse();
+    }
+
+    onKeyPress = (event: React.KeyboardEvent) => {
+        if (event.target !== this.containerRef.current) {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            this.toggleCollapse();
+        }
     }
 
     @action.bound
