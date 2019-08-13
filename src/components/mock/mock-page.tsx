@@ -7,7 +7,7 @@ import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 
 import { ActivatedStore } from '../../model/interception-store';
-import { getNewRule } from '../../model/rules';
+import { getNewRule } from '../../model/rules/rules';
 
 import { Button } from '../common/inputs';
 import { AddRuleRow, RuleRow } from './rule-row';

@@ -18,7 +18,7 @@ import {
     InitialMatcher,
     InitialMatcherClass,
     InitialMatcherClasses
-} from '../../model/rules';
+} from '../../model/rules/rules';
 import {
     summarizeMatcherClass
 } from '../../model/rules/rule-descriptions';

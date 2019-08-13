@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { matchers } from "mockttp";
 
-import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules";
+import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
 import { SimplePathMatcher, RegexPathMatcher } from 'mockttp/dist/rules/matchers';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';

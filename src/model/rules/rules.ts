@@ -7,16 +7,16 @@ import {
     MockRuleData,
 } from 'mockttp';
 
-import { Omit } from '../types';
+import { Omit } from '../../types';
 
-import * as amIUsingHtml from '../amiusing.html';
+import * as amIUsingHtml from '../../amiusing.html';
 import {
     MethodMatchers,
     WildcardMatcher,
     StaticResponseHandler,
     AmIUsingMatcher,
     DefaultWildcardMatcher
-} from './rules/rule-definitions';
+} from './rule-definitions';
 
 export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
     id: string;

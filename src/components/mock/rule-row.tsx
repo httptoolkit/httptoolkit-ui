@@ -7,14 +7,14 @@ import { observable, action } from 'mobx';
 import { styled, css } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 
-import { HtkMockRule, Matcher } from '../../model/rules';
+import { HtkMockRule, Matcher } from '../../model/rules/rules';
 import {
     summarizeMatcher,
     summarizeAction
 } from '../../model/rules/rule-descriptions';
 
 import { LittleCard } from '../common/card';
-import { InitialMatcher } from '../../model/rules';
+import { InitialMatcher } from '../../model/rules/rules';
 import {
     InitialMatcherRow,
     ExistingMatcherRow,

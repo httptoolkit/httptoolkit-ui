@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { MockRuleData, matchers } from "mockttp";
 
-import { MatcherClass } from "../rules";
+import { MatcherClass } from "./rules";
 import { WildcardMatcher, DefaultWildcardMatcher, MethodMatchers } from './rule-definitions';
 
 function withFirstCharUppercased(input: string): string {

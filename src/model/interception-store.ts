@@ -16,7 +16,7 @@ import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
-import { buildDefaultRules, HtkMockRule } from './rules';
+import { buildDefaultRules, HtkMockRule } from './rules/rules';
 
 configure({ enforceActions: 'observed' });
 
