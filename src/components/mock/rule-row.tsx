@@ -7,14 +7,13 @@ import { observable, action } from 'mobx';
 import { styled, css } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 
-import { HtkMockRule, Matcher } from '../../model/rules/rules';
+import { HtkMockRule, Matcher, Handler, InitialMatcher } from '../../model/rules/rules';
 import {
     summarizeMatcher,
     summarizeAction
 } from '../../model/rules/rule-descriptions';
 
 import { LittleCard } from '../common/card';
-import { InitialMatcher } from '../../model/rules/rules';
 import {
     InitialMatcherRow,
     ExistingMatcherRow,
@@ -23,6 +22,8 @@ import {
 
 interface RuleRowProps {
     rule: HtkMockRule;
+    collapsed: boolean;
+    toggleCollapse: () => void;
     deleteRule: () => void;
 }
 
@@ -139,23 +140,20 @@ const RuleMenu = (p: {
 @observer
 export class RuleRow extends React.Component<RuleRowProps> {
 
-    @observable
-    private collapsed: boolean = true;
-
     render() {
-        const { rule } = this.props;
+        const { rule, collapsed, toggleCollapse } = this.props;
 
         return <RowContainer
-            collapsed={this.collapsed}
-            onClick={this.collapsed ? this.toggleCollapse : undefined}
+            collapsed={collapsed}
+            onClick={collapsed ? toggleCollapse : undefined}
         >
             <RuleMatcher>
-                <Summary collapsed={this.collapsed}>
+                <Summary collapsed={collapsed}>
                     { summarizeMatcher(rule) }
                 </Summary>
 
                 {
-                    !this.collapsed && <Details>
+                    !collapsed && <Details>
                         <div>Match:</div>
 
                         <MatchersList>
@@ -194,20 +192,20 @@ export class RuleRow extends React.Component<RuleRowProps> {
             <FontAwesomeIcon icon={['fas', 'arrow-left']} rotation={180} />
 
             <RuleAction>
-                <Summary collapsed={this.collapsed}>
+                <Summary collapsed={collapsed}>
                     { summarizeAction(rule) }
                 </Summary>
 
                 {
-                    !this.collapsed && <Details>
+                    !collapsed && <Details>
                         Then { rule.handler.explain() }
                     </Details>
                 }
             </RuleAction>
 
-            { !this.collapsed &&
+            { !collapsed &&
                 <RuleMenu
-                    onClose={this.toggleCollapse}
+                    onClose={toggleCollapse}
                     onDelete={this.props.deleteRule}
                 />
             }
@@ -230,8 +228,4 @@ export class RuleRow extends React.Component<RuleRowProps> {
         rule.matchers = rule.matchers.filter(m => m !== matcher);
     }
 
-    @action.bound
-    toggleCollapse() {
-        this.collapsed = !this.collapsed;
-    }
 }
