@@ -102,6 +102,19 @@ export type ExchangeCategory = ReturnType<typeof getExchangeCategory>;
 const isExchange = (maybeExchange: any): maybeExchange is HttpExchange =>
     maybeExchange.request && maybeExchange.category;
 
+const highlights = {
+    black: '#000',
+    grey: '#888',
+    red: '#ce3939',
+    green: '#4caf7d',
+    orange: '#ff8c38',
+    yellow: '#e9f05b',
+    lightBlue: '#2fb4e0',
+    darkBlue: '#5a80cc',
+    purple: '#6e40aa',
+    pink: '#dd3a96'
+};
+
 export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | ExchangeCategory): string {
     const category = isExchange(exchangeOrCategory) ?
         exchangeOrCategory.category : exchangeOrCategory;
@@ -109,23 +122,23 @@ export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | Exch
     switch (category) {
         case 'incomplete':
         case 'aborted':
-            return '#000'; // black
+            return highlights.black;
         case 'mutative':
-            return '#ce3939'; // red
+            return highlights.red;
         case 'image':
-            return '#4caf7d'; // green
+            return highlights.green;
         case 'js':
-            return '#ff8c38'; // orange
+            return highlights.orange;
         case 'css':
-            return '#e9f05b'; // yellow
+            return highlights.yellow;
         case 'html':
-            return '#2fb4e0'; // light blue
+            return highlights.lightBlue;
         case 'font':
-            return '#6e40aa'; // dark blue
+            return highlights.darkBlue;
         case 'data':
-            return '#6e40aa'; // purple
+            return highlights.purple;
         case 'unknown':
-            return '#888'; // grey
+            return highlights.grey;
     }
 }
 
@@ -134,17 +147,17 @@ export function getStatusColor(status: undefined | 'aborted' | number, theme: Th
         // All odd undefined/unknown cases
         return theme.mainColor;
     } else if (status >= 500) {
-        return '#ce3939';
+        return highlights.red;
     } else if (status >= 400) {
-        return '#f1971f';
+        return highlights.orange;
     } else if (status >= 300) {
-        return '#5a80cc';
+        return highlights.darkBlue;
     } else if (status >= 200) {
-        return '#4caf7d';
+        return highlights.green;
     } else if (status >= 100) {
-        return '#888';
+        return highlights.grey;
     }
 
     // Anything else weird.
-    return '#000';
+    return highlights.black;
 }
