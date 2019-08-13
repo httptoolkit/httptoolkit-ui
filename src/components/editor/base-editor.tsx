@@ -187,6 +187,9 @@ export class BaseEditor extends React.Component<EditorProps> {
         disposeOnUnmount(this, autorun(() => {
             if (!this.editor || !this.monaco) return;
 
+            // Update the set of JSON schemas recognized by Monaco, to potentially include this file's
+            // schema (from props.newSchema) linked to its model URI, or remove our stale schemas.
+
             const existingOptions = this.monaco.languages.json.jsonDefaults.diagnosticsOptions;
             let newSchemaMappings: SchemaMapping[] = existingOptions.schemas || [];
 
@@ -218,9 +221,13 @@ export class BaseEditor extends React.Component<EditorProps> {
             const options = Object.assign({}, existingOptions, {
                 validate: true,
                 schemas: newSchemaMappings
-            })
+            });
 
-            this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(options);
+            if (!_.isMatch(existingOptions, options)) {
+                // Avoid unnecessary calls to this, as it reloads the JSON worker
+                this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(options);
+            }
+
             this.registeredSchemaUri = this.modelUri;
         }));
     }
@@ -233,18 +240,15 @@ export class BaseEditor extends React.Component<EditorProps> {
             const newSchemaMappings = (existingOptions.schemas || [])
                 .filter((sm) => sm.uri !== this.registeredSchemaUri);
 
-            this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(
-                Object.assign({}, existingOptions, {
-                    schemas: newSchemaMappings
-                })
-            );
-            this.registeredSchemaUri = null;
-        }
-    }
+            const newOptions = Object.assign({}, existingOptions, {
+                schemas: newSchemaMappings
+            });
 
-    componentDidUpdate() {
-        if (this.editor) {
-            this.announceLineCount(this.editor);
+            if (!_.isMatch(existingOptions, newOptions)) {
+                this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(newOptions);
+            }
+
+            this.registeredSchemaUri = null;
         }
     }
 
