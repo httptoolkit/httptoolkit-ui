@@ -2,10 +2,12 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import * as polished from 'polished';
 import { observer } from 'mobx-react';
-import { observable, action } from 'mobx';
+import { action } from 'mobx';
+import { Method, matchers } from 'mockttp';
 
 import { styled, css } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
+import { getMethodColor } from '../../model/exchange-colors';
 
 import { HtkMockRule, Matcher, Handler, InitialMatcher } from '../../model/rules/rules';
 import {
@@ -27,7 +29,10 @@ interface RuleRowProps {
     deleteRule: () => void;
 }
 
-const RowContainer = styled(LittleCard)`
+const RowContainer = styled<React.ComponentType<{
+    collapsed: boolean,
+    borderColor: string
+} & React.HTMLAttributes<HTMLElement>>>(LittleCard)`
     width: 100%;
     margin: 20px 0;
 
@@ -40,18 +45,20 @@ const RowContainer = styled(LittleCard)`
     align-items: center;
     justify-content: space-between;
 
-    font-size: ${p => p.theme.headingSize};
+    font-size: ${(p) => p.theme.headingSize};
 
-    ${(p: { collapsed: boolean }) => p.collapsed
+    ${(p) => p.collapsed
         ? css`
             user-select: none;
         ` : css`
         `
     }
+
+    border-left: 5px solid ${(p) => p.borderColor};
 `;
 
 export const AddRuleRow = styled((p: React.HTMLAttributes<HTMLDivElement>) =>
-    <RowContainer collapsed={true} {...p}>
+    <RowContainer collapsed={true} borderColor='transparent' {...p}>
         <FontAwesomeIcon icon={['fas', 'plus']} />
         Add a new rule to rewrite requests or responses
     </RowContainer>
@@ -147,7 +154,22 @@ export class RuleRow extends React.Component<RuleRowProps> {
     render() {
         const { rule, collapsed, toggleCollapse } = this.props;
 
+        const methodMatcher = rule.matchers[0];
+
+        let method: string | undefined;
+        if (methodMatcher instanceof matchers.MethodMatcher) {
+            method = Method[methodMatcher.method];
+        } else if (methodMatcher !== undefined) {
+            method = 'unknown';
+        } else {
+            method = undefined;
+        }
+
         return <RowContainer
+            borderColor={method
+                ? getMethodColor(method)
+                : 'transparent'
+            }
             collapsed={collapsed}
             onClick={collapsed ? toggleCollapse : undefined}
         >
