@@ -67,7 +67,6 @@ interface SchemaMapping {
 }
 
 const EditorContainer = styled.div`
-    height: ${(p: { height: number }) => p.height}px;
     max-height: 560px;
 `;
 
@@ -76,17 +75,43 @@ export class SelfSizedBaseEditor extends React.Component<
     Omit<EditorProps, 'onLineCount'>
 > {
 
+    container = React.createRef<HTMLDivElement>();
+    editor = React.createRef<BaseEditor>();
+
     @action.bound
     updateLineCount(newLineCount: number) {
         this.lineCount = newLineCount;
     }
 
+    onResize = _.throttle(() => {
+        if (this.editor.current) this.editor.current.relayout();
+    }, 50, { leading: true, trailing: true });
+
+    resizeObserver = new ResizeObserver(this.onResize);
+
+    componentDidMount() {
+        if (this.container.current) {
+            this.resizeObserver.observe(this.container.current);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.container.current) {
+            this.resizeObserver.unobserve(this.container.current);
+        }
+        this.resizeObserver.disconnect();
+    }
+
     @observable lineCount: number = 0;
 
     render() {
-        return <EditorContainer height={this.lineCount * 22}>
+        return <EditorContainer
+            ref={this.container}
+            style={{ 'height': this.lineCount * 22 + 'px' }}
+        >
             <BaseEditor
                 {...this.props}
+                ref={this.editor}
                 onLineCount={this.updateLineCount}
             />
         </EditorContainer>
@@ -127,8 +152,14 @@ export class BaseEditor extends React.Component<EditorProps> {
         // itself doesn't take line wrapping into account.
         let lineCount = (editor as any)._modelData.viewModel.getLineCount();
 
-        if (this.props.onLineCount) {
-            this.props.onLineCount(lineCount);
+        if (this.props.onLineCount) this.props.onLineCount(lineCount);
+    }
+
+    public relayout() {
+        if (this.editor) {
+            this.editor.layout();
+            // If the layout has changed, the line count may have too (due to wrapping)
+            this.announceLineCount(this.editor);
         }
     }
 
@@ -136,12 +167,15 @@ export class BaseEditor extends React.Component<EditorProps> {
     onEditorDidMount(editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: typeof monacoTypes) {
         this.editor = editor;
         this.monaco = monaco;
+
         this.announceLineCount(editor);
 
         const model = editor.getModel();
         enableMarkers(model);
 
         this.modelUri = model && model.uri.toString();
+
+        this.editor.onDidChangeModelContent(() => this.announceLineCount(editor));
         this.editor.onDidChangeModel(action((e: monacoTypes.editor.IModelChangedEvent) => {
             enableMarkers(editor.getModel());
             this.modelUri = e.newModelUrl && e.newModelUrl.toString()
@@ -221,7 +255,6 @@ export class BaseEditor extends React.Component<EditorProps> {
         }
 
         const options = _.defaults(this.props.options, {
-            automaticLayout: true,
             showFoldingControls: 'always',
 
             quickSuggestions: false,
