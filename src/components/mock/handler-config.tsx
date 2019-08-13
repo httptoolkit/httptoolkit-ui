@@ -26,7 +26,8 @@ type HandlerConfigProps<h extends Handler> = {
 };
 
 const ConfigContainer = styled.div`
-    margin: 5px 0;
+    margin-bottom: 5px;
+    font-size: 16px;
 `;
 
 const ConfigExplanation = styled.p`
@@ -61,7 +62,18 @@ export function HandlerConfiguration(props: {
     throw new Error('Unknown handler: ' + handler.type);
 }
 
+const SectionLabel = styled.h4`
+    margin-top: 5px;
+
+    text-transform: uppercase;
+    color: ${p => p.theme.containerWatermark};
+    font-weight: bold;
+    width: 100%;
+`;
+
 const StatusContainer = styled.div`
+    margin-top: 5px;
+
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -76,6 +88,8 @@ const StatusContainer = styled.div`
 `;
 
 const HeadersContainer = styled.div`
+    margin-top: 5px;
+
     display: grid;
     grid-gap: 5px;
     grid-template-columns: 1fr 1fr;
@@ -86,9 +100,13 @@ const HeadersContainer = styled.div`
 `;
 
 const BodyContainer = styled.div`
-    > div {
-        border-radius: 4px;
+    margin-top: 5px;
 
+    > div {
+        margin-top: 5px;
+        border-radius: 4px;
+        border: solid 1px ${p => p.theme.containerBorder};
+        padding: 1px;
     }
 `;
 
@@ -136,9 +154,8 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             : this.statusMessage;
 
         return <ConfigContainer>
+            <SectionLabel>Status</SectionLabel>
             <StatusContainer>
-                <span>Status:</span>
-
                 <TextInput
                     type='number'
                     min='100'
@@ -153,9 +170,9 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                     onChange={this.setStatusMessage}
                 />
             </StatusContainer>
-            <HeadersContainer>
-                <span key='headers'>Headers:</span>
 
+            <SectionLabel>Headers</SectionLabel>
+            <HeadersContainer>
                 { _.flatMap(headers, ([key, value], i) => [
                     <TextInput value={key} key={`${i}-key`} onChange={(e) => this.updateHeaderName(i, e)} />,
                     <TextInput value={value} key={`${i}-val`} onChange={(e) => this.updateHeaderValue(i, e)}  />
@@ -164,13 +181,15 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                     <TextInput value='' key={`${headers.length}-val`} onChange={this.addHeaderByValue} />
                 ]) }
             </HeadersContainer>
-            <div>
+
+            <SectionLabel>Response body</SectionLabel>
+            <BodyContainer>
                 <SelfSizedBaseEditor
                     language='json'
                     value={body}
                     onChange={this.setBody}
                 />
-            </div>
+            </BodyContainer>
         </ConfigContainer>;
     }
 
