@@ -6,6 +6,7 @@ import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 import { Interceptor } from '../../model/interceptors';
 
+import { clickOnEnter } from '../component-utils';
 import { LittleCard } from '../common/card';
 import { Pill } from '../common/pill';
 
@@ -100,9 +101,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
         return <div className={className}>
             <InterceptOptionCard
-
                 disabled={isDisabled}
-                onKeyDown={this.onInterceptKeyDown.bind(this)}
+                onKeyDown={clickOnEnter}
                 onClick={onActivate ? () => onActivate(interceptor) : undefined}
                 tabIndex={!isDisabled && onActivate ? 0 : undefined}
             >
@@ -133,12 +133,6 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                 }
             </InterceptOptionCard>
         </div>
-    }
-
-    onInterceptKeyDown(event: React.KeyboardEvent) {
-        if (event.key === 'Enter' && this.props.onActivate) {
-            this.props.onActivate(this.props.interceptor);
-        }
     }
 
 }

@@ -1,7 +1,6 @@
-import * as React from 'react';
 import { styled, Theme } from "../../styles";
 import { FontAwesomeIcon } from "../../icons";
-import { filterProps } from '../component-utils';
+import { filterProps, clickOnEnter } from '../component-utils';
 
 interface CloseButtonProps {
     onClose: () => void;
@@ -20,11 +19,7 @@ export const CloseButton = styled(
 
     tabIndex: 0,
     onClick: props.onClose,
-    onKeyPress: (event: React.KeyboardEvent) => {
-        if (event.key === 'Enter') {
-            props.onClose();
-        }
-    }
+    onKeyPress: clickOnEnter
 }))`
     position: absolute;
     cursor: pointer;

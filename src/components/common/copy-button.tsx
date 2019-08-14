@@ -3,6 +3,8 @@ import * as React from 'react';
 import { FontAwesomeIcon } from "../../icons";
 import { styled } from '../../styles';
 import { reportError } from '../../errors';
+
+import { clickOnEnter } from '../component-utils';
 import { UnstyledButton } from './inputs';
 import { PillButton } from './pill';
 
@@ -29,9 +31,7 @@ const buildCopyComponent = (BaseComponent: typeof CopyButtonIconBase | typeof Pi
             ? <BaseComponent
                     className={p.className}
                     tabIndex={0}
-                    onKeyDown={(event: React.KeyboardEvent) => {
-                        if (event.key === 'Enter') copyToClipboard(p.content)
-                    }}
+                    onKeyDown={clickOnEnter}
                     onClick={() => copyToClipboard(p.content)}
                 >
                     <FontAwesomeIcon
