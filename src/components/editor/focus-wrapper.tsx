@@ -39,15 +39,18 @@ export const FocusWrapper = (p: { children: React.ReactNode, className?: string 
                         const allFocusableElements = getFocusableChildren(document.body);
                         const elementLastChild = _.last(thisElement.children) as HTMLElement;
                         const currentTabIndex = _.findIndex(allFocusableElements, elementLastChild);
+
                         const nextTabbableElement = allFocusableElements[currentTabIndex + 1];
                         if (nextTabbableElement) {
                             nextTabbableElement.focus();
                             e.preventDefault();
                             return;
+                        } else {
+                            // If we can't find a next tabbable element, loop back to the first
+                            allFocusableElements[0].focus();
+                            e.preventDefault();
+                            return;
                         }
-
-                        // If we can't find the next tabbable elements, just fall back to default behaviour
-                        return;
                     }
                 }
 
