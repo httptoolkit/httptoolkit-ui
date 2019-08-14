@@ -11,6 +11,7 @@ import { reportError } from '../../errors';
 import { delay } from '../../util';
 import { WritableKeys, Omit } from '../../types';
 import { styled } from '../../styles';
+import { FocusWrapper } from './focus-wrapper';
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
@@ -66,7 +67,7 @@ interface SchemaMapping {
     readonly schema?: any;
 }
 
-const EditorContainer = styled.div`
+const EditorMaxHeightContainer = styled.div`
     max-height: 560px;
 `;
 
@@ -105,7 +106,7 @@ export class SelfSizedBaseEditor extends React.Component<
     @observable lineCount: number = 0;
 
     render() {
-        return <EditorContainer
+        return <EditorMaxHeightContainer
             ref={this.container}
             style={{ 'height': this.lineCount * 22 + 'px' }}
         >
@@ -114,9 +115,14 @@ export class SelfSizedBaseEditor extends React.Component<
                 ref={this.editor}
                 onLineCount={this.updateLineCount}
             />
-        </EditorContainer>
+        </EditorMaxHeightContainer>
     }
 }
+
+const EditorFocusWrapper = styled(FocusWrapper)`
+    height: 100%;
+    width: 100%;
+`;
 
 @observer
 export class BaseEditor extends React.Component<EditorProps> {
@@ -276,10 +282,22 @@ export class BaseEditor extends React.Component<EditorProps> {
             wordWrap: 'on'
         });
 
-        return <MonacoEditor
-            {...this.props}
-            options={options}
-            editorDidMount={this.onEditorDidMount}
-        />
+        if (!options.readOnly) {
+            return <EditorFocusWrapper>
+                <MonacoEditor
+                    {...this.props}
+                    options={options}
+                    editorDidMount={this.onEditorDidMount}
+                />
+            </EditorFocusWrapper>;
+        } else {
+            // Read-only editors don't capture tab/shift-tab, so don't need
+            // any special focus management.
+            return <MonacoEditor
+                {...this.props}
+                options={options}
+                editorDidMount={this.onEditorDidMount}
+            />;
+        }
     }
 }
