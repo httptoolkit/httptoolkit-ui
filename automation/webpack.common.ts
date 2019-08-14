@@ -86,6 +86,7 @@ export default <Webpack.Configuration>{
                 'inspectTokens',
                 'links',
                 'smartSelect',
+                'toggleTabFocusMode',
                 'wordHighlighter',
                 'wordOperations'
             ]
