@@ -15,6 +15,7 @@ import {
     summarizeHandler
 } from '../../model/rules/rule-descriptions';
 
+import { clickOnEnter } from '../component-utils';
 import { LittleCard } from '../common/card';
 import {
     InitialMatcherRow,
@@ -69,11 +70,7 @@ export const AddRuleRow = styled((p: {
 
         tabIndex={0}
         onClick={p.onAdd}
-        onKeyPress={(event) => {
-            if (event.key === 'Enter') {
-                p.onAdd();
-            }
-        }}
+        onKeyPress={clickOnEnter}
     >
         <FontAwesomeIcon icon={['fas', 'plus']} />
         Add a new rule to rewrite requests or responses
@@ -163,8 +160,8 @@ const RuleMenu = (p: {
     onClose: () => void,
     onDelete: () => void,
 }) => <MenuContainer>
-    <FontAwesomeIcon icon={['far', 'trash-alt']} onClick={p.onDelete} />
-    <FontAwesomeIcon icon={['fas', 'times']} onClick={p.onClose} />
+    <FontAwesomeIcon icon={['far', 'trash-alt']} tabIndex={0} onKeyPress={clickOnEnter} onClick={p.onDelete} />
+    <FontAwesomeIcon icon={['fas', 'times']} tabIndex={0} onKeyPress={clickOnEnter} onClick={p.onClose} />
 </MenuContainer>
 
 @observer
@@ -195,7 +192,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
             collapsed={collapsed}
             tabIndex={collapsed ? 0 : undefined}
             onClick={collapsed ? this.toggleCollapse : undefined}
-            onKeyPress={this.onKeyPress}
+            onKeyPress={clickOnEnter}
         >
             <MatcherOrHandler>
                 <Summary collapsed={collapsed}>
@@ -282,16 +279,6 @@ export class RuleRow extends React.Component<RuleRowProps> {
         });
 
         this.props.toggleCollapse();
-    }
-
-    onKeyPress = (event: React.KeyboardEvent) => {
-        if (event.target !== this.containerRef.current) {
-            return;
-        }
-
-        if (event.key === 'Enter') {
-            this.toggleCollapse();
-        }
     }
 
     @action.bound
