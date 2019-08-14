@@ -17,7 +17,9 @@ import { getStatusMessage } from '../../model/http-docs';
 
 import { styled } from '../../styles';
 import { SelfSizedBaseEditor } from '../editor/base-editor';
-import { TextInput } from '../common/inputs';
+import { TextInput, Select, Button } from '../common/inputs';
+import { FontAwesomeIcon } from '../../icons';
+import { clickOnEnter } from '../component-utils';
 
 type HandlerConfigProps<h extends Handler> = {
     handler: h;
@@ -92,11 +94,16 @@ const HeadersContainer = styled.div`
 
     display: grid;
     grid-gap: 5px;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 2fr auto;
 
-    > span:first-child {
-        grid-column: 1 / span 2;
+    > :last-child {
+        grid-column: 2 / span 2;
     }
+`;
+
+const HeaderDeleteButton = styled(Button)`
+    font-size: ${p => p.theme.textSize};
+    padding: 3px 10px 5px;
 `;
 
 const BodyContainer = styled.div`
@@ -175,7 +182,10 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             <HeadersContainer>
                 { _.flatMap(headers, ([key, value], i) => [
                     <TextInput value={key} key={`${i}-key`} onChange={(e) => this.updateHeaderName(i, e)} />,
-                    <TextInput value={value} key={`${i}-val`} onChange={(e) => this.updateHeaderValue(i, e)}  />
+                    <TextInput value={value} key={`${i}-val`} onChange={(e) => this.updateHeaderValue(i, e)}  />,
+                    <HeaderDeleteButton key={`${i}-del`} onClick={() => this.deleteHeader(i)} onKeyPress={clickOnEnter}>
+                        <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                    </HeaderDeleteButton>
                 ]).concat([
                     <TextInput
                         value=''
@@ -244,6 +254,11 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     updateHeaderValue(index: number, event: React.ChangeEvent<HTMLInputElement>) {
         const value = event.target.value;
         this.headers[index][1] = value;
+    }
+
+    @action.bound
+    deleteHeader(index: number) {
+        this.headers.splice(index);
     }
 
     @action.bound
