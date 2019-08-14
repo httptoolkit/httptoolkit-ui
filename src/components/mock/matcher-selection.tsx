@@ -56,13 +56,14 @@ const MatcherButton = styled(Button)`
     margin-left: 5px;
 `;
 
-export const InitialMatcherRow = (p: {
+export const InitialMatcherRow = React.forwardRef((p: {
     matcher?: InitialMatcher,
     onChange: (m: InitialMatcher) => void
-}) => {
+}, ref: React.Ref<HTMLSelectElement>) => {
     return <MatcherRow>
         <MatcherInputsContainer>
             <Select
+                ref={ref}
                 value={getMatcherKey(p.matcher)}
                 onChange={(event) => {
                     const value = event.currentTarget.value as MatcherClassKey | undefined;
@@ -82,7 +83,7 @@ export const InitialMatcherRow = (p: {
             </Select>
         </MatcherInputsContainer>
     </MatcherRow>
-};
+});
 
 interface ExistingMatcherRowProps {
     matcher: Matcher;

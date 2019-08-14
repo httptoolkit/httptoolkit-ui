@@ -133,6 +133,7 @@ const MenuContainer = styled.div`
     position: absolute;
     top: 15px;
     right: 15px;
+    z-index: 1;
 
     display: flex;
     flex-direction: row;
@@ -167,6 +168,7 @@ const RuleMenu = (p: {
 @observer
 export class RuleRow extends React.Component<RuleRowProps> {
 
+    initialMatcherSelect = React.createRef<HTMLSelectElement>();
     containerRef = React.createRef<HTMLElement>();
 
     render() {
@@ -194,6 +196,13 @@ export class RuleRow extends React.Component<RuleRowProps> {
             onClick={collapsed ? this.toggleCollapse : undefined}
             onKeyPress={clickOnEnter}
         >
+            { !collapsed &&
+                <RuleMenu
+                    onClose={this.toggleCollapse}
+                    onDelete={this.props.deleteRule}
+                />
+            }
+
             <MatcherOrHandler>
                 <Summary collapsed={collapsed}>
                     { summarizeMatcher(rule) }
@@ -204,29 +213,20 @@ export class RuleRow extends React.Component<RuleRowProps> {
                         <div>Match:</div>
 
                         <MatchersList>
-                            { rule.matchers.map((matcher, i) =>
-                                i === 0
-                                    // 1st matcher is always a method/wildcard matcher,
-                                    // or undefined (handled below)
-                                    ? <InitialMatcherRow
-                                        key={i}
-                                        matcher={matcher as InitialMatcher}
-                                        onChange={(m) => this.updateMatcher(i, m)}
-                                    />
-                                    : <ExistingMatcherRow
-                                        key={i}
-                                        matcher={matcher}
-                                        onChange={(m) => this.updateMatcher(i, m)}
-                                        onDelete={() => this.deleteMatcher(matcher)}
-                                    />
-                            )}
+                            <InitialMatcherRow
+                                ref={this.initialMatcherSelect}
+                                matcher={rule.matchers.length ? rule.matchers[0] : undefined}
+                                onChange={(m) => this.updateMatcher(0, m)}
+                            />
 
-                            { rule.matchers.length === 0 &&
-                                <InitialMatcherRow
-                                    matcher={undefined}
-                                    onChange={(m) => this.updateMatcher(0, m)}
+                            { rule.matchers.slice(1).map((matcher, i) =>
+                                <ExistingMatcherRow
+                                    key={i}
+                                    matcher={matcher}
+                                    onChange={(m) => this.updateMatcher(i + 1, m)}
+                                    onDelete={() => this.deleteMatcher(matcher)}
                                 />
-                            }
+                            )}
 
                             { rule.matchers.length > 0 &&
                                 <NewMatcherRow onAdd={this.addMatcher} />
@@ -258,24 +258,21 @@ export class RuleRow extends React.Component<RuleRowProps> {
                     </HandlerDetails>
                 }
             </MatcherOrHandler>
-
-            { !collapsed &&
-                <RuleMenu
-                    onClose={this.toggleCollapse}
-                    onDelete={this.props.deleteRule}
-                />
-            }
         </RowContainer>;
     }
 
     toggleCollapse = () => {
         // Scroll the row into view, after giving it a moment to rerender
         requestAnimationFrame(() => {
-            if (!this.containerRef.current) return;
-            this.containerRef.current.scrollIntoView({
-                block: 'nearest',
-                behavior: 'smooth'
-            })
+            if (this.containerRef.current) {
+                this.containerRef.current.scrollIntoView({
+                    block: 'nearest',
+                    behavior: 'smooth'
+                });
+            }
+            if (this.initialMatcherSelect.current) {
+                this.initialMatcherSelect.current.focus();
+            }
         });
 
         this.props.toggleCollapse();
