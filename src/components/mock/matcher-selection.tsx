@@ -88,7 +88,7 @@ export const InitialMatcherRow = React.forwardRef((p: {
 interface ExistingMatcherRowProps {
     matcher: Matcher;
     onDelete: () => void;
-    onChange: (m: Matcher) => void;
+    onChange: (m: Matcher, ...ms: Matcher[]) => void;
 }
 
 @observer
@@ -99,7 +99,7 @@ export class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps>
         return <MatcherRow>
             <MatcherInputsContainer>
                 <MatcherConfiguration
-                    includeLabel={true}
+                    isExisting={true}
                     matcher={matcher}
                     onChange={onChange}
                 />
@@ -141,7 +141,7 @@ export class NewMatcherRow extends React.Component<{
     matcherClass: MatcherClass | undefined;
 
     @observable
-    draftMatcher: Matcher | undefined;
+    draftMatchers: Array<Matcher> = [];
 
     @observable
     invalidMatcherState = false;
@@ -152,12 +152,14 @@ export class NewMatcherRow extends React.Component<{
     selectMatcher(event: React.ChangeEvent<HTMLSelectElement>) {
         const matcherKey = event.target.value as MatcherClassKey;
         this.matcherClass = MatcherLookup[matcherKey];
-        this.updateDraftMatcher(undefined);
+
+        // Clear the existing matchers:
+        this.updateDraftMatcher();
     }
 
     @action.bound
-    updateDraftMatcher(matcher: Matcher | undefined) {
-        this.draftMatcher = matcher;
+    updateDraftMatcher(...matchers: Matcher[]) {
+        this.draftMatchers = matchers;
         this.invalidMatcherState = false;
     }
 
@@ -170,11 +172,11 @@ export class NewMatcherRow extends React.Component<{
     saveMatcher(e?: React.FormEvent) {
         if (e) e.preventDefault();
 
-        if (!this.draftMatcher) return;
-        this.props.onAdd(this.draftMatcher);
+        if (!this.draftMatchers.length) return;
+        this.draftMatchers.forEach(m => this.props.onAdd(m));
 
         this.matcherClass = undefined;
-        this.draftMatcher = undefined;
+        this.draftMatchers = [];
         this.invalidMatcherState = false;
 
         // Reset the focus ready to add another element
@@ -185,7 +187,7 @@ export class NewMatcherRow extends React.Component<{
     render() {
         const {
             matcherClass,
-            draftMatcher,
+            draftMatchers,
             updateDraftMatcher,
             invalidMatcherState,
             markMatcherInvalid,
@@ -203,24 +205,25 @@ export class NewMatcherRow extends React.Component<{
 
                     <MatcherOptions matchers={[
                         matchers.SimplePathMatcher,
-                        matchers.RegexPathMatcher
+                        matchers.RegexPathMatcher,
+                        matchers.ExactQueryMatcher
                     ]} />
                 </Select>
 
                 <NewMatcherConfigContainer onSubmit={
-                    !invalidMatcherState && draftMatcher
+                    !invalidMatcherState && draftMatchers.length
                         ? saveMatcher
                         : (e) => e.preventDefault()
                 }>
-                    { draftMatcher
+                    { draftMatchers.length >= 1
                         ? <MatcherConfiguration
-                            includeLabel={false}
-                            matcher={draftMatcher}
+                            isExisting={false}
+                            matcher={draftMatchers[0]}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}
                         />
                         : <MatcherConfiguration
-                            includeLabel={false}
+                            isExisting={false}
                             matcherClass={matcherClass}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}
@@ -230,7 +233,7 @@ export class NewMatcherRow extends React.Component<{
             </MatcherInputsContainer>
 
             <MatcherButton
-                disabled={!draftMatcher || invalidMatcherState}
+                disabled={!draftMatchers.length || invalidMatcherState}
                 onClick={saveMatcher}
             >
                 <FontAwesomeIcon icon={['fas', 'plus']} />

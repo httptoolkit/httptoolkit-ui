@@ -204,7 +204,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
             }
 
             <MatcherOrHandler>
-                <Summary collapsed={collapsed}>
+                <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
                     { summarizeMatcher(rule) }
                 </Summary>
 
@@ -216,14 +216,14 @@ export class RuleRow extends React.Component<RuleRowProps> {
                             <InitialMatcherRow
                                 ref={this.initialMatcherSelect}
                                 matcher={initialMatcher}
-                                onChange={(m) => this.updateMatcher(0, m)}
+                                onChange={(...ms) => this.updateMatcher(0, ...ms)}
                             />
 
                             { rule.matchers.slice(1).map((matcher, i) =>
                                 <ExistingMatcherRow
                                     key={`${i}/${rule.matchers.length}`}
                                     matcher={matcher}
-                                    onChange={(m) => this.updateMatcher(i + 1, m)}
+                                    onChange={(...ms) => this.updateMatcher(i + 1, ...ms)}
                                     onDelete={() => this.deleteMatcher(matcher)}
                                 />
                             )}
@@ -239,7 +239,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
             <ArrowIcon />
 
             <MatcherOrHandler>
-                <Summary collapsed={collapsed}>
+                <Summary collapsed={collapsed} title={ summarizeHandler(rule) }>
                     { summarizeHandler(rule) }
                 </Summary>
 
@@ -284,8 +284,8 @@ export class RuleRow extends React.Component<RuleRowProps> {
     }
 
     @action.bound
-    updateMatcher(index: number, matcher: Matcher) {
-        this.props.rule.matchers[index] = matcher;
+    updateMatcher(index: number, ...matchers: Matcher[]) {
+        this.props.rule.matchers.splice(index, 1, ...matchers);
     }
 
     @action.bound

@@ -3,7 +3,6 @@ import * as React from 'react';
 import { matchers } from "mockttp";
 
 import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
-import { SimplePathMatcher, RegexPathMatcher } from 'mockttp/dist/rules/matchers';
 import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 import { TextInput } from '../common/inputs';
@@ -11,8 +10,8 @@ import { styled } from '../../styles';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
-    includeLabel: boolean;
-    onChange: (matcher: M) => void;
+    isExisting: boolean;
+    onChange: (matcher: M, ...otherMatchers: Matcher[]) => void;
     onInvalidState: () => void;
 };
 
@@ -21,8 +20,8 @@ abstract class MatcherConfig<M extends Matcher> extends React.Component<MatcherC
 
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
-        includeLabel: boolean,
-        onChange: (matcher: Matcher) => void,
+        isExisting: boolean,
+        onChange: (matcher: Matcher, ...otherMatchers: Matcher[]) => void,
         onInvalidState?: () => void
     }
 ) {
@@ -34,16 +33,18 @@ export function MatcherConfiguration(props:
 
     const configProps = {
         matcher: matcher as any,
-        includeLabel: props.includeLabel,
+        isExisting: props.isExisting,
         onChange: props.onChange,
         onInvalidState: props.onInvalidState || _.noop
     };
 
     switch (matcherClass) {
-        case SimplePathMatcher:
+        case matchers.SimplePathMatcher:
             return <SimplePathMatcherConfig {...configProps} />;
-        case RegexPathMatcher:
+        case matchers.RegexPathMatcher:
             return <RegexPathMatcherConfig {...configProps} />;
+        case matchers.ExactQueryMatcher:
+            return <ExactQueryMatcherConfig {...configProps} />;
         default:
             return null;
     }
@@ -57,7 +58,7 @@ const ConfigLabel = styled.label`
     opacity: ${p => p.theme.lowlightTextOpacity};
 `;
 
-const PathMatcherContainer = styled.div`
+const MatcherConfigContainer = styled.div`
     display: flex;
     flex-direction: column;
 `;
@@ -76,8 +77,8 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
     private path = this.props.matcher ? this.props.matcher.path : '';
 
     render() {
-        return <PathMatcherContainer>
-            { this.props.includeLabel &&
+        return <MatcherConfigContainer>
+            { this.props.isExisting &&
                 <ConfigLabel htmlFor={this.id}>
                     for URL
                 </ConfigLabel>
@@ -90,7 +91,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
                 onChange={this.onChange}
                 placeholder='A specific URL to match'
             />
-        </PathMatcherContainer>;
+        </MatcherConfigContainer>;
     }
 
     ensurePathIsValid() {
@@ -111,7 +112,18 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
         try {
             this.ensurePathIsValid();
 
-            this.props.onChange(new matchers.SimplePathMatcher(this.path));
+            const [path, query] = this.path.split('?');
+
+            if (query === undefined) {
+                this.props.onChange(new matchers.SimplePathMatcher(path));
+            } else {
+                if (this.props.isExisting) this.path = path;
+
+                this.props.onChange(
+                    new matchers.SimplePathMatcher(path),
+                    new matchers.ExactQueryMatcher('?' + query)
+                );
+            }
             this.error = undefined;
         } catch (e) {
             console.log(e);
@@ -129,6 +141,11 @@ const RegexInput = styled(TextInput)`
     font-family: ${p => p.theme.monoFontFamily};
 `;
 
+// A crazy (but fun) regex to spot literal ? characters in regular expression strings.
+// Has some false (crazy) negatives but should have no false positives. Example false negative: [\]?]
+// This is a big silly - if it ever breaks, fall back to using regjsparser instead (spot codepoint 63)
+const containsLiteralQuestionMark = /([^\\]|^)\\(\?|u003F|x3F)|([^\\]|^)\[[^\]]*(\?|u003F|x3F)/;
+
 @observer
 class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
 
@@ -145,8 +162,8 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
     private id = _.uniqueId();
 
     render() {
-        return <PathMatcherContainer>
-            { this.props.includeLabel &&
+        return <MatcherConfigContainer>
+            { this.props.isExisting &&
                 <ConfigLabel htmlFor={this.id}>
                     for URLs matching
                 </ConfigLabel>
@@ -159,7 +176,7 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
                 onChange={this.onChange}
                 placeholder='Any regular expression: https?://abc.com/.*'
             />
-        </PathMatcherContainer>;
+        </MatcherConfigContainer>;
     }
 
     @action.bound
@@ -168,9 +185,58 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
 
         try {
             if (!this.pattern) throw new Error('A pattern to match is required');
+            if (this.pattern.match(containsLiteralQuestionMark)) {
+                throw new Error('Patterns will never match a literal ? character');
+            }
             this.props.onChange(
                 new matchers.RegexPathMatcher(new RegExp(this.pattern))
             );
+            this.error = undefined;
+        } catch (e) {
+            console.log(e);
+            this.error = e;
+            this.props.onInvalidState();
+        }
+    }
+}
+
+@observer
+class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> {
+
+    private id = _.uniqueId();
+
+    @observable
+    private error: Error | undefined;
+
+    // Only read once on creation: we trust the parent to set/reset a key prop
+    // if this is going to change externally.
+    @observable
+    private query = this.props.matcher ? this.props.matcher.query : '';
+
+    render() {
+        return <MatcherConfigContainer>
+            { this.props.isExisting &&
+                <ConfigLabel htmlFor={this.id}>
+                    with query
+                </ConfigLabel>
+            }
+            <TextInput
+                id={this.id}
+                invalid={!!this.error}
+                spellCheck={false}
+                value={this.query}
+                onChange={this.onChange}
+                placeholder='An exact query string to match, e.g. ?a=b'
+            />
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.query = event.target.value;
+
+        try {
+            this.props.onChange(new matchers.ExactQueryMatcher(this.query));
             this.error = undefined;
         } catch (e) {
             console.log(e);
