@@ -15,18 +15,20 @@ import {
     ForwardToHostHandler,
     PassThroughHandler
 } from '../../model/rules/rule-definitions';
-import { getStatusMessage } from '../../model/http-docs';
+import { getStatusMessage, HEADER_NAME_PATTERN, HEADER_NAME_REGEX } from '../../model/http-docs';
 import { getHTKContentType, getDefaultMimeType } from '../../model/content-types';
 
 import { clickOnEnter } from '../component-utils';
 import { SelfSizedBaseEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
 
-type HandlerConfigProps<h extends Handler> = {
-    handler: h;
-    onChange: (handler: h) => void;
-    onInvalidState?: () => void;
+type HandlerConfigProps<H extends Handler> = {
+    handler: H;
+    onChange: (handler: H) => void;
+    onInvalidState: () => void;
 };
+
+abstract class HandlerConfig<H extends Handler> extends React.Component<HandlerConfigProps<H>> { }
 
 const ConfigContainer = styled.div`
     margin-bottom: 5px;
@@ -51,7 +53,7 @@ export function HandlerConfiguration(props: {
     const configProps = {
         handler: handler as any,
         onChange,
-        onInvalidState
+        onInvalidState: onInvalidState || _.noop
     };
 
     if (handler instanceof StaticResponseHandler) {
@@ -242,7 +244,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 <TextInput
                     type='number'
                     min='100'
-                    max='599'
+                    max='999'
                     invalid={_.isNaN(parseInt(statusCode, 10))}
                     value={statusCode}
                     onChange={this.setStatus}
@@ -259,12 +261,15 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 { _.flatMap(headers, ([key, value], i) => [
                     <TextInput
                         value={key}
+                        required
+                        pattern={HEADER_NAME_PATTERN}
                         spellCheck={false}
                         key={`${i}-key`}
                         onChange={(e) => this.updateHeaderName(i, e)}
                     />,
                     <TextInput
                         value={value}
+                        invalid={!value}
                         spellCheck={false}
                         key={`${i}-val`}
                         onChange={(e) => this.updateHeaderValue(i, e)}
@@ -279,6 +284,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 ]).concat([
                     <TextInput
                         value=''
+                        pattern={HEADER_NAME_PATTERN}
                         placeholder='Header name'
                         spellCheck={false}
                         key={`${headers.length}-key`}
@@ -376,7 +382,13 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
     updateHandler() {
         const statusCode = parseInt(this.statusCode, 10);
-        if (_.isNaN(statusCode)) return;
+
+        if (
+            _.isNaN(statusCode) ||
+            statusCode < 100 ||
+            statusCode >= 1000 ||
+            _.some(this.headers, ([key]) => !key.match(HEADER_NAME_REGEX))
+        ) return this.props.onInvalidState();
 
         this.props.onChange(
             new StaticResponseHandler(
@@ -395,15 +407,23 @@ const UrlInput = styled(TextInput)`
 `;
 
 @observer
-class ForwardToHostHandlerConfig extends React.Component<HandlerConfigProps<ForwardToHostHandler>> {
+class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
+
+    @observable
+    private error: Error | undefined;
+
+    // Only read once on creation: we trust the parent to set/reset a key prop
+    // if this is going to change externally.
+    @observable
+    private targetHost = this.props.handler ? this.props.handler.forwardToLocation : '';
+
     render() {
         return <ConfigContainer>
             <UrlInput
-                value={this.props.handler.forwardToLocation}
-                onChange={(event) => {
-                    const handler = new ForwardToHostHandler(event.target.value);
-                    this.props.onChange(handler);
-                }}
+                value={this.targetHost}
+                invalid={!!this.error}
+                spellCheck={false}
+                onChange={this.onChange}
             />
             <ConfigExplanation>
                 All matching requests will be forwarded to {this.props.handler.forwardToLocation},
@@ -411,10 +431,25 @@ class ForwardToHostHandlerConfig extends React.Component<HandlerConfigProps<Forw
             </ConfigExplanation>
         </ConfigContainer>;
     }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.targetHost = event.target.value;
+
+        try {
+            if (!this.targetHost) throw new Error('A target host is required');
+            this.props.onChange(new ForwardToHostHandler(this.targetHost));
+            this.error = undefined;
+        } catch (e) {
+            console.log(e);
+            this.error = e;
+            if (this.props.onInvalidState) this.props.onInvalidState();
+        }
+    }
 }
 
 @observer
-class PassThroughHandlerConfig extends React.Component<HandlerConfigProps<PassThroughHandler>> {
+class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>

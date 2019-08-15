@@ -13,8 +13,11 @@ type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
     includeLabel: boolean;
     onChange: (matcher: M) => void;
-    onInvalidState?: () => void;
+    onInvalidState: () => void;
 };
+
+abstract class MatcherConfig<M extends Matcher> extends React.Component<MatcherConfigProps<M>> { }
+
 
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
@@ -33,7 +36,7 @@ export function MatcherConfiguration(props:
         matcher: matcher as any,
         includeLabel: props.includeLabel,
         onChange: props.onChange,
-        onInvalidState: props.onInvalidState
+        onInvalidState: props.onInvalidState || _.noop
     };
 
     switch (matcherClass) {
@@ -60,7 +63,7 @@ const PathMatcherContainer = styled.div`
 `;
 
 @observer
-class SimplePathMatcherConfig extends React.Component<MatcherConfigProps<matchers.SimplePathMatcher>> {
+class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> {
 
     private id = _.uniqueId();
 
@@ -113,7 +116,7 @@ class SimplePathMatcherConfig extends React.Component<MatcherConfigProps<matcher
         } catch (e) {
             console.log(e);
             this.error = e;
-            if (this.props.onInvalidState) this.props.onInvalidState();
+            this.props.onInvalidState();
         }
     }
 }
@@ -127,7 +130,7 @@ const RegexInput = styled(TextInput)`
 `;
 
 @observer
-class RegexPathMatcherConfig extends React.Component<MatcherConfigProps<matchers.RegexPathMatcher>> {
+class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
 
     @observable
     private error: Error | undefined;
@@ -172,7 +175,7 @@ class RegexPathMatcherConfig extends React.Component<MatcherConfigProps<matchers
         } catch (e) {
             console.log(e);
             this.error = e;
-            if (this.props.onInvalidState) this.props.onInvalidState();
+            this.props.onInvalidState();
         }
     }
 }
