@@ -14,63 +14,58 @@ export type HtkContentType =
     | 'javascript'
     | 'markdown'
     | 'yaml'
-    | 'image'
+    | 'image';
 
-export function getHTKContentType(mimeType: string | undefined): HtkContentType {
-    switch (getBaseContentType(mimeType)) {
-        case 'application/json':
-        case 'text/json':
-            return 'json';
+const mimeTypeToContentTypeMap: { [mimeType: string]: HtkContentType } = {
+    'application/json': 'json',
+    'text/json': 'json',
 
-        case 'application/xml':
-        case 'text/xml':
-        case 'application/rss':
-            return 'xml';
+    'application/xml': 'xml',
+    'text/xml': 'xml',
+    'application/rss': 'xml',
 
-        case 'text/javascript':
-        case 'application/javascript':
-        case 'application/x-javascript':
-        case 'application/ecmascript':
-            return 'javascript';
+    'application/javascript': 'javascript',
+    'application/x-javascript': 'javascript',
+    'application/ecmascript': 'javascript',
+    'text/javascript': 'javascript',
 
-        case 'text/plain':
-        case 'text/csv':
-        case 'application/x-www-form-urlencoded':
-            return 'text';
+    'text/plain': 'text',
+    'text/csv': 'text',
+    'application/x-www-form-urlencoded': 'text',
 
-        case 'text/markdown':
-        case 'text/x-markdown':
-            return 'markdown';
+    'text/markdown': 'markdown',
+    'text/x-markdown': 'markdown',
 
-        case 'text/yaml':
-        case 'text/x-yaml':
-        case 'application/yaml':
-            return 'yaml';
+    'text/x-yaml': 'yaml',
+    'text/yaml': 'yaml',
+    'application/yaml': 'yaml',
 
-        case 'image/gif':
-        case 'image/jpg':
-        case 'image/jpeg':
-        case 'image/png':
-        case 'image/svg':
-        case 'image/tiff':
-        case 'image/webp':
-        case 'image/x-icon':
-        case 'image/vnd.microsoft.icon':
-            return 'image';
+    'image/png': 'image',
+    'image/gif': 'image',
+    'image/jpg': 'image',
+    'image/jpeg': 'image',
+    'image/svg': 'image',
+    'image/tiff': 'image',
+    'image/webp': 'image',
+    'image/x-icon': 'image',
+    'image/vnd.microsoft.icon': 'image',
 
-        case 'text/css':
-            return 'css';
+    'text/css': 'css',
 
-        case 'text/html':
-        case 'application/xhtml':
-            return 'html';
+    'text/html': 'html',
+    'application/xhtml': 'html',
 
-        case 'application/octet-stream':
-            return 'raw';
+    'application/octet-stream': 'raw'
+};
 
-        default:
-            return 'text';
-    }
+export function getHTKContentType(mimeType: string | undefined): HtkContentType | undefined {
+    const baseContentType = getBaseContentType(mimeType);
+    return mimeTypeToContentTypeMap[baseContentType];
+}
+
+export function getDefaultMimeType(contentType: HtkContentType): string {
+    // Uses the *first* mime type listed for this key in our map
+    return _.findKey(mimeTypeToContentTypeMap, (c) => c === contentType)!;
 }
 
 export function getCompatibleTypes(contentType: HtkContentType, rawContentType?: string): HtkContentType[] {

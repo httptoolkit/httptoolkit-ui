@@ -90,7 +90,7 @@ const MatcherOrHandler = styled.section`
     max-width: calc(50% - 30px);
 `;
 
-const Summary = styled.h3`
+const Summary = styled.h1`
     ${(p: { collapsed: boolean }) => !p.collapsed && css`
         opacity: 0.3;
     `}

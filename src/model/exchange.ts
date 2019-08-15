@@ -38,7 +38,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
             parsedUrl,
             source: parseSource(request.headers['user-agent']),
             body: new ExchangeBody(request, request.headers),
-            contentType: getHTKContentType(request.headers['content-type']),
+            contentType: getHTKContentType(request.headers['content-type']) || 'text',
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })
         }) as HtkRequest;
     } catch (e) {
@@ -50,7 +50,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
 function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
         body: new ExchangeBody(response, response.headers),
-        contentType: getHTKContentType(response.headers['content-type']),
+        contentType: getHTKContentType(response.headers['content-type']) || 'text',
         cache: observable.map(new Map<symbol, unknown>(), { deep: false })
     }) as HtkResponse;
 }
