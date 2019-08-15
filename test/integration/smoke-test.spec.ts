@@ -22,7 +22,7 @@ describe('Smoke test', function () {
     beforeEach(async () => {
         [ browser ] = await Promise.all([
             puppeteer.launch({
-                headless: false,
+                headless: true,
                 slowMo: 0,
                 timeout: 10000
             }),
