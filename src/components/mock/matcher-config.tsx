@@ -11,12 +11,14 @@ import { styled } from '../../styles';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
+    includeLabel: boolean;
     onChange: (matcher: M) => void;
     onInvalidState?: () => void;
 };
 
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
+        includeLabel: boolean,
         onChange: (matcher: Matcher) => void,
         onInvalidState?: () => void
     }
@@ -29,6 +31,7 @@ export function MatcherConfiguration(props:
 
     const configProps = {
         matcher: matcher as any,
+        includeLabel: props.includeLabel,
         onChange: props.onChange,
         onInvalidState: props.onInvalidState
     };
@@ -44,21 +47,16 @@ export function MatcherConfiguration(props:
 }
 
 const ConfigLabel = styled.label`
-    flex: 1 0;
-    margin-right: 5px;
+    margin: 5px 0;
+
+    text-transform: uppercase;
+    font-size: ${p => p.theme.textSize};
+    opacity: ${p => p.theme.lowlightTextOpacity};
 `;
 
 const PathMatcherContainer = styled.div`
-    width: 100%;
-    height: 100%;
     display: flex;
-    flex-direction: row;
-    align-items: stretch;
-`;
-
-const PathInput = styled(TextInput)`
-    width: 100%;
-    box-sizing: border-box;
+    flex-direction: column;
 `;
 
 @observer
@@ -76,12 +74,15 @@ class SimplePathMatcherConfig extends React.Component<MatcherConfigProps<matcher
 
     render() {
         return <PathMatcherContainer>
-            <ConfigLabel htmlFor={this.id}>
-                for URL
-            </ConfigLabel>
-            <PathInput
+            { this.props.includeLabel &&
+                <ConfigLabel htmlFor={this.id}>
+                    for URL
+                </ConfigLabel>
+            }
+            <TextInput
                 id={this.id}
                 invalid={!!this.error}
+                spellCheck={false}
                 value={this.path}
                 onChange={this.onChange}
                 placeholder='A specific URL to match'
@@ -121,7 +122,7 @@ function unescapeRegexp(input: string): string {
     return input.replace(/\\(.)/g, '$1');
 }
 
-const RegexInput = styled(PathInput)`
+const RegexInput = styled(TextInput)`
     font-family: ${p => p.theme.monoFontFamily};
 `;
 
@@ -142,12 +143,15 @@ class RegexPathMatcherConfig extends React.Component<MatcherConfigProps<matchers
 
     render() {
         return <PathMatcherContainer>
-            <ConfigLabel htmlFor={this.id}>
-                for URLs matching
-            </ConfigLabel>
+            { this.props.includeLabel &&
+                <ConfigLabel htmlFor={this.id}>
+                    for URLs matching
+                </ConfigLabel>
+            }
             <RegexInput
                 id={this.id}
                 invalid={!!this.error}
+                spellCheck={false}
                 value={this.pattern}
                 onChange={this.onChange}
                 placeholder='Any regular expression: https?://abc.com/.*'

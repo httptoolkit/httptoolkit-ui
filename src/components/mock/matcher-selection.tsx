@@ -99,6 +99,7 @@ export class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps>
         return <MatcherRow>
             <MatcherInputsContainer>
                 <MatcherConfiguration
+                    includeLabel={true}
                     matcher={matcher}
                     onChange={onChange}
                 />
@@ -213,11 +214,13 @@ export class NewMatcherRow extends React.Component<{
                 }>
                     { draftMatcher
                         ? <MatcherConfiguration
+                            includeLabel={false}
                             matcher={draftMatcher}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}
                         />
                         : <MatcherConfiguration
+                            includeLabel={false}
                             matcherClass={matcherClass}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}
