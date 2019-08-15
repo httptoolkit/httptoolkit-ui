@@ -9,7 +9,7 @@ import { styled, css } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 import { getMethodColor } from '../../model/exchange-colors';
 
-import { HtkMockRule, Matcher, Handler, InitialMatcher } from '../../model/rules/rules';
+import { HtkMockRule, Matcher, Handler } from '../../model/rules/rules';
 import {
     summarizeMatcher,
     summarizeHandler
@@ -174,12 +174,12 @@ export class RuleRow extends React.Component<RuleRowProps> {
     render() {
         const { rule, collapsed } = this.props;
 
-        const methodMatcher = rule.matchers[0];
+        const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
         let method: string | undefined;
-        if (methodMatcher instanceof matchers.MethodMatcher) {
-            method = Method[methodMatcher.method];
-        } else if (methodMatcher !== undefined) {
+        if (initialMatcher instanceof matchers.MethodMatcher) {
+            method = Method[initialMatcher.method];
+        } else if (initialMatcher !== undefined) {
             method = 'unknown';
         } else {
             method = undefined;
@@ -215,7 +215,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
                         <MatchersList>
                             <InitialMatcherRow
                                 ref={this.initialMatcherSelect}
-                                matcher={rule.matchers.length ? rule.matchers[0] : undefined}
+                                matcher={initialMatcher}
                                 onChange={(m) => this.updateMatcher(0, m)}
                             />
 
