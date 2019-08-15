@@ -5,7 +5,6 @@ import { persist, create } from 'mobx-persist';
 import { getLocal, Mockttp } from 'mockttp';
 import { PortRange } from 'mockttp/dist/mockttp';
 import * as uuid from 'uuid/v4';
-import { get } from 'typesafe-get';
 
 import * as amIUsingHtml from '../amiusing.html';
 
@@ -131,15 +130,24 @@ export class InterceptionStore {
 
     private loadSettings(accountStore: AccountStore) {
         // Every time the user account data is updated from the server, consider resetting
-        // the port configuration to the free version. This ensures that it's reset on
+        // paid settings to the free defaults. This ensures that they're reset on
         // logout & subscription expiration (even if that happened while the app was
-        // closed), but doesn't get reset when the app starts with stale account data.
+        // closed), but don't get reset when the app starts with stale account data.
         observe(accountStore, 'accountDataLastUpdated', () => {
-            if (!accountStore.isPaidUser) this.setPortConfig(undefined);
+            if (!accountStore.isPaidUser) {
+                this.setPortConfig(undefined);
+                this.whitelistedCertificateHosts = ['localhost'];
+            }
         });
 
         return create()('interception-store', this);
     }
+
+    @persist('list') @observable
+    whitelistedCertificateHosts: string[] = ['localhost'];
+
+    // Saved when the server starts, so we can compare to the current list later
+    initiallyWhitelistedCertificateHosts: string[] = ['localhost'];
 
     private startIntercepting = flow(function* (this: InterceptionStore) {
         yield startServer(this.server, this._portConfig);
@@ -150,7 +158,7 @@ export class InterceptionStore {
                 200, amIUsingHtml, { 'content-type': 'text/html' }
             ).then(() =>
                 this.server.anyRequest().always().thenPassThrough({
-                    ignoreHostCertificateErrors: ['localhost']
+                    ignoreHostCertificateErrors: this.whitelistedCertificateHosts
                 })
             ),
             this.refreshInterceptors(),
@@ -158,6 +166,7 @@ export class InterceptionStore {
                 this.certPath = config.certificatePath
             })
         ]);
+        this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
 
         const refreshInterceptorInterval = setInterval(() =>
             this.refreshInterceptors()

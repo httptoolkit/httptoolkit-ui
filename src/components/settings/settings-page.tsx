@@ -11,7 +11,7 @@ import * as semver from 'semver';
 
 import { Omit, WithInjected } from '../../types';
 import { styled, css, Theme, ThemeName } from '../../styles';
-import { WarningIcon } from '../../icons';
+import { WarningIcon, FontAwesomeIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui-store';
@@ -32,8 +32,6 @@ interface SettingsPageProps {
     uiStore: UiStore;
     interceptionStore: InterceptionStore;
 }
-
-type CardKey = 'request' | 'requestBody' | 'response' | 'responseBody' | 'performance';
 
 const SettingsPagePlaceholder = styled.section`
     display: flex;
@@ -76,14 +74,14 @@ const AccountControls = styled.div`
     flex-direction: row;
 `;
 
-const AccountButtonCss = css`
+const SettingsButtonCss = css`
     font-size: ${p => p.theme.textSize};
     padding: 6px 16px;
     margin-right: 10px;
 `;
 
-const AccountButton = styled(Button)`${AccountButtonCss}`;
-const AccountButtonLink = styled(ButtonLink)`${AccountButtonCss}`;
+const SettingsButton = styled(Button)`${SettingsButtonCss}`;
+const SettingsButtonLink = styled(ButtonLink)`${SettingsButtonCss}`;
 
 const AccountContactFooter = styled.div`
     margin-top: 30px;
@@ -93,13 +91,46 @@ const AccountContactFooter = styled.div`
     }
 `;
 
-const ProxySettingsContainer = styled.div`
+const RestartApp = styled(SettingsButton).attrs(() => ({
+    children: 'Restart app to activate',
+    onClick: () => window.location.reload()
+}))`
+    position: absolute;
+    top: 18px;
+    left: 20px;
+    font-weight: bold;
+
+    ${(p: { visible: boolean }) => !p.visible && 'display: none;'}
+`;
+
+const CertificateWhitelistList = styled.div`
+    display: grid;
+    grid-template-columns: min-content min-content;
+    grid-gap: 10px;
+    margin: 10px 0;
+
+    align-items: baseline;
+
+    input {
+        align-self: stretch;
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: solid 1px ${p => p.theme.containerBorder};
+    }
+`;
+
+const WhitelistHost = styled.div`
+    min-width: 300px;
+    font-family: ${p => p.theme.monoFontFamily};
+`;
+
+const ProxyPortsContainer = styled.div`
     display: grid;
     grid-template-columns: fit-content(45%) fit-content(45%) fit-content(10%);
     align-items: baseline;
 
     grid-gap: 10px;
-    margin-bottom: 10px;
+    margin: 40px 0 10px 0;
 
     input {
         padding: 5px 10px;
@@ -127,20 +158,7 @@ const ProxyPortStateExplanation = styled.p`
     margin-bottom: 10px;
 `;
 
-const ReloadServer = styled((props: {
-    className?: string,
-    children: React.ReactNode
-}) => <a
-    className={props.className}
-    children={props.children}
-    onClick={() => window.location.reload()}
-/>)`
-    cursor: pointer;
-    text-decoration: underline;
-    font-weight: bold;
-`;
-
-const ProxyPortExplanation = styled.p`
+const SettingsExplanation = styled.p`
     font-style: italic;
 `;
 
@@ -184,6 +202,24 @@ class SettingsPage extends React.Component<SettingsPageProps> {
     private toggleCollapse(key: string) {
         const cardProps = this.cardProps[key];
         cardProps.collapsed = !cardProps.collapsed;
+    }
+
+    @observable
+    whitelistHostInput = '';
+
+    @action.bound
+    unwhitelistHost(host: string) {
+        const { whitelistedCertificateHosts } = this.props.interceptionStore!;
+        const hostIndex = whitelistedCertificateHosts.indexOf(host);
+        if (hostIndex > -1) {
+            whitelistedCertificateHosts.splice(hostIndex, 1);
+        }
+    }
+
+    @action.bound
+    addHostToWhitelist() {
+        this.props.interceptionStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
+        this.whitelistHostInput = '';
     }
 
     @observable
@@ -235,7 +271,11 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
     render() {
         const { uiStore } = this.props;
-        const { serverPort } = this.props.interceptionStore;
+        const {
+            serverPort,
+            whitelistedCertificateHosts,
+            initiallyWhitelistedCertificateHosts
+        } = this.props.interceptionStore;
         const {
             isPaidUser,
             userEmail,
@@ -325,22 +365,22 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
                     <AccountControls>
                         { sub.lastReceiptUrl &&
-                            <AccountButtonLink
+                            <SettingsButtonLink
                                 href={ sub.lastReceiptUrl }
                                 target='_blank'
                                 rel='noreferrer noopener'
                             >
                                 View latest invoice
-                            </AccountButtonLink>
+                            </SettingsButtonLink>
                         }
-                        <AccountButtonLink
+                        <SettingsButtonLink
                             href={ sub.updateBillingDetailsUrl }
                             target='_blank'
                             rel='noreferrer noopener'
                         >
                             Update billing details
-                        </AccountButtonLink>
-                        <AccountButton onClick={logOut}>Log out</AccountButton>
+                        </SettingsButtonLink>
+                        <SettingsButton onClick={logOut}>Log out</SettingsButton>
                     </AccountControls>
 
                     <AccountContactFooter>
@@ -355,7 +395,51 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         <header>
                             <h1>Proxy settings</h1>
                         </header>
-                        <ProxySettingsContainer>
+                        <RestartApp
+                            visible={
+                                (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
+                                !_.isEqual(whitelistedCertificateHosts, initiallyWhitelistedCertificateHosts)
+                            }
+                        />
+                        <ContentLabel>
+                            Host Certificate Whitelist
+                        </ContentLabel>
+                        <CertificateWhitelistList>
+                            {  whitelistedCertificateHosts.map((host) => [
+                                <WhitelistHost key={`host-${host}`}>{ host }</WhitelistHost>,
+                                <SettingsButton
+                                    key={`delete-${host}`}
+                                    onClick={() => this.unwhitelistHost(host)}
+                                >
+                                    <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                                </SettingsButton>
+                            ]) }
+
+                            <input
+                                type="text"
+                                required
+                                placeholder='Hostname to whitelist for certificate checks'
+                                value={this.whitelistHostInput}
+                                onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
+                                    this.whitelistHostInput = e.target.value;
+                                })}
+                            />
+                            <SettingsButton
+                                disabled={
+                                    !this.whitelistHostInput ||
+                                    whitelistedCertificateHosts.includes(this.whitelistHostInput)
+                                }
+                                onClick={this.addHostToWhitelist}
+                            >
+                                <FontAwesomeIcon icon={['fas', 'plus']} />
+                            </SettingsButton>
+                        </CertificateWhitelistList>
+                        <SettingsExplanation>
+                            All requests to these hosts will skip certificate validation, and so will
+                            appear successful despite self-signed, expired or invalid HTTPS certificates.
+                        </SettingsExplanation>
+
+                        <ProxyPortsContainer>
                             <ContentLabel>
                                 Minimum port
                             </ContentLabel>
@@ -381,25 +465,21 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 onChange={this.onMaxPortChange}
                             />
                             <WarningIcon />
-                        </ProxySettingsContainer>
+                        </ProxyPortsContainer>
                         <ProxyPortStateExplanation>
                             The proxy is currently using port <strong>
                                 { serverPort }
                             </strong>{
                                 (this.isCurrentPortConfigValid && !this.isCurrentPortInRange)
-                                ? <>
-                                    , outside this range. <ReloadServer>
-                                        Restart the app now to use this configuration
-                                    </ReloadServer>.
-                                </>
-                                : <>.</>
+                                ? ', outside this range. Restart the app now to use this configuration.'
+                                : '.'
                             }
                         </ProxyPortStateExplanation>
-                        <ProxyPortExplanation>
+                        <SettingsExplanation>
                             When opening HTTP Toolkit, it will start the proxy on the first port in
                             this range that is available. If all ports in the range are in use, the
                             first free port above 8000 will be used instead.
-                        </ProxyPortExplanation>
+                        </SettingsExplanation>
                     </CollapsibleCard>
                 }
 
