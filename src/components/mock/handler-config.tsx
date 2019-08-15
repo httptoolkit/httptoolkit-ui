@@ -257,21 +257,37 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             <SectionLabel>Headers</SectionLabel>
             <HeadersContainer>
                 { _.flatMap(headers, ([key, value], i) => [
-                    <TextInput value={key} key={`${i}-key`} onChange={(e) => this.updateHeaderName(i, e)} />,
-                    <TextInput value={value} key={`${i}-val`} onChange={(e) => this.updateHeaderValue(i, e)}  />,
-                    <HeaderDeleteButton key={`${i}-del`} onClick={() => this.deleteHeader(i)} onKeyPress={clickOnEnter}>
+                    <TextInput
+                        value={key}
+                        spellCheck={false}
+                        key={`${i}-key`}
+                        onChange={(e) => this.updateHeaderName(i, e)}
+                    />,
+                    <TextInput
+                        value={value}
+                        spellCheck={false}
+                        key={`${i}-val`}
+                        onChange={(e) => this.updateHeaderValue(i, e)}
+                    />,
+                    <HeaderDeleteButton
+                        key={`${i}-del`}
+                        onClick={() => this.deleteHeader(i)}
+                        onKeyPress={clickOnEnter}
+                    >
                         <FontAwesomeIcon icon={['far', 'trash-alt']} />
                     </HeaderDeleteButton>
                 ]).concat([
                     <TextInput
                         value=''
                         placeholder='Header name'
+                        spellCheck={false}
                         key={`${headers.length}-key`}
                         onChange={this.addHeaderByName}
                     />,
                     <TextInput
                         value=''
                         placeholder='Header value'
+                        spellCheck={false}
                         key={`${headers.length}-val`}
                         onChange={this.addHeaderByValue}
                     />
