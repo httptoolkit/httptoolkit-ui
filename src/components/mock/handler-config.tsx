@@ -39,7 +39,7 @@ const ConfigExplanation = styled.p`
     font-size: ${p => p.theme.textSize};
     opacity: ${p => p.theme.lowlightTextOpacity};
     font-style: italic;
-    margin-top: 5px;
+    margin-top: 10px;
 `;
 
 export function HandlerConfiguration(props: {
@@ -402,6 +402,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 }
 
 const UrlInput = styled(TextInput)`
+    margin-top: 5px;
     width: 100%;
     box-sizing: border-box;
 `;
@@ -418,17 +419,24 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
     private targetHost = this.props.handler ? this.props.handler.forwardToLocation : '';
 
     render() {
+        const { forwardToLocation } = this.props.handler;
+
         return <ConfigContainer>
+            <SectionLabel>Replacement host</SectionLabel>
             <UrlInput
                 value={this.targetHost}
                 invalid={!!this.error}
                 spellCheck={false}
                 onChange={this.onChange}
             />
-            <ConfigExplanation>
-                All matching requests will be forwarded to {this.props.handler.forwardToLocation},
-                retaining their existing path and query string.
-            </ConfigExplanation>
+            { forwardToLocation &&
+                <ConfigExplanation>
+                    All matching requests will be forwarded to {forwardToLocation},
+                    keeping their existing path{
+                        !forwardToLocation.includes('://') ? ', protocol,' : ''
+                    } and query string.
+                </ConfigExplanation>
+            }
         </ConfigContainer>;
     }
 
@@ -453,7 +461,7 @@ class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                All matching traffic will be passed through to the upstream target host.
+                All matching traffic will be transparently passed through to the upstream target host.
             </ConfigExplanation>
         </ConfigContainer>;
     }

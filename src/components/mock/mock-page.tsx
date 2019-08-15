@@ -18,7 +18,7 @@ interface MockPageProps {
 }
 
 const MockPageContainer = styled.section`
-    overflow-y: auto;
+    overflow-y: scroll;
     position: relative;
 
     box-sizing: border-box;

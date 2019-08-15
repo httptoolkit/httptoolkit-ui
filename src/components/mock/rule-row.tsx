@@ -221,7 +221,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
 
                             { rule.matchers.slice(1).map((matcher, i) =>
                                 <ExistingMatcherRow
-                                    key={i}
+                                    key={`${i}/${rule.matchers.length}`}
                                     matcher={matcher}
                                     onChange={(m) => this.updateMatcher(i + 1, m)}
                                     onDelete={() => this.deleteMatcher(matcher)}
