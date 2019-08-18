@@ -324,7 +324,10 @@ export class InterceptionStore {
             const exchange = _.find(this.exchanges, { id: response.id });
 
             // Should only happen in rare cases - e.g. paused for req, unpaused before res
-            if (!exchange) return;
+            if (!exchange) {
+                reportError('Response event received for missing request');
+                return;
+            }
 
             exchange.setResponse(response);
         } catch (e) {
