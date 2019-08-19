@@ -12,7 +12,13 @@ export { Sentry };
 
 export function initSentry(dsn: string | undefined) {
     if (dsn) {
-        Sentry.init({ dsn: dsn, release: UI_VERSION });
+        Sentry.init({
+            dsn: dsn,
+            release: UI_VERSION,
+            ignoreErrors: [
+                'ResizeObserver loop limit exceeded', // No visible effect: https://stackoverflow.com/a/50387233/68051
+            ]
+        });
         sentryInitialized = true;
 
         serverVersion.then((version) => addErrorTag('version:server', version));
