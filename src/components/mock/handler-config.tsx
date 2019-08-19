@@ -366,7 +366,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
     @action.bound
     deleteHeader(index: number) {
-        this.headers.splice(index);
+        this.headers.splice(index, 1);
     }
 
     @action.bound
