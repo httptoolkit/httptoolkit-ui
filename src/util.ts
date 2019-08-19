@@ -177,9 +177,11 @@ export type FakeBuffer = { byteLength: number };
 
 export function saveFile(filename: string, mimeType: string, content: string): void {
     const element = document.createElement('a');
-    element.setAttribute('href',
-        `data:${mimeType},${encodeURIComponent(content)}`
-    );
+
+    const data = new Blob([content], {type: 'application/har+json'});
+
+    const objectUrl = window.URL.createObjectURL(data);
+    element.setAttribute('href', objectUrl);
     element.setAttribute('download', filename);
 
     element.style.display = 'none';
@@ -187,6 +189,11 @@ export function saveFile(filename: string, mimeType: string, content: string): v
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+
+    // Stop persisting the data. In theory we could do this immediately, as the spec says
+    // existing requests will be fine, but let's wait a few seconds to make sure the
+    // request has definitely fired properly:
+    setTimeout(() => window.URL.revokeObjectURL(objectUrl), 10000);
 }
 
 type FileReaderType = 'text' | 'arraybuffer';
