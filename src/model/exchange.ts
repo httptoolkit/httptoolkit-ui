@@ -61,7 +61,7 @@ export class ExchangeBody implements MessageBody {
         message: InputMessage,
         headers: Headers
     ) {
-        if (!message.body) {
+        if (!('body' in message) || !message.body) {
             this._encoded = Buffer.from("");
         } else if ('buffer' in message.body) {
             this._encoded = message.body.buffer;

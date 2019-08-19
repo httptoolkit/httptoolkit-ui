@@ -6,7 +6,7 @@ import * as uuid from 'uuid/v4';
 
 import { getLocal, Mockttp } from 'mockttp';
 
-import { InputResponse, FailedTlsRequest, InputTlsRequest, PortRange, InputInitiatedRequest, InputRequest } from '../types';
+import { InputResponse, FailedTlsRequest, InputTlsRequest, PortRange, InputInitiatedRequest, InputCompletedRequest } from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from '../services/server-api';
@@ -117,6 +117,16 @@ export class InterceptionStore {
 
         console.log(`Server started on port ${this.server.port}`);
 
+        this.server.on('request-initiated', (req) => {
+            if (this.isPaused) return;
+
+            if (!this.isFlushQueued) {
+                this.isFlushQueued = true;
+                requestAnimationFrame(this.flushQueuedUpdates);
+            }
+
+            this.requestInitiatedQueue.push(req);
+        });
         this.server.on('request', (req) => {
             if (this.isPaused) return;
 
@@ -125,7 +135,7 @@ export class InterceptionStore {
                 requestAnimationFrame(this.flushQueuedUpdates);
             }
 
-            this.requestQueue.push(req);
+            this.requestCompletedQueue.push(req);
         });
         this.server.on('response', (res) => {
             if (this.isPaused) return;
@@ -244,7 +254,8 @@ export class InterceptionStore {
     isPaused = false;
 
     // TODO: Combine into a batchedEvent queue of callbacks
-    private requestQueue: InputRequest[] = [];
+    private requestInitiatedQueue: InputInitiatedRequest[] = [];
+    private requestCompletedQueue: InputCompletedRequest[] = [];
     private responseQueue: InputResponse[] = [];
     private abortQueue: InputInitiatedRequest[] = [];
     private tlsErrorQueue: InputTlsRequest[] = [];
@@ -276,8 +287,11 @@ export class InterceptionStore {
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
 
-        this.requestQueue.forEach((req) => this.addRequest(req));
-        this.requestQueue = [];
+        this.requestInitiatedQueue.forEach((req) => this.addInitiatedRequest(req));
+        this.requestInitiatedQueue = [];
+
+        this.requestCompletedQueue.forEach((req) => this.addCompletedRequest(req));
+        this.requestCompletedQueue = [];
 
         this.responseQueue.forEach((res) => this.setResponse(res));
         this.responseQueue = [];
@@ -295,10 +309,35 @@ export class InterceptionStore {
     }
 
     @action
-    private addRequest(request: InputRequest) {
+    private addInitiatedRequest(request: InputInitiatedRequest) {
+        try {
+            // Due to race conditions, it's possible this request already exists. If so,
+            // we just skip this - the existing data will be more up to date.
+            const existingEventIndex = _.findIndex(this.events, { id: request.id });
+            if (existingEventIndex === -1) {
+                const exchange = new HttpExchange(request);
+                this.events.push(exchange);
+            }
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
+    @action
+    private addCompletedRequest(request: InputCompletedRequest) {
         try {
             const exchange = new HttpExchange(request);
-            this.events.push(exchange);
+
+            // The request shuld already exist: we get an event when the initial path & headers
+            // are received, and this one later when the body etc arrives.
+            // We add it from scratch if not, in case of races or if the server doesn't support
+            // request-initiated events.
+            const existingEventIndex = _.findIndex(this.events, { id: request.id });
+            if (existingEventIndex >= 0) {
+                this.events[existingEventIndex] = exchange;
+            } else {
+                this.events.push(exchange);
+            }
         } catch (e) {
             reportError(e);
         }
@@ -364,7 +403,7 @@ export class InterceptionStore {
 
         // Arguably we could call addRequest/setResponse directly, but this is a little
         // nicer just in case the UI thread is already under strain.
-        requests.forEach(r => this.requestQueue.push(r));
+        requests.forEach(r => this.requestCompletedQueue.push(r));
         responses.forEach(r => this.responseQueue.push(r));
         aborts.forEach(r => this.abortQueue.push(r));
 

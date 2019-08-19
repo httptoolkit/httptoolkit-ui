@@ -19,10 +19,10 @@ export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents'> 
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
-
 export type InputTlsRequest = TlsRequest;
 export type InputInitiatedRequest = MockttpInitiatedRequest;
-export type InputRequest = MockttpCompletedRequest | HarRequest;
+export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
+export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 
