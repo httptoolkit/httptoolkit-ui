@@ -6,6 +6,7 @@ import {
     HtkResponse,
     Headers,
     MessageBody,
+    InputInitiatedRequest,
     InputRequest,
     InputResponse,
     TimingEvents,
@@ -37,7 +38,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
             parsedUrl,
             source: parseSource(request.headers['user-agent']),
             body: new ExchangeBody(request, request.headers),
-            contentType: getHTKContentType(request.headers['content-type']),
+            contentType: getHTKContentType(request.headers['content-type']) || 'text',
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })
         }) as HtkRequest;
     } catch (e) {
@@ -49,7 +50,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
 function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
         body: new ExchangeBody(response, response.headers),
-        contentType: getHTKContentType(response.headers['content-type']),
+        contentType: getHTKContentType(response.headers['content-type']) || 'text',
         cache: observable.map(new Map<symbol, unknown>(), { deep: false })
     }) as HtkResponse;
 }
@@ -60,7 +61,7 @@ export class ExchangeBody implements MessageBody {
         message: InputMessage,
         headers: Headers
     ) {
-        if (!message.body) {
+        if (!('body' in message) || !message.body) {
             this._encoded = Buffer.from("");
         } else if ('buffer' in message.body) {
             this._encoded = message.body.buffer;
@@ -147,7 +148,7 @@ export class HttpExchange {
     @observable
     public category: ExchangeCategory;
 
-    markAborted(request: InputRequest) {
+    markAborted(request: InputInitiatedRequest) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
         Object.assign(this.timingEvents, request.timingEvents);

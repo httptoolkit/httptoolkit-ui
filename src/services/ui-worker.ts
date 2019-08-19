@@ -2,7 +2,7 @@
 const ctx: Worker = self as any;
 
 import * as serializeError from 'serialize-error';
-import { handleContentEncoding } from 'mockttp/dist/server/request-utils';
+import { handleContentEncoding } from 'mockttp/dist/util/request-utils';
 import { OpenAPIObject } from 'openapi3-ts';
 
 import { compress as brotliCompress } from 'wasm-brotli';

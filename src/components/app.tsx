@@ -11,6 +11,7 @@ import { AccountStore } from '../model/account/account-store';
 import { Sidebar, SidebarItem } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
+import { MockPage } from './mock/mock-page';
 import { SettingsPage } from './settings/settings-page';
 
 import { PlanPicker } from './account/plan-picker';
@@ -42,7 +43,7 @@ const Spinner = styled((p: { className?: string }) => (
     z-index: 100;
 `;
 
-type Page = typeof InterceptPage | typeof ViewPage | typeof SettingsPage;
+type Page = typeof InterceptPage | typeof ViewPage | typeof SettingsPage | typeof MockPage;
 
 @inject('accountStore')
 @observer
@@ -65,6 +66,17 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 position: 'top',
                 page: ViewPage
             },
+
+            ...(
+                this.props.accountStore.hasFeatureFlag('mock-page')
+                ? [{
+                    name: 'Mock',
+                    icon: ['fas', 'theater-masks'],
+                    position: 'top',
+                    page: MockPage
+                }]
+                : []
+            ),
 
             this.props.accountStore.isPaidUser
                 ? {

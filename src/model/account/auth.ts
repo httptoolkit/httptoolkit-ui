@@ -175,6 +175,8 @@ function getToken() {
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'deleted';
 
+export type FeatureFlag = "mock-page";
+
 type AppData = {
     email: string;
     subscription_status?: SubscriptionStatus;
@@ -183,6 +185,7 @@ type AppData = {
     subscription_expiry?: number;
     update_url?: string;
     last_receipt_url?: string;
+    feature_flags?: string[];
 }
 
 type SubscriptionData = {
@@ -197,7 +200,10 @@ type SubscriptionData = {
 export type User = {
     email?: string;
     subscription?: SubscriptionData;
+    featureFlags: string[]; // Should be only FeatureFlag, but could have future/old flags too
 };
+
+const anonUser = (): User => ({ featureFlags: [] });
 
 /*
  * Synchronously gets the last received user data, _without_
@@ -209,7 +215,7 @@ export function getLastUserData(): User {
         return parseUserData(localStorage.getItem('last_jwt'));
     } catch (e) {
         console.warn("Couldn't parse saved user data", e);
-        return {};
+        return anonUser();
     }
 }
 
@@ -237,7 +243,7 @@ export async function getLatestUserData(): Promise<User> {
 }
 
 function parseUserData(userJwt: string | null): User {
-    if (!userJwt) return {};
+    if (!userJwt) return anonUser();
 
     const appData = <AppData>jwt.verify(userJwt, AUTH0_DATA_PUBLIC_KEY, {
         algorithms: ['RS256'],
@@ -265,7 +271,8 @@ function parseUserData(userJwt: string | null): User {
         // Use undefined rather than {} when there's any missing sub fields other than the receipt
         subscription: _.every(_.omit(subscription, 'lastReceiptUrl'))
             ? subscription as SubscriptionData
-            : undefined
+            : undefined,
+        featureFlags: appData.feature_flags || []
     };
 }
 

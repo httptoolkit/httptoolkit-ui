@@ -161,3 +161,23 @@ export function getStatusColor(status: undefined | 'aborted' | number, theme: Th
     // Anything else weird.
     return highlights.black;
 }
+
+export function getMethodColor(method: string): string {
+    if (method === 'GET') {
+        return highlights.green;
+    } else if (method === 'POST') {
+        return highlights.orange;
+    } else if (method === 'DELETE') {
+        return highlights.red;
+    } else if (method === 'PUT') {
+        return highlights.purple;
+    } else if (method === 'PATCH') {
+        return highlights.pink;
+    } else if (method === 'HEAD') {
+        return highlights.darkBlue;
+    } else if (method === 'OPTIONS') {
+        return highlights.lightBlue;
+    } else {
+        return highlights.grey;
+    }
+}
