@@ -66,12 +66,17 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 position: 'top',
                 page: ViewPage
             },
-            {
-                name: 'Mock',
-                icon: ['fas', 'theater-masks'],
-                position: 'top',
-                page: MockPage
-            },
+
+            ...(
+                this.props.accountStore.hasFeatureFlag('mock-page')
+                ? [{
+                    name: 'Mock',
+                    icon: ['fas', 'theater-masks'],
+                    position: 'top',
+                    page: MockPage
+                }]
+                : []
+            ),
 
             this.props.accountStore.isPaidUser
                 ? {

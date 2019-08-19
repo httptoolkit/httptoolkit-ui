@@ -12,7 +12,8 @@ import {
     logOut,
     User,
     getLatestUserData,
-    getLastUserData
+    getLastUserData,
+    FeatureFlag
 } from './auth';
 import {
     SubscriptionPlans,
@@ -84,6 +85,10 @@ export class AccountStore {
 
     @computed get isLoggedIn() {
         return !!this.user.email;
+    }
+
+    hasFeatureFlag(flag: FeatureFlag) {
+        return this.user.featureFlags.includes(flag);
     }
 
     @computed get isPaidUser() {
