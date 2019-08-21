@@ -3,6 +3,7 @@ import * as React from 'react';
 import * as polished from 'polished';
 import { observer } from 'mobx-react';
 import { action } from 'mobx';
+import { SortableHandle, SortableElement } from 'react-sortable-hoc';
 import { Method, matchers } from 'mockttp';
 
 import { styled, css } from '../../styles';
@@ -26,14 +27,41 @@ import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
 
 interface RuleRowProps {
-    rule: HtkMockRule;
+    value: HtkMockRule;
     collapsed: boolean;
+    rowDisabled: boolean; // 'disabled' conflicts with sortable-hoc
     toggleCollapse: () => void;
     deleteRule: () => void;
 }
 
+
+const FloatingDragHandle = styled.div`
+    position: absolute;
+    left: -36px;
+    top: 14px;
+    padding-right: 7px;
+
+    cursor: row-resize;
+
+    opacity: 0;
+
+    :focus {
+        outline: none;
+        opacity: 0.5;
+        color: ${p => p.theme.popColor};
+    }
+`;
+
+const DragHandle = SortableHandle(() =>
+    <FloatingDragHandle tabIndex={0}>
+        <FontAwesomeIcon icon={['fas', 'grip-vertical']} />
+    </FloatingDragHandle>
+);
+
+
 const RowContainer = styled<React.ComponentType<{
     collapsed: boolean,
+    disabled: boolean,
     borderColor: string
 } & React.ComponentProps<'section'>>>(LittleCard)`
     width: 100%;
@@ -50,18 +78,30 @@ const RowContainer = styled<React.ComponentType<{
 
     font-size: ${(p) => p.theme.headingSize};
 
-    ${(p) => p.collapsed
-        ? css`
-            user-select: none;
-        ` : css`
-        `
-    }
+    overflow: initial;
+
+    ${(p) => p.collapsed && css`
+        user-select: none;
+    `}
 
     border-left: 5px solid ${(p) => p.borderColor};
+
+    &:not([disabled]):hover > ${FloatingDragHandle} {
+        opacity: 0.5;
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 1px 2px ${p =>
+            polished.rgba(p.theme.popColor, 0.5)
+        };
+        background-color: ${p => p.theme.mainBackground};
+    }
 `;
 
 export const AddRuleRow = styled((p: {
-    onAdd: () => void
+    onAdd: () => void,
+    disabled: boolean
 } & React.HTMLAttributes<HTMLDivElement>) =>
     <RowContainer
         collapsed={true}
@@ -172,7 +212,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
     containerRef = React.createRef<HTMLElement>();
 
     render() {
-        const { rule, collapsed } = this.props;
+        const { value: rule, collapsed, rowDisabled } = this.props;
 
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
@@ -192,15 +232,17 @@ export class RuleRow extends React.Component<RuleRowProps> {
             }
             ref={this.containerRef}
             collapsed={collapsed}
+            disabled={rowDisabled}
             tabIndex={collapsed ? 0 : undefined}
             onClick={collapsed ? this.toggleCollapse : undefined}
             onKeyPress={clickOnEnter}
         >
-            { !collapsed &&
-                <RuleMenu
+            { !collapsed
+                ? <RuleMenu
                     onClose={this.toggleCollapse}
                     onDelete={this.props.deleteRule}
                 />
+                : <DragHandle />
             }
 
             <MatcherOrHandler>
@@ -280,22 +322,24 @@ export class RuleRow extends React.Component<RuleRowProps> {
 
     @action.bound
     addMatcher(matcher: Matcher) {
-        this.props.rule.matchers.push(matcher);
+        this.props.value.matchers.push(matcher);
     }
 
     @action.bound
     updateMatcher(index: number, ...matchers: Matcher[]) {
-        this.props.rule.matchers.splice(index, 1, ...matchers);
+        this.props.value.matchers.splice(index, 1, ...matchers);
     }
 
     @action.bound
     deleteMatcher(matcher: Matcher) {
-        const { rule } = this.props;
+        const { value: rule } = this.props;
         rule.matchers = rule.matchers.filter(m => m !== matcher);
     }
 
     @action.bound
     updateHandler(handler: Handler) {
-        this.props.rule.handler = handler;
+        this.props.value.handler = handler;
     }
 }
+
+export const SortableRuleRow = SortableElement(RuleRow);
