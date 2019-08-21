@@ -63,6 +63,8 @@ const MockRuleList = styled.ol`
 @observer
 class MockPage extends React.Component<MockPageProps> {
 
+    containerRef = React.createRef<HTMLDivElement>();
+
     // Map from rule id -> collapsed (true/false)
     @observable
     collapsedRulesMap = _.fromPairs(
@@ -100,7 +102,7 @@ class MockPage extends React.Component<MockPageProps> {
             areSomeRulesUnsaved
         } = this.props.interceptionStore;
 
-        return <MockPageContainer>
+        return <MockPageContainer ref={this.containerRef}>
             <MockPageHeader>
                 <MockHeading>Mock & Rewrite HTTP</MockHeading>
                 <SaveButton disabled={!areSomeRulesUnsaved} onClick={this.saveAll}>
@@ -141,6 +143,18 @@ class MockPage extends React.Component<MockPageProps> {
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
         rules.unshift(newRule);
+
+        // Wait briefly for the new rule to appear, then focus its first dropdown
+        setTimeout(() => {
+            const container = this.containerRef.current;
+            if (!container) return;
+
+            const dropdown = container.querySelector(
+                'section > ol > section:nth-child(2) select'
+            ) as HTMLSelectElement | undefined;
+            if (dropdown) dropdown.focus();
+            // If there's a race, this will just do nothing
+        }, 100);
     }
 
     @action.bound
