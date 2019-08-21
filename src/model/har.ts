@@ -304,6 +304,22 @@ function cleanRawHarData(harContents: any) {
         if (entry.serverIPAddress === "[::1]") {
             entry.serverIPAddress = "::1";
         }
+
+        // FF fails to write headersSize, for req/res that has no headers.
+        // We don't use it anyway - set it to -1 if it's missing
+        if (entry.request && entry.request.headersSize === undefined) {
+            entry.request.headersSize = -1;
+        }
+
+        if (entry.response && entry.response.headersSize === undefined) {
+            entry.response.headersSize = -1;
+        }
+    });
+
+    const pages = get(harContents, 'log', 'pages');
+    pages.forEach((page: any) => {
+        // FF doesn't give pages their (required) titles:
+        if (page.title === undefined) page.title = page.id;
     });
 
     return harContents;
