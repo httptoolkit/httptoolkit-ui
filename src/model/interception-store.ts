@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import { observable, action, configure, flow, computed, runInAction, observe, autorun } from 'mobx';
 import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
+import { HarParseError } from 'har-validator';
 
 import { getLocal, Mockttp } from 'mockttp';
 
@@ -399,7 +400,16 @@ export class InterceptionStore {
     }
 
     async loadFromHar(harContents: {}) {
-        const { requests, responses, aborts } = await parseHar(harContents);
+        const { requests, responses, aborts } = await parseHar(harContents)
+            .catch((harParseError: HarParseError) => {
+                // Log all suberrors, for easier reporting & debugging.
+                // This does not include HAR data - only schema errors like
+                // 'bodySize is missing' at 'entries[1].request'
+                harParseError.errors.forEach((error) => {
+                    console.log(error);
+                });
+                throw harParseError;
+            });
 
         // Arguably we could call addRequest/setResponse directly, but this is a little
         // nicer just in case the UI thread is already under strain.
