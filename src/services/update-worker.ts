@@ -140,6 +140,12 @@ workbox.routing.registerRoute(/api\/.*/, new workbox.strategies.StaleWhileRevali
     ],
 }));
 
+// Map all page loads to the root HTML. This is necessary to allow SPA routing,
+// as otherwise a refreshes miss the cache & fail.
+workbox.routing.registerNavigationRoute(
+    precacheController.getCacheKeyForURL('/index.html')
+);
+
 // All other app code _must_ be precached - no random updates from elsewhere please.
 // The below is broadly based on the precaching.addRoute, but resetting the cache
 // 100% if any requests ever fail to match.
@@ -154,8 +160,10 @@ workbox.routing.registerRoute(/\/.*/, async ({ event }) => {
     const precachedUrl = (
         ([
             requestUrl.href,
-            requestUrl.href + '.html', // Support .html requests without extension
-            requestUrl.href.endsWith('/') ? requestUrl.href + 'index.html' : false, // Allow index.html for /
+            // Load /index.html for /:
+            requestUrl.href.endsWith('/')
+                ? requestUrl.href + 'index.html'
+                : false
         ] as Array<string | false>)
         .map((cacheUrl) => cacheUrl && urlsToCacheKeys.get(cacheUrl))
         .filter((x): x is string => !!x)

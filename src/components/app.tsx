@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, computed } from 'mobx';
+import { computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
+import { Router, RouteComponentProps, Redirect, Location } from '@reach/router';
 
 import { styled } from '../styles';
 import { WithInjected } from '../types';
@@ -43,13 +44,22 @@ const Spinner = styled((p: { className?: string }) => (
     z-index: 100;
 `;
 
-type Page = typeof InterceptPage | typeof ViewPage | typeof SettingsPage | typeof MockPage;
+interface ExtendProps extends React.PropsWithChildren<any> {
+	pageComponent: React.ComponentType<{}>;
+}
+
+const Route = ({ children, ...props }: ExtendProps & RouteComponentProps): React.ReactElement => {
+	const { pageComponent, ...otherProps } = props;
+	return (
+		<props.pageComponent {...otherProps}>
+			{children}
+		</props.pageComponent>
+	)
+};
 
 @inject('accountStore')
 @observer
 class App extends React.Component<{ accountStore: AccountStore }> {
-
-    @observable.ref selectedPage: Page = InterceptPage;
 
     @computed
     get menuItems() {
@@ -58,13 +68,15 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 name: 'Intercept',
                 icon: ['fas', 'plug'],
                 position: 'top',
-                page: InterceptPage
+                type: 'router',
+                url: '/intercept'
             },
             {
                 name: 'View',
                 icon: ['fas', 'search'],
                 position: 'top',
-                page: ViewPage
+                type: 'router',
+                url: '/view'
             },
 
             ...(
@@ -73,25 +85,38 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     name: 'Mock',
                     icon: ['fas', 'theater-masks'],
                     position: 'top',
-                    page: MockPage
+                    type: 'router',
+                    url: '/mock'
                 }]
                 : []
             ),
 
-            this.props.accountStore.isPaidUser
+            (this.props.accountStore.isPaidUser
                 ? {
                     name: 'Settings',
                     icon: ['fas', 'cog'],
                     position: 'bottom',
-                    page: SettingsPage
+                    type: 'router',
+                    url: '/settings'
                 }
                 : {
                     name: 'Get Pro',
                     icon: ['far', 'star'],
                     position: 'bottom',
-                    onSelected: () => this.props.accountStore.getPro()
+                    type: 'callback',
+                    onClick: () => this.props.accountStore.getPro()
                 }
-        ];
+            ),
+
+            {
+                name: 'Give feedback',
+                icon: ['far', 'comment'],
+                position: 'bottom',
+                highlight: true,
+                type: 'web',
+                url: 'https://github.com/httptoolkit/feedback/issues/new'
+            }
+        ] as SidebarItem[];
     }
 
     render() {
@@ -103,9 +128,6 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             logOut
         } = this.props.accountStore;
 
-        const PageComponent = this.selectedPage;
-        const selectedPageIndex = _.findIndex(this.menuItems, (i) => i.page === PageComponent);
-
         return <>
             <AppContainer
                 aria-hidden={!!modal}
@@ -115,18 +137,20 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     node.setAttribute('inert', '') : node.removeAttribute('inert')
                 )}
             >
-                <Sidebar
-                    items={(this.menuItems as SidebarItem[]).concat({
-                        name: 'Give feedback',
-                        icon: ['far', 'comment'],
-                        position: 'bottom',
-                        highlight: true,
-                        url: 'https://github.com/httptoolkit/feedback/issues/new'
-                    })}
-                    selectedItemIndex={selectedPageIndex}
-                    onSelectItem={this.onSelectItem}
-                />
-                <PageComponent />
+                <Sidebar items={this.menuItems} />
+
+                <Location>{() => {
+                    trackPage();
+                    return null;
+                }}</Location>
+
+                <Router>
+                    <Redirect noThrow from="/" to={'/intercept'} />
+                    <Route path={'/intercept'} pageComponent={InterceptPage} />
+                    <Route path={'/view'} pageComponent={ViewPage} />
+                    <Route path={'/mock'} pageComponent={MockPage} />
+                    <Route path={'/settings'} pageComponent={SettingsPage} />
+                </Router>
             </AppContainer>
 
             { !!modal && <ModalOverlay opacity={
@@ -145,18 +169,6 @@ class App extends React.Component<{ accountStore: AccountStore }> {
 
             { modal === 'post-checkout' && <Spinner /> }
         </>;
-    }
-
-    @action.bound
-    onSelectItem(selectedItemIndex: number) {
-        const selectedItem = this.menuItems[selectedItemIndex];
-
-        if (selectedItem.onSelected) {
-            selectedItem.onSelected();
-        } else if (selectedItem.page) {
-            this.selectedPage = selectedItem.page;
-            trackPage(selectedItem.name);
-        }
     }
 }
 

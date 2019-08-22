@@ -30,7 +30,7 @@ export function initTracking() {
             value: performance.now()
         });
 
-        ReactGA.pageview('initial');
+        trackPage();
 
         window.addEventListener('DOMContentLoaded', () => {
             ReactGA.timing({
@@ -58,9 +58,20 @@ export function initTracking() {
     }
 }
 
-export function trackPage(page: string) {
+let lastUrl: string | undefined;
+export function trackPage() {
     if (!GA_ID) return;
-    ReactGA.pageview(page);
+
+    const currentUrl = window.location.href;
+    if (currentUrl === lastUrl) return;
+    lastUrl = currentUrl;
+    const currentPath = window.location.pathname + location.search;
+
+    ReactGA.set({
+        location: location.href,
+        page: currentPath
+    });
+    ReactGA.pageview(currentPath);
 }
 
 export function trackEvent(event: ReactGA.EventArgs) {

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { StyledComponent } from 'styled-components';
 import { observer } from 'mobx-react';
+import { Link } from '@reach/router';
 import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
@@ -15,13 +16,14 @@ export interface SidebarItem {
     icon: string[];
     position: 'top' | 'bottom';
     highlight?: true;
+
+    type: 'web' | 'router' | 'callback';
     url?: string;
+    onClick?: () => void;
 }
 
 interface SidebarProps {
-    selectedItemIndex: number;
     items: Array<SidebarItem>;
-    onSelectItem: (selectedItemIndex: number) => void;
 }
 
 const SidebarNav = styled.nav`
@@ -61,10 +63,12 @@ const SidebarLogo = styled.img.attrs({
     ${sidebarItemStyles}
 `
 
-const SidebarSelectableItem = styled(
-    UnstyledButton as StyledComponent<"button", Theme, { selected: boolean }>
-)`
+const SidebarSelectableItem = styled(Link)`
     ${sidebarItemStyles}
+
+    color: ${p => p.theme.mainColor};
+    text-decoration: none;
+    line-height: normal;
 
     width: calc(100% + 2px);
     margin: 0 -1px;
@@ -82,10 +86,10 @@ const SidebarSelectableItem = styled(
 
     opacity: 0.6;
 
-    ${(p) => p.selected && css`
+    &[aria-current] {
         opacity: 1;
-        border-right-color: ${p.theme.popColor};
-    `}
+        border-right-color: ${p => p.theme.popColor};
+    }
 
     > svg {
         margin-bottom: 5px;
@@ -112,6 +116,24 @@ const SidebarLink = styled.a<{ highlight?: true }>`
     }
 `;
 
+const SidebarButton = styled(
+    UnstyledButton as StyledComponent<"button", Theme, { highlight?: boolean }>
+)`
+    ${sidebarItemStyles}
+
+    cursor: pointer;
+    opacity: 0.6;
+
+    ${(p) => p.highlight && css`
+        color:  ${p.theme.popColor};
+        font-weight: bold;
+    `};
+
+    > svg {
+        margin-bottom: 5px;
+    }
+`;
+
 export const Sidebar = observer((props: SidebarProps) => {
     const items = props.items.map((item, i) => {
         const itemContent = <>
@@ -119,28 +141,38 @@ export const Sidebar = observer((props: SidebarProps) => {
             {item.name}
         </>;
 
-        if (item.url) {
+        if (item.type === 'web') {
             return {
                 position: item.position,
                 component: <SidebarLink
                     key={item.name}
                     highlight={item.highlight}
-                    href='https://github.com/httptoolkit/feedback/issues/new'
+                    href={item.url}
                     target='_blank'
                 >
                     { itemContent }
                 </SidebarLink>
             }
-        } else {
+        } else if (item.type === 'router') {
             return {
                 position: item.position,
                 component: <SidebarSelectableItem
                     key={item.name}
-                    selected={i === props.selectedItemIndex}
-                    onClick={() => props.onSelectItem(i)}
+                    to={item.url}
                 >
                     { itemContent }
                 </SidebarSelectableItem>
+            };
+        } else {
+            return {
+                position: item.position,
+                component: <SidebarButton
+                    key={item.name}
+                    highlight={item.highlight}
+                    onClick={item.onClick}
+                >
+                    { itemContent }
+                </SidebarButton>
             };
         }
     });

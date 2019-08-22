@@ -1,0 +1,5 @@
+[[redirects]]
+    # Rewrite all requests that 404 to /, to support SPA history
+    from = "/*"
+    to = "/"
+    status = 200
