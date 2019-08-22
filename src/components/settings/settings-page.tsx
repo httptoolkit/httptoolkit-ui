@@ -122,6 +122,11 @@ const CertificateWhitelistList = styled.div`
 const WhitelistHost = styled.div`
     min-width: 300px;
     font-family: ${p => p.theme.monoFontFamily};
+
+    ${(p: { active: boolean }) => !p.active && css`
+        font-style: italic;
+        opacity: 0.6;
+    `}
 `;
 
 const ProxyPortsContainer = styled.div`
@@ -406,7 +411,10 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         </ContentLabel>
                         <CertificateWhitelistList>
                             {  whitelistedCertificateHosts.map((host) => [
-                                <WhitelistHost key={`host-${host}`}>{ host }</WhitelistHost>,
+                                <WhitelistHost
+                                    active={initiallyWhitelistedCertificateHosts.includes(host)}
+                                    key={`host-${host}`}
+                                >{ host }</WhitelistHost>,
                                 <SettingsButton
                                     key={`delete-${host}`}
                                     onClick={() => this.unwhitelistHost(host)}
