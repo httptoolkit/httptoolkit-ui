@@ -11,7 +11,7 @@ import {
 } from 'js-beautify/js/lib/beautifier';
 import * as beautifyXml from 'xml-beautifier';
 
-import { SelfSizedBaseEditor } from './base-editor';
+import { ThemedSelfSizedEditor } from './base-editor';
 import { styled } from '../../styles';
 import { HtkContentType } from '../../model/content-types';
 
@@ -112,7 +112,6 @@ interface ContentEditorProps {
     rawContentType: string | undefined;
     contentType: HtkContentType;
     contentObservable?: IObservableValue<string | undefined>;
-    monacoTheme: string
 }
 
 function isEditorFormatter(input: any): input is EditorFormatter {
@@ -154,12 +153,11 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
     render() {
         if (isEditorFormatter(this.formatter)) {
             try {
-                return <SelfSizedBaseEditor
+                return <ThemedSelfSizedEditor
                     options={this.editorOptions}
                     language={this.formatter.language}
                     value={this.renderedContent!}
                     schema={this.props.schema}
-                    theme={this.props.monacoTheme}
                 />;
             } catch (e) {
                 return <div>

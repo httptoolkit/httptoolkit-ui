@@ -10,7 +10,6 @@ import { FontAwesomeIcon } from '../../icons';
 import { saveFile } from '../../util';
 
 import { AccountStore } from "../../model/account/account-store";
-import { UiStore } from '../../model/ui-store';
 import { HttpExchange } from "../../model/exchange";
 import { generateHarRequest, generateHar } from "../../model/har";
 
@@ -19,7 +18,7 @@ import { PillSelector, PillButton } from "../common/pill";
 import { CopyButtonPill } from '../common/copy-button';
 import { DocsLink } from '../common/docs-link';
 import { ExchangeCard, ExchangeCardProps } from "./exchange-card";
-import { SelfSizedBaseEditor } from '../editor/base-editor';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 interface SnippetOption {
     target: HTTPSnippet.Target,
@@ -77,10 +76,9 @@ const snippetEditorOptions = {
     hover: { enabled: false }
 };
 
-const ExportSnippetEditor = inject('uiStore')(observer((p: {
+const ExportSnippetEditor = observer((p: {
     exchange: HttpExchange
     exportOption: SnippetOption
-    uiStore?: UiStore
 }) => {
     const { target, client, link, description } = p.exportOption;
     const harRequest = generateHarRequest(p.exchange.request);
@@ -102,7 +100,7 @@ const ExportSnippetEditor = inject('uiStore')(observer((p: {
             </p>
         </SnippetDescriptionContainer>
         <SnippetEditorContainer>
-            <SelfSizedBaseEditor
+            <ThemedSelfSizedEditor
                 value={snippet}
                 language={
                     ({
@@ -112,11 +110,10 @@ const ExportSnippetEditor = inject('uiStore')(observer((p: {
                     } as _.Dictionary<string>)[target] || 'text'
                 }
                 options={snippetEditorOptions}
-                theme={p.uiStore!.theme.monacoTheme}
             />
         </SnippetEditorContainer>
     </>;
-}));
+});
 
 const exportHar = async (exchange: HttpExchange) => {
     const harContent = JSON.stringify(

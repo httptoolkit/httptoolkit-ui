@@ -8,7 +8,6 @@ import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
 import { HtkContentType, getCompatibleTypes } from '../../model/content-types';
 import { getReadableSize } from '../../model/bodies';
-import { UiStore } from '../../model/ui-store';
 
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
@@ -32,7 +31,6 @@ const CopyBody = styled(CopyButtonIcon)`
     color: ${p => p.theme.mainColor};
 `;
 
-@inject('uiStore')
 @observer
 export class ExchangeBodyCard extends React.Component<{
     title: string,
@@ -41,7 +39,6 @@ export class ExchangeBodyCard extends React.Component<{
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
-    uiStore?: UiStore
 }> {
 
     @observable
@@ -82,7 +79,6 @@ export class ExchangeBodyCard extends React.Component<{
             direction,
             collapsed,
             onCollapseToggled,
-            uiStore
         } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(message.contentType, message.headers['content-type']);
@@ -120,7 +116,6 @@ export class ExchangeBodyCard extends React.Component<{
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
                         contentObservable={this.currentContent}
-                        monacoTheme={uiStore!.theme.monacoTheme}
                         schema={apiBodySchema}
                     >
                         {decodedBody}

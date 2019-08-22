@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import { observable, action, autorun } from 'mobx';
+import { withTheme } from 'styled-components';
 import { SchemaObject } from 'openapi-directory';
 
 import * as monacoTypes from 'monaco-editor';
@@ -10,7 +11,7 @@ import _MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
 import { reportError } from '../../errors';
 import { delay } from '../../util';
 import { WritableKeys, Omit } from '../../types';
-import { styled } from '../../styles';
+import { styled, Theme } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
@@ -118,6 +119,11 @@ export class SelfSizedBaseEditor extends React.Component<
         </EditorMaxHeightContainer>
     }
 }
+
+export const ThemedSelfSizedEditor = withTheme(
+    ({ theme, ...otherProps }: { theme?: Theme } & Omit<EditorProps, 'onLineCount' | 'theme'>) =>
+        <SelfSizedBaseEditor theme={theme!.monacoTheme} {...otherProps} />
+);
 
 const EditorFocusWrapper = styled(FocusWrapper)`
     height: 100%;

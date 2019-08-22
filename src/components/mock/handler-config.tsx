@@ -20,7 +20,7 @@ import { getStatusMessage, HEADER_NAME_PATTERN, HEADER_NAME_REGEX } from '../../
 import { getHTKContentType, getDefaultMimeType } from '../../model/content-types';
 
 import { clickOnEnter } from '../component-utils';
-import { SelfSizedBaseEditor } from '../editor/base-editor';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
 
 type HandlerConfigProps<H extends Handler> = {
@@ -315,7 +315,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 </Select>
             </BodyHeader>
             <BodyContainer>
-                <SelfSizedBaseEditor
+                <ThemedSelfSizedEditor
                     language={this.bodyLanguage}
                     value={body}
                     onChange={this.setBody}
