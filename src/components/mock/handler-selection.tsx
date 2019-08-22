@@ -15,6 +15,7 @@ import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
     StaticResponseHandler,
     ForwardToHostHandler,
+    BreakpointHandler,
     PassThroughHandler
 } from '../../model/rules/rule-definitions';
 
@@ -49,6 +50,8 @@ const instantiateHandler = (handlerClass: HandlerClass, hostCertWhitelist: strin
             return new PassThroughHandler(hostCertWhitelist);
         case ForwardToHostHandler:
             return new ForwardToHostHandler('');
+        case BreakpointHandler:
+            return new BreakpointHandler({});
     }
 }
 
@@ -72,7 +75,8 @@ export const HandlerSelector = inject('interceptionStore')(observer((p: {
         <HandlerOptions handlers={[
             StaticResponseHandler,
             PassThroughHandler,
-            ForwardToHostHandler
+            ForwardToHostHandler,
+            BreakpointHandler
         ]} />
     </HandlerSelect>
 }));

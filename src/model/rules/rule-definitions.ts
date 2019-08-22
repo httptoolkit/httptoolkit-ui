@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { Method, matchers, handlers } from 'mockttp';
+import { PassThroughHandlerOptions } from 'mockttp/dist/rules/handlers';
 
 type MethodName = keyof typeof Method;
 const MethodNames = [
@@ -86,4 +87,28 @@ export class ForwardToHostHandler extends handlers.PassThroughHandler {
         }, forwardToLocation);
     }
 
+}
+
+export class BreakpointHandler extends handlers.PassThroughHandler {
+
+    constructor(options: Pick<
+        PassThroughHandlerOptions, 'beforeRequest' | 'beforeResponse'
+    >) {
+        super(Object.assign({
+            ignoreHostCertificateErrors: ['localhost'],
+        }, options));
+    }
+
+    explain() {
+        if (this.beforeRequest && this.beforeResponse) {
+            return "manually rewrite the request and response";
+        }
+        if (this.beforeRequest) {
+            return "manually rewrite the request before it's forwarded";
+        }
+        if (this.beforeResponse) {
+            return "manually rewrite the response before it's returned";
+        }
+        return super.explain();
+    }
 }

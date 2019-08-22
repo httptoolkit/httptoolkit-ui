@@ -13,7 +13,8 @@ import {
 import {
     StaticResponseHandler,
     ForwardToHostHandler,
-    PassThroughHandler
+    PassThroughHandler,
+    BreakpointHandler
 } from '../../model/rules/rule-definitions';
 import { getStatusMessage, HEADER_NAME_PATTERN, HEADER_NAME_REGEX } from '../../model/http-docs';
 import { getHTKContentType, getDefaultMimeType } from '../../model/content-types';
@@ -62,6 +63,8 @@ export function HandlerConfiguration(props: {
         return <ForwardToHostHandlerConfig {...configProps} />;
     } else if (handler instanceof PassThroughHandler) {
         return <PassThroughHandlerConfig {...configProps} />;
+    } else if (handler instanceof BreakpointHandler) {
+        return <BreakpointHandlerConfig {...configProps} />;
     }
 
     throw new Error('Unknown handler: ' + handler.type);
@@ -464,5 +467,109 @@ class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler> {
                 All matching traffic will be transparently passed through to the upstream target host.
             </ConfigExplanation>
         </ConfigContainer>;
+    }
+}
+
+const BreakpointToggleContainer = styled.div`
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    margin: 20px 0;
+`;
+
+const BreakpointToggle = styled.input.attrs({
+    type: 'checkbox'
+})`
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+`;
+
+const BreakpointLabel = styled.label`
+`;
+
+@observer
+class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler> {
+
+    requestToggleId = _.uniqueId();
+    responseToggleId = _.uniqueId();
+
+    @observable
+    requestBreakpointEnabled = !!this.props.handler.beforeRequest;
+
+    @observable
+    responseBreakpointEnabled = !!this.props.handler.beforeResponse;
+
+    render() {
+        const { requestBreakpointEnabled, responseBreakpointEnabled } = this;
+
+        return <ConfigContainer>
+            <BreakpointToggleContainer>
+                <BreakpointToggle
+                    id={this.requestToggleId}
+                    checked={requestBreakpointEnabled}
+                    onChange={this.onChange}
+                />
+                <BreakpointLabel htmlFor={this.requestToggleId}>
+                    Pause requests for editing before forwarding them upstream
+                </BreakpointLabel>
+
+                <BreakpointToggle
+                    id={this.responseToggleId}
+                    checked={responseBreakpointEnabled}
+                    onChange={this.onChange}
+                />
+                <BreakpointLabel htmlFor={this.responseToggleId}>
+                    Pause responses for editing before returning them to the client
+                </BreakpointLabel>
+            </BreakpointToggleContainer>
+            <ConfigExplanation>
+                All matching traffic will {
+                    (requestBreakpointEnabled && responseBreakpointEnabled)
+                        ? <>
+                            breakpoint when a request is sent or a response is received, allowing
+                            you to edit the URL (to transparently redirect the request elsewhere),
+                            method, headers, or body before they are sent upstream, and also rewrite
+                            the status code, headers or body, before it is returned to the
+                            initiating client.
+                        </>
+                    : requestBreakpointEnabled
+                        ? <>
+                            hit a breakpoint when the request is sent, allowing you to edit the
+                            URL (to transparently redirect the request elsewhere), method, headers
+                            or body, before they are sent upstream.
+                        </>
+                    : responseBreakpointEnabled
+                        ? <>
+                            breakpoint when the response is received from the upstream server,
+                            allowing you to rewrite the status code, headers, or body, before it
+                            is returned to the client of the original request.
+                        </>
+                    : 'be transparently passed through to the upstream target host.'
+                }
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(changeEvent: React.ChangeEvent<HTMLInputElement>) {
+        if (changeEvent.target.id === this.requestToggleId) {
+            this.requestBreakpointEnabled = !this.requestBreakpointEnabled;
+        } else if (changeEvent.target.id === this.responseToggleId) {
+            this.responseBreakpointEnabled = !this.responseBreakpointEnabled;
+        }
+
+        const fakeCb = (r: any) => {
+            console.log(r);
+            return {
+                statusCode: 418,
+                headers: Object.assign({}, r.headers, { 'x-breakpoint': 'true' })
+            };
+        };
+
+        this.props.onChange(new BreakpointHandler({
+            beforeRequest: this.requestBreakpointEnabled ? fakeCb : undefined,
+            beforeResponse: this.responseBreakpointEnabled ? fakeCb : undefined
+        }));
     }
 }
