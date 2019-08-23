@@ -171,6 +171,12 @@ class MockPage extends React.Component<MockPageProps> {
                     onSortStart={this.startMovingRule}
                     onSortEnd={this.moveRule}
                     transitionDuration={100}
+                    keyCodes={{
+                        lift: [32, 13],
+                        drop: [32, 13],
+                        up: [38, 37, 75],
+                        down: [40, 39, 74]
+                    }}
                 />
             </MockPageScrollContainer>
         </MockPageContainer>
