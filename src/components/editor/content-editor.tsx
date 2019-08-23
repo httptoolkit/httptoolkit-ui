@@ -107,9 +107,9 @@ export const Formatters: { [key in HtkContentType]?: Formatter } = {
 };
 
 interface ContentEditorProps {
-    children: Buffer;
+    children: Buffer | string;
     schema?: SchemaObject;
-    rawContentType: string | undefined;
+    rawContentType?: string;
     contentType: HtkContentType;
     contentObservable?: IObservableValue<string | undefined>;
 }
@@ -131,9 +131,16 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
     }
 
     @computed
+    private get contentBuffer() {
+        return _.isString(this.props.children)
+            ? Buffer.from(this.props.children)
+            : this.props.children;
+    }
+
+    @computed
     private get renderedContent() {
         if (isEditorFormatter(this.formatter)) {
-            return this.formatter.render(this.props.children);
+            return this.formatter.render(this.contentBuffer);
         }
     }
 
@@ -167,7 +174,7 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
             }
         } else {
             const Viewer = this.formatter;
-            return <Viewer content={this.props.children} rawContentType={this.props.rawContentType} />;
+            return <Viewer content={this.contentBuffer} rawContentType={this.props.rawContentType} />;
         }
     }
 }

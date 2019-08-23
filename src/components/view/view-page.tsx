@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-
-import { observable, autorun, action, runInAction } from 'mobx';
+import { autorun, action, observable, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
+import * as portals from 'react-reverse-portal';
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
@@ -15,6 +15,7 @@ import { EmptyState } from '../common/empty-state';
 import { ViewEventList, CollectedEvent } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
+import { ContentEditor } from '../editor/content-editor';
 
 interface ViewPageProps {
     className?: string,
@@ -26,6 +27,9 @@ interface ViewPageProps {
 class ViewPage extends React.Component<ViewPageProps> {
 
     @observable.ref selectedEvent: CollectedEvent | undefined = undefined;
+
+    requestEditor = portals.createPortalNode<ContentEditor>();
+    responseEditor = portals.createPortalNode<ContentEditor>();
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
@@ -49,7 +53,11 @@ class ViewPage extends React.Component<ViewPageProps> {
                 Select an exchange to see the full details.
             </EmptyState>;
         } else if ('request' in this.selectedEvent) {
-            rightPane = <ExchangeDetailsPane exchange={this.selectedEvent} />;
+            rightPane = <ExchangeDetailsPane
+                exchange={this.selectedEvent}
+                requestEditor={this.requestEditor}
+                responseEditor={this.responseEditor}
+            />;
         } else {
             rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
         }
@@ -70,6 +78,16 @@ class ViewPage extends React.Component<ViewPageProps> {
                 />
                 { rightPane }
             </SplitPane>
+
+            {[this.requestEditor, this.responseEditor].map((editorNode, i) =>
+                <portals.InPortal key={i} node={editorNode}>
+                    <ContentEditor
+                        contentType='text'
+                        rawContentType=''
+                        children=''
+                    />
+                </portals.InPortal>
+            )}
         </div>;
     }
 

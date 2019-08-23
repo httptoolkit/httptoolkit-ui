@@ -3,6 +3,7 @@ import * as React from 'react';
 import { get } from 'typesafe-get';
 import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
+import * as portals from 'react-reverse-portal';
 
 import { HtkResponse, Omit } from '../../types';
 import { styled } from '../../styles';
@@ -54,7 +55,9 @@ export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange,
     // Injected:
     uiStore?: UiStore,
-    accountStore?: AccountStore
+    accountStore?: AccountStore,
+    requestEditor: portals.PortalNode,
+    responseEditor: portals.PortalNode
 }> {
 
     @observable
@@ -92,6 +95,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 title='Request Body'
                 direction='right'
                 message={request}
+                editorNode={this.props.requestEditor}
                 apiBodySchema={get(apiExchange, 'request', 'bodySchema')}
                 {...this.cardProps.requestBody}
             />);
@@ -121,6 +125,7 @@ export class ExchangeDetailsPane extends React.Component<{
                     title='Response Body'
                     direction='left'
                     message={response}
+                    editorNode={this.props.responseEditor}
                     apiBodySchema={get(apiExchange, 'response', 'bodySchema')}
                     {...this.cardProps.responseBody}
                 />);

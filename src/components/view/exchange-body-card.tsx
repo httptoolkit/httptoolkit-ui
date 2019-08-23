@@ -3,6 +3,7 @@ import * as React from 'react';
 import { observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer, inject } from 'mobx-react';
 import { SchemaObject } from 'openapi-directory';
+import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
@@ -39,6 +40,7 @@ export class ExchangeBodyCard extends React.Component<{
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
+    editorNode: portals.PortalNode
 }> {
 
     @observable
@@ -112,14 +114,15 @@ export class ExchangeBodyCard extends React.Component<{
                     <h1>{ title }</h1>
                 </header>
                 <EditorCardContent>
-                    <ContentEditor
+                    <portals.OutPortal<ContentEditor>
+                        node={this.props.editorNode}
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
                         contentObservable={this.currentContent}
                         schema={apiBodySchema}
                     >
                         {decodedBody}
-                    </ContentEditor>
+                    </portals.OutPortal>
                 </EditorCardContent>
             </ExchangeCard>
         :
