@@ -45,6 +45,7 @@ export type CollectedEvent = HttpExchange | FailedTlsRequest
 
 interface ViewEventListProps {
     className?: string;
+    selectedEvent: CollectedEvent | undefined;
     onSelected: (event: CollectedEvent | undefined) => void;
     onClear: () => void;
     events: CollectedEvent[];
@@ -199,7 +200,12 @@ const FailedRequestRow = (p: { failure: FailedTlsRequest }) =>
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
 
-    @observable selectedEventId: string | undefined;
+    @computed
+    get selectedEventId() {
+        return this.props.selectedEvent
+            ? this.props.selectedEvent.id
+            : undefined;
+    }
 
     @observable searchFilter: string | false = false;
 
@@ -298,7 +304,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                                     className={className}
                                     role="row"
                                     style={style}
-                                    onClick={(event: React.MouseEvent) =>
+                                    onMouseDown={(event: React.MouseEvent) =>
                                         onRowClick && onRowClick({ event, index, rowData })
                                     }
                                 >
@@ -441,13 +447,11 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onEventSelected(index: number) {
-        this.selectedEventId = this.filteredEvents[index].id;
         this.props.onSelected(this.filteredEvents[index]);
     }
 
     @action.bound
     onEventDeselected() {
-        this.selectedEventId = undefined;
         this.props.onSelected(undefined);
     }
 

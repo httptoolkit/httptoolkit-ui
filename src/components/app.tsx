@@ -148,6 +148,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     <Redirect noThrow from="/" to={'/intercept'} />
                     <Route path={'/intercept'} pageComponent={InterceptPage} />
                     <Route path={'/view'} pageComponent={ViewPage} />
+                    <Route path={'/view/:eventId'} pageComponent={ViewPage} />
                     <Route path={'/mock'} pageComponent={MockPage} />
                     <Route path={'/settings'} pageComponent={SettingsPage} />
                 </Router>

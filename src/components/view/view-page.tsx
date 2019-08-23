@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { autorun, action, observable, runInAction } from 'mobx';
+import { autorun, action, computed } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -18,23 +18,34 @@ import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ContentEditor } from '../editor/content-editor';
 
 interface ViewPageProps {
-    className?: string,
-    interceptionStore: ActivatedStore
+    className?: string;
+    interceptionStore: ActivatedStore;
+    navigate: (path: string) => void;
+    eventId?: string;
 }
 
 @inject('interceptionStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    @observable.ref selectedEvent: CollectedEvent | undefined = undefined;
-
     requestEditor = portals.createPortalNode<ContentEditor>();
     responseEditor = portals.createPortalNode<ContentEditor>();
 
+    @computed
+    get selectedEvent() {
+        return _.find(this.props.interceptionStore.events, {
+            id: this.props.eventId
+        });
+    }
+
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            if (!_.includes(this.props.interceptionStore.events, this.selectedEvent)) {
-                runInAction(() => this.selectedEvent = undefined);
+            // If you somehow have a non-existent event selected, unselect it
+            if (
+                this.props.eventId &&
+                !_.includes(this.props.interceptionStore.events, this.selectedEvent)
+            ) {
+                this.onSelected(undefined);
             }
         }));
     }
@@ -71,6 +82,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 maxSize={-300}
             >
                 <ViewEventList
+                    selectedEvent={this.selectedEvent}
                     onSelected={this.onSelected}
                     onClear={clearInterceptedData}
                     events={events}
@@ -93,13 +105,16 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onSelected(event: CollectedEvent | undefined) {
-        this.selectedEvent = event;
+        this.props.navigate(event
+            ? `/view/${event.id}`
+            : '/view'
+        );
     }
 }
 
 const StyledViewPage = styled(
     // Exclude store from the external props, as it's injected
-    ViewPage as unknown as WithInjected<typeof ViewPage, 'interceptionStore'>
+    ViewPage as unknown as WithInjected<typeof ViewPage, 'interceptionStore' | 'navigate'>
 )`
     height: 100vh;
     position: relative;

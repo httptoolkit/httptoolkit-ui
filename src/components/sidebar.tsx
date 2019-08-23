@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { StyledComponent } from 'styled-components';
 import { observer } from 'mobx-react';
-import { Link } from '@reach/router';
+import { Link, Match } from '@reach/router';
 import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
@@ -86,10 +86,10 @@ const SidebarSelectableItem = styled(Link)`
 
     opacity: 0.6;
 
-    &[aria-current] {
+    ${(p: { selected: boolean }) => p.selected && css`{
         opacity: 1;
         border-right-color: ${p => p.theme.popColor};
-    }
+    }`}
 
     > svg {
         margin-bottom: 5px;
@@ -156,12 +156,17 @@ export const Sidebar = observer((props: SidebarProps) => {
         } else if (item.type === 'router') {
             return {
                 position: item.position,
-                component: <SidebarSelectableItem
+                component: <Match
                     key={item.name}
-                    to={item.url}
-                >
-                    { itemContent }
-                </SidebarSelectableItem>
+                    path={`${item.url!}/*`}
+                >{({ match }) =>
+                    <SidebarSelectableItem
+                        to={item.url}
+                        selected={!!match}
+                    >
+                        { itemContent }
+                    </SidebarSelectableItem>
+                }</Match>
             };
         } else {
             return {
