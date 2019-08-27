@@ -445,6 +445,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     }
 
     onListMouseDown = (mouseEvent: React.MouseEvent) => {
+        if (mouseEvent.button !== 0) return; // Left clicks only
+
         let row: Element | null = mouseEvent.target as Element;
         let ariaRowIndex: string | null = null;
 
