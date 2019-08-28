@@ -77,6 +77,10 @@ type QueuedEvent = ({
     [T in EventType]: { type: T, event: EventTypesMap[T] }
 }[EventType]);
 
+type OrphanableQueuedEvent =
+    | { type: 'response', event: InputResponse }
+    | { type: 'abort', event: InputInitiatedRequest }
+
 export class InterceptionStore {
 
     // ** Overall setup & startup:
@@ -236,7 +240,8 @@ export class InterceptionStore {
     @observable
     isPaused = false;
 
-    private eventQueue: QueuedEvent[] = [];
+    private eventQueue: Array<QueuedEvent> = [];
+    private orphanedEventQueue: Array<OrphanableQueuedEvent> = [];
 
     private isFlushQueued = false;
     private queueEventFlush() {
@@ -268,9 +273,24 @@ export class InterceptionStore {
     private flushQueuedUpdates() {
         this.isFlushQueued = false;
 
-        // We batch request updates until here. This runs in a mobx transaction, and
+        // We batch request updates until here. This runs in a mobx transaction and
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
+
+        // Sometimes we receive events out of order (response/abort before request).
+        // That could be from this batch, or from a previous batch. When that happens,
+        // we keep them separately, and we check later whether they're valid yet.
+        // If so, we push them back onto the normal queue and handle them as normal.
+        this.orphanedEventQueue = this.orphanedEventQueue.filter((orphan) => {
+            if (_.find(this.exchanges, { id: orphan.event.id })) {
+                // The parent request has arrived! Handle this response/abort now too.
+                this.eventQueue.push(orphan);
+                return false;
+            } else {
+                // Still orphaned.
+                return true;
+            }
+        }).filter((orphan): orphan is OrphanableQueuedEvent => orphan !== null);
 
         this.eventQueue.forEach((queuedEvent) => {
             switch (queuedEvent.type) {
@@ -334,8 +354,11 @@ export class InterceptionStore {
         try {
             const exchange = _.find(this.exchanges, { id: request.id });
 
-            // Should only happen in rare cases - e.g. paused for req, unpaused before res
-            if (!exchange) return;
+            if (!exchange) {
+                // Handle this later, once the request has arrived
+                this.orphanedEventQueue.push({ type: 'abort', event: request });
+                return;
+            };
 
             exchange.markAborted(request);
         } catch (e) {
@@ -348,9 +371,9 @@ export class InterceptionStore {
         try {
             const exchange = _.find(this.exchanges, { id: response.id });
 
-            // Should only happen in rare cases - e.g. paused for req, unpaused before res
             if (!exchange) {
-                reportError('Response event received for missing request');
+                // Handle this later, once the request has arrived
+                this.orphanedEventQueue.push({ type: 'response', event: response });
                 return;
             }
 
