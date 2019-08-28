@@ -1,12 +1,18 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { computed } from 'mobx';
-import { observer, inject } from 'mobx-react';
-import { Router, RouteComponentProps, Redirect, Location } from '@reach/router';
+import { observer, inject, disposeOnUnmount } from 'mobx-react';
+import {
+    Router,
+    RouteComponentProps,
+    Redirect,
+    LocationProvider
+} from '@reach/router';
 
 import { styled } from '../styles';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
+import { throttlesafeHistory } from '../routing';
 import { AccountStore } from '../model/account/account-store';
 
 import { Sidebar, SidebarItem } from './sidebar';
@@ -119,6 +125,10 @@ class App extends React.Component<{ accountStore: AccountStore }> {
         ] as SidebarItem[];
     }
 
+    componentDidMount() {
+        disposeOnUnmount(this, () => throttlesafeHistory.listen(() => trackPage()));
+    }
+
     render() {
         const {
             modal,
@@ -128,7 +138,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             logOut
         } = this.props.accountStore;
 
-        return <>
+        return <LocationProvider history={throttlesafeHistory}>
             <AppContainer
                 aria-hidden={!!modal}
                 inert={!!modal}
@@ -138,11 +148,6 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 )}
             >
                 <Sidebar items={this.menuItems} />
-
-                <Location>{() => {
-                    trackPage();
-                    return null;
-                }}</Location>
 
                 <Router>
                     <Redirect noThrow from="/" to={'/intercept'} />
@@ -169,7 +174,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             }
 
             { modal === 'post-checkout' && <Spinner /> }
-        </>;
+        </LocationProvider>;
     }
 }
 
