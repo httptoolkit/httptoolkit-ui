@@ -52,4 +52,17 @@ export class UiStore {
             return Themes[this.themeName];
         }
     }
+
+    // Store the view exchange details cards state here, so that it persists
+    // when moving away from the page or deselecting all exchanges.
+    @observable
+    readonly viewExchangeCardStates = {
+        'request': { collapsed: false },
+        'requestBody': { collapsed: false },
+        'response': { collapsed: false },
+        'responseBody': { collapsed: false },
+
+        'performance': { collapsed: true },
+        'export': { collapsed: true }
+    };
 }

@@ -1,18 +1,18 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
-import { action, observable } from 'mobx';
+import { action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { HtkResponse, Omit } from '../../types';
+import { HtkResponse } from '../../types';
 import { styled } from '../../styles';
 import { getStatusColor } from '../../model/exchange-colors';
 import { HttpExchange } from '../../model/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { Pill } from '../common/pill';
-import { ExchangeCard, ExchangeCardProps } from './exchange-card';
+import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeResponseCard } from './exchange-response-card';
@@ -48,6 +48,17 @@ const CardDivider = styled.div`
     margin-top: auto;
 `;
 
+const cardKeys = [
+    'request',
+    'requestBody',
+    'response',
+    'responseBody',
+    'performance',
+    'export'
+] as const;
+
+type CardKey = typeof cardKeys[number];
+
 @inject('uiStore')
 @inject('accountStore')
 @observer
@@ -60,20 +71,14 @@ export class ExchangeDetailsPane extends React.Component<{
     responseEditor: portals.PortalNode
 }> {
 
-    @observable
-    private cardProps = _.mapValues<{}, Omit<ExchangeCardProps, 'children'>>({
-        'request': {},
-        'requestBody': {},
-        'response': {},
-        'responseBody': {},
-
-        'performance': { collapsed: true },
-        'export': { collapsed: true }
-    }, (_value: { collapsed?: boolean }, key) => ({
-        key: key,
-        collapsed: _value.collapsed || false,
-        onCollapseToggled: this.toggleCollapse.bind(this, key)
-    }));
+    @computed
+    get cardProps() {
+        return _.fromPairs(cardKeys.map((key) => [key, {
+            key,
+            collapsed: this.props.uiStore!.viewExchangeCardStates[key].collapsed,
+            onCollapseToggled: this.toggleCollapse.bind(this, key)
+        }]));
+    }
 
     render() {
         const { exchange, uiStore, accountStore } = this.props;
@@ -153,9 +158,10 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     @action.bound
-    private toggleCollapse(key: string) {
-        const cardProps = this.cardProps[key];
-        cardProps.collapsed = !cardProps.collapsed;
+    private toggleCollapse(key: CardKey) {
+        const { viewExchangeCardStates } = this.props.uiStore!;
+        const cardState = viewExchangeCardStates[key];
+        cardState.collapsed = !cardState.collapsed;
     }
 
 };
