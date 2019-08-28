@@ -227,7 +227,7 @@ export function uploadFile(
 
     fileInput.click();
 
-    return new Promise((resolve, reject) => {
+    const fileContents = new Promise<ArrayBuffer | string | null>((resolve, reject) => {
         fileReader.addEventListener('load', () => {
             resolve(fileReader.result);
         });
@@ -236,4 +236,14 @@ export function uploadFile(
             reject(error);
         });
     });
+
+    // Hack to avoid unexpected GC of file inputs, so far as possible.
+    // See similar issue at https://stackoverflow.com/questions/52103269.
+    // Can't use answer there, as we can't reliably detect 'cancel'.
+    // Hold a reference until we get the data or 10 minutes passes (for cancel)
+    Promise.race([fileContents, delay(1000 * 60 * 10)])
+        .catch(() => {})
+        .then(() => fileInput.remove());
+
+    return fileContents;
 }
