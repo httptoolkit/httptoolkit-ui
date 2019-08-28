@@ -53,6 +53,30 @@ export function isValidPortConfiguration(portConfig: PortRange | undefined) {
     );
 }
 
+// Would be nice to magically infer this from the overloaded on() type, but sadly:
+// https://github.com/Microsoft/TypeScript/issues/24275#issuecomment-390701982
+type EventTypesMap = {
+    'request-initiated': InputInitiatedRequest
+    'request': InputCompletedRequest
+    'response': InputResponse
+    'abort': InputInitiatedRequest
+    'tlsClientError': InputTlsRequest
+};
+
+const eventTypes = [
+    'request-initiated',
+    'request',
+    'response',
+    'abort',
+    'tlsClientError'
+] as const;
+
+type EventType = typeof eventTypes[number];
+
+type QueuedEvent = ({
+    [T in EventType]: { type: T, event: EventTypesMap[T] }
+}[EventType]);
+
 export class InterceptionStore {
 
     // ** Overall setup & startup:
@@ -118,55 +142,13 @@ export class InterceptionStore {
 
         console.log(`Server started on port ${this.server.port}`);
 
-        this.server.on('request-initiated', (req) => {
-            if (this.isPaused) return;
-
-            if (!this.isFlushQueued) {
-                this.isFlushQueued = true;
-                requestAnimationFrame(this.flushQueuedUpdates);
-            }
-
-            this.requestInitiatedQueue.push(req);
-        });
-        this.server.on('request', (req) => {
-            if (this.isPaused) return;
-
-            if (!this.isFlushQueued) {
-                this.isFlushQueued = true;
-                requestAnimationFrame(this.flushQueuedUpdates);
-            }
-
-            this.requestCompletedQueue.push(req);
-        });
-        this.server.on('response', (res) => {
-            if (this.isPaused) return;
-
-            if (!this.isFlushQueued) {
-                this.isFlushQueued = true;
-                requestAnimationFrame(this.flushQueuedUpdates);
-            }
-
-            this.responseQueue.push(res);
-        });
-        this.server.on('abort', (req) => {
-            if (this.isPaused) return;
-
-            if (!this.isFlushQueued) {
-                this.isFlushQueued = true;
-                requestAnimationFrame(this.flushQueuedUpdates);
-            }
-
-            this.abortQueue.push(req);
-        });
-        this.server.on('tlsClientError', (req: InputTlsRequest) => {
-            if (this.isPaused) return;
-
-            if (!this.isFlushQueued) {
-                this.isFlushQueued = true;
-                requestAnimationFrame(this.flushQueuedUpdates);
-            }
-
-            this.tlsErrorQueue.push(req);
+        eventTypes.forEach(<T extends EventType>(eventName: T) => {
+            // Lots of 'any' because TS can't handle overload + type interception
+            this.server.on(eventName as any, ((eventData: EventTypesMap[T]) => {
+                if (this.isPaused) return;
+                this.eventQueue.push({ type: eventName, event: eventData } as any);
+                this.queueEventFlush();
+            }) as any);
         });
 
         window.addEventListener('beforeunload', () => {
@@ -254,13 +236,15 @@ export class InterceptionStore {
     @observable
     isPaused = false;
 
-    // TODO: Combine into a batchedEvent queue of callbacks
-    private requestInitiatedQueue: InputInitiatedRequest[] = [];
-    private requestCompletedQueue: InputCompletedRequest[] = [];
-    private responseQueue: InputResponse[] = [];
-    private abortQueue: InputInitiatedRequest[] = [];
-    private tlsErrorQueue: InputTlsRequest[] = [];
+    private eventQueue: QueuedEvent[] = [];
+
     private isFlushQueued = false;
+    private queueEventFlush() {
+        if (!this.isFlushQueued) {
+            this.isFlushQueued = true;
+            requestAnimationFrame(this.flushQueuedUpdates);
+        }
+    }
 
     readonly events = observable.array<HttpExchange | FailedTlsRequest>([], { deep: false });
 
@@ -288,20 +272,21 @@ export class InterceptionStore {
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
 
-        this.requestInitiatedQueue.forEach((req) => this.addInitiatedRequest(req));
-        this.requestInitiatedQueue = [];
-
-        this.requestCompletedQueue.forEach((req) => this.addCompletedRequest(req));
-        this.requestCompletedQueue = [];
-
-        this.responseQueue.forEach((res) => this.setResponse(res));
-        this.responseQueue = [];
-
-        this.abortQueue.forEach((req) => this.markRequestAborted(req));
-        this.abortQueue = [];
-
-        this.tlsErrorQueue.forEach((req) => this.addFailedTlsRequest(req));
-        this.tlsErrorQueue = [];
+        this.eventQueue.forEach((queuedEvent) => {
+            switch (queuedEvent.type) {
+                case 'request-initiated':
+                    return this.addInitiatedRequest(queuedEvent.event);
+                case 'request':
+                    return this.addCompletedRequest(queuedEvent.event);
+                case 'response':
+                    return this.setResponse(queuedEvent.event);
+                case 'abort':
+                    return this.markRequestAborted(queuedEvent.event);
+                case 'tlsClientError':
+                    return this.addFailedTlsRequest(queuedEvent.event);
+            }
+        });
+        this.eventQueue = [];
     }
 
     @action.bound
@@ -413,14 +398,11 @@ export class InterceptionStore {
 
         // Arguably we could call addRequest/setResponse directly, but this is a little
         // nicer just in case the UI thread is already under strain.
-        requests.forEach(r => this.requestCompletedQueue.push(r));
-        responses.forEach(r => this.responseQueue.push(r));
-        aborts.forEach(r => this.abortQueue.push(r));
+        requests.forEach(r => this.eventQueue.push({ type: 'request', event: r }));
+        responses.forEach(r => this.eventQueue.push({ type: 'response', event: r }));
+        aborts.forEach(r => this.eventQueue.push({ type: 'abort', event: r }));
 
-        if (!this.isFlushQueued) {
-            this.isFlushQueued = true;
-            requestAnimationFrame(this.flushQueuedUpdates);
-        }
+        this.queueEventFlush();
     }
 
 }
