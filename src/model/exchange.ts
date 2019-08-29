@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { observable } from 'mobx';
+import { observable, computed } from 'mobx';
 
 import {
     HtkRequest,
@@ -17,7 +17,9 @@ import {
     ObservablePromise,
     fakeBuffer,
     FakeBuffer,
-    asHeaderArray
+    asHeaderArray,
+    getDeferred,
+    Deferred
 } from '../util';
 
 import { parseSource } from './sources';
@@ -152,6 +154,19 @@ export class HttpExchange {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
         Object.assign(this.timingEvents, request.timingEvents);
+
+        if (this.requestBreakpointDeferred) {
+            this.requestBreakpointDeferred.reject(
+                new Error('Request aborted whilst breakpointed at request')
+            );
+            this.requestBreakpointDeferred = undefined;
+        }
+        if (this.responseBreakpointDeferred) {
+            this.responseBreakpointDeferred.reject(
+                new Error('Request aborted whilst breakpointed at response')
+            );
+            this.responseBreakpointDeferred = undefined;
+        }
     }
 
     setResponse(response: InputResponse) {
@@ -196,6 +211,37 @@ export class HttpExchange {
         if (this._apiPromise.state === 'fulfilled') {
             return this._apiPromise.value as ApiExchange | undefined;
         }
+    }
+
+    @observable.ref
+    private requestBreakpointDeferred: Deferred<{}> | undefined;
+
+    @observable.ref
+    private responseBreakpointDeferred: Deferred<{}> | undefined;
+
+    @computed
+    get isBreakpointed() {
+        return this.isRequestBreakpointed || this.isResponseBreakpointed;
+    }
+
+    @computed
+    get isRequestBreakpointed() {
+        return !!this.requestBreakpointDeferred;
+    }
+
+    @computed
+    get isResponseBreakpointed() {
+        return !!this.responseBreakpointDeferred;
+    }
+
+    triggerRequestBreakpoint() {
+        this.requestBreakpointDeferred = getDeferred();
+        return this.requestBreakpointDeferred.promise;
+    }
+
+    triggerResponseBreakpoint() {
+        this.responseBreakpointDeferred = getDeferred();
+        return this.responseBreakpointDeferred.promise;
     }
 
 }

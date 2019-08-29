@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, observable, reaction, autorun, observe, runInAction } from 'mobx';
-import { observer, disposeOnUnmount } from 'mobx-react';
+import { action, observable, reaction, autorun, observe, runInAction, when, flow } from 'mobx';
+import { observer, disposeOnUnmount, inject } from 'mobx-react';
+import { Location } from '@reach/router';
 
 import { Headers } from '../../types';
 import { styled } from '../../styles';
@@ -18,6 +19,8 @@ import {
 } from '../../model/rules/rule-definitions';
 import { getStatusMessage, HEADER_NAME_PATTERN, HEADER_NAME_REGEX } from '../../model/http-docs';
 import { getHTKContentType, getDefaultMimeType } from '../../model/content-types';
+import { InterceptionStore } from '../../model/interception-store';
+import { HttpExchange } from '../../model/exchange';
 
 import { clickOnEnter } from '../component-utils';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
@@ -29,7 +32,10 @@ type HandlerConfigProps<H extends Handler> = {
     onInvalidState: () => void;
 };
 
-abstract class HandlerConfig<H extends Handler> extends React.Component<HandlerConfigProps<H>> { }
+abstract class HandlerConfig<
+    H extends Handler,
+    P extends {} = {}
+> extends React.Component<HandlerConfigProps<H> & P> { }
 
 const ConfigContainer = styled.div`
     margin-bottom: 5px;
@@ -64,7 +70,9 @@ export function HandlerConfiguration(props: {
     } else if (handler instanceof PassThroughHandler) {
         return <PassThroughHandlerConfig {...configProps} />;
     } else if (handler instanceof BreakpointHandler) {
-        return <BreakpointHandlerConfig {...configProps} />;
+        return <Location>{({ navigate }) =>
+            <BreakpointHandlerConfig navigate={navigate} {...configProps} />
+        }</Location>;
     }
 
     throw new Error('Unknown handler: ' + handler.type);
@@ -488,8 +496,12 @@ const BreakpointToggle = styled.input.attrs({
 const BreakpointLabel = styled.label`
 `;
 
+@inject('interceptionStore')
 @observer
-class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler> {
+class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
+    navigate: (url: string) => void,
+    interceptionStore?: InterceptionStore
+}> {
 
     requestToggleId = _.uniqueId();
     responseToggleId = _.uniqueId();
@@ -551,6 +563,36 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler> {
         </ConfigContainer>;
     }
 
+    private breakpointExchange = flow(function * (
+        this: BreakpointHandlerConfig,
+        type: 'request' | 'response',
+        eventId: string
+    ) {
+        let exchange: HttpExchange | undefined;
+
+        // Wait until the event itself has arrived in the UI:
+        yield when(() => {
+            exchange = _.find(this.props.interceptionStore!.exchanges, { id: eventId });
+            return !!exchange;
+        });
+
+        // Jump to the exchange:
+        this.props.navigate(`/view/${eventId}`);
+
+        // Mark the exchange as breakpointed
+        // UI will make it editable, add a save button, save will resolve this promise
+        const editedExchange = yield (
+            type === 'request'
+                ? exchange!.triggerRequestBreakpoint()
+                : exchange!.triggerResponseBreakpoint()
+        );
+
+        return editedExchange;
+    });
+
+    private breakpointRequest = (request: { id: string }) => this.breakpointExchange('request', request.id);
+    private breakpointResponse = (response: { id: string }) => this.breakpointExchange('response', response.id)
+
     @action.bound
     onChange(changeEvent: React.ChangeEvent<HTMLInputElement>) {
         if (changeEvent.target.id === this.requestToggleId) {
@@ -559,17 +601,9 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler> {
             this.responseBreakpointEnabled = !this.responseBreakpointEnabled;
         }
 
-        const fakeCb = (r: any) => {
-            console.log(r);
-            return {
-                statusCode: 418,
-                headers: Object.assign({}, r.headers, { 'x-breakpoint': 'true' })
-            };
-        };
-
         this.props.onChange(new BreakpointHandler({
-            beforeRequest: this.requestBreakpointEnabled ? fakeCb : undefined,
-            beforeResponse: this.responseBreakpointEnabled ? fakeCb : undefined
+            beforeRequest: this.requestBreakpointEnabled ? this.breakpointRequest : undefined,
+            beforeResponse: this.responseBreakpointEnabled ? this.breakpointResponse : undefined
         }));
     }
 }

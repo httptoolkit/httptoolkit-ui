@@ -8,7 +8,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
-import { FontAwesomeIcon } from '../../icons';
+import { FontAwesomeIcon, WarningIcon } from '../../icons';
 import { FailedTlsRequest } from '../../types';
 
 import { HttpExchange } from '../../model/exchange';
@@ -238,7 +238,7 @@ const ExchangeRow = observer(({
     index,
     isSelected,
     style,
-    exchange: { id, category, request, response }
+    exchange: { id, category, isBreakpointed, request, response }
 }: {
     index: number,
     isSelected: boolean,
@@ -258,13 +258,16 @@ const ExchangeRow = observer(({
         <RowMarker category={category} />
         <Method>{ request.method }</Method>
         <Status>
-            { response === 'aborted'
-                ? <StatusCode
-                    status={'aborted'}
-                /> : <StatusCode
+            {
+                response === 'aborted'
+                    ? <StatusCode status={'aborted'} />
+                : isBreakpointed
+                    ? <WarningIcon title='Breakpointed, waiting to be resumed' />
+                : <StatusCode
                     status={get(response, 'statusCode')}
                     message={get(response, 'statusMessage')}
-                /> }
+                />
+            }
         </Status>
         <Source>
             <FontAwesomeIcon

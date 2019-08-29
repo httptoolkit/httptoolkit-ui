@@ -23,15 +23,17 @@ export function attempt<T>(fn: () => T): Promise<T> {
     }
 }
 
-export function getDeferred(): {
-    resolve: () => void,
-    reject: () => void,
-    promise: Promise<void>
-} {
-    let resolve: undefined | (() => void) = undefined;
-    let reject: undefined | (() => void) = undefined;
+export interface Deferred<T> {
+    resolve: (arg: T) => void,
+    reject: (e?: Error) => void,
+    promise: Promise<T>
+}
 
-    let promise = new Promise((resolveCb, rejectCb) => {
+export function getDeferred<T = void>(): Deferred<T> {
+    let resolve: undefined | ((arg: T) => void) = undefined;
+    let reject: undefined | ((e?: Error) => void) = undefined;
+
+    let promise = new Promise<T>((resolveCb, rejectCb) => {
         resolve = resolveCb;
         reject = rejectCb;
     });
