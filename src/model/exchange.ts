@@ -106,6 +106,16 @@ export class ExchangeBody implements MessageBody {
     }
 }
 
+export type CompletedRequest = Omit<HttpExchange, 'request'> & {
+    matchedRuleId: string
+};
+export type CompletedExchange = Omit<HttpExchange, 'response'> & {
+    response: HtkResponse | 'aborted'
+};
+export type SuccessfulExchange = Omit<HttpExchange, 'response'> & {
+    response: HtkResponse
+};
+
 export class HttpExchange {
 
     constructor(request: InputRequest) {
@@ -113,6 +123,7 @@ export class HttpExchange {
         this.timingEvents = request.timingEvents;
 
         this.id = this.request.id;
+        this.matchedRuleId = this.request.matchedRuleId;
         this.searchIndex = [
                 this.request.parsedUrl.protocol + '//' +
                 this.request.parsedUrl.hostname +
@@ -135,8 +146,21 @@ export class HttpExchange {
     // Keyed by symbols only, so we know we never have conflicts.
     public cache = observable.map(new Map<symbol, unknown>(), { deep: false });
 
-    public readonly request: HtkRequest
+    public readonly request: HtkRequest;
     public readonly id: string;
+    public readonly matchedRuleId: string | undefined; // Undefined initially, defined for completed requests
+
+    isCompletedRequest(): this is CompletedRequest {
+        return !!this.matchedRuleId;
+    }
+
+    isCompletedExchange(): this is CompletedExchange {
+        return !!this.response;
+    }
+
+    isSuccessfulExchange(): this is SuccessfulExchange {
+        return this.isCompletedExchange() && this.response !== 'aborted';
+    }
 
     @observable
     public readonly timingEvents: TimingEvents | {};  // May be {} if using an old server (<0.1.7)

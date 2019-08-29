@@ -1,24 +1,14 @@
 import * as _ from 'lodash';
 
-import { Omit, InputMessage, InputResponse } from '../types';
+import { ExchangeMessage } from '../types';
 import { getBaseContentType } from './content-types';
 import { Theme } from '../styles';
-import { HttpExchange } from './exchange';
+import { HttpExchange, SuccessfulExchange } from './exchange';
 
-type MinimalExchange = Pick<HttpExchange, 'request' | 'response'>;
-type CompletedExchange = Required<MinimalExchange>;
-type SuccessfulExchange = Omit<CompletedExchange, 'response'> & { response: InputResponse };
+export const getRequestBaseContentType = (message: ExchangeMessage) =>
+    getBaseContentType(message.headers['content-type']);
 
-export const getRequestBaseContentType = (requestOrResponse: InputMessage) =>
-    getBaseContentType(requestOrResponse.headers['content-type']);
-
-const isCompletedExchange = (exchange: MinimalExchange): exchange is CompletedExchange =>
-    !!exchange.response;
-
-const isSuccessfulExchange = (exchange: any): exchange is SuccessfulExchange =>
-    isCompletedExchange(exchange) && exchange.response !== 'aborted';
-
-const isMutatativeExchange = (exchange: MinimalExchange) => _.includes([
+const isMutatativeExchange = (exchange: HttpExchange) => _.includes([
     'POST',
     'PATCH',
     'PUT',
@@ -69,14 +59,14 @@ const isFontExchange = (exchange: SuccessfulExchange) =>
         'application/x-font-opentype',
     ], getRequestBaseContentType(exchange.response));
 
-export function getExchangeCategory(exchange: MinimalExchange) {
-    if (!isCompletedExchange(exchange)) {
+export function getExchangeCategory(exchange: HttpExchange) {
+    if (!exchange.isCompletedExchange()) {
         if (isMutatativeExchange(exchange)) {
             return 'mutative'; // red
         } else {
             return 'incomplete';
         }
-    } else if (!isSuccessfulExchange(exchange)) {
+    } else if (!exchange.isSuccessfulExchange()) {
         return 'aborted';
     } else if (isMutatativeExchange(exchange)) {
         return 'mutative';
