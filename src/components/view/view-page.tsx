@@ -14,6 +14,7 @@ import { EmptyState } from '../common/empty-state';
 
 import { ViewEventList, CollectedEvent } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
+import { ExchangeBreakpointPane } from './exchange-breakpoint-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ContentEditor } from '../editor/content-editor';
 
@@ -63,6 +64,12 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <EmptyState icon={['fas', 'arrow-left']}>
                 Select an exchange to see the full details.
             </EmptyState>;
+        } else if ('isBreakpointed' in this.selectedEvent && this.selectedEvent.isBreakpointed) {
+            rightPane = <ExchangeBreakpointPane
+                exchange={this.selectedEvent}
+                requestEditor={this.requestEditor}
+                responseEditor={this.responseEditor}
+            />
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}

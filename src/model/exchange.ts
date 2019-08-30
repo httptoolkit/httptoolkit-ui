@@ -10,7 +10,11 @@ import {
     InputRequest,
     InputResponse,
     TimingEvents,
-    InputMessage
+    InputMessage,
+    MockttpBreakpointedResponse,
+    MockttpBreakpointRequestResult,
+    MockttpBreakpointedRequest,
+    MockttpBreakpointResponseResult
 } from "../types";
 import {
     lazyObservablePromise,
@@ -179,17 +183,17 @@ export class HttpExchange {
         this.searchIndex += '\naborted';
         Object.assign(this.timingEvents, request.timingEvents);
 
-        if (this.requestBreakpointDeferred) {
-            this.requestBreakpointDeferred.reject(
+        if (this.requestBreakpoint) {
+            this.requestBreakpoint.deferred.reject(
                 new Error('Request aborted whilst breakpointed at request')
             );
-            this.requestBreakpointDeferred = undefined;
+            this.requestBreakpoint = undefined;
         }
-        if (this.responseBreakpointDeferred) {
-            this.responseBreakpointDeferred.reject(
+        if (this.responseBreakpoint) {
+            this.responseBreakpoint.deferred.reject(
                 new Error('Request aborted whilst breakpointed at response')
             );
-            this.responseBreakpointDeferred = undefined;
+            this.responseBreakpoint = undefined;
         }
     }
 
@@ -215,6 +219,8 @@ export class HttpExchange {
         );
     }
 
+    // API metadata:
+
     // A convenient reference to the service-wide spec for this API - starts loading immediately
     private _apiMetadataPromise: Promise<ApiMetadata> | undefined;
 
@@ -237,11 +243,20 @@ export class HttpExchange {
         }
     }
 
-    @observable.ref
-    private requestBreakpointDeferred: Deferred<{}> | undefined;
+    // Breakpoint data:
 
-    @observable.ref
-    private responseBreakpointDeferred: Deferred<{}> | undefined;
+    @observable.shallow
+    requestBreakpoint?: {
+        readonly deferred: Deferred<MockttpBreakpointRequestResult>;
+        inProgressResult: MockttpBreakpointRequestResult;
+    };
+
+    @observable.shallow
+    responseBreakpoint?: {
+        readonly deferred: Deferred<MockttpBreakpointRequestResult>;
+        readonly responseData: MockttpBreakpointedResponse;
+        inProgressResult: MockttpBreakpointResponseResult;
+    };
 
     @computed
     get isBreakpointed() {
@@ -250,22 +265,39 @@ export class HttpExchange {
 
     @computed
     get isRequestBreakpointed() {
-        return !!this.requestBreakpointDeferred;
+        return !!this.requestBreakpoint;
     }
 
     @computed
     get isResponseBreakpointed() {
-        return !!this.responseBreakpointDeferred;
+        return !!this.responseBreakpoint;
     }
 
-    triggerRequestBreakpoint() {
-        this.requestBreakpointDeferred = getDeferred();
-        return this.requestBreakpointDeferred.promise;
+    triggerRequestBreakpoint(request: MockttpBreakpointedRequest) {
+        this.requestBreakpoint = {
+            deferred: getDeferred(),
+            inProgressResult: {
+                method: request.method,
+                url: request.url,
+                headers: request.headers
+            }
+        };
+
+        return this.requestBreakpoint.deferred.promise;
     }
 
-    triggerResponseBreakpoint() {
-        this.responseBreakpointDeferred = getDeferred();
-        return this.responseBreakpointDeferred.promise;
+    triggerResponseBreakpoint(response: MockttpBreakpointedResponse) {
+        this.responseBreakpoint = {
+            deferred: getDeferred(),
+            inProgressResult: {
+                statusCode: response.statusCode,
+                statusMessage: response.statusMessage,
+                headers: response.headers
+            },
+            responseData: response
+        };
+
+        return this.responseBreakpoint.deferred.promise;
     }
 
 }

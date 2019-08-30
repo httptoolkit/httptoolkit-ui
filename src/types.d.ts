@@ -6,8 +6,9 @@ import {
     CompletedRequest as MockttpCompletedRequest,
     CompletedResponse as MockttpResponse
 } from 'mockttp';
-import { Headers, TimingEvents, TlsRequest } from 'mockttp/dist/types';
+import { Headers, RequestHeaders, TimingEvents, TlsRequest } from 'mockttp/dist/types';
 import { PortRange } from 'mockttp/dist/mockttp';
+import { PassThroughResponse, CallbackRequestResult, CallbackResponseResult } from 'mockttp/dist/rules/handlers';
 
 import { TrafficSource } from './model/sources';
 import { HtkContentType } from './model/content-types';
@@ -25,6 +26,13 @@ export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
+
+export {
+    MockttpCompletedRequest as MockttpBreakpointedRequest,
+    PassThroughResponse as MockttpBreakpointedResponse,
+    CallbackRequestResult as MockttpBreakpointRequestResult,
+    CallbackResponseResult as MockttpBreakpointResponseResult,
+};
 
 export type FailedTlsRequest = InputTlsRequest & {
     id: string;
@@ -55,6 +63,7 @@ export type ExchangeMessage = HtkRequest | HtkResponse;
 
 export {
     Headers,
+    RequestHeaders,
     PortRange,
     TimingEvents
 };

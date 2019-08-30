@@ -4,7 +4,7 @@ import { action, observable, reaction, autorun, observe, runInAction, when, flow
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import { Location } from '@reach/router';
 
-import { Headers } from '../../types';
+import { Headers, MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
 import { styled } from '../../styles';
 
 import {
@@ -16,14 +16,14 @@ import {
     PassThroughHandler,
     BreakpointHandler
 } from '../../model/rules/rule-definitions';
-import { getStatusMessage, HEADER_NAME_PATTERN, HEADER_NAME_REGEX } from '../../model/http-docs';
+import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http-docs';
 import { getHTKContentType, getDefaultMimeType } from '../../model/content-types';
 import { InterceptionStore } from '../../model/interception-store';
 import { HttpExchange } from '../../model/exchange';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
-import { EditableHeaders, HeadersArray } from '../common/editable-headers';
+import { EditableHeaders, HeadersArray, headersToHeadersArray } from '../common/editable-headers';
 
 
 type HandlerConfigProps<H extends Handler> = {
@@ -182,16 +182,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
     // Headers, as an array of [k, v], with multiple values flattened.
     @observable
-    headers = Object.entries(this.props.handler.headers || {}).reduce(
-        (acc: Array<[string, string]>, [key, value]) => {
-            if (_.isArray(value)) {
-                acc = acc.concat(value.map(v => [key, v]))
-            } else {
-                acc.push([key, value || '']);
-            }
-            return acc;
-        }, []
-    );
+    headers = headersToHeadersArray(this.props.handler.headers || {});
 
     @observable
     bodyLanguage: EditorContentType = 'text';
@@ -501,35 +492,38 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
         </ConfigContainer>;
     }
 
-    private breakpointExchange = flow(function * (
+    private breakpointOnExchange = flow(function * <T>(
         this: BreakpointHandlerConfig,
-        type: 'request' | 'response',
-        eventId: string
+        eventId: string,
+        getEditedEvent: (exchange: HttpExchange) => Promise<T>
     ) {
         let exchange: HttpExchange | undefined;
 
         // Wait until the event itself has arrived in the UI:
         yield when(() => {
             exchange = _.find(this.props.interceptionStore!.exchanges, { id: eventId });
-            return !!exchange;
+
+            // Completed -> doesn't fire for initial requests -> no completed/initial req race
+            return !!exchange && exchange.isCompletedRequest();
         });
 
         // Jump to the exchange:
         this.props.navigate(`/view/${eventId}`);
 
-        // Mark the exchange as breakpointed
+        // Mark the exchange as breakpointed, and wait for an edited version.
         // UI will make it editable, add a save button, save will resolve this promise
-        const editedExchange = yield (
-            type === 'request'
-                ? exchange!.triggerRequestBreakpoint()
-                : exchange!.triggerResponseBreakpoint()
-        );
-
-        return editedExchange;
+        return yield getEditedEvent(exchange!);
     });
 
-    private breakpointRequest = (request: { id: string }) => this.breakpointExchange('request', request.id);
-    private breakpointResponse = (response: { id: string }) => this.breakpointExchange('response', response.id)
+    private breakpointRequest = (request: MockttpBreakpointedRequest) => this.breakpointOnExchange(
+        request.id,
+        (exchange: HttpExchange) => exchange.triggerRequestBreakpoint(request)
+    );
+
+    private breakpointResponse = (response: MockttpBreakpointedResponse) => this.breakpointOnExchange(
+        response.id,
+        (exchange: HttpExchange) => exchange.triggerResponseBreakpoint(response)
+    );
 
     @action.bound
     onChange(changeEvent: React.ChangeEvent<HTMLInputElement>) {

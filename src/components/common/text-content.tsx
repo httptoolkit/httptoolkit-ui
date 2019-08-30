@@ -19,10 +19,11 @@ export const ContentValue = styled.div`
 `;
 
 export const ContentLabelBlock = styled(ContentLabel)`
-    padding: 3px 0 11px;
+    padding: 3px 0 0;
+    margin-bottom: 5px;
+    min-height: 26px;
     display: block;
     box-sizing: border-box;
-    min-height: 31px;
 `;
 
 export const ContentMonoValue = styled.div`

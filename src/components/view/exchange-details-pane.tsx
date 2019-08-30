@@ -64,11 +64,13 @@ type CardKey = typeof cardKeys[number];
 @observer
 export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange,
+
+    requestEditor: portals.PortalNode,
+    responseEditor: portals.PortalNode,
+
     // Injected:
     uiStore?: UiStore,
-    accountStore?: AccountStore,
-    requestEditor: portals.PortalNode,
-    responseEditor: portals.PortalNode
+    accountStore?: AccountStore
 }> {
 
     @computed

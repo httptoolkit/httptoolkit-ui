@@ -1,16 +1,29 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { action } from 'mobx';
 import { observer } from 'mobx-react';
 
+import { Headers } from '../../types';
 import { styled } from '../../styles';
 import { HEADER_NAME_PATTERN } from '../../model/http-docs';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, TextInput } from './inputs';
 import { FontAwesomeIcon } from '../../icons';
-import { action } from 'mobx';
 
 export type HeadersArray = Array<[string, string]>;
+
+export const headersToHeadersArray = (headers: Headers) =>
+    Object.entries(headers || {}).reduce(
+        (acc: Array<[string, string]>, [key, value]) => {
+            if (_.isArray(value)) {
+                acc = acc.concat(value.map(v => [key, v]))
+            } else {
+                acc.push([key, value || '']);
+            }
+            return acc;
+        }, []
+    );
 
 interface EditableHeadersProps {
     headers: HeadersArray;

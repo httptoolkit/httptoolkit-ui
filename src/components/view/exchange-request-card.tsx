@@ -241,7 +241,7 @@ const ApiRequestDetails = (props: {
 
 interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
-    apiExchange: ApiExchange | undefined
+    apiExchange?: ApiExchange
 }
 
 export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) => {
