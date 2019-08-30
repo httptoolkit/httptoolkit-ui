@@ -6,7 +6,6 @@ import { Location } from '@reach/router';
 
 import { Headers } from '../../types';
 import { styled } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
 
 import {
     Handler
@@ -22,9 +21,10 @@ import { getHTKContentType, getDefaultMimeType } from '../../model/content-types
 import { InterceptionStore } from '../../model/interception-store';
 import { HttpExchange } from '../../model/exchange';
 
-import { clickOnEnter } from '../component-utils';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
+import { EditableHeaders, HeadersArray } from '../common/editable-headers';
+
 
 type HandlerConfigProps<H extends Handler> = {
     handler: H;
@@ -268,48 +268,10 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             </StatusContainer>
 
             <SectionLabel>Headers</SectionLabel>
-            <HeadersContainer>
-                { _.flatMap(headers, ([key, value], i) => [
-                    <TextInput
-                        value={key}
-                        required
-                        pattern={HEADER_NAME_PATTERN}
-                        spellCheck={false}
-                        key={`${i}-key`}
-                        onChange={(e) => this.updateHeaderName(i, e)}
-                    />,
-                    <TextInput
-                        value={value}
-                        invalid={!value}
-                        spellCheck={false}
-                        key={`${i}-val`}
-                        onChange={(e) => this.updateHeaderValue(i, e)}
-                    />,
-                    <HeaderDeleteButton
-                        key={`${i}-del`}
-                        onClick={() => this.deleteHeader(i)}
-                        onKeyPress={clickOnEnter}
-                    >
-                        <FontAwesomeIcon icon={['far', 'trash-alt']} />
-                    </HeaderDeleteButton>
-                ]).concat([
-                    <TextInput
-                        value=''
-                        pattern={HEADER_NAME_PATTERN}
-                        placeholder='Header name'
-                        spellCheck={false}
-                        key={`${headers.length}-key`}
-                        onChange={this.addHeaderByName}
-                    />,
-                    <TextInput
-                        value=''
-                        placeholder='Header value'
-                        spellCheck={false}
-                        key={`${headers.length}-val`}
-                        onChange={this.addHeaderByValue}
-                    />
-                ]) }
-            </HeadersContainer>
+            <EditableHeaders
+                headers={this.headers}
+                onChange={this.onHeadersChanged}
+            />
 
             <BodyHeader>
                 <SectionLabel>Response body</SectionLabel>
@@ -352,32 +314,8 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     }
 
     @action.bound
-    addHeaderByName(event: React.ChangeEvent<HTMLInputElement>) {
-        const name = event.target.value;
-        this.headers.push([name, '']);
-    }
-
-    @action.bound
-    addHeaderByValue(event: React.ChangeEvent<HTMLInputElement>) {
-        const value = event.target.value;
-        this.headers.push(['', value]);
-    }
-
-    @action.bound
-    updateHeaderName(index: number, event: React.ChangeEvent<HTMLInputElement>) {
-        const name = event.target.value;
-        this.headers[index][0] = name;
-    }
-
-    @action.bound
-    updateHeaderValue(index: number, event: React.ChangeEvent<HTMLInputElement>) {
-        const value = event.target.value;
-        this.headers[index][1] = value;
-    }
-
-    @action.bound
-    deleteHeader(index: number) {
-        this.headers.splice(index, 1);
+    onHeadersChanged(headers: HeadersArray) {
+        this.headers = headers;
     }
 
     @action.bound
