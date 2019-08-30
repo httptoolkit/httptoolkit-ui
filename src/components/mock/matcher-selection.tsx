@@ -73,13 +73,13 @@ export const InitialMatcherRow = React.forwardRef((p: {
                     }
                 }}
             >
-                <MatcherOptions matchers={InitialMatcherClasses} />
-
                 { p.matcher === undefined &&
                     <option value={''}>
                         Never
                     </option>
                 }
+
+                <MatcherOptions matchers={InitialMatcherClasses} />
             </Select>
         </MatcherInputsContainer>
     </MatcherRow>
