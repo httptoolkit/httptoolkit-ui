@@ -3,7 +3,7 @@ import { observer, inject } from 'mobx-react';
 import * as dateFns from 'date-fns';
 
 import { styled } from '../../styles'
-import { FontAwesomeIcon } from '../../icons';
+import { FontAwesomeIcon, IconProp } from '../../icons';
 import { HttpExchange } from '../../model/exchange';
 import { generateHar } from '../../model/har';
 import { saveFile, uploadFile } from '../../util';
@@ -13,7 +13,7 @@ import { InterceptionStore } from '../../model/interception-store';
 const IconButton = styled((p: {
     className?: string,
     title: string,
-    icon: string[],
+    icon: IconProp,
     disabled?: boolean,
     onClick: () => void
 }) =>

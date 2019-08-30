@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 
 import { Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
-import { Icons, FontAwesomeIcon } from '../../icons';
+import { SourceIcons, FontAwesomeIcon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
@@ -30,7 +30,7 @@ import { HeaderDetails } from './headers/header-details';
 import { joinAnd } from '../../util';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
-    source.icon !== Icons.Unknown ?
+    source.icon !== SourceIcons.Unknown ?
         <FontAwesomeIcon
             className={className}
             title={source.summary}

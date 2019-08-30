@@ -5,7 +5,7 @@ import { Link, Match } from '@reach/router';
 import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
-import { FontAwesomeIcon } from '../icons';
+import { FontAwesomeIcon, IconProp } from '../icons';
 import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
@@ -13,7 +13,7 @@ import * as logo from '../images/logo-stacked.svg';
 
 export interface SidebarItem {
     name: string;
-    icon: string[];
+    icon: IconProp;
     position: 'top' | 'bottom';
     highlight?: true;
 

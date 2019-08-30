@@ -2,11 +2,11 @@ import * as React from 'react';
 import * as _ from 'lodash';
 
 import { styled } from '../../styles'
-import { FontAwesomeIcon } from '../../icons';
+import { FontAwesomeIcon, IconProp } from '../../icons';
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,
-    icon: string[],
+    icon: IconProp,
     spin?: true | 'slow',
     children?: React.ReactNode
 }) => (

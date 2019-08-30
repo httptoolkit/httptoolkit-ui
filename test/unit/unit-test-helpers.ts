@@ -1,8 +1,7 @@
 import * as dateFns from 'date-fns';
-import { Icons } from '../../src/icons';
+import { SourceIcons } from '../../src/icons';
 import { HttpExchange, ExchangeBody } from '../../src/model/exchange';
 import { HtkRequest, HtkResponse } from '../../src/types';
-
 
 export const getExchangeData = ({
     hostname = 'example.com',
@@ -33,7 +32,7 @@ export const getExchangeData = ({
             requestHeaders
         ),
         contentType: 'text',
-        source: { ua: '', summary: 'Unknown client', icon: Icons.Unknown },
+        source: { ua: '', summary: 'Unknown client', icon: SourceIcons.Unknown },
         timingEvents: { startTime: Date.now() },
         cache: new Map() as any
     } as HtkRequest,

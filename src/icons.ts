@@ -9,7 +9,9 @@ import {
     IconName,
     IconLookup,
     icon,
-    IconParams
+    IconParams,
+    IconProp,
+    SizeProp
 } from '@fortawesome/fontawesome-svg-core';
 
 import { faSpinner } from '@fortawesome/free-solid-svg-icons/faSpinner';
@@ -129,11 +131,13 @@ library.add(
 );
 
 export interface IconProps {
-    icon: string[];
+    icon: ExtendedIconProp;
     color: string;
 }
 
-export const Icons = {
+export type SourceIconName = keyof typeof SourceIcons;
+
+export const SourceIcons = {
     Chrome: { icon: ['fab', 'chrome'], color: '#1da462' },
     Chromium: { icon: ['fab', 'chrome'], color: '#4489f4' },
     Firefox: { icon: ['fab', 'firefox'], color: '#e66000' },
@@ -169,10 +173,18 @@ export const Icons = {
 
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
     Unknown: { icon: ['fas', 'question'], color: '#888' }
-};
+} as const;
 
-import { FontAwesomeIcon as FAI } from '@fortawesome/react-fontawesome';
-export const FontAwesomeIcon = React.memo(FAI);
+import { FontAwesomeIcon as FAI, Props as FAIProps } from '@fortawesome/react-fontawesome';
+type ExtendedIconProp = IconProp | ['fac', string] | readonly [IconPrefix, IconName];
+export const FontAwesomeIcon = React.memo(
+    FAI as (props: Omit<FAIProps, 'icon'> & {
+        icon: ExtendedIconProp,
+        onClick?: (event: React.MouseEvent) => void,
+        onKeyPress?: (event: React.KeyboardEvent) => void
+    }) => JSX.Element
+);
+export { ExtendedIconProp as IconProp, SizeProp };
 
 export const SuggestionIcon = styled(FontAwesomeIcon).attrs({
     icon: ['fas', 'lightbulb']

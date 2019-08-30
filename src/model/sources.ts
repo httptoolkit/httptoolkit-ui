@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as UserAgent from 'ua-parser-js';
 import { get } from 'typesafe-get';
 
-import { Icons, IconProps } from '../icons';
+import { SourceIcons, IconProps, SourceIconName } from '../icons';
 
 export interface TrafficSource {
     ua: string;
@@ -105,25 +105,25 @@ const getDescription = (useragent: IUAParser.IResult): string | undefined => {
     }.`;
 }
 
-const isValidIconName = (name: string | undefined): name is keyof typeof Icons => {
-    return !!(name && _.has(Icons, name));
+const isValidIconName = (name: string | undefined): name is SourceIconName => {
+    return !!(name && _.has(SourceIcons, name));
 }
 
 const getIcon = (useragent: IUAParser.IResult) => {
     const browserName = get(useragent, 'browser', 'name');
-    if (isValidIconName(browserName)) return Icons[browserName];
+    if (isValidIconName(browserName)) return SourceIcons[browserName];
 
     const uaStrings = useragent.ua.match(/[A-Za-z]+/g) || [];
 
-    const recognizedUaPart = <keyof typeof Icons> _.find(
+    const recognizedUaPart = <SourceIconName> _.find(
         uaStrings.map((s) => _.upperFirst(s.toLowerCase())),
         (s) => isValidIconName(s)
     );
 
     if (recognizedUaPart) {
-        return Icons[recognizedUaPart];
+        return SourceIcons[recognizedUaPart];
     } else {
-        return Icons.Unknown;
+        return SourceIcons.Unknown;
     }
 };
 
@@ -131,7 +131,7 @@ export const parseSource = (userAgentHeader: string | undefined): TrafficSource 
     if (!userAgentHeader) return {
         ua: '',
         summary: 'Unknown client',
-        icon: Icons.Unknown
+        icon: SourceIcons.Unknown
     };
 
     const useragent = new UserAgent(userAgentHeader).getResult();

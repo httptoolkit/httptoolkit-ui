@@ -1,11 +1,11 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-export function filterProps<T extends object, K extends string>(
-    Component: React.ComponentType<T>,
-    ...keys: K[]
-): React.ComponentType<T> {
-    return (props: T) => <Component {..._.omit(props, keys) as T} />;
+export function filterProps<C extends React.ComponentType<any>>(
+    Component: C,
+    ...keys: string[]
+): C {
+    return ((props: any) => <Component {..._.omit(props, keys)} />) as C;
 }
 
 // Trigger the click handler when Enter is pressed on this element

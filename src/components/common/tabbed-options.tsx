@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { FontAwesomeIcon } from '../../icons';
+import { FontAwesomeIcon, IconProp } from '../../icons';
 import { styled, css } from '../../styles';
 import { omit } from 'lodash';
 import { UnstyledButton } from './inputs';
@@ -45,7 +45,7 @@ export const TabsContainer = styled((p: {
 export const Tab = styled((p: {
     className?: string,
     selected?: boolean,
-    icon: string[],
+    icon: IconProp,
     value: any,
     children: React.ReactNode
 }) =>

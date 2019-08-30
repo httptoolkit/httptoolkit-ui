@@ -1,6 +1,6 @@
 import { expect } from '../../test-setup';
 
-import { Icons } from '../../../src/icons';
+import { SourceIcons } from '../../../src/icons';
 
 import { parseSource } from '../../../src/model/sources';
 
@@ -26,49 +26,49 @@ describe('HTTP source parsing', () => {
                 const source = parseSource(WINDOWS_CHROME);
 
                 expect(source.summary).to.equal('Chrome 60 (Windows 10)');
-                expect(source.icon).to.equal(Icons.Chrome);
+                expect(source.icon).to.equal(SourceIcons.Chrome);
             });
 
             it('should parse modern Firefox UAs', () => {
                 const source = parseSource(LINUX_FIREFOX);
 
                 expect(source.summary).to.equal('Firefox 64 (Ubuntu)');
-                expect(source.icon).to.equal(Icons.Firefox);
+                expect(source.icon).to.equal(SourceIcons.Firefox);
             });
 
             it('should parse modern Safari UAs', () => {
                 const source = parseSource(OSX_SAFARI);
 
                 expect(source.summary).to.equal('Safari 12 (Mac OS 10.13)');
-                expect(source.icon).to.equal(Icons.Safari);
+                expect(source.icon).to.equal(SourceIcons.Safari);
             });
 
             it('should parse IE UAs', () => {
                 const source = parseSource(WINDOWS_IE);
 
                 expect(source.summary).to.equal('IE 6 (Windows XP)');
-                expect(source.icon).to.equal(Icons.IE);
+                expect(source.icon).to.equal(SourceIcons.IE);
             });
 
             it('should parse Git UA', () => {
                 const source = parseSource(GIT);
 
                 expect(source.summary).to.equal('Git/2.20.1');
-                expect(source.icon).to.equal(Icons.Git);
+                expect(source.icon).to.equal(SourceIcons.Git);
             });
 
             it('should parse NPM UA', () => {
                 const source = parseSource(LINUX_NPM);
 
                 expect(source.summary).to.equal('Npm/6.4.1 (Linux x64)');
-                expect(source.icon).to.equal(Icons.Npm);
+                expect(source.icon).to.equal(SourceIcons.Npm);
             });
 
             it('should parse a PHP-based UA', () => {
                 const source = parseSource(GUZZLE_PHP);
 
                 expect(source.summary).to.equal('GuzzleHttp/6.3.3 (Ubuntu 0.18)');
-                expect(source.icon).to.equal(Icons.Php);
+                expect(source.icon).to.equal(SourceIcons.Php);
             });
 
         });
@@ -78,28 +78,28 @@ describe('HTTP source parsing', () => {
                 const source = parseSource(JAVA_APACHE);
 
                 expect(source.summary).to.equal('Apache-HttpClient/4.5.2');
-                expect(source.icon).to.equal(Icons.Unknown);
+                expect(source.icon).to.equal(SourceIcons.Unknown);
             });
 
             it('should parse wget UAs', () => {
                 const source = parseSource(WGET);
 
                 expect(source.summary).to.equal('Wget/1.12 (Linux)');
-                expect(source.icon).to.equal(Icons.Unknown);
+                expect(source.icon).to.equal(SourceIcons.Unknown);
             });
 
             it('should handle empty user agents', () => {
                 const source = parseSource('');
 
                 expect(source.summary).to.equal('Unknown client');
-                expect(source.icon).to.equal(Icons.Unknown);
+                expect(source.icon).to.equal(SourceIcons.Unknown);
             });
 
             it('should handle undefined user agents', () => {
                 const source = parseSource(undefined);
 
                 expect(source.summary).to.equal('Unknown client');
-                expect(source.icon).to.equal(Icons.Unknown);
+                expect(source.icon).to.equal(SourceIcons.Unknown);
             });
         });
     });

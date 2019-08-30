@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 
 import { styled } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
+import { FontAwesomeIcon, IconProp, SizeProp } from '../../icons';
 import { filterProps } from '../component-utils';
 
 const SearchInput = styled.input.attrs({
@@ -24,8 +24,8 @@ const SearchInput = styled.input.attrs({
 
 const ClearSearchButton = styled<React.ComponentType<{
     visible: boolean,
-    icon: string[],
-    size?: string,
+    icon: IconProp,
+    size?: SizeProp,
     onClick: () => void
 }>>(filterProps(FontAwesomeIcon, 'visible'))`
     position: absolute;
@@ -44,7 +44,7 @@ export const SearchBox = styled((props: {
     placeholder?: string,
     autoFocus?: boolean,
     onSearch: (input: string) => void,
-    iconSize?: string
+    iconSize?: SizeProp
 }) =>
     <div className={props.className}>
         <SearchInput
