@@ -115,6 +115,7 @@ export class InterceptionStore {
 
         // Rebuild any other data that depends on persisted settings:
         this.interceptionRules = buildDefaultRules(this.whitelistedCertificateHosts);
+        this.unsavedInterceptionRules = _.cloneDeep(this.interceptionRules);
         this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
 
