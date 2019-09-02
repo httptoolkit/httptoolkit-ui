@@ -9,6 +9,7 @@ import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
 import { getExchangeSummaryColour } from '../../model/exchange-colors';
 import { ApiExchange, Parameter } from '../../model/openapi/openapi';
+import { getMethodDocs } from '../../model/http-docs';
 
 import {
     ExchangeCard,
@@ -23,7 +24,8 @@ import {
     ContentLabel,
     ContentLabelBlock,
     ContentMonoValue,
-    ExternalContent
+    ExternalContent,
+    Markdown
 } from '../common/text-content';
 import { DocsLink } from '../common/docs-link';
 import { HeaderDetails } from './headers/header-details';
@@ -37,15 +39,42 @@ const SourceIcon = ({ source, className }: { source: TrafficSource, className?: 
             {...source.icon}
         /> : null;
 
-const RawRequestDetails = (p: { request: HtkRequest }) => <div>
-    <ContentLabelBlock>URL</ContentLabelBlock>
-    <ContentMonoValue>{
-        p.request.parsedUrl.toString()
-    }</ContentMonoValue>
+const RawRequestDetails = (p: { request: HtkRequest }) => {
+    const methodDocs = getMethodDocs(p.request.method);
+    const methodDetails = [
+        methodDocs && <Markdown
+            key='method-docs'
+            content={methodDocs.summary}
+        />,
+        methodDocs && <p key='method-link'>
+            <DocsLink href={methodDocs.url}>Find out more</DocsLink>
+        </p>
+    ].filter(d => !!d);
 
-    <ContentLabelBlock>Headers</ContentLabelBlock>
-    <HeaderDetails headers={p.request.headers} requestUrl={p.request.parsedUrl} />
-</div>;
+    return <div>
+        <CollapsibleSection>
+            <ExchangeCollapsibleSummary>
+                <ContentLabel>Method:</ContentLabel> { p.request.method }
+            </ExchangeCollapsibleSummary>
+
+            {
+                methodDetails.length ?
+                    <ExchangeCollapsibleBody>
+                        { methodDetails }
+                    </ExchangeCollapsibleBody>
+                : null
+            }
+        </CollapsibleSection>
+
+        <ContentLabelBlock>URL</ContentLabelBlock>
+        <ContentMonoValue>{
+            p.request.parsedUrl.toString()
+        }</ContentMonoValue>
+
+        <ContentLabelBlock>Headers</ContentLabelBlock>
+        <HeaderDetails headers={p.request.headers} requestUrl={p.request.parsedUrl} />
+    </div>;
+}
 
 const ServiceLogo = styled(OptionalImage)`
     float: right;

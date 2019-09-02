@@ -18,7 +18,7 @@ export const lightTheme = {
     mainLowlightBackground: '#eaeaea',
     mainColor: '#222',
 
-    lowlightTextOpacity: 0.8,
+    lowlightTextOpacity: 0.65,
     pillContrast: 0.8,
 
     primaryInputBackground: '#1f83e0',

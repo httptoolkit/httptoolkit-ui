@@ -727,6 +727,74 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     }
 };
 
+/*
+ * Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods$children?expand
+ * Transformed with:
+ *
+ * const _ = require('lodash');
+ * const methods = require('./methods.json');
+ * const output = (_(methods.subpages)
+ * .keyBy(p => p.title.toLowerCase())
+ * .mapValues((p, k) => ({
+ *     mdnSlug: p.slug,
+ *     name: p.title,
+ *     summary: p.summary
+ *     .replace(/<(.|\n)*?>/g, '')
+ *     .replace(/&lt;/g, '<')
+ *     .replace(/&gt;/g, '>')
+ *     .split(/\.( |$)/)[0] + '.'
+ * }))
+ * .value())
+ * console.log(JSON.stringify(output, null, 2));
+ */
+const METHODS: { [key: string]: DocsInfo | undefined } = {
+    "connect": {
+        "mdnSlug": "Web/HTTP/Methods/CONNECT",
+        "name": "CONNECT",
+        "summary": "The HTTP CONNECT method starts two-way communications with the requested resource."
+    },
+    "delete": {
+        "mdnSlug": "Web/HTTP/Methods/DELETE",
+        "name": "DELETE",
+        "summary": "The HTTP DELETE request method deletes the specified resource."
+    },
+    "get": {
+        "mdnSlug": "Web/HTTP/Methods/GET",
+        "name": "GET",
+        "summary": "The HTTP GET method requests a representation of the specified resource."
+    },
+    "head": {
+        "mdnSlug": "Web/HTTP/Methods/HEAD",
+        "name": "HEAD",
+        "summary": "The HTTP HEAD method requests the headers that are returned if the specified resource would be requested with an HTTP GET method."
+    },
+    "options": {
+        "mdnSlug": "Web/HTTP/Methods/OPTIONS",
+        "name": "OPTIONS",
+        "summary": "The HTTP OPTIONS method is used to describe the communication options for the target resource."
+    },
+    "patch": {
+        "mdnSlug": "Web/HTTP/Methods/PATCH",
+        "name": "PATCH",
+        "summary": "The HTTP PATCH request method applies partial modifications to a resource."
+    },
+    "post": {
+        "mdnSlug": "Web/HTTP/Methods/POST",
+        "name": "POST",
+        "summary": "The HTTP POST method sends data to the server."
+    },
+    "put": {
+        "mdnSlug": "Web/HTTP/Methods/PUT",
+        "name": "PUT",
+        "summary": "The HTTP PUT request method creates a new resource or replaces a representation of the target resource with the request payload."
+    },
+    "trace": {
+        "mdnSlug": "Web/HTTP/Methods/TRACE",
+        "name": "TRACE",
+        "summary": "The HTTP TRACE method performs a message loop-back test along the path to the target resource, providing a useful debugging mechanism."
+    }
+};
+
 // Based RFC7230, 3.2.6:
 export const HEADER_NAME_PATTERN = '[!#$%&\'*+\-;^_`|~A-Za-z0-9]+';
 export const HEADER_NAME_REGEX = new RegExp(HEADER_NAME_PATTERN);
@@ -747,6 +815,10 @@ export function getHeaderDocs(headerName: string) {
 
 export function getStatusDocs(statusCode: string | number) {
     return getDocs(STATUSES, statusCode.toString());
+}
+
+export function getMethodDocs(methodName: string) {
+    return getDocs(METHODS, methodName.toLowerCase());
 }
 
 export function getStatusMessage(statusCode: string | number) {
