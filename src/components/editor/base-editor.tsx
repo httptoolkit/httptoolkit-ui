@@ -235,7 +235,7 @@ export class BaseEditor extends React.Component<EditorProps> {
                 schemas: newSchemaMappings
             });
 
-            if (!_.isMatch(existingOptions, options)) {
+            if (!_.isEqual(existingOptions, options)) {
                 // Avoid unnecessary calls to this, as it reloads the JSON worker
                 this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(options);
             }
