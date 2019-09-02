@@ -273,6 +273,13 @@ export class HttpExchange {
         return !!this.responseBreakpoint;
     }
 
+    resumeRequestFromBreakpoint() {
+        this.requestBreakpoint!.deferred.resolve(
+            this.requestBreakpoint!.inProgressResult
+        );
+        this.requestBreakpoint = undefined;
+    }
+
     triggerRequestBreakpoint(request: MockttpBreakpointedRequest) {
         this.requestBreakpoint = {
             deferred: getDeferred(),

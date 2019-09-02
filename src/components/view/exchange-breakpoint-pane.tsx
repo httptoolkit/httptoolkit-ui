@@ -12,6 +12,7 @@ import { UiStore } from '../../model/ui-store';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeRequestBreakpointCard } from './exchange-request-breakpoint-card';
+import { ExchangeBreakpointHeader } from './exchange-breakpoint-header';
 
 const ExchangeBreakpointScrollContainer = styled.div`
     position: relative;
@@ -45,10 +46,12 @@ type CardKey = typeof cardKeys[number];
 @observer
 export class ExchangeBreakpointPane extends React.Component<{
     exchange: HttpExchange,
-    // Injected:
-    uiStore?: UiStore,
+
     requestEditor: portals.PortalNode,
     responseEditor: portals.PortalNode
+
+    // Injected:
+    uiStore?: UiStore
 }> {
 
     @computed
@@ -65,17 +68,35 @@ export class ExchangeBreakpointPane extends React.Component<{
         this.props.exchange.requestBreakpoint!.inProgressResult = result;
     }
 
+    @action.bound
+    private resumeRequest() {
+        this.props.exchange.resumeRequestFromBreakpoint();
+    }
+
+    @action.bound
+    private toggleCollapse(key: CardKey) {
+        const { viewExchangeCardStates } = this.props.uiStore!;
+        const cardState = viewExchangeCardStates[key];
+        cardState.collapsed = !cardState.collapsed;
+    }
+
     render() {
         const { exchange } = this.props;
 
         const cards: JSX.Element[] = [];
 
         const {
-            isRequestBreakpointed,
-            request
+            isRequestBreakpointed
         } = exchange;
 
         if (isRequestBreakpointed) {
+            cards.push(
+                <ExchangeBreakpointHeader
+                    type='request'
+                    onResume={this.resumeRequest}
+                />
+            );
+
             cards.push(<ExchangeRequestBreakpointCard
                 {...this.cardProps.request}
                 key={`request-${exchange.id}`}
@@ -83,6 +104,8 @@ export class ExchangeBreakpointPane extends React.Component<{
                 onChange={this.updateRequestResult}
             />);
         } else {
+            const { request } = exchange;
+
             cards.push(<ExchangeRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
@@ -106,13 +129,6 @@ export class ExchangeBreakpointPane extends React.Component<{
                 {cards}
             </ExchangeBreakpointContentContainer>
         </ExchangeBreakpointScrollContainer>;
-    }
-
-    @action.bound
-    private toggleCollapse(key: CardKey) {
-        const { viewExchangeCardStates } = this.props.uiStore!;
-        const cardState = viewExchangeCardStates[key];
-        cardState.collapsed = !cardState.collapsed;
     }
 
 };
