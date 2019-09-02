@@ -216,7 +216,13 @@ export class InterceptionStore {
 
     @computed
     get areSomeRulesUnsaved() {
-        return !_.isEqual(this.interceptionRules, this.unsavedInterceptionRules);
+        return !_.isEqualWith(this.interceptionRules, this.unsavedInterceptionRules, (a, b) => {
+            // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
+            // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
+            if (_.isFunction(a) && _.isFunction(b)) {
+                return a.toString() === b.toString();
+            }
+        });
     }
 
     // ** Interceptors:
