@@ -16,7 +16,12 @@ import {
 } from './exchange-card';
 import { Pill } from '../common/pill';
 import { ContentLabelBlock } from '../common/text-content';
-import { headersToHeadersArray, HeadersArray, EditableHeaders } from '../common/editable-headers';
+import {
+    headersToHeadersArray,
+    headersArrayToHeaders,
+    HeadersArray,
+    EditableHeaders
+} from '../common/editable-headers';
 import { TextInput } from '../common/inputs';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
@@ -86,14 +91,7 @@ export class ExchangeRequestBreakpointCard extends React.Component<RequestBreakp
         this.props.onChange(Object.assign({},
             this.props.exchange.requestBreakpoint!.inProgressResult,
             {
-                headers: headers.reduce((acc: { [k: string]: string[] }, [key, value]) => {
-                    if (acc[key] === undefined) {
-                        acc[key] = [value];
-                    } else {
-                        acc[key].push(value);
-                    }
-                    return acc;
-                }, {}) as RequestHeaders
+                headers: headersArrayToHeaders(headers) as RequestHeaders
             }
         ));
     }

@@ -4,7 +4,7 @@ import { action, observable, reaction, autorun, observe, runInAction, when, flow
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import { Location } from '@reach/router';
 
-import { Headers, MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
+import { MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
 import { styled } from '../../styles';
 
 import {
@@ -22,8 +22,13 @@ import { InterceptionStore } from '../../model/interception-store';
 import { HttpExchange } from '../../model/exchange';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { TextInput, Select, Button } from '../common/inputs';
-import { EditableHeaders, HeadersArray, headersToHeadersArray } from '../common/editable-headers';
+import { TextInput, Select } from '../common/inputs';
+import {
+    EditableHeaders,
+    HeadersArray,
+    headersToHeadersArray,
+    headersArrayToHeaders
+} from '../common/editable-headers';
 
 
 type HandlerConfigProps<H extends Handler> = {
@@ -100,23 +105,6 @@ const StatusContainer = styled.div`
     > :last-child {
         flex-grow: 1;
     }
-`;
-
-const HeadersContainer = styled.div`
-    margin-top: 5px;
-
-    display: grid;
-    grid-gap: 5px;
-    grid-template-columns: 1fr 2fr auto;
-
-    > :last-child {
-        grid-column: 2 / span 2;
-    }
-`;
-
-const HeaderDeleteButton = styled(Button)`
-    font-size: ${p => p.theme.textSize};
-    padding: 3px 10px 5px;
 `;
 
 const BodyHeader = styled.div`
@@ -260,7 +248,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
             <SectionLabel>Headers</SectionLabel>
             <EditableHeaders
-                headers={this.headers}
+                headers={headers}
                 onChange={this.onHeadersChanged}
             />
 
@@ -335,7 +323,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 statusCode,
                 this.statusMessage,
                 this.body,
-                _.fromPairs(this.headers) as Headers
+                headersArrayToHeaders(this.headers)
             )
         );
     }

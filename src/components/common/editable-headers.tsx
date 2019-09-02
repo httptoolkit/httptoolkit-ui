@@ -13,7 +13,7 @@ import { FontAwesomeIcon } from '../../icons';
 
 export type HeadersArray = Array<[string, string]>;
 
-export const headersToHeadersArray = (headers: Headers) =>
+export const headersToHeadersArray = (headers: Headers): HeadersArray =>
     Object.entries(headers || {}).reduce(
         (acc: Array<[string, string]>, [key, value]) => {
             if (_.isArray(value)) {
@@ -24,6 +24,19 @@ export const headersToHeadersArray = (headers: Headers) =>
             return acc;
         }, []
     );
+
+export const headersArrayToHeaders = (headers: HeadersArray): Headers =>
+    headers.reduce((acc: { [k: string]: string | string[] }, [key, value]) => {
+        const existingValue = acc[key];
+        if (existingValue === undefined) {
+            acc[key] = value;
+        } else if (_.isString(existingValue)) {
+            acc[key] = [existingValue, value];
+        } else {
+            existingValue.push(value);
+        }
+        return acc;
+    }, {});
 
 interface EditableHeadersProps {
     headers: HeadersArray;
