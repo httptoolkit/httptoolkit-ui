@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { action } from 'mobx';
 import { observer } from 'mobx-react';
+import { Method } from 'mockttp';
 
 import { Omit, MockttpBreakpointRequestResult, RequestHeaders } from '../../types';
 import { styled } from '../../styles';
@@ -15,14 +16,14 @@ import {
     ExchangeCardProps,
 } from './exchange-card';
 import { Pill } from '../common/pill';
-import { ContentLabelBlock } from '../common/text-content';
+import { ContentLabelBlock, ContentLabel } from '../common/text-content';
 import {
     headersToHeadersArray,
     headersArrayToHeaders,
     HeadersArray,
     EditableHeaders
 } from '../common/editable-headers';
-import { TextInput } from '../common/inputs';
+import { TextInput, Select } from '../common/inputs';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== SourceIcons.Unknown ?
@@ -41,6 +42,21 @@ const UrlInput = styled(TextInput)`
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 10px;
+`;
+
+type MethodName = keyof typeof Method;
+const validMethods = Object.values(Method)
+    .filter(
+        value => typeof value === 'string'
+    ) as Array<MethodName>;
+
+const MethodSelect = styled(Select)`
+    font-size: ${p => p.theme.textSize};
+    display: inline-block;
+
+    width: auto;
+    margin-left: 10px;
+    margin-bottom: 5px;
 `;
 
 @observer
@@ -67,6 +83,23 @@ export class ExchangeRequestBreakpointCard extends React.Component<RequestBreakp
                 <h1>Request</h1>
             </header>
 
+            <ContentLabel>Method:</ContentLabel>
+            <MethodSelect value={method} onChange={this.onMethodChanged}>
+                { !validMethods.includes(method as MethodName) &&
+                    <option key={method} value={undefined}>
+                        { method }
+                    </option>
+                }
+                { validMethods.map((methodOption) =>
+                    <option
+                        key={methodOption}
+                        value={methodOption}
+                    >
+                        { methodOption }
+                    </option>
+                ) }
+            </MethodSelect>
+
             <ContentLabelBlock>URL</ContentLabelBlock>
             <UrlInput value={url} onChange={this.onUrlChanged} />
 
@@ -76,6 +109,16 @@ export class ExchangeRequestBreakpointCard extends React.Component<RequestBreakp
                 onChange={this.onHeadersChanged}
             />
         </ExchangeCard>;
+    }
+
+    @action.bound
+    onMethodChanged(event: React.ChangeEvent<HTMLSelectElement>) {
+        const method = event.target.value;
+        const { inProgressResult } = this.props.exchange.requestBreakpoint!;
+
+        if (method === inProgressResult.method) return;
+
+        this.props.onChange(Object.assign({}, inProgressResult, { method }));
     }
 
     @action.bound

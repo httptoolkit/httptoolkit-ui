@@ -3,15 +3,10 @@ import { Method, matchers, handlers } from 'mockttp';
 import { PassThroughHandlerOptions } from 'mockttp/dist/rules/handlers';
 
 type MethodName = keyof typeof Method;
-const MethodNames = [
-    'GET',
-    'POST',
-    'PUT',
-    'DELETE',
-    'PATCH',
-    'HEAD',
-    'OPTIONS'
-] as unknown as Array<MethodName>;
+const MethodNames = Object.values(Method)
+    .filter(
+        value => typeof value === 'string'
+    ) as Array<MethodName>;
 
 // Create per-method classes (that all serialize to the same MethodMatcher class + param)
 // for each supported HTTP method, as a methodName -> methodClass lookup object.
