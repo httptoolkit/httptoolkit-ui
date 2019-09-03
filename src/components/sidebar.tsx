@@ -28,6 +28,8 @@ interface SidebarProps {
 
 const SidebarNav = styled.nav`
     width: 90px;
+    flex-shrink: 0;
+
     background-color: ${p => p.theme.mainBackground};
     color: ${p => p.theme.mainColor};
     z-index: 5;
