@@ -35,7 +35,7 @@ import {
     headersToHeadersArray,
     headersArrayToHeaders
 } from '../common/editable-headers';
-
+import { EditableStatus } from '../common/editable-status';
 
 type HandlerConfigProps<H extends Handler> = {
     handler: H;
@@ -97,22 +97,6 @@ const SectionLabel = styled.h2`
     width: 100%;
 `;
 
-const StatusContainer = styled.div`
-    margin-top: 5px;
-
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-
-    > :not(:last-child) {
-        margin-right: 5px;
-    }
-
-    > :last-child {
-        flex-grow: 1;
-    }
-`;
-
 const BodyHeader = styled.div`
     display: flex;
     flex-direction: row;
@@ -155,7 +139,7 @@ function getContentTypeFromHeader(contentTypeHeader: string | undefined | [strin
 class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<StaticResponseHandler>> {
 
     @observable
-    statusCode = this.props.handler.status.toString();
+    statusCode: number | '' = this.props.handler.status;
 
     @observable
     statusMessage = this.props.handler.statusMessage;
@@ -212,31 +196,15 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     }
 
     render() {
-        const { statusCode, headers, body } = this;
-
-        // Undefined status message = use default. Note that the status
-        // message can still be shown as _empty_, just not undefined.
-        const statusMessage = this.statusMessage === undefined
-            ? getStatusMessage(statusCode)
-            : this.statusMessage;
+        const { statusCode, statusMessage, headers, body } = this;
 
         return <ConfigContainer>
             <SectionLabel>Status</SectionLabel>
-            <StatusContainer>
-                <TextInput
-                    type='number'
-                    min='100'
-                    max='999'
-                    invalid={_.isNaN(parseInt(statusCode, 10))}
-                    value={statusCode}
-                    onChange={this.setStatus}
-                />
-
-                <TextInput
-                    value={statusMessage}
-                    onChange={this.setStatusMessage}
-                />
-            </StatusContainer>
+            <EditableStatus
+                statusCode={statusCode}
+                statusMessage={statusMessage}
+                onChange={this.setStatus}
+            />
 
             <SectionLabel>Headers</SectionLabel>
             <EditableHeaders
@@ -266,22 +234,9 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     }
 
     @action.bound
-    setStatus(event: React.ChangeEvent<HTMLInputElement>) {
-        this.statusCode = event.target.value;
-
-        // Empty status messages reset to default when the status is changed:
-        if (this.statusMessage === '') this.statusMessage = undefined;
-    }
-
-    @action.bound
-    setStatusMessage(event: React.ChangeEvent<HTMLInputElement>) {
-        const message = event.target.value;
-
-        if (message !== getStatusMessage(this.statusCode)) {
-            this.statusMessage = message;
-        } else {
-            this.statusMessage = undefined;
-        }
+    setStatus(statusCode: number | '', statusMessage: string | undefined) {
+        this.statusCode = statusCode;
+        this.statusMessage = statusMessage;
     }
 
     @action.bound
@@ -301,18 +256,16 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     }
 
     updateHandler() {
-        const statusCode = parseInt(this.statusCode, 10);
-
         if (
-            _.isNaN(statusCode) ||
-            statusCode < 100 ||
-            statusCode >= 1000 ||
+            !this.statusCode ||
+            this.statusCode < 100 ||
+            this.statusCode >= 1000 ||
             _.some(this.headers, ([key]) => !key.match(HEADER_NAME_REGEX))
         ) return this.props.onInvalidState();
 
         this.props.onChange(
             new StaticResponseHandler(
-                statusCode,
+                this.statusCode,
                 this.statusMessage,
                 this.body,
                 headersArrayToHeaders(this.headers)
