@@ -17,7 +17,13 @@ import {
     BreakpointHandler
 } from '../../model/rules/rule-definitions';
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http-docs';
-import { getHTKContentType, getDefaultMimeType } from '../../model/content-types';
+import {
+    getContentType,
+    getDefaultMimeType,
+    EditableContentTypes,
+    EditableContentType,
+    getEditableContentType
+} from '../../model/content-types';
 import { InterceptionStore } from '../../model/interception-store';
 import { HttpExchange } from '../../model/exchange';
 
@@ -134,29 +140,15 @@ const BodyContainer = styled.div`
     }
 `;
 
-// Subset of HtkContentType that we support in this editor
-const EditorContentTypes = [
-    'text',
-    'json',
-    'xml',
-    'html',
-    'css',
-    'javascript'
-] as const;
-
-type EditorContentType = (typeof EditorContentTypes) extends ReadonlyArray<infer T> ? T : never;
-
 function getContentTypeHeader(headers: Array<[string, string]>): [string, string] | undefined {
     return (_.find(headers, ([key]) => key.toLowerCase() === 'content-type'));
 }
 
-function getEditorContentType(contentTypeHeader: string | undefined | [string, string]): EditorContentType | undefined {
-    const contentTypeValue = _.isArray(contentTypeHeader) ? contentTypeHeader[1] : contentTypeHeader;
-    const htkContentType = getHTKContentType(contentTypeValue);
-
-    if ((EditorContentTypes as ReadonlyArray<any>).includes(htkContentType)) {
-        return htkContentType as EditorContentType;
-    }
+function getContentTypeFromHeader(contentTypeHeader: string | undefined | [string, string]): EditableContentType | undefined {
+    const contentTypeValue = _.isArray(contentTypeHeader)
+        ? contentTypeHeader[1]
+        : contentTypeHeader;
+    return getEditableContentType(contentTypeValue);
 }
 
 @observer
@@ -173,7 +165,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     headers = headersToHeadersArray(this.props.handler.headers || {});
 
     @observable
-    bodyLanguage: EditorContentType = 'text';
+    contentType: EditableContentType = 'text';
 
     @observable
     body = (this.props.handler.data || '').toString();
@@ -184,34 +176,34 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'body']))
         ), () => this.updateHandler()));
 
-        // If you enter a relevant content-type header, consider updating the editor language:
+        // If you enter a relevant content-type header, consider updating the editor content type:
         disposeOnUnmount(this, autorun(() => {
-            const detectedContentType = getEditorContentType(getContentTypeHeader(this.headers));
+            const detectedContentType = getContentTypeFromHeader(getContentTypeHeader(this.headers));
             if (detectedContentType) runInAction(() => {
-                this.bodyLanguage = detectedContentType;
+                this.contentType = detectedContentType;
             });
-            // If not a known type, we leave the language as whatever it currently is
+            // If not a known type, we leave the content type as whatever it currently is
         }));
 
-        // If you set the editor language, keep the content-type header up to date
-        disposeOnUnmount(this, observe(this, 'bodyLanguage', ({
-            oldValue: oldLanguage,
-            newValue: newLanguage
+        // If you set the editor content type, keep the content-type header up to date
+        disposeOnUnmount(this, observe(this, 'contentType', ({
+            oldValue: oldContentType,
+            newValue: newContentType
         }) => {
             const contentTypeHeader = getContentTypeHeader(this.headers);
 
             if (!contentTypeHeader) {
-                // If you pick a body language with no header set, we add one
+                // If you pick a body content type with no header set, we add one
                 runInAction(() => {
-                    this.headers.push(['Content-Type', getDefaultMimeType(newLanguage)]);
+                    this.headers.push(['Content-Type', getDefaultMimeType(newContentType)]);
                 });
             } else {
-                const headerContentType = getEditorContentType(contentTypeHeader);
+                const headerContentType = getContentTypeFromHeader(contentTypeHeader);
 
                 // If the body type changes, and the old header matched the old type, update the header
-                if (oldLanguage === headerContentType) {
+                if (oldContentType === headerContentType) {
                     runInAction(() => {
-                        contentTypeHeader[1] = getDefaultMimeType(newLanguage);
+                        contentTypeHeader[1] = getDefaultMimeType(newContentType);
                     });
                 }
                 // If there is a header, but it didn't match the body, leave it as-is
@@ -254,7 +246,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
             <BodyHeader>
                 <SectionLabel>Response body</SectionLabel>
-                <Select value={this.bodyLanguage} onChange={this.setBodyLanguage}>
+                <Select value={this.contentType} onChange={this.setContentType}>
                     <option value="text">Plain text</option>
                     <option value="json">JSON</option>
                     <option value="xml">XML</option>
@@ -265,7 +257,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             </BodyHeader>
             <BodyContainer>
                 <ThemedSelfSizedEditor
-                    language={this.bodyLanguage}
+                    language={this.contentType}
                     value={body}
                     onChange={this.setBody}
                 />
@@ -298,9 +290,9 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     }
 
     @action.bound
-    setBodyLanguage(event: React.ChangeEvent<HTMLSelectElement>) {
+    setContentType(event: React.ChangeEvent<HTMLSelectElement>) {
         const value = event.target.value;
-        this.bodyLanguage = value as EditorContentType;
+        this.contentType = value as EditableContentType;
     }
 
     @action.bound

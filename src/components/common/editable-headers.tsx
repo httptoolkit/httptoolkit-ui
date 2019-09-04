@@ -26,16 +26,18 @@ export const headersToHeadersArray = (headers: Headers): HeadersArray =>
     );
 
 export const headersArrayToHeaders = (headers: HeadersArray): Headers =>
-    headers.reduce((acc: { [k: string]: string | string[] }, [key, value]) => {
-        const existingValue = acc[key];
+    headers.reduce((headersObj: { [k: string]: string | string[] }, [key, value]) => {
+        const headerName = key.toLowerCase();
+
+        const existingValue = headersObj[headerName];
         if (existingValue === undefined) {
-            acc[key] = value;
+            headersObj[headerName] = value;
         } else if (_.isString(existingValue)) {
-            acc[key] = [existingValue, value];
+            headersObj[headerName] = [existingValue, value];
         } else {
             existingValue.push(value);
         }
-        return acc;
+        return headersObj;
     }, {});
 
 interface EditableHeadersProps {

@@ -13,7 +13,7 @@ import * as beautifyXml from 'xml-beautifier';
 
 import { ThemedSelfSizedEditor } from './base-editor';
 import { styled } from '../../styles';
-import { HtkContentType } from '../../model/content-types';
+import { ViewableContentType } from '../../model/content-types';
 
 interface EditorFormatter {
     language: string;
@@ -24,11 +24,7 @@ type FormatComponent = React.ComponentType<{ content: Buffer, rawContentType: st
 
 type Formatter = EditorFormatter | FormatComponent;
 
-export function getContentEditorName(contentType: HtkContentType): string {
-    return contentType === 'raw' ? 'Hex' : _.capitalize(contentType);
-}
-
-export const Formatters: { [key in HtkContentType]?: Formatter } = {
+export const Formatters: { [key in ViewableContentType]?: Formatter } = {
     raw: {
         language: 'text',
         // Poor man's hex editor:
@@ -106,11 +102,11 @@ export const Formatters: { [key in HtkContentType]?: Formatter } = {
     ` as FormatComponent // Shouldn't be necessary, but somehow TS doesn't work this out
 };
 
-interface ContentEditorProps {
+interface ContentViewerProps {
     children: Buffer | string;
     schema?: SchemaObject;
     rawContentType?: string;
-    contentType: HtkContentType;
+    contentType: ViewableContentType;
     contentObservable?: IObservableValue<string | undefined>;
 }
 
@@ -119,9 +115,9 @@ function isEditorFormatter(input: any): input is EditorFormatter {
 }
 
 @observer
-export class ContentEditor extends React.Component<ContentEditorProps> {
+export class ContentViewer extends React.Component<ContentViewerProps> {
 
-    constructor(props: ContentEditorProps) {
+    constructor(props: ContentViewerProps) {
         super(props);
     }
 
@@ -153,7 +149,6 @@ export class ContentEditor extends React.Component<ContentEditorProps> {
     }
 
     private readonly editorOptions = {
-        // For now, we only support read only content
         readOnly: true
     };
 

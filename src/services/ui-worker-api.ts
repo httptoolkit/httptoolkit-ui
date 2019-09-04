@@ -10,7 +10,9 @@ import {
     BuildApiResponse,
     BuildApiRequest,
     TestEncodingsRequest,
-    TestEncodingsResponse
+    TestEncodingsResponse,
+    EncodeRequest,
+    EncodeResponse
 } from './ui-worker';
 import Worker from 'worker-loader!./ui-worker';
 
@@ -77,6 +79,27 @@ export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
     return {
         encoded: Buffer.from(result.inputBuffer),
         decoded: Buffer.from(result.decodedBuffer)
+    };
+}
+
+export async function encodeBody(decodedBuffer: Buffer, encodings: string[]) {
+    if (
+        encodings.length === 0 ||
+        (encodings.length === 1 && encodings[0] === 'identity')
+    ) {
+        // Shortcut to skip encoding when we know it's not required
+        return { encoded: decodedBuffer, decoded: decodedBuffer };
+    }
+
+    const result = await callApi<EncodeRequest, EncodeResponse>({
+        type: 'encode',
+        buffer: decodedBuffer.buffer as ArrayBuffer,
+        encodings
+    }, [decodedBuffer.buffer]);
+
+    return {
+        decoded: Buffer.from(result.inputBuffer),
+        encoded: Buffer.from(result.encodedBuffer)
     };
 }
 

@@ -3,7 +3,7 @@ import { action } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { Omit, MockttpBreakpointRequestResult, RequestHeaders } from '../../types';
+import { Omit, BreakpointRequestResult, RequestHeaders } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, FontAwesomeIcon } from '../../icons';
 
@@ -35,7 +35,7 @@ const SourceIcon = ({ source, className }: { source: TrafficSource, className?: 
 
 interface RequestBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
-    onChange: (request: MockttpBreakpointRequestResult) => void;
+    onChange: (request: BreakpointRequestResult) => void;
 }
 
 const UrlInput = styled(TextInput)`
@@ -60,7 +60,7 @@ const MethodSelect = styled(Select)`
 `;
 
 @observer
-export class ExchangeRequestBreakpointCard extends React.Component<RequestBreakpointCardProps> {
+export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakpointCardProps> {
 
     render() {
         const { exchange, onChange, ...cardProps } = this.props;

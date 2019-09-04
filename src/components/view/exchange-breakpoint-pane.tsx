@@ -4,15 +4,16 @@ import { action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { MockttpBreakpointRequestResult } from '../../types';
+import { BreakpointRequestResult } from '../../types';
 import { styled } from '../../styles';
 import { HttpExchange } from '../../model/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
-import { ExchangeRequestBreakpointCard } from './exchange-request-breakpoint-card';
 import { ExchangeBreakpointHeader } from './exchange-breakpoint-header';
+import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
+import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
 
 const ExchangeBreakpointScrollContainer = styled.div`
     position: relative;
@@ -64,8 +65,17 @@ export class ExchangeBreakpointPane extends React.Component<{
     }
 
     @action.bound
-    updateRequestResult(result: MockttpBreakpointRequestResult) {
+    updateRequestResult(result: BreakpointRequestResult) {
         this.props.exchange.requestBreakpoint!.inProgressResult = result;
+    }
+
+    @action.bound
+    updateRequestBody(body: string) {
+        const requestBreakpoint = this.props.exchange.requestBreakpoint!;
+        requestBreakpoint!.inProgressResult = Object.assign({},
+            requestBreakpoint.inProgressResult,
+            { body: Buffer.from(body) }
+        );
     }
 
     @action.bound
@@ -86,22 +96,32 @@ export class ExchangeBreakpointPane extends React.Component<{
         const cards: JSX.Element[] = [];
 
         const {
-            isRequestBreakpointed
+            requestBreakpoint,
         } = exchange;
 
-        if (isRequestBreakpointed) {
+        if (requestBreakpoint) {
             cards.push(
                 <ExchangeBreakpointHeader
+                    key='breakpoint-header'
                     type='request'
                     onResume={this.resumeRequest}
                 />
             );
 
-            cards.push(<ExchangeRequestBreakpointCard
+            cards.push(<ExchangeBreakpointRequestCard
                 {...this.cardProps.request}
                 key={`request-${exchange.id}`}
                 exchange={exchange}
                 onChange={this.updateRequestResult}
+            />);
+
+            cards.push(<ExchangeBreakpointBodyCard
+                title='Request Body'
+                direction='right'
+                body={requestBreakpoint.inProgressResult.body}
+                headers={requestBreakpoint.inProgressResult.headers}
+                onChange={this.updateRequestBody}
+                {...this.cardProps.requestBody}
             />);
         } else {
             const { request } = exchange;

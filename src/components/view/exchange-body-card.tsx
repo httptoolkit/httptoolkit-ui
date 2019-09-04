@@ -1,19 +1,19 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, autorun, action } from 'mobx';
-import { disposeOnUnmount, observer, inject } from 'mobx-react';
+import { disposeOnUnmount, observer } from 'mobx-react';
 import { SchemaObject } from 'openapi-directory';
 import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
-import { HtkContentType, getCompatibleTypes } from '../../model/content-types';
+import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/content-types';
 import { getReadableSize } from '../../model/bodies';
 
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButtonIcon } from '../common/copy-button';
-import { ContentEditor, getContentEditorName } from '../editor/content-editor';
+import { ContentViewer } from '../editor/content-viewer';
 
 const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
@@ -44,7 +44,7 @@ export class ExchangeBodyCard extends React.Component<{
 }> {
 
     @observable
-    private selectedContentType: HtkContentType | undefined;
+    private selectedContentType: ViewableContentType | undefined;
 
     /*
      * Bit of a hack... We pass an observable down into the child editor component, who
@@ -65,7 +65,7 @@ export class ExchangeBodyCard extends React.Component<{
     }
 
     @action.bound
-    setContentType(contentType: HtkContentType | undefined) {
+    setContentType(contentType: ViewableContentType | undefined) {
         if (contentType === this.props.message.contentType) {
             this.selectedContentType = undefined;
         } else {
@@ -105,7 +105,7 @@ export class ExchangeBodyCard extends React.Component<{
                         <CopyBody content={currentRenderedContent} />
                     }
                     <Pill>{ getReadableSize(decodedBody.byteLength) }</Pill>
-                    <PillSelector<HtkContentType>
+                    <PillSelector<ViewableContentType>
                         onChange={this.setContentType}
                         value={contentType}
                         options={compatibleContentTypes}
@@ -114,7 +114,7 @@ export class ExchangeBodyCard extends React.Component<{
                     <h1>{ title }</h1>
                 </header>
                 <EditorCardContent>
-                    <portals.OutPortal<ContentEditor>
+                    <portals.OutPortal<ContentViewer>
                         node={this.props.editorNode}
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
@@ -133,7 +133,7 @@ export class ExchangeBodyCard extends React.Component<{
                 height='500px'
             >
                 <header>
-                    <PillSelector<HtkContentType>
+                    <PillSelector<ViewableContentType>
                         onChange={this.setContentType}
                         value={contentType}
                         options={compatibleContentTypes}

@@ -8,10 +8,14 @@ import {
 } from 'mockttp';
 import { Headers, RequestHeaders, TimingEvents, TlsRequest } from 'mockttp/dist/types';
 import { PortRange } from 'mockttp/dist/mockttp';
-import { PassThroughResponse, CallbackRequestResult, CallbackResponseResult } from 'mockttp/dist/rules/handlers';
+import {
+    PassThroughResponse as MockttpBreakpointedResponse,
+    CallbackRequestResult as MockttpBreakpointRequestResult,
+    CallbackResponseResult as MockttpBreakpointResponseResult
+} from 'mockttp/dist/rules/handlers';
 
 import { TrafficSource } from './model/sources';
-import { HtkContentType } from './model/content-types';
+import { ViewableContentType } from './model/content-types';
 import { ObservablePromise } from './util';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
@@ -27,11 +31,30 @@ export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 
+// Define the restricted form of request BP result we'll use internally
+export type BreakpointRequestResult = Pick<
+    MockttpBreakpointRequestResult, 'response'
+> & Pick<
+    Required<MockttpBreakpointRequestResult>,
+    | 'method'
+    | 'url'
+    | 'headers'
+> & {
+    body: Buffer | undefined
+};
+
+// Define the restricted form of response BP result we'll use internally
+export type BreakpointResponseResult = Pick<
+    MockttpBreakpointResponseResult, 'statusMessage'
+> & Pick<
+    Required<MockttpBreakpointResponseResult>, 'statusCode' | 'headers'
+> & {
+    body: Buffer | undefined
+};
+
 export {
     MockttpCompletedRequest as MockttpBreakpointedRequest,
-    PassThroughResponse as MockttpBreakpointedResponse,
-    CallbackRequestResult as MockttpBreakpointRequestResult,
-    CallbackResponseResult as MockttpBreakpointResponseResult,
+    MockttpBreakpointedResponse,
 };
 
 export type FailedTlsRequest = InputTlsRequest & {
@@ -42,13 +65,13 @@ export type FailedTlsRequest = InputTlsRequest & {
 export type HtkRequest = Omit<InputRequest, 'body'> & {
     parsedUrl: URL,
     source: TrafficSource,
-    contentType: HtkContentType,
+    contentType: ViewableContentType,
     cache: ObservableMap<symbol, unknown>,
     body: MessageBody
 };
 
 export type HtkResponse = Omit<InputResponse, 'body'> & {
-    contentType: HtkContentType,
+    contentType: ViewableContentType,
     cache: ObservableMap<symbol, unknown>,
     body: MessageBody
 };

@@ -108,9 +108,9 @@ export const PillSelector = <
 >(props: {
     value: T,
     onChange: (optionKey: K) => void
-    nameFormatter: (key: T) => string,
+    nameFormatter?: (key: T) => string,
     keyFormatter?: (key: T) => K,
-} & ({ options: T[] } | { optGroups: { [groupName: string]: T[] } })
+} & ({ options: readonly T[] } | { optGroups: { [groupName: string]: T[] } })
 ) => {
     const asKey = props.keyFormatter || ((k: T) => k.toString() as K);
     const asName = props.nameFormatter || ((k: T) => k.toString());

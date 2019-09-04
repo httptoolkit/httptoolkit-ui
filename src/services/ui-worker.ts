@@ -12,12 +12,23 @@ import { buildApiMetadata, ApiMetadata } from '../model/openapi/build-api';
 
 const gzipCompress = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
     new Promise<Buffer>((resolve, reject) => {
-        zlib.gzip(buffer, options, (error, result) => error ? reject(error) : resolve(result))
+        zlib.gzip(buffer, options,
+            (error, result) => error ? reject(error) : resolve(result)
+        )
     });
 
 const deflate = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
     new Promise<Buffer>((resolve, reject) => {
-        zlib.deflate(buffer, options, (error, result) => error ? reject(error) : resolve(result))
+        zlib.deflate(buffer, options,
+            (error, result) => error ? reject(error) : resolve(result)
+        )
+    });
+
+const deflateRaw = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
+    new Promise<Buffer>((resolve, reject) => {
+        zlib.deflateRaw(buffer, options,
+            (error, result) => error ? reject(error) : resolve(result)
+        )
     });
 
 interface Message {
@@ -34,6 +45,18 @@ export interface DecodeResponse extends Message {
     error?: Error;
     inputBuffer: ArrayBuffer; // Send the input back, since we transferred it
     decodedBuffer: ArrayBuffer;
+}
+
+export interface EncodeRequest extends Message {
+    type: 'encode';
+    buffer: ArrayBuffer;
+    encodings: string[];
+}
+
+export interface EncodeResponse extends Message {
+    error?: Error;
+    inputBuffer: ArrayBuffer; // Send the input back, since we transferred it
+    encodedBuffer: ArrayBuffer;
 }
 
 export interface TestEncodingsRequest extends Message {
@@ -56,11 +79,21 @@ export interface BuildApiResponse extends Message {
     api: ApiMetadata
 }
 
-export type BackgroundRequest = DecodeRequest | TestEncodingsRequest | BuildApiRequest;
-export type BackgroundResponse = DecodeResponse | TestEncodingsResponse | BuildApiResponse;
+export type BackgroundRequest =
+    | DecodeRequest
+    | EncodeRequest
+    | TestEncodingsRequest
+    | BuildApiRequest;
 
-function decodeContent(request: DecodeRequest): DecodeResponse {
+export type BackgroundResponse =
+    | DecodeResponse
+    | EncodeResponse
+    | TestEncodingsResponse
+    | BuildApiResponse;
+
+function decodeRequest(request: DecodeRequest): DecodeResponse {
     const { id, buffer, encodings } = request;
+
     const result = handleContentEncoding(Buffer.from(buffer), encodings);
     return {
         id,
@@ -68,6 +101,46 @@ function decodeContent(request: DecodeRequest): DecodeResponse {
         decodedBuffer: result.buffer as ArrayBuffer
     };
 }
+
+const encodeContent = async (body: Buffer, encoding: string) => {
+    // This mirrors handleContentEncoding in Mockttp
+    if (encoding === 'gzip' || encoding === 'x-gzip') {
+        return gzipCompress(body);
+    } else if (encoding === 'deflate' || encoding === 'x-deflate') {
+        // Deflate is ambiguous, and may or may not have a zlib wrapper.
+        // This checks the buffer header directly, based on
+        // https://stackoverflow.com/a/37528114/68051
+        const lowNibble = body[0] & 0xF;
+        if (lowNibble === 8) {
+            return deflate(body);
+        } else {
+            return deflateRaw(body);
+        }
+    } else if (encoding === 'br') {
+        return new Buffer(await brotliCompress(body));
+    } else if (!encoding || encoding === 'identity') {
+        return body;
+    } else {
+        throw new Error(`Unknown encoding: ${encoding}`);
+    }
+};
+
+async function encodeRequest(request: EncodeRequest): Promise<EncodeResponse> {
+    const { id, buffer, encodings } = request;
+
+    const result = await encodings.reduce((contentPromise, nextEncoding) => {
+        return contentPromise.then((content) =>
+            encodeContent(content, nextEncoding)
+        )
+    }, Promise.resolve(Buffer.from(buffer)));
+
+    return {
+        id,
+        inputBuffer: buffer,
+        encodedBuffer: result.buffer
+    };
+}
+
 
 async function testEncodings(request: TestEncodingsRequest) {
     const { decodedBuffer } = request;
@@ -91,10 +164,18 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
     try {
         switch (event.data.type) {
             case 'decode':
-                const result = decodeContent(event.data);
-                ctx.postMessage(result, [
-                    result.inputBuffer,
-                    result.decodedBuffer
+                const decodeResult = decodeRequest(event.data);
+                ctx.postMessage(decodeResult, [
+                    decodeResult.inputBuffer,
+                    decodeResult.decodedBuffer
+                ]);
+                break;
+
+            case 'encode':
+                const encodeResult = await encodeRequest(event.data);
+                ctx.postMessage(encodeResult, [
+                    encodeResult.inputBuffer,
+                    encodeResult.encodedBuffer
                 ]);
                 break;
 

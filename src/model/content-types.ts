@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 export const getBaseContentType = (mimeType: string | undefined) =>
     (mimeType || '').split(';')[0].split('+')[0];
 
-export type HtkContentType =
+export type ViewableContentType =
     | 'raw'
     | 'text'
     | 'json'
@@ -16,7 +16,20 @@ export type HtkContentType =
     | 'yaml'
     | 'image';
 
-const mimeTypeToContentTypeMap: { [mimeType: string]: HtkContentType } = {
+export const EditableContentTypes = [
+    'text',
+    'json',
+    'xml',
+    'html',
+    'css',
+    'javascript'
+] as const;
+
+export type EditableContentType = (
+    typeof EditableContentTypes
+) extends ReadonlyArray<infer T> ? T : never;
+
+const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/json': 'json',
     'text/json': 'json',
 
@@ -58,17 +71,32 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: HtkContentType } = {
     'application/octet-stream': 'raw'
 };
 
-export function getHTKContentType(mimeType: string | undefined): HtkContentType | undefined {
+export function getContentType(mimeType: string | undefined): ViewableContentType | undefined {
     const baseContentType = getBaseContentType(mimeType);
     return mimeTypeToContentTypeMap[baseContentType];
 }
 
-export function getDefaultMimeType(contentType: HtkContentType): string {
+export function getEditableContentType(mimeType: string | undefined): EditableContentType | undefined {
+    const baseContentType = getBaseContentType(mimeType);
+    const viewableContentType = mimeTypeToContentTypeMap[baseContentType];
+
+    if (EditableContentTypes.includes(viewableContentType as any)) {
+        return viewableContentType as EditableContentType;
+    }
+}
+
+export function getContentEditorName(contentType: ViewableContentType): string {
+    return contentType === 'raw' ? 'Hex'
+        : contentType === 'json' ? 'JSON'
+        : _.capitalize(contentType);
+}
+
+export function getDefaultMimeType(contentType: ViewableContentType): string {
     // Uses the *first* mime type listed for this key in our map
     return _.findKey(mimeTypeToContentTypeMap, (c) => c === contentType)!;
 }
 
-export function getCompatibleTypes(contentType: HtkContentType, rawContentType?: string): HtkContentType[] {
+export function getCompatibleTypes(contentType: ViewableContentType, rawContentType?: string): ViewableContentType[] {
     let types = [contentType];
 
     // Anything except raw & image can be shown as text

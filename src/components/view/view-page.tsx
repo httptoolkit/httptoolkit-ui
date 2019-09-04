@@ -16,7 +16,7 @@ import { ViewEventList, CollectedEvent } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { ExchangeBreakpointPane } from './exchange-breakpoint-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
-import { ContentEditor } from '../editor/content-editor';
+import { ContentViewer } from '../editor/content-viewer';
 
 interface ViewPageProps {
     className?: string;
@@ -29,8 +29,8 @@ interface ViewPageProps {
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    requestEditor = portals.createPortalNode<ContentEditor>();
-    responseEditor = portals.createPortalNode<ContentEditor>();
+    requestViewer = portals.createPortalNode<ContentViewer>();
+    responseViewer = portals.createPortalNode<ContentViewer>();
 
     @computed
     get selectedEvent() {
@@ -67,14 +67,14 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if ('isBreakpointed' in this.selectedEvent && this.selectedEvent.isBreakpointed) {
             rightPane = <ExchangeBreakpointPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestEditor}
-                responseEditor={this.responseEditor}
+                requestEditor={this.requestViewer}
+                responseEditor={this.responseViewer}
             />
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestEditor}
-                responseEditor={this.responseEditor}
+                requestEditor={this.requestViewer}
+                responseEditor={this.responseViewer}
             />;
         } else {
             rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
@@ -98,9 +98,9 @@ class ViewPage extends React.Component<ViewPageProps> {
                 { rightPane }
             </SplitPane>
 
-            {[this.requestEditor, this.responseEditor].map((editorNode, i) =>
+            {[this.requestViewer, this.responseViewer].map((editorNode, i) =>
                 <portals.InPortal key={i} node={editorNode}>
-                    <ContentEditor
+                    <ContentViewer
                         contentType='text'
                         rawContentType=''
                         children=''
