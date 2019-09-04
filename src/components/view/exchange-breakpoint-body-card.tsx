@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, action, reaction } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
+import * as portals from 'react-reverse-portal';
 
 import { Headers } from '../../types';
 import { styled } from '../../styles';
@@ -37,7 +38,8 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
 
     body: Buffer | undefined,
     headers: Headers,
-    onChange: (result: string) => void
+    onChange: (result: string) => void,
+    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>;
 }> {
 
     @observable
@@ -83,7 +85,8 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
                 <h1>{ title }</h1>
             </header>
             <EditorCardContent>
-                <ThemedSelfSizedEditor
+                <portals.OutPortal<typeof ThemedSelfSizedEditor>
+                    node={this.props.editorNode}
                     language={this.contentType}
                     value={body.toString('utf8')}
                     onChange={this.props.onChange}

@@ -14,6 +14,7 @@ import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeBreakpointHeader } from './exchange-breakpoint-header';
 import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
 import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 const ExchangeBreakpointScrollContainer = styled.div`
     position: relative;
@@ -48,8 +49,8 @@ type CardKey = typeof cardKeys[number];
 export class ExchangeBreakpointPane extends React.Component<{
     exchange: HttpExchange,
 
-    requestEditor: portals.PortalNode,
-    responseEditor: portals.PortalNode
+    requestEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
+    responseEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>
 
     // Injected:
     uiStore?: UiStore
@@ -121,6 +122,7 @@ export class ExchangeBreakpointPane extends React.Component<{
                 body={requestBreakpoint.inProgressResult.body}
                 headers={requestBreakpoint.inProgressResult.headers}
                 onChange={this.updateRequestBody}
+                editorNode={this.props.requestEditor}
                 {...this.cardProps.requestBody}
             />);
         } else {

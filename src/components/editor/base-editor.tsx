@@ -89,6 +89,12 @@ export class SelfSizedBaseEditor extends React.Component<
         if (this.editor.current) this.editor.current.relayout();
     }, 50, { leading: true, trailing: true });
 
+    componentDidUpdate() {
+        // Relayout after update, to ensure the editor is always using the full available
+        // size even as the editor content changes
+        if (this.editor.current) this.editor.current.relayout();
+    }
+
     resizeObserver = new ResizeObserver(this.onResize);
 
     componentDidMount() {

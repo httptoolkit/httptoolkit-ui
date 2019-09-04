@@ -16,7 +16,7 @@ import { ViewEventList, CollectedEvent } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { ExchangeBreakpointPane } from './exchange-breakpoint-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
-import { ContentViewer } from '../editor/content-viewer';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 interface ViewPageProps {
     className?: string;
@@ -29,8 +29,8 @@ interface ViewPageProps {
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    requestViewer = portals.createPortalNode<ContentViewer>();
-    responseViewer = portals.createPortalNode<ContentViewer>();
+    requestEditor = portals.createPortalNode<typeof ThemedSelfSizedEditor>();
+    responseEditor = portals.createPortalNode<typeof ThemedSelfSizedEditor>();
 
     @computed
     get selectedEvent() {
@@ -67,14 +67,14 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if ('isBreakpointed' in this.selectedEvent && this.selectedEvent.isBreakpointed) {
             rightPane = <ExchangeBreakpointPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestViewer}
-                responseEditor={this.responseViewer}
+                requestEditor={this.requestEditor}
+                responseEditor={this.responseEditor}
             />
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestViewer}
-                responseEditor={this.responseViewer}
+                requestEditor={this.requestEditor}
+                responseEditor={this.responseEditor}
             />;
         } else {
             rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
@@ -98,13 +98,9 @@ class ViewPage extends React.Component<ViewPageProps> {
                 { rightPane }
             </SplitPane>
 
-            {[this.requestViewer, this.responseViewer].map((editorNode, i) =>
+            {[this.requestEditor, this.responseEditor].map((editorNode, i) =>
                 <portals.InPortal key={i} node={editorNode}>
-                    <ContentViewer
-                        contentType='text'
-                        rawContentType=''
-                        children=''
-                    />
+                    <ThemedSelfSizedEditor />
                 </portals.InPortal>
             )}
         </div>;

@@ -19,6 +19,7 @@ import { ExchangeResponseCard } from './exchange-response-card';
 import { AccountStore } from '../../model/account/account-store';
 import { ExchangePerformanceCard } from './exchange-performance-card';
 import { ExchangeExportCard } from './exchange-export-card';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!res && res !== 'aborted' && !!res.body.encoded.byteLength;
@@ -65,8 +66,8 @@ type CardKey = typeof cardKeys[number];
 export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange,
 
-    requestEditor: portals.PortalNode,
-    responseEditor: portals.PortalNode,
+    requestEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
+    responseEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
 
     // Injected:
     uiStore?: UiStore,

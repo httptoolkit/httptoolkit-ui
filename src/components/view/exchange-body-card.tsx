@@ -14,6 +14,7 @@ import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButtonIcon } from '../common/copy-button';
 import { ContentViewer } from '../editor/content-viewer';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
@@ -40,7 +41,7 @@ export class ExchangeBodyCard extends React.Component<{
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
-    editorNode: portals.PortalNode
+    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>
 }> {
 
     @observable
@@ -114,15 +115,15 @@ export class ExchangeBodyCard extends React.Component<{
                     <h1>{ title }</h1>
                 </header>
                 <EditorCardContent>
-                    <portals.OutPortal<ContentViewer>
-                        node={this.props.editorNode}
+                    <ContentViewer
+                        editorNode={this.props.editorNode}
                         rawContentType={message.headers['content-type']}
                         contentType={contentType}
                         contentObservable={this.currentContent}
                         schema={apiBodySchema}
                     >
                         {decodedBody}
-                    </portals.OutPortal>
+                    </ContentViewer>
                 </EditorCardContent>
             </ExchangeCard>
         :

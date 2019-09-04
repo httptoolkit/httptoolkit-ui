@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import { computed, IObservableValue, autorun, runInAction } from 'mobx';
 import { SchemaObject } from 'openapi3-ts';
+import * as portals from 'react-reverse-portal';
 
 import {
     js as beautifyJs,
@@ -108,6 +109,7 @@ interface ContentViewerProps {
     rawContentType?: string;
     contentType: ViewableContentType;
     contentObservable?: IObservableValue<string | undefined>;
+    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>;
 }
 
 function isEditorFormatter(input: any): input is EditorFormatter {
@@ -155,7 +157,8 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
     render() {
         if (isEditorFormatter(this.formatter)) {
             try {
-                return <ThemedSelfSizedEditor
+                return <portals.OutPortal<typeof ThemedSelfSizedEditor>
+                    node={this.props.editorNode}
                     options={this.editorOptions}
                     language={this.formatter.language}
                     value={this.renderedContent!}
