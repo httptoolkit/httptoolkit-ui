@@ -4,6 +4,7 @@ import { observer } from 'mobx-react';
 import { Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, FontAwesomeIcon } from '../../icons';
+import { joinAnd } from '../../util';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
@@ -29,7 +30,7 @@ import {
 } from '../common/text-content';
 import { DocsLink } from '../common/docs-link';
 import { HeaderDetails } from './headers/header-details';
-import { joinAnd } from '../../util';
+import { UrlBreakdown } from './url-breakdown';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== SourceIcons.Unknown ?
@@ -38,6 +39,10 @@ const SourceIcon = ({ source, className }: { source: TrafficSource, className?: 
             title={source.summary}
             {...source.icon}
         /> : null;
+
+const UrlLabel = styled(ContentMonoValue)`
+    display: inline;
+`;
 
 const RawRequestDetails = (p: { request: HtkRequest }) => {
     const methodDocs = getMethodDocs(p.request.method);
@@ -67,9 +72,20 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
         </CollapsibleSection>
 
         <ContentLabelBlock>URL</ContentLabelBlock>
-        <ContentMonoValue>{
-            p.request.parsedUrl.toString()
-        }</ContentMonoValue>
+
+        <CollapsibleSection prefixTrigger={true}>
+            <ExchangeCollapsibleSummary>
+                <UrlLabel>{
+                    p.request.parsedUrl.toString()
+                }</UrlLabel>
+            </ExchangeCollapsibleSummary>
+
+            {
+                <ExchangeCollapsibleBody>
+                    <UrlBreakdown url={p.request.parsedUrl} />
+                </ExchangeCollapsibleBody>
+            }
+        </CollapsibleSection>
 
         <ContentLabelBlock>Headers</ContentLabelBlock>
         <HeaderDetails headers={p.request.headers} requestUrl={p.request.parsedUrl} />
