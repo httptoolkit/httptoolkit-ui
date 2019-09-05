@@ -171,6 +171,14 @@ workbox.routing.registerRoute(/\/.*/, async ({ event }) => {
 
     // We have a /<something> URL that isn't in the cache at all - something is very wrong
     if (!precachedUrl) {
+        if (event.request.cache === 'only-if-cached') {
+            // Triggered by dev tools looking for sources. We know it's indeed not cached, so we reject
+            return new Response(null, { status: 504 }) // 504 is standard failure code for these
+
+            // This is required due to https://bugs.chromium.org/p/chromium/issues/detail?id=823392
+            // TODO: This can likely be removed once all Electrons are updated to include that
+        }
+
         console.log(`${requestUrl.href} did not match any of ${[...urlsToCacheKeys.keys()]}`);
         return brokenCacheResponse(event);
     }
