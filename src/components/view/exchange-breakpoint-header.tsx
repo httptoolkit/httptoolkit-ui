@@ -1,6 +1,8 @@
 import * as React from 'react';
 
 import { styled } from '../../styles';
+import { WarningIcon } from '../../icons';
+
 import { clickOnEnter } from '../component-utils';
 import { MediumCard } from '../common/card';
 import { Button } from '../common/inputs';
@@ -22,6 +24,7 @@ const BreakpointHeaderCard = styled(MediumCard)`
 const HeaderExplanation = styled.p`
     width: 100%;
     margin-bottom: 10px;
+    line-height: 1.2;
 `;
 
 const HeaderButton = styled(Button)`
@@ -39,11 +42,11 @@ export const ExchangeRequestBreakpointHeader = (p: {
 }) =>
     <BreakpointHeaderCard>
         <HeaderExplanation>
-            <strong>This request is paused at a breakpoint.</strong>
+            <WarningIcon /> <strong>This request is paused at a breakpoint</strong>
         </HeaderExplanation>
         <HeaderExplanation>
-            Edit it as you'd like, then resume to let the edited request continue as normal,
-            or respond directly to provide a response yourself.
+            Respond directly to provide a response yourself, or edit the request as you'd like
+            and then resume to let your edited request continue to the target URL.
         </HeaderExplanation>
 
         <HeaderButton onClick={p.onCreateResponse} onKeyPress={clickOnEnter}>
@@ -60,10 +63,10 @@ export const ExchangeResponseBreakpointHeader = (p: {
 }) =>
     <BreakpointHeaderCard>
         <HeaderExplanation>
-            <strong>This response is paused at a breakpoint.</strong>
+            <WarningIcon /> <strong>This response is paused at a breakpoint</strong>
         </HeaderExplanation>
         <HeaderExplanation>
-            Edit it as you'd like, then resume to let the edited response complete as normal.
+            Edit it as you'd like, then resume to let the edited response continue back to the client.
         </HeaderExplanation>
 
         <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>

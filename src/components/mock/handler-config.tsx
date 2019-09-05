@@ -350,7 +350,7 @@ const BreakpointToggle = styled.input.attrs({
 })`
     width: 20px;
     height: 20px;
-    margin-right: 10px;
+    margin: 3px 10px 3px 0;
 `;
 
 const BreakpointLabel = styled.label`

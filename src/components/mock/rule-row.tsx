@@ -156,17 +156,11 @@ const Details = styled.div`
 
     display: flex;
     flex-direction: column;
-`;
-
-const HandlerDetails = styled(Details)`
-    padding-left: 20px;
     text-align: left;
 `;
 
 const MatchersList = styled.ul`
-    margin: 10px;
-    padding: 10px;
-    border-left: 5px solid ${p => p.theme.containerWatermark};
+    margin-top: 20px;
 `;
 
 const MenuContainer = styled.div`
@@ -286,7 +280,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
                 </Summary>
 
                 {
-                    !collapsed && <HandlerDetails>
+                    !collapsed && <Details>
                         <div>Then:</div>
                         <HandlerSelector
                             value={rule.handler}
@@ -297,7 +291,7 @@ export class RuleRow extends React.Component<RuleRowProps> {
                             handler={rule.handler}
                             onChange={this.updateHandler}
                         />
-                    </HandlerDetails>
+                    </Details>
                 }
             </MatcherOrHandler>
         </RowContainer>;
