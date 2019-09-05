@@ -123,9 +123,25 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
 
     @action.bound
     onUrlChanged(event: React.ChangeEvent<HTMLInputElement>) {
+        const url = event.target.value;
+        const { inProgressResult } = this.props.exchange.requestBreakpoint!;
+
+        let headers = inProgressResult.headers;
+
+        try {
+            // Automatically update the host header to match, if we can:
+            const parsedUrl = new URL(url);
+            if (parsedUrl.host) {
+                headers = Object.assign({}, headers, { host: parsedUrl.host });
+            }
+        } catch (e) { }
+
         this.props.onChange(Object.assign({},
             this.props.exchange.requestBreakpoint!.inProgressResult,
-            { url: event.target.value }
+            {
+                url: event.target.value,
+                headers
+            }
         ));
     }
 
