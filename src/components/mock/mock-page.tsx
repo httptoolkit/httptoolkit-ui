@@ -37,7 +37,7 @@ const MockPageScrollContainer = styled.div`
 const MockPageHeader = styled.header`
     box-sizing: border-box;
     width: 100%;
-    padding: 20px 40px;
+    padding: 20px calc(40px + 16px) 20px 40px; /* ~16px to match scrollbar below */
     background-color: ${p => p.theme.containerBackground};
     border-bottom: 1px solid rgba(0,0,0,0.12);
     box-sizing: border-box;
