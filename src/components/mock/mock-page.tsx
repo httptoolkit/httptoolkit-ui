@@ -3,10 +3,8 @@ import * as React from 'react';
 import { action, observable, autorun, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
 import {
-    SortableContainer,
-    SortableElement,
-    SortableHandle,
-  } from 'react-sortable-hoc';
+    SortableContainer
+} from 'react-sortable-hoc';
 
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
@@ -14,12 +12,12 @@ import { WithInjected } from '../../types';
 import { ActivatedStore } from '../../model/interception-store';
 import { getNewRule, HtkMockRule } from '../../model/rules/rules';
 
-import { Button } from '../common/inputs';
+import { Button, SecondaryButton } from '../common/inputs';
 import { AddRuleRow, SortableRuleRow } from './rule-row';
 
 interface MockPageProps {
     className?: string,
-    interceptionStore: ActivatedStore,
+    interceptionStore: ActivatedStore
 }
 
 const MockPageContainer = styled.section`
@@ -52,13 +50,19 @@ const MockPageHeader = styled.header`
 const MockHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
     font-weight: bold;
+    flex-grow: 1;
+`;
+
+const ResetButton = styled(SecondaryButton)`
+    padding: 10px 24px;
+    font-weight: bold;
+    font-size: ${p => p.theme.textSize};
 `;
 
 const SaveButton = styled(Button)`
-    margin-left: auto;
+    margin-left: 20px;
     padding: 10px 24px;
     font-weight: bold;
-
     font-size: ${p => p.theme.textSize};
 `;
 
@@ -111,7 +115,7 @@ class MockPage extends React.Component<MockPageProps> {
     // Map from rule id -> collapsed (true/false)
     @observable
     collapsedRulesMap = _.fromPairs(
-        this.props.interceptionStore.unsavedInterceptionRules.map((rule) =>
+        this.props.interceptionStore.draftInterceptionRules.map((rule) =>
             [rule.id, true] as [string, boolean]
         )
     );
@@ -123,7 +127,7 @@ class MockPage extends React.Component<MockPageProps> {
         // If the list of rules ever changes, update the collapsed list accordingly.
         // Drop now-unnecessary ids, and add new rules (defaulting to collapsed)
         disposeOnUnmount(this, autorun(() => {
-            const rules = this.props.interceptionStore.unsavedInterceptionRules;
+            const rules = this.props.interceptionStore.draftInterceptionRules;
             const ruleIds = rules.map(r => r.id);
             const ruleMapIds = _.keys(this.collapsedRulesMap);
 
@@ -144,14 +148,19 @@ class MockPage extends React.Component<MockPageProps> {
 
     render(): JSX.Element {
         const {
-            unsavedInterceptionRules,
-            areSomeRulesUnsaved
+            draftInterceptionRules,
+            areSomeRulesUnsaved,
+            areSomeRulesNonDefault
         } = this.props.interceptionStore;
         const { currentlyDraggingRuleIndex } = this;
 
         return <MockPageContainer ref={this.containerRef}>
             <MockPageHeader>
                 <MockHeading>Mock & Rewrite HTTP</MockHeading>
+
+                <ResetButton disabled={!areSomeRulesNonDefault} onClick={this.resetAll}>
+                    Reset
+                </ResetButton>
                 <SaveButton disabled={!areSomeRulesUnsaved} onClick={this.saveAll}>
                     Save changes
                 </SaveButton>
@@ -159,7 +168,7 @@ class MockPage extends React.Component<MockPageProps> {
 
             <MockPageScrollContainer>
                 <SortableMockRuleList
-                    items={unsavedInterceptionRules}
+                    items={draftInterceptionRules}
                     collapsedRulesMap={this.collapsedRulesMap}
                     addRule={this.addRule}
                     toggleRuleCollapsed={this.toggleRuleCollapsed}
@@ -183,18 +192,27 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
-    saveAll() {
-        this.props.interceptionStore.saveInterceptionRules();
-
-        // Collapse everything
+    collapseAll() {
         Object.keys(this.collapsedRulesMap).forEach((ruleId) => {
             this.collapsedRulesMap[ruleId] = true;
-        })
+        });
+    }
+
+    @action.bound
+    saveAll() {
+        this.props.interceptionStore.saveInterceptionRules();
+        this.collapseAll();
+    }
+
+    @action.bound
+    resetAll() {
+        this.props.interceptionStore.resetInterceptionRules();
+        this.collapseAll();
     }
 
     @action.bound
     addRule() {
-        const rules = this.props.interceptionStore.unsavedInterceptionRules;
+        const rules = this.props.interceptionStore.draftInterceptionRules;
         const newRule = getNewRule();
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
@@ -215,7 +233,7 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     deleteRule(ruleIndex: number) {
-        const rules = this.props.interceptionStore.unsavedInterceptionRules;
+        const rules = this.props.interceptionStore.draftInterceptionRules;
         rules.splice(ruleIndex, 1);
     }
 
@@ -226,7 +244,7 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     moveRule({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) {
-        const rules = this.props.interceptionStore.unsavedInterceptionRules;
+        const rules = this.props.interceptionStore.draftInterceptionRules;
         const rule = rules[oldIndex];
         rules.splice(oldIndex, 1);
         rules.splice(newIndex, 0, rule);

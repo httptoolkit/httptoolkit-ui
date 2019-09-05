@@ -114,8 +114,7 @@ export class InterceptionStore {
         await create()('interception-store', this);
 
         // Rebuild any other data that depends on persisted settings:
-        this.interceptionRules = buildDefaultRules(this.whitelistedCertificateHosts);
-        this.unsavedInterceptionRules = _.cloneDeep(this.interceptionRules);
+        this.resetInterceptionRules();
         this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
 
@@ -206,23 +205,55 @@ export class InterceptionStore {
     interceptionRules: HtkMockRule[] = buildDefaultRules(['localhost']);
 
     @observable
-    unsavedInterceptionRules: HtkMockRule[] = _.cloneDeep(this.interceptionRules);
+    draftInterceptionRules: HtkMockRule[] = _.cloneDeep(this.interceptionRules);
 
     @action.bound
     saveInterceptionRules() {
-        this.interceptionRules = this.unsavedInterceptionRules;
-        this.unsavedInterceptionRules = _.cloneDeep(this.interceptionRules);
+        this.interceptionRules = this.draftInterceptionRules;
+        this.resetInterceptionRuleDrafts();
+    }
+
+    @action.bound
+    resetInterceptionRuleDrafts() {
+        // Set the rules back to the latest saved version
+        this.draftInterceptionRules = _.cloneDeep(this.interceptionRules);
+    }
+
+    @action.bound
+    resetInterceptionRules() {
+        // Set the rules back to the default settings
+        this.interceptionRules = buildDefaultRules(this.whitelistedCertificateHosts);
+        this.resetInterceptionRuleDrafts();
     }
 
     @computed
     get areSomeRulesUnsaved() {
-        return !_.isEqualWith(this.interceptionRules, this.unsavedInterceptionRules, (a, b) => {
-            // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
-            // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
-            if (_.isFunction(a) && _.isFunction(b)) {
-                return a.toString() === b.toString();
+        return !_.isEqualWith(
+            this.draftInterceptionRules,
+            this.interceptionRules,
+            (a, b) => {
+                // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
+                // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
+                if (_.isFunction(a) && _.isFunction(b)) {
+                    return a.toString() === b.toString();
+                }
             }
-        });
+        );
+    }
+
+    @computed
+    get areSomeRulesNonDefault() {
+        return !_.isEqualWith(
+            this.draftInterceptionRules,
+            buildDefaultRules(this.whitelistedCertificateHosts),
+            (a, b) => {
+                // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
+                // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
+                if (_.isFunction(a) && _.isFunction(b)) {
+                    return a.toString() === b.toString();
+                }
+            }
+            );
     }
 
     // ** Interceptors:

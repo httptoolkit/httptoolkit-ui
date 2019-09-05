@@ -27,7 +27,7 @@ export const UnstyledButton = styled.button`
     color: inherit;
 ` as StyledComponent<"button", Theme>;
 
-export const Button = styled.button`
+const BaseButton = styled.button`
     -webkit-appearance: none;
     cursor: pointer;
     padding: 15px 36px;
@@ -37,6 +37,16 @@ export const Button = styled.button`
     font-family: ${p => p.theme.fontFamily};
     font-size: ${p => p.theme.headingSize};
 
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    font-weight: inherit;
+    line-height: normal;
+
+    ${interactiveMouseoverStyles}
+`;
+
+export const Button = styled(BaseButton)`
     /*
      * Need both to ensure link button colours have higher
      * specificity than the a:visited default.
@@ -45,20 +55,32 @@ export const Button = styled.button`
         color: ${p => p.theme.primaryInputColor};
     }
 
-    display: block;
-    text-decoration: none;
-    text-align: center;
-    font-weight: inherit;
-    line-height: normal;
-
-    ${interactiveMouseoverStyles}
-
     &[disabled] {
         background-color: ${p => p.theme.containerWatermark};
     }
 
     &:not([disabled]) {
         background-color: ${p => p.theme.primaryInputBackground};
+    }
+`;
+
+export const SecondaryButton = styled(BaseButton)`
+    background-color: transparent;
+
+    &, &:visited {
+        color: ${p => p.theme.secondaryInputColor};
+    }
+
+    border-width: 2px;
+    border-style: solid;
+
+    &[disabled] {
+        color: ${p => p.theme.containerWatermark};
+        border-color: ${p => p.theme.containerWatermark};
+    }
+
+    &:not([disabled]) {
+        border-color: ${p => p.theme.secondaryInputBorder};
     }
 `;
 
