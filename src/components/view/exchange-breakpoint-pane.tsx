@@ -45,6 +45,31 @@ const cardKeys = [
 
 type CardKey = typeof cardKeys[number];
 
+function updateBody(
+    breakpoint: { inProgressResult: BreakpointRequestResult | BreakpointResponseResult },
+    body: string
+) {
+    const bodyBuffer = Buffer.from(body);
+    const { headers: previousHeaders, body: previousBody } = breakpoint.inProgressResult;
+
+    let headers = previousHeaders;
+
+    if (parseInt(headers['content-length'] || '', 10) === (previousBody || '').length) {
+        // If the content-length was previous correct, keep it correct:
+        headers = Object.assign({}, previousHeaders, {
+            'content-length': bodyBuffer.length.toString()
+        });
+    }
+
+    breakpoint.inProgressResult = Object.assign({},
+        breakpoint.inProgressResult,
+        {
+            body: bodyBuffer,
+            headers
+        }
+    );
+}
+
 @inject('uiStore')
 @observer
 export class ExchangeBreakpointPane extends React.Component<{
@@ -78,19 +103,13 @@ export class ExchangeBreakpointPane extends React.Component<{
     @action.bound
     updateRequestBody(body: string) {
         const requestBreakpoint = this.props.exchange.requestBreakpoint!;
-        requestBreakpoint!.inProgressResult = Object.assign({},
-            requestBreakpoint.inProgressResult,
-            { body: Buffer.from(body) }
-        );
+        updateBody(requestBreakpoint, body);
     }
 
     @action.bound
     updateResponseBody(body: string) {
         const responseBreakpoint = this.props.exchange.responseBreakpoint!;
-        responseBreakpoint!.inProgressResult = Object.assign({},
-            responseBreakpoint.inProgressResult,
-            { body: Buffer.from(body) }
-        );
+        updateBody(responseBreakpoint, body);
     }
 
     @action.bound
