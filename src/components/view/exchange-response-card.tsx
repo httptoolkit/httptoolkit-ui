@@ -56,7 +56,7 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
 
     return <ExchangeCard {...props} direction='left'>
         <header>
-            <Pill color={getStatusColor(response.statusCode, theme!)}>{
+            <Pill color={getStatusColor(response.statusCode, theme)}>{
                 response.statusCode
             }</Pill>
             <h1>Response</h1>

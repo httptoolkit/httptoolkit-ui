@@ -23,6 +23,7 @@ const StatusContainer = styled.div`
 `;
 
 export const EditableStatus = (props: {
+    className?: string,
     statusCode: number | '',
     statusMessage: string | undefined,
     onChange: (statusCode: number | '', statusMessage: string | undefined) => void
@@ -35,7 +36,7 @@ export const EditableStatus = (props: {
         ? getStatusMessage(statusCode)
         : props.statusMessage;
 
-    return <StatusContainer>
+    return <StatusContainer className={props.className}>
         <TextInput
             type='number'
             min='100'

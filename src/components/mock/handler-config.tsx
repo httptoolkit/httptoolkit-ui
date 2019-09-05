@@ -16,11 +16,9 @@ import {
     PassThroughHandler,
     BreakpointHandler
 } from '../../model/rules/rule-definitions';
-import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http-docs';
+import { HEADER_NAME_REGEX } from '../../model/http-docs';
 import {
-    getContentType,
     getDefaultMimeType,
-    EditableContentTypes,
     EditableContentType,
     getEditableContentType
 } from '../../model/content-types';

@@ -67,8 +67,7 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if ('isBreakpointed' in this.selectedEvent && this.selectedEvent.isBreakpointed) {
             rightPane = <ExchangeBreakpointPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestEditor}
-                responseEditor={this.responseEditor}
+                editorNode={this.requestEditor}
             />
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane

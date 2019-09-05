@@ -63,10 +63,11 @@ function callApi<
  */
 export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
     if (
-        encodings.length === 0 ||
-        (encodings.length === 1 && encodings[0] === 'identity')
+        encodings.length === 0 || // No encoding
+        (encodings.length === 1 && encodings[0] === 'identity') || // No-op only encoding
+        encodedBuffer.length === 0 // Empty body (e.g. HEAD, 204, etc)
     ) {
-        // Shortcut to skip decoding when we know it's not required
+        // Shortcut to skip decoding when we know it's not required:
         return { encoded: encodedBuffer, decoded: encodedBuffer };
     }
 

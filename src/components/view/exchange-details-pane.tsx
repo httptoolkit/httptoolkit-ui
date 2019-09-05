@@ -125,7 +125,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 response={response}
                 requestUrl={exchange.request.parsedUrl}
                 apiExchange={apiExchange}
-                theme={uiStore!.theme!}
+                theme={uiStore!.theme}
             />);
 
             if (hasCompletedBody(response)) {

@@ -34,6 +34,7 @@ import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
 import { decodeBody, encodeBody } from '../services/ui-worker-api';
 import { reportError } from '../errors';
+import { getStatusMessage } from './http-docs';
 
 export { TimingEvents };
 
@@ -286,6 +287,28 @@ export class HttpExchange {
         this.requestBreakpoint = undefined;
     });
 
+    resumeResponseFromBreakpoint = flow(function * (this: HttpExchange) {
+        const { inProgressResult } = this.responseBreakpoint!;
+
+        let body = inProgressResult.body;
+
+        if (body) {
+            // Encode the body according to the content-encoding specified:
+            const encodings = asHeaderArray(inProgressResult.headers['content-encoding']);
+            body = (
+                yield encodeBody(body, encodings).catch((e) => {
+                    reportError(e, { encodings });
+                    return { encoded: 'HTTP TOOLKIT ERROR: COULD NOT ENCODE BODY' };
+                })
+            ).encoded;
+        }
+
+        this.responseBreakpoint!.deferred.resolve(
+            Object.assign({}, inProgressResult, { body })
+        );
+        this.responseBreakpoint = undefined;
+    });
+
     triggerRequestBreakpoint = flow(function * (
         this: HttpExchange,
         request: MockttpBreakpointedRequest
@@ -315,11 +338,16 @@ export class HttpExchange {
         this: HttpExchange,
         response: MockttpBreakpointedResponse
     ) {
+        const expectedStatusMessage = getStatusMessage(response.statusCode)
+        const statusMessage = expectedStatusMessage === response.statusMessage
+            ? undefined
+            : response.statusMessage;
+
         this.responseBreakpoint = {
             deferred: getDeferred(),
             inProgressResult: {
                 statusCode: response.statusCode,
-                statusMessage: response.statusMessage,
+                statusMessage: statusMessage,
                 headers: response.headers,
                 body: (
                     yield decodeBody(
