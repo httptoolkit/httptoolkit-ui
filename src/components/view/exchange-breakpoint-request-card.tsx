@@ -35,7 +35,7 @@ const SourceIcon = ({ source, className }: { source: TrafficSource, className?: 
 
 interface RequestBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
-    onChange: (request: BreakpointRequestResult) => void;
+    onChange: (request: Partial<BreakpointRequestResult>) => void;
 }
 
 const UrlInput = styled(TextInput)`
@@ -118,7 +118,7 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
 
         if (method === inProgressResult.method) return;
 
-        this.props.onChange(Object.assign({}, inProgressResult, { method }));
+        this.props.onChange({ method });
     }
 
     @action.bound
@@ -136,23 +136,12 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
             }
         } catch (e) { }
 
-        this.props.onChange(Object.assign({},
-            this.props.exchange.requestBreakpoint!.inProgressResult,
-            {
-                url: event.target.value,
-                headers
-            }
-        ));
+        this.props.onChange({ url: event.target.value, headers });
     }
 
     @action.bound
     onHeadersChanged(headers: HeadersArray) {
-        this.props.onChange(Object.assign({},
-            this.props.exchange.requestBreakpoint!.inProgressResult,
-            {
-                headers: headersArrayToHeaders(headers) as RequestHeaders
-            }
-        ));
+        this.props.onChange({ headers: headersArrayToHeaders(headers) as RequestHeaders });
     }
 
 }

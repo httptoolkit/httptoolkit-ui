@@ -81,6 +81,8 @@ export const TextInput = styled.input.attrs({
     border-radius: 4px;
     border: solid 1px ${p => p.theme.containerBorder};
 
+    min-width: 20px; /* Without this, editable headers especially refuse to shrink */
+
     &:invalid {
         ${invalidTextCss}
     }

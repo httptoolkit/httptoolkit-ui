@@ -50,7 +50,7 @@ const HeadersContainer = styled.div`
 
     display: grid;
     grid-gap: 5px;
-    grid-template-columns: 1fr 2fr auto;
+    grid-template-columns: 1fr 2fr min-content;
 
     > :last-child {
         grid-column: 2 / span 2;

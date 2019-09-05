@@ -33,23 +33,26 @@ export type InputMessage = InputRequest | InputResponse;
 
 // Define the restricted form of request BP result we'll use internally
 export type BreakpointRequestResult = Pick<
-    MockttpBreakpointRequestResult, 'response'
-> & Pick<
     Required<MockttpBreakpointRequestResult>,
     | 'method'
     | 'url'
     | 'headers'
 > & {
-    body: Buffer | undefined
+    body: Buffer
 };
+
+// We still need this for the places where we actually interact with Mockttp
+export { MockttpBreakpointRequestResult };
 
 // Define the restricted form of response BP result we'll use internally
 export type BreakpointResponseResult = Pick<
     MockttpBreakpointResponseResult, 'statusMessage'
 > & Pick<
-    Required<MockttpBreakpointResponseResult>, 'statusCode' | 'headers'
+    Required<MockttpBreakpointResponseResult>,
+    | 'statusCode'
+    | 'headers'
 > & {
-    body: Buffer | undefined
+    body: Buffer
 };
 
 export {

@@ -4,14 +4,13 @@ import { action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { BreakpointRequestResult, BreakpointResponseResult } from '../../types';
 import { styled } from '../../styles';
 import { HttpExchange } from '../../model/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
-import { ExchangeBreakpointHeader } from './exchange-breakpoint-header';
+import { ExchangeRequestBreakpointHeader, ExchangeResponseBreakpointHeader } from './exchange-breakpoint-header';
 import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
 import { ExchangeBreakpointResponseCard } from './exchange-breakpoint-response-card';
 import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
@@ -45,31 +44,6 @@ const cardKeys = [
 
 type CardKey = typeof cardKeys[number];
 
-function updateBody(
-    breakpoint: { inProgressResult: BreakpointRequestResult | BreakpointResponseResult },
-    body: string
-) {
-    const bodyBuffer = Buffer.from(body);
-    const { headers: previousHeaders, body: previousBody } = breakpoint.inProgressResult;
-
-    let headers = previousHeaders;
-
-    if (parseInt(headers['content-length'] || '', 10) === (previousBody || '').length) {
-        // If the content-length was previous correct, keep it correct:
-        headers = Object.assign({}, previousHeaders, {
-            'content-length': bodyBuffer.length.toString()
-        });
-    }
-
-    breakpoint.inProgressResult = Object.assign({},
-        breakpoint.inProgressResult,
-        {
-            body: bodyBuffer,
-            headers
-        }
-    );
-}
-
 @inject('uiStore')
 @observer
 export class ExchangeBreakpointPane extends React.Component<{
@@ -91,39 +65,7 @@ export class ExchangeBreakpointPane extends React.Component<{
     }
 
     @action.bound
-    updateRequestResult(result: BreakpointRequestResult) {
-        this.props.exchange.requestBreakpoint!.inProgressResult = result;
-    }
-
-    @action.bound
-    updateResponseResult(result: BreakpointResponseResult) {
-        this.props.exchange.responseBreakpoint!.inProgressResult = result;
-    }
-
-    @action.bound
-    updateRequestBody(body: string) {
-        const requestBreakpoint = this.props.exchange.requestBreakpoint!;
-        updateBody(requestBreakpoint, body);
-    }
-
-    @action.bound
-    updateResponseBody(body: string) {
-        const responseBreakpoint = this.props.exchange.responseBreakpoint!;
-        updateBody(responseBreakpoint, body);
-    }
-
-    @action.bound
-    private resumeRequest() {
-        this.props.exchange.resumeRequestFromBreakpoint();
-    }
-
-    @action.bound
-    private resumeResponse() {
-        this.props.exchange.resumeResponseFromBreakpoint();
-    }
-
-    @action.bound
-    private toggleCollapse(key: CardKey) {
+    toggleCollapse(key: CardKey) {
         const { viewExchangeCardStates } = this.props.uiStore!;
         const cardState = viewExchangeCardStates[key];
         cardState.collapsed = !cardState.collapsed;
@@ -138,17 +80,17 @@ export class ExchangeBreakpointPane extends React.Component<{
 
         if (requestBreakpoint) {
             cards.push(
-                <ExchangeBreakpointHeader
+                <ExchangeRequestBreakpointHeader
                     key='breakpoint-header'
-                    type='request'
-                    onResume={this.resumeRequest}
+                    onCreateResponse={exchange.respondToBreakpointedRequest}
+                    onResume={requestBreakpoint.resume}
                 />
             );
 
             cards.push(<ExchangeBreakpointRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
-                onChange={this.updateRequestResult}
+                onChange={requestBreakpoint.updateResult}
             />);
 
             cards.push(<ExchangeBreakpointBodyCard
@@ -156,7 +98,7 @@ export class ExchangeBreakpointPane extends React.Component<{
                 direction='right'
                 body={requestBreakpoint.inProgressResult.body}
                 headers={requestBreakpoint.inProgressResult.headers}
-                onChange={this.updateRequestBody}
+                onChange={requestBreakpoint.updateBody}
                 editorNode={this.props.editorNode}
                 {...this.cardProps.requestBody}
             />);
@@ -165,10 +107,9 @@ export class ExchangeBreakpointPane extends React.Component<{
             const responseBreakpoint = exchange.responseBreakpoint!;
 
             cards.push(
-                <ExchangeBreakpointHeader
+                <ExchangeResponseBreakpointHeader
                     key='breakpoint-header'
-                    type='response'
-                    onResume={this.resumeResponse}
+                    onResume={responseBreakpoint.resume}
                 />
             );
 
@@ -190,7 +131,7 @@ export class ExchangeBreakpointPane extends React.Component<{
             cards.push(<ExchangeBreakpointResponseCard
                 {...this.cardProps.response}
                 exchange={exchange}
-                onChange={this.updateResponseResult}
+                onChange={responseBreakpoint.updateResult}
                 theme={uiStore!.theme}
             />);
 
@@ -199,7 +140,7 @@ export class ExchangeBreakpointPane extends React.Component<{
                 direction='left'
                 body={responseBreakpoint.inProgressResult.body}
                 headers={responseBreakpoint.inProgressResult.headers}
-                onChange={this.updateResponseBody}
+                onChange={responseBreakpoint.updateBody}
                 editorNode={this.props.editorNode}
                 {...this.cardProps.responseBody}
             />);

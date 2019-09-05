@@ -25,7 +25,7 @@ import { EditableStatus } from '../common/editable-status';
 interface ResponseBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
     theme: Theme;
     exchange: HttpExchange;
-    onChange: (response: BreakpointResponseResult) => void;
+    onChange: (response: Partial<BreakpointResponseResult>) => void;
 }
 
 const StatusContainer = styled.div`
@@ -75,23 +75,12 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
 
     @action.bound
     onHeadersChanged(headers: HeadersArray) {
-        this.props.onChange(Object.assign({},
-            this.props.exchange.responseBreakpoint!.inProgressResult,
-            {
-                headers: headersArrayToHeaders(headers)
-            }
-        ));
+        this.props.onChange({ headers: headersArrayToHeaders(headers) });
     }
 
     @action.bound
     onStatusChange(statusCode: number | '', statusMessage: string | undefined) {
-        this.props.onChange(Object.assign({},
-            this.props.exchange.responseBreakpoint!.inProgressResult,
-            {
-                statusCode: statusCode || NaN,
-                statusMessage
-            }
-        ));
+        this.props.onChange({ statusCode: statusCode || NaN, statusMessage });
     }
 
 }

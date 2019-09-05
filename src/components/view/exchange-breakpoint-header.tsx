@@ -13,30 +13,60 @@ const BreakpointHeaderCard = styled(MediumCard)`
     margin-bottom: 20px;
 
     display: flex;
+    flex-wrap: wrap;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
 `;
 
-const ResumeButton = styled(Button)`
-    padding: 10px 24px;
+const HeaderExplanation = styled.p`
+    width: 100%;
+    margin-bottom: 10px;
+`;
+
+const HeaderButton = styled(Button)`
+    padding: 10px 20px;
     font-weight: bold;
     font-size: ${p => p.theme.textSize};
 
-    margin-left: 10px;
+    margin: 10px 0 0 20px;
+    align-self: stretch;
 `;
 
-export const ExchangeBreakpointHeader = (p: {
-    type: 'request' | 'response'
+export const ExchangeRequestBreakpointHeader = (p: {
+    onResume: () => void,
+    onCreateResponse: () => void
+}) =>
+    <BreakpointHeaderCard>
+        <HeaderExplanation>
+            <strong>This request is paused at a breakpoint.</strong>
+        </HeaderExplanation>
+        <HeaderExplanation>
+            Edit it as you'd like, then resume to let the edited request continue as normal,
+            or respond directly to provide a response yourself.
+        </HeaderExplanation>
+
+        <HeaderButton onClick={p.onCreateResponse} onKeyPress={clickOnEnter}>
+            Respond directly
+        </HeaderButton>
+
+        <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>
+            Resume
+        </HeaderButton>
+    </BreakpointHeaderCard>;
+
+export const ExchangeResponseBreakpointHeader = (p: {
     onResume: () => void
 }) =>
     <BreakpointHeaderCard>
-        <p>
-            This { p.type } is paused at a breakpoint. Edit it below as you'd like,
-            then resume to let the edited {p.type} continue as normal.
-        </p>
+        <HeaderExplanation>
+            <strong>This response is paused at a breakpoint.</strong>
+        </HeaderExplanation>
+        <HeaderExplanation>
+            Edit it as you'd like, then resume to let the edited response complete as normal.
+        </HeaderExplanation>
 
-        <ResumeButton onClick={p.onResume} onKeyPress={clickOnEnter}>
+        <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>
             Resume
-        </ResumeButton>
+        </HeaderButton>
     </BreakpointHeaderCard>;

@@ -443,7 +443,7 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
 
         // Mark the exchange as breakpointed, and wait for an edited version.
         // UI will make it editable, add a save button, save will resolve this promise
-        return yield getEditedEvent(exchange!);
+        return (yield getEditedEvent(exchange!)) as T;
     });
 
     private breakpointRequest = (request: MockttpBreakpointedRequest) => this.breakpointOnExchange(

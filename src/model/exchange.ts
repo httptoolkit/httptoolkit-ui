@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { observable, computed, flow } from 'mobx';
+import { observable, computed, action, runInAction } from 'mobx';
 
 import {
     HtkRequest,
@@ -13,8 +13,8 @@ import {
     InputMessage,
     MockttpBreakpointedRequest,
     MockttpBreakpointedResponse,
-    BreakpointRequestResult,
-    BreakpointResponseResult
+    BreakpointResponseResult,
+    MockttpBreakpointRequestResult,
 } from "../types";
 import {
     lazyObservablePromise,
@@ -22,8 +22,6 @@ import {
     fakeBuffer,
     FakeBuffer,
     asHeaderArray,
-    getDeferred,
-    Deferred
 } from '../util';
 
 import { parseSource } from './sources';
@@ -32,9 +30,14 @@ import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
 
 import { getMatchingAPI, ApiExchange } from './openapi/openapi';
 import { ApiMetadata } from './openapi/build-api';
-import { decodeBody, encodeBody } from '../services/ui-worker-api';
-import { reportError } from '../errors';
-import { getStatusMessage } from './http-docs';
+import { decodeBody } from '../services/ui-worker-api';
+import {
+    RequestBreakpoint,
+    ResponseBreakpoint,
+    getRequestBreakpoint,
+    getResponseBreakpoint,
+    getDummyResponseBreakpoint
+} from './exchange-breakpoint';
 
 export { TimingEvents };
 
@@ -186,16 +189,16 @@ export class HttpExchange {
         Object.assign(this.timingEvents, request.timingEvents);
 
         if (this.requestBreakpoint) {
-            this.requestBreakpoint.deferred.reject(
+            this.requestBreakpoint.reject(
                 new Error('Request aborted whilst breakpointed at request')
             );
-            this.requestBreakpoint = undefined;
+            this._requestBreakpoint = undefined;
         }
         if (this.responseBreakpoint) {
-            this.responseBreakpoint.deferred.reject(
+            this.responseBreakpoint.reject(
                 new Error('Request aborted whilst breakpointed at response')
             );
-            this.responseBreakpoint = undefined;
+            this._responseBreakpoint = undefined;
         }
     }
 
@@ -247,122 +250,65 @@ export class HttpExchange {
 
     // Breakpoint data:
 
-    @observable.shallow
-    requestBreakpoint?: {
-        readonly deferred: Deferred<BreakpointRequestResult>;
-        inProgressResult: BreakpointRequestResult;
-    };
+    @observable.ref
+    private _requestBreakpoint?: RequestBreakpoint;
 
-    @observable.shallow
-    responseBreakpoint?: {
-        readonly deferred: Deferred<BreakpointResponseResult>;
-        readonly responseData: MockttpBreakpointedResponse;
-        inProgressResult: BreakpointResponseResult;
-    };
+    get requestBreakpoint() {
+        return this._requestBreakpoint;
+    }
+
+    @observable.ref
+    private _responseBreakpoint?: ResponseBreakpoint;
+
+    get responseBreakpoint() {
+        return this._responseBreakpoint;
+    }
 
     @computed
     get isBreakpointed() {
         return this.requestBreakpoint || this.responseBreakpoint;
     }
 
-    resumeRequestFromBreakpoint = flow(function * (this: HttpExchange) {
-        const { inProgressResult } = this.requestBreakpoint!;
+    async triggerRequestBreakpoint(request: MockttpBreakpointedRequest) {
+        const breakpoint = await getRequestBreakpoint(request);
+        runInAction(() => { this._requestBreakpoint = breakpoint; });
 
-        let body = inProgressResult.body;
+        const result = await breakpoint.waitForCompletedResult();
 
-        if (body) {
-            // Encode the body according to the content-encoding specified:
-            const encodings = asHeaderArray(inProgressResult.headers['content-encoding']);
-            body = (
-                yield encodeBody(body, encodings).catch((e) => {
-                    reportError(e, { encodings });
-                    return { encoded: 'HTTP TOOLKIT ERROR: COULD NOT ENCODE BODY' };
-                })
-            ).encoded;
+        if (this._requestBreakpoint === breakpoint) {
+            runInAction(() => { this._requestBreakpoint = undefined; });
         }
 
-        this.requestBreakpoint!.deferred.resolve(
-            Object.assign({}, inProgressResult, { body })
-        );
-        this.requestBreakpoint = undefined;
-    });
+        return result;
+    }
 
-    resumeResponseFromBreakpoint = flow(function * (this: HttpExchange) {
-        const { inProgressResult } = this.responseBreakpoint!;
+    async triggerResponseBreakpoint(response: MockttpBreakpointedResponse) {
+        const breakpoint = await getResponseBreakpoint(response);
+        runInAction(() => { this._responseBreakpoint = breakpoint; });
 
-        let body = inProgressResult.body;
+        const result = await breakpoint.waitForCompletedResult();
 
-        if (body) {
-            // Encode the body according to the content-encoding specified:
-            const encodings = asHeaderArray(inProgressResult.headers['content-encoding']);
-            body = (
-                yield encodeBody(body, encodings).catch((e) => {
-                    reportError(e, { encodings });
-                    return { encoded: 'HTTP TOOLKIT ERROR: COULD NOT ENCODE BODY' };
-                })
-            ).encoded;
+        if (this._responseBreakpoint === breakpoint) {
+            runInAction(() => { this._responseBreakpoint = undefined; });
         }
 
-        this.responseBreakpoint!.deferred.resolve(
-            Object.assign({}, inProgressResult, { body })
+        return result;
+    }
+
+    @action.bound
+    respondToBreakpointedRequest() {
+        // Replace the request breakpoint with an empty response breakpoint
+        this._responseBreakpoint = getDummyResponseBreakpoint();
+        const requestBreakpoint = this.requestBreakpoint!;
+        this._requestBreakpoint = undefined;
+
+        // When the response resumes, return it as the request result's response
+        this._responseBreakpoint.waitForCompletedResult().then(
+            action((responseResult: BreakpointResponseResult) => {
+                requestBreakpoint.respondDirectly(responseResult);
+                this._responseBreakpoint = undefined;
+            })
         );
-        this.responseBreakpoint = undefined;
-    });
-
-    triggerRequestBreakpoint = flow(function * (
-        this: HttpExchange,
-        request: MockttpBreakpointedRequest
-    ) {
-        this.requestBreakpoint = {
-            deferred: getDeferred(),
-            inProgressResult: {
-                method: request.method,
-                url: request.url,
-                headers: request.headers,
-                body: (
-                    yield decodeBody(
-                        request.body.buffer,
-                        asHeaderArray(request.headers['content-encoding'])
-                    ).catch((e) => {
-                        reportError(e);
-                        return { decoded: undefined };
-                    })
-                ).decoded
-            }
-        };
-
-        return this.requestBreakpoint.deferred.promise;
-    });
-
-    triggerResponseBreakpoint = flow(function * (
-        this: HttpExchange,
-        response: MockttpBreakpointedResponse
-    ) {
-        const expectedStatusMessage = getStatusMessage(response.statusCode)
-        const statusMessage = expectedStatusMessage === response.statusMessage
-            ? undefined
-            : response.statusMessage;
-
-        this.responseBreakpoint = {
-            deferred: getDeferred(),
-            inProgressResult: {
-                statusCode: response.statusCode,
-                statusMessage: statusMessage,
-                headers: response.headers,
-                body: (
-                    yield decodeBody(
-                        response.body.buffer,
-                        asHeaderArray(response.headers['content-encoding'])
-                    ).catch((e) => {
-                        reportError(e);
-                        return { decoded: undefined };
-                    })
-                ).decoded
-            },
-            responseData: response
-        };
-
-        return this.responseBreakpoint.deferred.promise;
-    });
+    }
 
 }
