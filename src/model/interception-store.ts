@@ -114,7 +114,7 @@ export class InterceptionStore {
         await create()('interception-store', this);
 
         // Rebuild any other data that depends on persisted settings:
-        this.resetInterceptionRules();
+        this.resetRulesToDefault();
         this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
 
@@ -130,7 +130,12 @@ export class InterceptionStore {
                     resolve(
                         // Set the mocking rules that will be used by the server. We have to
                         // clone so that we retain the pre-serialization definitions.
-                        this.server.setRules(..._.cloneDeep(this.interceptionRules))
+                        this.server.setRules(
+                            ..._.cloneDeep(this.rules.filter(
+                                // Drop inactive or never-matching rules
+                                r => r.activated && r.matchers.length
+                            ))
+                        )
                     )
                 )
             }),
@@ -202,58 +207,133 @@ export class InterceptionStore {
     // ** Rule management:
 
     @observable.shallow
-    interceptionRules: HtkMockRule[] = buildDefaultRules(['localhost']);
+    rules: HtkMockRule[] = buildDefaultRules(['localhost']);
 
     @observable
-    draftInterceptionRules: HtkMockRule[] = _.cloneDeep(this.interceptionRules);
+    draftRules: HtkMockRule[] = _.cloneDeep(this.rules);
 
     @action.bound
-    saveInterceptionRules() {
-        this.interceptionRules = this.draftInterceptionRules;
-        this.resetInterceptionRuleDrafts();
+    resetRule(draftRuleIndex: number) {
+        // To reset a single rule, we reset the content of that rule, and reset only its
+        // position (different to save rule: see below). The difference is because this
+        // is a clear & visible change, so doing the smaller move makes more sense.
+
+        const { draftRules, rules: activeRules } = this;
+
+        const draftRule = draftRules[draftRuleIndex];
+        const id = draftRule.id;
+
+        const existingRule = _.find(activeRules, { id });
+
+        if (!existingRule) return;
+        // Update the rule content:
+        draftRules[draftRuleIndex] = _.cloneDeep(existingRule);
+
+        const activeRulesIntersection = _.intersectionBy(activeRules, draftRules, 'id');
+        const draftRulesIntersection = _.intersectionBy(draftRules, activeRules, 'id');
+
+        if (
+            activeRulesIntersection.indexOf(existingRule) ===
+            draftRulesIntersection.indexOf(draftRule)
+        ) {
+            // If this rule is effectively in the right place already, we're done
+            return;
+        }
+
+        // If not, find where it should go:
+        const targetIndex = activeRules.indexOf(existingRule);
+        let [movedRule] = draftRules.splice(draftRuleIndex, 1);
+        draftRules.splice(Math.min(targetIndex, draftRules.length), 0, movedRule);
     }
 
     @action.bound
-    resetInterceptionRuleDrafts() {
+    saveRule(draftRuleIndex: number) {
+        // To update a single rule, we update the content of that single rule, but if its
+        // position has changed then we update the position of all rules. It's very hard
+        // to update the position of one predictable, and the saved state is invisible,
+        // so it's better to just give consistency.
+        // This should doe what you expect for simple states (one or two moves), and
+        // is at least predictable & transparent in pathological cases.
+
+        const { draftRules, rules: activeRules } = this;
+        const draftRule = draftRules[draftRuleIndex];
+        const id = draftRule.id;
+
+        const existingRuleIndex = _.findIndex(activeRules, { id });
+        if (existingRuleIndex !== -1) {
+            // If this rule already exists, update it
+            activeRules[existingRuleIndex] = _.cloneDeep(draftRule);
+        } else {
+            // If not, insert it (it'll be sorted to the right place behlow)
+            activeRules.push(_.cloneDeep(draftRule));
+        }
+
+        const draftDeletedRules = _.differenceBy(activeRules, draftRules, 'id');
+        const activeRulesIntersection = _.intersectionBy(activeRules, draftRules, 'id');
+        const draftRulesIntersection = _.intersectionBy(draftRules, activeRules, 'id');
+
+        if (
+            _.findIndex(draftRulesIntersection, { id }) ===
+            _.findIndex(activeRulesIntersection, { id })
+        ) {
+            // If this rule is effectively in the right place already, we're done
+            return;
+        }
+
+        // Sort the existing rules by their updated positions
+        const sortedRules = _.sortBy(activeRulesIntersection,
+            rule => _.findIndex(draftRules, { id: rule.id })
+        );
+
+        // Reinsert draft-deleted rules:
+        draftDeletedRules.forEach((rule) => {
+            const previousIndex = Math.min(activeRules.indexOf(rule), activeRules.length);
+            sortedRules.splice(previousIndex, 0, rule);
+        });
+
+        this.rules = sortedRules;
+    }
+
+    @action.bound
+    saveRules() {
+        this.rules = this.draftRules;
+        this.resetRuleDrafts();
+    }
+
+    @action.bound
+    resetRuleDrafts() {
         // Set the rules back to the latest saved version
-        this.draftInterceptionRules = _.cloneDeep(this.interceptionRules);
+        this.draftRules = _.cloneDeep(this.rules);
     }
 
     @action.bound
-    resetInterceptionRules() {
+    resetRulesToDefault() {
         // Set the rules back to the default settings
-        this.interceptionRules = buildDefaultRules(this.whitelistedCertificateHosts);
-        this.resetInterceptionRuleDrafts();
+        this.rules = buildDefaultRules(this.whitelistedCertificateHosts);
+        this.resetRuleDrafts();
     }
 
     @computed
     get areSomeRulesUnsaved() {
-        return !_.isEqualWith(
-            this.draftInterceptionRules,
-            this.interceptionRules,
-            (a, b) => {
-                // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
-                // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
-                if (_.isFunction(a) && _.isFunction(b)) {
-                    return a.toString() === b.toString();
-                }
+        return !_.isEqualWith(this.draftRules, this.rules, (a, b) => {
+            // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
+            // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
+            if (_.isFunction(a) && _.isFunction(b)) {
+                return a.toString() === b.toString();
             }
-        );
+        });
     }
 
     @computed
     get areSomeRulesNonDefault() {
-        return !_.isEqualWith(
-            this.draftInterceptionRules,
-            buildDefaultRules(this.whitelistedCertificateHosts),
-            (a, b) => {
-                // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
-                // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
-                if (_.isFunction(a) && _.isFunction(b)) {
-                    return a.toString() === b.toString();
-                }
+        const defaultRules = buildDefaultRules(this.whitelistedCertificateHosts);
+        return !_.isEqualWith(this.draftRules, defaultRules, (a, b) => {
+            // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
+            // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
+            if (_.isFunction(a) && _.isFunction(b)) {
+                return a.toString() === b.toString();
             }
-            );
+        });
     }
 
     // ** Interceptors:

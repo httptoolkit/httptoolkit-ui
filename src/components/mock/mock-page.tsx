@@ -2,18 +2,17 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { action, observable, autorun, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
-import {
-    SortableContainer
-} from 'react-sortable-hoc';
 
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
+import { FontAwesomeIcon } from '../../icons';
 
 import { ActivatedStore } from '../../model/interception-store';
-import { getNewRule, HtkMockRule } from '../../model/rules/rules';
+import { getNewRule } from '../../model/rules/rules';
 
+import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
-import { AddRuleRow, SortableRuleRow } from './rule-row';
+import { MockRuleList } from './mock-rule-list';
 
 interface MockPageProps {
     className?: string,
@@ -53,58 +52,22 @@ const MockHeading = styled.h1`
     flex-grow: 1;
 `;
 
-const ResetButton = styled(SecondaryButton)`
-    padding: 10px 24px;
-    font-weight: bold;
-    font-size: ${p => p.theme.textSize};
-`;
-
 const SaveButton = styled(Button)`
-    margin-left: 20px;
-    padding: 10px 24px;
-    font-weight: bold;
     font-size: ${p => p.theme.textSize};
+    font-weight: bold;
+    padding: 10px 24px;
+    margin-left: 20px;
+
+    svg {
+        margin-right: 5px;
+    }
 `;
-
-const MockRuleList = styled.ol`
-    padding: 0 40px 20px;
+const OtherButton = styled(SecondaryButton)`
+    border: none;
+    font-size: 1.2em;
+    padding: 5px 10px;
+    margin-left: 10px;
 `;
-
-const SortableMockRuleList = SortableContainer(observer(({ items, ...props }: {
-    items: HtkMockRule[],
-    addRule: () => void,
-    collapsedRulesMap: { [id: string]: boolean },
-    toggleRuleCollapsed: (id: string) => void,
-    deleteRule: (index: number) => void,
-    currentlyDraggingRuleIndex: number | undefined
-}) =>
-    <MockRuleList>
-        <AddRuleRow
-            onAdd={props.addRule}
-            disabled={props.currentlyDraggingRuleIndex !== undefined}
-        />
-
-        { items.map((item, i) => {
-            const isCollapsed = props.collapsedRulesMap[item.id];
-            return <SortableRuleRow
-                key={item.id}
-                index={i}
-                value={item}
-
-                collapsed={isCollapsed}
-                disabled={!isCollapsed}
-                rowDisabled={
-                    // When dragging, disable all rules
-                    props.currentlyDraggingRuleIndex !== undefined &&
-                    props.currentlyDraggingRuleIndex !== i
-                }
-
-                toggleCollapse={() => props.toggleRuleCollapsed(item.id)}
-                deleteRule={() => props.deleteRule(i)}
-            />
-        }) }
-    </MockRuleList>
-));
 
 @inject('interceptionStore')
 @observer
@@ -115,7 +78,7 @@ class MockPage extends React.Component<MockPageProps> {
     // Map from rule id -> collapsed (true/false)
     @observable
     collapsedRulesMap = _.fromPairs(
-        this.props.interceptionStore.draftInterceptionRules.map((rule) =>
+        this.props.interceptionStore.draftRules.map((rule) =>
             [rule.id, true] as [string, boolean]
         )
     );
@@ -127,7 +90,7 @@ class MockPage extends React.Component<MockPageProps> {
         // If the list of rules ever changes, update the collapsed list accordingly.
         // Drop now-unnecessary ids, and add new rules (defaulting to collapsed)
         disposeOnUnmount(this, autorun(() => {
-            const rules = this.props.interceptionStore.draftInterceptionRules;
+            const rules = this.props.interceptionStore.draftRules;
             const ruleIds = rules.map(r => r.id);
             const ruleMapIds = _.keys(this.collapsedRulesMap);
 
@@ -148,7 +111,8 @@ class MockPage extends React.Component<MockPageProps> {
 
     render(): JSX.Element {
         const {
-            draftInterceptionRules,
+            rules,
+            draftRules,
             areSomeRulesUnsaved,
             areSomeRulesNonDefault
         } = this.props.interceptionStore;
@@ -158,23 +122,46 @@ class MockPage extends React.Component<MockPageProps> {
             <MockPageHeader>
                 <MockHeading>Mock & Rewrite HTTP</MockHeading>
 
-                <ResetButton disabled={!areSomeRulesNonDefault} onClick={this.resetAll}>
-                    Reset
-                </ResetButton>
-                <SaveButton disabled={!areSomeRulesUnsaved} onClick={this.saveAll}>
-                    Save changes
+                <OtherButton
+                    disabled={!areSomeRulesNonDefault}
+                    onClick={this.resetToDefaults}
+                    onKeyPress={clickOnEnter}
+                    title="Reset rules to default"
+                >
+                    <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                </OtherButton>
+                <OtherButton
+                    disabled={!areSomeRulesUnsaved}
+                    onClick={this.resetRuleDrafts}
+                    onKeyPress={clickOnEnter}
+                    title="Revert changes since the last save"
+                >
+                    <FontAwesomeIcon icon={['fas', 'undo']} />
+                </OtherButton>
+                <SaveButton
+                    disabled={!areSomeRulesUnsaved}
+                    onClick={this.saveAll}
+                    onKeyPress={clickOnEnter}
+                    title="Save all rule changes"
+                >
+                    <FontAwesomeIcon icon={['fas', 'save']} /> Save changes
                 </SaveButton>
             </MockPageHeader>
 
             <MockPageScrollContainer>
-                <SortableMockRuleList
-                    items={draftInterceptionRules}
+                <MockRuleList
+                    activeRules={rules}
+                    draftRules={draftRules}
                     collapsedRulesMap={this.collapsedRulesMap}
                     addRule={this.addRule}
-                    toggleRuleCollapsed={this.toggleRuleCollapsed}
-                    deleteRule={this.deleteRule}
-                    currentlyDraggingRuleIndex={currentlyDraggingRuleIndex}
 
+                    toggleRuleCollapsed={this.toggleRuleCollapsed}
+
+                    saveRule={this.saveRule}
+                    resetRule={this.resetRule}
+                    deleteRule={this.deleteRule}
+
+                    currentlyDraggingRuleIndex={currentlyDraggingRuleIndex}
                     useDragHandle
                     lockAxis={'y'}
                     onSortStart={this.startMovingRule}
@@ -199,20 +186,41 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
+    saveRule(ruleId: string) {
+        const { interceptionStore } = this.props;
+        const ruleIndex = _.findIndex(interceptionStore.draftRules, { id: ruleId });
+        interceptionStore.saveRule(ruleIndex);
+        this.collapsedRulesMap[ruleId] = true;
+    }
+
+    @action.bound
+    resetRule(ruleId: string) {
+        const { interceptionStore } = this.props;
+        const ruleIndex = _.findIndex(interceptionStore.draftRules, { id: ruleId });
+        interceptionStore.resetRule(ruleIndex);
+    }
+
+    @action.bound
     saveAll() {
-        this.props.interceptionStore.saveInterceptionRules();
+        this.props.interceptionStore.saveRules();
         this.collapseAll();
     }
 
     @action.bound
-    resetAll() {
-        this.props.interceptionStore.resetInterceptionRules();
+    resetToDefaults() {
+        this.props.interceptionStore.resetRulesToDefault();
+        this.collapseAll();
+    }
+
+    @action.bound
+    resetRuleDrafts() {
+        this.props.interceptionStore.resetRuleDrafts();
         this.collapseAll();
     }
 
     @action.bound
     addRule() {
-        const rules = this.props.interceptionStore.draftInterceptionRules;
+        const rules = this.props.interceptionStore.draftRules;
         const newRule = getNewRule();
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
@@ -232,9 +240,15 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
-    deleteRule(ruleIndex: number) {
-        const rules = this.props.interceptionStore.draftInterceptionRules;
-        rules.splice(ruleIndex, 1);
+    toggleRuleCollapsed(ruleId: string) {
+        this.collapsedRulesMap[ruleId] = !this.collapsedRulesMap[ruleId];
+    }
+
+    @action.bound
+    deleteRule(ruleId: string) {
+        const draftRules = this.props.interceptionStore.draftRules;
+        const ruleIndex = _.findIndex(draftRules, { id: ruleId });
+        draftRules.splice(ruleIndex, 1);
     }
 
     @action.bound
@@ -244,16 +258,11 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     moveRule({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) {
-        const rules = this.props.interceptionStore.draftInterceptionRules;
+        const rules = this.props.interceptionStore.draftRules;
         const rule = rules[oldIndex];
         rules.splice(oldIndex, 1);
         rules.splice(newIndex, 0, rule);
         this.currentlyDraggingRuleIndex = undefined;
-    }
-
-    @action.bound
-    toggleRuleCollapsed(ruleId: string) {
-        this.collapsedRulesMap[ruleId] = !this.collapsedRulesMap[ruleId];
     }
 }
 

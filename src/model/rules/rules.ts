@@ -24,6 +24,7 @@ import {
 
 export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
     id: string;
+    activated: boolean;
     matchers: Array<Matcher> & { 0?: InitialMatcher };
     handler: Handler;
 };
@@ -77,6 +78,7 @@ export const HandlerKeys = new Map<HandlerClass, HandlerClassKey>(
 export function getNewRule(): HtkMockRule {
     return observable({
         id: _.uniqueId(), // Just used for us, for keys
+        activated: true,
         matchers: [ ],
         completionChecker: new completionCheckers.Always(),
         handler: new StaticResponseHandler(200)
@@ -94,6 +96,7 @@ export const buildDefaultRules = (hostWhitelist: string[]) => [
     // Respond to amiusing.httptoolkit.tech with an emphatic YES
     {
         id: 'default-amiusing',
+        activated: true,
         matchers: [
             new MethodMatchers.GET(),
             new AmIUsingMatcher()
@@ -107,6 +110,7 @@ export const buildDefaultRules = (hostWhitelist: string[]) => [
     // Pass through all other traffic to the real target
     {
         id: 'default-wildcard',
+        activated: true,
         matchers: [new DefaultWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
         handler: new PassThroughHandler(hostWhitelist)

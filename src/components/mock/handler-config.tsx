@@ -158,6 +158,17 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'body']))
         ), () => this.updateHandler()));
 
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { status, statusMessage, headers, data } = this.props.handler;
+            runInAction(() => {
+                this.statusCode = status;
+                this.statusMessage = statusMessage;
+                this.headers = headersToHeadersArray(headers || {});
+                this.body = (data || '').toString();
+            });
+        }));
+
         // If you enter a relevant content-type header, consider updating the editor content type:
         disposeOnUnmount(this, autorun(() => {
             const detectedContentType = getContentTypeFromHeader(getContentTypeHeader(this.headers));
@@ -284,10 +295,15 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
     @observable
     private error: Error | undefined;
 
-    // Only read once on creation: we trust the parent to set/reset a key prop
-    // if this is going to change externally.
     @observable
-    private targetHost = this.props.handler ? this.props.handler.forwardToLocation : '';
+    private targetHost: string | undefined;
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const targetHost = this.props.handler ? this.props.handler.forwardToLocation : '';
+            runInAction(() => { this.targetHost = targetHost });
+        }));
+    }
 
     render() {
         const { forwardToLocation } = this.props.handler;
@@ -295,7 +311,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
         return <ConfigContainer>
             <SectionLabel>Replacement host</SectionLabel>
             <UrlInput
-                value={this.targetHost}
+                value={this.targetHost || ''}
                 invalid={!!this.error}
                 spellCheck={false}
                 onChange={this.onChange}
@@ -371,6 +387,17 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
 
     @observable
     responseBreakpointEnabled = !!this.props.handler.beforeResponse;
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const { beforeRequest, beforeResponse } = this.props.handler;
+
+            runInAction(() => {
+                this.requestBreakpointEnabled = !!beforeRequest;
+                this.responseBreakpointEnabled = !!beforeResponse;
+            });
+        }));
+    }
 
     render() {
         const { requestBreakpointEnabled, responseBreakpointEnabled } = this;

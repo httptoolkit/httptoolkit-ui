@@ -7,9 +7,9 @@ import { SortableHandle, SortableElement } from 'react-sortable-hoc';
 import { Method, matchers } from 'mockttp';
 
 import { styled, css } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
-import { getMethodColor } from '../../model/exchange-colors';
+import { FontAwesomeIcon, IconProp } from '../../icons';
 
+import { getMethodColor } from '../../model/exchange-colors';
 import { HtkMockRule, Matcher, Handler } from '../../model/rules/rules';
 import {
     summarizeMatcher,
@@ -25,15 +25,6 @@ import {
 } from './matcher-selection';
 import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
-
-interface RuleRowProps {
-    value: HtkMockRule;
-    collapsed: boolean;
-    rowDisabled: boolean; // 'disabled' conflicts with sortable-hoc
-    toggleCollapse: () => void;
-    deleteRule: () => void;
-}
-
 
 const FloatingDragHandle = styled.div`
     position: absolute;
@@ -60,6 +51,7 @@ const DragHandle = SortableHandle(() =>
 
 
 const RowContainer = styled<React.ComponentType<{
+    deactivated?: boolean,
     collapsed: boolean,
     disabled: boolean,
     borderColor: string
@@ -80,15 +72,30 @@ const RowContainer = styled<React.ComponentType<{
 
     overflow: initial;
 
-    ${(p) => p.collapsed && css`
-        user-select: none;
-    `}
+    ${(p) => p.collapsed
+        ? css`
+            user-select: none;
+
+            &:hover {
+                ${MenuContainer} {
+                    display: flex;
+                }
+
+                ${FloatingDragHandle} {
+                    opacity: 0.5;
+                }
+            }
+
+            ${p.deactivated && 'opacity: 0.6;'}
+        `
+        : css`
+            ${MenuContainer} {
+                display: flex;
+            }
+        `
+    }
 
     border-left: 5px solid ${(p) => p.borderColor};
-
-    &:not([disabled]):hover > ${FloatingDragHandle} {
-        opacity: 0.5;
-    }
 
     &:focus {
         outline: none;
@@ -165,48 +172,119 @@ const MatchersList = styled.ul`
 
 const MenuContainer = styled.div`
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 7px;
+    right: 10px;
     z-index: 1;
 
-    display: flex;
-    flex-direction: row;
+    display: none; /* Made flex by container, on hover/expand */
+    flex-direction: row-reverse;
     align-items: center;
 
     background-image: radial-gradient(
         ${p => polished.rgba(p.theme.mainBackground, 0.9)} 50%,
         transparent 100%
     );
+`;
 
-    > svg {
-        margin-left: 15px;
-        padding: 5px;
-        margin-top: -7px;
-        margin-right: -5px;
+const IconButton = styled(React.memo((p: {
+    className?: string,
+    icon: IconProp,
+    title: string,
+    onClick: (event: React.MouseEvent) => void,
+    disabled?: boolean
+}) => <FontAwesomeIcon
+    className={p.className}
+    icon={p.icon}
+    title={p.title}
+    tabIndex={p.disabled ? -1 : 0}
+    onKeyPress={clickOnEnter}
+    onClick={p.disabled ? _.noop : p.onClick}
+/>))`
+    margin: 0 0 0 10px;
+    padding: 5px;
 
-        cursor: pointer;
-        color: ${p => p.theme.primaryInputBackground};
+    font-size: 1.2em;
 
-        font-size: 1.2em;
+    ${p => p.disabled
+        ? css`
+            color: ${p => p.theme.containerWatermark};
+        `
+        : css`
+            cursor: pointer;
+            color: ${p => p.theme.primaryInputBackground};
+
+            &:hover, &:focus {
+                outline: none;
+                color: ${p => p.theme.popColor};
+            }
+        `
     }
 `;
 
 const RuleMenu = (p: {
-    onClose: () => void,
-    onDelete: () => void,
+    isCollapsed: boolean,
+    isNewRule: boolean,
+    hasUnsavedChanges: boolean,
+    onToggleCollapse: (event: React.MouseEvent) => void,
+    onSave: (event: React.MouseEvent) => void,
+    onReset: (event: React.MouseEvent) => void,
+    toggleState: boolean,
+    onToggleActivation: (event: React.MouseEvent) => void,
+    onDelete: (event: React.MouseEvent) => void,
 }) => <MenuContainer>
-    <FontAwesomeIcon icon={['far', 'trash-alt']} tabIndex={0} onKeyPress={clickOnEnter} onClick={p.onDelete} />
-    <FontAwesomeIcon icon={['fas', 'times']} tabIndex={0} onKeyPress={clickOnEnter} onClick={p.onClose} />
-</MenuContainer>
+    <IconButton title='Delete this rule' icon={['far', 'trash-alt']} onClick={p.onDelete} />
+    <IconButton
+        title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
+        icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
+        onClick={p.onToggleActivation}
+    />
+    <IconButton
+        title='Revert this rule to the last saved version'
+        icon={['fas', 'undo']}
+        disabled={!p.hasUnsavedChanges || p.isNewRule}
+        onClick={p.onReset}
+    />
+    <IconButton
+        icon={['fas',
+            p.hasUnsavedChanges
+                ? 'save'
+            : p.isCollapsed
+                ? 'chevron-down'
+            : 'chevron-up']}
+        title={
+            p.hasUnsavedChanges
+                ? 'Save changes to this rule'
+            : p.isCollapsed
+                ? 'Show rule details'
+            : 'Hide rule details'}
+        onClick={p.hasUnsavedChanges ? p.onSave : p.onToggleCollapse}
+    />
+</MenuContainer>;
+
+const stopPropagation = (callback: () => void) => (event: React.MouseEvent) => {
+    event.stopPropagation();
+    callback();
+}
 
 @observer
-export class RuleRow extends React.Component<RuleRowProps> {
+export class RuleRow extends React.Component<{
+    rule: HtkMockRule;
+    isNewRule: boolean;
+    hasUnsavedChanges: boolean;
+    collapsed: boolean;
+    rowDisabled: boolean; // 'disabled' conflicts with sortable-hoc
+
+    saveRule: (id: string) => void;
+    resetRule: (id: string) => void;
+    toggleCollapse: (id: string) => void;
+    deleteRule: (id: string) => void;
+}> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
     containerRef = React.createRef<HTMLElement>();
 
     render() {
-        const { value: rule, collapsed, rowDisabled } = this.props;
+        const { rule, isNewRule, hasUnsavedChanges, collapsed, rowDisabled } = this.props;
 
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
@@ -226,18 +304,24 @@ export class RuleRow extends React.Component<RuleRowProps> {
             }
             ref={this.containerRef}
             collapsed={collapsed}
+            deactivated={!rule.activated}
             disabled={rowDisabled}
             tabIndex={collapsed ? 0 : undefined}
             onClick={collapsed ? this.toggleCollapse : undefined}
             onKeyPress={clickOnEnter}
         >
-            { !collapsed
-                ? <RuleMenu
-                    onClose={this.toggleCollapse}
-                    onDelete={this.props.deleteRule}
-                />
-                : <DragHandle />
-            }
+            <RuleMenu
+                isCollapsed={collapsed}
+                isNewRule={isNewRule}
+                hasUnsavedChanges={hasUnsavedChanges}
+                onToggleCollapse={this.toggleCollapse}
+                onSave={this.saveRule}
+                onReset={this.resetRule}
+                toggleState={rule.activated}
+                onToggleActivation={this.toggleActivation}
+                onDelete={this.deleteRule}
+            />
+            <DragHandle />
 
             <MatcherOrHandler>
                 <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
@@ -297,7 +381,18 @@ export class RuleRow extends React.Component<RuleRowProps> {
         </RowContainer>;
     }
 
-    toggleCollapse = () => {
+    saveRule = stopPropagation(() => this.props.saveRule(this.props.rule.id));
+    resetRule = stopPropagation(() => this.props.resetRule(this.props.rule.id));
+    deleteRule = stopPropagation(() => this.props.deleteRule(this.props.rule.id));
+
+    @action.bound
+    toggleActivation(event: React.MouseEvent) {
+        const { rule } = this.props;
+        rule.activated = !rule.activated;
+        event.stopPropagation();
+    }
+
+    toggleCollapse = stopPropagation(() => {
         // Scroll the row into view, after giving it a moment to rerender
         requestAnimationFrame(() => {
             if (this.containerRef.current) {
@@ -311,28 +406,28 @@ export class RuleRow extends React.Component<RuleRowProps> {
             }
         });
 
-        this.props.toggleCollapse();
-    }
+        this.props.toggleCollapse(this.props.rule.id);
+    });
 
     @action.bound
     addMatcher(matcher: Matcher) {
-        this.props.value.matchers.push(matcher);
+        this.props.rule.matchers.push(matcher);
     }
 
     @action.bound
     updateMatcher(index: number, ...matchers: Matcher[]) {
-        this.props.value.matchers.splice(index, 1, ...matchers);
+        this.props.rule.matchers.splice(index, 1, ...matchers);
     }
 
     @action.bound
     deleteMatcher(matcher: Matcher) {
-        const { value: rule } = this.props;
+        const { rule } = this.props;
         rule.matchers = rule.matchers.filter(m => m !== matcher);
     }
 
     @action.bound
     updateHandler(handler: Handler) {
-        this.props.value.handler = handler;
+        this.props.rule.handler = handler;
     }
 }
 

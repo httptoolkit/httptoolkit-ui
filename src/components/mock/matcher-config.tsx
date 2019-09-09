@@ -3,8 +3,8 @@ import * as React from 'react';
 import { matchers } from "mockttp";
 
 import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
-import { observer } from 'mobx-react';
-import { observable, action } from 'mobx';
+import { observer, disposeOnUnmount } from 'mobx-react';
+import { observable, action, autorun, runInAction } from 'mobx';
 import { TextInput } from '../common/inputs';
 import { styled } from '../../styles';
 
@@ -66,25 +66,31 @@ const MatcherConfigContainer = styled.div`
 @observer
 class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> {
 
-    private id = _.uniqueId();
+    private fieldId = _.uniqueId();
 
     @observable
     private error: Error | undefined;
 
-    // Only read once on creation: we trust the parent to set/reset a key prop
-    // if this is going to change externally.
     @observable
-    private path = this.props.matcher ? this.props.matcher.path : '';
+    private path = '';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const path = this.props.matcher ? this.props.matcher.path : '';
+
+            runInAction(() => { this.path = path });
+        }));
+    }
 
     render() {
         return <MatcherConfigContainer>
             { this.props.isExisting &&
-                <ConfigLabel htmlFor={this.id}>
+                <ConfigLabel htmlFor={this.fieldId}>
                     for URL
                 </ConfigLabel>
             }
             <TextInput
-                id={this.id}
+                id={this.fieldId}
                 invalid={!!this.error}
                 spellCheck={false}
                 value={this.path}
@@ -149,27 +155,33 @@ const containsLiteralQuestionMark = /([^\\]|^)\\(\?|u003F|x3F)|([^\\]|^)\[[^\]]*
 @observer
 class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
 
+    private fieldId = _.uniqueId();
+
     @observable
     private error: Error | undefined;
 
-    // Only read once on creation: we trust the parent to set/reset a key prop
-    // if this is going to change externally.
     @observable
-    private pattern = this.props.matcher
-        ? unescapeRegexp(this.props.matcher.regexSource)
-        : '';
+    private pattern = '';
 
-    private id = _.uniqueId();
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const pattern = this.props.matcher
+                ? unescapeRegexp(this.props.matcher.regexSource)
+                : '';
+
+            runInAction(() => { this.pattern = pattern });
+        }));
+    }
 
     render() {
         return <MatcherConfigContainer>
             { this.props.isExisting &&
-                <ConfigLabel htmlFor={this.id}>
+                <ConfigLabel htmlFor={this.fieldId}>
                     for URLs matching
                 </ConfigLabel>
             }
             <RegexInput
-                id={this.id}
+                id={this.fieldId}
                 invalid={!!this.error}
                 spellCheck={false}
                 value={this.pattern}
@@ -203,25 +215,31 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
 @observer
 class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> {
 
-    private id = _.uniqueId();
+    private fieldId = _.uniqueId();
 
     @observable
     private error: Error | undefined;
 
-    // Only read once on creation: we trust the parent to set/reset a key prop
-    // if this is going to change externally.
     @observable
-    private query = this.props.matcher ? this.props.matcher.query : '';
+    private query = '';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const query = this.props.matcher ? this.props.matcher.query : '';
+
+            runInAction(() => { this.query = query });
+        }));
+    }
 
     render() {
         return <MatcherConfigContainer>
             { this.props.isExisting &&
-                <ConfigLabel htmlFor={this.id}>
+                <ConfigLabel htmlFor={this.fieldId}>
                     with query
                 </ConfigLabel>
             }
             <TextInput
-                id={this.id}
+                id={this.fieldId}
                 invalid={!!this.error}
                 spellCheck={false}
                 value={this.query}

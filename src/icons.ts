@@ -48,6 +48,8 @@ import { faPause } from '@fortawesome/free-solid-svg-icons/faPause';
 import { faGem } from '@fortawesome/free-solid-svg-icons/faGem';
 import { faTheaterMasks } from '@fortawesome/free-solid-svg-icons/faTheaterMasks';
 import { faGripVertical } from '@fortawesome/free-solid-svg-icons/faGripVertical';
+import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
+import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -114,6 +116,8 @@ library.add(
     faGem,
     faTheaterMasks,
     faGripVertical,
+    faUndo,
+    faSave,
 
     faChrome,
     faFirefox,
