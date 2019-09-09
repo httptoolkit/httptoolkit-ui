@@ -88,6 +88,7 @@ export class InterceptionStore {
     constructor() {
         this.server = getLocal({
             cors: false,
+            suggestChanges: false,
             standaloneServerUrl: 'http://127.0.0.1:45456'
         });
         this.interceptors = getInterceptOptions([]);
