@@ -103,11 +103,12 @@ type QueuedEvent = ({
 
 type OrphanableQueuedEvent =
     | { type: 'response', event: InputResponse }
-    | { type: 'abort', event: InputInitiatedRequest }
+    | { type: 'abort', event: InputInitiatedRequest };
 
 export class InterceptionStore {
 
     // ** Overall setup & startup:
+    //#region
 
     constructor(
         private readonly jumpToExchange: (exchangeId: string) => void
@@ -193,7 +194,9 @@ export class InterceptionStore {
         });
     });
 
+    //#endregion
     // ** Core server config
+    //#region
 
     @observable.ref
     private server: Mockttp;
@@ -231,7 +234,9 @@ export class InterceptionStore {
     // Saved when the server starts, so we can compare to the current list later
     initiallyWhitelistedCertificateHosts: string[] = ['localhost'];
 
-    // ** Rule management:
+    //#endregion
+    // ** Rules:
+    //#region
 
     @observable.shallow
     rules: HtkMockRule[] = buildDefaultRules(['localhost']);
@@ -363,7 +368,9 @@ export class InterceptionStore {
         });
     }
 
+    //#endregion
     // ** Interceptors:
+    //#region
 
     @observable interceptors: _.Dictionary<Interceptor>;
 
@@ -380,7 +387,9 @@ export class InterceptionStore {
         await this.refreshInterceptors();
     }
 
+    //#endregion
     // ** Server event subscriptions:
+    //#region
 
     @observable
     isPaused = false;
@@ -609,4 +618,6 @@ export class InterceptionStore {
         // UI will make it editable, add a save button, save will resolve this promise
         return (yield getEditedEvent(exchange!)) as T;
     });
+
+    //#endregion
 }
