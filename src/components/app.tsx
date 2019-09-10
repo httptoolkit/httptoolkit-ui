@@ -12,7 +12,7 @@ import {
 import { styled } from '../styles';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
-import { throttlesafeHistory } from '../routing';
+import { appHistory } from '../routing';
 import { AccountStore } from '../model/account/account-store';
 
 import { Sidebar, SidebarItem } from './sidebar';
@@ -126,7 +126,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
     }
 
     componentDidMount() {
-        disposeOnUnmount(this, () => throttlesafeHistory.listen(() => trackPage()));
+        disposeOnUnmount(this, () => appHistory.listen(() => trackPage()));
     }
 
     render() {
@@ -138,7 +138,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             logOut
         } = this.props.accountStore;
 
-        return <LocationProvider history={throttlesafeHistory}>
+        return <LocationProvider history={appHistory}>
             <AppContainer
                 aria-hidden={!!modal}
                 inert={!!modal}

@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { Method, matchers, handlers } from 'mockttp';
-import { PassThroughHandlerOptions } from 'mockttp/dist/rules/handlers';
+import { InterceptionStore } from '../interception-store';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -86,12 +86,20 @@ export class ForwardToHostHandler extends handlers.PassThroughHandler {
 
 export class BreakpointHandler extends handlers.PassThroughHandler {
 
-    constructor(options: Pick<
-        PassThroughHandlerOptions, 'beforeRequest' | 'beforeResponse'
-    >) {
-        super(Object.assign({
-            ignoreHostCertificateErrors: ['localhost'],
-        }, options));
+    constructor(
+        interceptionStore: InterceptionStore,
+        breakBeforeRequest: boolean,
+        breakBeforeResponse: boolean
+    ) {
+        super({
+            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            beforeRequest: breakBeforeRequest
+                ? interceptionStore.triggerRequestBreakpoint
+                : undefined,
+            beforeResponse: breakBeforeResponse
+                ? interceptionStore.triggerResponseBreakpoint
+                : undefined
+        });
     }
 
     explain() {

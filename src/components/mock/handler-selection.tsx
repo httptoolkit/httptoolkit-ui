@@ -42,16 +42,19 @@ const HandlerSelect = styled(Select)`
     margin-top: 20px;
 `;
 
-const instantiateHandler = (handlerClass: HandlerClass, hostCertWhitelist: string[]): Handler | undefined => {
+const instantiateHandler = (
+    handlerClass: HandlerClass,
+    interceptionStore: InterceptionStore
+): Handler | undefined => {
     switch (handlerClass) {
         case StaticResponseHandler:
             return new StaticResponseHandler(200);
         case PassThroughHandler:
-            return new PassThroughHandler(hostCertWhitelist);
+            return new PassThroughHandler(interceptionStore.whitelistedCertificateHosts);
         case ForwardToHostHandler:
             return new ForwardToHostHandler('');
         case BreakpointHandler:
-            return new BreakpointHandler({});
+            return new BreakpointHandler(interceptionStore, false, false);
     }
 }
 
@@ -64,10 +67,7 @@ export const HandlerSelector = inject('interceptionStore')(observer((p: {
         value={getHandlerKey(p.value)}
         onChange={(event) => {
             const handlerClass = getHandlerClassByKey(event.target.value as HandlerClassKey);
-            const handler = instantiateHandler(
-                handlerClass,
-                p.interceptionStore!.whitelistedCertificateHosts
-            );
+            const handler = instantiateHandler(handlerClass, p.interceptionStore!);
             if (!handler) return;
             p.onChange(handler);
         }}

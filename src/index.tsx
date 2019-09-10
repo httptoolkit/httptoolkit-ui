@@ -10,6 +10,7 @@ import { Provider } from 'mobx-react';
 import { GlobalStyles } from './styles';
 import { delay } from './util';
 import { initTracking } from './tracking';
+import { appHistory } from './routing';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./services/update-worker';
 
@@ -48,7 +49,9 @@ serverVersion.then((version) => localStorage.setItem('last-server-version', vers
 
 const accountStore = new AccountStore();
 const uiStore = new UiStore();
-const interceptionStore = new InterceptionStore();
+const interceptionStore = new InterceptionStore(
+    (exchangeId: string) => appHistory.navigate(`/view/${exchangeId}`)
+);
 
 const appStartupPromise = Promise.all([
     interceptionStore.initialize(accountStore),

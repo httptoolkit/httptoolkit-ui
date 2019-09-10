@@ -450,39 +450,6 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
         </ConfigContainer>;
     }
 
-    private breakpointOnExchange = flow(function * <T>(
-        this: BreakpointHandlerConfig,
-        eventId: string,
-        getEditedEvent: (exchange: HttpExchange) => Promise<T>
-    ) {
-        let exchange: HttpExchange | undefined;
-
-        // Wait until the event itself has arrived in the UI:
-        yield when(() => {
-            exchange = _.find(this.props.interceptionStore!.exchanges, { id: eventId });
-
-            // Completed -> doesn't fire for initial requests -> no completed/initial req race
-            return !!exchange && exchange.isCompletedRequest();
-        });
-
-        // Jump to the exchange:
-        this.props.navigate(`/view/${eventId}`);
-
-        // Mark the exchange as breakpointed, and wait for an edited version.
-        // UI will make it editable, add a save button, save will resolve this promise
-        return (yield getEditedEvent(exchange!)) as T;
-    });
-
-    private breakpointRequest = (request: MockttpBreakpointedRequest) => this.breakpointOnExchange(
-        request.id,
-        (exchange: HttpExchange) => exchange.triggerRequestBreakpoint(request)
-    );
-
-    private breakpointResponse = (response: MockttpBreakpointedResponse) => this.breakpointOnExchange(
-        response.id,
-        (exchange: HttpExchange) => exchange.triggerResponseBreakpoint(response)
-    );
-
     @action.bound
     onChange(changeEvent: React.ChangeEvent<HTMLInputElement>) {
         if (changeEvent.target.id === this.requestToggleId) {
@@ -491,9 +458,10 @@ class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
             this.responseBreakpointEnabled = !this.responseBreakpointEnabled;
         }
 
-        this.props.onChange(new BreakpointHandler({
-            beforeRequest: this.requestBreakpointEnabled ? this.breakpointRequest : undefined,
-            beforeResponse: this.responseBreakpointEnabled ? this.breakpointResponse : undefined
-        }));
+        this.props.onChange(new BreakpointHandler(
+            this.props.interceptionStore!,
+            this.requestBreakpointEnabled,
+            this.responseBreakpointEnabled
+        ));
     }
 }

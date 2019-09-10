@@ -1,16 +1,40 @@
 import * as _ from 'lodash';
 
-import { observable, action, configure, flow, computed, runInAction, observe, autorun } from 'mobx';
+import {
+    observable,
+    action,
+    configure,
+    flow,
+    computed,
+    runInAction,
+    observe,
+    autorun,
+    when
+} from 'mobx';
 import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
 import { HarParseError } from 'har-validator';
 
 import { getLocal, Mockttp } from 'mockttp';
 
-import { InputResponse, FailedTlsRequest, InputTlsRequest, PortRange, InputInitiatedRequest, InputCompletedRequest } from '../types';
+import {
+    InputResponse,
+    FailedTlsRequest,
+    InputTlsRequest,
+    PortRange,
+    InputInitiatedRequest,
+    InputCompletedRequest,
+    MockttpBreakpointedRequest,
+    MockttpBreakpointedResponse
+} from '../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
-import { getInterceptors, activateInterceptor, getConfig, announceServerReady } from '../services/server-api';
+import {
+    getInterceptors,
+    activateInterceptor,
+    getConfig,
+    announceServerReady
+} from '../services/server-api';
 import { AccountStore } from './account/account-store';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
@@ -85,7 +109,9 @@ export class InterceptionStore {
 
     // ** Overall setup & startup:
 
-    constructor() {
+    constructor(
+        private readonly jumpToExchange: (exchangeId: string) => void
+    ) {
         this.server = getLocal({
             cors: false,
             suggestChanges: false,
@@ -547,4 +573,40 @@ export class InterceptionStore {
         this.queueEventFlush();
     }
 
+    readonly triggerRequestBreakpoint = (request: MockttpBreakpointedRequest) => {
+        return this.triggerBreakpoint(
+            request.id,
+            (exchange: HttpExchange) => exchange.triggerRequestBreakpoint(request)
+        );
+    }
+
+    readonly triggerResponseBreakpoint = (response: MockttpBreakpointedResponse) => {
+        return this.triggerBreakpoint(
+            response.id,
+            (exchange: HttpExchange) => exchange.triggerResponseBreakpoint(response)
+        );
+    }
+
+    private triggerBreakpoint = flow(function * <T>(
+        this: InterceptionStore,
+        eventId: string,
+        getEditedEvent: (exchange: HttpExchange) => Promise<T>
+    ) {
+        let exchange: HttpExchange | undefined;
+
+        // Wait until the event itself has arrived in the UI:
+        yield when(() => {
+            exchange = _.find(this.exchanges, { id: eventId });
+
+            // Completed -> doesn't fire for initial requests -> no completed/initial req race
+            return !!exchange && exchange.isCompletedRequest();
+        });
+
+        // Jump to the exchange:
+        this.jumpToExchange(eventId);
+
+        // Mark the exchange as breakpointed, and wait for an edited version.
+        // UI will make it editable, add a save button, save will resolve this promise
+        return (yield getEditedEvent(exchange!)) as T;
+    });
 }

@@ -51,4 +51,4 @@ const buildThrottledHistorySource = () => {
 };
 
 // Throttlesafe: even with Chrome's throttling us, it'll still work nicely.
-export const throttlesafeHistory = createHistory(buildThrottledHistorySource());
+export const appHistory = createHistory(buildThrottledHistorySource());
