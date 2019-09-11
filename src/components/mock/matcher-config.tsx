@@ -1,12 +1,21 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { observable, action, autorun, runInAction, reaction } from 'mobx';
+import { observer, disposeOnUnmount } from 'mobx-react';
+
 import { matchers } from "mockttp";
 
-import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
-import { observer, disposeOnUnmount } from 'mobx-react';
-import { observable, action, autorun, runInAction } from 'mobx';
-import { TextInput } from '../common/inputs';
 import { styled } from '../../styles';
+
+import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
+
+import { TextInput } from '../common/inputs';
+import {
+    EditableHeaders,
+    HeadersArray,
+    headersArrayToHeaders,
+    headersToHeadersArray
+} from '../common/editable-headers';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -45,6 +54,8 @@ export function MatcherConfiguration(props:
             return <RegexPathMatcherConfig {...configProps} />;
         case matchers.ExactQueryMatcher:
             return <ExactQueryMatcherConfig {...configProps} />;
+        case matchers.HeaderMatcher:
+            return <HeaderMatcherConfig {...configProps} />;
         default:
             return null;
     }
@@ -259,6 +270,72 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
         } catch (e) {
             console.log(e);
             this.error = e;
+            this.props.onInvalidState();
+        }
+    }
+}
+
+const headersArrayToFlatHeaders = (headers: HeadersArray) =>
+    _.mapValues(
+        headersArrayToHeaders(
+            headers.filter(([k, v]) => k && v)
+        ),
+        (value) =>
+            _.isArray(value)
+                ? value.join(', ')
+                : value! // We know this is set because of filter above
+    )
+
+
+@observer
+class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
+
+    @observable
+    private headers: HeadersArray = [];
+
+    componentDidMount() {
+        disposeOnUnmount(this, reaction(
+            () => this.props.matcher ? this.props.matcher.headers : {},
+            (headers) => {
+                if (!_.isEqual(headers, headersArrayToFlatHeaders(this.headers))) {
+                    this.headers = headersToHeadersArray(headers);
+                }
+            },
+            { fireImmediately: true }
+        ));
+    }
+
+    render() {
+        return <MatcherConfigContainer>
+            { this.props.isExisting &&
+                <ConfigLabel>
+                    with headers including
+                </ConfigLabel>
+            }
+            <EditableHeaders
+                headers={this.headers}
+                onChange={this.onChange}
+            />
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(headers: HeadersArray) {
+        this.headers = headers;
+
+        try {
+            if (_.some(Object.values(this.headers), (value) => !value)) {
+                throw new Error("Invalid headers; header values can't be empty");
+            }
+            if (_.some(Object.keys(this.headers), (name) => !name)) {
+                throw new Error("Invalid headers; header names can't be empty");
+            }
+
+            this.props.onChange(new matchers.HeaderMatcher(
+                headersArrayToFlatHeaders(this.headers)
+            ));
+        } catch (e) {
+            console.log(e);
             this.props.onInvalidState();
         }
     }

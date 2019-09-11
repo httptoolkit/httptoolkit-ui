@@ -46,8 +46,6 @@ interface EditableHeadersProps {
 }
 
 const HeadersContainer = styled.div`
-    margin-top: 5px;
-
     display: grid;
     grid-gap: 5px;
     grid-template-columns: 1fr 2fr min-content;

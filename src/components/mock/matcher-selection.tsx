@@ -206,7 +206,8 @@ export class NewMatcherRow extends React.Component<{
                     <MatcherOptions matchers={[
                         matchers.SimplePathMatcher,
                         matchers.RegexPathMatcher,
-                        matchers.ExactQueryMatcher
+                        matchers.ExactQueryMatcher,
+                        matchers.HeaderMatcher
                     ]} />
                 </Select>
 

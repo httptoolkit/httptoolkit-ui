@@ -1,10 +1,9 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, observable, reaction, autorun, observe, runInAction, when, flow } from 'mobx';
+import { action, observable, reaction, autorun, observe, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import { Location } from '@reach/router';
 
-import { MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
 import { styled } from '../../styles';
 
 import {
@@ -23,7 +22,6 @@ import {
     getEditableContentType
 } from '../../model/content-types';
 import { InterceptionStore } from '../../model/interception-store';
-import { HttpExchange } from '../../model/exchange';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select } from '../common/inputs';
@@ -88,7 +86,7 @@ export function HandlerConfiguration(props: {
 }
 
 const SectionLabel = styled.h2`
-    margin-top: 10px;
+    margin: 10px 0 5px;
 
     text-transform: uppercase;
     opacity: ${p => p.theme.lowlightTextOpacity};
@@ -100,8 +98,11 @@ const BodyHeader = styled.div`
     flex-direction: row;
     align-items: flex-end;
 
+    margin-bottom: 5px;
+
     > ${SectionLabel} {
         flex-grow: 1;
+        margin-bottom: 0;
     }
 
     > ${Select} {
