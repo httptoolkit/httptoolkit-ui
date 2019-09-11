@@ -42,6 +42,12 @@ const auth0Lock = new Auth0LockPasswordless(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
         // Entirely within the app please
         redirect: false,
 
+        // Not used for redirects, but checked against auth0 config. Defaults to current URL, but
+        // unfortunately that is a very large space, and each valid URL needs preconfiguring.
+        redirectUrl: window.location.origin + '/',
+        // Required for passwordless (not needed by default, but gets reset when we use redirectUrl)
+        responseType: 'token',
+
         // Include offline, so we get a refresh token
         params: { scope: 'openid email offline_access app_metadata' },
     },
