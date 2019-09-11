@@ -42,6 +42,7 @@ import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
 import { buildDefaultRules, HtkMockRule, ruleEquality } from './rules/rules';
+import { deserializeRules } from './rules/rule-serialization';
 
 configure({ enforceActions: 'observed' });
 
@@ -354,6 +355,12 @@ export class InterceptionStore {
         });
 
         this.rules = sortedRules;
+    }
+
+    @action.bound
+    loadSavedRules(savedData: any) {
+        this.rules = deserializeRules(savedData, { interceptionStore: this });
+        this.resetRuleDrafts();
     }
 
     //#endregion

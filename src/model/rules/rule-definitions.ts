@@ -1,6 +1,9 @@
 import * as _ from 'lodash';
 import { Method, matchers, handlers } from 'mockttp';
+import * as serializr from 'serializr';
+
 import { InterceptionStore } from '../interception-store';
+import { serializeAsTag } from './rule-serialization';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -16,6 +19,9 @@ export const MethodMatchers = _.reduce<MethodName, {
     MethodNames,
     (result, method) => {
         result[method] = class SpecificMethodMatcher extends matchers.MethodMatcher {
+
+            uiType = method;
+
             constructor() {
                 super(Method[method]);
             }
@@ -39,12 +45,17 @@ export class WildcardMatcher extends matchers.WildcardMatcher {
 }
 
 export class DefaultWildcardMatcher extends matchers.WildcardMatcher {
+
+    uiType = 'default-wildcard';
+
     explain() {
         return 'Any other requests';
     }
 }
 
 export class AmIUsingMatcher extends matchers.RegexPathMatcher {
+
+    uiType = 'am-i-using';
 
     constructor() {
         // Optional slash is for backward compat: for server 0.1.18+ it's always present
@@ -75,6 +86,8 @@ export class PassThroughHandler extends handlers.PassThroughHandler {
 }
 
 export class ForwardToHostHandler extends handlers.PassThroughHandler {
+
+    uiType = 'forward-to-host';
 
     constructor(forwardToLocation: string) {
         super({
@@ -115,3 +128,15 @@ export class BreakpointHandler extends handlers.PassThroughHandler {
         return super.explain();
     }
 }
+
+serializr.createModelSchema(BreakpointHandler, {
+    uiType: serializeAsTag(() => 'breakpoint'),
+    beforeRequest: serializeAsTag(Boolean),
+    beforeResponse: serializeAsTag(Boolean)
+}, (context) =>
+    new BreakpointHandler(
+        context.args.interceptionStore,
+        context.json.beforeRequest,
+        context.json.beforeResponse
+    )
+);

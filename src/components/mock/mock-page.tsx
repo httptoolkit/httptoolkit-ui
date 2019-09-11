@@ -2,21 +2,26 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { action, observable, autorun, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
+import * as dateFns from 'date-fns';
 
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 import { FontAwesomeIcon } from '../../icons';
 
 import { ActivatedStore } from '../../model/interception-store';
+import { AccountStore } from '../../model/account/account-store';
 import { getNewRule } from '../../model/rules/rules';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
 import { MockRuleList } from './mock-rule-list';
+import { uploadFile, saveFile } from '../../util';
+import { serializeRules } from '../../model/rules/rule-serialization';
 
 interface MockPageProps {
-    className?: string,
-    interceptionStore: ActivatedStore
+    className?: string;
+    interceptionStore: ActivatedStore;
+    accountStore: AccountStore;
 }
 
 const MockPageContainer = styled.section`
@@ -70,6 +75,7 @@ const OtherButton = styled(SecondaryButton)`
 `;
 
 @inject('interceptionStore')
+@inject('accountStore')
 @observer
 class MockPage extends React.Component<MockPageProps> {
 
@@ -116,6 +122,7 @@ class MockPage extends React.Component<MockPageProps> {
             areSomeRulesUnsaved,
             areSomeRulesNonDefault
         } = this.props.interceptionStore;
+        const { isPaidUser } = this.props.accountStore;
         const { currentlyDraggingRuleIndex } = this;
 
         return <MockPageContainer ref={this.containerRef}>
@@ -129,6 +136,33 @@ class MockPage extends React.Component<MockPageProps> {
                     title="Reset rules to default"
                 >
                     <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                </OtherButton>
+                <OtherButton
+                    disabled={!isPaidUser}
+                    onClick={this.importRules}
+                    onKeyPress={clickOnEnter}
+                    title={
+                        isPaidUser
+                            ? 'Import a saved set of rules'
+                            : (
+                                'Pro-only: Import a set of saved rules, so you can build your ' +
+                                'own ready-to-use collections of predefined rules'
+                            )
+                    }
+                >
+                    <FontAwesomeIcon icon={['fas', 'upload']} />
+                </OtherButton>
+                <OtherButton
+                    disabled={!isPaidUser || !areSomeRulesNonDefault || draftRules.length === 0}
+                    onClick={this.exportRules}
+                    onKeyPress={clickOnEnter}
+                    title={
+                        isPaidUser
+                            ? 'Export these rules'
+                            : 'Pro-only: Export these rules, to save them for quick reuse later'
+                    }
+                >
+                    <FontAwesomeIcon icon={['fas', 'download']} />
                 </OtherButton>
                 <OtherButton
                     disabled={!areSomeRulesUnsaved}
@@ -264,11 +298,36 @@ class MockPage extends React.Component<MockPageProps> {
         rules.splice(newIndex, 0, rule);
         this.currentlyDraggingRuleIndex = undefined;
     }
+
+    readonly importRules = async () => {
+        const uploadedFile = await uploadFile('text', [
+            '.htkrules',
+            'application/json',
+            'application/htkrules+json'
+        ]);
+        if (uploadedFile) {
+            this.props.interceptionStore.loadSavedRules(
+                JSON.parse(uploadedFile)
+            );
+        }
+    }
+
+    readonly exportRules = async () => {
+        const rulesetContent = JSON.stringify(
+            serializeRules(this.props.interceptionStore.draftRules)
+        );
+
+        const filename = `HTTPToolkit_${
+            dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
+        }.htkrules`;
+
+        saveFile(filename, 'application/htkrules+json;charset=utf-8', rulesetContent);
+    }
 }
 
 // Annoying cast required to handle the store prop nicely in our types
 const InjectedMockPage = MockPage as unknown as WithInjected<
     typeof MockPage,
-    'interceptionStore'
+    'interceptionStore' | 'accountStore'
 >;
 export { InjectedMockPage as MockPage };

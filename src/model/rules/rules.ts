@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as uuid from 'uuid/v4';
 import { observable } from 'mobx';
 
 import {
@@ -36,7 +37,14 @@ export const MatcherLookup = Object.assign(
     {},
     matchers.MatcherLookup,
     MethodMatchers,
-    { wildcard: WildcardMatcher } // Replace the wildcard matcher with our own
+    {
+        // Replace the built-in wildcard matcher with our own:
+        wildcard: WildcardMatcher,
+        // Add special types for our built-in matcher explanation overrides:
+        'default-wildcard': DefaultWildcardMatcher,
+        'am-i-using': AmIUsingMatcher
+    }
+
 );
 
 export type MatcherClassKey = keyof typeof MatcherLookup;
@@ -77,7 +85,7 @@ export const HandlerKeys = new Map<HandlerClass, HandlerClassKey>(
 
 export function getNewRule(): HtkMockRule {
     return observable({
-        id: _.uniqueId(), // Just used for us, for keys
+        id: uuid(),
         activated: true,
         matchers: [ ],
         completionChecker: new completionCheckers.Always(),

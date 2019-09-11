@@ -95,6 +95,7 @@
     "remarkable": "^1.7.1",
     "semver": "^5.6.0",
     "serialize-error": "^3.0.0",
+    "serializr": "^1.5.1",
     "set-cookie-parser": "^2.3.5",
     "styled-components": "^4.3.2",
     "styled-reset": "^1.1.2",
