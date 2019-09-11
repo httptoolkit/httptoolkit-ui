@@ -378,13 +378,15 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 View latest invoice
                             </SettingsButtonLink>
                         }
-                        <SettingsButtonLink
-                            href={ sub.updateBillingDetailsUrl }
-                            target='_blank'
-                            rel='noreferrer noopener'
-                        >
-                            Update billing details
-                        </SettingsButtonLink>
+                        { sub.updateBillingDetailsUrl &&
+                            <SettingsButtonLink
+                                href={ sub.updateBillingDetailsUrl }
+                                target='_blank'
+                                rel='noreferrer noopener'
+                            >
+                                Update billing details
+                            </SettingsButtonLink>
+                        }
                         <SettingsButton onClick={logOut}>Log out</SettingsButton>
                     </AccountControls>
 

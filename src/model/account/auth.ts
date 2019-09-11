@@ -266,10 +266,12 @@ function parseUserData(userJwt: string | null): User {
         reportError('Invalid subscription data', appData);
     }
 
+    const optionalFields = ['lastReceiptUrl', 'updateBillingDetailsUrl'];
+
     return {
         email: appData.email,
-        // Use undefined rather than {} when there's any missing sub fields other than the receipt
-        subscription: _.every(_.omit(subscription, 'lastReceiptUrl'))
+        // Use undefined rather than {} when there's any missing required sub fields
+        subscription: _.every(_.omit(subscription, ...optionalFields))
             ? subscription as SubscriptionData
             : undefined,
         featureFlags: appData.feature_flags || []
