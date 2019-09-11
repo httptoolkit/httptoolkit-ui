@@ -7,7 +7,7 @@ import {
 
 import { styled } from '../../styles';
 
-import { HtkMockRule } from '../../model/rules/rules';
+import { HtkMockRule, ruleEquality } from '../../model/rules/rules';
 
 import { AddRuleRow, SortableRuleRow } from './mock-rule-row';
 
@@ -40,21 +40,22 @@ export const MockRuleList = SortableContainer(observer(({ draftRules, ...props }
             disabled={props.currentlyDraggingRuleIndex !== undefined}
         />
 
-        { draftRules.map((rule, i) => {
-            const isCollapsed = props.collapsedRulesMap[rule.id];
+        { draftRules.map((draftRule, i) => {
+            const isCollapsed = props.collapsedRulesMap[draftRule.id];
 
-            const draftIndex = draftRulesIntersection.indexOf(rule);
-            const activeIndex = _.findIndex(activeRulesIntersection, { id: rule.id })
+            const draftIndex = draftRulesIntersection.indexOf(draftRule);
+            const activeIndex = _.findIndex(activeRulesIntersection, { id: draftRule.id })
+            const activeRule = activeRulesIntersection[activeIndex];
             const hasUnsavedChanges =
                 activeIndex === -1 || // New rule
-                !_.isEqual(activeRulesIntersection[activeIndex], rule) || // Changed rule
-                draftIndex !== activeIndex; // Moved rule
+                draftIndex !== activeIndex || // Moved rule
+                !_.isEqualWith(activeRule, draftRule, ruleEquality); // Changed rule
 
             return <SortableRuleRow
-                key={rule.id}
+                key={draftRule.id}
                 index={i}
 
-                rule={rule}
+                rule={draftRule}
 
                 isNewRule={activeIndex === -1}
                 hasUnsavedChanges={hasUnsavedChanges}

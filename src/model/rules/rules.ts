@@ -116,3 +116,30 @@ export const buildDefaultRules = (hostWhitelist: string[]) => [
         handler: new PassThroughHandler(hostWhitelist)
     }
 ];
+
+// A more flexible _.isEqual. Considers source-equal functions to be
+// equal, and treats undefined properties as missing.
+export const ruleEquality = (a: any, b: any): boolean | undefined => {
+    // Assume that all function props (e.g. beforeRequest, callbacks)
+    // are equivalent if they're source-equivalent.
+    // Not a 100% safe guarantee, but should usually be true.
+    if (_.isFunction(a) && _.isFunction(b)) {
+        return a.toString() === b.toString();
+    }
+
+    // For objects with undefined props, pretend those props don't exist:
+    if (
+        _.isObject(a) && _.isObject(b) && (
+            Object.values(a).includes(undefined) ||
+            Object.values(b).includes(undefined)
+        )
+    ) {
+        return _.isEqualWith(
+            _.omitBy(a, (value) => value === undefined),
+            _.omitBy(b, (value) => value === undefined),
+            ruleEquality
+        );
+    }
+
+    // Return undefined -> use standard rules
+}

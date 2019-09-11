@@ -41,7 +41,7 @@ import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
-import { buildDefaultRules, HtkMockRule } from './rules/rules';
+import { buildDefaultRules, HtkMockRule, ruleEquality } from './rules/rules';
 
 configure({ enforceActions: 'observed' });
 
@@ -245,6 +245,36 @@ export class InterceptionStore {
     draftRules: HtkMockRule[] = _.cloneDeep(this.rules);
 
     @action.bound
+    saveRules() {
+        this.rules = this.draftRules;
+        this.resetRuleDrafts();
+    }
+
+    @action.bound
+    resetRuleDrafts() {
+        // Set the rules back to the latest saved version
+        this.draftRules = _.cloneDeep(this.rules);
+    }
+
+    @action.bound
+    resetRulesToDefault() {
+        // Set the rules back to the default settings
+        this.rules = buildDefaultRules(this.whitelistedCertificateHosts);
+        this.resetRuleDrafts();
+    }
+
+    @computed
+    get areSomeRulesUnsaved() {
+        return !_.isEqualWith(this.draftRules, this.rules, ruleEquality);
+    }
+
+    @computed
+    get areSomeRulesNonDefault() {
+        const defaultRules = buildDefaultRules(this.whitelistedCertificateHosts);
+        return !_.isEqualWith(this.draftRules, defaultRules, ruleEquality);
+    }
+
+    @action.bound
     resetRule(draftRuleIndex: number) {
         // To reset a single rule, we reset the content of that rule, and reset only its
         // position (different to save rule: see below). The difference is because this
@@ -324,48 +354,6 @@ export class InterceptionStore {
         });
 
         this.rules = sortedRules;
-    }
-
-    @action.bound
-    saveRules() {
-        this.rules = this.draftRules;
-        this.resetRuleDrafts();
-    }
-
-    @action.bound
-    resetRuleDrafts() {
-        // Set the rules back to the latest saved version
-        this.draftRules = _.cloneDeep(this.rules);
-    }
-
-    @action.bound
-    resetRulesToDefault() {
-        // Set the rules back to the default settings
-        this.rules = buildDefaultRules(this.whitelistedCertificateHosts);
-        this.resetRuleDrafts();
-    }
-
-    @computed
-    get areSomeRulesUnsaved() {
-        return !_.isEqualWith(this.draftRules, this.rules, (a, b) => {
-            // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
-            // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
-            if (_.isFunction(a) && _.isFunction(b)) {
-                return a.toString() === b.toString();
-            }
-        });
-    }
-
-    @computed
-    get areSomeRulesNonDefault() {
-        const defaultRules = buildDefaultRules(this.whitelistedCertificateHosts);
-        return !_.isEqualWith(this.draftRules, defaultRules, (a, b) => {
-            // We assume that all instances of functions (e.g. beforeRequest/beforeResponse, callbacks)
-            // are equivalent if they're source-equivalent. Not a hard guarantee, but _should_ be true.
-            if (_.isFunction(a) && _.isFunction(b)) {
-                return a.toString() === b.toString();
-            }
-        });
     }
 
     //#endregion
