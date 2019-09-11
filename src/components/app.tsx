@@ -15,7 +15,7 @@ import { trackPage } from '../tracking';
 import { appHistory } from '../routing';
 import { AccountStore } from '../model/account/account-store';
 
-import { Sidebar, SidebarItem } from './sidebar';
+import { Sidebar, SidebarItem, SIDEBAR_WIDTH } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
 import { MockPage } from './mock/mock-page';
@@ -31,6 +31,7 @@ const AppContainer = styled.div<{ inert?: boolean }>`
 
     > :not(:first-child) {
         flex: 1 1;
+        width: calc(100% - ${SIDEBAR_WIDTH});
     }
 `;
 

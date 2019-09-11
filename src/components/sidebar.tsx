@@ -26,8 +26,10 @@ interface SidebarProps {
     items: Array<SidebarItem>;
 }
 
+export const SIDEBAR_WIDTH = '90px';
+
 const SidebarNav = styled.nav`
-    width: 90px;
+    width: ${SIDEBAR_WIDTH};
     flex-shrink: 0;
 
     background-color: ${p => p.theme.mainBackground};
