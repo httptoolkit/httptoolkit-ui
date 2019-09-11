@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { styled, css } from "../../styles";
 import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account/subscriptions";
-import { Button } from "../common/inputs";
+import { Button, UnstyledButton } from "../common/inputs";
 import { CloseButton } from "../common/close-button";
 
 const PlanPickerModal = styled.dialog`
@@ -38,7 +38,7 @@ const PlanPickerHeading = styled.h1`
     text-align: center;
 `;
 
-const PlanCycleToggle = styled.button`
+const PlanCycleToggle = styled(UnstyledButton)`
     background: none;
     border: none;
 

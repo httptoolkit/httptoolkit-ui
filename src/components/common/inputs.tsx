@@ -18,7 +18,10 @@ export const interactiveMouseoverStyles = css`
     }
 `;
 
-export const UnstyledButton = styled.button`
+export const UnstyledButton = styled.button.attrs({
+    // 'submit' is the default, which makes 'enter' behaviour super wacky:
+    'type': 'button'
+})`
     /* Reset styles that get broken because <button> overrides them: */
     border: none;
     background: none;
@@ -46,7 +49,10 @@ const BaseButtonStyles = css`
     ${interactiveMouseoverStyles}
 `;
 
-export const Button = styled.button`
+export const Button = styled.button.attrs({
+    // 'submit' is the default, which makes 'enter' behaviour super wacky:
+    'type': 'button'
+})`
     ${BaseButtonStyles}
 
     /*
@@ -68,7 +74,10 @@ export const Button = styled.button`
 
 export const ButtonLink = Button.withComponent('a');
 
-export const SecondaryButton = styled.button`
+export const SecondaryButton = styled.button.attrs({
+    // 'submit' is the default, which makes 'enter' behaviour super wacky:
+    'type': 'button'
+})`
     ${BaseButtonStyles}
 
     background-color: transparent;
