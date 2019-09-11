@@ -27,7 +27,7 @@ export const UnstyledButton = styled.button`
     color: inherit;
 ` as StyledComponent<"button", Theme>;
 
-const BaseButton = styled.button`
+const BaseButtonStyles = css`
     -webkit-appearance: none;
     cursor: pointer;
     padding: 15px 36px;
@@ -46,7 +46,9 @@ const BaseButton = styled.button`
     ${interactiveMouseoverStyles}
 `;
 
-export const Button = styled(BaseButton)`
+export const Button = styled.button`
+    ${BaseButtonStyles}
+
     /*
      * Need both to ensure link button colours have higher
      * specificity than the a:visited default.
@@ -64,7 +66,11 @@ export const Button = styled(BaseButton)`
     }
 `;
 
-export const SecondaryButton = styled(BaseButton)`
+export const ButtonLink = Button.withComponent('a');
+
+export const SecondaryButton = styled.button`
+    ${BaseButtonStyles}
+
     background-color: transparent;
 
     &, &:visited {
@@ -83,8 +89,6 @@ export const SecondaryButton = styled(BaseButton)`
         border-color: ${p => p.theme.secondaryInputBorder};
     }
 `;
-
-export const ButtonLink = Button.withComponent('a');
 
 const invalidTextCss = css`
     border-color: #f1971f;
