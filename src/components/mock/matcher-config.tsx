@@ -26,7 +26,6 @@ type MatcherConfigProps<M extends Matcher> = {
 
 abstract class MatcherConfig<M extends Matcher> extends React.Component<MatcherConfigProps<M>> { }
 
-
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
         isExisting: boolean,
@@ -324,10 +323,10 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
         this.headers = headers;
 
         try {
-            if (_.some(Object.values(this.headers), (value) => !value)) {
+            if (_.some(this.headers, ([_name, value]) => !value)) {
                 throw new Error("Invalid headers; header values can't be empty");
             }
-            if (_.some(Object.keys(this.headers), (name) => !name)) {
+            if (_.some(this.headers, ([name]) => !name)) {
                 throw new Error("Invalid headers; header names can't be empty");
             }
 
