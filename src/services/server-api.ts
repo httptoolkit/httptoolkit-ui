@@ -17,19 +17,19 @@ interface GraphQLError {
     path: Array<string>
 }
 
-function formatError(errors: GraphQLError[] | XMLHttpRequest) {
+const formatError = (opName: string) => (errors: GraphQLError[] | XMLHttpRequest) => {
     console.error(errors);
 
     if (_.isArray(errors)) {
         const errorCount = errors.length > 1 ? `s (${errors.length})` : '';
 
         throw new Error(
-            `Server error${errorCount}: ${errors.map(e =>
+            `Server error${errorCount} during ${opName}: ${errors.map(e =>
                 `${e.message} at ${e.path.join('.')}`
             ).join(', ')}`
         );
     } else if (errors instanceof XMLHttpRequest) {
-        throw new Error(`Server XHR error, status ${errors.status} ${errors.statusText}`);
+        throw new Error(`Server XHR error during ${opName}, status ${errors.status} ${errors.statusText}`);
     } else {
         throw errors;
     }
@@ -44,7 +44,7 @@ export async function getServerVersion(): Promise<string> {
         query getVersion {
             version
         }
-    `, {}).catch(formatError);
+    `, {}).catch(formatError('get-server-version'));
 
     return response.version;
 }
@@ -56,7 +56,7 @@ export async function getConfig() {
                 certificatePath
             }
         }
-    `, {}).catch(formatError);
+    `, {}).catch(formatError('get-config'));
 
     return response.config;
 }
@@ -71,7 +71,7 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
                 isActivable
             }
         }
-    `, { proxyPort }).catch(formatError);
+    `, { proxyPort }).catch(formatError('get-interceptors'));
 
     return response.interceptors;
 }
@@ -81,7 +81,7 @@ export async function activateInterceptor(id: string, proxyPort: number) {
         mutation Activate($id: ID!, $proxyPort: Int!) {
             activateInterceptor(id: $id, proxyPort: $proxyPort)
         }
-    `, { id, proxyPort }).catch(formatError);
+    `, { id, proxyPort }).catch(formatError('activate-interceptor'));
 
     if (!result.activateInterceptor) {
         throw new Error('Failed to activate interceptor');
@@ -93,7 +93,7 @@ export async function deactivateInterceptor(id: string, proxyPort: number) {
         mutation Deactivate($id: ID!, $proxyPort: Int!) {
             deactivateInterceptor(id: $id, proxyPort: $proxyPort)
         }
-    `, { id, proxyPort }).catch(formatError);
+    `, { id, proxyPort }).catch(formatError('deactivate-interceptor'));
 
     if (!result.deactivateInterceptor) {
         throw new Error('Failed to deactivate interceptor');
@@ -106,6 +106,7 @@ export async function triggerServerUpdate() {
             triggerUpdate
         }
     `, { })
+    .catch(formatError('trigger-update'))
     // We ignore all errors, this trigger is just advisory
-    .catch(formatError).catch(console.log);
+    .catch(console.log);
 }
