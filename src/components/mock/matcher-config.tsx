@@ -21,7 +21,7 @@ import {
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
     matcherIndex: number | undefined,
-    onChange: (matcher: M, ...otherMatchers: Matcher[]) => void;
+    onChange: (...matchers: Matcher[] & { 0?: M }) => void;
     onInvalidState: () => void;
 };
 
@@ -30,7 +30,7 @@ abstract class MatcherConfig<M extends Matcher> extends React.Component<MatcherC
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
         matcherIndex: number | undefined,
-        onChange: (matcher: Matcher, ...otherMatchers: Matcher[]) => void,
+        onChange: (...matchers: Matcher[]) => void,
         onInvalidState?: () => void
     }
 ) {
@@ -399,16 +399,20 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
         this.headers = headers;
 
         try {
-            if (_.some(this.headers, ([_name, value]) => !value)) {
+            if (_.some(headers, ([_name, value]) => !value)) {
                 throw new Error("Invalid headers; header values can't be empty");
             }
-            if (_.some(this.headers, ([name]) => !name)) {
+            if (_.some(headers, ([name]) => !name)) {
                 throw new Error("Invalid headers; header names can't be empty");
             }
 
-            this.props.onChange(new matchers.HeaderMatcher(
-                headersArrayToFlatHeaders(this.headers)
-            ));
+            if (headers.length === 0) {
+                this.props.onChange();
+            } else {
+                this.props.onChange(new matchers.HeaderMatcher(
+                    headersArrayToFlatHeaders(this.headers)
+                ));
+            }
         } catch (e) {
             console.log(e);
             this.props.onInvalidState();
