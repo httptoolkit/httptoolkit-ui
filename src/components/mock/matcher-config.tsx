@@ -83,7 +83,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
     private error: Error | undefined;
 
     @observable
-    private path = '';
+    private url = '';
 
     componentDidMount() {
         // Avoid overriding state for new matchers, this lets us allow ? in the
@@ -91,14 +91,29 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
         if (!this.props.isExisting) return;
 
         disposeOnUnmount(this, autorun(() => {
-            const path = this.props.matcher ? this.props.matcher.path : '';
+            const url = this.props.matcher ? this.props.matcher.path : '';
 
-            runInAction(() => { this.path = path });
+            runInAction(() => { this.url = url });
         }));
     }
 
     render() {
-        return <MatcherConfigContainer>
+        const { url } = this;
+
+        const urlMatch = (/(\w+:\/\/)?([^/?#]+)?(\/[^?#]*)?/.exec(url) || []);
+        const [fullMatch, protocol, host, path] = urlMatch;
+
+        return <MatcherConfigContainer title={
+            (host || path)
+                ? `Matches ${
+                    protocol ? protocol.slice(0, -3) : 'any'
+                } requests to ${
+                    host ? `host ${host}` : 'any host'
+                } at ${
+                    path ? `path ${path}` : 'path /'
+                }`
+                : undefined
+        }>
             { this.props.isExisting &&
                 <ConfigLabel htmlFor={this.fieldId}>
                     for URL
@@ -108,7 +123,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
                 id={this.fieldId}
                 invalid={!!this.error}
                 spellCheck={false}
-                value={this.path}
+                value={url}
                 onChange={this.onChange}
                 placeholder='A specific URL to match'
             />
@@ -116,11 +131,11 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
     }
 
     ensurePathIsValid() {
-        if (!this.path) throw new Error('The URL must not be empty');
+        if (!this.url) throw new Error('The URL must not be empty');
 
         // If you start a URL with a protocol, it must be fully parseable:
-        if (this.path.match(/\w+:\//)) {
-            new URL(this.path);
+        if (this.url.match(/\w+:\//)) {
+            new URL(this.url);
         }
 
         // We leave the rest of the parsing to the SimplePathMatcher itself
@@ -128,20 +143,20 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
 
     @action.bound
     onChange(event: React.ChangeEvent<HTMLInputElement>) {
-        this.path = event.target.value;
+        this.url = event.target.value.split('#')[0];
 
         try {
             this.ensurePathIsValid();
 
-            const [path, query] = this.path.split('?');
+            const [baseUrl, query] = this.url.split('?');
 
             if (query === undefined) {
-                this.props.onChange(new matchers.SimplePathMatcher(path));
+                this.props.onChange(new matchers.SimplePathMatcher(baseUrl));
             } else {
-                if (this.props.isExisting) this.path = path;
+                if (this.props.isExisting) this.url = baseUrl;
 
                 this.props.onChange(
-                    new matchers.SimplePathMatcher(path),
+                    new matchers.SimplePathMatcher(baseUrl),
                     new matchers.ExactQueryMatcher('?' + query)
                 );
             }
