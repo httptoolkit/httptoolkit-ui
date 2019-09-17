@@ -85,6 +85,10 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
     private path = '';
 
     componentDidMount() {
+        // Avoid overriding state for new matchers, this lets us allow ? in the
+        // string initially, and delay splitting into two matchers until later.
+        if (!this.props.isExisting) return;
+
         disposeOnUnmount(this, autorun(() => {
             const path = this.props.matcher ? this.props.matcher.path : '';
 
@@ -111,7 +115,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
     }
 
     ensurePathIsValid() {
-        if (!this.path) throw new Error('Path is required');
+        if (!this.path) throw new Error('The URL must not be empty');
 
         // If you start a URL with a protocol, it must be fully parseable:
         if (this.path.match(/\w+:\//)) {
@@ -141,11 +145,15 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
                 );
             }
             this.error = undefined;
+            event.target.setCustomValidity('');
         } catch (e) {
             console.log(e);
+
             this.error = e;
             this.props.onInvalidState();
+            event.target.setCustomValidity(e.message);
         }
+        event.target.reportValidity();
     }
 }
 
@@ -208,17 +216,23 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
         try {
             if (!this.pattern) throw new Error('A pattern to match is required');
             if (this.pattern.match(containsLiteralQuestionMark)) {
-                throw new Error('Patterns will never match a literal ? character');
+                throw new Error(
+                    'Query strings are matched separately, so a literal ? character will never match'
+                );
             }
             this.props.onChange(
                 new matchers.RegexPathMatcher(new RegExp(this.pattern))
             );
             this.error = undefined;
+            event.target.setCustomValidity('');
         } catch (e) {
             console.log(e);
+
             this.error = e;
             this.props.onInvalidState();
+            event.target.setCustomValidity(e.message);
         }
+        event.target.reportValidity();
     }
 }
 
@@ -266,11 +280,15 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
         try {
             this.props.onChange(new matchers.ExactQueryMatcher(this.query));
             this.error = undefined;
+            event.target.setCustomValidity('');
         } catch (e) {
             console.log(e);
+
             this.error = e;
             this.props.onInvalidState();
+            event.target.setCustomValidity(e.message);
         }
+        event.target.reportValidity();
     }
 }
 

@@ -73,16 +73,18 @@ export const EditableHeaders = observer((props: EditableHeadersProps) => {
                 spellCheck={false}
                 key={`${i}-key`}
                 onChange={action((event: React.ChangeEvent<HTMLInputElement>) => {
+                    event.target.reportValidity();
                     headers[i][0] = event.target.value;
                     onChange(headers);
                 })}
             />,
             <TextInput
                 value={value}
-                invalid={!value}
+                required
                 spellCheck={false}
                 key={`${i}-val`}
                 onChange={action((event: React.ChangeEvent<HTMLInputElement>) => {
+                    event.target.reportValidity();
                     headers[i][1] = event.target.value;
                     onChange(headers);
                 })}
