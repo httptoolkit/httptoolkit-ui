@@ -20,7 +20,7 @@ import {
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
-    isExisting: boolean;
+    matcherIndex: number | undefined,
     onChange: (matcher: M, ...otherMatchers: Matcher[]) => void;
     onInvalidState: () => void;
 };
@@ -29,7 +29,7 @@ abstract class MatcherConfig<M extends Matcher> extends React.Component<MatcherC
 
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
-        isExisting: boolean,
+        matcherIndex: number | undefined,
         onChange: (matcher: Matcher, ...otherMatchers: Matcher[]) => void,
         onInvalidState?: () => void
     }
@@ -42,7 +42,7 @@ export function MatcherConfiguration(props:
 
     const configProps = {
         matcher: matcher as any,
-        isExisting: props.isExisting,
+        matcherIndex: props.matcherIndex,
         onChange: props.onChange,
         onInvalidState: props.onInvalidState || _.noop
     };
@@ -88,7 +88,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
     componentDidMount() {
         // Avoid overriding state for new matchers, this lets us allow ? in the
         // string initially, and delay splitting into two matchers until later.
-        if (!this.props.isExisting) return;
+        if (this.props.matcherIndex === undefined) return;
 
         disposeOnUnmount(this, autorun(() => {
             const url = this.props.matcher ? this.props.matcher.path : '';
@@ -99,6 +99,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
 
     render() {
         const { url } = this;
+        const { matcherIndex } = this.props;
 
         const urlMatch = (/(\w+:\/\/)?([^/?#]+)?(\/[^?#]*)?/.exec(url) || []);
         const [fullMatch, protocol, host, path] = urlMatch;
@@ -114,9 +115,9 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
                 }`
                 : undefined
         }>
-            { this.props.isExisting &&
+            { matcherIndex !== undefined &&
                 <ConfigLabel htmlFor={this.fieldId}>
-                    for URL
+                    { matcherIndex !== 0 && 'and ' } for URL
                 </ConfigLabel>
             }
             <TextInput
@@ -153,7 +154,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
             if (query === undefined) {
                 this.props.onChange(new matchers.SimplePathMatcher(baseUrl));
             } else {
-                if (this.props.isExisting) this.url = baseUrl;
+                if (this.props.matcherIndex !== undefined) this.url = baseUrl;
 
                 this.props.onChange(
                     new matchers.SimplePathMatcher(baseUrl),
@@ -208,6 +209,8 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
     }
 
     render() {
+        const { matcherIndex } = this.props;
+
         let examples: string[] = [];
         let matchType: 'including' | 'that start with' | 'that end with' | 'like' = 'like';
 
@@ -244,9 +247,9 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
                     ? `Would match absolute URLs ${matchType} ${examples[0]}`
                 : `Would match absolute URLs ${matchType}:\n\n${examples.join('\n')}`
             }>
-            { this.props.isExisting &&
+            { matcherIndex !== undefined &&
                 <ConfigLabel htmlFor={this.fieldId}>
-                    for URLs matching
+                    { matcherIndex !== 0 && 'and ' } for URLs matching
                 </ConfigLabel>
             }
             <RegexInput
@@ -307,10 +310,12 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
     }
 
     render() {
+        const { matcherIndex } = this.props;
+
         return <MatcherConfigContainer>
-            { this.props.isExisting &&
+            { matcherIndex !== undefined &&
                 <ConfigLabel htmlFor={this.fieldId}>
-                    with query
+                    { matcherIndex !== 0 && 'and ' } with query
                 </ConfigLabel>
             }
             <TextInput
@@ -374,10 +379,12 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
     }
 
     render() {
+        const { matcherIndex } = this.props;
+
         return <MatcherConfigContainer>
-            { this.props.isExisting &&
+            { matcherIndex !== undefined &&
                 <ConfigLabel>
-                    with headers including
+                    { matcherIndex !== 0 && 'and ' } with headers including
                 </ConfigLabel>
             }
             <EditableHeaders

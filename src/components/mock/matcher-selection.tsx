@@ -87,6 +87,7 @@ export const InitialMatcherRow = React.forwardRef((p: {
 
 interface ExistingMatcherRowProps {
     matcher: Matcher;
+    matcherIndex: number;
     onDelete: () => void;
     onChange: (m: Matcher, ...ms: Matcher[]) => void;
 }
@@ -94,12 +95,12 @@ interface ExistingMatcherRowProps {
 @observer
 export class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps> {
     render() {
-        const { matcher, onChange, onDelete } = this.props;
+        const { matcher, onChange, onDelete, matcherIndex } = this.props;
 
         return <MatcherRow>
             <MatcherInputsContainer>
                 <MatcherConfiguration
-                    isExisting={true}
+                    matcherIndex={matcherIndex}
                     matcher={matcher}
                     onChange={onChange}
                 />
@@ -218,13 +219,13 @@ export class NewMatcherRow extends React.Component<{
                 }>
                     { draftMatchers.length >= 1
                         ? <MatcherConfiguration
-                            isExisting={false}
+                            matcherIndex={undefined}
                             matcher={draftMatchers[0]}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}
                         />
                         : <MatcherConfiguration
-                            isExisting={false}
+                            matcherIndex={undefined}
                             matcherClass={matcherClass}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}

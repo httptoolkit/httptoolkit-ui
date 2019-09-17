@@ -343,6 +343,7 @@ export class RuleRow extends React.Component<{
                                 <ExistingMatcherRow
                                     key={`${i}/${rule.matchers.length}`}
                                     matcher={matcher}
+                                    matcherIndex={i}
                                     onChange={(...ms) => this.updateMatcher(i + 1, ...ms)}
                                     onDelete={() => this.deleteMatcher(matcher)}
                                 />
