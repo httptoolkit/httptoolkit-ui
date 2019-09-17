@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, action, autorun, runInAction, reaction } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
+import * as Randexp from 'randexp';
 
 import { matchers } from "mockttp";
 
@@ -158,7 +159,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
 }
 
 function unescapeRegexp(input: string): string {
-    return input.replace(/\\(.)/g, '$1');
+    return input.replace(/\\\//g, '/');
 }
 
 const RegexInput = styled(TextInput)`
@@ -192,7 +193,42 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
     }
 
     render() {
-        return <MatcherConfigContainer>
+        let examples: string[] = [];
+        let matchType: 'including' | 'that start with' | 'that end with' | 'like' = 'like';
+
+        if (!this.error && this.props.matcher) {
+            const { regexSource } = this.props.matcher;
+            const regex = new RegExp(regexSource);
+            const exp = new Randexp(regex);
+
+            exp.defaultRange.subtract(32, 47); // Symbols
+            exp.defaultRange.subtract(58, 64); // More symbols
+            exp.defaultRange.subtract(123, 126); // Yet more symbols
+
+            // For infinite ranges (.*), use up to 10 chars
+            exp.max = 10;
+
+            examples = _.uniq([exp.gen(), exp.gen(), exp.gen()])
+                .filter((example) => example.length && example.match(regex))
+                .sort();
+
+            matchType =
+                (regexSource.startsWith('^') && regexSource.endsWith('$'))
+                    ? 'like'
+                : regexSource.startsWith('^')
+                    ? 'that start with'
+                : regexSource.endsWith('$')
+                    ? 'that end with'
+                : 'including';
+        }
+
+        return <MatcherConfigContainer title={
+                examples.length === 0
+                    ? undefined
+                : examples.length === 1
+                    ? `Would match absolute URLs ${matchType} ${examples[0]}`
+                : `Would match absolute URLs ${matchType}:\n\n${examples.join('\n')}`
+            }>
             { this.props.isExisting &&
                 <ConfigLabel htmlFor={this.fieldId}>
                     for URLs matching
