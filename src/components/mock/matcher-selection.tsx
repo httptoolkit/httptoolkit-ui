@@ -135,7 +135,8 @@ const NewMatcherConfigContainer = styled.form`
 
 @observer
 export class NewMatcherRow extends React.Component<{
-    onAdd: (matcher: Matcher) => void
+    onAdd: (matcher: Matcher) => void,
+    existingMatchers: Matcher[]
 }> {
 
     @observable
@@ -195,6 +196,29 @@ export class NewMatcherRow extends React.Component<{
             saveMatcher
         } = this;
 
+        const availableMatchers = [
+            matchers.SimplePathMatcher,
+            matchers.RegexPathMatcher,
+            matchers.ExactQueryMatcher,
+            matchers.HeaderMatcher
+        ].filter((matcherClass) => {
+            if (
+                matcherClass === matchers.SimplePathMatcher ||
+                matcherClass === matchers.RegexPathMatcher
+            ) {
+                // You're allowed max 1 path matcher, across both types
+                return !_.some(this.props.existingMatchers, (m) =>
+                    m instanceof matchers.SimplePathMatcher ||
+                    m instanceof matchers.RegexPathMatcher
+                );
+            } else {
+                // For other matchers, there can just only be one of each type
+                return !_.some(this.props.existingMatchers, (m) => m instanceof matcherClass)
+            }
+        });
+
+        if (availableMatchers.length === 0) return null;
+
         return <MatcherRow>
             <MatcherInputsContainer>
                 <Select
@@ -204,12 +228,7 @@ export class NewMatcherRow extends React.Component<{
                 >
                     <option value={''}>Add another matcher:</option>
 
-                    <MatcherOptions matchers={[
-                        matchers.SimplePathMatcher,
-                        matchers.RegexPathMatcher,
-                        matchers.ExactQueryMatcher,
-                        matchers.HeaderMatcher
-                    ]} />
+                    <MatcherOptions matchers={availableMatchers} />
                 </Select>
 
                 <NewMatcherConfigContainer onSubmit={

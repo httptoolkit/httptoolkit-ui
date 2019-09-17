@@ -350,7 +350,10 @@ export class RuleRow extends React.Component<{
                             )}
 
                             { rule.matchers.length > 0 &&
-                                <NewMatcherRow onAdd={this.addMatcher} />
+                                <NewMatcherRow
+                                    existingMatchers={rule.matchers}
+                                    onAdd={this.addMatcher}
+                                />
                             }
                         </MatchersList>
                     </Details>
