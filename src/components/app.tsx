@@ -8,6 +8,7 @@ import {
     Redirect,
     LocationProvider
 } from '@reach/router';
+import * as semver from 'semver';
 
 import { styled } from '../styles';
 import { WithInjected } from '../types';
@@ -24,6 +25,7 @@ import { SettingsPage } from './settings/settings-page';
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
 import { FontAwesomeIcon } from '../icons';
+import { serverVersion } from '../services/service-versions';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -87,7 +89,12 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             },
 
             ...(
-                this.props.accountStore.hasFeatureFlag('mock-page')
+                this.props.accountStore.hasFeatureFlag('mock-page') && (
+                    // Hide Mock option if the server is too old for proper support.
+                    // We show by default to avoid flicker in the most common case
+                    serverVersion.state !== 'fulfilled' ||
+                    semver.satisfies(serverVersion.value as string, '>=0.1.21')
+                )
                 ? [{
                     name: 'Mock',
                     icon: ['fas', 'theater-masks'],
