@@ -20,7 +20,9 @@ import {
     DefaultWildcardMatcher,
     ForwardToHostHandler,
     PassThroughHandler,
-    BreakpointHandler
+    RequestBreakpointHandler,
+    ResponseBreakpointHandler,
+    RequestAndResponseBreakpointHandler
 } from './rule-definitions';
 
 export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
@@ -68,7 +70,9 @@ export const HandlerLookup = Object.assign(
         'passthrough': PassThroughHandler,
         'simple': StaticResponseHandler,
         'forward-to-host': ForwardToHostHandler,
-        'breakpoint': BreakpointHandler
+        'request-breakpoint': RequestBreakpointHandler,
+        'response-breakpoint': ResponseBreakpointHandler,
+        'request-and-response-breakpoint': RequestAndResponseBreakpointHandler
     }
 );
 

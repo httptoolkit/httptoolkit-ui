@@ -97,46 +97,58 @@ export class ForwardToHostHandler extends handlers.PassThroughHandler {
 
 }
 
-export class BreakpointHandler extends handlers.PassThroughHandler {
+export class RequestBreakpointHandler extends handlers.PassThroughHandler {
 
-    constructor(
-        interceptionStore: InterceptionStore,
-        breakBeforeRequest: boolean,
-        breakBeforeResponse: boolean
-    ) {
+    constructor(interceptionStore: InterceptionStore) {
         super({
             ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
-            beforeRequest: breakBeforeRequest
-                ? interceptionStore.triggerRequestBreakpoint
-                : undefined,
-            beforeResponse: breakBeforeResponse
-                ? interceptionStore.triggerResponseBreakpoint
-                : undefined
+            beforeRequest: interceptionStore.triggerRequestBreakpoint
         });
     }
 
     explain() {
-        if (this.beforeRequest && this.beforeResponse) {
-            return "manually rewrite the request and response";
-        }
-        if (this.beforeRequest) {
-            return "manually rewrite the request before it's forwarded";
-        }
-        if (this.beforeResponse) {
-            return "manually rewrite the response before it's returned";
-        }
-        return super.explain();
+        return "manually rewrite the request before it's forwarded";
     }
 }
 
-serializr.createModelSchema(BreakpointHandler, {
-    uiType: serializeAsTag(() => 'breakpoint'),
-    beforeRequest: serializeAsTag(Boolean),
-    beforeResponse: serializeAsTag(Boolean)
-}, (context) =>
-    new BreakpointHandler(
-        context.args.interceptionStore,
-        context.json.beforeRequest,
-        context.json.beforeResponse
-    )
-);
+serializr.createModelSchema(RequestBreakpointHandler, {
+    uiType: serializeAsTag(() => 'request-breakpoint')
+}, (context) => new RequestBreakpointHandler(context.args.interceptionStore));
+
+export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
+
+    constructor(interceptionStore: InterceptionStore) {
+        super({
+            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            beforeResponse: interceptionStore.triggerResponseBreakpoint
+        });
+    }
+
+    explain() {
+        return "manually rewrite the response before it's returned";
+    }
+}
+
+serializr.createModelSchema(ResponseBreakpointHandler, {
+    uiType: serializeAsTag(() => 'response-breakpoint')
+}, (context) => new ResponseBreakpointHandler(context.args.interceptionStore));
+
+
+export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHandler {
+
+    constructor(interceptionStore: InterceptionStore) {
+        super({
+            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            beforeRequest: interceptionStore.triggerRequestBreakpoint,
+            beforeResponse: interceptionStore.triggerResponseBreakpoint
+        });
+    }
+
+    explain() {
+        return "manually rewrite the request and response";
+    }
+}
+
+serializr.createModelSchema(RequestAndResponseBreakpointHandler, {
+    uiType: serializeAsTag(() => 'request-and-response-breakpoint')
+}, (context) => new RequestAndResponseBreakpointHandler(context.args.interceptionStore));

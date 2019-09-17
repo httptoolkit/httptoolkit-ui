@@ -8,7 +8,9 @@ import {
     MethodMatchers,
     StaticResponseHandler,
     ForwardToHostHandler,
-    BreakpointHandler,
+    RequestBreakpointHandler,
+    ResponseBreakpointHandler,
+    RequestAndResponseBreakpointHandler,
     PassThroughHandler
 } from './rule-definitions';
 
@@ -65,8 +67,12 @@ export function summarizeHandlerClass(handler: HandlerClass): string | undefined
             return "Forward the request to a different host";
         case PassThroughHandler:
             return "Pass the request on to its destination";
-        case BreakpointHandler:
-            return "Pause the request to edit it or respond manually";
+        case RequestBreakpointHandler:
+            return "Pause the request to manually edit it";
+        case ResponseBreakpointHandler:
+            return "Pause the response to manually edit it";
+        case RequestAndResponseBreakpointHandler:
+            return "Pause both the request and response to manually edit them";
         default:
             return undefined;
     }

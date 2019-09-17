@@ -1,8 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { action, observable, reaction, autorun, observe, runInAction } from 'mobx';
-import { observer, disposeOnUnmount, inject } from 'mobx-react';
-import { Location } from '@reach/router';
+import { observer, disposeOnUnmount } from 'mobx-react';
 
 import { styled } from '../../styles';
 
@@ -13,7 +12,9 @@ import {
     StaticResponseHandler,
     ForwardToHostHandler,
     PassThroughHandler,
-    BreakpointHandler
+    RequestBreakpointHandler,
+    ResponseBreakpointHandler,
+    RequestAndResponseBreakpointHandler,
 } from '../../model/rules/rule-definitions';
 import { HEADER_NAME_REGEX } from '../../model/http-docs';
 import {
@@ -21,7 +22,6 @@ import {
     EditableContentType,
     getEditableContentType
 } from '../../model/content-types';
-import { InterceptionStore } from '../../model/interception-store';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select } from '../common/inputs';
@@ -76,10 +76,12 @@ export function HandlerConfiguration(props: {
         return <ForwardToHostHandlerConfig {...configProps} />;
     } else if (handler instanceof PassThroughHandler) {
         return <PassThroughHandlerConfig {...configProps} />;
-    } else if (handler instanceof BreakpointHandler) {
-        return <Location>{({ navigate }) =>
-            <BreakpointHandlerConfig navigate={navigate} {...configProps} />
-        }</Location>;
+    } else if (handler instanceof RequestBreakpointHandler) {
+        return <RequestBreakpointHandlerConfig {...configProps} />;
+    } else if (handler instanceof ResponseBreakpointHandler) {
+        return <ResponseBreakpointHandlerConfig {...configProps} />;
+    } else if (handler instanceof RequestAndResponseBreakpointHandler) {
+        return <RequestAndResponseBreakpointHandlerConfig {...configProps} />;
     }
 
     throw new Error('Unknown handler: ' + handler.type);
@@ -355,114 +357,54 @@ class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler> {
     }
 }
 
-const BreakpointToggleContainer = styled.div`
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    margin: 20px 0;
-`;
-
-const BreakpointToggle = styled.input.attrs({
-    type: 'checkbox'
-})`
-    width: 20px;
-    height: 20px;
-    margin: 3px 10px 3px 0;
-`;
-
-const BreakpointLabel = styled.label`
-`;
-
-@inject('interceptionStore')
 @observer
-class BreakpointHandlerConfig extends HandlerConfig<PassThroughHandler, {
-    navigate: (url: string) => void,
-    interceptionStore?: InterceptionStore
-}> {
-
-    requestToggleId = _.uniqueId();
-    responseToggleId = _.uniqueId();
-
-    @observable
-    requestBreakpointEnabled = !!this.props.handler.beforeRequest;
-
-    @observable
-    responseBreakpointEnabled = !!this.props.handler.beforeResponse;
-
-    componentDidMount() {
-        disposeOnUnmount(this, autorun(() => {
-            const { beforeRequest, beforeResponse } = this.props.handler;
-
-            runInAction(() => {
-                this.requestBreakpointEnabled = !!beforeRequest;
-                this.responseBreakpointEnabled = !!beforeResponse;
-            });
-        }));
-    }
-
+class RequestBreakpointHandlerConfig extends HandlerConfig<RequestBreakpointHandler> {
     render() {
-        const { requestBreakpointEnabled, responseBreakpointEnabled } = this;
-
         return <ConfigContainer>
-            <BreakpointToggleContainer>
-                <BreakpointToggle
-                    id={this.requestToggleId}
-                    checked={requestBreakpointEnabled}
-                    onChange={this.onChange}
-                />
-                <BreakpointLabel htmlFor={this.requestToggleId}>
-                    Pause requests for editing before forwarding them upstream
-                </BreakpointLabel>
-
-                <BreakpointToggle
-                    id={this.responseToggleId}
-                    checked={responseBreakpointEnabled}
-                    onChange={this.onChange}
-                />
-                <BreakpointLabel htmlFor={this.responseToggleId}>
-                    Pause responses for editing before returning them to the client
-                </BreakpointLabel>
-            </BreakpointToggleContainer>
             <ConfigExplanation>
-                All matching traffic will {
-                    (requestBreakpointEnabled && responseBreakpointEnabled)
-                        ? <>
-                            breakpoint when a request is sent or a response is received, allowing
-                            you to edit the URL (to transparently redirect the request elsewhere),
-                            method, headers, or body before they are sent upstream, and also rewrite
-                            the status code, headers or body, before it is returned to the
-                            initiating client.
-                        </>
-                    : requestBreakpointEnabled
-                        ? <>
-                            hit a breakpoint when the request is sent, allowing you to edit the
-                            URL (to transparently redirect the request elsewhere), method, headers
-                            or body, before they are sent upstream.
-                        </>
-                    : responseBreakpointEnabled
-                        ? <>
-                            breakpoint when the response is received from the upstream server,
-                            allowing you to rewrite the status code, headers, or body, before it
-                            is returned to the client of the original request.
-                        </>
-                    : 'be transparently passed through to the upstream target host.'
-                }
+                All matching traffic will breakpoint when a request is sent.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                Once a request is breakpointed, you can edit the request URL to redirect
+                the request elsewhere, edit the method, headers, or body before they are sent upstream,
+                or provide your own response manually so the request is never sent onwards at all.
             </ConfigExplanation>
         </ConfigContainer>;
     }
+}
 
-    @action.bound
-    onChange(changeEvent: React.ChangeEvent<HTMLInputElement>) {
-        if (changeEvent.target.id === this.requestToggleId) {
-            this.requestBreakpointEnabled = !this.requestBreakpointEnabled;
-        } else if (changeEvent.target.id === this.responseToggleId) {
-            this.responseBreakpointEnabled = !this.responseBreakpointEnabled;
-        }
+@observer
+class ResponseBreakpointHandlerConfig extends HandlerConfig<ResponseBreakpointHandler> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                All matching traffic will breakpoint when a response is received from the upstream server.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                Once a response is breakpointed, you can rewrite the received message, to edit the status
+                code, headers or body before they're returned to the downstream HTTP client.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+}
 
-        this.props.onChange(new BreakpointHandler(
-            this.props.interceptionStore!,
-            this.requestBreakpointEnabled,
-            this.responseBreakpointEnabled
-        ));
+@observer
+class RequestAndResponseBreakpointHandlerConfig extends HandlerConfig<RequestAndResponseBreakpointHandler> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                All matching traffic will breakpoint when a request is sent, and when a response
+                is received.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                From a request breakpoint, you can edit the request URL to redirect
+                the request elsewhere, edit the method, headers, or body before they are sent upstream,
+                or provide your own response manually so the request is never sent onwards at all.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                From a response breakpoint, you can rewrite a received response, to edit the status
+                code, headers or body before they're returned to the downstream HTTP client.
+            </ConfigExplanation>
+        </ConfigContainer>;
     }
 }

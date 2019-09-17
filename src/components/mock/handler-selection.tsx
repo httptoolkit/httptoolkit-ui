@@ -15,7 +15,9 @@ import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
     StaticResponseHandler,
     ForwardToHostHandler,
-    BreakpointHandler,
+    RequestBreakpointHandler,
+    ResponseBreakpointHandler,
+    RequestAndResponseBreakpointHandler,
     PassThroughHandler
 } from '../../model/rules/rule-definitions';
 
@@ -53,8 +55,12 @@ const instantiateHandler = (
             return new PassThroughHandler(interceptionStore.whitelistedCertificateHosts);
         case ForwardToHostHandler:
             return new ForwardToHostHandler('');
-        case BreakpointHandler:
-            return new BreakpointHandler(interceptionStore, false, false);
+        case RequestBreakpointHandler:
+            return new RequestBreakpointHandler(interceptionStore);
+        case ResponseBreakpointHandler:
+            return new ResponseBreakpointHandler(interceptionStore);
+        case RequestAndResponseBreakpointHandler:
+            return new RequestAndResponseBreakpointHandler(interceptionStore);
     }
 }
 
@@ -76,7 +82,9 @@ export const HandlerSelector = inject('interceptionStore')(observer((p: {
             StaticResponseHandler,
             PassThroughHandler,
             ForwardToHostHandler,
-            BreakpointHandler
+            RequestBreakpointHandler,
+            ResponseBreakpointHandler,
+            RequestAndResponseBreakpointHandler
         ]} />
     </HandlerSelect>
 }));
