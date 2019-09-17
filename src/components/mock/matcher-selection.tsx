@@ -133,6 +133,10 @@ const NewMatcherConfigContainer = styled.form`
     }
 `;
 
+const LowlightedOption = styled.option`
+    color: ${p => p.theme.containerWatermark};
+`;
+
 @observer
 export class NewMatcherRow extends React.Component<{
     onAdd: (matcher: Matcher) => void,
@@ -226,8 +230,8 @@ export class NewMatcherRow extends React.Component<{
                     value={getMatcherKey(matcherClass)}
                     ref={this.dropdownRef}
                 >
-                    <option value={''}>Add another matcher:</option>
-
+                    <LowlightedOption value={''}>Add another matcher:</LowlightedOption>
+                    <LowlightedOption disabled>─────────────</LowlightedOption>
                     <MatcherOptions matchers={availableMatchers} />
                 </Select>
 
