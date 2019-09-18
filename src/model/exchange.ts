@@ -158,7 +158,9 @@ export class HttpExchange {
 
     public readonly request: HtkRequest;
     public readonly id: string;
-    public readonly matchedRuleId: string | undefined; // Undefined initially, defined for completed requests
+
+    @observable
+    public matchedRuleId: string | undefined; // Undefined initially, defined for completed requests
 
     isCompletedRequest(): this is CompletedRequest {
         return !!this.matchedRuleId;
@@ -186,6 +188,7 @@ export class HttpExchange {
 
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new ExchangeBody(request, request.headers);
+        this.matchedRuleId = request.matchedRuleId;
         Object.assign(this.timingEvents, request.timingEvents);
     }
 
