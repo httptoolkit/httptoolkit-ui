@@ -13,7 +13,7 @@ import { AccountStore } from "../../model/account/account-store";
 import { HttpExchange } from "../../model/exchange";
 import { generateHarRequest, generateHar } from "../../model/har";
 
-import { ProHeaderPill, CardSalesPitch } from "../common/pro-placeholders";
+import { ProHeaderPill, CardSalesPitch } from "../account/pro-placeholders";
 import { PillSelector, PillButton } from "../common/pill";
 import { CopyButtonPill } from '../common/copy-button';
 import { DocsLink } from '../common/docs-link';

@@ -28,7 +28,7 @@ import {
 import { Pill } from '../common/pill';
 import { CollapsibleSection } from '../common/collapsible-section';
 import { ContentLabelBlock, Markdown } from '../common/text-content';
-import { ProHeaderPill, CardSalesPitch } from '../common/pro-placeholders';
+import { ProHeaderPill, CardSalesPitch } from '../account/pro-placeholders';
 
 interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
@@ -77,8 +77,8 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
         :
             <CardSalesPitch>
                 <p>
-                    See timing info, and dive into the compression & caching of every exchange,
-                    for a full performance overview.
+                    See timing info, dive into the real and potential compression of every exchange, and understand how & where this response could
+                    be cached, for a full performance overview.
                 </p>
             </CardSalesPitch>
         }

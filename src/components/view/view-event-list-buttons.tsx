@@ -73,7 +73,7 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
             isPaidUser
                 ? 'Export these requests & responses as a HAR file'
                 : (
-                    'Pro-only: Export requests & responses as a HAR file, ' +
+                    'With Pro: Export requests & responses as a HAR file, ' +
                     'to save for later or share with others'
                 )
         }
@@ -104,7 +104,7 @@ export const ImportHarButton = inject('interceptionStore', 'accountStore')(
                 isPaidUser
                     ? 'Import exchanges from a HAR file'
                     : (
-                        'Pro-only: Imports requests & responses from HAR files, ' +
+                        'With Pro: Imports requests & responses from HAR files, ' +
                         'to examine past recordings or data from other tools'
                     )
             }

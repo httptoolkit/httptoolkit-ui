@@ -62,7 +62,7 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
 export function summarizeHandlerClass(handler: HandlerClass): string | undefined {
     switch (handler) {
         case StaticResponseHandler:
-            return "Return a fixed response";
+            return "Return an automated fixed response";
         case ForwardToHostHandler:
             return "Forward the request to a different host";
         case PassThroughHandler:

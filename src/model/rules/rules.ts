@@ -10,6 +10,7 @@ import {
 } from 'mockttp';
 
 import { Omit } from '../../types';
+import { ActivatedStore } from '../interception-store';
 
 import * as amIUsingHtml from '../../amiusing.html';
 import {
@@ -76,6 +77,19 @@ export const HandlerLookup = Object.assign(
     }
 );
 
+const PaidHandlerClasses: HandlerClass[] = [
+    StaticResponseHandler,
+    ForwardToHostHandler
+];
+
+export const isPaidHandler = (handler: Handler) => {
+    return _.some(PaidHandlerClasses, (cls) => handler instanceof cls);
+}
+
+export const isPaidHandlerClass = (handlerClass: HandlerClass) => {
+    return PaidHandlerClasses.includes(handlerClass);
+}
+
 export type HandlerClassKey = keyof typeof HandlerLookup;
 export type HandlerClass = typeof HandlerLookup[HandlerClassKey];
 export type Handler = InstanceType<HandlerClass>;
@@ -87,13 +101,13 @@ export const HandlerKeys = new Map<HandlerClass, HandlerClassKey>(
     ) as Array<[HandlerClass, HandlerClassKey]>
 );
 
-export function getNewRule(): HtkMockRule {
+export function getNewRule(interceptionStore: ActivatedStore): HtkMockRule {
     return observable({
         id: uuid(),
         activated: true,
         matchers: [ ],
         completionChecker: new completionCheckers.Always(),
-        handler: new StaticResponseHandler(200)
+        handler: new PassThroughHandler(interceptionStore.whitelistedCertificateHosts)
     });
 }
 

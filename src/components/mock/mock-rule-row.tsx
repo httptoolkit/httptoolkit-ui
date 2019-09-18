@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as polished from 'polished';
-import { observer } from 'mobx-react';
-import { action } from 'mobx';
+import { observer, inject } from 'mobx-react';
+import { action, observable } from 'mobx';
 import { SortableHandle, SortableElement } from 'react-sortable-hoc';
 import { Method, matchers } from 'mockttp';
 
@@ -10,11 +10,12 @@ import { styled, css } from '../../styles';
 import { FontAwesomeIcon, IconProp } from '../../icons';
 
 import { getMethodColor } from '../../model/exchange-colors';
-import { HtkMockRule, Matcher, Handler } from '../../model/rules/rules';
+import { HtkMockRule, Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
 import {
     summarizeMatcher,
     summarizeHandler
 } from '../../model/rules/rule-descriptions';
+import { AccountStore } from '../../model/account/account-store';
 
 import { clickOnEnter } from '../component-utils';
 import { LittleCard } from '../common/card';
@@ -25,6 +26,7 @@ import {
 } from './matcher-selection';
 import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
+import { GetProOverlay } from '../account/pro-placeholders';
 
 const FloatingDragHandle = styled.div`
     position: absolute;
@@ -266,8 +268,11 @@ const stopPropagation = (callback: () => void) => (event: React.MouseEvent) => {
     callback();
 }
 
+@inject('accountStore')
 @observer
 export class RuleRow extends React.Component<{
+    accountStore?: AccountStore,
+
     rule: HtkMockRule;
     isNewRule: boolean;
     hasUnsavedChanges: boolean;
@@ -283,8 +288,15 @@ export class RuleRow extends React.Component<{
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
     containerRef = React.createRef<HTMLElement>();
 
+    @observable
+    demoHandler: Handler | undefined;
+
     render() {
         const { rule, isNewRule, hasUnsavedChanges, collapsed, rowDisabled } = this.props;
+        const {
+            isPaidUser,
+            getPro
+        } = this.props.accountStore!;
 
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
@@ -296,6 +308,10 @@ export class RuleRow extends React.Component<{
         } else {
             method = undefined;
         }
+
+        const ruleHandler = isPaidUser || !this.demoHandler
+            ? rule.handler
+            : this.demoHandler || rule.handler;
 
         return <RowContainer
             borderColor={method
@@ -371,14 +387,24 @@ export class RuleRow extends React.Component<{
                     !collapsed && <Details>
                         <div>Then:</div>
                         <HandlerSelector
-                            value={rule.handler}
+                            value={ruleHandler}
                             onChange={this.updateHandler}
                         />
 
-                        <HandlerConfiguration
-                            handler={rule.handler}
-                            onChange={this.updateHandler}
-                        />
+                        { ruleHandler === this.demoHandler
+                            // If you select a paid handler with an unpaid account,
+                            // show a handler demo with a 'Get Pro' overlay:
+                            ? <GetProOverlay getPro={getPro}>
+                                <HandlerConfiguration
+                                    handler={this.demoHandler}
+                                    onChange={_.noop}
+                                />
+                            </GetProOverlay>
+                            : <HandlerConfiguration
+                                handler={ruleHandler}
+                                onChange={this.updateHandler}
+                            />
+                        }
                     </Details>
                 }
             </MatcherOrHandler>
@@ -431,7 +457,14 @@ export class RuleRow extends React.Component<{
 
     @action.bound
     updateHandler(handler: Handler) {
-        this.props.rule.handler = handler;
+        const { isPaidUser } = this.props.accountStore!;
+
+        if (isPaidUser || !isPaidHandler(handler)) {
+            this.demoHandler = undefined;
+            this.props.rule.handler = handler;
+        } else {
+            this.demoHandler = handler;
+        }
     }
 }
 

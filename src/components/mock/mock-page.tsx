@@ -145,7 +145,7 @@ class MockPage extends React.Component<MockPageProps> {
                         isPaidUser
                             ? 'Import a saved set of rules'
                             : (
-                                'Pro-only: Import a set of saved rules, so you can build your ' +
+                                'With Pro: Import a set of saved rules, so you can build your ' +
                                 'own ready-to-use collections of predefined rules'
                             )
                     }
@@ -159,7 +159,7 @@ class MockPage extends React.Component<MockPageProps> {
                     title={
                         isPaidUser
                             ? 'Export these rules'
-                            : 'Pro-only: Export these rules, to save them for quick reuse later'
+                            : 'With Pro: Export these rules, to save them for quick reuse later'
                     }
                 >
                     <FontAwesomeIcon icon={['fas', 'download']} />
@@ -255,7 +255,7 @@ class MockPage extends React.Component<MockPageProps> {
     @action.bound
     addRule() {
         const rules = this.props.interceptionStore.draftRules;
-        const newRule = getNewRule();
+        const newRule = getNewRule(this.props.interceptionStore);
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
         rules.unshift(newRule);

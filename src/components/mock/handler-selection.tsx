@@ -1,15 +1,18 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../styles';
 
 import { InterceptionStore } from '../../model/interception-store';
+import { AccountStore } from '../../model/account/account-store';
 import {
     HandlerClass,
     Handler,
     HandlerClassKey,
     HandlerKeys,
-    HandlerLookup
+    HandlerLookup,
+    isPaidHandlerClass
 } from '../../model/rules/rules';
 import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
@@ -64,11 +67,23 @@ const instantiateHandler = (
     }
 }
 
-export const HandlerSelector = inject('interceptionStore')(observer((p: {
+export const HandlerSelector = inject('interceptionStore', 'accountStore')(observer((p: {
     interceptionStore?: InterceptionStore,
+    accountStore?: AccountStore,
     value: Handler,
     onChange: (handler: Handler) => void
 }) => {
+    const [ availableHandlers, needProHandlers ] = _.partition([
+        PassThroughHandler,
+        ForwardToHostHandler,
+        StaticResponseHandler,
+        RequestBreakpointHandler,
+        ResponseBreakpointHandler,
+        RequestAndResponseBreakpointHandler,
+    ], (handlerClass) =>
+        p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
+    );
+
     return <HandlerSelect
         value={getHandlerKey(p.value)}
         onChange={(event) => {
@@ -78,13 +93,11 @@ export const HandlerSelector = inject('interceptionStore')(observer((p: {
             p.onChange(handler);
         }}
     >
-        <HandlerOptions handlers={[
-            StaticResponseHandler,
-            PassThroughHandler,
-            ForwardToHostHandler,
-            RequestBreakpointHandler,
-            ResponseBreakpointHandler,
-            RequestAndResponseBreakpointHandler
-        ]} />
+        <HandlerOptions handlers={availableHandlers} />
+        { needProHandlers.length &&
+            <optgroup label='With HTTP Toolkit Pro:'>
+                <HandlerOptions handlers={needProHandlers} />
+            </optgroup>
+        }
     </HandlerSelect>
 }));
