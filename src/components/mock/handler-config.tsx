@@ -336,13 +336,37 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
 
         try {
             if (!this.targetHost) throw new Error('A target host is required');
+
+            const protocolMatch = this.targetHost.match(/^\w+:\/\//);
+            if (protocolMatch) {
+                const pathWithoutProtocol = this.targetHost.slice(protocolMatch[0].length);
+
+                if (pathWithoutProtocol.includes('/')) {
+                    throw new Error('The replacement host shouldn\'t include a path, since it won\'t be used');
+                }
+                if (pathWithoutProtocol.includes('?')) {
+                    throw new Error('The replacement host shouldn\'t include a query string, since it won\'t be used');
+                }
+            } else {
+                if (this.targetHost.includes('/')) {
+                    throw new Error('The replacement host shouldn\'t include a path, since it won\'t be used');
+                }
+                if (this.targetHost.includes('?')) {
+                    throw new Error('The replacement host shouldn\'t include a query string, since it won\'t be used');
+                }
+            }
+
             this.props.onChange(new ForwardToHostHandler(this.targetHost));
             this.error = undefined;
+            event.target.setCustomValidity('');
         } catch (e) {
             console.log(e);
             this.error = e;
+            event.target.setCustomValidity(e.message);
+
             if (this.props.onInvalidState) this.props.onInvalidState();
         }
+        event.target.reportValidity();
     }
 }
 
