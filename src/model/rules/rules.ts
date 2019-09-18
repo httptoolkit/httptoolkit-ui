@@ -23,7 +23,9 @@ import {
     PassThroughHandler,
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
-    RequestAndResponseBreakpointHandler
+    RequestAndResponseBreakpointHandler,
+    TimeoutHandler,
+    CloseConnectionHandler
 } from './rule-definitions';
 
 export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
@@ -79,7 +81,9 @@ export const HandlerLookup = Object.assign(
 
 const PaidHandlerClasses: HandlerClass[] = [
     StaticResponseHandler,
-    ForwardToHostHandler
+    ForwardToHostHandler,
+    TimeoutHandler,
+    CloseConnectionHandler
 ];
 
 export const isPaidHandler = (handler: Handler) => {

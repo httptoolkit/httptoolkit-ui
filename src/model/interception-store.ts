@@ -390,7 +390,7 @@ export class InterceptionStore {
     isPaused = false;
 
     private eventQueue: Array<QueuedEvent> = [];
-    private orphanedEventQueue: Array<OrphanableQueuedEvent> = [];
+    private orphanedEvents: { [id: string]: OrphanableQueuedEvent } = {};
 
     private isFlushQueued = false;
     private queueEventFlush() {
@@ -426,36 +426,39 @@ export class InterceptionStore {
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
 
-        // Sometimes we receive events out of order (response/abort before request).
-        // That could be from this batch, or from a previous batch. When that happens,
-        // we keep them separately, and we check later whether they're valid yet.
-        // If so, we push them back onto the normal queue and handle them as normal.
-        this.orphanedEventQueue = this.orphanedEventQueue.filter((orphan) => {
-            if (_.find(this.exchanges, { id: orphan.event.id })) {
-                // The parent request has arrived! Handle this response/abort now too.
-                this.eventQueue.push(orphan);
-                return false;
-            } else {
-                // Still orphaned.
-                return true;
-            }
-        }).filter((orphan): orphan is OrphanableQueuedEvent => orphan !== null);
-
-        this.eventQueue.forEach((queuedEvent) => {
-            switch (queuedEvent.type) {
-                case 'request-initiated':
-                    return this.addInitiatedRequest(queuedEvent.event);
-                case 'request':
-                    return this.addCompletedRequest(queuedEvent.event);
-                case 'response':
-                    return this.setResponse(queuedEvent.event);
-                case 'abort':
-                    return this.markRequestAborted(queuedEvent.event);
-                case 'tlsClientError':
-                    return this.addFailedTlsRequest(queuedEvent.event);
-            }
-        });
+        this.eventQueue.forEach(this.updateFromQueuedEvent);
         this.eventQueue = [];
+    }
+
+    private updateFromQueuedEvent = (queuedEvent: QueuedEvent) => {
+        switch (queuedEvent.type) {
+            case 'request-initiated':
+                this.addInitiatedRequest(queuedEvent.event);
+                return this.checkForOrphan(queuedEvent.event.id);
+            case 'request':
+                this.addCompletedRequest(queuedEvent.event);
+                return this.checkForOrphan(queuedEvent.event.id);
+            case 'response':
+                return this.setResponse(queuedEvent.event);
+            case 'abort':
+                return this.markRequestAborted(queuedEvent.event);
+            case 'tlsClientError':
+                return this.addFailedTlsRequest(queuedEvent.event);
+        }
+    }
+
+    private checkForOrphan(id: string) {
+        // Sometimes we receive events out of order (response/abort before request).
+        // They could be later in the same batch, or in a previous batch. If that happens,
+        // we store them separately, and we check later whether they're valid when subsequent
+        // completed/initiated request events come in. If so, we re-queue them.
+
+        const orphanEvent = this.orphanedEvents[id];
+
+        if (orphanEvent) {
+            delete this.orphanedEvents[id];
+            this.updateFromQueuedEvent(orphanEvent);
+        }
     }
 
     @action.bound
@@ -481,17 +484,15 @@ export class InterceptionStore {
     @action
     private addCompletedRequest(request: InputCompletedRequest) {
         try {
-            const exchange = new HttpExchange(request);
-
-            // The request shuld already exist: we get an event when the initial path & headers
-            // are received, and this one later when the body etc arrives.
-            // We add it from scratch if not, in case of races or if the server doesn't support
-            // request-initiated events.
+            // The request should already exist: we get an event when the initial path & headers
+            // are received, and this one later when the full body is received.
+            // We add the request from scratch if it's somehow missing, which can happen given
+            // races or if the server doesn't support request-initiated events.
             const existingEventIndex = _.findIndex(this.events, { id: request.id });
             if (existingEventIndex >= 0) {
-                this.events[existingEventIndex] = exchange;
+                (this.events[existingEventIndex] as HttpExchange).updateFromCompletedRequest(request);
             } else {
-                this.events.push(exchange);
+                this.events.push(new HttpExchange(request));
             }
         } catch (e) {
             reportError(e);
@@ -505,7 +506,7 @@ export class InterceptionStore {
 
             if (!exchange) {
                 // Handle this later, once the request has arrived
-                this.orphanedEventQueue.push({ type: 'abort', event: request });
+                this.orphanedEvents[request.id] = { type: 'abort', event: request };
                 return;
             };
 
@@ -522,7 +523,7 @@ export class InterceptionStore {
 
             if (!exchange) {
                 // Handle this later, once the request has arrived
-                this.orphanedEventQueue.push({ type: 'response', event: response });
+                this.orphanedEvents[response.id] = { type: 'response', event: response };
                 return;
             }
 
@@ -554,6 +555,7 @@ export class InterceptionStore {
     @action.bound
     clearInterceptedData() {
         this.events.clear();
+        this.orphanedEvents = {};
     }
 
     async loadFromHar(harContents: {}) {

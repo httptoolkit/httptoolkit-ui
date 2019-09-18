@@ -152,3 +152,8 @@ export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHan
 serializr.createModelSchema(RequestAndResponseBreakpointHandler, {
     uiType: serializeAsTag(() => 'request-and-response-breakpoint')
 }, (context) => new RequestAndResponseBreakpointHandler(context.args.interceptionStore));
+
+export type TimeoutHandler = handlers.TimeoutHandler;
+export const TimeoutHandler = handlers.TimeoutHandler;
+export type CloseConnectionHandler = handlers.CloseConnectionHandler;
+export const CloseConnectionHandler = handlers.CloseConnectionHandler;

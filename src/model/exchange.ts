@@ -15,6 +15,7 @@ import {
     MockttpBreakpointedResponse,
     BreakpointResponseResult,
     MockttpBreakpointRequestResult,
+    InputCompletedRequest,
 } from "../types";
 import {
     lazyObservablePromise,
@@ -182,6 +183,11 @@ export class HttpExchange {
 
     @observable
     public category: ExchangeCategory;
+
+    updateFromCompletedRequest(request: InputCompletedRequest) {
+        this.request.body = new ExchangeBody(request, request.headers);
+        Object.assign(this.timingEvents, request.timingEvents);
+    }
 
     markAborted(request: InputInitiatedRequest) {
         this.response = 'aborted';

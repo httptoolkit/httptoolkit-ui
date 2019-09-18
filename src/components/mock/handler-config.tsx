@@ -15,6 +15,8 @@ import {
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
+    TimeoutHandler,
+    CloseConnectionHandler
 } from '../../model/rules/rule-definitions';
 import { HEADER_NAME_REGEX } from '../../model/http-docs';
 import {
@@ -82,6 +84,10 @@ export function HandlerConfiguration(props: {
         return <ResponseBreakpointHandlerConfig {...configProps} />;
     } else if (handler instanceof RequestAndResponseBreakpointHandler) {
         return <RequestAndResponseBreakpointHandlerConfig {...configProps} />;
+    } else if (handler instanceof TimeoutHandler) {
+        return <TimeoutHandlerConfig {...configProps} />;
+    } else if (handler instanceof CloseConnectionHandler) {
+        return <CloseConnectionHandlerConfig {...configProps} />;
     }
 
     throw new Error('Unknown handler: ' + handler.type);
@@ -428,6 +434,31 @@ class RequestAndResponseBreakpointHandlerConfig extends HandlerConfig<RequestAnd
             <ConfigExplanation>
                 From a response breakpoint, you can rewrite a received response, to edit the status
                 code, headers or body before they're returned to the downstream HTTP client.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+}
+
+@observer
+class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                When a matching request is received, the server will keep the connection
+                open but do nothing. With no data or response, most clients will time out
+                and abort the request after sufficient time has passed.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+}
+
+@observer
+class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                As soon as a matching request is received, the connection will
+                be closed, with no response.
             </ConfigExplanation>
         </ConfigContainer>;
     }

@@ -21,7 +21,9 @@ import {
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
-    PassThroughHandler
+    PassThroughHandler,
+    TimeoutHandler,
+    CloseConnectionHandler
 } from '../../model/rules/rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -64,6 +66,10 @@ const instantiateHandler = (
             return new ResponseBreakpointHandler(interceptionStore);
         case RequestAndResponseBreakpointHandler:
             return new RequestAndResponseBreakpointHandler(interceptionStore);
+        case TimeoutHandler:
+            return new TimeoutHandler();
+        case CloseConnectionHandler:
+            return new CloseConnectionHandler();
     }
 }
 
@@ -80,6 +86,8 @@ export const HandlerSelector = inject('interceptionStore', 'accountStore')(obser
         RequestBreakpointHandler,
         ResponseBreakpointHandler,
         RequestAndResponseBreakpointHandler,
+        TimeoutHandler,
+        CloseConnectionHandler
     ], (handlerClass) =>
         p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
     );

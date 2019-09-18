@@ -11,7 +11,9 @@ import {
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
-    PassThroughHandler
+    PassThroughHandler,
+    TimeoutHandler,
+    CloseConnectionHandler
 } from './rule-definitions';
 
 function withFirstCharUppercased(input: string): string {
@@ -73,6 +75,10 @@ export function summarizeHandlerClass(handler: HandlerClass): string | undefined
             return "Pause the response to manually edit it";
         case RequestAndResponseBreakpointHandler:
             return "Pause both the request and response to manually edit them";
+        case TimeoutHandler:
+            return "Time out with no response";
+        case CloseConnectionHandler:
+            return "Close the connection immediately";
         default:
             return undefined;
     }
