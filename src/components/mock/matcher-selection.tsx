@@ -2,11 +2,13 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import { action, observable } from 'mobx';
+import * as semver from 'semver';
 
 import { matchers } from 'mockttp';
 
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
+import { serverVersion as serverVersionObservable } from '../../services/service-versions';
 import { Button, Select } from '../common/inputs';
 
 import {
@@ -200,13 +202,19 @@ export class NewMatcherRow extends React.Component<{
             saveMatcher
         } = this;
 
+        const serverVersion = serverVersionObservable.state === 'fulfilled'
+            ? serverVersionObservable.value as string
+            : undefined;
+
         const availableMatchers = [
-            matchers.HostMatcher,
+            serverVersion && semver.satisfies(serverVersion, '>=0.1.22') && matchers.HostMatcher,
             matchers.SimplePathMatcher,
             matchers.RegexPathMatcher,
             matchers.ExactQueryMatcher,
             matchers.HeaderMatcher
         ].filter((matcherClass) => {
+            if (!matcherClass) return false;
+
             if (
                 matcherClass === matchers.SimplePathMatcher ||
                 matcherClass === matchers.RegexPathMatcher
@@ -220,7 +228,7 @@ export class NewMatcherRow extends React.Component<{
                 // For other matchers, there can just only be one of each type
                 return !_.some(this.props.existingMatchers, (m) => m instanceof matcherClass)
             }
-        });
+        }) as MatcherClass[];
 
         if (availableMatchers.length === 0) return null;
 
