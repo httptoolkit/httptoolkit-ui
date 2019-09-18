@@ -30,7 +30,7 @@ export function initTracking() {
             value: performance.now()
         });
 
-        trackPage();
+        trackPage(window.location);
 
         window.addEventListener('DOMContentLoaded', () => {
             ReactGA.timing({
@@ -59,10 +59,10 @@ export function initTracking() {
 }
 
 let lastUrl: string | undefined;
-export function trackPage() {
+export function trackPage(location: Window['location']) {
     if (!GA_ID) return;
 
-    const currentUrl = window.location.href;
+    const currentUrl = location.href;
     if (currentUrl === lastUrl) return;
     lastUrl = currentUrl;
     const currentPath = window.location.pathname + location.search;

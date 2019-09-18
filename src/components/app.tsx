@@ -134,7 +134,9 @@ class App extends React.Component<{ accountStore: AccountStore }> {
     }
 
     componentDidMount() {
-        disposeOnUnmount(this, () => appHistory.listen(() => trackPage()));
+        disposeOnUnmount(this, appHistory.listen(
+            ({ location }) => trackPage(location)
+        ));
     }
 
     render() {
