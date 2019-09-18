@@ -192,7 +192,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
                 spellCheck={false}
                 value={url}
                 onChange={this.onChange}
-                placeholder='A specific URL to match'
+                placeholder='A specific URL to match: http://example.com/abc'
             />
         </MatcherConfigContainer>;
     }

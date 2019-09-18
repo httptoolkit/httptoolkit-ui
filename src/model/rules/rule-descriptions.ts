@@ -32,7 +32,7 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
         case matchers.HostMatcher:
             return "For a host";
         case matchers.SimplePathMatcher:
-            return "For URL";
+            return "For a URL";
         case matchers.RegexPathMatcher:
             return "For URLs matching";
         case matchers.QueryMatcher:
