@@ -159,6 +159,7 @@ const FailedRequestListRow = styled(EventListRow)`
 
     font-style: italic;
     justify-content: center;
+    text-align: center;
 
     opacity: 0.7;
 
