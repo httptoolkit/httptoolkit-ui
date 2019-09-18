@@ -76,7 +76,7 @@ export function summarizeHandlerClass(handler: HandlerClass): string | undefined
         case ResponseBreakpointHandler:
             return "Pause the response to manually edit it";
         case RequestAndResponseBreakpointHandler:
-            return "Pause both the request and response to manually edit them";
+            return "Pause the request & response to manually edit them";
         case TimeoutHandler:
             return "Time out with no response";
         case CloseConnectionHandler:
