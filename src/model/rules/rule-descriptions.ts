@@ -29,6 +29,8 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
             return "Any requests";
         case matchers.MethodMatcher:
             return "Requests using method";
+        case matchers.HostMatcher:
+            return "For a host";
         case matchers.SimplePathMatcher:
             return "For URL";
         case matchers.RegexPathMatcher:

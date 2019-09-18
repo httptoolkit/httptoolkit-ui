@@ -48,6 +48,8 @@ export function MatcherConfiguration(props:
     };
 
     switch (matcherClass) {
+        case matchers.HostMatcher:
+            return <HostMatcherConfig {...configProps} />;
         case matchers.SimplePathMatcher:
             return <SimplePathMatcherConfig {...configProps} />;
         case matchers.RegexPathMatcher:
@@ -73,6 +75,70 @@ const MatcherConfigContainer = styled.div`
     display: flex;
     flex-direction: column;
 `;
+
+@observer
+class HostMatcherConfig extends MatcherConfig<matchers.HostMatcher> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private error: Error | undefined;
+
+    @observable
+    private host = '';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const host = this.props.matcher ? this.props.matcher.host : '';
+            runInAction(() => { this.host = host });
+        }));
+    }
+
+    render() {
+        const { host } = this;
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer title={
+            host
+                ? `Matches all requests to ${
+                    host
+                }, regardless of their path or protocol`
+                : undefined
+        }>
+            { matcherIndex !== undefined &&
+                <ConfigLabel htmlFor={this.fieldId}>
+                    { matcherIndex !== 0 && 'and ' } for host
+                </ConfigLabel>
+            }
+            <TextInput
+                id={this.fieldId}
+                invalid={!!this.error}
+                spellCheck={false}
+                value={host}
+                onChange={this.onChange}
+                placeholder='A specific host to match: example.com'
+            />
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.host = event.target.value;
+
+        try {
+            this.props.onChange(new matchers.HostMatcher(this.host));
+            this.error = undefined;
+            event.target.setCustomValidity('');
+        } catch (e) {
+            console.log(e);
+
+            this.error = e;
+            this.props.onInvalidState();
+            event.target.setCustomValidity(e.message);
+        }
+        event.target.reportValidity();
+    }
+}
 
 @observer
 class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> {

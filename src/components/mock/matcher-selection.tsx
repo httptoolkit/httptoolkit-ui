@@ -201,6 +201,7 @@ export class NewMatcherRow extends React.Component<{
         } = this;
 
         const availableMatchers = [
+            matchers.HostMatcher,
             matchers.SimplePathMatcher,
             matchers.RegexPathMatcher,
             matchers.ExactQueryMatcher,
