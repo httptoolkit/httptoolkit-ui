@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as polished from 'polished';
-import { observer, inject } from 'mobx-react';
-import { action, observable } from 'mobx';
+import { observer, inject, disposeOnUnmount } from 'mobx-react';
+import { action, observable, reaction } from 'mobx';
 import { SortableHandle, SortableElement } from 'react-sortable-hoc';
 import { Method, matchers } from 'mockttp';
 
@@ -291,6 +291,14 @@ export class RuleRow extends React.Component<{
     @observable
     demoHandler: Handler | undefined;
 
+    componentDidMount() {
+        // If the actual handler ever changes, dump our demo handler state:
+        disposeOnUnmount(this, reaction(
+            () => this.props.rule.handler,
+            () => { this.demoHandler = undefined; }
+        ));
+    }
+
     render() {
         const { rule, isNewRule, hasUnsavedChanges, collapsed, rowDisabled } = this.props;
         const {
@@ -309,9 +317,13 @@ export class RuleRow extends React.Component<{
             method = undefined;
         }
 
-        const ruleHandler = isPaidUser || !this.demoHandler
-            ? rule.handler
-            : this.demoHandler || rule.handler;
+        // Handlers are in demo mode (uneditable, behind a 'Get Pro' overlay), either if the rule
+        // has a handler you can't use, or you've picked a Pro handler and its been put in demoHandler
+        const isHandlerDemo = !isPaidUser && (this.demoHandler || isPaidHandler(rule.handler));
+
+        const ruleHandler = isHandlerDemo
+            ? (this.demoHandler || rule.handler)
+            : rule.handler
 
         return <RowContainer
             borderColor={method
@@ -391,12 +403,12 @@ export class RuleRow extends React.Component<{
                             onChange={this.updateHandler}
                         />
 
-                        { ruleHandler === this.demoHandler
+                        { isHandlerDemo
                             // If you select a paid handler with an unpaid account,
                             // show a handler demo with a 'Get Pro' overlay:
                             ? <GetProOverlay getPro={getPro}>
                                 <HandlerConfiguration
-                                    handler={this.demoHandler}
+                                    handler={ruleHandler}
                                     onChange={_.noop}
                                 />
                             </GetProOverlay>
