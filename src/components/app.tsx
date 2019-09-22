@@ -89,7 +89,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             },
 
             ...(
-                this.props.accountStore.hasFeatureFlag('mock-page') && (
+                (
                     // Hide Mock option if the server is too old for proper support.
                     // We show by default to avoid flicker in the most common case
                     serverVersion.state !== 'fulfilled' ||
