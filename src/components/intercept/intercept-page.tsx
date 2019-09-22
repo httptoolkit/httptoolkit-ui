@@ -16,8 +16,9 @@ import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
 import { ManualInterceptOption } from './manual-intercept-config';
 
 interface InterceptPageProps {
-    className?: string,
-    interceptionStore: ActivatedStore,
+    className?: string;
+    interceptionStore: ActivatedStore;
+    navigate: (path: string) => void;
 }
 
 const InterceptPageContainer = styled.section`
@@ -147,6 +148,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         interceptor.inProgress = true;
         yield this.props.interceptionStore.activateInterceptor(interceptor.id);
         interceptor.inProgress = false;
+        this.props.navigate('/view');
     });
 
     @action.bound
@@ -157,7 +159,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
 const StyledInterceptPage = styled(
     // Exclude store from the external props, as it's injected
-    InterceptPage as unknown as WithInjected<typeof InterceptPage, 'interceptionStore'>
+    InterceptPage as unknown as WithInjected<typeof InterceptPage, 'interceptionStore' | 'navigate'>
 )`
     height: 100%;
     overflow-y: auto;
