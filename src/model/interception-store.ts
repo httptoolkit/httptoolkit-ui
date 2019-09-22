@@ -378,8 +378,14 @@ export class InterceptionStore {
     }
 
     async activateInterceptor(interceptorId: string) {
-        await activateInterceptor(interceptorId, this.server.port).catch(console.warn);
+        const result = await activateInterceptor(interceptorId, this.server.port)
+            .then(() => true)
+            .catch((e) => {
+                console.warn(e);
+                return false;
+            });
         await this.refreshInterceptors();
+        return result;
     }
 
     //#endregion

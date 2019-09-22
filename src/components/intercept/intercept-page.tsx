@@ -146,9 +146,10 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: Interceptor) {
         trackEvent({ category: 'Interceptors', action: 'Activated', label: interceptor.id });
         interceptor.inProgress = true;
-        yield this.props.interceptionStore.activateInterceptor(interceptor.id);
+        const successful: boolean = yield this.props.interceptionStore.activateInterceptor(interceptor.id);
         interceptor.inProgress = false;
-        this.props.navigate('/view');
+
+        if (successful) this.props.navigate('/view');
     });
 
     @action.bound
