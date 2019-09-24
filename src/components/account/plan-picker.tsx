@@ -233,29 +233,35 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <TierPriceCaveats>
                             plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
-                        <TierLicense title='Licensed for a specific person. See the terms of service for more details.'>
+                        <TierLicense title='Licensed for a specific individual. See the terms of service for details.'>
                             Personal user account
                         </TierLicense>
                     </TierPriceBlock>
                     <TierFeatures>
-                        <FeatureHeading>
-                            <em>All free features, and:</em>
-                        </FeatureHeading>
                         <Feature>
-                            <strong>Integration with 1400+ APIs</strong>, including
-                            AWS, Github & Stripe, for live validation and documentation
+                            <strong>In-depth HTTP debugging tools</strong>, including compression
+                            & caching analysis
                         </Feature>
                         <Feature>
-                            In-depth <strong>performance analysis</strong>, including<br/>
-                            compression and caching explanations & warnings
+                            <strong>Validation & documentation for more than 1400 APIs</strong>,
+                            from AWS to GitHub to Stripe
                         </Feature>
                         <Feature>
-                            <strong>Import/export traffic</strong> as HARs, or as
-                            ready-to-use code for 20+ languages & tools
+                            <strong>Automated HTTP mocking & rewriting</strong>, from fixed
+                            responses to errors & timeouts
                         </Feature>
                         <Feature>
-                            <strong>Advanced customization</strong>, including proxy port configuration,
-                            certificate whitelisting, and light, dark & high-contrast UI themes.
+                            <strong>Import/export</strong> mock rules, and code or <a
+                                href="https://en.wikipedia.org/wiki/HAR_(file_format)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                HARs
+                            </a> of collected traffic
+                        </Feature>
+                        <Feature>
+                            <strong>Advanced customization</strong>, including port configuration,
+                            certificate whitelisting, and UI themes
                         </Feature>
                         <Feature>
                             <strong>Support ongoing development!</strong>
