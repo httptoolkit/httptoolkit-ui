@@ -117,12 +117,8 @@ const TierHeader = styled.div`
 
 const TierPriceBlock = styled.div`
     text-align: center;
-    padding: 15px 0;
     color: ${p => p.theme.mainColor};
     margin: 0 20px;
-    border-style: solid;
-    border-color: ${p => p.theme.mainColor};
-    border-width: 1px 0;
 `;
 
 
@@ -145,10 +141,8 @@ const TierLicense = styled.div`
 `;
 
 const TierFeatures = styled.ul`
-    padding: 30px 20px;
+    padding: 40px 20px 30px;
     font-size: ${p => p.theme.textSize};
-
-    list-style-type: circle;
 `;
 
 const FeatureHeading = styled.li`
@@ -162,8 +156,9 @@ const FeatureHeading = styled.li`
 `;
 
 const Feature = styled.li`
-    margin-top: 20px;
-    margin-left: 20px;
+    &:not(:first-child) {
+        margin-top: 20px;
+    }
 `;
 
 const PricingCTA = styled.div`
@@ -233,7 +228,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <TierPriceCaveats>
                             plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
-                        <TierLicense title='Licensed for a specific individual. See the terms of service for details.'>
+                        <TierLicense title='Licensed for a specific individual. See the terms of service for full details.'>
                             Personal user account
                         </TierLicense>
                     </TierPriceBlock>
