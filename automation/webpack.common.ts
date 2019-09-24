@@ -4,7 +4,6 @@ import * as Webpack from 'webpack';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 import * as GoogleFontsPlugin from '@beyonk/google-fonts-webpack-plugin';
 import * as CopyPlugin from 'copy-webpack-plugin';
-import * as RobotsTxtPlugin from 'robotstxt-webpack-plugin';
 import { InjectManifest } from 'workbox-webpack-plugin';
 
 // Webpack (but not tsc) gets upset about this, so let's opt out
@@ -106,12 +105,6 @@ export default <Webpack.Configuration>{
         new InjectManifest({
             swSrc: 'update-worker.js',
             importWorkboxFrom: 'local'
-        }),
-        new RobotsTxtPlugin({
-            policy: [{
-                userAgent: '*',
-                disallow: '/'
-            }]
         })
     ],
 };
