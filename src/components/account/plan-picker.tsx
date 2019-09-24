@@ -325,7 +325,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         </SubFeatures>
                     </TierFeatures>
                     <PricingCTA>
-                        <ButtonLink href='mailto:contact@httptoolkit.tech?subject=HTTP Toolkit Team'>
+                        <ButtonLink href='https://httptoolkit.tech/contact'>
                             Get in touch
                         </ButtonLink>
                     </PricingCTA>
