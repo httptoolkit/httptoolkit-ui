@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { styled, css } from "../../styles";
 import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account/subscriptions";
-import { Button, UnstyledButton } from "../common/inputs";
+import { Button, UnstyledButton, ButtonLink } from "../common/inputs";
 import { CloseButton } from "../common/close-button";
 
 const PlanPickerModal = styled.dialog`
@@ -29,6 +29,8 @@ const PlanPickerModal = styled.dialog`
 
     background-color: transparent;
     border: none;
+
+    max-width: 830px;
 `;
 
 const PlanPickerHeading = styled.h1`
@@ -88,12 +90,16 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
         padding: 10px 20px;
     }
 
+    flex: 1 1;
+
     ${p => p.highlighted ? css`
         background-color: ${p => p.theme.mainBackground};
         color: ${p => p.theme.mainColor};
 
         z-index: 1;
         margin: -15px -5px -15px 0;
+
+        flex-basis: 1%;
 
         > ${TierHeader} {
             padding: 37.5px 0;
@@ -102,8 +108,6 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
         background-color: ${p => p.theme.mainLowlightBackground};
         opacity: 0.9;
     `}
-
-    width: 60%;
 `;
 
 const TierHeader = styled.div`
@@ -158,6 +162,19 @@ const FeatureHeading = styled.li`
 const Feature = styled.li`
     &:not(:first-child) {
         margin-top: 20px;
+    }
+`;
+
+const SubFeature = styled(Feature)`
+    list-style: circle;
+    margin-left: 20px;
+`;
+
+const SubFeatures = styled.ul`
+    margin-top: 20px;
+
+    > ${SubFeature} {
+        margin-top: 10px;
     }
 `;
 
@@ -242,17 +259,20 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             from AWS to GitHub to Stripe
                         </Feature>
                         <Feature>
-                            <strong>Automated HTTP mocking & rewriting</strong>, from fixed
-                            responses to errors & timeouts
+                            <strong>Automated HTTP mocking & rewriting</strong>, including fixed
+                            responses, request forwarding, connection failures, timeouts and more
                         </Feature>
                         <Feature>
-                            <strong>Import/export</strong> mock rules, and code or <a
+                            <strong>Import/export mock rules</strong>, to reuse & share your mock environments
+                        </Feature>
+                        <Feature>
+                            <strong>Import/export collected traffic</strong>, as either <a
                                 href="https://en.wikipedia.org/wiki/HAR_(file_format)"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 HARs
-                            </a> of collected traffic
+                            </a> or ready-to-use code for 20+ tools
                         </Feature>
                         <Feature>
                             <strong>Advanced customization</strong>, including port configuration,
@@ -266,6 +286,48 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <Button onClick={() => buyPlan('pro')}>
                             Get Pro Now
                         </Button>
+                    </PricingCTA>
+                </PricingTier>
+
+                <PricingTier>
+                    <TierHeader>
+                        Team
+                    </TierHeader>
+                    <TierPriceBlock>
+                        <TierPrice>{getPlanMonthlyPrice('team')} / user / month</TierPrice>
+                        <TierPriceCaveats>
+                            plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
+                        </TierPriceCaveats>
+                        <TierLicense title='One team license, linked to many individuals, who can be added and removed. See the terms of service for details.'>
+                            Team account
+                        </TierLicense>
+                    </TierPriceBlock>
+                    <TierFeatures>
+                        <FeatureHeading>
+                            <em>All Professional features, and:</em>
+                        </FeatureHeading>
+                        <Feature>
+                            <strong>Centralized billing</strong> to simplify payment for your team
+                        </Feature>
+                        <Feature>Licensed to your team, rather than individuals</Feature>
+                        <Feature>Add or remove team members whenever you need to</Feature>
+                        <Feature>
+                            <strong>Team workspaces</strong> for low-friction collaboration (coming soon)
+                        </Feature>
+                        <FeatureHeading>
+                            Options available on request:
+                        </FeatureHeading>
+                        <SubFeatures>
+                            <SubFeature>Self-hosted infrastructure</SubFeature>
+                            <SubFeature>Private support</SubFeature>
+                            <SubFeature>Training & consultancy</SubFeature>
+                            <SubFeature>Bulk discounts</SubFeature>
+                        </SubFeatures>
+                    </TierFeatures>
+                    <PricingCTA>
+                        <ButtonLink href='mailto:contact@httptoolkit.tech?subject=HTTP Toolkit Team'>
+                            Get in touch
+                        </ButtonLink>
                     </PricingCTA>
                 </PricingTier>
             </PricingTable>
