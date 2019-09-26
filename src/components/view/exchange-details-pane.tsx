@@ -12,6 +12,7 @@ import { HttpExchange } from '../../model/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { Pill } from '../common/pill';
+import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
 import { ExchangeRequestCard } from './exchange-request-card';
@@ -112,8 +113,10 @@ export class ExchangeDetailsPane extends React.Component<{
         if (response === 'aborted') {
             cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
                 <header>
-                <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
-                    <h1>Response</h1>
+                    <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
+                    <CollapsibleCardHeading onCollapseToggled={this.cardProps.response.onCollapseToggled}>
+                        Response
+                    </CollapsibleCardHeading>
                 </header>
                 <div>
                     The request was aborted before the response was completed.

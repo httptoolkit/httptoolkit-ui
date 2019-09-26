@@ -14,6 +14,7 @@ import { HttpExchange } from "../../model/exchange";
 import { generateHarRequest, generateHar } from "../../model/har";
 
 import { ProHeaderPill, CardSalesPitch } from "../account/pro-placeholders";
+import { CollapsibleCardHeading } from '../common/card';
 import { PillSelector, PillButton } from "../common/pill";
 import { CopyButtonPill } from '../common/copy-button';
 import { DocsLink } from '../common/docs-link';
@@ -167,7 +168,9 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
                     nameFormatter={getExportOptionName}
                 />
 
-                <h1>Export</h1>
+                <CollapsibleCardHeading onCollapseToggled={this.props.onCollapseToggled}>
+                    Export
+                </CollapsibleCardHeading>
             </header>
 
             { isPaidUser ?

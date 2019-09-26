@@ -10,6 +10,7 @@ import { ApiExchange } from '../../model/openapi/openapi';
 import { getStatusColor } from '../../model/exchange-colors';
 import { getStatusDocs } from '../../model/http-docs';
 
+import { CollapsibleCardHeading } from '../common/card';
 import { Pill } from '../common/pill';
 import { HeaderDetails } from './headers/header-details';
 import {
@@ -59,7 +60,9 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
             <Pill color={getStatusColor(response.statusCode, theme)}>{
                 response.statusCode
             }</Pill>
-            <h1>Response</h1>
+            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
+                Response
+            </CollapsibleCardHeading>
         </header>
 
         <div>

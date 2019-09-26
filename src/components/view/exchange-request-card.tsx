@@ -12,6 +12,7 @@ import { getExchangeSummaryColour } from '../../model/exchange-colors';
 import { ApiExchange, Parameter } from '../../model/openapi/openapi';
 import { getMethodDocs } from '../../model/http-docs';
 
+import { CollapsibleCardHeading } from '../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
@@ -303,7 +304,9 @@ export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) =>
                     .replace(/\./g, '\u2008.\u2008')
                 }
             </Pill>
-            <h1>Request</h1>
+            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
+                Request
+            </CollapsibleCardHeading>
         </header>
 
         { apiExchange ? <ApiRequestDetails api={apiExchange} /> : null }

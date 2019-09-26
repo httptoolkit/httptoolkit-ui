@@ -14,6 +14,7 @@ import {
 } from '../../model/content-types';
 import { getReadableSize } from '../../model/bodies';
 
+import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
@@ -82,7 +83,9 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
                     options={EditableContentTypes}
                     nameFormatter={getContentEditorName}
                 />
-                <h1>{ title }</h1>
+                <CollapsibleCardHeading onCollapseToggled={onCollapseToggled}>
+                    { title }
+                </CollapsibleCardHeading>
             </header>
             <EditorCardContent>
                 <portals.OutPortal<typeof ThemedSelfSizedEditor>

@@ -8,6 +8,7 @@ import { styled, Theme } from '../../styles';
 import { HttpExchange } from '../../model/exchange';
 import { getStatusColor } from '../../model/exchange-colors';
 
+import { CollapsibleCardHeading } from '../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
@@ -53,7 +54,9 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
         return <ExchangeCard {...cardProps} direction='left'>
             <header>
                 <Pill color={getStatusColor(inProgressResult.statusCode, theme!)}>{ statusCode }</Pill>
-                <h1>Response</h1>
+                <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
+                    Response
+                </CollapsibleCardHeading>
             </header>
 
             <StatusContainer>

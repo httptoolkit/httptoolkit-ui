@@ -18,7 +18,7 @@ import { UiStore } from '../../model/ui-store';
 import { InterceptionStore, isValidPortConfiguration } from '../../model/interception-store';
 import { serverVersion, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
-import { CollapsibleCard, CollapsibleCardProps } from '../common/card';
+import { CollapsibleCard, CollapsibleCardProps, CollapsibleCardHeading } from '../common/card';
 import { ContentLabel, ContentValue } from '../common/text-content';
 import { Pill } from '../common/pill';
 import { Button, ButtonLink } from '../common/inputs';
@@ -306,7 +306,11 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
                 <CollapsibleCard {...this.cardProps.account}>
                     <header>
-                        <h1>Account</h1>
+                        <CollapsibleCardHeading onCollapseToggled={
+                            this.cardProps.account.onCollapseToggled
+                        }>
+                            Account
+                        </CollapsibleCardHeading>
                     </header>
                     <AccountDetailsContainer>
                         <ContentLabel>
@@ -400,7 +404,11 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     semver.satisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
                     <CollapsibleCard {...this.cardProps.proxy}>
                         <header>
-                            <h1>Proxy settings</h1>
+                            <CollapsibleCardHeading onCollapseToggled={
+                                this.cardProps.proxy.onCollapseToggled
+                            }>
+                                Proxy settings
+                            </CollapsibleCardHeading>
                         </header>
                         <RestartApp
                             visible={
@@ -495,7 +503,11 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
                 <CollapsibleCard {...this.cardProps.themes}>
                     <header>
-                        <h1>Themes</h1>
+                        <CollapsibleCardHeading onCollapseToggled={
+                            this.cardProps.themes.onCollapseToggled
+                        }>
+                            Themes
+                        </CollapsibleCardHeading>
                     </header>
                     <TabbedOptionsContainer>
                         <TabsContainer

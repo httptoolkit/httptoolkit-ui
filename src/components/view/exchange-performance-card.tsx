@@ -19,6 +19,7 @@ import {
     explainValidCacheTypes
 } from '../../model/caching';
 
+import { CollapsibleCardHeading } from '../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
@@ -66,7 +67,9 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
                     : null)
                 : <ProHeaderPill />
             }
-            <h1>Performance</h1>
+            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
+                Performance
+            </CollapsibleCardHeading>
         </header>
 
         { isPaidUser ?

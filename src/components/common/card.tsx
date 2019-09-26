@@ -61,6 +61,17 @@ export const LittleCard = styled(Card)`
     }
 `;
 
+export const CollapsibleCardHeading = styled((p: {
+    className?: string,
+    onCollapseToggled: () => void,
+    children: React.ReactNode
+}) => <h1 className={p.className} onClick={p.onCollapseToggled}>
+    { p.children }
+</h1>)`
+    cursor: pointer;
+    user-select: none;
+`;
+
 export const MediumCard = styled(Card)`
     padding: 20px;
 

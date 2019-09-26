@@ -10,6 +10,7 @@ import { styled } from '../../styles';
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/content-types';
 import { getReadableSize } from '../../model/bodies';
 
+import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButtonIcon } from '../common/copy-button';
@@ -112,7 +113,9 @@ export class ExchangeBodyCard extends React.Component<{
                         options={compatibleContentTypes}
                         nameFormatter={getContentEditorName}
                     />
-                    <h1>{ title }</h1>
+                    <CollapsibleCardHeading onCollapseToggled={onCollapseToggled}>
+                        { title }
+                    </CollapsibleCardHeading>
                 </header>
                 <EditorCardContent>
                     <ContentViewer
@@ -140,7 +143,9 @@ export class ExchangeBodyCard extends React.Component<{
                         options={compatibleContentTypes}
                         nameFormatter={getContentEditorName}
                     />
-                    <h1>{ title }</h1>
+                    <CollapsibleCardHeading onCollapseToggled={onCollapseToggled}>
+                        { title }
+                    </CollapsibleCardHeading>
                 </header>
             </LoadingExchangeCard>;
     }

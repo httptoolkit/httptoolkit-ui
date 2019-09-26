@@ -11,6 +11,7 @@ import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
 import { getExchangeSummaryColour } from '../../model/exchange-colors';
 
+import { CollapsibleCardHeading } from '../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
@@ -80,7 +81,9 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
                         .replace(/\./g, '\u2008.\u2008')
                     }
                 </Pill>
-                <h1>Request</h1>
+                <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
+                    Request
+                </CollapsibleCardHeading>
             </header>
 
             <ContentLabel>Method:</ContentLabel>
