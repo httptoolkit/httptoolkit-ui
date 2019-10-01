@@ -151,7 +151,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         interceptor.inProgress = false;
 
         if (successful) this.props.navigate('/view');
-        if (!successful && interceptor.isSupported) {
+        if (!successful && interceptor.isActivable) {
             reportError(`Failed to launch interceptor ${interceptor.id}`);
         }
     });
