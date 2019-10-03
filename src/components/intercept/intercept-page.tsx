@@ -14,7 +14,6 @@ import { WithInjected } from '../../types';
 import { trackEvent } from '../../tracking';
 import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
 import { ManualInterceptOption } from './manual-intercept-config';
-import { reportError } from '../../errors';
 
 interface InterceptPageProps {
     className?: string;
@@ -151,9 +150,6 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         interceptor.inProgress = false;
 
         if (successful) this.props.navigate('/view');
-        if (!successful && interceptor.isActivable) {
-            reportError(`Failed to launch interceptor ${interceptor.id}`);
-        }
     });
 
     @action.bound
