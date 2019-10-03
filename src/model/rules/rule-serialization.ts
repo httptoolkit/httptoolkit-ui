@@ -5,6 +5,7 @@ import * as serializr from 'serializr';
 
 import { InterceptionStore } from '../interception-store';
 import { HtkMockRule, MatcherLookup, HandlerLookup } from './rules';
+import { migrateRules } from './rule-migrations';
 
 export type DeserializationArgs = {
     interceptionStore: InterceptionStore
@@ -89,6 +90,6 @@ export const serializeRules = (rules: HtkMockRule[]): MockRuleset => {
 
 export const deserializeRules = (data: any, args: DeserializationArgs): HtkMockRule[] => {
     return (
-        serializr.deserialize(MockRulesetSchema, data, undefined, args)
+        serializr.deserialize(MockRulesetSchema, migrateRules(data), undefined, args)
     ).rules;
 }

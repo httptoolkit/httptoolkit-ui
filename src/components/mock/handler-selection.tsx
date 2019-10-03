@@ -59,7 +59,7 @@ const instantiateHandler = (
         case PassThroughHandler:
             return new PassThroughHandler(interceptionStore.whitelistedCertificateHosts);
         case ForwardToHostHandler:
-            return new ForwardToHostHandler('');
+            return new ForwardToHostHandler('', true);
         case RequestBreakpointHandler:
             return new RequestBreakpointHandler(interceptionStore);
         case ResponseBreakpointHandler:

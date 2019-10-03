@@ -89,10 +89,14 @@ export class ForwardToHostHandler extends handlers.PassThroughHandler {
 
     uiType = 'forward-to-host';
 
-    constructor(forwardToLocation: string) {
+    constructor(forwardToLocation: string, updateHostHeader: boolean) {
         super({
-            ignoreHostCertificateErrors: ['localhost']
-        }, forwardToLocation);
+            ignoreHostCertificateErrors: ['localhost'],
+            forwarding: {
+                targetHost: forwardToLocation,
+                updateHostHeader: updateHostHeader
+            }
+        });
     }
 
 }

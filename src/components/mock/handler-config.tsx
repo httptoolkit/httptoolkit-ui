@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { action, observable, reaction, autorun, observe, runInAction } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
+import * as dedent from 'dedent';
 
 import { styled } from '../../styles';
 
@@ -101,6 +102,12 @@ const SectionLabel = styled.h2`
     width: 100%;
 `;
 
+const ConfigSelect = styled(Select)`
+    font-size: ${p => p.theme.textSize};
+    margin-top: 5px;
+    width: auto;
+`;
+
 const BodyHeader = styled.div`
     display: flex;
     flex-direction: row;
@@ -111,12 +118,6 @@ const BodyHeader = styled.div`
     > ${SectionLabel} {
         flex-grow: 1;
         margin-bottom: 0;
-    }
-
-    > ${Select} {
-        font-size: ${p => p.theme.textSize};
-        margin-top: 5px;
-        width: auto;
     }
 `;
 
@@ -232,14 +233,14 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
             <BodyHeader>
                 <SectionLabel>Response body</SectionLabel>
-                <Select value={this.contentType} onChange={this.setContentType}>
+                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
                     <option value="text">Plain text</option>
                     <option value="json">JSON</option>
                     <option value="xml">XML</option>
                     <option value="html">HTML</option>
                     <option value="css">CSS</option>
                     <option value="javascript">JavaScript</option>
-                </Select>
+                </ConfigSelect>
             </BodyHeader>
             <BodyContainer>
                 <ThemedSelfSizedEditor
@@ -307,39 +308,62 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
     @observable
     private targetHost: string | undefined;
 
+    @observable
+    private updateHostHeader: true | false = true;
+
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            const targetHost = this.props.handler ? this.props.handler.forwardToLocation : '';
-            runInAction(() => { this.targetHost = targetHost });
+            const targetHost = this.props.handler ? this.props.handler.forwarding!.targetHost : '';
+            const updateHostHeader = this.props.handler ? this.props.handler.forwarding!.updateHostHeader : true;
+            runInAction(() => {
+                this.targetHost = targetHost
+                this.updateHostHeader = !!updateHostHeader;
+            });
         }));
     }
 
     render() {
-        const { forwardToLocation } = this.props.handler;
+        const { targetHost, updateHostHeader, error, onTargetChange, onUpdateHeaderChange } = this;
+        const { targetHost: savedTargetHost } = this.props.handler.forwarding!;
 
         return <ConfigContainer>
             <SectionLabel>Replacement host</SectionLabel>
             <UrlInput
-                value={this.targetHost || ''}
-                invalid={!!this.error}
+                value={targetHost || ''}
+                invalid={!!error}
                 spellCheck={false}
-                onChange={this.onChange}
+                onChange={onTargetChange}
             />
-            { forwardToLocation &&
+
+            <SectionLabel>Host header</SectionLabel>
+            <ConfigSelect
+                value={updateHostHeader.toString()}
+                onChange={onUpdateHeaderChange}
+                title={dedent`
+                    Most servers will not accept requests that arrive
+                    with the wrong host header, so it's typically useful
+                    to automatically change it to match the new host
+                `}
+            >
+                <option value={'true'}>Update the host header automatically (recommended)</option>
+                <option value={'false'}>Leave the host header untouched</option>
+            </ConfigSelect>
+            { savedTargetHost &&
                 <ConfigExplanation>
-                    All matching requests will be forwarded to {forwardToLocation},
+                    All matching requests will be forwarded to {savedTargetHost},
                     keeping their existing path{
-                        !forwardToLocation.includes('://') ? ', protocol,' : ''
-                    } and query string.
+                        !savedTargetHost.includes('://') ? ', protocol,' : ''
+                    } and query string.{
+                        updateHostHeader
+                        ? ' Their host header will be automatically updated to match.'
+                        : ''
+                    }
                 </ConfigExplanation>
             }
         </ConfigContainer>;
     }
 
-    @action.bound
-    onChange(event: React.ChangeEvent<HTMLInputElement>) {
-        this.targetHost = event.target.value;
-
+    updateHandler() {
         try {
             if (!this.targetHost) throw new Error('A target host is required');
 
@@ -362,17 +386,38 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
                 }
             }
 
-            this.props.onChange(new ForwardToHostHandler(this.targetHost));
+            this.props.onChange(new ForwardToHostHandler(this.targetHost, this.updateHostHeader));
             this.error = undefined;
-            event.target.setCustomValidity('');
         } catch (e) {
             console.log(e);
             this.error = e;
-            event.target.setCustomValidity(e.message);
-
             if (this.props.onInvalidState) this.props.onInvalidState();
+            throw e;
+        }
+    }
+
+    @action.bound
+    onTargetChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.targetHost = event.target.value;
+
+        try {
+            this.updateHandler();
+            event.target.setCustomValidity('');
+        } catch (e) {
+            event.target.setCustomValidity(e.message);
         }
         event.target.reportValidity();
+    }
+
+    @action.bound
+    onUpdateHeaderChange(event: React.ChangeEvent<HTMLSelectElement>) {
+        this.updateHostHeader = event.target.value === 'true';
+
+        try {
+            this.updateHandler();
+        } catch (e) {
+            // If there's an error, it must be in the host name, so it's reported elsewhere
+        }
     }
 }
 
