@@ -41,8 +41,10 @@ import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
-import { buildDefaultRules, HtkMockRule, ruleEquality } from './rules/rules';
+import { buildDefaultRules, HtkMockRule, ruleEquality, buildForwardingRuleIntegration } from './rules/rules';
 import { deserializeRules } from './rules/rule-serialization';
+import { getDesktopInjectedValue } from '../services/desktop-api';
+import { ForwardToHostHandler } from './rules/rule-definitions';
 
 configure({ enforceActions: 'observed' });
 
@@ -159,6 +161,15 @@ export class InterceptionStore {
                 console.log(e);
             }
         }
+
+        // Support injection of a default forwarding rule by the desktop app, for integrations
+        getDesktopInjectedValue('httpToolkitForwardingDefault').then(action((forwardingConfig: string) => {
+            const [sourceHost, targetHost] = forwardingConfig.split('|');
+            const forwardingRule = buildForwardingRuleIntegration(sourceHost, targetHost, this);
+
+            this.rules.unshift(forwardingRule);
+            this.draftRules.unshift(_.cloneDeep(forwardingRule));
+        }));
 
         // On startup the draft host settings take effect, becoming the real settings.
         this.whitelistedCertificateHosts = _.clone(this.draftWhitelistedCertificateHosts);

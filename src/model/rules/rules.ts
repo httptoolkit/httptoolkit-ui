@@ -147,6 +147,21 @@ export const buildDefaultRules = (interceptionStore: InterceptionStore) => [
     }
 ];
 
+export const buildForwardingRuleIntegration = (
+    sourceHost: string,
+    targetHost: string,
+    interceptionStore: InterceptionStore
+): HtkMockRule => ({
+    id: 'default-forwarding-rule',
+    activated: true,
+    matchers: [
+        new WildcardMatcher(),
+        new matchers.HostMatcher(sourceHost)
+    ],
+    completionChecker: new completionCheckers.Always(),
+    handler: new ForwardToHostHandler(targetHost, true, interceptionStore)
+});
+
 // A more flexible _.isEqual. Considers source-equal functions to be
 // equal, and treats undefined properties as missing.
 export const ruleEquality = (a: any, b: any): boolean | undefined => {
