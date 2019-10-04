@@ -36,6 +36,12 @@ function templateStringToRegexString(template: string): string {
 }
 
 export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata> {
+    const specId = `${
+        spec.info['x-providerName'] || 'unknown'
+    }/${
+        spec.info['x-serviceName'] || 'unknown'
+    }`;
+
     // This mutates the spec to drop unknown fields. Mainly useful to limit spec size. Stripe
     // particularly includes huge recursive refs in its x-expansion* extension fields.
     const isValid = filterSpec(spec);
@@ -45,7 +51,7 @@ export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata
             'Errors filtering spec',
             JSON.stringify(filterSpec.errors, null, 2)
         );
-        throw new Error('Failed to filter spec');
+        throw new Error(`Failed to filter spec: ${specId}`);
     }
 
     // Now it's relatively small & tidy, dereference everything.
