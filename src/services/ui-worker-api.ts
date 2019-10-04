@@ -12,7 +12,9 @@ import {
     TestEncodingsRequest,
     TestEncodingsResponse,
     EncodeRequest,
-    EncodeResponse
+    EncodeResponse,
+    ValidatePKCSRequest,
+    ValidatePKCSResponse
 } from './ui-worker';
 import Worker from 'worker-loader!./ui-worker';
 
@@ -116,4 +118,12 @@ export async function buildApiMetadataAsync(spec: OpenAPIObject): Promise<ApiMet
         type: 'build-api',
         spec
     })).api;
+}
+
+export async function validatePKCS(buffer: ArrayBuffer, passphrase: string | undefined) {
+    return (await callApi<ValidatePKCSRequest, ValidatePKCSResponse>({
+        type: 'validate-pkcs12',
+        buffer,
+        passphrase
+    })).result;
 }

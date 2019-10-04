@@ -1,5 +1,6 @@
 require('ts-node/register');
 
+const path = require('path');
 const tmp = require('tmp');
 tmp.setGracefulCleanup();
 
@@ -8,8 +9,12 @@ module.exports = function(config) {
         frameworks: ['mocha', 'chai'],
         files: [
             './**/*.spec.ts',
-            './**/*.spec.tsx'
+            './**/*.spec.tsx',
+            { pattern: '../fixtures/*', included: false, served: true }
         ],
+        proxies: {
+            '/fixtures': '/absolute' + path.resolve('./test/fixtures')
+        },
         mime: { 'text/x-typescript': ['ts', 'tsx'] },
         webpack: require('../../automation/webpack.test').default,
         webpackMiddleware: {

@@ -9,6 +9,7 @@ import { compress as brotliCompress } from 'wasm-brotli';
 import * as zlib from 'zlib';
 
 import { buildApiMetadata, ApiMetadata } from '../model/openapi/build-api';
+import { validatePKCS12, ValidationResult } from '../model/crypto';
 
 const gzipCompress = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
     new Promise<Buffer>((resolve, reject) => {
@@ -79,17 +80,30 @@ export interface BuildApiResponse extends Message {
     api: ApiMetadata
 }
 
+export interface ValidatePKCSRequest extends Message {
+    type: 'validate-pkcs12';
+    buffer: ArrayBuffer;
+    passphrase: string | undefined;
+}
+
+export interface ValidatePKCSResponse extends Message {
+    error?: Error;
+    result: ValidationResult;
+}
+
 export type BackgroundRequest =
     | DecodeRequest
     | EncodeRequest
     | TestEncodingsRequest
-    | BuildApiRequest;
+    | BuildApiRequest
+    | ValidatePKCSRequest;
 
 export type BackgroundResponse =
     | DecodeResponse
     | EncodeResponse
     | TestEncodingsResponse
-    | BuildApiResponse;
+    | BuildApiResponse
+    | ValidatePKCSResponse;
 
 function decodeRequest(request: DecodeRequest): DecodeResponse {
     const { id, buffer, encodings } = request;
@@ -186,6 +200,11 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
 
             case 'build-api':
                 ctx.postMessage(await buildApi(event.data));
+                break;
+
+            case 'validate-pkcs12':
+                const result = validatePKCS12(event.data.buffer, event.data.passphrase);
+                ctx.postMessage({ id: event.data.id, result });
                 break;
 
             default:
