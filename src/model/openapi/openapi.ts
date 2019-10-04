@@ -43,6 +43,12 @@ export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | unde
 
     let specId = findApi(requestUrl);
     if (!specId) return;
+    if (specId === 'microsoft.com/graph') {
+        // The graph API is enormous and doesn't actually build due to
+        // https://github.com/microsoftgraph/microsoft-graph-openapi/issues/9.
+        // Skip it rather than waiting ages before failing anyway.
+        return;
+    }
 
     if (!Array.isArray(specId)) {
         return getApi(specId);
