@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { action, observable, reaction, autorun, observe, runInAction } from 'mobx';
-import { observer, disposeOnUnmount } from 'mobx-react';
+import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as dedent from 'dedent';
 
 import { styled } from '../../styles';
@@ -25,6 +25,7 @@ import {
     EditableContentType,
     getEditableContentType
 } from '../../model/content-types';
+import { InterceptionStore } from '../../model/interception-store';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select } from '../common/inputs';
@@ -299,8 +300,11 @@ const UrlInput = styled(TextInput)`
     box-sizing: border-box;
 `;
 
+@inject('interceptionStore')
 @observer
-class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
+class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
+    interceptionStore?: InterceptionStore
+}> {
 
     @observable
     private error: Error | undefined;
@@ -386,7 +390,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler> {
                 }
             }
 
-            this.props.onChange(new ForwardToHostHandler(this.targetHost, this.updateHostHeader));
+            this.props.onChange(new ForwardToHostHandler(this.targetHost, this.updateHostHeader, this.props.interceptionStore!));
             this.error = undefined;
         } catch (e) {
             console.log(e);

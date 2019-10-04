@@ -46,9 +46,11 @@ import { deserializeRules } from './rules/rule-serialization';
 
 configure({ enforceActions: 'observed' });
 
+type WithSet<T, K extends keyof T> = T & { [k in K]: NonNullable<T[k]> };
+
 // All later components assume the store is fully activated - that means
 // all undefined/nullable fields have been set.
-export type ActivatedStore = { [P in keyof InterceptionStore]: NonNullable<InterceptionStore[P]> };
+export type ActivatedStore = WithSet<InterceptionStore, 'certPath' | 'portConfig'>;
 
 // Start the server, with slowly decreasing retry frequency (up to a limit).
 // Note that this never fails - any timeout to this process needs to happen elsewhere.
@@ -135,16 +137,34 @@ export class InterceptionStore {
         observe(accountStore, 'accountDataLastUpdated', () => {
             if (!accountStore.isPaidUser) {
                 this.setPortConfig(undefined);
-                this.whitelistedCertificateHosts = ['localhost'];
+                this.draftWhitelistedCertificateHosts = ['localhost'];
             }
         });
 
         // Load all persisted settings from storage
         await create()('interception-store', this);
 
-        // Rebuild any other data that depends on persisted settings:
+        // Backward compat for store data before 2019-10-04 - drop this in a month or two
+        const rawData = localStorage.getItem('interception-store');
+        if (rawData) {
+            try {
+                const data = JSON.parse(rawData);
+                // Handle the migration from WL + initiallyWL to WL + draftWL.
+                if (data.whitelistedCertificateHosts && !data.draftWhitelistedCertificateHosts) {
+                    runInAction(() => {
+                        this.draftWhitelistedCertificateHosts = data.whitelistedCertificateHosts;
+                    });
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // On startup the draft host settings take effect, becoming the real settings.
+        this.whitelistedCertificateHosts = _.clone(this.draftWhitelistedCertificateHosts);
+
+        // Rebuild the rules, which might depends on these settings:
         this.resetRulesToDefault();
-        this.initiallyWhitelistedCertificateHosts = _.clone(this.whitelistedCertificateHosts);
     }
 
     private startIntercepting = flow(function* (this: InterceptionStore) {
@@ -229,18 +249,19 @@ export class InterceptionStore {
         return this.server.port;
     }
 
-    @persist('list') @observable
+    // The currently active list, set during startup
     whitelistedCertificateHosts: string[] = ['localhost'];
 
-    // Saved when the server starts, so we can compare to the current list later
-    initiallyWhitelistedCertificateHosts: string[] = ['localhost'];
+    // The desired list - can be changed, takes effect on next app startup
+    @persist('list') @observable
+    draftWhitelistedCertificateHosts: string[] = ['localhost'];
 
     //#endregion
     // ** Rules:
     //#region
 
     @observable.shallow
-    rules: HtkMockRule[] = buildDefaultRules(['localhost']);
+    rules: HtkMockRule[] = buildDefaultRules(this);
 
     @observable
     draftRules: HtkMockRule[] = _.cloneDeep(this.rules);
@@ -260,7 +281,7 @@ export class InterceptionStore {
     @action.bound
     resetRulesToDefault() {
         // Set the rules back to the default settings
-        this.rules = buildDefaultRules(this.whitelistedCertificateHosts);
+        this.rules = buildDefaultRules(this);
         this.resetRuleDrafts();
     }
 
@@ -271,7 +292,7 @@ export class InterceptionStore {
 
     @computed
     get areSomeRulesNonDefault() {
-        const defaultRules = buildDefaultRules(this.whitelistedCertificateHosts);
+        const defaultRules = buildDefaultRules(this);
         return !_.isEqualWith(this.draftRules, defaultRules, ruleEquality);
     }
 

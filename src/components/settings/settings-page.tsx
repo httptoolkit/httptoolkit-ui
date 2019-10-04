@@ -214,16 +214,16 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
     @action.bound
     unwhitelistHost(host: string) {
-        const { whitelistedCertificateHosts } = this.props.interceptionStore!;
-        const hostIndex = whitelistedCertificateHosts.indexOf(host);
+        const { draftWhitelistedCertificateHosts } = this.props.interceptionStore!;
+        const hostIndex = draftWhitelistedCertificateHosts.indexOf(host);
         if (hostIndex > -1) {
-            whitelistedCertificateHosts.splice(hostIndex, 1);
+            draftWhitelistedCertificateHosts.splice(hostIndex, 1);
         }
     }
 
     @action.bound
     addHostToWhitelist() {
-        this.props.interceptionStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
+        this.props.interceptionStore!.draftWhitelistedCertificateHosts.push(this.whitelistHostInput);
         this.whitelistHostInput = '';
     }
 
@@ -279,7 +279,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
         const {
             serverPort,
             whitelistedCertificateHosts,
-            initiallyWhitelistedCertificateHosts
+            draftWhitelistedCertificateHosts
         } = this.props.interceptionStore;
         const {
             isPaidUser,
@@ -413,16 +413,16 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         <RestartApp
                             visible={
                                 (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
-                                !_.isEqual(whitelistedCertificateHosts, initiallyWhitelistedCertificateHosts)
+                                !_.isEqual(whitelistedCertificateHosts, draftWhitelistedCertificateHosts)
                             }
                         />
                         <ContentLabel>
                             Host Certificate Whitelist
                         </ContentLabel>
                         <CertificateWhitelistList>
-                            {  whitelistedCertificateHosts.map((host) => [
+                            { draftWhitelistedCertificateHosts.map((host) => [
                                 <WhitelistHost
-                                    active={initiallyWhitelistedCertificateHosts.includes(host)}
+                                    active={whitelistedCertificateHosts.includes(host)}
                                     key={`host-${host}`}
                                 >{ host }</WhitelistHost>,
                                 <SettingsButton
@@ -445,7 +445,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             <SettingsButton
                                 disabled={
                                     !this.whitelistHostInput ||
-                                    whitelistedCertificateHosts.includes(this.whitelistHostInput)
+                                    draftWhitelistedCertificateHosts.includes(this.whitelistHostInput)
                                 }
                                 onClick={this.addHostToWhitelist}
                             >

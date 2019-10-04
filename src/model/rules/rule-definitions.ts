@@ -4,6 +4,7 @@ import * as serializr from 'serializr';
 
 import { InterceptionStore } from '../interception-store';
 import { serializeAsTag } from './rule-serialization';
+import { inject } from 'mobx-react';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -77,21 +78,23 @@ export class StaticResponseHandler extends handlers.SimpleHandler {
 
 export class PassThroughHandler extends handlers.PassThroughHandler {
 
-    constructor(hostWhitelist: string[]) {
+    constructor(interceptionStore: InterceptionStore) {
         super({
-            ignoreHostCertificateErrors: hostWhitelist
+            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts
         });
     }
 
 }
 
+serializr.createModelSchema(PassThroughHandler, {
+    type: serializr.primitive()
+}, (context) => new PassThroughHandler(context.args.interceptionStore));
+
 export class ForwardToHostHandler extends handlers.PassThroughHandler {
 
-    uiType = 'forward-to-host';
-
-    constructor(forwardToLocation: string, updateHostHeader: boolean) {
+    constructor(forwardToLocation: string, updateHostHeader: boolean, interceptionStore: InterceptionStore) {
         super({
-            ignoreHostCertificateErrors: ['localhost'],
+            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
             forwarding: {
                 targetHost: forwardToLocation,
                 updateHostHeader: updateHostHeader
@@ -100,6 +103,19 @@ export class ForwardToHostHandler extends handlers.PassThroughHandler {
     }
 
 }
+
+serializr.createModelSchema(ForwardToHostHandler, {
+    uiType: serializeAsTag(() => 'forward-to-host'),
+    type: serializr.primitive(),
+    forwarding: serializr.map(serializr.primitive())
+}, (context) => {
+    const data = context.json;
+    return new ForwardToHostHandler(
+        data.forwarding.targetHost,
+        data.forwarding.updateHostHeader,
+        context.args.interceptionStore
+    );
+});
 
 export class RequestBreakpointHandler extends handlers.PassThroughHandler {
 
@@ -116,7 +132,8 @@ export class RequestBreakpointHandler extends handlers.PassThroughHandler {
 }
 
 serializr.createModelSchema(RequestBreakpointHandler, {
-    uiType: serializeAsTag(() => 'request-breakpoint')
+    uiType: serializeAsTag(() => 'request-breakpoint'),
+    type: serializr.primitive()
 }, (context) => new RequestBreakpointHandler(context.args.interceptionStore));
 
 export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
@@ -134,7 +151,8 @@ export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
 }
 
 serializr.createModelSchema(ResponseBreakpointHandler, {
-    uiType: serializeAsTag(() => 'response-breakpoint')
+    uiType: serializeAsTag(() => 'response-breakpoint'),
+    type: serializr.primitive()
 }, (context) => new ResponseBreakpointHandler(context.args.interceptionStore));
 
 
@@ -154,7 +172,8 @@ export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHan
 }
 
 serializr.createModelSchema(RequestAndResponseBreakpointHandler, {
-    uiType: serializeAsTag(() => 'request-and-response-breakpoint')
+    uiType: serializeAsTag(() => 'request-and-response-breakpoint'),
+    type: serializr.primitive()
 }, (context) => new RequestAndResponseBreakpointHandler(context.args.interceptionStore));
 
 export type TimeoutHandler = handlers.TimeoutHandler;

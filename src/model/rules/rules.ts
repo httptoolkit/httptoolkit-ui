@@ -10,7 +10,7 @@ import {
 } from 'mockttp';
 
 import { Omit } from '../../types';
-import { ActivatedStore } from '../interception-store';
+import { ActivatedStore, InterceptionStore } from '../interception-store';
 
 import * as amIUsingHtml from '../../amiusing.html';
 import {
@@ -111,7 +111,7 @@ export function getNewRule(interceptionStore: ActivatedStore): HtkMockRule {
         activated: true,
         matchers: [ ],
         completionChecker: new completionCheckers.Always(),
-        handler: new PassThroughHandler(interceptionStore.whitelistedCertificateHosts)
+        handler: new PassThroughHandler(interceptionStore)
     });
 }
 
@@ -122,7 +122,7 @@ export const InitialMatcherClasses = [
 export type InitialMatcherClass = typeof InitialMatcherClasses[0];
 export type InitialMatcher = InstanceType<InitialMatcherClass>;
 
-export const buildDefaultRules = (hostWhitelist: string[]) => [
+export const buildDefaultRules = (interceptionStore: InterceptionStore) => [
     // Respond to amiusing.httptoolkit.tech with an emphatic YES
     {
         id: 'default-amiusing',
@@ -143,7 +143,7 @@ export const buildDefaultRules = (hostWhitelist: string[]) => [
         activated: true,
         matchers: [new DefaultWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
-        handler: new PassThroughHandler(hostWhitelist)
+        handler: new PassThroughHandler(interceptionStore)
     }
 ];
 
