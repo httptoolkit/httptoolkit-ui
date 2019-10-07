@@ -158,6 +158,8 @@ const SettingsExplanation = styled.p`
     font-style: italic;
 `;
 
+const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
+
 @inject('interceptionStore')
 @observer
 export class ProxySettingsCard extends React.Component<
@@ -182,6 +184,18 @@ export class ProxySettingsCard extends React.Component<
     addHostToWhitelist() {
         this.props.interceptionStore!.draftWhitelistedCertificateHosts.push(this.whitelistHostInput);
         this.whitelistHostInput = '';
+    }
+
+    validateHost(input: HTMLInputElement) {
+        const host = input.value;
+        if (!host || isValidHost(host)) {
+            input.setCustomValidity('');
+        } else {
+            input.setCustomValidity(
+                "Should be a plain hostname, plus a port if it's not the default"
+            );
+        }
+        input.reportValidity();
     }
 
     @observable
@@ -378,11 +392,11 @@ export class ProxySettingsCard extends React.Component<
 
                 <input
                     type="text"
-                    required
                     placeholder='Hostname to whitelist for certificate checks'
                     value={this.whitelistHostInput}
                     onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
                         this.whitelistHostInput = e.target.value;
+                        this.validateHost(e.target);
                     })}
                 />
                 <SettingsButton
@@ -431,11 +445,11 @@ export class ProxySettingsCard extends React.Component<
 
                     <input
                         type="text"
-                        required
                         placeholder='Hostname where the certificate should be used'
                         value={this.clientCertHostInput}
                         onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
                             this.clientCertHostInput = e.target.value;
+                            this.validateHost(e.target);
                         })}
                     />
                     { this.clientCertState === undefined
@@ -446,7 +460,6 @@ export class ProxySettingsCard extends React.Component<
                             <input
                                 ref={this.certFileInputRef}
                                 type="file"
-                                required
                                 accept='.pfx,.p12,application/x-pkcs12'
                                 onChange={this.onClientCertSelected}
                             />
@@ -464,7 +477,6 @@ export class ProxySettingsCard extends React.Component<
                             ? <DecryptionInput>
                                 <input
                                     type="text"
-                                    required
                                     placeholder={`The passphrase for ${this.clientCertData!.filename}`}
                                     value={this.clientCertData!.passphrase || ''}
                                     onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
