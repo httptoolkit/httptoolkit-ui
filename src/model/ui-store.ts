@@ -1,9 +1,10 @@
 
 import * as _ from 'lodash';
-import { configure, observable, action, autorun, computed } from 'mobx';
+import { configure, observable, action, autorun, computed, observe } from 'mobx';
 import { persist, create } from 'mobx-persist';
 
 import { Theme, lightTheme, ThemeName, Themes } from '../styles';
+import { AccountStore } from './account/account-store';
 
 configure({ enforceActions: 'observed' });
 
@@ -20,7 +21,19 @@ export class UiStore {
         });
     }
 
-    loadSettings() {
+    initialize(accountStore: AccountStore) {
+        // Every time the user account data is updated from the server, consider resetting
+        // paid settings to the free defaults. This ensures that they're reset on
+        // logout & subscription expiration (even if that happened while the app was
+        // closed), but don't get reset when the app starts with stale account data.
+        observe(accountStore, 'accountDataLastUpdated', () => {
+            if (!accountStore.isPaidUser) this.setTheme('light');
+        });
+
+        this.loadSettings();
+    }
+
+    private loadSettings() {
         return create()('ui-store', this);
     }
 

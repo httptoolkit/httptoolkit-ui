@@ -55,7 +55,7 @@ const interceptionStore = new InterceptionStore(
 
 const appStartupPromise = Promise.all([
     interceptionStore.initialize(accountStore),
-    uiStore.loadSettings()
+    uiStore.initialize(accountStore)
 ]);
 
 // Once the app is loaded, show the app
