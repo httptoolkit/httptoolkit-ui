@@ -95,7 +95,7 @@
     "react-split-pane": "^0.1.84",
     "react-virtualized-auto-sizer": "^1.0.2",
     "react-window": "^1.8.5",
-    "remarkable": "^1.7.1",
+    "remarkable": "^1.7.4",
     "semver": "^5.6.0",
     "serialize-error": "^3.0.0",
     "serializr": "^1.5.1",
