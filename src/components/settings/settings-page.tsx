@@ -36,6 +36,7 @@ const SettingsPagePlaceholder = styled.section`
     display: flex;
     align-items: center;
     justify-content: center;
+    height: 100%;
 `;
 
 const SettingsPageScrollContainer = styled.div`
