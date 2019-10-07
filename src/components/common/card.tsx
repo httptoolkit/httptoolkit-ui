@@ -121,7 +121,7 @@ export const CollapseIcon = styled((props: CollapseIconProps) =>
 export interface CollapsibleCardProps {
     collapsed: boolean;
     onCollapseToggled: () => void;
-    children: React.ReactElement<any> | Array<React.ReactElement<any> | null>;
+    children: React.ReactNode;
 }
 
 const CollapsibleCardContainer = styled(MediumCard)`

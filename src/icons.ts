@@ -50,6 +50,7 @@ import { faTheaterMasks } from '@fortawesome/free-solid-svg-icons/faTheaterMasks
 import { faGripVertical } from '@fortawesome/free-solid-svg-icons/faGripVertical';
 import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
 import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
+import { faUnlock } from '@fortawesome/free-solid-svg-icons/faUnlock';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -118,6 +119,7 @@ library.add(
     faGripVertical,
     faUndo,
     faSave,
+    faUnlock,
 
     faChrome,
     faFirefox,

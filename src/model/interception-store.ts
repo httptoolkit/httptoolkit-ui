@@ -14,6 +14,8 @@ import {
 import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
 import { HarParseError } from 'har-validator';
+import * as serializr from 'serializr';
+import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuffer';
 
 import { getLocal, Mockttp } from 'mockttp';
 
@@ -44,7 +46,6 @@ import { isValidPort } from './network';
 import { buildDefaultRules, HtkMockRule, ruleEquality, buildForwardingRuleIntegration } from './rules/rules';
 import { deserializeRules } from './rules/rule-serialization';
 import { getDesktopInjectedValue } from '../services/desktop-api';
-import { ForwardToHostHandler } from './rules/rule-definitions';
 
 configure({ enforceActions: 'observed' });
 
@@ -110,6 +111,23 @@ type OrphanableQueuedEvent =
     | { type: 'response', event: InputResponse }
     | { type: 'abort', event: InputInitiatedRequest };
 
+export type ClientCertificate = {
+    readonly pfx: ArrayBuffer,
+    readonly passphrase?: string,
+    readonly filename: string
+};
+
+const pojoSchema = (props: serializr.Props) => ({
+    factory: () => ({}),
+    props: props
+});
+
+const clientCertificateSchema = pojoSchema({
+    passphrase: serializr.primitive(),
+    filename: serializr.primitive(),
+    pfx: serializr.custom(encodeBase64, decodeBase64)
+});
+
 export class InterceptionStore {
 
     // ** Overall setup & startup:
@@ -140,6 +158,7 @@ export class InterceptionStore {
             if (!accountStore.isPaidUser) {
                 this.setPortConfig(undefined);
                 this.draftWhitelistedCertificateHosts = ['localhost'];
+                this.draftClientCertificateHostMap = {};
             }
         });
 
@@ -171,8 +190,9 @@ export class InterceptionStore {
             this.draftRules.unshift(_.cloneDeep(forwardingRule));
         }));
 
-        // On startup the draft host settings take effect, becoming the real settings.
+        // On startup the draft host settings take effect, becoming the real settings:
         this.whitelistedCertificateHosts = _.clone(this.draftWhitelistedCertificateHosts);
+        this.clientCertificateHostMap = _.clone(this.draftClientCertificateHostMap);
 
         // Rebuild the rules, which might depends on these settings:
         this.resetRulesToDefault();
@@ -260,12 +280,48 @@ export class InterceptionStore {
         return this.server.port;
     }
 
+    get activePassthroughOptions() {
+        return {
+            ignoreHostCertificateErrors: this.whitelistedCertificateHosts,
+            clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
+                pfx: Buffer.from(cert.pfx),
+                passphrase: cert.passphrase
+            }))
+        }
+    }
+
     // The currently active list, set during startup
-    whitelistedCertificateHosts: string[] = ['localhost'];
+    private whitelistedCertificateHosts: string[] = ['localhost'];
 
     // The desired list - can be changed, takes effect on next app startup
     @persist('list') @observable
     draftWhitelistedCertificateHosts: string[] = ['localhost'];
+
+    readonly areWhitelistedCertificatesUpToDate = () => {
+        return _.isEqual(this.whitelistedCertificateHosts, this.draftWhitelistedCertificateHosts);
+    }
+
+    readonly isWhitelistedCertificateSaved = (host: string) => {
+        return this.whitelistedCertificateHosts.includes(host);
+    }
+
+    // The currently active client certificates
+    private clientCertificateHostMap: { [host: string]: ClientCertificate } = {};
+
+    // The desired set of client certificates - takes effect on next startup
+    @persist('map', clientCertificateSchema) @observable
+    draftClientCertificateHostMap: { [host: string]: ClientCertificate } = _.clone(
+        this.clientCertificateHostMap
+    );
+
+    readonly areClientCertificatesUpToDate = () => {
+        return _.isEqual(this.clientCertificateHostMap, this.draftClientCertificateHostMap);
+    }
+
+    readonly isClientCertificateUpToDate = (host: string) => {
+        return _.isEqual(this.clientCertificateHostMap[host], this.draftClientCertificateHostMap[host]);
+    }
+
 
     //#endregion
     // ** Rules:

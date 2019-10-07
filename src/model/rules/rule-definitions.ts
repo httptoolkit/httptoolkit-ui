@@ -79,9 +79,7 @@ export class StaticResponseHandler extends handlers.SimpleHandler {
 export class PassThroughHandler extends handlers.PassThroughHandler {
 
     constructor(interceptionStore: InterceptionStore) {
-        super({
-            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts
-        });
+        super(interceptionStore.activePassthroughOptions);
     }
 
 }
@@ -94,7 +92,7 @@ export class ForwardToHostHandler extends handlers.PassThroughHandler {
 
     constructor(forwardToLocation: string, updateHostHeader: boolean, interceptionStore: InterceptionStore) {
         super({
-            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            ...interceptionStore.activePassthroughOptions,
             forwarding: {
                 targetHost: forwardToLocation,
                 updateHostHeader: updateHostHeader
@@ -121,7 +119,7 @@ export class RequestBreakpointHandler extends handlers.PassThroughHandler {
 
     constructor(interceptionStore: InterceptionStore) {
         super({
-            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            ...interceptionStore.activePassthroughOptions,
             beforeRequest: interceptionStore.triggerRequestBreakpoint
         });
     }
@@ -140,7 +138,7 @@ export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
 
     constructor(interceptionStore: InterceptionStore) {
         super({
-            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            ...interceptionStore.activePassthroughOptions,
             beforeResponse: interceptionStore.triggerResponseBreakpoint
         });
     }
@@ -160,7 +158,7 @@ export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHan
 
     constructor(interceptionStore: InterceptionStore) {
         super({
-            ignoreHostCertificateErrors: interceptionStore.whitelistedCertificateHosts,
+            ...interceptionStore.activePassthroughOptions,
             beforeRequest: interceptionStore.triggerRequestBreakpoint,
             beforeResponse: interceptionStore.triggerResponseBreakpoint
         });
