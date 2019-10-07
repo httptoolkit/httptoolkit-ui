@@ -414,13 +414,12 @@ export class ProxySettingsCard extends React.Component<
                 appear successful despite self-signed, expired or invalid HTTPS certificates.
             </SettingsExplanation>
 
-            <ClientCertContentLabel>
-                Client Certificates
-            </ClientCertContentLabel>
-
             {
                 _.isString(serverVersion.value) &&
-                semver.satisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) &&
+                semver.satisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) && <>
+                <ClientCertContentLabel>
+                    Client Certificates
+                </ClientCertContentLabel>
                 <ClientCertificatesList>
                     { Object.entries(draftClientCertificateHostMap).map(([host, cert]) => [
                         <CertificateHost
@@ -508,7 +507,7 @@ export class ProxySettingsCard extends React.Component<
                         <FontAwesomeIcon icon={['fas', 'plus']} />
                     </SettingsButton>
                 </ClientCertificatesList>
-            }
+            </> }
 
             <ProxyPortsContainer>
                 <ContentLabel>
