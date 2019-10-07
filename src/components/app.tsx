@@ -11,21 +11,21 @@ import {
 import * as semver from 'semver';
 
 import { styled } from '../styles';
+import { FontAwesomeIcon } from '../icons';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
 import { appHistory } from '../routing';
+
 import { AccountStore } from '../model/account/account-store';
+import { serverVersion, MOCK_SERVER_RANGE } from '../services/service-versions';
 
 import { Sidebar, SidebarItem, SIDEBAR_WIDTH } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
 import { MockPage } from './mock/mock-page';
 import { SettingsPage } from './settings/settings-page';
-
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
-import { FontAwesomeIcon } from '../icons';
-import { serverVersion } from '../services/service-versions';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -93,7 +93,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     // Hide Mock option if the server is too old for proper support.
                     // We show by default to avoid flicker in the most common case
                     serverVersion.state !== 'fulfilled' ||
-                    semver.satisfies(serverVersion.value as string, '>=0.1.21')
+                    semver.satisfies(serverVersion.value as string, MOCK_SERVER_RANGE)
                 )
                 ? [{
                     name: 'Mock',

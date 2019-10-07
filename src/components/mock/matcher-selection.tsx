@@ -8,7 +8,7 @@ import { matchers } from 'mockttp';
 
 import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
-import { serverVersion as serverVersionObservable } from '../../services/service-versions';
+import { serverVersion as serverVersionObservable, HOST_MATCHER_SERVER_RANGE } from '../../services/service-versions';
 import { Button, Select } from '../common/inputs';
 
 import {
@@ -207,7 +207,7 @@ export class NewMatcherRow extends React.Component<{
             : undefined;
 
         const availableMatchers = [
-            serverVersion && semver.satisfies(serverVersion, '>=0.1.22') && matchers.HostMatcher,
+            serverVersion && semver.satisfies(serverVersion, HOST_MATCHER_SERVER_RANGE) && matchers.HostMatcher,
             matchers.SimplePathMatcher,
             matchers.RegexPathMatcher,
             matchers.ExactQueryMatcher,
