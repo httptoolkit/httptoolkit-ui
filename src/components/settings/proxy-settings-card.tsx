@@ -42,7 +42,7 @@ const UnsavedIcon = styled(FontAwesomeIcon).attrs({
 
 const CertificateWhitelistList = styled.div`
     display: grid;
-    grid-template-columns: min-content min-content;
+    grid-template-columns: auto min-content;
     grid-gap: 10px;
     margin: 10px 0;
 
@@ -366,6 +366,7 @@ export class ProxySettingsCard extends React.Component<
                         key={`host-${host}`}
                     >
                         { host }
+                        { !isWhitelistedCertificateSaved(host) && <UnsavedIcon /> }
                     </CertificateHost>,
                     <SettingsButton
                         key={`delete-${host}`}
