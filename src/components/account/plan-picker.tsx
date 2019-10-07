@@ -276,7 +276,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         </Feature>
                         <Feature>
                             <strong>Advanced customization</strong>, including port configuration,
-                            certificate whitelisting, and UI themes
+                            whitelisted & client certificates, and UI themes
                         </Feature>
                         <Feature>
                             <strong>Support ongoing development!</strong>
