@@ -227,13 +227,24 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 View latest invoice
                             </SettingsButtonLink>
                         }
-                        { sub.updateBillingDetailsUrl &&
+                        { sub.status !== 'deleted' &&
+                          sub.updateBillingDetailsUrl &&
                             <SettingsButtonLink
                                 href={ sub.updateBillingDetailsUrl }
                                 target='_blank'
                                 rel='noreferrer noopener'
                             >
                                 Update billing details
+                            </SettingsButtonLink>
+                        }
+                        { sub.status !== 'deleted' &&
+                          sub.cancelSubscriptionUrl &&
+                            <SettingsButtonLink
+                                href={ sub.cancelSubscriptionUrl }
+                                target='_blank'
+                                rel='noreferrer noopener'
+                            >
+                                Cancel subscription
                             </SettingsButtonLink>
                         }
                         <SettingsButton onClick={logOut}>Log out</SettingsButton>

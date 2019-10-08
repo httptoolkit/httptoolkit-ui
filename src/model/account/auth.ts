@@ -190,6 +190,7 @@ type AppData = {
     subscription_plan_id?: number;
     subscription_expiry?: number;
     update_url?: string;
+    cancel_url?: string;
     last_receipt_url?: string;
     feature_flags?: string[];
 }
@@ -199,7 +200,8 @@ type SubscriptionData = {
     status: SubscriptionStatus;
     plan: SubscriptionPlanCode;
     expiry: Date;
-    updateBillingDetailsUrl: string;
+    updateBillingDetailsUrl?: string;
+    cancelSubscriptionUrl?: string;
     lastReceiptUrl?: string;
 };
 
@@ -263,6 +265,7 @@ function parseUserData(userJwt: string | null): User {
         plan: getSubscriptionPlanCode(appData.subscription_plan_id),
         expiry: appData.subscription_expiry ? new Date(appData.subscription_expiry) : undefined,
         updateBillingDetailsUrl: appData.update_url,
+        cancelSubscriptionUrl: appData.cancel_url,
         lastReceiptUrl: appData.last_receipt_url
     };
 
@@ -272,7 +275,11 @@ function parseUserData(userJwt: string | null): User {
         reportError('Invalid subscription data', appData);
     }
 
-    const optionalFields = ['lastReceiptUrl', 'updateBillingDetailsUrl'];
+    const optionalFields = [
+        'lastReceiptUrl',
+        'updateBillingDetailsUrl',
+        'cancelSubscriptionUrl'
+    ];
 
     return {
         email: appData.email,
