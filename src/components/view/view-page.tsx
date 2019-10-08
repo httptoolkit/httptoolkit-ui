@@ -74,7 +74,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 exchange={this.selectedEvent}
                 requestEditor={this.requestEditor}
                 responseEditor={this.responseEditor}
-                goToSettings={this.goToSettings}
+                navigate={this.props.navigate}
             />;
         } else {
             rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
@@ -104,11 +104,6 @@ class ViewPage extends React.Component<ViewPageProps> {
                 </portals.InPortal>
             )}
         </div>;
-    }
-
-    @action.bound
-    goToSettings() {
-        this.props.navigate('/settings');
     }
 
     @action.bound

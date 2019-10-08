@@ -71,7 +71,7 @@ export class ExchangeDetailsPane extends React.Component<{
     requestEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
     responseEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
 
-    goToSettings: () => void
+    navigate: (path: string) => void
 
     // Injected:
     uiStore?: UiStore,
@@ -88,7 +88,7 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     render() {
-        const { exchange, uiStore, accountStore, goToSettings } = this.props;
+        const { exchange, uiStore, accountStore, navigate } = this.props;
         const { isPaidUser, getPro } = accountStore!;
 
         const cards: JSX.Element[] = [];
@@ -100,7 +100,7 @@ export class ExchangeDetailsPane extends React.Component<{
             key: 'error-header',
             isPaidUser,
             getPro,
-            goToSettings,
+            navigate,
             ignoreError: this.ignoreError
         };
 
@@ -119,6 +119,8 @@ export class ExchangeDetailsPane extends React.Component<{
             tags.includes("passthrough-error:EPROTO")
         ) {
             cards.push(<ExchangeErrorHeader type='tls-error' {...errorHeaderProps} />);
+        } else if (tags.includes("passthrough-error:ENOTFOUND")) {
+            cards.push(<ExchangeErrorHeader type='host-not-found' {...errorHeaderProps} />);
         }
 
         cards.push(<ExchangeRequestCard

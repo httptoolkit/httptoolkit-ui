@@ -42,9 +42,10 @@ export const ExchangeErrorHeader = (p: {
         | 'untrusted'
         | 'expired'
         | 'wrong-host'
-        | 'tls-error',
+        | 'tls-error'
+        | 'host-not-found',
     getPro: () => void,
-    goToSettings: () => void,
+    navigate: (path: string) => void,
     ignoreError: () => void
 }) =>
     <ErrorHeaderCard>
@@ -62,6 +63,8 @@ export const ExchangeErrorHeader = (p: {
                     ? 'has an untrusted HTTPS certificate'
                 : p.type === 'tls-error'
                     ? 'failed to complete a TLS handshake'
+                : p.type === 'host-not-found'
+                    ? 'hostname could not found'
                 : 'failed to communicate, due to an unknown error'
             }, so HTTP Toolkit did not forward the request.
         </HeaderExplanation>
@@ -88,6 +91,18 @@ export const ExchangeErrorHeader = (p: {
                     }
                 </HeaderExplanation>
             </>
+            : p.type === 'host-not-found'
+                ? <>
+                    <HeaderExplanation>
+                        This typically means the host doesn't exist, although it
+                        could be an issue with your DNS or network configuration.
+                    </HeaderExplanation>
+                    <HeaderExplanation>
+                        You can define mock responses for requests like this from the
+                        Mock page, to return fake data even for servers and hostnames
+                        that don't exist.
+                    </HeaderExplanation>
+                </>
             : <HeaderExplanation>
                 By default this is only allowed for localhost servers, but {
                     p.isPaidUser
@@ -101,10 +116,14 @@ export const ExchangeErrorHeader = (p: {
             Ignore
         </HeaderButton>
 
-        { p.isPaidUser
-            ? <HeaderButton onClick={p.goToSettings} onKeyPress={clickOnEnter}>
-                Go to Settings
+        { p.type ==='host-not-found'
+            ? <HeaderButton onClick={() => p.navigate('/mock')} onKeyPress={clickOnEnter}>
+                Go to the Mock page
             </HeaderButton>
+            : p.isPaidUser
+                ? <HeaderButton onClick={() => p.navigate('/settings')} onKeyPress={clickOnEnter}>
+                    Go to Settings
+                </HeaderButton>
             : <HeaderButton onClick={p.getPro} onKeyPress={clickOnEnter}>
                 Get Pro
             </HeaderButton>
