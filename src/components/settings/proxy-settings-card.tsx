@@ -192,7 +192,7 @@ export class ProxySettingsCard extends React.Component<
             input.setCustomValidity('');
         } else {
             input.setCustomValidity(
-                "Should be a plain hostname, plus a port if it's not the default"
+                "Should be a plain hostname, optionally with a specific port"
             );
         }
         input.reportValidity();
