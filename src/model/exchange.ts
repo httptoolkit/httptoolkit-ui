@@ -130,7 +130,9 @@ export class HttpExchange {
 
     constructor(request: InputRequest) {
         this.request = addRequestMetadata(request);
+
         this.timingEvents = request.timingEvents;
+        this.tags = this.request.tags;
 
         this.id = this.request.id;
         this.matchedRuleId = this.request.matchedRuleId;
@@ -162,6 +164,9 @@ export class HttpExchange {
     @observable
     public matchedRuleId: string | undefined; // Undefined initially, defined for completed requests
 
+    @observable
+    public tags: string[];
+
     isCompletedRequest(): this is CompletedRequest {
         return !!this.matchedRuleId;
     }
@@ -189,13 +194,17 @@ export class HttpExchange {
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new ExchangeBody(request, request.headers);
         this.matchedRuleId = request.matchedRuleId;
+
         Object.assign(this.timingEvents, request.timingEvents);
+        this.tags = _.union(this.tags, request.tags);
     }
 
     markAborted(request: InputInitiatedRequest) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
+
         Object.assign(this.timingEvents, request.timingEvents);
+        this.tags = _.union(this.tags, request.tags);
 
         if (this.requestBreakpoint) {
             this.requestBreakpoint.reject(
@@ -213,7 +222,9 @@ export class HttpExchange {
 
     setResponse(response: InputResponse) {
         this.response = addResponseMetadata(response);
+
         Object.assign(this.timingEvents, response.timingEvents);
+        this.tags = _.union(this.tags, response.tags);
 
         this.category = getExchangeCategory(this);
         this.searchIndex = [

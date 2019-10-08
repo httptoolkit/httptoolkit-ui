@@ -1,0 +1,113 @@
+import * as React from 'react';
+
+import { styled } from '../../styles';
+import { WarningIcon } from '../../icons';
+
+import { clickOnEnter } from '../component-utils';
+import { MediumCard } from '../common/card';
+import { Button } from '../common/inputs';
+
+const ErrorHeaderCard = styled(MediumCard)`
+    position: sticky;
+    top: -25px;
+    z-index: 2;
+
+    margin-bottom: 20px;
+
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+`;
+
+const HeaderExplanation = styled.p`
+    width: 100%;
+    margin-bottom: 10px;
+    line-height: 1.2;
+`;
+
+const HeaderButton = styled(Button)`
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: ${p => p.theme.textSize};
+
+    margin: 10px 0 0 20px;
+    align-self: stretch;
+`;
+
+export const ExchangeErrorHeader = (p: {
+    isPaidUser: boolean,
+    type:
+        | 'untrusted'
+        | 'expired'
+        | 'wrong-host'
+        | 'tls-error',
+    getPro: () => void,
+    goToSettings: () => void,
+    ignoreError: () => void
+}) =>
+    <ErrorHeaderCard>
+        <HeaderExplanation>
+            <WarningIcon /> <strong>This request was not forwarded successfully</strong>
+        </HeaderExplanation>
+
+        <HeaderExplanation>
+            The upstream server {
+                p.type === 'wrong-host'
+                    ? 'responded with an HTTPS certificate for the wrong hostname'
+                : p.type === 'expired'
+                    ? 'has an expired HTTPS certificate'
+                : p.type === 'untrusted'
+                    ? 'has an untrusted HTTPS certificate'
+                : p.type === 'tls-error'
+                    ? 'failed to complete a TLS handshake'
+                : 'failed to communicate, due to an unknown error'
+            }, so HTTP Toolkit did not forward the request.
+        </HeaderExplanation>
+
+        { p.type === 'tls-error'
+            ? <>
+                <HeaderExplanation>
+                    This could be caused by the server not supporting modern cipher
+                    standards, requiring a client certificate that hasn't been
+                    provided, or other TLS configuration issues.
+                </HeaderExplanation>
+                <HeaderExplanation>
+                    { p.isPaidUser
+                        ? <>
+                            You can configure client certificates or whitelist this
+                            host's certificates, which may resolve some TLS issues,
+                            from the Settings page.
+                        </>
+                        : <>
+                            Pro users can whitelist certificates for custom hosts, which
+                            may resolve some TLS issues, and configure per-host client
+                            certificates.
+                        </>
+                    }
+                </HeaderExplanation>
+            </>
+            : <HeaderExplanation>
+                By default this is only allowed for localhost servers, but {
+                    p.isPaidUser
+                        ? 'other hosts can be added to the whitelist from the Settings page.'
+                        : 'Pro users can whitelist other custom hosts.'
+                }
+            </HeaderExplanation>
+        }
+
+        <HeaderButton onClick={p.ignoreError} onKeyPress={clickOnEnter}>
+            Ignore
+        </HeaderButton>
+
+        { p.isPaidUser
+            ? <HeaderButton onClick={p.goToSettings} onKeyPress={clickOnEnter}>
+                Go to Settings
+            </HeaderButton>
+            : <HeaderButton onClick={p.getPro} onKeyPress={clickOnEnter}>
+                Get Pro
+            </HeaderButton>
+        }
+
+    </ErrorHeaderCard>;

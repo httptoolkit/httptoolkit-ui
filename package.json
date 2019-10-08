@@ -82,7 +82,7 @@
     "mobx-persist": "^0.4.1",
     "mobx-react": "^5.4.0",
     "mobx-utils": "^5.1.0",
-    "mockttp": "^0.18.1",
+    "mockttp": "^0.19.0",
     "monaco-editor": "^0.15.5",
     "node-forge": "^0.8.5",
     "openapi-directory": "^1.1.3",

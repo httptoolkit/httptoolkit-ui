@@ -21,6 +21,7 @@ import { AccountStore } from '../../model/account/account-store';
 import { ExchangePerformanceCard } from './exchange-performance-card';
 import { ExchangeExportCard } from './exchange-export-card';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { ExchangeErrorHeader } from './exchange-error-header';
 
 function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
     return !!res && res !== 'aborted' && !!res.body.encoded.byteLength;
@@ -70,6 +71,8 @@ export class ExchangeDetailsPane extends React.Component<{
     requestEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
     responseEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
 
+    goToSettings: () => void
+
     // Injected:
     uiStore?: UiStore,
     accountStore?: AccountStore
@@ -85,13 +88,38 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     render() {
-        const { exchange, uiStore, accountStore } = this.props;
-        const { isPaidUser } = accountStore!;
+        const { exchange, uiStore, accountStore, goToSettings } = this.props;
+        const { isPaidUser, getPro } = accountStore!;
 
         const cards: JSX.Element[] = [];
 
-        const { request, response } = exchange;
+        const { request, response, tags } = exchange;
         const apiExchange = isPaidUser ? exchange.api : undefined;
+
+        const errorHeaderProps = {
+            key: 'error-header',
+            isPaidUser,
+            getPro,
+            goToSettings,
+            ignoreError: this.ignoreError
+        };
+
+        if (
+            tags.includes("passthrough-error:SELF_SIGNED_CERT_IN_CHAIN") ||
+            tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
+            tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE")
+        ) {
+            cards.push(<ExchangeErrorHeader type='untrusted' {...errorHeaderProps} />);
+        } else if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) {
+            cards.push(<ExchangeErrorHeader type='expired' {...errorHeaderProps} />);
+        } else if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) {
+            cards.push(<ExchangeErrorHeader type='wrong-host' {...errorHeaderProps} />);
+        } else if (
+            tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
+            tags.includes("passthrough-error:EPROTO")
+        ) {
+            cards.push(<ExchangeErrorHeader type='tls-error' {...errorHeaderProps} />);
+        }
 
         cards.push(<ExchangeRequestCard
             {...this.cardProps.request}
@@ -168,6 +196,17 @@ export class ExchangeDetailsPane extends React.Component<{
         const { viewExchangeCardStates } = this.props.uiStore!;
         const cardState = viewExchangeCardStates[key];
         cardState.collapsed = !cardState.collapsed;
+    }
+
+    @action.bound
+    private ignoreError() {
+        const { exchange } = this.props;
+
+        // Drop all error tags from this exchange
+        exchange.tags = exchange.tags.filter(t =>
+            !t.startsWith('passthrough-error:') &&
+            !t.startsWith('passthrough-tls-error:')
+        );
     }
 
 };

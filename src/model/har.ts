@@ -335,6 +335,7 @@ function parseHarRequest(
     return {
         id,
         timingEvents,
+        tags: [],
         protocol: request.url.split(':')[0],
         method: request.method,
         url: request.url,
@@ -361,6 +362,7 @@ function parseHarResponse(
     return {
         id,
         timingEvents,
+        tags: [],
         statusCode: response.status,
         statusMessage: response.statusText,
         headers: asHtkHeaders(response.headers),
