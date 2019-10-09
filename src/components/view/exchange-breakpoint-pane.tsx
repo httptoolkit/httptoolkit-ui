@@ -30,16 +30,17 @@ const ExchangeBreakpointScrollContainer = styled.div`
 
 const ExchangeBreakpointContentContainer = styled.div`
     min-height: 100%;
+    box-sizing: border-box;
 
     display: flex;
     flex-direction: column;
 
     /*
-     * This margin could be padding on the scroll container, but doing so causes odd
+     * This padding could be padding on the scroll container, but doing so causes odd
      * behaviour where position: sticky headers don't take it into account, on OSX only.
      * Moving to the direct parent of the header makes that consistent, for some reason. Ew.
     */
-    margin-top: 20px;
+    padding-top: 20px;
 `;
 
 const cardKeys = [
