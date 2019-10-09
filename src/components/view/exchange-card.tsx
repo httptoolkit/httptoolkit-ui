@@ -5,7 +5,8 @@ import { FontAwesomeIcon } from '../../icons';
 
 import {
     CollapsibleCard,
-    CollapsibleCardProps
+    CollapsibleCardProps,
+    MediumCard
 } from '../common/card'
 import {
     CollapsibleSectionSummary,
@@ -65,4 +66,18 @@ export const ExchangeCollapsibleBody = styled(CollapsibleSectionBody)`
 export const ExchangeCollapsibleSummary = styled(CollapsibleSectionSummary)`
     margin-left: -20px;
     padding-left: 20px;
+`;
+
+export const ExchangeHeaderCard = styled(MediumCard)`
+    position: sticky;
+    top: -10px;
+    z-index: 2;
+
+    margin-bottom: 20px;
+
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
 `;

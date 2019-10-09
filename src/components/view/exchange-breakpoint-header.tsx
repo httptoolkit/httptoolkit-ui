@@ -4,22 +4,8 @@ import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 
 import { clickOnEnter } from '../component-utils';
-import { MediumCard } from '../common/card';
 import { Button } from '../common/inputs';
-
-const BreakpointHeaderCard = styled(MediumCard)`
-    position: sticky;
-    top: -10px;
-    z-index: 2;
-
-    margin-bottom: 20px;
-
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-`;
+import { ExchangeHeaderCard } from './exchange-card';
 
 const HeaderExplanation = styled.p`
     width: 100%;
@@ -40,7 +26,7 @@ export const ExchangeRequestBreakpointHeader = (p: {
     onResume: () => void,
     onCreateResponse: () => void
 }) =>
-    <BreakpointHeaderCard>
+    <ExchangeHeaderCard>
         <HeaderExplanation>
             <WarningIcon /> <strong>This request is paused at a breakpoint</strong>
         </HeaderExplanation>
@@ -56,12 +42,12 @@ export const ExchangeRequestBreakpointHeader = (p: {
         <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>
             Resume
         </HeaderButton>
-    </BreakpointHeaderCard>;
+    </ExchangeHeaderCard>;
 
 export const ExchangeResponseBreakpointHeader = (p: {
     onResume: () => void
 }) =>
-    <BreakpointHeaderCard>
+    <ExchangeHeaderCard>
         <HeaderExplanation>
             <WarningIcon /> <strong>This response is paused at a breakpoint</strong>
         </HeaderExplanation>
@@ -72,4 +58,4 @@ export const ExchangeResponseBreakpointHeader = (p: {
         <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>
             Resume
         </HeaderButton>
-    </BreakpointHeaderCard>;
+    </ExchangeHeaderCard>;

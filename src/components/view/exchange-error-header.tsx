@@ -4,22 +4,8 @@ import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 
 import { clickOnEnter } from '../component-utils';
-import { MediumCard } from '../common/card';
 import { Button } from '../common/inputs';
-
-const ErrorHeaderCard = styled(MediumCard)`
-    position: sticky;
-    top: -10px;
-    z-index: 2;
-
-    margin-bottom: 20px;
-
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-`;
+import { ExchangeHeaderCard } from './exchange-card';
 
 const HeaderExplanation = styled.p`
     width: 100%;
@@ -48,7 +34,7 @@ export const ExchangeErrorHeader = (p: {
     navigate: (path: string) => void,
     ignoreError: () => void
 }) =>
-    <ErrorHeaderCard>
+    <ExchangeHeaderCard>
         <HeaderExplanation>
             <WarningIcon /> <strong>This request was not forwarded successfully</strong>
         </HeaderExplanation>
@@ -129,4 +115,4 @@ export const ExchangeErrorHeader = (p: {
             </HeaderButton>
         }
 
-    </ErrorHeaderCard>;
+    </ExchangeHeaderCard>;
