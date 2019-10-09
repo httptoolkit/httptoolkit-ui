@@ -9,7 +9,7 @@ import { Button } from '../common/inputs';
 
 const ErrorHeaderCard = styled(MediumCard)`
     position: sticky;
-    top: -25px;
+    top: -10px;
     z-index: 2;
 
     margin-bottom: 20px;

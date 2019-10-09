@@ -34,7 +34,7 @@ const ExchangeDetailsScrollContainer = styled.div`
     height: 100%;
     width: 100%;
     box-sizing: border-box;
-    padding: 20px 20px 0 20px;
+    padding: 0 20px 0 20px;
 
     background-color: ${p => p.theme.containerBackground};
 `;
@@ -44,6 +44,13 @@ const ExchangeDetailsContentContainer = styled.div`
 
     display: flex;
     flex-direction: column;
+
+    /*
+     * This margin could be padding on the scroll container, but doing so causes odd
+     * behaviour where position: sticky headers don't take it into account, on OSX only.
+     * Moving to the direct parent of the header makes that consistent, for some reason. Ew.
+     */
+    margin-top: 20px;
 `;
 
 // Used to push all cards below it to the bottom (when less than 100% height)
