@@ -1,8 +1,19 @@
 import * as _ from 'lodash';
 
 // Simplify a mime type as much as we can, without throwing any errors
-export const getBaseContentType = (mimeType: string | undefined) =>
-    (mimeType || '').split(';')[0].split('+')[0];
+export const getBaseContentType = (mimeType: string | undefined) => {
+    const typeWithoutParams = (mimeType || '').split(';')[0];
+    const [type, combinedSubTypes] = typeWithoutParams.split(/\/(.+)/);
+
+    if (!combinedSubTypes) return type;
+
+    // A list of types from most specific to most generic: [svg, xml] for image/svg+xml
+    const subTypes = combinedSubTypes.split('+');
+
+    const possibleTypes = subTypes.map(st => type + '/' + st);
+    return _.find(possibleTypes, t => !!mimeTypeToContentTypeMap[t]) ||
+        _.last(possibleTypes)!; // If we recognize none - return the most generic
+}
 
 export type ViewableContentType =
     | 'raw'
@@ -69,16 +80,16 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/xhtml': 'html',
 
     'application/octet-stream': 'raw'
-};
+} as const;
 
 export function getContentType(mimeType: string | undefined): ViewableContentType | undefined {
     const baseContentType = getBaseContentType(mimeType);
-    return mimeTypeToContentTypeMap[baseContentType];
+    return mimeTypeToContentTypeMap[baseContentType!];
 }
 
 export function getEditableContentType(mimeType: string | undefined): EditableContentType | undefined {
     const baseContentType = getBaseContentType(mimeType);
-    const viewableContentType = mimeTypeToContentTypeMap[baseContentType];
+    const viewableContentType = mimeTypeToContentTypeMap[baseContentType!];
 
     if (EditableContentTypes.includes(viewableContentType as any)) {
         return viewableContentType as EditableContentType;
