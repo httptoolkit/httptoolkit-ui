@@ -112,6 +112,7 @@ type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 export const TextInput = styled.input.attrs({
     type: 'text'
 })`
+    font-size: 13px;
     padding: 5px 10px;
     border-radius: 4px;
     border: solid 1px ${p => p.theme.containerBorder};
