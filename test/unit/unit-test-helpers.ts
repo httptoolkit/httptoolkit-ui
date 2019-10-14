@@ -34,6 +34,7 @@ export const getExchangeData = ({
         contentType: 'text',
         source: { ua: '', summary: 'Unknown client', icon: SourceIcons.Unknown },
         timingEvents: { startTime: Date.now() },
+        tags: [],
         cache: new Map() as any
     } as HtkRequest,
     response: {
@@ -47,6 +48,7 @@ export const getExchangeData = ({
         ),
         contentType: 'text',
         timingEvents: { startTime: Date.now() },
+        tags: [],
         cache: new Map()  as any
     } as HtkResponse,
     timingEvents: { startTime: Date.now() },
