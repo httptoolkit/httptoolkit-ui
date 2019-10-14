@@ -57,7 +57,7 @@ function enableMarkers(model: monacoTypes.editor.ITextModel | null) {
 }
 
 export interface EditorProps extends MonacoEditorProps {
-    onLineCount?: (lineCount: number) => void;
+    onLinesUpdate?: (lineCount: number, lineHeight: number) => void;
     schema?: SchemaObject;
 }
 
@@ -81,8 +81,9 @@ export class SelfSizedBaseEditor extends React.Component<
     editor = React.createRef<BaseEditor>();
 
     @action.bound
-    updateLineCount(newLineCount: number) {
+    onLinesUpdate(newLineCount: number, newLineHeight: number) {
         this.lineCount = newLineCount;
+        this.lineHeight = newLineHeight;
     }
 
     onResize = _.throttle(() => {
@@ -111,16 +112,17 @@ export class SelfSizedBaseEditor extends React.Component<
     }
 
     @observable lineCount: number = 0;
+    @observable lineHeight: number = 0;
 
     render() {
         return <EditorMaxHeightContainer
             ref={this.container}
-            style={{ 'height': this.lineCount * 22 + 'px' }}
+            style={{ 'height': this.lineCount * this.lineHeight + 'px' }}
         >
             <BaseEditor
                 {...this.props}
                 ref={this.editor}
-                onLineCount={this.updateLineCount}
+                onLinesUpdate={this.onLinesUpdate}
             />
         </EditorMaxHeightContainer>
     }
@@ -166,11 +168,14 @@ export class BaseEditor extends React.Component<EditorProps> {
     }
 
     private announceLineCount(editor: monacoTypes.editor.IStandaloneCodeEditor) {
-        // This is also available as model.getLineCount(), but the model
-        // itself doesn't take line wrapping into account.
-        let lineCount = (editor as any)._modelData.viewModel.getLineCount();
+        if (this.props.onLinesUpdate) {
+            // This is also available as model.getLineCount(), but the model
+            // itself doesn't take line wrapping into account.
+            const lineCount = (editor as any)._modelData.viewModel.getLineCount();
+            const lineHeight = editor.getConfiguration().lineHeight;
 
-        if (this.props.onLineCount) this.props.onLineCount(lineCount);
+            this.props.onLinesUpdate(lineCount, lineHeight);
+        }
     }
 
     public relayout() {
