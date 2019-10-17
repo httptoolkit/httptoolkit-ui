@@ -7,8 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { styled, css } from "../../styles";
 import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account/subscriptions";
-import { Button, UnstyledButton, ButtonLink } from "../common/inputs";
-import { CloseButton } from "../common/close-button";
+import { Button, UnstyledButton, ButtonLink, SecondaryButton } from "../common/inputs";
 
 const PlanPickerModal = styled.dialog`
     position: absolute;
@@ -24,13 +23,20 @@ const PlanPickerModal = styled.dialog`
     z-index: 99;
 
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     color: ${p => p.theme.mainBackground};
 
     background-color: transparent;
     border: none;
+`;
 
-    max-width: 830px;
+const PlanPickerDetails = styled.section`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    padding-right: 20px;
+    max-width: 400px;
 `;
 
 const PlanPickerHeading = styled.h1`
@@ -71,12 +77,31 @@ const PlanCycle = styled.span<{selected: boolean}>`
     `}
 `;
 
+const PlanPickerButtons = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+
+    margin-top: 50px;
+`;
+
+const PlanSecondaryButton = styled(SecondaryButton)`
+    &:not([disabled]) {
+        color: ${p => p.theme.mainBackground};
+        border-color: ${p => p.theme.mainBackground};
+    }
+`;
+
+const Nowrap = styled.span`
+    white-space: nowrap;
+`;
+
 const PricingTable = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: center;
-    margin-top: 20px;
     color: ${p => p.theme.mainColor};
+    max-width: 830px;
 `;
 
 const PricingTier = styled.section<{ highlighted?: boolean }>`
@@ -189,11 +214,11 @@ const PricingCTA = styled.div`
     }
 `;
 
-const PlanFooter = styled.div`
+const PlanSmallPrint = styled.div`
     color: ${p => p.theme.mainBackground};
     font-size: ${p => p.theme.textSize};
 
-    margin-top: 30px;
+    margin-top: 10px;
     text-align: center;
 
     a {
@@ -226,14 +251,34 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
         const { email, onLogOut } = this.props;
 
         return <PlanPickerModal open>
-            <PlanPickerHeading>Choose your Plan</PlanPickerHeading>
-            <PlanCycleToggle onClick={toggleCycle}>
-                <PlanCycle selected={planCycle === 'monthly'}>Monthly</PlanCycle>
+            <PlanPickerDetails>
+                <PlanPickerHeading>Choose your Plan</PlanPickerHeading>
+                <PlanCycleToggle onClick={toggleCycle}>
+                    <PlanCycle selected={planCycle === 'monthly'}>Monthly</PlanCycle>
 
-                <FontAwesomeIcon icon={['fas', planCycle === 'annual' ? 'toggle-on' : 'toggle-off']} />
+                    <FontAwesomeIcon icon={['fas', planCycle === 'annual' ? 'toggle-on' : 'toggle-off']} />
 
-                <PlanCycle selected={planCycle === 'annual'}>Annual</PlanCycle>
-            </PlanCycleToggle>
+                    <PlanCycle selected={planCycle === 'annual'}>Annual</PlanCycle>
+                </PlanCycleToggle>
+
+                <PlanSmallPrint>
+                    <p>
+                        Logged in as <Nowrap>{ email }</Nowrap>.
+                    </p>
+                    <p>
+                        By subscribing to a paid plan, you accept <Nowrap>
+                            <a href="https://httptoolkit.tech/terms-of-service">
+                                the HTTP Toolkit Terms of Service
+                            </a>
+                        </Nowrap>.
+                    </p>
+                </PlanSmallPrint>
+
+                <PlanPickerButtons>
+                    <PlanSecondaryButton onClick={closePicker}>Cancel</PlanSecondaryButton>
+                    <PlanSecondaryButton onClick={onLogOut}>Log out</PlanSecondaryButton>
+                </PlanPickerButtons>
+            </PlanPickerDetails>
 
             <PricingTable>
                 <PricingTier highlighted={true}>
@@ -331,24 +376,6 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     </PricingCTA>
                 </PricingTier>
             </PricingTable>
-
-            <CloseButton
-                onClose={closePicker}
-                inverted={true}
-                top='5px'
-                right='6px'
-            />
-
-            <PlanFooter>
-                <p>
-                    Logged in as { email }. <a href='#' onClick={onLogOut}>Log out</a>
-                </p>
-                <p>
-                    By subscribing to a paid plan, you accept <a href="https://httptoolkit.tech/terms-of-service">
-                        the HTTP Toolkit Terms of Service
-                    </a>.
-                </p>
-            </PlanFooter>
         </PlanPickerModal>
     }
 
