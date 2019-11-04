@@ -270,17 +270,16 @@ const ExchangeRow = observer(({
                 />
             }
         </Status>
-        <Source>
+        <Source title={request.source.summary}>
             <FontAwesomeIcon
-                title={request.source.summary}
                 {...request.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <Host>
+        <Host title={ request.parsedUrl.host }>
             { request.parsedUrl.host }
         </Host>
-        <PathAndQuery>
+        <PathAndQuery title={ request.parsedUrl.pathname + request.parsedUrl.search }>
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
     </ExchangeListRow>
