@@ -6,7 +6,7 @@ import { styled, css } from '../../styles';
 import { trackEvent } from '../../tracking';
 
 import { Interceptor, MANUAL_INTERCEPT_ID } from '../../model/interceptors';
-import { InterceptOption } from './intercept-option';
+import { InterceptOption, StatusPill } from './intercept-option';
 import { CloseButton } from '../common/close-button';
 import { CopyableMonoValue } from '../common/text-content';
 
@@ -149,7 +149,10 @@ export class ManualInterceptOption extends React.Component<ManualInterceptOption
                     </p>
                 </InstructionsStep>
             </InstructionsContainer>
-        </> : null }</ManualInterceptOptionCard>
+        </> : <StatusPill color='#4caf7d'>
+                Proxy port: { serverPort }
+            </StatusPill>
+        }</ManualInterceptOptionCard>
     }
 
     @action.bound

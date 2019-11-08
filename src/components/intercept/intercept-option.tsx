@@ -63,7 +63,7 @@ const LoadingOverlay = styled.div`
     justify-content: center;
 `;
 
-const StatusPill = styled(Pill)`
+export const StatusPill = styled(Pill)`
     && { margin: auto 0 0 0; }
 `;
 
