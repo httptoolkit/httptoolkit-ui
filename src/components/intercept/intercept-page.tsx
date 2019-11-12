@@ -1,19 +1,19 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { observable, action, flow } from 'mobx';
+import { observable, action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
+import { WithInjected } from '../../types';
 import { styled } from '../../styles';
+import { trackEvent } from '../../tracking';
 
 import { ActivatedStore } from '../../model/interception-store';
+import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
+
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
 import { SearchBox } from '../common/search-box';
-import { WithInjected } from '../../types';
-import { trackEvent } from '../../tracking';
-import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
-import { ManualInterceptOption } from './manual-intercept-config';
 
 interface InterceptPageProps {
     className?: string;
@@ -77,7 +77,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     private readonly gridRef = React.createRef<HTMLDivElement>();
 
     render(): JSX.Element {
-        const { serverPort, certPath, activeSources, interceptors } = this.props.interceptionStore;
+        const { activeSources, interceptors } = this.props.interceptionStore;
 
         const filter = this.filter ? this.filter.toLocaleLowerCase() : false;
 
@@ -122,35 +122,27 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         else return 0;
                     })
                     .map((option, index) =>
-                        // TODO: This is fine for now, but in future we definitely need a generic
-                        // activateAction for interceptors, and to move this into the option.
-                        (option.id === MANUAL_INTERCEPT_ID) ?
-                            <ManualInterceptOption
-                                key={option.id}
-                                interceptor={option}
-                                index={index}
-                                serverPort={serverPort}
-                                certPath={certPath}
-                            />
-                        :
-                            <InterceptOption
-                                key={option.id}
-                                interceptor={option}
-                                onActivate={this.onInterceptorActivated.bind(this)}
-                            />
-                ).value() }
+                        <InterceptOption
+                            key={option.id}
+                            index={index}
+                            interceptor={option}
+                            onActivated={this.onInterceptorActivated}
+                        />
+                    ).value()
+                }
             </InterceptPageContainer>
         </div>;
     }
 
-    onInterceptorActivated = flow(function * (this: InterceptPage, interceptor: Interceptor) {
-        trackEvent({ category: 'Interceptors', action: 'Activated', label: interceptor.id });
-        interceptor.inProgress = true;
-        const successful: boolean = yield this.props.interceptionStore.activateInterceptor(interceptor.id);
-        interceptor.inProgress = false;
-
-        if (successful) this.props.navigate('/view');
-    });
+    @action.bound
+    onInterceptorActivated(interceptor: Interceptor) {
+        trackEvent({
+            category: 'Interceptors',
+            action: 'Successfully Activated',
+            label: interceptor.id
+        });
+        this.props.navigate('/view');
+    }
 
     @action.bound
     onSearchInput(input: string) {

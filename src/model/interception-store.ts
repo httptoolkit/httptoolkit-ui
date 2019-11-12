@@ -465,16 +465,26 @@ export class InterceptionStore {
         });
     }
 
-    async activateInterceptor(interceptorId: string) {
-        const result = await activateInterceptor(interceptorId, this.server.port)
-            .then(() => true)
-            .catch((e) => {
-                console.warn(e);
-                return false;
-            });
-        await this.refreshInterceptors();
+    activateInterceptor = flow(function * (
+        this: InterceptionStore,
+        interceptorId: string
+    ) {
+        this.interceptors[interceptorId].inProgress = true;
+        const result = yield activateInterceptor(
+            interceptorId,
+            this.server.port
+        ).then(
+            () => true
+        ).catch((e) => {
+            console.warn(e);
+            return false;
+        });
+
+        this.interceptors[interceptorId].inProgress = false;
+        yield this.refreshInterceptors();
+
         return result;
-    }
+    });
 
     //#endregion
     // ** Server event subscriptions:

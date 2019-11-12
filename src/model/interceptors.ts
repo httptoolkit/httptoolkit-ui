@@ -3,17 +3,22 @@ import * as _ from "lodash";
 import { ServerInterceptor } from "../services/server-api";
 import { IconProps, SourceIcons } from "../icons";
 
-interface InterceptorUiConfig {
+import { InterceptorCustomUiConfig } from "../components/intercept/intercept-option";
+import { ManualInterceptCustomUi } from "../components/intercept/config/manual-intercept-config";
+
+interface InterceptorConfig {
     name: string;
     description: string;
     iconProps: IconProps;
     tags: string[];
     inProgress?: boolean;
+    clientOnly?: true;
+    uiConfig?: InterceptorCustomUiConfig
 }
 
 export type Interceptor =
     Pick<ServerInterceptor, Exclude<keyof ServerInterceptor, 'version'>> &
-    InterceptorUiConfig &
+    InterceptorConfig &
     { version?: string, isSupported: boolean };
 
 const BROWSER_TAGS = ['browsers', 'web page', 'web app', 'javascript'];
@@ -24,7 +29,7 @@ const DOCKER_TAGS = ['bridge', 'services', 'images'];
 
 export const MANUAL_INTERCEPT_ID = 'manual-setup';
 
-const INTERCEPT_OPTIONS: _.Dictionary<InterceptorUiConfig> = {
+const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'docker-all': {
         name: 'All Docker Containers',
         description: 'Intercept all local Docker traffic',
@@ -101,6 +106,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorUiConfig> = {
         name: 'Anything',
         description: 'Manually configure any source using the proxy settings and CA certificate',
         iconProps: SourceIcons.Unknown,
+        clientOnly: true,
+        uiConfig: ManualInterceptCustomUi,
         tags: []
     }
 };
@@ -109,7 +116,9 @@ export function getInterceptOptions(serverInterceptorArray: ServerInterceptor[])
     const serverInterceptors = _.keyBy(serverInterceptorArray, 'id');
 
     return _.mapValues(INTERCEPT_OPTIONS, (option, id) => {
-        if (id === MANUAL_INTERCEPT_ID) {
+        if (option.clientOnly) {
+            // Some interceptors don't need server support at all, so
+            // they're always supported & activable (e.g. manual setup guide).
             return _.assign({}, option, {
                 id: id,
                 isSupported: true,
@@ -117,6 +126,8 @@ export function getInterceptOptions(serverInterceptorArray: ServerInterceptor[])
                 isActivable: true
             });
         } else {
+            // For everything else, the server tells us if it's supported,
+            // activable, or currently active.
             const serverInterceptor = serverInterceptors[id] || {
                 isActive: false,
                 isActivable: false
