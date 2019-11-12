@@ -133,7 +133,8 @@ export const buildDefaultRules = (interceptionStore: InterceptionStore) => [
         ],
         completionChecker: new completionCheckers.Always(),
         handler: new StaticResponseHandler(200, undefined, amIUsingHtml, {
-            'content-type': 'text/html'
+            'content-type': 'text/html',
+            'httptoolkit-active': 'true'
         })
     },
 
