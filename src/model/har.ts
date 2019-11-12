@@ -369,7 +369,7 @@ function parseHarResponse(
         body: {
             decoded: Buffer.from(
                 response.content.text || '',
-                response.content.encoding || 'utf8'
+                response.content.encoding as BufferEncoding || 'utf8'
             ),
             encodedLength: response.bodySize
         }

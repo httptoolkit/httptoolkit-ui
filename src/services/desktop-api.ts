@@ -9,7 +9,7 @@ export async function getDesktopInjectedValue(key: DesktopInjectedKey): Promise<
 
     if (key in window) {
         // If it's already been set, just return it
-        return window[key as keyof typeof window];
+        return window[key as keyof Window];
     } else {
         return new Promise<string>((resolve) => {
             // If not, it might still be coming (there's race here), so listen out

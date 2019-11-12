@@ -20,7 +20,7 @@ describe('Smoke test', function () {
     let browser: puppeteer.Browser;
 
     beforeEach(async () => {
-        [ browser ] = await Promise.all([
+        [ browser ] = await Promise.all<puppeteer.Browser, unknown, unknown>([
             puppeteer.launch({
                 headless: true,
                 slowMo: 0,
