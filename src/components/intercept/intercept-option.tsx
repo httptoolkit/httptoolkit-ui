@@ -216,6 +216,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             label: interceptor.id
         });
 
+        if (!interceptor.isActivable) return;
+
         if (interceptor.uiConfig) {
             this.expanded = true;
             requestAnimationFrame(() => {

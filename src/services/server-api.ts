@@ -83,11 +83,17 @@ export async function activateInterceptor(id: string, proxyPort: number): Promis
         }
     `, { id, proxyPort }).catch(formatError('activate-interceptor'));
 
-    if (!result.activateInterceptor || !result.activateInterceptor.success) {
+    if (
+        // Backward compat for a < v0.1.28 server that returns booleans:
+        result.activateInterceptor === true ||
+        // New server that return an object with a success prop:
+        (result.activateInterceptor && result.activateInterceptor.success)
+    ) {
+        return result.activateInterceptor.metadata;
+    } else {
+        console.log('Activation result', result);
         throw new Error('Failed to activate interceptor');
     }
-
-    return result.activateInterceptor.metadata;
 }
 
 export async function deactivateInterceptor(id: string, proxyPort: number) {
