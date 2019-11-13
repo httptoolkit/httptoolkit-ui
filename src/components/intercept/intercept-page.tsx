@@ -27,6 +27,7 @@ const InterceptPageContainer = styled.section`
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 350px;
     grid-auto-rows: minmax(200px, auto);
+    grid-auto-flow: row dense;
 
     max-width: 1200px;
     margin: 0 auto 20px;

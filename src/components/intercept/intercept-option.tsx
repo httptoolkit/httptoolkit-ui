@@ -43,10 +43,25 @@ const InterceptOptionCard = styled<React.ComponentType<{
     height: 100%;
     width: 100%;
 
-    ${p => p.expanded && p.uiConfig && css`
-        grid-row: ${Math.floor(p.index / 4) + 2} / span ${p.uiConfig.rowHeight};
-        grid-column: span ${p.uiConfig.columnWidth};
-    `}
+    ${p => {
+        if (!p.expanded || !p.uiConfig) {
+            return `order: ${p.index}`;
+        }
+
+        const width = p.uiConfig.columnWidth;
+        const height = p.uiConfig.rowHeight;
+
+        // Tweak the order to try and keep cards in the same place as
+        // they expand, pushing other cards down rather than moving
+        // down in the grid themselves.
+        const fixedOrder = Math.max(0, p.index - Math.min(3, width));
+
+        return `
+            order: ${fixedOrder}
+            grid-row: span ${height};
+            grid-column: span ${width};
+        `
+    }}
 
     user-select: none;
 
@@ -120,6 +135,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
     @observable expanded = false;
 
+    private cardRef = React.createRef<HTMLDivElement>();
+
     constructor(props: InterceptOptionProps) {
         super(props);
 
@@ -138,6 +155,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         const ConfigComponent = uiConfig?.configComponent;
 
         return <InterceptOptionCard
+            ref={this.cardRef}
+
             index={index}
             expanded={expanded}
             uiConfig={uiConfig}
@@ -190,6 +209,12 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
         if (interceptor.uiConfig) {
             this.expanded = true;
+            requestAnimationFrame(() => {
+                this.cardRef.current?.scrollIntoView({
+                    block: 'nearest',
+                    behavior: 'smooth'
+                });
+            });
         } else {
             interceptionStore!.activateInterceptor(interceptor.id)
                 .then((successful) => {
