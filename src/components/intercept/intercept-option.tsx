@@ -3,7 +3,7 @@ import * as React from 'react';
 import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { styled, css } from '../../styles';
+import { styled } from '../../styles';
 import { FontAwesomeIcon } from '../../icons';
 import { trackEvent } from '../../tracking';
 import { Interceptor } from '../../model/interceptors';
@@ -55,7 +55,7 @@ const InterceptOptionCard = styled<React.ComponentType<{
         // Tweak the order to try and keep cards in the same place as
         // they expand, pushing other cards down rather than moving
         // down in the grid themselves.
-        const fixedOrder = Math.max(0, p.index - Math.min(3, width));
+        const fixedOrder = Math.max(-1, p.index - width);
 
         return `
             order: ${fixedOrder}

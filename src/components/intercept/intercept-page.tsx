@@ -34,12 +34,14 @@ const InterceptPageContainer = styled.section`
     padding: 40px;
 
     > ${ConnectedSources} {
+        order: -1;
         grid-column: 3 / span 2;
         overflow-y: auto;
     }
 `;
 
 const InterceptInstructions = styled.div`
+    order: -1;
     grid-column: 1 / span 2;
 
     display: flex;
