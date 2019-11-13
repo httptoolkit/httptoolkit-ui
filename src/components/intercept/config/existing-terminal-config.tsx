@@ -27,7 +27,7 @@ const CopyableCommand = styled<React.ComponentType<{
     background-color: ${p => p.theme.highlightBackground};
     color: ${p => p.theme.highlightColor};
 
-    padding: 10px 20px;
+    padding: 10px 75px 10px 20px;
     border-radius: 4px;
 
     > code {
@@ -35,9 +35,13 @@ const CopyableCommand = styled<React.ComponentType<{
         user-select: all;
     }
 
+    position: relative;
     > button {
         padding: 10px 20px 10px 20px;
-        margin: -10px -20px -10px 20px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
 
         border-radius: 0 4px 4px 0;
         border-left: solid 1px ${p => p.theme.containerBorder};
@@ -88,7 +92,7 @@ class ExistingTerminalConfig extends React.Component<{
             <CopyableCommand disabled={this.serverPort === undefined}>
                 { this.interceptCommand }
             </CopyableCommand>
-        </ConfigContainer>
+        </ConfigContainer>;
     }
 
 }
