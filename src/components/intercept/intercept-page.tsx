@@ -6,10 +6,9 @@ import { observer, inject } from 'mobx-react';
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
-import { trackEvent } from '../../tracking';
 
 import { ActivatedStore } from '../../model/interception-store';
-import { MANUAL_INTERCEPT_ID, Interceptor } from '../../model/interceptors';
+import { MANUAL_INTERCEPT_ID } from '../../model/interceptors';
 
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
@@ -126,7 +125,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                             key={option.id}
                             index={index}
                             interceptor={option}
-                            onActivated={this.onInterceptorActivated}
+                            showRequests={this.showRequests}
                         />
                     ).value()
                 }
@@ -135,12 +134,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     }
 
     @action.bound
-    onInterceptorActivated(interceptor: Interceptor) {
-        trackEvent({
-            category: 'Interceptors',
-            action: 'Successfully Activated',
-            label: interceptor.id
-        });
+    showRequests() {
         this.props.navigate('/view');
     }
 

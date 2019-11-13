@@ -19,11 +19,11 @@ interface InterceptOptionProps {
     interceptionStore?: InterceptionStore;
     index: number;
     interceptor: Interceptor;
-    onActivated: (interceptor: Interceptor) => void;
+    showRequests: () => void;
 }
 
 type InterceptorConfigComponent = React.ComponentType<{
-    onActivated: (interceptor: Interceptor) => void
+    showRequests: () => void
 }>
 
 export interface InterceptorCustomUiConfig {
@@ -131,7 +131,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
     render() {
         const { expanded } = this;
-        const { interceptor, index, onActivated } = this.props;
+        const { interceptor, index, showRequests } = this.props;
 
         const isDisabled = !interceptor.isActivable;
         const { uiConfig } = interceptor;
@@ -157,7 +157,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             { ConfigComponent && expanded
                 ? <>
                     <CloseButton onClose={this.onClose} />
-                    <ConfigComponent onActivated={onActivated} />
+                    <ConfigComponent showRequests={showRequests} />
                 </>
                 : <>
                     <p>{ interceptor.description }</p>
@@ -180,7 +180,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
     @action.bound
     onClick() {
-        const { interceptor, interceptionStore, onActivated } = this.props;
+        const { interceptor, interceptionStore, showRequests } = this.props;
 
         trackEvent({
             category: 'Interceptors',
@@ -193,7 +193,15 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         } else {
             interceptionStore!.activateInterceptor(interceptor.id)
                 .then((successful) => {
-                    if (successful) onActivated(interceptor);
+                    if (successful) {
+                        trackEvent({
+                            category: 'Interceptors',
+                            action: 'Successfully Activated',
+                            label: interceptor.id
+                        });
+
+                        showRequests();
+                    }
                 });
         }
     }
