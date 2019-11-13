@@ -76,16 +76,18 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
     return response.interceptors;
 }
 
-export async function activateInterceptor(id: string, proxyPort: number) {
+export async function activateInterceptor(id: string, proxyPort: number): Promise<unknown> {
     const result = await graphql(`
         mutation Activate($id: ID!, $proxyPort: Int!) {
             activateInterceptor(id: $id, proxyPort: $proxyPort)
         }
     `, { id, proxyPort }).catch(formatError('activate-interceptor'));
 
-    if (!result.activateInterceptor) {
+    if (!result.activateInterceptor || !result.activateInterceptor.success) {
         throw new Error('Failed to activate interceptor');
     }
+
+    return result.activateInterceptor.metadata;
 }
 
 export async function deactivateInterceptor(id: string, proxyPort: number) {

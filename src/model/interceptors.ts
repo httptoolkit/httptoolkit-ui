@@ -5,6 +5,7 @@ import { IconProps, SourceIcons } from "../icons";
 
 import { InterceptorCustomUiConfig } from "../components/intercept/intercept-option";
 import { ManualInterceptCustomUi } from "../components/intercept/config/manual-intercept-config";
+import { ExistingTerminalCustomUi } from "../components/intercept/config/existing-terminal-config";
 
 interface InterceptorConfig {
     name: string;
@@ -67,9 +68,16 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         tags: BROWSER_TAGS
     },
     'fresh-terminal': {
-        name: 'Terminal',
+        name: 'Fresh Terminal',
         description: 'Open a new terminal preconfigured to intercept all launched processes',
         iconProps: SourceIcons.Terminal,
+        tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
+    },
+    'existing-terminal': {
+        name: 'Existing Terminal',
+        description: 'Intercept all launched processes from one of your existing terminal windows',
+        iconProps: SourceIcons.Terminal,
+        uiConfig: ExistingTerminalCustomUi,
         tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
     },
     'android-device': {

@@ -3,7 +3,6 @@ import { observer, inject } from 'mobx-react';
 
 import { styled } from '../../../styles';
 
-import { Interceptor } from '../../../model/interceptors';
 import { StatusPill } from '../intercept-option';
 import { CopyableMonoValue } from '../../common/text-content';
 import { InterceptionStore } from '../../../model/interception-store';

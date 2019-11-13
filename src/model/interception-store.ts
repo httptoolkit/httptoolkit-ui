@@ -470,11 +470,11 @@ export class InterceptionStore {
         interceptorId: string
     ) {
         this.interceptors[interceptorId].inProgress = true;
-        const result = yield activateInterceptor(
+        const result: unknown = yield activateInterceptor(
             interceptorId,
             this.server.port
         ).then(
-            () => true
+            (metadata) => metadata || true
         ).catch((e) => {
             console.warn(e);
             return false;

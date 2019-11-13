@@ -23,6 +23,7 @@ interface InterceptOptionProps {
 }
 
 type InterceptorConfigComponent = React.ComponentType<{
+    activateInterceptor: () => Promise<any>,
     showRequests: () => void
 }>
 
@@ -176,7 +177,10 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             { ConfigComponent && expanded
                 ? <>
                     <CloseButton onClose={this.onClose} />
-                    <ConfigComponent showRequests={showRequests} />
+                    <ConfigComponent
+                        activateInterceptor={this.activateInterceptor}
+                        showRequests={showRequests}
+                    />
                 </>
                 : <>
                     <p>{ interceptor.description }</p>
@@ -195,6 +199,11 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                 </>
             }
         </InterceptOptionCard>;
+    }
+
+    activateInterceptor = () => {
+        const { interceptor, interceptionStore } = this.props;
+        return interceptionStore!.activateInterceptor(interceptor.id);
     }
 
     @action.bound
