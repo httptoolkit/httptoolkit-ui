@@ -13,7 +13,8 @@ import {
     RequestAndResponseBreakpointHandler,
     PassThroughHandler,
     TimeoutHandler,
-    CloseConnectionHandler
+    CloseConnectionHandler,
+    FromFileResponseHandler
 } from './rule-definitions';
 
 function withFirstCharUppercased(input: string): string {
@@ -66,7 +67,9 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
 export function summarizeHandlerClass(handler: HandlerClass): string | undefined {
     switch (handler) {
         case StaticResponseHandler:
-            return "Return an automated fixed response";
+            return "Return a fixed response";
+        case FromFileResponseHandler:
+            return "Return a response from a file";
         case ForwardToHostHandler:
             return "Forward the request to a different host";
         case PassThroughHandler:

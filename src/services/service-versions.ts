@@ -17,3 +17,4 @@ export const PORT_RANGE_SERVER_RANGE = '^0.1.14';
 export const MOCK_SERVER_RANGE = '^0.1.21';
 export const HOST_MATCHER_SERVER_RANGE = '^0.1.22';
 export const CLIENT_CERT_SERVER_RANGE = '^0.1.26';
+export const FROM_FILE_HANDLER_SERVER_RANGE = '^0.1.28';

@@ -5,6 +5,8 @@ import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as dedent from 'dedent';
 
 import { styled } from '../../styles';
+import { WarningIcon } from '../../icons';
+import { uploadFile } from '../../util';
 
 import {
     Handler
@@ -17,7 +19,8 @@ import {
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
     TimeoutHandler,
-    CloseConnectionHandler
+    CloseConnectionHandler,
+    FromFileResponseHandler
 } from '../../model/rules/rule-definitions';
 import { HEADER_NAME_REGEX } from '../../model/http-docs';
 import {
@@ -26,9 +29,10 @@ import {
     getEditableContentType
 } from '../../model/content-types';
 import { InterceptionStore } from '../../model/interception-store';
+import { desktopVersion } from '../../services/service-versions';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { TextInput, Select } from '../common/inputs';
+import { TextInput, Select, Button } from '../common/inputs';
 import {
     EditableHeaders,
     HeadersArray,
@@ -76,6 +80,8 @@ export function HandlerConfiguration(props: {
 
     if (handler instanceof StaticResponseHandler) {
         return <StaticResponseHandlerConfig {...configProps} />;
+    } else if (handler instanceof FromFileResponseHandler) {
+        return <FromFileResponseHandlerConfig {...configProps} />;
     } else if (handler instanceof ForwardToHostHandler) {
         return <ForwardToHostHandlerConfig {...configProps} />;
     } else if (handler instanceof PassThroughHandler) {
@@ -288,6 +294,152 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 this.statusCode,
                 this.statusMessage,
                 this.body,
+                headersArrayToHeaders(this.headers)
+            )
+        );
+    }
+}
+
+const BodyFileContainer = styled.div`
+    margin-top: 1px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`;
+
+const BodyFileButton = styled(Button)`
+    font-size: ${p => p.theme.textSize};
+    padding: 10px 24px;
+
+    flex-grow: 1;
+    white-space: nowrap;
+`;
+
+const BodyFilePath = styled.div`
+    margin-left: 15px;
+    flex-shrink: 1;
+
+    font-family: ${p => p.theme.monoFontFamily};
+    word-break: break-word;
+`;
+
+@observer
+class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<FromFileResponseHandler>> {
+
+    @observable
+    statusCode: number | '' = this.props.handler.status;
+
+    @observable
+    statusMessage = this.props.handler.statusMessage;
+
+    // Headers, as an array of [k, v], with multiple values flattened.
+    @observable
+    headers = headersToHeadersArray(this.props.handler.headers || {});
+
+    @observable
+    filePath = (this.props.handler.filePath || '').toString();
+
+    componentDidMount() {
+        // If any of our data fields change, rebuild & update the handler
+        disposeOnUnmount(this, reaction(() => (
+            JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'filePath']))
+        ), () => this.updateHandler()));
+
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { status, statusMessage, headers, filePath } = this.props.handler;
+            runInAction(() => {
+                this.statusCode = status;
+                this.statusMessage = statusMessage;
+                this.headers = headersToHeadersArray(headers || {});
+                this.filePath = filePath;
+            });
+        }));
+    }
+
+    render() {
+        const { statusCode, statusMessage, headers } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Status</SectionLabel>
+            <EditableStatus
+                statusCode={statusCode}
+                statusMessage={statusMessage}
+                onChange={this.setStatus}
+            />
+
+            <SectionLabel>Headers</SectionLabel>
+            <EditableHeaders
+                headers={headers}
+                onChange={this.onHeadersChanged}
+            />
+
+            <SectionLabel>Response body</SectionLabel>
+            <BodyFileContainer>
+                <BodyFileButton
+                    onClick={this.selectFile}
+                    disabled={!desktopVersion.value}
+                    title={!desktopVersion.value
+                        ? 'Only supported in the full desktop app'
+                        : ''
+                    }
+                >
+                    { this.filePath
+                        ? 'Change file'
+                        : <>
+                            Select file <WarningIcon />
+                        </>
+                    }
+                </BodyFileButton>
+                { this.filePath && <BodyFilePath>
+                    { this.filePath }
+                </BodyFilePath> }
+            </BodyFileContainer>
+
+            <ConfigExplanation>
+                All matching requests will receive a { this.statusCode } response, with the response
+                body containing the contents of the selected file.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                This file will be read fresh for each request, so future changes to the file will
+                immediately affect matching requests.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    setStatus(statusCode: number | '', statusMessage: string | undefined) {
+        this.statusCode = statusCode;
+        this.statusMessage = statusMessage;
+    }
+
+    @action.bound
+    onHeadersChanged(headers: HeadersArray) {
+        this.headers = headers;
+    }
+
+    selectFile = async () => {
+        const result = await uploadFile("path", []);
+        if (result) {
+            runInAction(() => {
+                this.filePath = result;
+            });
+        }
+    }
+
+    updateHandler() {
+        if (
+            !this.statusCode ||
+            this.statusCode < 100 ||
+            this.statusCode >= 1000 ||
+            _.some(this.headers, ([key]) => !key.match(HEADER_NAME_REGEX))
+        ) return this.props.onInvalidState();
+
+        this.props.onChange(
+            new FromFileResponseHandler(
+                this.statusCode,
+                this.statusMessage,
+                this.filePath,
                 headersArrayToHeaders(this.headers)
             )
         );

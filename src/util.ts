@@ -4,6 +4,7 @@ import { IPromiseBasedObservable, fromPromise, PromiseState } from 'mobx-utils';
 
 import { Omit } from './types';
 import { observable } from 'mobx';
+import { desktopVersion } from './services/service-versions';
 
 export function delay(numberMs: number) {
     return new Promise((resolve) => setTimeout(resolve, numberMs));
@@ -198,21 +199,30 @@ export function saveFile(filename: string, mimeType: string, content: string): v
     setTimeout(() => window.URL.revokeObjectURL(objectUrl), 10000);
 }
 
-type FileReaderType = 'text' | 'arraybuffer';
+type FileReaderType = 'text' | 'arraybuffer' | 'path';
 
+// Ask the user for a file of one of the given types, and get the raw arraybuffer data
 export function uploadFile(type: 'arraybuffer', acceptedMimeTypes: string[]): Promise<ArrayBuffer | null>
+// Ask the user for a file of one of the given types, and get the utf8 text data
 export function uploadFile(type: 'text', acceptedMimeTypes: string[]): Promise<string | null>;
+// Ask the user for a file of one of the given types, and get the file path itself (electron only)
+export function uploadFile(type: 'path', acceptedMimeTypes: string[]): Promise<string | null>;
 export function uploadFile(
     type: FileReaderType = 'arraybuffer',
     acceptedMimeTypes: string[]
 ): Promise<ArrayBuffer | string | null> {
+    if (type === 'path' && !desktopVersion.value) {
+        throw new Error("Path inputs can only be used from Electron");
+    }
+
     const fileInput = document.createElement('input');
     fileInput.setAttribute('type', 'file');
     if (acceptedMimeTypes.length > 0) {
         fileInput.setAttribute('accept', acceptedMimeTypes.join(','));
     }
 
-    const fileReader = new FileReader();
+    const result = getDeferred<ArrayBuffer | string | null>();
+
     fileInput.addEventListener('change', () => {
         if (!fileInput.files || !fileInput.files.length) {
             return Promise.resolve(null);
@@ -220,32 +230,38 @@ export function uploadFile(
 
         const file = fileInput.files[0];
 
-        if (type === 'text') {
-            fileReader.readAsText(file);
+        if (type === 'path') {
+            // file.path is an Electron-only extra property:
+            // https://github.com/electron/electron/blob/master/docs/api/file-object.md
+            result.resolve((file as unknown as { path: string }).path);
         } else {
-            fileReader.readAsArrayBuffer(file);
+            const fileReader = new FileReader();
+
+            fileReader.addEventListener('load', () => {
+                result.resolve(fileReader.result);
+            });
+
+            fileReader.addEventListener('error', (error: any) => {
+                result.reject(error);
+            });
+
+            if (type === 'text') {
+                fileReader.readAsText(file);
+            } else {
+                fileReader.readAsArrayBuffer(file);
+            }
         }
     });
 
     fileInput.click();
 
-    const fileContents = new Promise<ArrayBuffer | string | null>((resolve, reject) => {
-        fileReader.addEventListener('load', () => {
-            resolve(fileReader.result);
-        });
-
-        fileReader.addEventListener('error', (error) => {
-            reject(error);
-        });
-    });
-
     // Hack to avoid unexpected GC of file inputs, so far as possible.
     // See similar issue at https://stackoverflow.com/questions/52103269.
     // Can't use answer there, as we can't reliably detect 'cancel'.
     // Hold a reference until we get the data or 10 minutes passes (for cancel)
-    Promise.race([fileContents, delay(1000 * 60 * 10)])
+    Promise.race([result.promise, delay(1000 * 60 * 10)])
         .catch(() => {})
         .then(() => fileInput.remove());
 
-    return fileContents;
+    return result.promise;
 }

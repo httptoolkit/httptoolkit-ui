@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
+import * as semver from 'semver';
 
 import { styled } from '../../styles';
 
@@ -23,10 +24,12 @@ import {
     RequestAndResponseBreakpointHandler,
     PassThroughHandler,
     TimeoutHandler,
-    CloseConnectionHandler
+    CloseConnectionHandler,
+    FromFileResponseHandler
 } from '../../model/rules/rule-definitions';
 
 import { Select } from '../common/inputs';
+import { serverVersion, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
 
 const getHandlerKey = (h: HandlerClass | Handler) =>
     HandlerKeys.get(h as any) || HandlerKeys.get(h.constructor as any);
@@ -56,6 +59,8 @@ const instantiateHandler = (
     switch (handlerClass) {
         case StaticResponseHandler:
             return new StaticResponseHandler(200);
+        case FromFileResponseHandler:
+            return new FromFileResponseHandler(200, undefined, '');
         case PassThroughHandler:
             return new PassThroughHandler(interceptionStore);
         case ForwardToHostHandler:
@@ -73,23 +78,34 @@ const instantiateHandler = (
     }
 }
 
+const supportsFileHandlers = () =>
+    _.isString(serverVersion.value) &&
+    semver.satisfies(serverVersion.value, FROM_FILE_HANDLER_SERVER_RANGE);
+
 export const HandlerSelector = inject('interceptionStore', 'accountStore')(observer((p: {
     interceptionStore?: InterceptionStore,
     accountStore?: AccountStore,
     value: Handler,
     onChange: (handler: Handler) => void
 }) => {
-    const [ availableHandlers, needProHandlers ] = _.partition([
+    const allHandlers = [
         PassThroughHandler,
         ForwardToHostHandler,
         StaticResponseHandler,
+        supportsFileHandlers() && FromFileResponseHandler,
         RequestBreakpointHandler,
         ResponseBreakpointHandler,
         RequestAndResponseBreakpointHandler,
         TimeoutHandler,
         CloseConnectionHandler
-    ], (handlerClass) =>
-        p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
+    ].filter(Boolean);
+
+    // Do some type tricks to make TS understand that we've filtered 'false' out of the handlers.
+    type DefinedHandler = Exclude<typeof allHandlers[0], false>;
+
+    const [ availableHandlers, needProHandlers ] = _.partition<DefinedHandler>(
+        allHandlers as DefinedHandler[],
+        (handlerClass) => p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
     );
 
     return <HandlerSelect

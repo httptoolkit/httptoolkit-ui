@@ -25,7 +25,8 @@ import {
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
     TimeoutHandler,
-    CloseConnectionHandler
+    CloseConnectionHandler,
+    FromFileResponseHandler
 } from './rule-definitions';
 
 export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
@@ -72,6 +73,7 @@ export const HandlerLookup = Object.assign(
     {
         'passthrough': PassThroughHandler,
         'simple': StaticResponseHandler,
+        'file': FromFileResponseHandler,
         'forward-to-host': ForwardToHostHandler,
         'request-breakpoint': RequestBreakpointHandler,
         'response-breakpoint': ResponseBreakpointHandler,
@@ -81,6 +83,7 @@ export const HandlerLookup = Object.assign(
 
 const PaidHandlerClasses: HandlerClass[] = [
     StaticResponseHandler,
+    FromFileResponseHandler,
     ForwardToHostHandler,
     TimeoutHandler,
     CloseConnectionHandler

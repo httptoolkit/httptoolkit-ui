@@ -76,6 +76,12 @@ export class StaticResponseHandler extends handlers.SimpleHandler {
     }
 }
 
+export class FromFileResponseHandler extends handlers.FileHandler {
+    explain() {
+        return `respond with status ${this.status} and content from ${this.filePath || 'a file'}`;
+    }
+}
+
 export class PassThroughHandler extends handlers.PassThroughHandler {
 
     constructor(interceptionStore: InterceptionStore) {
