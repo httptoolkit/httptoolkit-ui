@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as polished from 'polished';
-import { observer, inject, disposeOnUnmount } from 'mobx-react';
+import { observer, inject, disposeOnUnmount, Observer } from 'mobx-react';
 import { action, observable, reaction } from 'mobx';
-import { SortableHandle, SortableElement } from 'react-sortable-hoc';
 import { Method, matchers } from 'mockttp';
+import { Draggable, DraggingStyle, NotDraggingStyle } from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
 import { FontAwesomeIcon, IconProp } from '../../icons';
@@ -38,19 +38,17 @@ const FloatingDragHandle = styled.div`
 
     opacity: 0;
 
-    :focus {
+    :focus, :active {
         outline: none;
         opacity: 0.5;
         color: ${p => p.theme.popColor};
     }
 `;
 
-const DragHandle = SortableHandle(() =>
-    <FloatingDragHandle tabIndex={0}>
+const DragHandle = (props: {}) =>
+    <FloatingDragHandle {...props}>
         <FontAwesomeIcon icon={['fas', 'grip-vertical']} />
-    </FloatingDragHandle>
-);
-
+    </FloatingDragHandle>;
 
 const RowContainer = styled<React.ComponentType<{
     deactivated?: boolean,
@@ -59,7 +57,7 @@ const RowContainer = styled<React.ComponentType<{
     borderColor: string
 } & React.ComponentProps<'section'>>>(LittleCard)`
     width: 100%;
-    margin: 20px 0;
+    margin-top: 20px;
 
     svg {
         margin: 0 5px;
@@ -74,7 +72,7 @@ const RowContainer = styled<React.ComponentType<{
 
     overflow: initial;
 
-    ${(p) => p.collapsed
+    ${(p) => p.collapsed && !p.disabled
         ? css`
             user-select: none;
 
@@ -268,16 +266,42 @@ const stopPropagation = (callback: () => void) => (event: React.MouseEvent) => {
     callback();
 }
 
+const extendRowDraggableStyles = (
+    style: DraggingStyle | NotDraggingStyle | undefined
+) => {
+    const overrideStyles: _.Dictionary<string> = { };
+
+    if (style && style.transition) {
+        overrideStyles.transition = style.transition.replace(
+            /transform [\d.]+s/,
+            'transform 100ms'
+        );
+    }
+
+    const currentTransformMatch = style && style.transform &&
+        style.transform.match(/translate\((-?\d+)px,\s+(-?\d+)px\)/);
+    if (currentTransformMatch) {
+        const yTransform = parseInt(currentTransformMatch[2]);
+        overrideStyles.transform = `translate(0, ${yTransform}px)`;
+    }
+
+    return {
+        ...style,
+        ...overrideStyles
+    };
+};
+
 @inject('accountStore')
 @observer
 export class RuleRow extends React.Component<{
     accountStore?: AccountStore,
 
+    index: number;
     rule: HtkMockRule;
     isNewRule: boolean;
     hasUnsavedChanges: boolean;
     collapsed: boolean;
-    rowDisabled: boolean; // 'disabled' conflicts with sortable-hoc
+    disabled: boolean;
 
     saveRule: (id: string) => void;
     resetRule: (id: string) => void;
@@ -286,7 +310,7 @@ export class RuleRow extends React.Component<{
 }> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
-    containerRef = React.createRef<HTMLElement>();
+    containerRef: HTMLElement | null = null;
 
     @observable
     demoHandler: Handler | undefined;
@@ -300,7 +324,14 @@ export class RuleRow extends React.Component<{
     }
 
     render() {
-        const { rule, isNewRule, hasUnsavedChanges, collapsed, rowDisabled } = this.props;
+        const {
+            index,
+            rule,
+            isNewRule,
+            hasUnsavedChanges,
+            collapsed,
+            disabled
+        } = this.props;
         const {
             isPaidUser,
             getPro
@@ -325,102 +356,113 @@ export class RuleRow extends React.Component<{
             ? (this.demoHandler || rule.handler)
             : rule.handler
 
-        return <RowContainer
-            borderColor={method
-                ? getMethodColor(method)
-                : 'transparent'
-            }
-            ref={this.containerRef}
-            collapsed={collapsed}
-            deactivated={!rule.activated}
-            disabled={rowDisabled}
-            tabIndex={collapsed ? 0 : undefined}
-            onClick={collapsed ? this.toggleCollapse : undefined}
-            onKeyPress={clickOnEnter}
-        >
-            <RuleMenu
-                isCollapsed={collapsed}
-                isNewRule={isNewRule}
-                hasUnsavedChanges={hasUnsavedChanges}
-                onToggleCollapse={this.toggleCollapse}
-                onSave={this.saveRule}
-                onReset={this.resetRule}
-                toggleState={rule.activated}
-                onToggleActivation={this.toggleActivation}
-                onDelete={this.deleteRule}
-            />
-            <DragHandle />
-
-            <MatcherOrHandler>
-                <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
-                    { summarizeMatcher(rule) }
-                </Summary>
-
-                {
-                    !collapsed && <Details>
-                        <div>Match:</div>
-
-                        <MatchersList>
-                            <InitialMatcherRow
-                                ref={this.initialMatcherSelect}
-                                matcher={initialMatcher}
-                                onChange={(...ms) => this.updateMatcher(0, ...ms)}
-                            />
-
-                            { rule.matchers.slice(1).map((matcher, i) =>
-                                <ExistingMatcherRow
-                                    key={`${i}/${rule.matchers.length}`}
-                                    matcher={matcher}
-                                    matcherIndex={i}
-                                    onChange={(...ms) => this.updateMatcher(i + 1, ...ms)}
-                                    onDelete={() => this.deleteMatcher(matcher)}
-                                />
-                            )}
-
-                            { rule.matchers.length > 0 &&
-                                <NewMatcherRow
-                                    existingMatchers={rule.matchers}
-                                    onAdd={this.addMatcher}
-                                />
-                            }
-                        </MatchersList>
-                    </Details>
+        return <Draggable
+            draggableId={rule.id}
+            index={index}
+            isDragDisabled={!collapsed}
+        >{ (provided) => <Observer>{ () =>
+            <RowContainer
+                {...provided.draggableProps}
+                borderColor={method
+                    ? getMethodColor(method)
+                    : 'transparent'
                 }
-            </MatcherOrHandler>
+                ref={(ref: HTMLElement | null) => {
+                    provided.innerRef(ref);
+                    this.containerRef = ref;
+                }}
+                collapsed={collapsed}
+                deactivated={!rule.activated}
+                disabled={disabled}
+                tabIndex={collapsed ? 0 : undefined}
+                onClick={collapsed ? this.toggleCollapse : undefined}
+                onKeyPress={clickOnEnter}
+                style={extendRowDraggableStyles(provided.draggableProps.style)}
+            >
+                <RuleMenu
+                    isCollapsed={collapsed}
+                    isNewRule={isNewRule}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    onToggleCollapse={this.toggleCollapse}
+                    onSave={this.saveRule}
+                    onReset={this.resetRule}
+                    toggleState={rule.activated}
+                    onToggleActivation={this.toggleActivation}
+                    onDelete={this.deleteRule}
+                />
+                <DragHandle {...provided.dragHandleProps} />
 
-            <ArrowIcon />
+                <MatcherOrHandler>
+                    <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
+                        { summarizeMatcher(rule) }
+                    </Summary>
 
-            <MatcherOrHandler>
-                <Summary collapsed={collapsed} title={ summarizeHandler(rule) }>
-                    { summarizeHandler(rule) }
-                </Summary>
+                    {
+                        !collapsed && <Details>
+                            <div>Match:</div>
 
-                {
-                    !collapsed && <Details>
-                        <div>Then:</div>
-                        <HandlerSelector
-                            value={ruleHandler}
-                            onChange={this.updateHandler}
-                        />
-
-                        { isHandlerDemo
-                            // If you select a paid handler with an unpaid account,
-                            // show a handler demo with a 'Get Pro' overlay:
-                            ? <GetProOverlay getPro={getPro}>
-                                <HandlerConfiguration
-                                    handler={ruleHandler}
-                                    onChange={_.noop}
+                            <MatchersList>
+                                <InitialMatcherRow
+                                    ref={this.initialMatcherSelect}
+                                    matcher={initialMatcher}
+                                    onChange={(...ms) => this.updateMatcher(0, ...ms)}
                                 />
-                            </GetProOverlay>
-                            : <HandlerConfiguration
-                                handler={ruleHandler}
+
+                                { rule.matchers.slice(1).map((matcher, i) =>
+                                    <ExistingMatcherRow
+                                        key={`${i}/${rule.matchers.length}`}
+                                        matcher={matcher}
+                                        matcherIndex={i}
+                                        onChange={(...ms) => this.updateMatcher(i + 1, ...ms)}
+                                        onDelete={() => this.deleteMatcher(matcher)}
+                                    />
+                                )}
+
+                                { rule.matchers.length > 0 &&
+                                    <NewMatcherRow
+                                        existingMatchers={rule.matchers}
+                                        onAdd={this.addMatcher}
+                                    />
+                                }
+                            </MatchersList>
+                        </Details>
+                    }
+                </MatcherOrHandler>
+
+                <ArrowIcon />
+
+                <MatcherOrHandler>
+                    <Summary collapsed={collapsed} title={ summarizeHandler(rule) }>
+                        { summarizeHandler(rule) }
+                    </Summary>
+
+                    {
+                        !collapsed && <Details>
+                            <div>Then:</div>
+                            <HandlerSelector
+                                value={ruleHandler}
                                 onChange={this.updateHandler}
                             />
-                        }
-                    </Details>
-                }
-            </MatcherOrHandler>
-        </RowContainer>;
+
+                            { isHandlerDemo
+                                // If you select a paid handler with an unpaid account,
+                                // show a handler demo with a 'Get Pro' overlay:
+                                ? <GetProOverlay getPro={getPro}>
+                                    <HandlerConfiguration
+                                        handler={ruleHandler}
+                                        onChange={_.noop}
+                                    />
+                                </GetProOverlay>
+                                : <HandlerConfiguration
+                                    handler={ruleHandler}
+                                    onChange={this.updateHandler}
+                                />
+                            }
+                        </Details>
+                    }
+                </MatcherOrHandler>
+            </RowContainer>
+        }</Observer>}</Draggable>;
     }
 
     saveRule = stopPropagation(() => this.props.saveRule(this.props.rule.id));
@@ -437,8 +479,8 @@ export class RuleRow extends React.Component<{
     toggleCollapse = stopPropagation(() => {
         // Scroll the row into view, after giving it a moment to rerender
         requestAnimationFrame(() => {
-            if (this.containerRef.current) {
-                this.containerRef.current.scrollIntoView({
+            if (this.containerRef) {
+                this.containerRef.scrollIntoView({
                     block: 'nearest',
                     behavior: 'smooth'
                 });
@@ -479,5 +521,3 @@ export class RuleRow extends React.Component<{
         }
     }
 }
-
-export const SortableRuleRow = SortableElement(RuleRow);
