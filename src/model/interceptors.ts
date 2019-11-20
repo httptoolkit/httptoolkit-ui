@@ -76,7 +76,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'existing-terminal': {
         name: 'Existing Terminal',
         description: 'Intercept all launched processes from one of your existing terminal windows',
-        iconProps: SourceIcons.Terminal,
+        iconProps: _.defaults({ color: '#dd44dd' }, SourceIcons.Terminal),
         uiConfig: ExistingTerminalCustomUi,
         tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
     },
