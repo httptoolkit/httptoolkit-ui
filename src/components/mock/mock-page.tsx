@@ -4,8 +4,6 @@ import { action, observable, autorun, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
 import * as dateFns from 'date-fns';
 
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
-
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 import { FontAwesomeIcon } from '../../icons';
@@ -91,9 +89,6 @@ class MockPage extends React.Component<MockPageProps> {
         )
     );
 
-    @observable
-    currentlyDraggingRuleId: string | undefined;
-
     componentDidMount() {
         // If the list of rules ever changes, update the collapsed list accordingly.
         // Drop now-unnecessary ids, and add new rules (defaulting to collapsed)
@@ -125,7 +120,6 @@ class MockPage extends React.Component<MockPageProps> {
             areSomeRulesNonDefault
         } = this.props.interceptionStore;
         const { isPaidUser } = this.props.accountStore;
-        const { currentlyDraggingRuleId } = this;
 
         return <MockPageContainer ref={this.containerRef}>
             <MockPageHeader>
@@ -185,25 +179,19 @@ class MockPage extends React.Component<MockPageProps> {
             </MockPageHeader>
 
             <MockPageScrollContainer>
-                <DragDropContext
-                    onDragStart={this.startMovingRule}
-                    onDragEnd={this.moveRule}
-                >
-                    <MockRuleList
-                        activeRules={rules}
-                        draftRules={draftRules}
-                        collapsedRulesMap={this.collapsedRulesMap}
-                        addRule={this.addRule}
+                <MockRuleList
+                    activeRules={rules}
+                    draftRules={draftRules}
+                    collapsedRulesMap={this.collapsedRulesMap}
+                    addRule={this.addRule}
 
-                        toggleRuleCollapsed={this.toggleRuleCollapsed}
+                    toggleRuleCollapsed={this.toggleRuleCollapsed}
 
-                        saveRule={this.saveRule}
-                        resetRule={this.resetRule}
-                        deleteRule={this.deleteRule}
-
-                        currentlyDraggingRuleId={currentlyDraggingRuleId}
-                    />
-                </DragDropContext>
+                    saveRule={this.saveRule}
+                    resetRule={this.resetRule}
+                    deleteRule={this.deleteRule}
+                    moveRule={this.moveRule}
+                />
             </MockPageScrollContainer>
         </MockPageContainer>
     }
@@ -282,19 +270,11 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
-    startMovingRule({ draggableId }: { draggableId: string }) {
-        this.currentlyDraggingRuleId = draggableId;
-    }
-
-    @action.bound
-    moveRule({ source, destination }: DropResult) {
-        this.currentlyDraggingRuleId = undefined;
-        if (!destination) return;
-
+    moveRule(startIndex: number, endIndex: number) {
         const rules = this.props.interceptionStore.draftRules;
-        const rule = rules[source.index];
-        rules.splice(source.index, 1);
-        rules.splice(destination.index, 0, rule);
+        const rule = rules[startIndex];
+        rules.splice(startIndex, 1);
+        rules.splice(endIndex, 0, rule);
     }
 
     readonly importRules = async () => {
