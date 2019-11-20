@@ -2,8 +2,9 @@ import * as React from 'react';
 
 import { styled, css } from '../../../styles';
 import { observer } from 'mobx-react';
-import { observable, runInAction, computed } from 'mobx';
+import { observable, runInAction, computed, when } from 'mobx';
 import { CopyButtonIcon } from '../../common/copy-button';
+import { Interceptor } from '../../../model/interceptors';
 
 const CopyableCommand = styled<React.ComponentType<{
     className?: string,
@@ -64,6 +65,7 @@ const ConfigContainer = styled.div`
 
 @observer
 class ExistingTerminalConfig extends React.Component<{
+    interceptor: Interceptor,
     activateInterceptor: () => Promise<{ port: number }>,
     showRequests: () => void
 }> {
@@ -81,6 +83,13 @@ class ExistingTerminalConfig extends React.Component<{
         runInAction(() => {
             this.serverPort = port;
         });
+
+        if (!this.props.interceptor.isActive) {
+            // When a terminal is first activated for real, jump to the requests
+            when(() => this.props.interceptor.isActive, () => {
+                this.props.showRequests();
+            });
+        }
     }
 
     render() {
