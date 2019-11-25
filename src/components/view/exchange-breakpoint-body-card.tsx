@@ -6,6 +6,7 @@ import * as portals from 'react-reverse-portal';
 
 import { Headers } from '../../types';
 import { styled } from '../../styles';
+import { lastHeader } from '../../util';
 import {
     EditableContentType,
     EditableContentTypes,
@@ -54,7 +55,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
     componentDidMount() {
         // If the content header is changed (manually, or when switching requests), update the
         // selected editor content type to match:
-        disposeOnUnmount(this, reaction(() => this.props.headers['content-type'], (contentTypeHeader) => {
+        disposeOnUnmount(this, reaction(() => lastHeader(this.props.headers['content-type']), (contentTypeHeader) => {
             this.contentType = getEditableContentType(contentTypeHeader) || 'text';
         }, { fireImmediately: true }));
     }

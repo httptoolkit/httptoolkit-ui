@@ -14,7 +14,6 @@ import {
     MockttpBreakpointedRequest,
     MockttpBreakpointedResponse,
     BreakpointResponseResult,
-    MockttpBreakpointRequestResult,
     InputCompletedRequest,
 } from "../types";
 import {
@@ -23,6 +22,7 @@ import {
     fakeBuffer,
     FakeBuffer,
     asHeaderArray,
+    lastHeader,
 } from '../util';
 
 import { parseSource } from './sources';
@@ -50,7 +50,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
             parsedUrl,
             source: parseSource(request.headers['user-agent']),
             body: new ExchangeBody(request, request.headers),
-            contentType: getContentType(request.headers['content-type']) || 'text',
+            contentType: getContentType(lastHeader(request.headers['content-type'])) || 'text',
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })
         }) as HtkRequest;
     } catch (e) {
@@ -62,7 +62,10 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
 function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
         body: new ExchangeBody(response, response.headers),
-        contentType: getContentType(response.headers['content-type']) || 'text',
+        contentType: getContentType(
+            // There should only ever be one. If we get multiple though, just use the last.
+            lastHeader(response.headers['content-type'])
+        ) || 'text',
         cache: observable.map(new Map<symbol, unknown>(), { deep: false })
     }) as HtkResponse;
 }

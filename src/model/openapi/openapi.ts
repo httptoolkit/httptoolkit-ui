@@ -282,7 +282,7 @@ export function getBodySchema(
 ): SchemaObject {
     if (!bodyDefinition || !message || message === 'aborted') return {};
 
-    const contentType = message.headers['content-type'] || '*/*';
+    const contentType = lastHeader(message.headers['content-type']) || '*/*';
 
     const schemasByType = bodyDefinition.content;
     if (!schemasByType) return {};

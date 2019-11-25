@@ -7,6 +7,7 @@ import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
+import { lastHeader } from '../../util';
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/content-types';
 import { getReadableSize } from '../../model/bodies';
 
@@ -85,7 +86,10 @@ export class ExchangeBodyCard extends React.Component<{
             onCollapseToggled,
         } = this.props;
 
-        const compatibleContentTypes = getCompatibleTypes(message.contentType, message.headers['content-type']);
+        const compatibleContentTypes = getCompatibleTypes(
+            message.contentType,
+            lastHeader(message.headers['content-type'])
+        );
         const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
             this.selectedContentType! : message.contentType;
 
@@ -120,7 +124,7 @@ export class ExchangeBodyCard extends React.Component<{
                 <EditorCardContent>
                     <ContentViewer
                         editorNode={this.props.editorNode}
-                        rawContentType={message.headers['content-type']}
+                        rawContentType={lastHeader(message.headers['content-type'])}
                         contentType={contentType}
                         contentObservable={this.currentContent}
                         schema={apiBodySchema}

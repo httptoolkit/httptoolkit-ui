@@ -1,12 +1,14 @@
 import * as _ from 'lodash';
 
 import { ExchangeMessage } from '../types';
-import { getBaseContentType } from './content-types';
+import { lastHeader } from '../util';
 import { Theme } from '../styles';
+
+import { getBaseContentType } from './content-types';
 import { HttpExchange, SuccessfulExchange } from './exchange';
 
 export const getRequestBaseContentType = (message: ExchangeMessage) =>
-    getBaseContentType(message.headers['content-type']);
+    getBaseContentType(lastHeader(message.headers['content-type']));
 
 const isMutatativeExchange = (exchange: HttpExchange) => _.includes([
     'POST',

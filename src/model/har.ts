@@ -4,7 +4,7 @@ import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
 
-import { ObservablePromise } from '../util';
+import { ObservablePromise, lastHeader } from '../util';
 import { Headers, HtkRequest, HarRequest, HarResponse } from '../types';
 import { HttpExchange, TimingEvents } from "./exchange";
 import { UI_VERSION } from '../services/service-versions';
@@ -95,7 +95,8 @@ export function generateHarRequest(
         ),
         postData: bodyText
             ? {
-                mimeType: request.headers['content-type'] || 'application/octet-stream',
+                mimeType: lastHeader(request.headers['content-type']) ||
+                    'application/octet-stream',
                 text: bodyText,
                 params: []
             }
@@ -151,7 +152,8 @@ async function generateHarResponse(exchange: HttpExchange): Promise<HarFormat.Re
         headers: asHarHeaders(response.headers),
         content: Object.assign(
             {
-                mimeType: response.headers['content-type'] || 'application/octet-stream',
+                mimeType: lastHeader(response.headers['content-type']) ||
+                    'application/octet-stream',
                 size: get(response.body.decoded, 'byteLength') || 0
             },
             responseContent
