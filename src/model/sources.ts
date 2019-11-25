@@ -127,6 +127,21 @@ const getIcon = (useragent: IUAParser.IResult) => {
     }
 };
 
+function checkForElectron(userAgent: IUAParser.IResult) {
+    const electronVersion = userAgent.ua.match(/Electron\/(\S+)/);
+
+    if (electronVersion) {
+        // If we have a browser & an engine, treat the browser as the engine
+        userAgent.engine = userAgent.browser || userAgent.engine;
+        // Treat Electron as the 'browser', replacing any existing browser
+        userAgent.browser = {
+            name: 'Electron',
+            version: electronVersion[1],
+            major: electronVersion[1].split('.')[0]
+        };
+    }
+}
+
 export const parseSource = (userAgentHeader: string | undefined): TrafficSource => {
     if (!userAgentHeader) return {
         ua: '',
@@ -135,6 +150,8 @@ export const parseSource = (userAgentHeader: string | undefined): TrafficSource 
     };
 
     const useragent = new UserAgent(userAgentHeader).getResult();
+
+    checkForElectron(useragent);
 
     return {
         ua: useragent.ua,

@@ -18,6 +18,7 @@ const GIT = 'git/2.20.1';
 const GUZZLE_PHP = 'GuzzleHttp/6.3.3 curl/7.58.0 PHP/7.2.17-0ubuntu0.18.04.1';
 const JAVA_APACHE = 'Apache-HttpClient/4.5.2 (Java/1.8.0_60)';
 const WGET = 'Wget/1.12 (linux-gnu)';
+const SLACK = 'Mozilla/5.0 (X11; Linux x86_64; Ubuntu 18.04.3 LTS bionic) AppleWebKit/537.36 (KHTML, like Gecko) Slack/4.1.2 Chrome/76.0.3809.146 Electron/6.0.10 Safari/537.36 Sonic Slack_SSB/4.1.2';
 
 describe('HTTP source parsing', () => {
     describe('source summaries', () => {
@@ -69,6 +70,13 @@ describe('HTTP source parsing', () => {
 
                 expect(source.summary).to.equal('GuzzleHttp/6.3.3 (Ubuntu 0.18)');
                 expect(source.icon).to.equal(SourceIcons.Php);
+            });
+
+            it('should parse an Electron-based UA', () => {
+                const source = parseSource(SLACK);
+
+                expect(source.summary).to.equal('Electron 6 (Ubuntu 18.04)');
+                expect(source.icon).to.equal(SourceIcons.Electron);
             });
 
         });

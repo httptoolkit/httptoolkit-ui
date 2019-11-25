@@ -65,6 +65,7 @@ import { faNpm } from '@fortawesome/free-brands-svg-icons/faNpm';
 import { faNodeJs } from '@fortawesome/free-brands-svg-icons/faNodeJs';
 import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
 import { faPython } from '@fortawesome/free-brands-svg-icons/faPython';
+import { faAtom } from '@fortawesome/free-solid-svg-icons/faAtom';
 
 const customSpinnerArc: IconDefinition = {
     // Based on https://codepen.io/aurer/pen/jEGbA
@@ -133,7 +134,8 @@ library.add(
     faNpm,
     faNodeJs,
     faPhp,
-    faPython
+    faPython,
+    faAtom
 );
 
 export interface IconProps {
@@ -176,6 +178,7 @@ export const SourceIcons = {
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
     Android: { icon: ['fab', 'android'], color: '#A4C639' },
     iOS: { icon: ['fab', 'apple'], color: '#000' },
+    Electron: { icon: ['fas', 'atom'], color: '#9FEAF9' },
 
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
     Unknown: { icon: ['fas', 'question'], color: '#888' }
