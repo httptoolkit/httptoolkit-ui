@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import * as UserAgent from 'ua-parser-js';
+import { UAParser } from 'ua-parser-js';
 import { get } from 'typesafe-get';
 
 import { SourceIcons, IconProps, SourceIconName } from '../icons';
@@ -149,7 +149,7 @@ export const parseSource = (userAgentHeader: string | undefined): TrafficSource 
         icon: SourceIcons.Unknown
     };
 
-    const useragent = new UserAgent(userAgentHeader).getResult();
+    const useragent = new UAParser(userAgentHeader).getResult();
 
     checkForElectron(useragent);
 

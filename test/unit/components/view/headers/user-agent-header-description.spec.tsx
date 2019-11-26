@@ -21,7 +21,7 @@ describe('User agent header description', () => {
             description.find('p').at(0).text()
         ).to.equal(
             'This request came from Chrome 60, which uses the ' +
-                'WebKit 537.36 engine. The device is running Windows 10, with ' +
+                'Blink engine. The device is running Windows 10, with ' +
                 'an amd64 CPU.'
         );
     });
@@ -34,7 +34,8 @@ describe('User agent header description', () => {
         expect(
             description.find('p').at(0).text()
         ).to.equal(
-            'The User-Agent request header contains a characteristic string that ' + 'allows the network protocol peers to identify the application type, ' + 
+            'The User-Agent request header contains a characteristic string that ' +
+            'allows the network protocol peers to identify the application type, ' +
             'operating system, software vendor or software version of the requesting ' + 'software user agent.'
         );
     });

@@ -9,6 +9,7 @@ const LINUX_FIREFOX = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:64.0) Gecko/20
 const OSX_SAFARI = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.1 Safari/605.1.15';
 const WINDOWS_IE = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)';
 const WINDOWS_CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36';
+const WINDOWS_EDGE = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.48 Safari/537.36 Edg/74.1.96.24';
 
 const ANDROID_CHROME = 'Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko; googleweblight) Chrome/38.0.1025.166 Mobile Safari/535.19';
 const IPHONE_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.0 Mobile/15E148 Safari/604.1';
@@ -49,6 +50,13 @@ describe('HTTP source parsing', () => {
 
                 expect(source.summary).to.equal('IE 6 (Windows XP)');
                 expect(source.icon).to.equal(SourceIcons.IE);
+            });
+
+            it('should parsed Chromium-Edge UAs', () => {
+                const source = parseSource(WINDOWS_EDGE);
+
+                expect(source.summary).to.equal('Edge 74.1 (Windows 10)');
+                expect(source.icon).to.equal(SourceIcons.Edge);
             });
 
             it('should parse Git UA', () => {
@@ -118,7 +126,7 @@ describe('HTTP source parsing', () => {
 
             expect(source.description).to.equal(
                 'This request came from Chrome 70, which uses the ' +
-                    'WebKit 537.36 engine. The device is running Linux x86_64, with ' +
+                    'Blink engine. The device is running Linux x86_64, with ' +
                     'an amd64 CPU.'
             );
         });
@@ -128,7 +136,7 @@ describe('HTTP source parsing', () => {
 
             expect(source.description).to.equal(
                 'This request came from Chrome 60, which uses the ' +
-                    'WebKit 537.36 engine. The device is running Windows 10, with ' +
+                    'Blink engine. The device is running Windows 10, with ' +
                     'an amd64 CPU.'
             );
         });

@@ -60,7 +60,7 @@
     "@types/serialize-error": "^2.1.0",
     "@types/set-cookie-parser": "0.0.3",
     "@types/styled-components": "^4.4.0",
-    "@types/ua-parser-js": "^0.7.32",
+    "@types/ua-parser-js": "^0.7.33",
     "@types/uuid": "^3.4.4",
     "@types/workbox-sw": "^4.2.0",
     "@types/workbox-webpack-plugin": "^4.1.0",
@@ -109,7 +109,7 @@
     "ts-node": "^3.3.0",
     "typesafe-get": "^2.1.1",
     "typescript": "^3.7.2",
-    "ua-parser-js": "^0.7.18",
+    "ua-parser-js": "^0.7.20",
     "uuid": "^3.3.2",
     "wasm-brotli": "^1.0.2",
     "xml-beautifier": "^0.4.0"
