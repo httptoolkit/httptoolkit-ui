@@ -467,16 +467,18 @@ export class InterceptionStore {
 
     activateInterceptor = flow(function * (
         this: InterceptionStore,
-        interceptorId: string
+        interceptorId: string,
+        options?: any
     ) {
         this.interceptors[interceptorId].inProgress = true;
         const result: unknown = yield activateInterceptor(
             interceptorId,
-            this.server.port
+            this.server.port,
+            options
         ).then(
             (metadata) => metadata || true
         ).catch((e) => {
-            console.warn(e);
+            reportError(e);
             return false;
         });
 

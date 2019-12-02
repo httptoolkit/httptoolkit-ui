@@ -76,12 +76,12 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
     return response.interceptors;
 }
 
-export async function activateInterceptor(id: string, proxyPort: number): Promise<unknown> {
+export async function activateInterceptor(id: string, proxyPort: number, options?: any): Promise<unknown> {
     const result = await graphql(`
-        mutation Activate($id: ID!, $proxyPort: Int!) {
-            activateInterceptor(id: $id, proxyPort: $proxyPort)
+        mutation Activate($id: ID!, $proxyPort: Int!, $options: Json) {
+            activateInterceptor(id: $id, proxyPort: $proxyPort, options: $options)
         }
-    `, { id, proxyPort }).catch(formatError('activate-interceptor'));
+    `, { id, proxyPort, options }).catch(formatError('activate-interceptor'));
 
     if (
         // Backward compat for a < v0.1.28 server that returns booleans:
