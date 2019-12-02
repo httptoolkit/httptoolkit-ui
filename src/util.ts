@@ -202,14 +202,14 @@ export function saveFile(filename: string, mimeType: string, content: string): v
 type FileReaderType = 'text' | 'arraybuffer' | 'path';
 
 // Ask the user for a file of one of the given types, and get the raw arraybuffer data
-export function uploadFile(type: 'arraybuffer', acceptedMimeTypes: string[]): Promise<ArrayBuffer | null>
+export function uploadFile(type: 'arraybuffer', acceptedMimeTypes?: string[]): Promise<ArrayBuffer | null>
 // Ask the user for a file of one of the given types, and get the utf8 text data
-export function uploadFile(type: 'text', acceptedMimeTypes: string[]): Promise<string | null>;
+export function uploadFile(type: 'text', acceptedMimeTypes?: string[]): Promise<string | null>;
 // Ask the user for a file of one of the given types, and get the file path itself (electron only)
-export function uploadFile(type: 'path', acceptedMimeTypes: string[]): Promise<string | null>;
+export function uploadFile(type: 'path', acceptedMimeTypes?: string[]): Promise<string | null>;
 export function uploadFile(
     type: FileReaderType = 'arraybuffer',
-    acceptedMimeTypes: string[]
+    acceptedMimeTypes: string[] = []
 ): Promise<ArrayBuffer | string | null> {
     if (type === 'path' && !desktopVersion.value) {
         throw new Error("Path inputs can only be used from Electron");
