@@ -141,11 +141,6 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
     constructor(props: InterceptOptionProps) {
         super(props);
-
-        // Active & configurable components are expanded by default.
-        this.expanded = props.interceptor.uiConfig
-            ? props.interceptor.isActive
-            : false;
     }
 
     render() {
