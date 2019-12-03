@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { MessageBody } from '../types';
 
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
@@ -18,6 +19,7 @@ export const getBaseContentType = (mimeType: string | undefined) => {
 export type ViewableContentType =
     | 'raw'
     | 'text'
+    | 'base64'
     | 'json'
     | 'xml'
     | 'html'
@@ -107,7 +109,20 @@ export function getDefaultMimeType(contentType: ViewableContentType): string {
     return _.findKey(mimeTypeToContentTypeMap, (c) => c === contentType)!;
 }
 
-export function getCompatibleTypes(contentType: ViewableContentType, rawContentType?: string): ViewableContentType[] {
+function isValidBase64Byte(byte: number) {
+    return (byte >= 65 && byte <= 90) || // A-Z
+        (byte >= 97 && byte <= 122) ||   // a-z
+        (byte >= 48 && byte <= 57) ||    // 0-9
+        byte === 43 ||                   // +
+        byte === 47 ||                   // /
+        byte === 61;                     // =
+}
+
+export function getCompatibleTypes(
+    contentType: ViewableContentType,
+    rawContentType: string | undefined,
+    body: MessageBody
+): ViewableContentType[] {
     let types = [contentType];
 
     // Anything except raw & image can be shown as text
@@ -122,6 +137,15 @@ export function getCompatibleTypes(contentType: ViewableContentType, rawContentT
 
     // Anything can be shown raw
     if (contentType !== 'raw') types.push('raw');
+
+    if (
+        body.decoded &&
+        body.decoded.length % 4 === 0 && // Multiple of 4 bytes
+        body.decoded.length < 1000 * 100 && // < 100 KB of content
+        body.decoded.every(isValidBase64Byte)
+    ) {
+        types.push('base64');
+    }
 
     return types;
 }

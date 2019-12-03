@@ -88,7 +88,8 @@ export class ExchangeBodyCard extends React.Component<{
 
         const compatibleContentTypes = getCompatibleTypes(
             message.contentType,
-            lastHeader(message.headers['content-type'])
+            lastHeader(message.headers['content-type']),
+            message.body
         );
         const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
             this.selectedContentType! : message.contentType;

@@ -41,6 +41,12 @@ export const Formatters: { [key in ViewableContentType]?: Formatter } = {
             return content.toString('utf8');
         }
     },
+    base64: {
+        language: 'text',
+        render(content: Buffer) {
+            return Buffer.from(content.toString('utf8'), 'base64').toString('utf8');
+        }
+    },
     markdown: {
         language: 'markdown',
         render(content: Buffer) {
