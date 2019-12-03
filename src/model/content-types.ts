@@ -140,6 +140,7 @@ export function getCompatibleTypes(
 
     if (
         body.decoded &&
+        body.decoded.length > 0 &&
         body.decoded.length % 4 === 0 && // Multiple of 4 bytes
         body.decoded.length < 1000 * 100 && // < 100 KB of content
         body.decoded.every(isValidBase64Byte)
