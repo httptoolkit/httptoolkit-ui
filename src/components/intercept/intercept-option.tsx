@@ -4,7 +4,7 @@ import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 import { trackEvent } from '../../tracking';
 import { Interceptor } from '../../model/interceptors';
 import { InterceptionStore } from '../../model/interception-store';
@@ -163,7 +163,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             onClick={this.expanded ? undefined : this.onClick}
             tabIndex={!isDisabled && !this.expanded ? 0 : undefined}
         >
-            <FontAwesomeIcon
+            <Icon
                 {...interceptor.iconProps}
                 size='8x'
             />
@@ -186,7 +186,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
                     { interceptor.inProgress &&
                         <LoadingOverlay>
-                            <FontAwesomeIcon
+                            <Icon
                                 icon={['fac', 'spinner-arc']}
                                 size='4x'
                                 spin={true}

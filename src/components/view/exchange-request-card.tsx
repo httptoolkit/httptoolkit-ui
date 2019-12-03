@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 
 import { Omit, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
-import { SourceIcons, FontAwesomeIcon } from '../../icons';
+import { SourceIcons, Icon } from '../../icons';
 import { joinAnd } from '../../util';
 
 import { HttpExchange } from '../../model/exchange';
@@ -35,7 +35,7 @@ import { UrlBreakdown } from './url-breakdown';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== SourceIcons.Unknown ?
-        <FontAwesomeIcon
+        <Icon
             className={className}
             title={source.summary}
             {...source.icon}
@@ -160,7 +160,7 @@ const ParamMetadata = styled((p: {
     font-style: italic;
 `;
 
-const WarningIcon = styled(FontAwesomeIcon).attrs({
+const WarningIcon = styled(Icon).attrs({
     icon: ['fas', 'exclamation-triangle']
 })`
     color: #f1971f;

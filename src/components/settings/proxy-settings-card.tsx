@@ -6,7 +6,7 @@ import { get } from 'typesafe-get';
 import * as semver from 'semver';
 
 import { styled, css } from '../../styles';
-import { WarningIcon, FontAwesomeIcon } from '../../icons';
+import { WarningIcon, Icon } from '../../icons';
 
 import { InterceptionStore, isValidPortConfiguration } from '../../model/interception-store';
 import { ValidationResult } from '../../model/crypto';
@@ -33,7 +33,7 @@ const RestartApp = styled(SettingsButton).attrs(() => ({
     ${(p: { visible: boolean }) => !p.visible && 'display: none;'}
 `;
 
-const UnsavedIcon = styled(FontAwesomeIcon).attrs({
+const UnsavedIcon = styled(Icon).attrs({
     icon: ['fas', 'save'],
 })`
     margin-left: 10px;
@@ -113,7 +113,7 @@ const DecryptionInput = styled.div`
     }
 `;
 
-const DecryptionSpinner = styled(FontAwesomeIcon).attrs({
+const DecryptionSpinner = styled(Icon).attrs({
     icon: ['fas', 'spinner'],
     spin: true
 })`
@@ -386,7 +386,7 @@ export class ProxySettingsCard extends React.Component<
                         key={`delete-${host}`}
                         onClick={() => this.unwhitelistHost(host)}
                     >
-                        <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                        <Icon icon={['far', 'trash-alt']} />
                     </SettingsButton>
                 ]) }
 
@@ -406,7 +406,7 @@ export class ProxySettingsCard extends React.Component<
                     }
                     onClick={this.addHostToWhitelist}
                 >
-                    <FontAwesomeIcon icon={['fas', 'plus']} />
+                    <Icon icon={['fas', 'plus']} />
                 </SettingsButton>
             </CertificateWhitelistList>
             <SettingsExplanation>
@@ -438,7 +438,7 @@ export class ProxySettingsCard extends React.Component<
                             key={`delete-${host}`}
                             onClick={() => this.removeClientCertificate(host)}
                         >
-                            <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                            <Icon icon={['far', 'trash-alt']} />
                         </SettingsButton>
                     ]) }
 
@@ -469,7 +469,7 @@ export class ProxySettingsCard extends React.Component<
                             ? <DecryptionInput>
                                 <CertificateFilename>{ this.clientCertData!.filename }</CertificateFilename>
                                 <SettingsButton onClick={this.dropClientCertData}>
-                                    <FontAwesomeIcon icon={['fas', 'undo']} title='Deselect this certificate' />
+                                    <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
                                 </SettingsButton>
                             </DecryptionInput>
                         : this.clientCertState === 'encrypted'
@@ -483,16 +483,16 @@ export class ProxySettingsCard extends React.Component<
                                     })}
                                 />
                                 <SettingsButton onClick={() => this.decryptClientCertData()}>
-                                    <FontAwesomeIcon icon={['fas', 'unlock']} title='Decrypt with this passphrase' />
+                                    <Icon icon={['fas', 'unlock']} title='Decrypt with this passphrase' />
                                 </SettingsButton>
                                 <SettingsButton onClick={this.dropClientCertData}>
-                                    <FontAwesomeIcon icon={['fas', 'undo']} title='Deselect this certificate' />
+                                    <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
                                 </SettingsButton>
                             </DecryptionInput>
                         : <DecryptionInput>
                             <p><WarningIcon /> Invalid certificate</p>
                             <SettingsButton onClick={this.dropClientCertData}>
-                                <FontAwesomeIcon icon={['fas', 'undo']} title='Deselect this certificate' />
+                                <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
                             </SettingsButton>
                         </DecryptionInput>
                     }
@@ -504,7 +504,7 @@ export class ProxySettingsCard extends React.Component<
                         }
                         onClick={this.addClientCertificate}
                     >
-                        <FontAwesomeIcon icon={['fas', 'plus']} />
+                        <Icon icon={['fas', 'plus']} />
                     </SettingsButton>
                 </ClientCertificatesList>
             </> }

@@ -1,5 +1,5 @@
 import { styled, Theme } from "../../styles";
-import { FontAwesomeIcon } from "../../icons";
+import { Icon } from "../../icons";
 import { filterProps, clickOnEnter } from '../component-utils';
 
 interface CloseButtonProps {
@@ -12,7 +12,7 @@ interface CloseButtonProps {
 }
 
 export const CloseButton = styled(
-    filterProps(FontAwesomeIcon, 'inverted')
+    filterProps(Icon, 'inverted')
 ).attrs((props: CloseButtonProps) => ({
     icon: ['fas', 'times'],
     size: '2x',

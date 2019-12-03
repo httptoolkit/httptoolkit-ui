@@ -3,7 +3,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import { styled, Theme, ThemeProps, css } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 import { Omit } from '../../types';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
@@ -101,7 +101,7 @@ interface CollapseIconProps extends ThemeProps<Theme> {
 }
 
 export const CollapseIcon = styled((props: CollapseIconProps) =>
-    <FontAwesomeIcon
+    <Icon
         className={props.className}
         icon={['fas', props.collapsed ? 'chevron-down' : 'chevron-up']}
         onClick={props.onClick}

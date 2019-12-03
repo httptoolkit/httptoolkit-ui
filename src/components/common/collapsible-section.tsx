@@ -5,7 +5,7 @@ import { observable, action } from 'mobx';
 
 import { styled, css } from "../../styles";
 import { isReactElement } from '../../util';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 
 interface CollapsibleSectionProps {
     children: React.ReactNode;
@@ -153,7 +153,7 @@ const CollapsibleTrigger = styled((p: {
     onClick: (e: React.SyntheticEvent) => void
 }) =>
     <button {..._.omit(p, ['open', 'canOpen', 'withinGrid'])}>
-        <FontAwesomeIcon icon={[
+        <Icon icon={[
             'fas',
             p.open ? 'minus' : 'plus'
         ]} />

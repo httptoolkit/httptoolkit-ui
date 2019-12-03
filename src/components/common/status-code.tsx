@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { styled } from '../../styles'
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 import { getStatusColor } from '../../model/exchange-colors';
 
 export const StatusCode = styled((props: {
@@ -15,10 +15,10 @@ export const StatusCode = styled((props: {
     >
         {
             props.status === 'aborted' ?
-                <FontAwesomeIcon icon={['fas', 'ban']} />
+                <Icon icon={['fas', 'ban']} />
             : (
                 props.status ||
-                <FontAwesomeIcon
+                <Icon
                     icon={['fas', 'spinner']}
                     spin={true}
                 />

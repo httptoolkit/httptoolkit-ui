@@ -6,7 +6,7 @@ import * as HTTPSnippet from "httpsnippet";
 
 import { Omit } from "../../types";
 import { styled } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 import { saveFile } from '../../util';
 
 import { AccountStore } from "../../model/account/account-store";
@@ -138,7 +138,7 @@ const ExportHarPill = styled(observer((p: {
         onClick={() => exportHar(p.exchange)}
         disabled={!p.exchange.response || p.exchange.response === 'aborted'}
     >
-        <FontAwesomeIcon icon={['fas', 'download']} /> Save as HAR
+        <Icon icon={['fas', 'download']} /> Save as HAR
     </PillButton>
 ))`
     margin-right: auto;

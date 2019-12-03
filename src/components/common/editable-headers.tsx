@@ -9,7 +9,7 @@ import { HEADER_NAME_PATTERN } from '../../model/http-docs';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, TextInput } from './inputs';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 
 export type HeadersArray = Array<[string, string]>;
 
@@ -97,7 +97,7 @@ export const EditableHeaders = observer((props: EditableHeadersProps) => {
                 })}
                 onKeyPress={clickOnEnter}
             >
-                <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                <Icon icon={['far', 'trash-alt']} />
             </HeaderDeleteButton>
         ]).concat([
             <TextInput

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 
 import { styled } from '../../styles';
-import { FontAwesomeIcon, IconProp, SizeProp } from '../../icons';
+import { Icon, IconProp, SizeProp } from '../../icons';
 import { filterProps } from '../component-utils';
 
 const SearchInput = styled.input.attrs({
@@ -27,7 +27,7 @@ const ClearSearchButton = styled<React.ComponentType<{
     icon: IconProp,
     size?: SizeProp,
     onClick: () => void
-}>>(filterProps(FontAwesomeIcon, 'visible'))`
+}>>(filterProps(Icon, 'visible'))`
     position: absolute;
 
     right: 15px;

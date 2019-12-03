@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { FontAwesomeIcon, IconProp } from '../../icons';
+import { Icon, IconProp } from '../../icons';
 import { styled, css } from '../../styles';
 import { omit } from 'lodash';
 import { UnstyledButton } from './inputs';
@@ -56,7 +56,7 @@ export const Tab = styled((p: {
             event.tabValue = p.value;
         }}
     >
-        <FontAwesomeIcon icon={p.icon} size='2x' />
+        <Icon icon={p.icon} size='2x' />
         { p.children }
     </UnstyledButton>
 )`

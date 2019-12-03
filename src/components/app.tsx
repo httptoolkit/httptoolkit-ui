@@ -11,7 +11,7 @@ import {
 import * as semver from 'semver';
 
 import { styled } from '../styles';
-import { FontAwesomeIcon } from '../icons';
+import { Icon } from '../icons';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
 import { appHistory } from '../routing';
@@ -39,7 +39,7 @@ const AppContainer = styled.div<{ inert?: boolean }>`
 
 const Spinner = styled((p: { className?: string }) => (
     <div className={p.className}>
-        <FontAwesomeIcon
+        <Icon
             icon={['fac', 'spinner-arc']}
             spin
             size='10x'

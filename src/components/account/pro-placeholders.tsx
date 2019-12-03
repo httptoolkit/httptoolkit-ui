@@ -2,7 +2,7 @@ import React from "react";
 import { inject, observer } from "mobx-react";
 
 import { styled } from "../../styles";
-import { FontAwesomeIcon } from "../../icons";
+import { Icon } from "../../icons";
 
 import { UiStore } from "../../model/ui-store";
 
@@ -65,7 +65,7 @@ export const CardSalesPitch = inject('accountStore')(observer((p: {
     { p.children }
 
     <GetProButton onClick={p.accountStore!.getPro}>
-        <FontAwesomeIcon icon={['far', 'star']} size='2x' />
+        <Icon icon={['far', 'star']} size='2x' />
         Get HTTP Toolkit Pro
     </GetProButton>
 </CardSalesPitchContainer>));
@@ -119,7 +119,7 @@ export class GetProOverlay extends React.Component<{
     render() {
         return <OverlayContainer>
             <OverlayGetProButton ref={this.buttonRef} onClick={this.props.getPro}>
-                <FontAwesomeIcon icon={['far', 'star']} size='2x' />
+                <Icon icon={['far', 'star']} size='2x' />
                 Get Pro
             </OverlayGetProButton>
 

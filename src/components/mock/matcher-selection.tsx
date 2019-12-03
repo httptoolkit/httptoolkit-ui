@@ -7,7 +7,7 @@ import * as semver from 'semver';
 import { matchers } from 'mockttp';
 
 import { styled } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 import { serverVersion as serverVersionObservable, HOST_MATCHER_SERVER_RANGE } from '../../services/service-versions';
 import { Button, Select } from '../common/inputs';
 
@@ -109,7 +109,7 @@ export class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps>
             </MatcherInputsContainer>
 
             <MatcherButton onClick={onDelete}>
-                <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                <Icon icon={['far', 'trash-alt']} />
             </MatcherButton>
         </MatcherRow>;
     }
@@ -270,7 +270,7 @@ export class NewMatcherRow extends React.Component<{
                 disabled={!draftMatchers.length || invalidMatcherState}
                 onClick={saveMatcher}
             >
-                <FontAwesomeIcon icon={['fas', 'plus']} />
+                <Icon icon={['fas', 'plus']} />
             </MatcherButton>
         </MatcherRow>;
     }

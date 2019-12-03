@@ -6,7 +6,7 @@ import * as dateFns from 'date-fns';
 
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 
 import { ActivatedStore } from '../../model/interception-store';
 import { AccountStore } from '../../model/account/account-store';
@@ -131,7 +131,7 @@ class MockPage extends React.Component<MockPageProps> {
                     onKeyPress={clickOnEnter}
                     title="Reset rules to default"
                 >
-                    <FontAwesomeIcon icon={['far', 'trash-alt']} />
+                    <Icon icon={['far', 'trash-alt']} />
                 </OtherButton>
                 <OtherButton
                     disabled={!isPaidUser}
@@ -146,7 +146,7 @@ class MockPage extends React.Component<MockPageProps> {
                             )
                     }
                 >
-                    <FontAwesomeIcon icon={['fas', 'upload']} />
+                    <Icon icon={['fas', 'upload']} />
                 </OtherButton>
                 <OtherButton
                     disabled={!isPaidUser || !areSomeRulesNonDefault || draftRules.length === 0}
@@ -158,7 +158,7 @@ class MockPage extends React.Component<MockPageProps> {
                             : 'With Pro: Export these rules, to save them for quick reuse later'
                     }
                 >
-                    <FontAwesomeIcon icon={['fas', 'download']} />
+                    <Icon icon={['fas', 'download']} />
                 </OtherButton>
                 <OtherButton
                     disabled={!areSomeRulesUnsaved}
@@ -166,7 +166,7 @@ class MockPage extends React.Component<MockPageProps> {
                     onKeyPress={clickOnEnter}
                     title="Revert changes since the last save"
                 >
-                    <FontAwesomeIcon icon={['fas', 'undo']} />
+                    <Icon icon={['fas', 'undo']} />
                 </OtherButton>
                 <SaveButton
                     disabled={!areSomeRulesUnsaved}
@@ -174,7 +174,7 @@ class MockPage extends React.Component<MockPageProps> {
                     onKeyPress={clickOnEnter}
                     title="Save all rule changes"
                 >
-                    <FontAwesomeIcon icon={['fas', 'save']} /> Save changes
+                    <Icon icon={['fas', 'save']} /> Save changes
                 </SaveButton>
             </MockPageHeader>
 

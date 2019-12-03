@@ -3,7 +3,7 @@ import { observer, inject } from 'mobx-react';
 import * as dateFns from 'date-fns';
 
 import { styled } from '../../styles'
-import { FontAwesomeIcon, IconProp } from '../../icons';
+import { Icon, IconProp } from '../../icons';
 import { HttpExchange } from '../../model/exchange';
 import { generateHar } from '../../model/har';
 import { saveFile, uploadFile } from '../../util';
@@ -24,7 +24,7 @@ const IconButton = styled((p: {
         disabled={p.disabled}
         onClick={p.onClick}
     >
-        <FontAwesomeIcon icon={p.icon} />
+        <Icon icon={p.icon} />
     </button>
 )`
     border: none;

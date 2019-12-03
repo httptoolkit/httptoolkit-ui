@@ -5,7 +5,7 @@ import { TrafficSource } from '../../model/sources';
 
 import { BigCard } from "../common/card";
 import { EmptyState } from '../common/empty-state';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 
 const ConnectedSource = styled.div`
     &:not(:last-child) {
@@ -26,7 +26,7 @@ export const ConnectedSources = styled((props: { activeSources: TrafficSource[],
             props.activeSources.length ?
                 props.activeSources.map((source) =>
                     <ConnectedSource key={source.ua} title={source.ua}>
-                        <FontAwesomeIcon {...source.icon} fixedWidth={true} />
+                        <Icon {...source.icon} fixedWidth={true} />
                         { source.summary }
                     </ConnectedSource>
                 )

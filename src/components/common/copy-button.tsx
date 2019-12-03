@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { FontAwesomeIcon } from "../../icons";
+import { Icon } from "../../icons";
 import { styled } from '../../styles';
 import { reportError } from '../../errors';
 
@@ -34,7 +34,7 @@ const buildCopyComponent = (BaseComponent: typeof CopyButtonIconBase | typeof Pi
                     onKeyDown={clickOnEnter}
                     onClick={() => copyToClipboard(p.content)}
                 >
-                    <FontAwesomeIcon
+                    <Icon
                         icon={['far', 'copy']}
                     />
                     { p.children }

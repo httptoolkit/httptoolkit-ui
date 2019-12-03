@@ -5,7 +5,7 @@ import { Method } from 'mockttp';
 
 import { Omit, BreakpointRequestResult, RequestHeaders } from '../../types';
 import { styled } from '../../styles';
-import { SourceIcons, FontAwesomeIcon } from '../../icons';
+import { SourceIcons, Icon } from '../../icons';
 
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
@@ -28,7 +28,7 @@ import { TextInput, Select } from '../common/inputs';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== SourceIcons.Unknown ?
-        <FontAwesomeIcon
+        <Icon
             className={className}
             title={source.summary}
             {...source.icon}

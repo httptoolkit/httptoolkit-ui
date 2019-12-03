@@ -1,13 +1,12 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, inject } from 'mobx-react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { get } from 'typesafe-get';
 
 import { styled } from '../../styles';
 import { Omit, ExchangeMessage } from '../../types';
 import { asHeaderArray, joinAnd } from '../../util';
-import { WarningIcon, SuggestionIcon } from '../../icons';
+import { Icon, WarningIcon, SuggestionIcon } from '../../icons';
 
 import { HttpExchange, TimingEvents } from '../../model/exchange';
 import { AccountStore } from '../../model/account/account-store';
@@ -135,7 +134,7 @@ const CompressionDescription = observer((p: {
                     } to {
                         getReadableSize(encodedBodyLength)
                     })
-                </> : <FontAwesomeIcon icon={['fas', 'spinner']} spin />
+                </> : <Icon icon={['fas', 'spinner']} spin />
             }
         </> :
             <strong>not compressed</strong>
@@ -183,7 +182,7 @@ const CompressionOptions = observer((p: {
             }).valueOf()
         }</>
     } else {
-        return <FontAwesomeIcon icon={['fas', 'spinner']} spin />;
+        return <Icon icon={['fas', 'spinner']} spin />;
     }
 });
 

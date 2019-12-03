@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { styled, css } from '../../styles';
-import { FontAwesomeIcon } from '../../icons';
+import { Icon } from '../../icons';
 
 import {
     CollapsibleCard,
@@ -52,7 +52,7 @@ export const LoadingExchangeCard = (props:
             { props.children }
         </header>
         <LoadingCardContent height={props.height}>
-            <FontAwesomeIcon spin icon={['fac', 'spinner-arc']} size='8x' />
+            <Icon spin icon={['fac', 'spinner-arc']} size='8x' />
         </LoadingCardContent>
     </ExchangeCard>;
 

@@ -5,7 +5,7 @@ import { Link, Match } from '@reach/router';
 import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
-import { FontAwesomeIcon, IconProp } from '../icons';
+import { Icon, IconProp } from '../icons';
 import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
@@ -141,7 +141,7 @@ const SidebarButton = styled(
 export const Sidebar = observer((props: SidebarProps) => {
     const items = props.items.map((item, i) => {
         const itemContent = <>
-            <FontAwesomeIcon size='2x' icon={item.icon} />
+            <Icon size='2x' icon={item.icon} />
             {item.name}
         </>;
 

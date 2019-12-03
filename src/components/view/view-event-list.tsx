@@ -8,7 +8,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
-import { FontAwesomeIcon, WarningIcon } from '../../icons';
+import { Icon, WarningIcon } from '../../icons';
 import { FailedTlsRequest } from '../../types';
 
 import { HttpExchange } from '../../model/exchange';
@@ -271,7 +271,7 @@ const ExchangeRow = observer(({
             }
         </Status>
         <Source title={request.source.summary}>
-            <FontAwesomeIcon
+            <Icon
                 {...request.source.icon}
                 fixedWidth={true}
             />

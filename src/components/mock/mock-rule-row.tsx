@@ -7,7 +7,7 @@ import { Method, matchers } from 'mockttp';
 import { Draggable, DraggingStyle, NotDraggingStyle } from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
-import { FontAwesomeIcon, IconProp } from '../../icons';
+import { Icon, IconProp } from '../../icons';
 
 import { getMethodColor } from '../../model/exchange-colors';
 import { HtkMockRule, Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
@@ -47,7 +47,7 @@ const FloatingDragHandle = styled.div`
 
 const DragHandle = (props: {}) =>
     <FloatingDragHandle {...props}>
-        <FontAwesomeIcon icon={['fas', 'grip-vertical']} />
+        <Icon icon={['fas', 'grip-vertical']} />
     </FloatingDragHandle>;
 
 const RowContainer = styled<React.ComponentType<{
@@ -119,7 +119,7 @@ export const AddRuleRow = styled((p: {
         onClick={p.onAdd}
         onKeyPress={clickOnEnter}
     >
-        <FontAwesomeIcon icon={['fas', 'plus']} />
+        <Icon icon={['fas', 'plus']} />
         Add a new rule to rewrite requests or responses
     </RowContainer>
 )`
@@ -151,7 +151,7 @@ const Summary = styled.h1`
     margin: -5px;
 `;
 
-const ArrowIcon = styled(FontAwesomeIcon).attrs({
+const ArrowIcon = styled(Icon).attrs({
     icon: ['fas', 'arrow-left']
 })`
     transform: rotate(180deg);
@@ -192,7 +192,7 @@ const IconButton = styled(React.memo((p: {
     title: string,
     onClick: (event: React.MouseEvent) => void,
     disabled?: boolean
-}) => <FontAwesomeIcon
+}) => <Icon
     className={p.className}
     icon={p.icon}
     title={p.title}

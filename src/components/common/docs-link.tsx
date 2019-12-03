@@ -1,9 +1,9 @@
 import * as React from 'react';
 
 import { styled } from "../../styles";
-import { FontAwesomeIcon } from "../../icons";
+import { Icon } from "../../icons";
 
-const ExternalLinkIcon = styled(FontAwesomeIcon).attrs({
+const ExternalLinkIcon = styled(Icon).attrs({
     icon: ['fas', 'external-link-alt']
 })`
     opacity: 0.5;

@@ -184,10 +184,10 @@ export const SourceIcons = {
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 } as const;
 
-import { FontAwesomeIcon as FAI, Props as FAIProps } from '@fortawesome/react-fontawesome';
+import { FontAwesomeIcon, Props as FAIProps } from '@fortawesome/react-fontawesome';
 type ExtendedIconProp = IconProp | ['fac', string] | readonly [IconPrefix, IconName];
-export const FontAwesomeIcon = React.memo(
-    FAI as (props: Omit<FAIProps, 'icon'> & {
+export const Icon = React.memo(
+    FontAwesomeIcon as (props: Omit<FAIProps, 'icon'> & {
         icon: ExtendedIconProp,
         onClick?: (event: React.MouseEvent) => void,
         onKeyPress?: (event: React.KeyboardEvent) => void
@@ -195,7 +195,7 @@ export const FontAwesomeIcon = React.memo(
 );
 export { ExtendedIconProp as IconProp, SizeProp };
 
-export const SuggestionIcon = styled(FontAwesomeIcon).attrs({
+export const SuggestionIcon = styled(Icon).attrs({
     icon: ['fas', 'lightbulb']
 })`
     margin: 0 6px;
@@ -212,7 +212,7 @@ export const suggestionIconHtml = iconHtml(
     }
 );
 
-export const WarningIcon = styled(FontAwesomeIcon).attrs({
+export const WarningIcon = styled(Icon).attrs({
     icon: ['fas', 'exclamation-triangle']
 })`
     margin: 0 6px;
