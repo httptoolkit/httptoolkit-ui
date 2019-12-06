@@ -43,7 +43,21 @@ import { delay } from '../util';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
-import { buildDefaultRules, HtkMockRule, ruleEquality, buildForwardingRuleIntegration } from './rules/rules';
+import {
+    buildDefaultRules,
+    HtkMockRuleGroup,
+    flattenRules,
+    areItemsEqual,
+    buildForwardingRuleIntegration,
+    ItemPath,
+    isRuleGroup,
+    getItemAtPath,
+    getItemParentByPath,
+    updateItemAtPath,
+    findItem,
+    findItemPath,
+    HtkMockRuleRoot
+} from './rules/rules';
 import { deserializeRules } from './rules/rule-serialization';
 import { getDesktopInjectedValue } from '../services/desktop-api';
 
@@ -186,8 +200,8 @@ export class InterceptionStore {
             const [sourceHost, targetHost] = forwardingConfig.split('|');
             const forwardingRule = buildForwardingRuleIntegration(sourceHost, targetHost, this);
 
-            this.rules.unshift(forwardingRule);
-            this.draftRules.unshift(_.cloneDeep(forwardingRule));
+            this.rules.items.unshift(forwardingRule);
+            this.draftRules.items.unshift(_.cloneDeep(forwardingRule));
         }));
 
         // On startup the draft host settings take effect, becoming the real settings:
@@ -211,10 +225,12 @@ export class InterceptionStore {
                         // Set the mocking rules that will be used by the server. We have to
                         // clone so that we retain the pre-serialization definitions.
                         this.server.setRules(
-                            ..._.cloneDeep(this.rules.filter(
-                                // Drop inactive or never-matching rules
-                                r => r.activated && r.matchers.length
-                            ))
+                            ..._.cloneDeep(
+                                flattenRules(this.rules).filter(
+                                    // Drop inactive or never-matching rules
+                                    r => r.activated && r.matchers.length
+                                )
+                            )
                         )
                     )
                 )
@@ -327,11 +343,11 @@ export class InterceptionStore {
     // ** Rules:
     //#region
 
-    @observable.shallow
-    rules: HtkMockRule[] = buildDefaultRules(this);
+    @observable
+    rules: HtkMockRuleRoot = buildDefaultRules(this);
 
     @observable
-    draftRules: HtkMockRule[] = _.cloneDeep(this.rules);
+    draftRules: HtkMockRuleRoot = _.cloneDeep(this.rules);
 
     @action.bound
     saveRules() {
@@ -354,95 +370,172 @@ export class InterceptionStore {
 
     @computed
     get areSomeRulesUnsaved() {
-        return !_.isEqualWith(this.draftRules, this.rules, ruleEquality);
+        return !_.isEqualWith(this.draftRules, this.rules, areItemsEqual);
     }
 
     @computed
     get areSomeRulesNonDefault() {
         const defaultRules = buildDefaultRules(this);
-        return !_.isEqualWith(this.draftRules, defaultRules, ruleEquality);
+        return !_.isEqualWith(this.draftRules, defaultRules, areItemsEqual);
     }
 
     @action.bound
-    resetRule(draftRuleIndex: number) {
-        // To reset a single rule, we reset the content of that rule, and reset only its
-        // position (different to save rule: see below). The difference is because this
-        // is a clear & visible change, so doing the smaller move makes more sense.
+    resetRule(draftRulePath: ItemPath) {
+        // To reset a single rule, we reset the group & content of that rule, resetting only the
+        // position of this one rule (different to save rule: see below). The difference is because
+        // this is a clear & visible change, so doing the smaller move is easy & makes more sense.
 
         const { draftRules, rules: activeRules } = this;
 
-        const draftRule = draftRules[draftRuleIndex];
+        const draftRule = getItemAtPath(draftRules, draftRulePath);
+        if (isRuleGroup(draftRule)) throw new Error("Can't reset single rule group");
         const id = draftRule.id;
 
-        const existingRule = _.find(activeRules, { id });
+        const activeRulePath = findItemPath(activeRules, { id });
+        if (!activeRulePath) throw new Error("Can't reset a new rule");
 
-        if (!existingRule) return;
+        const activeRule = getItemAtPath(activeRules, activeRulePath);
+
         // Update the rule content:
-        draftRules[draftRuleIndex] = _.cloneDeep(existingRule);
 
-        const activeRulesIntersection = _.intersectionBy(activeRules, draftRules, 'id');
-        const draftRulesIntersection = _.intersectionBy(draftRules, activeRules, 'id');
+        const activeParent = getItemParentByPath(activeRules, activeRulePath);
+        const currentDraftParent = getItemParentByPath(draftRules, draftRulePath);
+        const targetDraftParent = findItem(draftRules, { id: activeParent.id }) as HtkMockRuleGroup;
 
-        if (
-            activeRulesIntersection.indexOf(existingRule) ===
-            draftRulesIntersection.indexOf(draftRule)
-        ) {
-            // If this rule is effectively in the right place already, we're done
-            return;
+        const resetRule = _.cloneDeep(activeRule);
+
+        // Update & potentially reparent the rule:
+
+        if (currentDraftParent.id === targetDraftParent.id) {
+            updateItemAtPath(draftRules, draftRulePath, resetRule);
+        } else {
+            // We're moving parent. Before rearranging it, we need to reparent the draft element.
+            currentDraftParent.items.splice(_.last(draftRulePath)!, 1);
+            targetDraftParent.items.splice(0, 0, resetRule); // Put it at the start: we'll rearrange below
         }
 
-        // If not, find where it should go:
-        const targetIndex = activeRules.indexOf(existingRule);
-        let [movedRule] = draftRules.splice(draftRuleIndex, 1);
-        draftRules.splice(Math.min(targetIndex, draftRules.length), 0, movedRule);
+        // Check the rule's position relative to its siblings, reset it if necessary:
+
+        const draftSiblings = targetDraftParent.items;
+        const activeSiblings = activeParent.items;
+
+        // Find the common (still present in active & draft) items in this group, in two sets:
+        // one by their order in the draft rules, one by their order in the active rules.
+        const draftCommonSiblings = _.intersectionBy(draftSiblings, activeSiblings, 'id');
+        const activeCommonSiblings = _.intersectionBy(activeSiblings, draftSiblings, 'id');
+
+        const targetCommonIndex = _.findIndex(activeCommonSiblings, { id });
+
+        // If this rule is in the right place already, we're done
+        if (_.findIndex(draftCommonSiblings, { id }) === targetCommonIndex) return;
+
+        // Otherwise, the rule is in the wrong group/place in its group.
+
+        // Remove it from its current position:
+        _.remove(draftSiblings, { id });
+        _.remove(draftCommonSiblings, { id });
+
+        // The tricky bit: place it into the first position that gives it the same position
+        // within the common siblings as it has in the set of active rules.
+        if (targetCommonIndex > 0) {
+            const draftItemToFollow = draftCommonSiblings[targetCommonIndex - 1];
+            const targetSiblingIndex = _.findIndex(draftSiblings, { id: draftItemToFollow.id }) + 1;
+            draftSiblings.splice(targetSiblingIndex, 0, resetRule);
+        } else {
+            draftSiblings.splice(0, 0, resetRule);
+        }
     }
 
     @action.bound
-    saveRule(draftRuleIndex: number) {
+    saveRule(draftRulePath: ItemPath) {
         // To update a single rule, we update the content of that single rule, but if its
         // position has changed then we update the position of all rules. It's very hard
-        // to update the position of one predictable, and the saved state is invisible,
+        // to update the position of one predictably, and the saved state is invisible,
         // so it's better to just give consistency.
-        // This should doe what you expect for simple states (one or two moves), and
+        // This should do what you expect for simple states (one or two moves), and
         // is at least predictable & transparent in pathological cases.
 
         const { draftRules, rules: activeRules } = this;
-        const draftRule = draftRules[draftRuleIndex];
+
+        const draftRule = getItemAtPath(draftRules, draftRulePath);
+        if (isRuleGroup(draftRule)) throw new Error("Can't save single rule group");
+
+        const draftParent = getItemParentByPath(draftRules, draftRulePath);
+
         const id = draftRule.id;
 
-        const existingRuleIndex = _.findIndex(activeRules, { id });
-        if (existingRuleIndex !== -1) {
-            // If this rule already exists, update it
-            activeRules[existingRuleIndex] = _.cloneDeep(draftRule);
+        const activeRulePath = findItemPath(activeRules, { id });
+        const targetActiveParent = findItem(activeRules, { id: draftParent.id }) as HtkMockRuleGroup;
+
+        const updatedRule = _.cloneDeep(draftRule);
+
+        // Insert/update the rule in the tree:
+
+        if (activeRulePath) {
+            // The rule is active, but maybe moved.
+            const currentActiveParent = getItemParentByPath(activeRules, activeRulePath);
+            if (currentActiveParent === targetActiveParent) {
+                // Update in place, we'll sort below
+                updateItemAtPath(activeRules, activeRulePath, updatedRule);
+            } else {
+                // Parent changed - move the rule, we'll sort it to the exact correct position below
+                const currentIndex = _.last(activeRulePath)!;
+                currentActiveParent.items.splice(currentIndex, 1);
+                targetActiveParent.items.push(updatedRule);
+            }
         } else {
-            // If not, insert it (it'll be sorted to the right place behlow)
-            activeRules.push(_.cloneDeep(draftRule));
+            // The rule doesn't exist yet. For now, just append it, and we'll sorted it
+            // into the right position below
+            targetActiveParent.items.push(updatedRule);
         }
 
-        const draftDeletedRules = _.differenceBy(activeRules, draftRules, 'id');
-        const activeRulesIntersection = _.intersectionBy(activeRules, draftRules, 'id');
-        const draftRulesIntersection = _.intersectionBy(draftRules, activeRules, 'id');
+        // Reorder this rule & all its siblings, to match the draft order:
 
-        if (
-            _.findIndex(draftRulesIntersection, { id }) ===
-            _.findIndex(activeRulesIntersection, { id })
-        ) {
+        const draftDeletedRules = _.differenceBy(targetActiveParent.items, draftParent.items, 'id');
+        const activeCommonSiblings = _.intersectionBy(targetActiveParent.items, draftParent.items, 'id');
+        const draftCommonSiblings = _.intersectionBy(draftParent.items, targetActiveParent.items, 'id');
+
+        if (_.findIndex(draftCommonSiblings, { id }) === _.findIndex(activeCommonSiblings, { id })) {
             // If this rule is effectively in the right place already, we're done
-            return;
+            return updatedRule;
         }
 
-        // Sort the existing rules by their updated positions
-        const sortedRules = _.sortBy(activeRulesIntersection,
-            rule => _.findIndex(draftRules, { id: rule.id })
+        // Sort the existing siblings by their updated positions
+        const sortedRules = _.sortBy(activeCommonSiblings,
+            rule => _.findIndex(draftParent.items, { id: rule.id })
         );
 
         // Reinsert draft-deleted rules:
         draftDeletedRules.forEach((rule) => {
-            const previousIndex = Math.min(activeRules.indexOf(rule), activeRules.length);
+            const previousIndex = Math.min(
+                targetActiveParent.items.indexOf(rule),
+                targetActiveParent.items.length
+            );
             sortedRules.splice(previousIndex, 0, rule);
         });
 
-        this.rules = sortedRules;
+        targetActiveParent.items = sortedRules;
+
+        return updatedRule;
+    }
+
+    @action.bound
+    deleteDraftRule(draftRulePath: ItemPath) {
+        const parent = getItemParentByPath(this.draftRules, draftRulePath);
+        const itemIndex = _.last(draftRulePath)!;
+        parent.items.splice(itemIndex, 1);
+    }
+
+    @action.bound
+    moveDraftRule(currentPath: ItemPath, targetPath: ItemPath) {
+        const currentParent = getItemParentByPath(this.draftRules, currentPath);
+        const targetParent = getItemParentByPath(this.draftRules, targetPath);
+
+        const currentIndex = _.last(currentPath)!;
+        const targetIndex = _.last(targetPath)!;
+
+        const [item] = currentParent.items.splice(currentIndex, 1);
+        targetParent.items.splice(targetIndex, 0, item);
     }
 
     @action.bound

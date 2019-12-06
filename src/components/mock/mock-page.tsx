@@ -10,7 +10,7 @@ import { Icon } from '../../icons';
 
 import { ActivatedStore } from '../../model/interception-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getNewRule } from '../../model/rules/rules';
+import { getNewRule, flattenRules, findItemPath, ItemPath, mapRules } from '../../model/rules/rules';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
@@ -84,7 +84,7 @@ class MockPage extends React.Component<MockPageProps> {
     // Map from rule id -> collapsed (true/false)
     @observable
     collapsedRulesMap = _.fromPairs(
-        this.props.interceptionStore.draftRules.map((rule) =>
+        mapRules(this.props.interceptionStore.draftRules, (rule) =>
             [rule.id, true] as [string, boolean]
         )
     );
@@ -93,8 +93,7 @@ class MockPage extends React.Component<MockPageProps> {
         // If the list of rules ever changes, update the collapsed list accordingly.
         // Drop now-unnecessary ids, and add new rules (defaulting to collapsed)
         disposeOnUnmount(this, autorun(() => {
-            const rules = this.props.interceptionStore.draftRules;
-            const ruleIds = rules.map(r => r.id);
+            const ruleIds = mapRules(this.props.interceptionStore.draftRules, r => r.id);
             const ruleMapIds = _.keys(this.collapsedRulesMap);
 
             const extraIds = _.difference(ruleMapIds, ruleIds);
@@ -149,7 +148,7 @@ class MockPage extends React.Component<MockPageProps> {
                     <Icon icon={['fas', 'upload']} />
                 </OtherButton>
                 <OtherButton
-                    disabled={!isPaidUser || !areSomeRulesNonDefault || draftRules.length === 0}
+                    disabled={!isPaidUser || !areSomeRulesNonDefault || draftRules.items.length === 0}
                     onClick={this.exportRules}
                     onKeyPress={clickOnEnter}
                     title={
@@ -204,18 +203,14 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
-    saveRule(ruleId: string) {
-        const { interceptionStore } = this.props;
-        const ruleIndex = _.findIndex(interceptionStore.draftRules, { id: ruleId });
-        interceptionStore.saveRule(ruleIndex);
-        this.collapsedRulesMap[ruleId] = true;
+    saveRule(path: ItemPath) {
+        const savedRule = this.props.interceptionStore.saveRule(path);
+        this.collapsedRulesMap[savedRule.id] = true;
     }
 
     @action.bound
-    resetRule(ruleId: string) {
-        const { interceptionStore } = this.props;
-        const ruleIndex = _.findIndex(interceptionStore.draftRules, { id: ruleId });
-        interceptionStore.resetRule(ruleIndex);
+    resetRule(path: ItemPath) {
+        this.props.interceptionStore.resetRule(path);
     }
 
     @action.bound
@@ -242,7 +237,7 @@ class MockPage extends React.Component<MockPageProps> {
         const newRule = getNewRule(this.props.interceptionStore);
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
-        rules.unshift(newRule);
+        rules.items.unshift(newRule);
 
         // Wait briefly for the new rule to appear, then focus its first dropdown
         setTimeout(() => {
@@ -263,18 +258,13 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
-    deleteRule(ruleId: string) {
-        const draftRules = this.props.interceptionStore.draftRules;
-        const ruleIndex = _.findIndex(draftRules, { id: ruleId });
-        draftRules.splice(ruleIndex, 1);
+    deleteRule(path: ItemPath) {
+        this.props.interceptionStore.deleteDraftRule(path);
     }
 
     @action.bound
-    moveRule(startIndex: number, endIndex: number) {
-        const rules = this.props.interceptionStore.draftRules;
-        const rule = rules[startIndex];
-        rules.splice(startIndex, 1);
-        rules.splice(endIndex, 0, rule);
+    moveRule(currentPath: ItemPath, targetPath: ItemPath) {
+        this.props.interceptionStore.moveDraftRule(currentPath, targetPath);
     }
 
     readonly importRules = async () => {

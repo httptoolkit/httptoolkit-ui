@@ -4,7 +4,7 @@ import { completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
 import { InterceptionStore } from '../interception-store';
-import { HtkMockRule, MatcherLookup, HandlerLookup } from './rules';
+import { HtkMockRule, MatcherLookup, HandlerLookup, HtkMockItem, HtkMockRuleRoot, HtkMockRuleGroup, isRuleGroup } from './rules';
 import { migrateRules } from './rule-migrations';
 
 export type DeserializationArgs = {
@@ -76,20 +76,46 @@ const MockRuleSerializer = serializr.custom(
     }
 );
 
-interface MockRuleset {
-    rules: HtkMockRule[];
+const MockItemSerializer: serializr.PropSchema = serializr.custom(
+    (item: HtkMockItem) => {
+        if (isRuleGroup(item)) {
+            return serializr.serialize(MockRuleGroupSchema, item);
+        } else {
+            return MockRuleSerializer.serializer(item);
+        }
+    },
+    (data: HtkMockItem, context: any, oldValue: any, done: (err: any, result: any) => any) => {
+        if (isRuleGroup(data)) {
+            return serializr.deserialize(MockRuleGroupSchema, data, done, context.args);
+        } else {
+            return MockRuleSerializer.deserializer(data, done, context, oldValue);
+        }
+    }
+);
+
+const MockRuleGroupSchema = serializr.createSimpleSchema({
+    id: serializr.primitive(),
+    title: serializr.primitive(),
+    items: serializr.list(MockItemSerializer)
+});
+
+interface MockRuleset extends HtkMockRuleRoot {
+    version: undefined;
 }
 
 const MockRulesetSchema = serializr.createSimpleSchema<MockRuleset>({
-    rules: serializr.list(MockRuleSerializer)
+    id: serializr.primitive(),
+    title: serializr.primitive(),
+    isRoot: serializr.optional(serializr.primitive()),
+    items: serializr.list(MockItemSerializer)
 });
 
-export const serializeRules = (rules: HtkMockRule[]): MockRuleset => {
-    return serializr.serialize(MockRulesetSchema, { rules: rules });
+export const serializeRules = (rules: HtkMockRuleRoot): MockRuleset => {
+    return serializr.serialize(MockRulesetSchema, rules);
 }
 
-export const deserializeRules = (data: any, args: DeserializationArgs): HtkMockRule[] => {
+export const deserializeRules = (data: any, args: DeserializationArgs): HtkMockRuleRoot => {
     return (
         serializr.deserialize(MockRulesetSchema, migrateRules(data), undefined, args)
-    ).rules;
+    ) as HtkMockRuleRoot;
 }

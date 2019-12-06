@@ -10,7 +10,7 @@ import { styled, css } from '../../styles';
 import { Icon, IconProp } from '../../icons';
 
 import { getMethodColor } from '../../model/exchange-colors';
-import { HtkMockRule, Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
+import { HtkMockRule, Matcher, Handler, isPaidHandler, ItemPath } from '../../model/rules/rules';
 import {
     summarizeMatcher,
     summarizeHandler
@@ -54,10 +54,13 @@ const RowContainer = styled<React.ComponentType<{
     deactivated?: boolean,
     collapsed: boolean,
     disabled: boolean,
-    borderColor: string
+    borderColor: string,
+    depth: number
 } & React.ComponentProps<'section'>>>(LittleCard)`
-    width: 100%;
     margin-top: 20px;
+
+    width: calc(100% - ${p => p.depth * 20}px);
+    margin-left: ${p => p.depth * 20}px;
 
     svg {
         margin: 0 5px;
@@ -116,6 +119,7 @@ export const AddRuleRow = styled((p: {
         {..._.omit(p, 'onAdd')}
 
         tabIndex={0}
+        depth={0}
         onClick={p.onAdd}
         onKeyPress={clickOnEnter}
     >
@@ -297,16 +301,18 @@ export class RuleRow extends React.Component<{
     accountStore?: AccountStore,
 
     index: number;
+    path: ItemPath;
     rule: HtkMockRule;
     isNewRule: boolean;
     hasUnsavedChanges: boolean;
     collapsed: boolean;
     disabled: boolean;
 
-    saveRule: (id: string) => void;
-    resetRule: (id: string) => void;
-    toggleCollapse: (id: string) => void;
-    deleteRule: (id: string) => void;
+    toggleRuleCollapsed: (ruleId: string) => void;
+
+    saveRule: (path: ItemPath) => void;
+    resetRule: (path: ItemPath) => void;
+    deleteRule: (path: ItemPath) => void;
 }> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
@@ -327,6 +333,7 @@ export class RuleRow extends React.Component<{
         const {
             index,
             rule,
+            path,
             isNewRule,
             hasUnsavedChanges,
             collapsed,
@@ -377,6 +384,7 @@ export class RuleRow extends React.Component<{
                 tabIndex={collapsed ? 0 : undefined}
                 onClick={collapsed ? this.toggleCollapse : undefined}
                 onKeyPress={clickOnEnter}
+                depth={path.length - 1}
                 style={extendRowDraggableStyles(provided.draggableProps.style)}
             >
                 <RuleMenu
@@ -465,9 +473,9 @@ export class RuleRow extends React.Component<{
         }</Observer>}</Draggable>;
     }
 
-    saveRule = stopPropagation(() => this.props.saveRule(this.props.rule.id));
-    resetRule = stopPropagation(() => this.props.resetRule(this.props.rule.id));
-    deleteRule = stopPropagation(() => this.props.deleteRule(this.props.rule.id));
+    saveRule = stopPropagation(() => this.props.saveRule(this.props.path));
+    resetRule = stopPropagation(() => this.props.resetRule(this.props.path));
+    deleteRule = stopPropagation(() => this.props.deleteRule(this.props.path));
 
     @action.bound
     toggleActivation(event: React.MouseEvent) {
@@ -490,7 +498,7 @@ export class RuleRow extends React.Component<{
             }
         });
 
-        this.props.toggleCollapse(this.props.rule.id);
+        this.props.toggleRuleCollapsed(this.props.rule.id);
     });
 
     @action.bound
