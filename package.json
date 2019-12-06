@@ -91,7 +91,7 @@
     "polished": "^3.2.0",
     "randexp": "^0.5.3",
     "react": "^16.8.5",
-    "react-beautiful-dnd": "^12.1.1",
+    "react-beautiful-dnd": "^12.2.0",
     "react-dom": "^16.8.5",
     "react-ga": "^2.5.6",
     "react-monaco-editor": "^0.22.0",
