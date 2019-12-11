@@ -48,6 +48,10 @@ const InstructionsStep = styled.div`
     }
 `;
 
+const Nowrap = styled.span`
+    white-space: nowrap;
+`;
+
 const ManualInterceptPill = inject('interceptionStore')(observer(
     (p: {
         interceptionStore?: InterceptionStore,
@@ -78,9 +82,11 @@ const ManualInterceptConfig = inject('interceptionStore')(observer(
                     you'll need are shown here.
                 </p>
                 <p>
-                    Want your client to be supported automatically?{' '}
-                    <a href='https://github.com/httptoolkit/feedback/issues/new'>
-                    Let us know</a>.
+                    Want your client to be supported automatically? <Nowrap>
+                        <a href='https://github.com/httptoolkit/feedback/issues/new'>
+                            Send some feedback
+                        </a>
+                    </Nowrap>.
                 </p>
             </InstructionsStep>
 

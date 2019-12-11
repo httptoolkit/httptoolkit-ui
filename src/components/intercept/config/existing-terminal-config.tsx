@@ -1,8 +1,8 @@
 import * as React from 'react';
-
-import { styled, css } from '../../../styles';
 import { observer } from 'mobx-react';
 import { observable, runInAction, computed, when } from 'mobx';
+
+import { styled, css } from '../../../styles';
 import { CopyButtonIcon } from '../../common/copy-button';
 import { Interceptor } from '../../../model/interceptors';
 
@@ -67,7 +67,8 @@ const ConfigContainer = styled.div`
 class ExistingTerminalConfig extends React.Component<{
     interceptor: Interceptor,
     activateInterceptor: () => Promise<{ port: number }>,
-    showRequests: () => void
+    showRequests: () => void,
+    closeSelf: () => void
 }> {
 
     @observable serverPort?: number;
