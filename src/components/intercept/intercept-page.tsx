@@ -31,7 +31,7 @@ const InterceptPageContainer = styled.section`
 
     max-width: 1200px;
     margin: 0 auto 20px;
-    padding: 40px;
+    padding: 60px 40px;
 
     > ${ConnectedSources} {
         order: -1;
