@@ -6,6 +6,7 @@ import { IconProps, SourceIcons } from "../icons";
 import { InterceptorCustomUiConfig } from "../components/intercept/intercept-option";
 import { ManualInterceptCustomUi } from "../components/intercept/config/manual-intercept-config";
 import { ExistingTerminalCustomUi } from "../components/intercept/config/existing-terminal-config";
+import { ElectronCustomUi } from '../components/intercept/config/electron-config';
 
 interface InterceptorConfig {
     name: string;
@@ -79,6 +80,13 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: _.defaults({ color: '#dd44dd' }, SourceIcons.Terminal),
         uiConfig: ExistingTerminalCustomUi,
         tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
+    },
+    'electron': {
+        name: 'Electron Application',
+        description: 'Launch an Electron application with all its traffic intercepted',
+        iconProps: SourceIcons.Electron,
+        uiConfig: ElectronCustomUi,
+        tags: ['electron', 'desktop', 'postman']
     },
     'android-device': {
         name: 'An Android device',

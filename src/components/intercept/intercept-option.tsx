@@ -25,7 +25,8 @@ interface InterceptOptionProps {
 type InterceptorConfigComponent = React.ComponentType<{
     interceptor: Interceptor,
     activateInterceptor: (options?: any) => Promise<any>,
-    showRequests: () => void
+    showRequests: () => void,
+    closeSelf: () => void
 }>
 
 export interface InterceptorCustomUiConfig {
@@ -177,6 +178,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                         interceptor={interceptor}
                         activateInterceptor={this.activateInterceptor}
                         showRequests={showRequests}
+                        closeSelf={this.onClose}
                     />
                 </>
                 : <>

@@ -78,4 +78,23 @@ export class UiStore {
         'performance': { collapsed: true },
         'export': { collapsed: true }
     };
+
+    @action.bound
+    rememberElectronPath(path: string) {
+        if (!this.previousElectronAppPaths.includes(path)) {
+            this.previousElectronAppPaths.unshift(path);
+        }
+
+        // Keep only the most recent 3 electron paths used
+        this.previousElectronAppPaths = this.previousElectronAppPaths.slice(0, 3);
+    }
+
+    @action.bound
+    forgetElectronPath(path: string) {
+        this.previousElectronAppPaths = this.previousElectronAppPaths.filter(p => p != path);
+    }
+
+    @persist('list') @observable
+    previousElectronAppPaths: string[] = [
+    ];
 }
