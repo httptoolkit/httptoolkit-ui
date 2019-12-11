@@ -32,7 +32,7 @@ export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & 
     text-align: center;
 
     box-sizing: border-box;
-    padding: 40px;
+    padding: 20px;
     height: 100%;
     width: 100%;
 

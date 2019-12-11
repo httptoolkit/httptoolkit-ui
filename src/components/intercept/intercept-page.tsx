@@ -23,9 +23,9 @@ interface InterceptPageProps {
 const InterceptPageContainer = styled.section`
     display: grid;
 
-    grid-gap: 80px;
+    grid-gap: 60px;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 350px;
+    grid-template-rows: 310px;
     grid-auto-rows: minmax(200px, auto);
     grid-auto-flow: row dense;
 
