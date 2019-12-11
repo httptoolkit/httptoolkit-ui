@@ -48,7 +48,7 @@ const SidebarNav = styled.nav`
 
 const sidebarItemStyles = css`
     width: 80px;
-    height: 80px;
+    height: 70px;
     margin: 0 auto;
 
     display: flex;

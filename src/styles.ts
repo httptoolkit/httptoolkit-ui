@@ -5,9 +5,9 @@ import { ThemeProps } from 'styled-components';
 import reset from 'styled-reset'
 
 const fontSizes = {
-    textSize: '16px',
-    headingSize: '22px',
-    loudHeadingSize: '40px',
+    textSize: '15px',
+    headingSize: '20px',
+    loudHeadingSize: '38px',
 };
 
 export const lightTheme = {
