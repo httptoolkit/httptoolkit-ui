@@ -54,6 +54,10 @@ const CertificateWhitelistList = styled.div`
         border-radius: 4px;
         border: solid 1px ${p => p.theme.containerBorder};
     }
+
+    input[type=text] {
+        font-size: ${p => p.theme.textInputFontSize};
+    }
 `;
 
 const CertificateHost = styled.div`
@@ -79,6 +83,7 @@ const ClientCertificatesList = styled.div`
     align-items: baseline;
 
     input[type=text] {
+        font-size: ${p => p.theme.textInputFontSize};
         align-self: stretch;
         padding: 5px 10px;
         border-radius: 4px;

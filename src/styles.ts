@@ -5,6 +5,7 @@ import { ThemeProps } from 'styled-components';
 import reset from 'styled-reset'
 
 const fontSizes = {
+    textInputFontSize: '13px',
     textSize: '15px',
     headingSize: '20px',
     loudHeadingSize: '38px',
