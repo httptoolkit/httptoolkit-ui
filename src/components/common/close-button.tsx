@@ -30,4 +30,8 @@ export const CloseButton = styled(
 
     top: ${p => p.top || '15px'};
     right: ${p => p.right || '15px'};
+
+    &:hover {
+        opacity: 0.6;
+    }
 `;
