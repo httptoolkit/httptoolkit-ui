@@ -80,12 +80,18 @@ const ForgetPathButton = styled(UnstyledButton)`
     }
 `;
 
-function getWordForBinary() {
-    const { platform } = navigator;
+const platform = navigator.platform.startsWith('Mac')
+        ? 'mac'
+    : navigator.platform.startsWith('Win')
+        ? 'win'
+    : navigator.platform.includes('Linux')
+        ? 'linux'
+    : 'unknown';
 
-    if (platform.startsWith('Mac')) return 'application';
-    if (platform.startsWith('Win')) return 'exe';
-    if (platform.includes('Linux')) return 'binary';
+function getWordForBinary() {
+    if (platform === 'mac') return 'application';
+    if (platform === 'win') return 'exe';
+    if (platform === 'linux') return 'binary';
     else return 'application';
 }
 
@@ -95,7 +101,7 @@ function getArticleForBinary(binaryName: string) {
 }
 
 function getReadablePath(path: string) {
-    if (navigator.platform.includes('Win')) {
+    if (platform === 'win') {
         // Windows exes generally have meaningful names, so just use that
         return _.last(path.split('\\'))!;
     } else {
@@ -129,7 +135,8 @@ class ElectronConfig extends React.Component<{
         const { previousElectronAppPaths } = this.props.uiStore!;
         if (previousElectronAppPaths.length === 0) {
             this.selectApplication();
-            this.props.closeSelf();
+            // Don't expand for selection, unless we're a mac (where the instructions might be useful).
+            if (platform !== 'mac') this.props.closeSelf();
         }
     }
 
@@ -163,9 +170,15 @@ class ElectronConfig extends React.Component<{
 
         return <ConfigContainer>
             <p>
-                Start an Electron {binary} with HTTP Toolkit's settings automatically injected,
-                to immediately intercept all HTTP & HTTPS traffic.
+                Start an Electron {binary} with HTTP Toolkit's settings injected,
+                to intercept all its HTTP & HTTPS traffic.
             </p>
+            {
+                platform === 'mac' && previousElectronAppPaths.length < 2 && <p>
+                    To run a Mac .app bundle, select the executable within. It's typically
+                    in Contents/MacOS inside the bundle.
+                </p>
+            }
             <p>
                 {
                     previousElectronAppPaths.length
