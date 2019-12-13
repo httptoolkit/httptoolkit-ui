@@ -41,6 +41,7 @@ export class UiStore {
     setTheme(themeNameOrObject: Theme | ThemeName) {
         if (typeof themeNameOrObject === 'string') {
             this._themeName = themeNameOrObject;
+            this.customTheme = undefined;
         } else {
             this._themeName = 'custom';
             this.customTheme = themeNameOrObject;
@@ -55,12 +56,12 @@ export class UiStore {
     }
 
     @persist('object') @observable
-    private customTheme: Theme = lightTheme;
+    private customTheme: Theme | undefined = undefined;
 
     @computed
     get theme(): Theme {
         if (this.themeName === 'custom') {
-            return this.customTheme;
+            return this.customTheme!;
         } else {
             return Themes[this.themeName];
         }
