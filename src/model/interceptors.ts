@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import * as semver from "semver";
 
 import { ServerInterceptor } from "../services/server-api";
 import { IconProps, SourceIcons } from "../icons";
@@ -15,7 +16,8 @@ interface InterceptorConfig {
     tags: string[];
     inProgress?: boolean;
     clientOnly?: true;
-    uiConfig?: InterceptorCustomUiConfig
+    uiConfig?: InterceptorCustomUiConfig;
+    semverRange?: string;
 }
 
 export type Interceptor =
@@ -86,6 +88,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         description: 'Launch an Electron application with all its traffic intercepted',
         iconProps: SourceIcons.Electron,
         uiConfig: ElectronCustomUi,
+        semverRange: '^1.0.1',
         tags: ['electron', 'desktop', 'postman']
     },
     'android-device': {
@@ -142,12 +145,12 @@ export function getInterceptOptions(serverInterceptorArray: ServerInterceptor[])
                 isActivable: true
             });
         } else {
-            // For everything else, the server tells us if it's supported,
-            // activable, or currently active.
-            const serverInterceptor = serverInterceptors[id] || {
-                isActive: false,
-                isActivable: false
-            };
+            // For everything else, the server tells us if it's supported, activable, or currently active.
+            // semverRange allows the UI to require certain minimum versions of interceptors
+            const serverInterceptor = serverInterceptors[id] &&
+                (!option.semverRange || semver.satisfies(serverInterceptors[id].version, option.semverRange))
+                ? serverInterceptors[id]
+                : { isActive: false, isActivable: false };
 
             return _.assign({}, option, serverInterceptor, {
                 id: id,
