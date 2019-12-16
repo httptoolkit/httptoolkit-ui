@@ -447,7 +447,7 @@ export class RuleRow extends React.Component<{
                             { isHandlerDemo
                                 // If you select a paid handler with an unpaid account,
                                 // show a handler demo with a 'Get Pro' overlay:
-                                ? <GetProOverlay getPro={getPro}>
+                                ? <GetProOverlay getPro={getPro} source={`rule-${ruleHandler.type}`}>
                                     <HandlerConfiguration
                                         handler={ruleHandler}
                                         onChange={_.noop}

@@ -30,7 +30,7 @@ export const ExchangeErrorHeader = (p: {
         | 'wrong-host'
         | 'tls-error'
         | 'host-not-found',
-    getPro: () => void,
+    getPro: (source: string) => void,
     navigate: (path: string) => void,
     ignoreError: () => void
 }) =>
@@ -110,7 +110,10 @@ export const ExchangeErrorHeader = (p: {
                 ? <HeaderButton onClick={() => p.navigate('/settings')} onKeyPress={clickOnEnter}>
                     Go to Settings
                 </HeaderButton>
-            : <HeaderButton onClick={p.getPro} onKeyPress={clickOnEnter}>
+            : <HeaderButton
+                onClick={() => p.getPro(`error-header-${p.type}`)}
+                onKeyPress={clickOnEnter}
+            >
                 Get Pro
             </HeaderButton>
         }

@@ -77,7 +77,7 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
                 <CachingPerformance exchange={exchange} />
             </div>
         :
-            <CardSalesPitch>
+            <CardSalesPitch source='performance'>
                 <p>
                     See timing info, dive into the real and potential compression of every exchange, and understand how & where this response could
                     be cached, for a full performance overview.

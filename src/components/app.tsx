@@ -118,7 +118,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     icon: ['far', 'star'],
                     position: 'bottom',
                     type: 'callback',
-                    onClick: () => this.props.accountStore.getPro()
+                    onClick: () => this.props.accountStore.getPro('sidebar')
                 }
             ),
 

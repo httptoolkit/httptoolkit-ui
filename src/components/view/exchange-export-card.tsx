@@ -181,7 +181,7 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
                     />
                 </div>
             :
-                <CardSalesPitch>
+                <CardSalesPitch source='export'>
                     <p>
                         Instantly export requests as code, for languages and tools including cURL, wget, JS
                         (XHR, Node HTTP, Request, ...), Python (native or Requests), Ruby, Java (OkHttp

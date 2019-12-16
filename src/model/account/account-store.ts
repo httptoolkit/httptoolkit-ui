@@ -117,9 +117,9 @@ export class AccountStore {
             subscriptionExpiry.valueOf() + expiryMargin > Date.now();
     }
 
-    getPro = flow(function * (this: AccountStore) {
+    getPro = flow(function * (this: AccountStore, source: string) {
         try {
-            trackEvent({ category: 'Account', action: 'Get Pro' });
+            trackEvent({ category: 'Account', action: 'Get Pro', label: source });
 
             const selectedPlan: SubscriptionPlanCode | undefined = yield this.pickPlan();
             if (!selectedPlan) return;
@@ -142,6 +142,7 @@ export class AccountStore {
         let initialModal = this.modal;
         this.modal = 'login';
 
+        trackEvent({ category: 'Account', action: 'Login' });
         const loggedIn: boolean = yield showLoginDialog();
 
         if (loggedIn) {
@@ -176,7 +177,9 @@ export class AccountStore {
 
         if (selectedPlan) {
             trackEvent({ category: 'Account', action: 'Plan selected', label: selectedPlan });
-        } else {
+        } else if (!this.isPaidUser) {
+            // If you don't pick a plan via any route other than already having
+            // bought them, then you're pretty clearly rejecting them.
             trackEvent({ category: 'Account', action: 'Plans rejected' });
         }
 

@@ -59,12 +59,13 @@ const GetProButton = styled(UnstyledButton)`
 
 export const CardSalesPitch = inject('accountStore')(observer((p: {
     children: React.ReactNode,
+    source: string,
     accountStore?: AccountStore
 }) => <CardSalesPitchContainer>
 
     { p.children }
 
-    <GetProButton onClick={p.accountStore!.getPro}>
+    <GetProButton onClick={() => p.accountStore!.getPro(p.source)}>
         <Icon icon={['far', 'star']} size='2x' />
         Get HTTP Toolkit Pro
     </GetProButton>
@@ -109,16 +110,20 @@ const OverlayGetProButton = styled(GetProButton)`
     z-index: 1;
 `;
 
+@observer
 export class GetProOverlay extends React.Component<{
-    getPro: () => void,
+    getPro: (source: string) => void,
+    source: string,
     children: React.ReactNode
 }> {
-
     private buttonRef = React.createRef<HTMLButtonElement>();
 
     render() {
         return <OverlayContainer>
-            <OverlayGetProButton ref={this.buttonRef} onClick={this.props.getPro}>
+            <OverlayGetProButton
+                ref={this.buttonRef}
+                onClick={() => this.props.getPro(this.props.source)}
+            >
                 <Icon icon={['far', 'star']} size='2x' />
                 Get Pro
             </OverlayGetProButton>

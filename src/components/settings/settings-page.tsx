@@ -138,7 +138,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
         if (!isPaidUser) {
             // Can only happen if you log out whilst on this page.
             return <SettingsPagePlaceholder>
-                <Button onClick={getPro}>Get Pro</Button>
+                <Button onClick={() => getPro('settings-page')}>Get Pro</Button>
             </SettingsPagePlaceholder>;
         }
 
