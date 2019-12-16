@@ -188,6 +188,10 @@ const Feature = styled.li`
     &:not(:first-child) {
         margin-top: 20px;
     }
+
+    strong {
+        color: ${p => p.theme.popColor};
+    }
 `;
 
 const SubFeature = styled(Feature)`
@@ -297,15 +301,15 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     <TierFeatures>
                         <Feature>
                             <strong>In-depth HTTP debugging tools</strong>, including compression
-                            & caching analysis
+                            & caching performance analysis
                         </Feature>
                         <Feature>
-                            <strong>Validation & documentation for more than 1400 APIs</strong>,
-                            from AWS to GitHub to Stripe
+                            <strong>Validation & documentation for 1400+ APIs</strong>,
+                            from AWS to GitHub to Stripe, powered by OpenAPI
                         </Feature>
                         <Feature>
                             <strong>Automated HTTP mocking & rewriting</strong>, including fixed
-                            responses, request forwarding, connection failures, timeouts and more
+                            responses, request forwarding, connection failures, timeouts & more
                         </Feature>
                         <Feature>
                             <strong>Import/export mock rules</strong>, to reuse & share your mock environments
@@ -357,7 +361,9 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         <Feature>Licensed to your team, rather than individuals</Feature>
                         <Feature>Add or remove team members whenever you need to</Feature>
                         <Feature>
-                            <strong>Team workspaces</strong> for low-friction collaboration (coming soon)
+                            <strong>Team workspaces</strong> for low-friction collaboration <Nowrap>
+                                (<em>coming soon</em>)
+                            </Nowrap>
                         </Feature>
                         <FeatureHeading>
                             Options available on request:
