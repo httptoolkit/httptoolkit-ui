@@ -120,64 +120,64 @@ export class AccountStore {
     getPro = flow(function * (this: AccountStore) {
         try {
             trackEvent({ category: 'Account', action: 'Get Pro' });
-            if (!this.isLoggedIn) {
-                yield this.login();
-
-                if (!this.isLoggedIn) {
-                    trackEvent({ category: 'Account', action: 'Login failed' });
-                    return;
-                }
-
-                trackEvent({ category: 'Account', action: 'Login success' });
-            }
-
-            if (this.isPaidUser) {
-                trackEvent({ category: 'Account', action: 'Paid user login' });
-                return;
-            }
 
             const selectedPlan: SubscriptionPlanCode | undefined = yield this.pickPlan();
-            if (!selectedPlan) {
-                trackEvent({ category: 'Account', action: 'Plans rejected' });
-                return;
-            }
-            trackEvent({ category: 'Account', action: 'Plan selected', label: selectedPlan });
+            if (!selectedPlan) return;
 
-            const purchased = yield this.purchasePlan(this.user.email!, selectedPlan);
+            if (!this.isLoggedIn) yield this.logIn();
 
-            if (purchased) {
-                trackEvent({ category: 'Account', action: 'Checkout complete', label: selectedPlan });
-            } else {
-                trackEvent({ category: 'Account', action: 'Checkout cancelled', label: selectedPlan });
-            }
+            // If we cancelled login, or we've already got a plan, we're done.
+            if (!this.isLoggedIn || this.isPaidUser) return;
+
+            // Otherwise, it's checkout time, and the rest is in the hands of Paddle
+            yield this.purchasePlan(this.user.email!, selectedPlan);
         } catch (error) {
             reportError(error);
             this.modal = undefined;
         }
     }.bind(this));
 
-    private login = flow(function * (this: AccountStore) {
+    logIn = flow(function * (this: AccountStore) {
+        let initialModal = this.modal;
         this.modal = 'login';
 
         const loggedIn: boolean = yield showLoginDialog();
-        this.modal = undefined;
+
+        if (loggedIn) {
+            trackEvent({ category: 'Account', action: 'Login success' });
+            if (this.isPaidUser) {
+                trackEvent({ category: 'Account', action: 'Paid user login' });
+                this.modal = undefined;
+            } else {
+                this.modal = initialModal;
+            }
+        } else {
+            trackEvent({ category: 'Account', action: 'Login failed' });
+            this.modal = undefined;
+        }
+
         return loggedIn;
-    });
+    }.bind(this));
 
     @action.bound
     logOut() {
         logOut();
-        this.modal = undefined;
     }
 
     private pickPlan = flow(function * (this: AccountStore) {
         this.modal = 'pick-a-plan';
 
-        yield when(() => this.modal !== 'pick-a-plan' || !!this.selectedPlan);
+        yield when(() => this.modal === undefined || !!this.selectedPlan);
 
         const selectedPlan = this.selectedPlan;
         this.selectedPlan = undefined;
         this.modal = undefined;
+
+        if (selectedPlan) {
+            trackEvent({ category: 'Account', action: 'Plan selected', label: selectedPlan });
+        } else {
+            trackEvent({ category: 'Account', action: 'Plans rejected' });
+        }
 
         return selectedPlan;
     });
@@ -210,6 +210,12 @@ export class AccountStore {
             // After 30 seconds, fail - this will report an error, show an error, and then refresh
             if (!this.isPaidUser) throw new Error('Checkout failed to complete!');
         }
+
+        trackEvent({
+            category: 'Account',
+            action: purchased ? 'Checkout complete' : 'Checkout cancelled',
+            label: planCode
+        });
 
         this.modal = undefined;
         return purchased;

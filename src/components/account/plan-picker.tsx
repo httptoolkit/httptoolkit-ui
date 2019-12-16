@@ -79,13 +79,18 @@ const PlanCycle = styled.span<{selected: boolean}>`
 
 const PlanPickerButtons = styled.div`
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: space-evenly;
 
-    margin-top: 50px;
+    width: 300px;
+    margin: 50px auto 0;
 `;
 
 const PlanSecondaryButton = styled(SecondaryButton)`
+    &:not(:last-child) {
+        margin-bottom: 10px;
+    }
+
     &:not([disabled]) {
         color: ${p => p.theme.mainBackground};
         border-color: ${p => p.theme.mainBackground};
@@ -238,10 +243,11 @@ const PlanSmallPrint = styled.div`
 type PlanCycle = 'monthly' | 'annual';
 
 interface PlanPickerProps {
-    email: string;
+    email?: string;
     plans: _.Dictionary<SubscriptionPlan>;
     onPlanPicked: (plan: SubscriptionPlanCode | undefined) => void;
-    onLogOut: () => void;
+    logOut: () => void;
+    logIn: () => void;
 }
 
 @observer
@@ -252,7 +258,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
 
     render() {
         const { planCycle, toggleCycle, buyPlan, closePicker, getPlanMonthlyPrice } = this;
-        const { email, onLogOut } = this.props;
+        const { email, logOut, logIn } = this.props;
 
         return <PlanPickerModal open>
             <PlanPickerDetails>
@@ -266,9 +272,9 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                 </PlanCycleToggle>
 
                 <PlanSmallPrint>
-                    <p>
+                    { email && <p>
                         Logged in as <Nowrap>{ email }</Nowrap>.
-                    </p>
+                    </p> }
                     <p>
                         By subscribing to a paid plan, you accept <Nowrap>
                             <a href="https://httptoolkit.tech/terms-of-service">
@@ -279,8 +285,12 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                 </PlanSmallPrint>
 
                 <PlanPickerButtons>
+                    {
+                        email
+                            ? <PlanSecondaryButton onClick={logOut}>Log out</PlanSecondaryButton>
+                            : <PlanSecondaryButton onClick={logIn}>Log into existing account</PlanSecondaryButton>
+                    }
                     <PlanSecondaryButton onClick={closePicker}>Cancel</PlanSecondaryButton>
-                    <PlanSecondaryButton onClick={onLogOut}>Log out</PlanSecondaryButton>
                 </PlanPickerButtons>
             </PlanPickerDetails>
 
