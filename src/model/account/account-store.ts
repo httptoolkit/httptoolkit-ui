@@ -133,6 +133,7 @@ export class AccountStore {
             yield this.purchasePlan(this.user.email!, selectedPlan);
         } catch (error) {
             reportError(error);
+            alert(`${error.message}\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.tech.`);
             this.modal = undefined;
         }
     }.bind(this));
@@ -207,8 +208,10 @@ export class AccountStore {
                 yield this.updateUser();
             }
 
-            // After 30 seconds, fail - this will report an error, show an error, and then refresh
-            if (!this.isPaidUser) throw new Error('Checkout failed to complete!');
+            // After 30 seconds, fail - this will report an error and then refresh
+            if (!this.isPaidUser) {
+                throw new Error('Checkout failed to complete');
+            }
         }
 
         trackEvent({
