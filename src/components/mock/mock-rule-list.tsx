@@ -113,6 +113,7 @@ export class MockRuleList extends React.Component<{
     toggleRuleCollapsed: (id: string) => void,
     moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
+    combineRulesAsGroup: (sourcePath: ItemPath, targetPath: ItemPath) => void,
 
     collapsedRulesMap: { [id: string]: boolean }
 }> {
@@ -135,13 +136,38 @@ export class MockRuleList extends React.Component<{
     }
 
     buildDragEndListener = (indexMapping: Array<ItemPath>, rules: HtkMockRuleRoot) =>
-        action(({ source, destination }: DropResult) => {
+        action(({ source, destination, combine }: DropResult) => {
             this.currentlyDraggingRuleId = undefined;
+
+            const { draftRules } = this.props;
+
+            if (combine) {
+                const sourcePath = indexMapping[source.index];
+                const isTail = combine.draggableId.endsWith('-tail');
+                const targetId = isTail ? combine.draggableId.slice(0, -5) : combine.draggableId;
+
+                const targetPath = findItemPath(draftRules, { id: targetId })!;
+                const targetItem = getItemAtPath(draftRules, targetPath);
+
+                if (isRuleGroup(targetItem)) {
+                    this.props.moveRule(
+                        sourcePath,
+                        targetPath.concat(isTail ? targetItem.items.length : 0)
+                    );
+                } else {
+                    this.props.combineRulesAsGroup(
+                        sourcePath,
+                        targetPath
+                    );
+                }
+
+                return;
+            }
 
             if (!destination) {
                 if (this.wasGroupOpenBeforeDrag) {
                     const path = indexMapping[source.index];
-                    const item = getItemAtPath(this.props.draftRules, path) as HtkMockRuleGroup;
+                    const item = getItemAtPath(draftRules, path) as HtkMockRuleGroup;
                     item.collapsed = false;
                 }
 
@@ -161,7 +187,7 @@ export class MockRuleList extends React.Component<{
             );
 
             if (this.wasGroupOpenBeforeDrag) {
-                const item = getItemAtPath(this.props.draftRules, targetPath) as HtkMockRuleGroup;
+                const item = getItemAtPath(draftRules, targetPath) as HtkMockRuleGroup;
                 item.collapsed = false;
             }
         });
@@ -205,7 +231,10 @@ export class MockRuleList extends React.Component<{
             onBeforeCapture={beforeDrag}
             onDragEnd={buildDragEndListener(indexMapping, draftRules)}
         >
-            <Droppable droppableId='mock-rule-list'>{(provided) => <Observer>{() =>
+            <Droppable
+                isCombineEnabled={true}
+                droppableId='mock-rule-list'
+            >{(provided) => <Observer>{() =>
                 <MockRuleListContainer
                     ref={provided.innerRef}
                     {...provided.droppableProps}

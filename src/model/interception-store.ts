@@ -56,7 +56,8 @@ import {
     updateItemAtPath,
     findItem,
     findItemPath,
-    HtkMockRuleRoot
+    HtkMockRuleRoot,
+    isRuleRoot
 } from './rules/rules';
 import { deserializeRules } from './rules/rule-serialization';
 import { getDesktopInjectedValue } from '../services/desktop-api';
@@ -406,6 +407,9 @@ export class InterceptionStore {
             // We're moving parent. Before rearranging it, we need to reparent the draft element.
             currentDraftParent.items.splice(_.last(draftRulePath)!, 1);
             targetDraftParent.items.splice(0, 0, resetRule); // Put it at the start: we'll rearrange below
+            if (currentDraftParent.items.length === 0 && !isRuleRoot(currentDraftParent)) {
+                this.deleteDraftRule(findItemPath(this.draftRules, { id: currentDraftParent.id })!);
+            }
         }
 
         // Check the rule's position relative to its siblings, reset it if necessary:
@@ -518,6 +522,11 @@ export class InterceptionStore {
         const parent = getItemParentByPath(this.draftRules, draftRulePath);
         const itemIndex = _.last(draftRulePath)!;
         parent.items.splice(itemIndex, 1);
+
+        // If the parent is empty, delete them too (recursively, until the root)
+        if (parent.items.length === 0 && !isRuleRoot(parent)) {
+            this.deleteDraftRule(findItemPath(this.draftRules, { id: parent.id })!);
+        }
     }
 
     @action.bound
@@ -530,6 +539,30 @@ export class InterceptionStore {
 
         const [item] = currentParent.items.splice(currentIndex, 1);
         targetParent.items.splice(targetIndex, 0, item);
+
+        // If the source parent is empty, delete them completely
+        if (currentParent.items.length === 0 && !isRuleRoot(currentParent)) {
+            this.deleteDraftRule(findItemPath(this.draftRules, { id: currentParent.id })!);
+        }
+    }
+
+    @action.bound
+    combineDraftRulesAsGroup(sourcePath: ItemPath, targetPath: ItemPath) {
+        const sourceItem = getItemAtPath(this.draftRules, sourcePath);
+
+        const targetParent = getItemParentByPath(this.draftRules, targetPath);
+        const targetIndex = _.last(targetPath)!;
+        const targetItem = targetParent.items[targetIndex];
+
+        targetParent.items[targetIndex] = {
+            id: uuid(),
+            title: "New group",
+            items: [
+                targetItem,
+                sourceItem
+            ]
+        };
+        this.deleteDraftRule(sourcePath);
     }
 
     @action.bound

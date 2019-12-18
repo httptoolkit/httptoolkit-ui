@@ -119,7 +119,8 @@ class MockPage extends React.Component<MockPageProps> {
             areSomeRulesNonDefault,
             deleteDraftRule,
             moveDraftRule,
-            updateGroupTitle
+            updateGroupTitle,
+            combineDraftRulesAsGroup
         } = this.props.interceptionStore;
         const { isPaidUser } = this.props.accountStore;
 
@@ -192,6 +193,7 @@ class MockPage extends React.Component<MockPageProps> {
                     deleteRule={deleteDraftRule}
                     toggleRuleCollapsed={this.toggleRuleCollapsed}
                     moveRule={moveDraftRule}
+                    combineRulesAsGroup={combineDraftRulesAsGroup}
                     updateGroupTitle={updateGroupTitle}
                 />
             </MockPageScrollContainer>
