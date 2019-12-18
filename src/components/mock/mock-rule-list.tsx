@@ -228,7 +228,10 @@ function buildRuleRows(
     allActiveRules: HtkMockRuleRoot,
     collapsedRulesMap: { [id: string]: boolean },
     currentlyDraggingRuleId: string | undefined,
-    rowEventHandlers: any, // props of RuleRow
+    rowEventHandlers: Pick<
+        React.ComponentProps<typeof RuleRow>,
+        'toggleRuleCollapsed' | 'saveRule' | 'resetRule' | 'deleteRule'
+    >,
 
     ruleGroup: HtkMockRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
