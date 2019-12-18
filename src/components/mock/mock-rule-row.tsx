@@ -18,6 +18,7 @@ import {
 import { AccountStore } from '../../model/account/account-store';
 
 import { clickOnEnter } from '../component-utils';
+import { GetProOverlay } from '../account/pro-placeholders';
 import { LittleCard } from '../common/card';
 import {
     InitialMatcherRow,
@@ -26,29 +27,7 @@ import {
 } from './matcher-selection';
 import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
-import { GetProOverlay } from '../account/pro-placeholders';
-
-const FloatingDragHandle = styled.div`
-    position: absolute;
-    left: -36px;
-    top: 14px;
-    padding-right: 7px;
-
-    cursor: row-resize;
-
-    opacity: 0;
-
-    :focus, :active {
-        outline: none;
-        opacity: 0.5;
-        color: ${p => p.theme.popColor};
-    }
-`;
-
-const DragHandle = (props: {}) =>
-    <FloatingDragHandle {...props}>
-        <Icon icon={['fas', 'grip-vertical']} />
-    </FloatingDragHandle>;
+import { DragHandle } from './mock-drag-handle';
 
 const RowContainer = styled<React.ComponentType<{
     deactivated?: boolean,
@@ -76,26 +55,28 @@ const RowContainer = styled<React.ComponentType<{
     overflow: initial;
 
     ${(p) => p.collapsed && !p.disabled
-        ? css`
-            user-select: none;
+            ? css`
+                user-select: none;
 
-            &:hover {
+                &:hover {
+                    ${MenuContainer} {
+                        display: flex;
+                    }
+
+                    ${DragHandle} {
+                        opacity: 0.5;
+                    }
+                }
+
+                ${p.deactivated && 'opacity: 0.6;'}
+            `
+        : !p.collapsed
+            ? css`
                 ${MenuContainer} {
                     display: flex;
                 }
-
-                ${FloatingDragHandle} {
-                    opacity: 0.5;
-                }
-            }
-
-            ${p.deactivated && 'opacity: 0.6;'}
-        `
-        : css`
-            ${MenuContainer} {
-                display: flex;
-            }
-        `
+            `
+        : ''
     }
 
     border-left: 5px solid ${(p) => p.borderColor};
