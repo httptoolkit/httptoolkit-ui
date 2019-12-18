@@ -39,12 +39,20 @@ function getDragTarget(
 
     const pathComparison = comparePaths(sourcePath, displacedItemPath);
 
-    const displacedItem = getItemAtPath(rules, displacedItemPath);
+    const displacedItemParent = getItemParentByPath(rules, displacedItemPath);
+    const displacedItemIndex = _.last(displacedItemPath)!;
+
+    // Avoid reading off the end of the children (for group tail elements),
+    // to stop mobx complaining at us.
+    const displacedItem = displacedItemParent.items.length > displacedItemIndex
+        ? getItemAtPath(rules, displacedItemPath)
+        : undefined;
 
     const sourceParentPath = sourcePath.slice(0, -1);
     const targetParentPath = displacedItemPath.slice(0, -1);
 
     if (
+        displacedItem &&
         isRuleGroup(displacedItem) &&
         !displacedItem.collapsed &&
         pathComparison > 0
