@@ -2,10 +2,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, action } from 'mobx';
 import { observer, Observer } from 'mobx-react'
-import { Droppable, DragDropContext, DragStart, DropResult, Draggable, DragUpdate } from 'react-beautiful-dnd';
+import { Draggable, Droppable, DragDropContext, BeforeCapture, DropResult } from 'react-beautiful-dnd';
 
 import { styled } from '../../styles';
-import { Icon } from '../../icons';
 
 import {
     areItemsEqual,
@@ -18,6 +17,7 @@ import {
     isRuleGroup,
     comparePaths,
     getItemAtPath,
+    findItem,
 } from '../../model/rules/rules';
 
 import { AddRuleRow, RuleRow } from './mock-rule-row';
@@ -43,8 +43,12 @@ function getDragTarget(
     const sourceParentPath = sourcePath.slice(0, -1);
     const targetParentPath = displacedItemPath.slice(0, -1);
 
-    if (isRuleGroup(displacedItem) && pathComparison > 0) {
-        // If you displace a group header below you from above, then
+    if (
+        isRuleGroup(displacedItem) &&
+        !displacedItem.collapsed &&
+        pathComparison > 0
+    ) {
+        // If you displace an expanded group header below you from above, then
         // you're actually entering the top of the group
         return { sourcePath, targetPath: displacedItemPath.concat(0) };
     }
@@ -105,16 +109,34 @@ export class MockRuleList extends React.Component<{
 
     @observable currentlyDraggingRuleId: string | undefined;
 
+    private wasGroupOpenBeforeDrag: boolean | undefined;
+
     @action.bound
-    startDrag({ draggableId }: DragStart) {
+    beforeDrag({ draggableId }: BeforeCapture) {
         this.currentlyDraggingRuleId = draggableId;
+
+        const item = findItem(this.props.draftRules, { id: draggableId });
+        if (item && isRuleGroup(item)) {
+            this.wasGroupOpenBeforeDrag = !item.collapsed;
+            item.collapsed = true;
+        } else {
+            this.wasGroupOpenBeforeDrag = undefined;
+        }
     }
 
     buildDragEndListener = (indexMapping: Array<ItemPath>, rules: HtkMockRuleRoot) =>
         action(({ source, destination }: DropResult) => {
             this.currentlyDraggingRuleId = undefined;
 
-            if (!destination) return;
+            if (!destination) {
+                if (this.wasGroupOpenBeforeDrag) {
+                    const path = indexMapping[source.index];
+                    const item = getItemAtPath(this.props.draftRules, path) as HtkMockRuleGroup;
+                    item.collapsed = false;
+                }
+
+                return;
+            }
 
             const { sourcePath, targetPath } = getDragTarget(
                 indexMapping,
@@ -127,6 +149,11 @@ export class MockRuleList extends React.Component<{
                 sourcePath,
                 targetPath
             );
+
+            if (this.wasGroupOpenBeforeDrag) {
+                const item = getItemAtPath(this.props.draftRules, targetPath) as HtkMockRuleGroup;
+                item.collapsed = false;
+            }
         });
 
     render() {
@@ -143,7 +170,7 @@ export class MockRuleList extends React.Component<{
             collapsedRulesMap
         } = this.props;
         const {
-            startDrag,
+            beforeDrag,
             buildDragEndListener,
             currentlyDraggingRuleId,
         } = this;
@@ -163,7 +190,7 @@ export class MockRuleList extends React.Component<{
         );
 
         return <DragDropContext
-            onDragStart={startDrag}
+            onBeforeCapture={beforeDrag}
             onDragEnd={buildDragEndListener(indexMapping, draftRules)}
         >
             <Droppable droppableId='mock-rule-list'>{(provided) => <Observer>{() =>
@@ -264,6 +291,9 @@ function buildRuleRows(
                 />
             );
             result.indexMapping.push(itemPath);
+
+            // We skip the children & tail of collapsed groups
+            if (item.collapsed) return result;
 
             const subResult = buildRuleRows(
                 allDraftRules,

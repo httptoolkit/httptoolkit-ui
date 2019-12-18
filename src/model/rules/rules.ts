@@ -42,6 +42,7 @@ export type HtkMockRuleGroup = {
     id: string;
     title: string;
     items: HtkMockItem[];
+    collapsed?: boolean;
 };
 
 export type HtkMockRuleRoot = HtkMockRuleGroup & {
