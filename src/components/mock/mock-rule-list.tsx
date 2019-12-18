@@ -20,6 +20,7 @@ import {
     findItem,
 } from '../../model/rules/rules';
 
+import { GroupHeader, GroupTail } from './mock-rule-group';
 import { AddRuleRow, RuleRow } from './mock-rule-row';
 
 const MockRuleListContainer = styled.ol`
@@ -214,59 +215,6 @@ export class MockRuleList extends React.Component<{
 
 type RuleRowsData = { indexMapping: Array<ItemPath>, ruleRows: Array<React.ReactNode> };
 
-const GroupHeaderContainer = styled.header<{ depth: number }>`
-    margin-top: 20px;
-
-    width: calc(100% - ${p => p.depth * 20}px);
-    margin-left: ${p => p.depth * 20}px;
-
-    padding: 5px 20px;
-    box-sizing: border-box;
-
-    margin-top: 20px;
-
-    display: flex;
-    align-items: center;
-
-    > h2 {
-        font-size: ${(p) => p.theme.headingSize};
-        margin-left: 10px;
-    }
-`;
-
-const GroupHeader = (p: { group: HtkMockRuleGroup, path: ItemPath, index: number }) =>
-    <Draggable
-        draggableId={p.group.id}
-        index={p.index}
-        isDragDisabled={true}
-    >{ (provided) => <Observer>{ () =>
-        <GroupHeaderContainer
-            depth={p.path.length - 1}
-            {...provided.draggableProps}
-            ref={provided.innerRef}
-        >
-            <h2>{ p.group.title }</h2>
-        </GroupHeaderContainer>
-    }</Observer>}</Draggable>;
-
-const GroupTailPlaceholder = styled.div`
-    width: 100%;
-    height: 40px;
-    margin-bottom: -20px;
-`;
-
-const GroupTail = (p: { group: HtkMockRuleGroup, index: number }) =>
-    <Draggable
-        draggableId={p.group.id + '-tail'}
-        index={p.index}
-        isDragDisabled={true}
-    >{ (provided) =>
-        <GroupTailPlaceholder
-            {...provided.draggableProps}
-            ref={provided.innerRef}
-        />
-    }</Draggable>;
-
 function buildRuleRows(
     allDraftRules: HtkMockRuleRoot,
     allActiveRules: HtkMockRuleRoot,
@@ -288,6 +236,7 @@ function buildRuleRows(
                     group={item}
                     path={itemPath}
                     index={overallStartIndex + result.indexMapping.length}
+                    collapsed={!!item.collapsed}
                 />
             );
             result.indexMapping.push(itemPath);

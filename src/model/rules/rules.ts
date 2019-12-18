@@ -261,7 +261,7 @@ export type InitialMatcher = InstanceType<InitialMatcherClass>;
 
 export const buildDefaultRules = (interceptionStore: InterceptionStore) => ({
     id: 'root',
-    title: 'HTTP Toolkit Rules',
+    title: "HTTP Toolkit Rules",
     isRoot: true,
     items: [
         {
