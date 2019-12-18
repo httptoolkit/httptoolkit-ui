@@ -48,7 +48,9 @@ const GroupHeaderContainer = styled.header<{
     width: calc(100% - 5px - ${p => p.depth * 40}px);
     margin-left: calc(5px + ${p => p.depth * 40}px);
 
-    padding: 5px 20px 5px 15px;
+    padding: ${p => p.collapsed
+        ? '5px 20px 5px 15px'
+        : '5px 20px 5px 0px'};
     box-sizing: border-box;
 
     display: flex;

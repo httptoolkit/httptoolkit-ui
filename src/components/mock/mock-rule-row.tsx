@@ -38,8 +38,8 @@ const RowContainer = styled<React.ComponentType<{
 } & React.ComponentProps<'section'>>>(LittleCard)`
     margin-top: 20px;
 
-    width: calc(100% - ${p => p.depth * 20}px);
-    margin-left: ${p => p.depth * 20}px;
+    width: calc(100% - ${p => p.depth * 40}px);
+    margin-left: ${p => p.depth * 40}px;
 
     svg {
         margin: 0 5px;
