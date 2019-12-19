@@ -2,7 +2,7 @@ import * as React from 'react';
 import { action } from 'mobx';
 import { Observer } from 'mobx-react'
 import { Method, matchers } from 'mockttp';
-import { Draggable } from 'react-beautiful-dnd';
+import { Draggable, DraggingStyle, NotDraggingStyle, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
@@ -129,6 +129,29 @@ const GroupHeaderContainer = styled.header<{
     }
 `;
 
+const extendGroupDraggableStyles = (
+    style: DraggingStyle | NotDraggingStyle | undefined,
+    snapshot: DraggableStateSnapshot
+) => {
+    const overrideStyles: _.Dictionary<string> = { };
+
+    if (style && style.transition) {
+        overrideStyles.transition = style.transition.replace(
+            /transform [\d.]+s/,
+            'transform 100ms'
+        );
+    }
+
+    if (snapshot.combineWith && snapshot.combineWith.endsWith('-tail')) {
+        overrideStyles.opacity = '1';
+    }
+
+    return {
+        ...style,
+        ...overrideStyles
+    };
+};
+
 export const GroupHeader = (p: {
     group: HtkMockRuleGroup,
     path: ItemPath,
@@ -161,13 +184,14 @@ export const GroupHeader = (p: {
     return <Draggable
         draggableId={p.group.id}
         index={p.index}
-    >{ (provided) => <Observer>{ () =>
+    >{ (provided, snapshot) => <Observer>{ () =>
         <GroupHeaderContainer
             depth={p.path.length - 1}
             collapsed={p.collapsed}
             editingTitle={isEditing}
 
             {...provided.draggableProps}
+            style={extendGroupDraggableStyles(provided.draggableProps.style, snapshot)}
             ref={provided.innerRef}
 
             onClick={toggleCollapsed}

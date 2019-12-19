@@ -4,7 +4,7 @@ import * as polished from 'polished';
 import { observer, inject, disposeOnUnmount, Observer } from 'mobx-react';
 import { action, observable, reaction } from 'mobx';
 import { Method, matchers } from 'mockttp';
-import { Draggable, DraggingStyle, NotDraggingStyle } from 'react-beautiful-dnd';
+import { Draggable, DraggingStyle, NotDraggingStyle, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
 import { Icon, IconProp } from '../../icons';
@@ -252,7 +252,8 @@ const stopPropagation = (callback: () => void) => (event: React.MouseEvent) => {
 }
 
 const extendRowDraggableStyles = (
-    style: DraggingStyle | NotDraggingStyle | undefined
+    style: DraggingStyle | NotDraggingStyle | undefined,
+    snapshot: DraggableStateSnapshot
 ) => {
     const overrideStyles: _.Dictionary<string> = { };
 
@@ -263,11 +264,8 @@ const extendRowDraggableStyles = (
         );
     }
 
-    const currentTransformMatch = style && style.transform &&
-        style.transform.match(/translate\((-?\d+)px,\s+(-?\d+)px\)/);
-    if (currentTransformMatch) {
-        const yTransform = parseInt(currentTransformMatch[2]);
-        overrideStyles.transform = `translate(0, ${yTransform}px)`;
+    if (snapshot.combineWith && snapshot.combineWith.endsWith('-tail')) {
+        overrideStyles.opacity = '1';
     }
 
     return {
@@ -348,7 +346,7 @@ export class RuleRow extends React.Component<{
             draggableId={rule.id}
             index={index}
             isDragDisabled={!collapsed}
-        >{ (provided) => <Observer>{ () =>
+        >{ (provided, snapshot) => <Observer>{ () =>
             <RowContainer
                 {...provided.draggableProps}
                 borderColor={method
@@ -366,7 +364,7 @@ export class RuleRow extends React.Component<{
                 onClick={collapsed ? this.toggleCollapse : undefined}
                 onKeyPress={clickOnEnter}
                 depth={path.length - 1}
-                style={extendRowDraggableStyles(provided.draggableProps.style)}
+                style={extendRowDraggableStyles(provided.draggableProps.style, snapshot)}
             >
                 <RuleMenu
                     isCollapsed={collapsed}
