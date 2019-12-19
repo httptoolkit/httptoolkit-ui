@@ -110,9 +110,10 @@ export class MockRuleList extends React.Component<{
     saveRule: (path: ItemPath) => void,
     resetRule: (path: ItemPath) => void,
     deleteRule: (path: ItemPath) => void,
-    moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
-
     toggleRuleCollapsed: (id: string) => void,
+    moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
+    updateGroupTitle: (groupId: string, title: string) => void,
+
     collapsedRulesMap: { [id: string]: boolean }
 }> {
 
@@ -174,8 +175,9 @@ export class MockRuleList extends React.Component<{
             saveRule,
             resetRule,
             deleteRule,
-
             toggleRuleCollapsed,
+            updateGroupTitle,
+
             collapsedRulesMap
         } = this.props;
         const {
@@ -195,7 +197,8 @@ export class MockRuleList extends React.Component<{
                 saveRule,
                 resetRule,
                 deleteRule
-            }
+            },
+            updateGroupTitle
         );
 
         return <DragDropContext
@@ -232,6 +235,7 @@ function buildRuleRows(
         React.ComponentProps<typeof RuleRow>,
         'toggleRuleCollapsed' | 'saveRule' | 'resetRule' | 'deleteRule'
     >,
+    updateGroupTitle: (groupId: string, title: string) => void,
 
     ruleGroup: HtkMockRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
@@ -248,6 +252,7 @@ function buildRuleRows(
                     path={itemPath}
                     index={overallStartIndex + result.indexMapping.length}
                     collapsed={!!item.collapsed}
+                    updateGroupTitle={updateGroupTitle}
                 />
             );
             result.indexMapping.push(itemPath);
@@ -261,6 +266,7 @@ function buildRuleRows(
                 collapsedRulesMap,
                 currentlyDraggingRuleId,
                 rowEventHandlers,
+                updateGroupTitle,
                 item,
                 itemPath,
                 overallStartIndex + result.indexMapping.length

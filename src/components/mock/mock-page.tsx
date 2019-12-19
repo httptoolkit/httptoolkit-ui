@@ -10,7 +10,7 @@ import { Icon } from '../../icons';
 
 import { ActivatedStore } from '../../model/interception-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getNewRule, flattenRules, findItemPath, ItemPath, mapRules } from '../../model/rules/rules';
+import { getNewRule, ItemPath, mapRules } from '../../model/rules/rules';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
@@ -116,7 +116,10 @@ class MockPage extends React.Component<MockPageProps> {
             rules,
             draftRules,
             areSomeRulesUnsaved,
-            areSomeRulesNonDefault
+            areSomeRulesNonDefault,
+            deleteDraftRule,
+            moveDraftRule,
+            updateGroupTitle
         } = this.props.interceptionStore;
         const { isPaidUser } = this.props.accountStore;
 
@@ -182,14 +185,14 @@ class MockPage extends React.Component<MockPageProps> {
                     activeRules={rules}
                     draftRules={draftRules}
                     collapsedRulesMap={this.collapsedRulesMap}
+
                     addRule={this.addRule}
-
-                    toggleRuleCollapsed={this.toggleRuleCollapsed}
-
                     saveRule={this.saveRule}
                     resetRule={this.resetRule}
-                    deleteRule={this.deleteRule}
-                    moveRule={this.moveRule}
+                    deleteRule={deleteDraftRule}
+                    toggleRuleCollapsed={this.toggleRuleCollapsed}
+                    moveRule={moveDraftRule}
+                    updateGroupTitle={updateGroupTitle}
                 />
             </MockPageScrollContainer>
         </MockPageContainer>
@@ -255,16 +258,6 @@ class MockPage extends React.Component<MockPageProps> {
     @action.bound
     toggleRuleCollapsed(ruleId: string) {
         this.collapsedRulesMap[ruleId] = !this.collapsedRulesMap[ruleId];
-    }
-
-    @action.bound
-    deleteRule(path: ItemPath) {
-        this.props.interceptionStore.deleteDraftRule(path);
-    }
-
-    @action.bound
-    moveRule(currentPath: ItemPath, targetPath: ItemPath) {
-        this.props.interceptionStore.moveDraftRule(currentPath, targetPath);
     }
 
     readonly importRules = async () => {

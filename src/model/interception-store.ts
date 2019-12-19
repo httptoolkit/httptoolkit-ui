@@ -539,6 +539,17 @@ export class InterceptionStore {
     }
 
     @action.bound
+    updateGroupTitle(groupId: string, newTitle: string) {
+        const draftGroup = findItem(this.draftRules, { id: groupId }) as HtkMockRuleGroup;
+        const activeGroup = findItem(this.rules, { id: groupId }) as (
+            HtkMockRuleGroup | undefined
+        );
+
+        draftGroup.title = newTitle;
+        if (activeGroup) activeGroup.title = newTitle;
+    }
+
+    @action.bound
     loadSavedRules(savedData: any) {
         this.rules = deserializeRules(savedData, { interceptionStore: this });
         this.resetRuleDrafts();

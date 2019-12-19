@@ -15,6 +15,7 @@ import {
 import { getMethodColor } from '../../model/exchange-colors';
 
 import { clickOnEnter } from '../component-utils';
+import { TextInput } from '../common/inputs';
 import { DragHandle } from './mock-drag-handle';
 
 const CollapsedItemPlaceholder = styled.div<{
@@ -39,9 +40,29 @@ const CollapsedItemPlaceholder = styled.div<{
     border-left: 5px solid ${(p) => p.borderColor};
 `;
 
+const TitleButtons = styled.div`
+    display: none; /* Made flex by container, on hover/expand */
+    flex-direction: row;
+    align-items: center;
+
+    z-index: 10;
+
+    margin-left: 5px;
+
+    > svg {
+        margin: 0 5px;
+        color: ${p => p.theme.primaryInputBackground};
+
+        &:hover {
+            color: ${p => p.theme.popColor};
+        }
+    }
+`;
+
 const GroupHeaderContainer = styled.header<{
     depth: number,
-    collapsed: boolean
+    collapsed: boolean,
+    editingTitle: boolean
 }>`
     margin-top: 25px;
 
@@ -59,7 +80,7 @@ const GroupHeaderContainer = styled.header<{
     position: relative;
 
     cursor: pointer;
-    &:active, &:focus {
+    &:focus {
         outline: none;
         > h2 > svg {
             color: ${p => p.theme.popColor};
@@ -68,6 +89,10 @@ const GroupHeaderContainer = styled.header<{
     &:hover {
         ${DragHandle} {
             opacity: 0.5;
+        }
+
+        ${TitleButtons} {
+            display: flex;
         }
 
         ${p => !p.collapsed
@@ -80,6 +105,12 @@ const GroupHeaderContainer = styled.header<{
         }
     }
 
+    ${p => p.editingTitle && css`
+        ${TitleButtons} {
+            display: flex;
+        }
+    `}
+
     font-size: ${(p) => p.theme.headingSize};
 
     > h2 {
@@ -90,26 +121,56 @@ const GroupHeaderContainer = styled.header<{
             margin-right: 10px;
         }
     }
+
+    input[type=text] {
+        margin: -7px 0;
+        position: relative;
+        top: -3px;
+    }
 `;
 
 export const GroupHeader = (p: {
     group: HtkMockRuleGroup,
     path: ItemPath,
     index: number,
-    collapsed: boolean
-}) =>
-    <Draggable
+    collapsed: boolean,
+    updateGroupTitle: (groupId: string, title: string) => void
+}) => {
+    const [isEditing, setEditing] = React.useState(false);
+    const [unsavedTitle, setUnsavedTitle] = React.useState(p.group.title);
+
+    const toggleCollapsed = action(() => { p.group.collapsed = !p.group.collapsed });
+    const startEditing = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditing(true);
+        setUnsavedTitle(p.group.title);
+    };
+    const editTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUnsavedTitle(e.target.value)
+    }
+    const resetTitle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditing(false);
+    };
+    const saveTitle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditing(false);
+        p.updateGroupTitle(p.group.id, unsavedTitle);
+    };
+
+    return <Draggable
         draggableId={p.group.id}
         index={p.index}
     >{ (provided) => <Observer>{ () =>
         <GroupHeaderContainer
             depth={p.path.length - 1}
             collapsed={p.collapsed}
+            editingTitle={isEditing}
 
             {...provided.draggableProps}
             ref={provided.innerRef}
 
-            onClick={action(() => { p.group.collapsed = !p.group.collapsed })}
+            onClick={toggleCollapsed}
             onKeyPress={clickOnEnter}
             tabIndex={0}
         >
@@ -118,8 +179,42 @@ export const GroupHeader = (p: {
             <h2>
                 <Icon
                     icon={['fas', p.group.collapsed ? 'chevron-down' : 'chevron-up']}
-                /> { p.group.title }
+                />
+                { isEditing
+                    ? <TextInput
+                        autoFocus
+                        value={unsavedTitle}
+                        onChange={editTitle}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    : p.group.title
+                }
             </h2>
+
+            <TitleButtons>
+                { isEditing
+                    ? <>
+                        <Icon
+                            tabIndex={0}
+                            icon={['fas', 'save']}
+                            onClick={saveTitle}
+                            onKeyPress={clickOnEnter}
+                        />
+                        <Icon
+                            tabIndex={0}
+                            icon={['fas', 'undo']}
+                            onClick={resetTitle}
+                            onKeyPress={clickOnEnter}
+                        />
+                    </>
+                    : <Icon
+                        tabIndex={0}
+                        icon={['fas', 'edit']}
+                        onClick={startEditing}
+                        onKeyPress={clickOnEnter}
+                    />
+                }
+            </TitleButtons>
 
             { p.collapsed && p.group.items.slice(0, 5).map((item, index) => {
                 const initialMatcher = isRuleGroup(item) ? undefined : item.matchers[0];
@@ -141,6 +236,7 @@ export const GroupHeader = (p: {
             }) }
         </GroupHeaderContainer>
     }</Observer>}</Draggable>;
+}
 
 const GroupTailPlaceholder = styled.div`
     width: 100%;

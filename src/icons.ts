@@ -51,6 +51,7 @@ import { faGripVertical } from '@fortawesome/free-solid-svg-icons/faGripVertical
 import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
 import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
 import { faUnlock } from '@fortawesome/free-solid-svg-icons/faUnlock';
+import { faEdit } from '@fortawesome/free-solid-svg-icons/faEdit';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -121,6 +122,7 @@ library.add(
     faUndo,
     faSave,
     faUnlock,
+    faEdit,
 
     faChrome,
     faFirefox,
