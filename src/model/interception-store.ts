@@ -8,8 +8,8 @@ import {
     computed,
     runInAction,
     observe,
-    autorun,
-    when
+    when,
+    reaction
 } from 'mobx';
 import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
@@ -218,21 +218,15 @@ export class InterceptionStore {
 
         yield Promise.all([
             new Promise((resolve) => {
-                // Autorun server rule configuration, so its rerun if rules change later
-                autorun(() =>
-                    // Interception setup waits on this, i.e. until setRules first succeeds
-                    resolve(
-                        // Set the mocking rules that will be used by the server. We have to
-                        // clone so that we retain the pre-serialization definitions.
-                        this.server.setRules(
-                            ..._.cloneDeep(
-                                flattenRules(this.rules).filter(
-                                    // Drop inactive or never-matching rules
-                                    r => r.activated && r.matchers.length
-                                )
-                            )
-                        )
-                    )
+                // Autorun server rule configuration, so reruns if effective rules change later
+                reaction(
+                    () => _.cloneDeep( // Clone to retain the pre-serialization definitions.
+                        flattenRules(this.rules)
+                        // Drop inactive or never-matching rules
+                        .filter(r => r.activated && r.matchers.length),
+                    ),
+                    (rules) => resolve(this.server.setRules(...rules)),
+                    { fireImmediately: true }
                 )
             }),
             this.refreshInterceptors(),
