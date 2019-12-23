@@ -1,9 +1,9 @@
 import { InterceptionStore } from "../../../src/model/interception-store";
-import { HtkMockRule, HtkMockRuleRoot } from "../../../src/model/rules/rules";
+import { HtkMockRule, HtkMockRuleRoot, HtkMockItem } from "../../../src/model/rules/rules";
 
 import { expect } from "../../test-setup";
 
-const group = (id: number, ...items: Array<HtkMockRule>) => ({
+const group = (id: number, ...items: Array<HtkMockItem>) => ({
     id: id.toString(),
     title: id.toString(),
     items
@@ -28,7 +28,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, b, c];
                 store.draftRules.items = [b, c, a];
 
-                store.saveRule([1]);
+                store.saveItem([1]);
                 expect(store.rules.items).to.deep.equal([b, c, a]);
             });
 
@@ -36,7 +36,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, b, c];
                 store.draftRules.items = [a, c, b];
 
-                store.saveRule([0]);
+                store.saveItem([0]);
                 expect(store.rules.items).to.deep.equal([a, b, c]);
                 // ^ 'a' hasn't moved, so we don't update any positions
             });
@@ -45,7 +45,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, b, c];
                 store.draftRules.items = [c, b];
 
-                store.saveRule([1]);
+                store.saveItem([1]);
                 expect(store.rules.items).to.deep.equal([a, c, b]);
 
                 store.saveRules();
@@ -56,7 +56,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, c];
                 store.draftRules.items = [a, b, c];
 
-                store.saveRule([1]);
+                store.saveItem([1]);
                 expect(store.rules.items).to.deep.equal([a, b, c]);
 
                 store.saveRules();
@@ -67,7 +67,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, b, c, d, e, f];
                 store.draftRules.items = [f, d, c, a];
 
-                store.saveRule([1]);
+                store.saveItem([1]);
                 expect(store.rules.items).to.deep.equal([f, b, d, c, e, a]);
             });
 
@@ -75,7 +75,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, group(1, b, c), d];
                 store.draftRules.items = [a, group(1, c, b), d];
 
-                store.saveRule([1, 0]);
+                store.saveItem([1, 0]);
 
                 expect(store.rules.items).to.deep.equal([a, group(1, c, b), d]);
             });
@@ -84,7 +84,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, group(1, b, c), d];
                 store.draftRules.items = [a, group(1, b), c, d];
 
-                store.saveRule([2]);
+                store.saveItem([2]);
 
                 expect(store.rules.items).to.deep.equal([a, group(1, b), c, d]);
             });
@@ -93,7 +93,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, group(1, b), c, d];
                 store.draftRules.items = [a, group(1, c, b), d];
 
-                store.saveRule([1, 0]);
+                store.saveItem([1, 0]);
 
                 expect(store.rules.items).to.deep.equal([a, group(1, c, b), d]);
             });
@@ -102,7 +102,7 @@ describe("Interception store", () => {
                 store.rules.items = [a, group(1, b), c, d];
                 store.draftRules.items = [a, group(1, c, b), d];
 
-                store.saveRule([1, 0]);
+                store.saveItem([1, 0]);
 
                 expect(store.rules.items).to.deep.equal([a, group(1, c, b), d]);
             });
@@ -111,9 +111,55 @@ describe("Interception store", () => {
                 store.rules.items = [a, group(1, b)];
                 store.draftRules.items = [group(1, a, b)];
 
-                store.saveRule([0, 0]);
+                store.saveItem([0, 0]);
 
                 expect(store.rules.items).to.deep.equal([group(1, a, b)]);
+            });
+
+            it("a -> a[b]", () => {
+                store.rules.items = [a];
+                store.draftRules.items = [a, group(1, b)];
+
+                store.saveItem([1, 0]);
+
+                expect(store.rules.items).to.deep.equal([a, group(1, b)]);
+            });
+
+            it("a -> [b]a", () => {
+                store.rules.items = [a];
+                store.draftRules.items = [group(1, b), a];
+
+                store.saveItem([0, 0]);
+
+                expect(store.rules.items).to.deep.equal([group(1, b), a]);
+            });
+
+            it("b -> [[abc]]", () => {
+                store.rules.items = [b];
+                store.draftRules.items = [group(1, group(2, a, b, c))];
+
+                store.saveItem([0, 0, 1]);
+                expect(store.rules.items).to.deep.equal([group(1, group(2, b))]);
+
+                store.saveItem([0, 0, 2]);
+                expect(store.rules.items).to.deep.equal([group(1, group(2, b, c))]);
+
+                store.saveItem([0, 0, 0]);
+                expect(store.rules.items).to.deep.equal([group(1, group(2, a, b, c))]);
+            });
+
+            it("[[abc]] -> cba", () => {
+                store.rules.items = [group(1, group(2, a, b, c))];
+                store.draftRules.items = [c, b, a];
+
+                store.saveItem([1]);
+                expect(store.rules.items).to.deep.equal([group(1, group(2, a, c)), b]);
+
+                store.saveItem([0]);
+                expect(store.rules.items).to.deep.equal([group(1, group(2, a)), c, b]);
+
+                store.saveItem([2]);
+                expect(store.rules.items).to.deep.equal([c, b, a]);
             });
         });
 
@@ -201,6 +247,34 @@ describe("Interception store", () => {
                 store.resetRule([0, 0]);
 
                 expect(store.draftRules.items).to.deep.equal([a, group(1, b)]);
+            });
+
+            it("[a][[b]] -> [ab]", () => {
+                store.rules.items = [group(1, a), group(2, group(3, group(4, b)))];
+                store.draftRules.items = [group(3, a, b)];
+
+                store.resetRule([0, 0]);
+                expect(store.draftRules.items).to.deep.equal([group(1, a), group(3, b)]);
+
+                store.resetRule([1, 0]);
+                expect(store.draftRules.items).to.deep.equal([
+                    group(1, a),
+                    group(3, group(4, b))
+                ]);
+            });
+
+            it("[[abc]] -> cba", () => {
+                store.rules.items = [group(1, group(2, a, b, c))];
+                store.draftRules.items = [c, b, a];
+
+                store.resetRule([1]);
+                expect(store.draftRules.items).to.deep.equal([group(1, group(2, b)), c, a]);
+
+                store.resetRule([1]);
+                expect(store.draftRules.items).to.deep.equal([group(1, group(2, b, c)), a]);
+
+                store.resetRule([1]);
+                expect(store.draftRules.items).to.deep.equal([group(1, group(2, a, b, c))]);
             });
         });
 

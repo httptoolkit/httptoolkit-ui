@@ -113,6 +113,20 @@ export function updateItemAtPath(
     return parentItems;
 };
 
+export function deleteItemAtPath(
+    rules: HtkMockRuleGroup,
+    path: ItemPath
+) {
+    const parent = getItemParentByPath(rules, path);
+    const itemIndex = _.last(path)!;
+    parent.items.splice(itemIndex, 1);
+
+    // If the parent is empty, delete them too (recursively, but not the root)
+    if (parent.items.length === 0 && !isRuleRoot(parent)) {
+        deleteItemAtPath(rules, path.slice(0, -1));
+    }
+}
+
 export function findItem(
     rules: HtkMockRuleGroup,
     match: ((value: HtkMockItem) => boolean) | Partial<HtkMockItem>

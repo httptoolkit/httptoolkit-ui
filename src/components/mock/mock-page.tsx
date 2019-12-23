@@ -209,7 +209,7 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     saveRule(path: ItemPath) {
-        const savedRule = this.props.interceptionStore.saveRule(path);
+        const savedRule = this.props.interceptionStore.saveItem(path);
         this.collapsedRulesMap[savedRule.id] = true;
     }
 
