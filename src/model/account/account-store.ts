@@ -13,7 +13,8 @@ import {
     User,
     getLatestUserData,
     getLastUserData,
-    FeatureFlag
+    FeatureFlag,
+    RefreshRejectedError
 } from './auth';
 import {
     SubscriptionPlans,
@@ -32,6 +33,14 @@ export class AccountStore {
         loginEvents.on('authenticated', async () => {
             await this.updateUser();
             loginEvents.emit('user_data_loaded');
+        });
+        loginEvents.on('authorization_error', (error) => {
+            if (error instanceof RefreshRejectedError) {
+                // If our refresh token ever becomes invalid (caused once by an Auth0 regression,
+                // or in general refresh tokens can be revoked), prompt for a fresh login.
+                logOut();
+                this.logIn();
+            }
         });
         loginEvents.on('logout', this.updateUser);
         setInterval(this.updateUser, 1000 * 60 * 10);

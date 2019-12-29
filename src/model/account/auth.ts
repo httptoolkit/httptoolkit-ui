@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import { Mutex } from 'async-mutex';
 import { EventEmitter } from 'events';
+import { TypedError } from 'typed-error';
 
 import * as jwt from 'jsonwebtoken';
 import * as Auth0 from 'auth0-js';
@@ -30,6 +31,12 @@ mCVpul3MYubdv034/ipGZSKJTwgubiHocrSBdeImNe3xdxOw/Mo04r0kcZBg2l/b
 7QIDAQAB
 -----END PUBLIC KEY-----
 `;
+
+export class RefreshRejectedError extends TypedError {
+    constructor(response: { description: string }) {
+        super(`Token refresh failed with: ${response.description}`);
+    }
+}
 
 const auth0Lock = new Auth0LockPasswordless(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
     configurationBaseUrl: 'https://cdn.eu.auth0.com',
@@ -62,7 +69,7 @@ const auth0Lock = new Auth0LockPasswordless(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
     languageDictionary: {
         title: 'Log in / Sign up',
         signUpTerms: dedent`
-            No spam, this will only be used as your account login. By signing up, you agree to our ToS & privacy policy.
+            No spam, this will only be used as your account login. By signing up, you accept the ToS & privacy policy.
         `
     }
 });
@@ -85,7 +92,7 @@ export const showLoginDialog = () => {
     // Login is always followed by either:
     // hide - user cancels login
     // user_data_loaded - everything successful
-    // authorization_error - something (login or data loading) goes wrong.
+    // authorization_error - something (login/data loading/token request) goes wrong.
     return new Promise<boolean>((resolve, reject) => {
         loginEvents.once('user_data_loaded', () => resolve(true));
         loginEvents.once('hide', () => resolve(false));
@@ -146,8 +153,22 @@ async function refreshToken() {
         auth0Client.oauthToken({
             refreshToken: tokens!.refreshToken,
             grantType: 'refresh_token'
-        }, (error, result: { accessToken: string, expiresIn: number }) => {
-            if (error) reject(error);
+        }, (error: any, result: { accessToken: string, expiresIn: number }) => {
+            if (error) {
+                if (
+                    [500, 403].includes(error.statusCode) &&
+                    error.description && (
+                        error.description.includes('Grant not found') ||
+                        error.description.includes('invalid refresh token')
+                    )
+                ) {
+                    // Auth0 is explicitly rejecting our refresh token.
+                    reject(new RefreshRejectedError(error));
+                } else {
+                    // Some other unknown error, might be transient/network issues
+                    reject(error);
+                }
+            }
             else {
                 tokens!.accessToken = result.accessToken;
                 tokens!.accessTokenExpiry = Date.now() + (result.expiresIn * 1000);

@@ -106,6 +106,7 @@
     "styled-components": "^4.3.2",
     "styled-reset": "^1.1.2",
     "ts-node": "^3.3.0",
+    "typed-error": "^3.2.0",
     "typesafe-get": "^2.1.1",
     "typescript": "^3.7.2",
     "ua-parser-js": "^0.7.20",
