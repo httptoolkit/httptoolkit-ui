@@ -1,6 +1,10 @@
+import { NetworkInterfaceInfo } from 'os';
 import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
+import * as semver from 'semver';
+
 import { getDeferred } from '../util';
+import { serverVersion, DETAILED_CONFIG_RANGE } from './service-versions';
 
 const graphql = getGraphQL('http://127.0.0.1:45457/', { asJSON: true });
 
@@ -49,16 +53,39 @@ export async function getServerVersion(): Promise<string> {
     return response.version;
 }
 
-export async function getConfig() {
+export async function getConfig(): Promise<{
+    certificatePath: string;
+    certificateContent?: string;
+    networkInterfaces?: { [index: string]: NetworkInterfaceInfo[] };
+}> {
     const response = await graphql(`
         query getConfig {
-            config {
-                certificatePath
+
+            ${semver.satisfies(await serverVersion, DETAILED_CONFIG_RANGE)
+                ?  `
+                    config {
+                        certificatePath
+                        certificateContent
+                    }
+                    networkInterfaces
+                `
+                : `
+                    config {
+                        certificatePath
+                    }
+                `
             }
         }
     `, {}).catch(formatError('get-config'));
 
-    return response.config;
+    if (response.networkInterfaces) {
+        return {
+            ...response.config,
+            networkInterfaces: response.networkInterfaces
+        }
+    } else {
+        return response.config;
+    }
 }
 
 export async function getInterceptors(proxyPort: number): Promise<ServerInterceptor[]> {

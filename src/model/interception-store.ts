@@ -233,7 +233,13 @@ export class InterceptionStore {
             }),
             this.refreshInterceptors(),
             getConfig().then((config) => {
-                this.certPath = config.certificatePath
+                this.certPath = config.certificatePath;
+                this.certContent = config.certificateContent;
+                this.networkAddresses = _.flatMap(config.networkInterfaces, (addresses) => {
+                    return addresses
+                        .filter(a => !a.internal)
+                        .map(a => a.address);
+                });
             })
         ]);
 
@@ -267,6 +273,12 @@ export class InterceptionStore {
 
     @observable
     certPath: string | undefined;
+
+    @observable
+    certContent: string | undefined;
+
+    @observable
+    networkAddresses: string[] | undefined;
 
     @persist('object') @observable
     private _portConfig: PortRange | undefined;
