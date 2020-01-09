@@ -13,6 +13,13 @@ const group = (id: number, ...items: Array<HtkMockItem>) => ({
     items
 });
 
+const defaultGroup = (...items: Array<HtkMockItem>) => ({
+    id: 'default-group',
+    title: "Default rules",
+    collapsed: true,
+    items
+});
+
 describe("Interception store", () => {
     describe("rules", () => {
 
@@ -315,6 +322,76 @@ describe("Interception store", () => {
                 store.deleteDraftRule([1]);
 
                 expect(store.draftRules.items).to.deep.equal([a, c]);
+            });
+        });
+
+        describe("default rule management", () => {
+
+            it("should create rules & the default group if neither exist", () => {
+                store.ensureDefaultRuleExists(a);
+
+                expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
+                expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
+            });
+
+            it("should do nothing if the rule exists in the group", () => {
+                store.rules.items = [defaultGroup(a)];
+                store.draftRules.items = [defaultGroup(a)];
+
+                store.ensureDefaultRuleExists(a);
+
+                expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
+                expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
+            });
+
+            it("should save the rule if it only exists as a draft", () => {
+                store.rules.items = [];
+                store.draftRules.items = [defaultGroup(a)];
+
+                store.ensureDefaultRuleExists(a);
+
+                expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
+                expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
+            });
+
+            it("should create a draft if the rule is draft-deleted", () => {
+                store.rules.items = [defaultGroup(a)];
+                store.draftRules.items = [];
+
+                store.ensureDefaultRuleExists(a);
+
+                expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
+                expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
+            });
+
+            it("should prepend the rule to the group, if there's a group without the rule", () => {
+                store.rules.items = [defaultGroup(a)];
+                store.draftRules.items = [defaultGroup(a)];
+
+                store.ensureDefaultRuleExists(b);
+
+                expect(store.rules.items).to.deep.equal([defaultGroup(b, a)]);
+                expect(store.draftRules.items).to.deep.equal([defaultGroup(b, a)]);
+            });
+
+            it("should do nothing if the rule exists, but outside the group", () => {
+                store.rules.items = [a];
+                store.draftRules.items = [a];
+
+                store.ensureDefaultRuleExists(a);
+
+                expect(store.rules.items).to.deep.equal([a]);
+                expect(store.draftRules.items).to.deep.equal([a]);
+            });
+
+            it("should update the rule if it exists but with changes", () => {
+                store.rules.items = [{ ...a, activated: false }];
+                store.draftRules.items = [{ ...a, activated: false }];
+
+                store.ensureDefaultRuleExists(a);
+
+                expect(store.rules.items).to.deep.equal([a]);
+                expect(store.draftRules.items).to.deep.equal([a]);
             });
         });
     });

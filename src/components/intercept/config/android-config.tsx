@@ -1,11 +1,18 @@
 import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import * as QRCode from 'qrcode.react';
+import {
+    handlers,
+    matchers,
+    completionCheckers,
+    MockRuleData,
+} from 'mockttp';
 
 import { styled } from '../../../styles';
 
 import { Interceptor } from '../../../model/interceptors';
 import { InterceptionStore } from '../../../model/interception-store';
+import { MethodMatchers, StaticResponseHandler } from '../../../model/rules/rule-definitions';
 
 const ConfigContainer = styled.div`
     user-select: text;
@@ -51,6 +58,25 @@ class AndroidConfig extends React.Component<{
     showRequests: () => void,
     closeSelf: () => void
 }> {
+
+    async componentDidMount() {
+        this.props.interceptionStore!.ensureDefaultRuleExists({
+            id: 'default-android-certificate',
+            activated: true,
+            matchers: [
+                new MethodMatchers.GET(),
+                new matchers.SimplePathMatcher(
+                    "http://android.httptoolkit.tech/config"
+                )
+            ],
+            completionChecker: new completionCheckers.Always(),
+            handler: new StaticResponseHandler(200, undefined, JSON.stringify({
+                certificate: this.props.interceptionStore!.certContent
+            }), {
+                'content-type': 'application/json'
+            })
+        });
+    }
 
     render() {
         const {

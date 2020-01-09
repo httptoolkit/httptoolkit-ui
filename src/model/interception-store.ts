@@ -62,6 +62,7 @@ import {
     areItemsEqual
 } from './rules/rules-structure';
 import {
+    buildDefaultGroup,
     buildDefaultRules,
     buildForwardingRuleIntegration
 } from './rules/rule-definitions';
@@ -651,6 +652,46 @@ export class InterceptionStore {
 
         draftGroup.title = newTitle;
         if (activeGroup) activeGroup.title = newTitle;
+    }
+
+    @action.bound
+    ensureDefaultRuleExists(rule: HtkMockItem) {
+        const activeRulePath = findItemPath(this.rules, { id: rule.id });
+        const activeRule = activeRulePath
+            ? getItemAtPath(this.rules, activeRulePath) as HtkMockRule
+            : undefined;
+
+        const draftRulePath = findItemPath(this.draftRules, { id: rule.id });
+        const draftRule = draftRulePath
+            ? getItemAtPath(this.draftRules, draftRulePath) as HtkMockRule
+            : undefined;
+
+        if (areItemsEqual(rule, activeRule) && areItemsEqual(rule, draftRule)) {
+            // Rule is already happily in place.
+            return;
+        }
+
+        if (draftRulePath) {
+            // The draft rule exists, and active doesn't or has changed.
+            updateItemAtPath(this.draftRules, draftRulePath, rule);
+            this.saveItem(draftRulePath);
+            return;
+        }
+
+        // No draft rule at all: build one (creating the default rules group if necessary),
+        // and save it, to update both the active & draft rules.
+
+        let draftDefaultGroupPath = findItemPath(this.draftRules, { id: 'default-group' });
+        if (!draftDefaultGroupPath) {
+            // If there's no draft default rules at all, build one
+            this.draftRules.items.push(buildDefaultGroup(rule));
+            draftDefaultGroupPath = [this.draftRules.items.length - 1];
+        } else {
+            const draftDefaultGroup = getItemAtPath(this.draftRules, draftDefaultGroupPath) as HtkMockRuleGroup;
+            draftDefaultGroup.items.unshift(rule);
+        }
+
+        this.saveItem(draftDefaultGroupPath.concat(0));
     }
 
     @action.bound
