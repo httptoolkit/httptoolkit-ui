@@ -56,6 +56,7 @@ export async function getServerVersion(): Promise<string> {
 export async function getConfig(): Promise<{
     certificatePath: string;
     certificateContent?: string;
+    certificateFingerprint?: string;
     networkInterfaces?: { [index: string]: NetworkInterfaceInfo[] };
 }> {
     const response = await graphql(`
@@ -66,6 +67,7 @@ export async function getConfig(): Promise<{
                     config {
                         certificatePath
                         certificateContent
+                        certificateFingerprint
                     }
                     networkInterfaces
                 `

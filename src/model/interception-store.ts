@@ -235,6 +235,7 @@ export class InterceptionStore {
             getConfig().then((config) => {
                 this.certPath = config.certificatePath;
                 this.certContent = config.certificateContent;
+                this.certFingerprint = config.certificateFingerprint;
                 this.networkAddresses = _.flatMap(config.networkInterfaces, (addresses) => {
                     return addresses
                         .filter(a => !a.internal)
@@ -276,6 +277,9 @@ export class InterceptionStore {
 
     @observable
     certContent: string | undefined;
+
+    @observable
+    certFingerprint: string | undefined;
 
     @observable
     networkAddresses: string[] | undefined;
