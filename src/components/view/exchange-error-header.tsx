@@ -50,7 +50,7 @@ export const ExchangeErrorHeader = (p: {
                 : p.type === 'tls-error'
                     ? 'failed to complete a TLS handshake'
                 : p.type === 'host-not-found'
-                    ? 'hostname could not found'
+                    ? 'hostname could be not found'
                 : 'failed to communicate, due to an unknown error'
             }, so HTTP Toolkit did not forward the request.
         </HeaderExplanation>
