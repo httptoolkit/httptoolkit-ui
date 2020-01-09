@@ -8,6 +8,7 @@ import { InterceptorCustomUiConfig } from "../components/intercept/intercept-opt
 import { ManualInterceptCustomUi } from "../components/intercept/config/manual-intercept-config";
 import { ExistingTerminalCustomUi } from "../components/intercept/config/existing-terminal-config";
 import { ElectronCustomUi } from '../components/intercept/config/electron-config';
+import { AndroidCustomUi } from "../components/intercept/config/android-config";
 
 interface InterceptorConfig {
     name: string;
@@ -16,6 +17,7 @@ interface InterceptorConfig {
     tags: string[];
     inProgress?: boolean;
     clientOnly?: true;
+    requiresServerRange?: string;
     uiConfig?: InterceptorCustomUiConfig;
     semverRange?: string;
 }
@@ -95,6 +97,9 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         name: 'An Android device',
         description: 'Intercept all HTTP traffic from an Android device on your network',
         iconProps: SourceIcons.Android,
+        requiresServerRange: ">=0.1.30",
+        clientOnly: true,
+        uiConfig: AndroidCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
     },
     'ios-device': {
@@ -131,11 +136,24 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     }
 };
 
-export function getInterceptOptions(serverInterceptorArray: ServerInterceptor[]) {
+export function getInterceptOptions(
+    serverInterceptorArray: ServerInterceptor[],
+    serverVersion?: string
+) {
     const serverInterceptors = _.keyBy(serverInterceptorArray, 'id');
 
     return _.mapValues(INTERCEPT_OPTIONS, (option, id) => {
-        if (option.clientOnly) {
+        if (
+            option.requiresServerRange &&
+            (!serverVersion || !semver.satisfies(serverVersion, option.requiresServerRange))
+        ) {
+            return _.assign({}, option, {
+                id: id,
+                isSupported: false,
+                isActive: false,
+                isActivable: false
+            });
+        } else if (option.clientOnly) {
             // Some interceptors don't need server support at all, so
             // they're always supported & activable (e.g. manual setup guide).
             return _.assign({}, option, {

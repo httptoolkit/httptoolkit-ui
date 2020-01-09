@@ -35,8 +35,9 @@ import {
     getInterceptors,
     activateInterceptor,
     getConfig,
-    announceServerReady
+    announceServerReady,
 } from '../services/server-api';
+import { serverVersion as serverVersionPromise } from '../services/service-versions';
 import { AccountStore } from './account/account-store';
 import { Interceptor, getInterceptOptions } from './interceptors';
 import { delay } from '../util';
@@ -662,9 +663,10 @@ export class InterceptionStore {
 
     async refreshInterceptors() {
         const serverInterceptors = await getInterceptors(this.server.port);
+        const serverVersion = await serverVersionPromise;
 
         runInAction(() => {
-            this.interceptors = getInterceptOptions(serverInterceptors);
+            this.interceptors = getInterceptOptions(serverInterceptors, serverVersion);
         });
     }
 
