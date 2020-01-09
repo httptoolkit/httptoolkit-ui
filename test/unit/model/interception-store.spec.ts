@@ -1,5 +1,9 @@
 import { InterceptionStore } from "../../../src/model/interception-store";
-import { HtkMockRule, HtkMockRuleRoot, HtkMockItem } from "../../../src/model/rules/rules";
+import {
+    HtkMockRule,
+    HtkMockRuleRoot,
+    HtkMockItem
+} from "../../../src/model/rules/rules-structure";
 
 import { expect } from "../../test-setup";
 

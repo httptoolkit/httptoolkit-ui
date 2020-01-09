@@ -1,10 +1,14 @@
 import * as _ from 'lodash';
-import { Method, matchers, handlers } from 'mockttp';
+import * as uuid from 'uuid/v4'
+import { observable } from 'mobx';
+import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
-import { InterceptionStore } from '../interception-store';
-import { serializeAsTag } from './rule-serialization';
-import { inject } from 'mobx-react';
+import { InterceptionStore, ActivatedStore } from '../interception-store';
+import { serializeAsTag } from '../serialization';
+
+import * as amIUsingHtml from '../../amiusing.html';
+import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -184,3 +188,68 @@ export type TimeoutHandler = handlers.TimeoutHandler;
 export const TimeoutHandler = handlers.TimeoutHandler;
 export type CloseConnectionHandler = handlers.CloseConnectionHandler;
 export const CloseConnectionHandler = handlers.CloseConnectionHandler;
+
+export function getNewRule(interceptionStore: ActivatedStore): HtkMockRule {
+    return observable({
+        id: uuid(),
+        activated: true,
+        matchers: [ ],
+        completionChecker: new completionCheckers.Always(),
+        handler: new PassThroughHandler(interceptionStore)
+    });
+}
+
+export const buildDefaultGroup = (...items: HtkMockItem[]): HtkMockRuleGroup => ({
+    id: 'default-group',
+    title: "Default rules",
+    collapsed: true,
+    items: items
+})
+
+export const buildDefaultRules = (interceptionStore: InterceptionStore) => ({
+    id: 'root',
+    title: "HTTP Toolkit Rules",
+    isRoot: true,
+    items: [
+        buildDefaultGroup(
+            // Respond to amiusing.httptoolkit.tech with an emphatic YES
+            {
+                id: 'default-amiusing',
+                activated: true,
+                matchers: [
+                    new MethodMatchers.GET(),
+                    new AmIUsingMatcher()
+                ],
+                completionChecker: new completionCheckers.Always(),
+                handler: new StaticResponseHandler(200, undefined, amIUsingHtml, {
+                    'content-type': 'text/html',
+                    'httptoolkit-active': 'true'
+                })
+            },
+
+            // Pass through all other traffic to the real target
+            {
+                id: 'default-wildcard',
+                activated: true,
+                matchers: [new DefaultWildcardMatcher()],
+                completionChecker: new completionCheckers.Always(),
+                handler: new PassThroughHandler(interceptionStore)
+            }
+        )
+    ]
+} as HtkMockRuleRoot);
+
+export const buildForwardingRuleIntegration = (
+    sourceHost: string,
+    targetHost: string,
+    interceptionStore: InterceptionStore
+): HtkMockRule => ({
+    id: 'default-forwarding-rule',
+    activated: true,
+    matchers: [
+        new WildcardMatcher(),
+        new matchers.HostMatcher(sourceHost)
+    ],
+    completionChecker: new completionCheckers.Always(),
+    handler: new ForwardToHostHandler(targetHost, true, interceptionStore)
+});

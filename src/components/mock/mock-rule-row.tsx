@@ -10,7 +10,8 @@ import { styled, css } from '../../styles';
 import { Icon, IconProp } from '../../icons';
 
 import { getMethodColor } from '../../model/exchange-colors';
-import { HtkMockRule, Matcher, Handler, isPaidHandler, ItemPath } from '../../model/rules/rules';
+import { Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
+import { HtkMockRule, ItemPath } from '../../model/rules/rules-structure';
 import {
     summarizeMatcher,
     summarizeHandler

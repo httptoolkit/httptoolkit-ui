@@ -1,6 +1,8 @@
 import * as _ from 'lodash';
 import * as dedent from 'dedent';
-import { isRuleGroup } from './rules';
+
+import { isRuleGroup } from './rules-structure';
+import { buildDefaultGroup } from './rule-definitions';
 
 // Take some raw rule data, exported from any version of the app since HTTP Mock was launched,
 // and convert it into raw modern rule data, ready to be deserialized.
@@ -18,12 +20,7 @@ export function migrateRules(data: any) {
             if (defaultRules.length) {
                 data.items = [
                     ...otherRules,
-                    {
-                        id: 'default-group',
-                        title: "Default rules",
-                        collapsed: true,
-                        items: defaultRules
-                    }
+                    buildDefaultGroup(...defaultRules)
                 ];
             } else {
                 data.items = otherRules;

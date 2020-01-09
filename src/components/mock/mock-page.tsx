@@ -7,16 +7,17 @@ import * as dateFns from 'date-fns';
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 import { Icon } from '../../icons';
+import { uploadFile, saveFile } from '../../util';
 
 import { ActivatedStore } from '../../model/interception-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getNewRule, ItemPath, mapRules } from '../../model/rules/rules';
+import { getNewRule } from '../../model/rules/rule-definitions';
+import { ItemPath, mapRules } from '../../model/rules/rules-structure';
+import { serializeRules } from '../../model/rules/rule-serialization';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
 import { MockRuleList } from './mock-rule-list';
-import { uploadFile, saveFile } from '../../util';
-import { serializeRules } from '../../model/rules/rule-serialization';
 
 interface MockPageProps {
     className?: string;

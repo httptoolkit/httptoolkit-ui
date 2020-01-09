@@ -4,7 +4,15 @@ import { completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
 import { InterceptionStore } from '../interception-store';
-import { HtkMockRule, MatcherLookup, HandlerLookup, HtkMockItem, HtkMockRuleRoot, HtkMockRuleGroup, isRuleGroup } from './rules';
+import { hasSerializrSchema } from '../serialization';
+
+import { MatcherLookup, HandlerLookup } from './rules';
+import {
+    HtkMockRule,
+    HtkMockItem,
+    HtkMockRuleRoot,
+    isRuleGroup
+} from './rules-structure';
 import { migrateRules } from './rule-migrations';
 
 export type DeserializationArgs = {
@@ -26,14 +34,6 @@ const deserializeByType = <T extends { type: string, uiType?: string }>(
         return _.create(clazz.prototype, data);
     }
 }
-
-const hasSerializrSchema = (obj: any) => !!serializr.getDefaultModelSchema(obj);
-
-export const serializeAsTag = (getTag: (value: any) => any) =>
-    serializr.custom(
-        getTag,
-        () => serializr.SKIP
-    );
 
 const MockRuleSerializer = serializr.custom(
     (rule: HtkMockRule): HtkMockRule => {

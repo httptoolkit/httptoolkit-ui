@@ -45,11 +45,8 @@ import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';
 import {
-    buildDefaultRules,
     HtkMockRuleGroup,
     flattenRules,
-    areItemsEqual,
-    buildForwardingRuleIntegration,
     ItemPath,
     isRuleGroup,
     getItemAtPath,
@@ -59,8 +56,15 @@ import {
     findItem,
     findItemPath,
     HtkMockRuleRoot,
-    isRuleRoot
-} from './rules/rules';
+    isRuleRoot,
+    HtkMockItem,
+    HtkMockRule,
+    areItemsEqual
+} from './rules/rules-structure';
+import {
+    buildDefaultRules,
+    buildForwardingRuleIntegration
+} from './rules/rule-definitions';
 import { deserializeRules } from './rules/rule-serialization';
 import { getDesktopInjectedValue } from '../services/desktop-api';
 

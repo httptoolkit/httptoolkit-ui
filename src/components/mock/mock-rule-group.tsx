@@ -11,7 +11,7 @@ import {
     isRuleGroup,
     ItemPath,
     HtkMockRuleGroup
-} from '../../model/rules/rules';
+} from '../../model/rules/rules-structure';
 import { getMethodColor } from '../../model/exchange-colors';
 
 import { clickOnEnter } from '../component-utils';

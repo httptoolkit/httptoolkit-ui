@@ -18,7 +18,7 @@ import {
     comparePaths,
     getItemAtPath,
     findItem,
-} from '../../model/rules/rules';
+} from '../../model/rules/rules-structure';
 
 import { GroupHeader, GroupTail } from './mock-rule-group';
 import { AddRuleRow, RuleRow } from './mock-rule-row';
