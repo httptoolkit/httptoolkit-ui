@@ -5,9 +5,9 @@ import { styled } from '../../styles';
 import { Icon, IconProp, SizeProp } from '../../icons';
 import { filterProps } from '../component-utils';
 
-const SearchInput = styled.input.attrs({
+const SearchInput = styled.input.attrs(() => ({
     type: 'text'
-})`
+}))`
     width: 100%;
     padding: 15px;
     box-sizing: border-box;

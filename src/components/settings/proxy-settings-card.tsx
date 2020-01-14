@@ -33,9 +33,9 @@ const RestartApp = styled(SettingsButton).attrs(() => ({
     ${(p: { visible: boolean }) => !p.visible && 'display: none;'}
 `;
 
-const UnsavedIcon = styled(Icon).attrs({
+const UnsavedIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'save'],
-})`
+}))`
     margin-left: 10px;
     color: #f1971f;
 `;
@@ -118,10 +118,10 @@ const DecryptionInput = styled.div`
     }
 `;
 
-const DecryptionSpinner = styled(Icon).attrs({
+const DecryptionSpinner = styled(Icon).attrs(() => ({
     icon: ['fas', 'spinner'],
     spin: true
-})`
+}))`
     margin: 0 auto;
 `;
 

@@ -137,9 +137,9 @@ const Summary = styled.h1`
     margin: -5px;
 `;
 
-const ArrowIcon = styled(Icon).attrs({
+const ArrowIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'arrow-left']
-})`
+}))`
     transform: rotate(180deg);
     padding: 0 15px;
 `;

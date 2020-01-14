@@ -60,10 +60,10 @@ const sidebarItemStyles = css`
     box-sizing: border-box;
 `;
 
-const SidebarLogo = styled.img.attrs({
+const SidebarLogo = styled.img.attrs(() => ({
     src: logo,
     alt: 'HTTP Toolkit logo'
-})`
+}))`
     ${sidebarItemStyles}
 `
 

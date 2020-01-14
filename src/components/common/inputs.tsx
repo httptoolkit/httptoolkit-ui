@@ -18,10 +18,10 @@ export const interactiveMouseoverStyles = css`
     }
 `;
 
-export const UnstyledButton = styled.button.attrs({
+export const UnstyledButton = styled.button.attrs(() => ({
     // 'submit' is the default, which makes 'enter' behaviour super wacky:
     'type': 'button'
-})`
+}))`
     /* Reset styles that get broken because <button> overrides them: */
     border: none;
     background: none;
@@ -49,10 +49,10 @@ const BaseButtonStyles = css`
     ${interactiveMouseoverStyles}
 `;
 
-export const Button = styled.button.attrs({
+export const Button = styled.button.attrs(() => ({
     // 'submit' is the default, which makes 'enter' behaviour super wacky:
     'type': 'button'
-})`
+}))`
     ${BaseButtonStyles}
 
     /*
@@ -74,10 +74,10 @@ export const Button = styled.button.attrs({
 
 export const ButtonLink = Button.withComponent('a');
 
-export const SecondaryButton = styled.button.attrs({
+export const SecondaryButton = styled.button.attrs(() => ({
     // 'submit' is the default, which makes 'enter' behaviour super wacky:
     'type': 'button'
-})`
+}))`
     ${BaseButtonStyles}
 
     background-color: transparent;
@@ -109,9 +109,9 @@ type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
     invalid?: boolean
 }
 
-export const TextInput = styled.input.attrs({
+export const TextInput = styled.input.attrs(() => ({
     type: 'text'
-})`
+}))`
     font-size: ${p => p.theme.textInputFontSize};
     padding: 5px 10px;
     border-radius: 4px;

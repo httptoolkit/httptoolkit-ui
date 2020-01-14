@@ -160,9 +160,9 @@ const ParamMetadata = styled((p: {
     font-style: italic;
 `;
 
-const WarningIcon = styled(Icon).attrs({
+const WarningIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'exclamation-triangle']
-})`
+}))`
     color: #f1971f;
     line-height: 1.2;
 

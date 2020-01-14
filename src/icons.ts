@@ -197,9 +197,9 @@ export const Icon = React.memo(
 );
 export { ExtendedIconProp as IconProp, SizeProp };
 
-export const SuggestionIcon = styled(Icon).attrs({
+export const SuggestionIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'lightbulb']
-})`
+}))`
     margin: 0 6px;
     color: #2fb4e0;
 `;
@@ -214,9 +214,9 @@ export const suggestionIconHtml = iconHtml(
     }
 );
 
-export const WarningIcon = styled(Icon).attrs({
+export const WarningIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'exclamation-triangle']
-})`
+}))`
     margin: 0 6px;
     color: #f1971f;
 `;

@@ -3,9 +3,9 @@ import * as React from 'react';
 import { styled } from "../../styles";
 import { Icon } from "../../icons";
 
-const ExternalLinkIcon = styled(Icon).attrs({
+const ExternalLinkIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'external-link-alt']
-})`
+}))`
     opacity: 0.5;
     margin-left: 5px;
 

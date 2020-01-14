@@ -62,11 +62,11 @@ const InterceptInstructions = styled.div`
     }
 `;
 
-const InterceptSearchBox = styled(SearchBox).attrs({
+const InterceptSearchBox = styled(SearchBox).attrs(() => ({
     autoFocus: true,
     placeholder: 'Browsers, mobile, docker...',
     iconSize: '2x'
-})`
+}))`
     margin: 20px 0 0;
 `;
 
