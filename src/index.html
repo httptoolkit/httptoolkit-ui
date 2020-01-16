@@ -44,9 +44,10 @@
         }
 
         #app-loading-error {
-            margin-top: 500px;
+            margin-top: 520px;
             font-weight: bold;
             font-size: 40pt;
+            text-align: center;
         }
 
         #app-loading-error-details {
@@ -114,11 +115,21 @@
                 setProgress(100);
             });
 
-            document.addEventListener('load:failed', function () {
+            document.addEventListener('load:failed', function (evt) {
                 setProgress(100);
-                errorElement.innerText = 'Failing to start. Is the server running?';
-                errorDetailsElement.innerHTML = 'This could be caused firewall issues, or a broken installation. ' +
-                    'Please <a href="https://github.com/httptoolkit/feedback/issues/new">file an issue</a>!';
+
+                let error = evt.error || {};
+
+                if (error.isTimeout) {
+                    errorElement.innerText = 'This is taking longer than normal...';
+                    errorDetailsElement.innerHTML = 'If this persists or happens often ' +
+                        'please <a href="https://github.com/httptoolkit/feedback/issues/new">file an issue</a> ' + 'and help make HTTP Toolkit faster.';
+                } else {
+                    errorElement.innerText = 'Startup failed: "' + error.message + '"';
+                    errorDetailsElement.innerHTML = 'Please ' +
+                        '<a href="https://github.com/httptoolkit/feedback/issues/new">file an issue</a>, ' +
+                        "and we'll get this fixed ASAP";
+                }
             });
         }, 0);
     </script>

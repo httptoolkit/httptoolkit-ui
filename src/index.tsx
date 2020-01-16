@@ -85,10 +85,18 @@ Promise.race([
     appStartupPromise,
     delay(STARTUP_TIMEOUT).then(() => {
         console.log('Previous server version was', lastServerVersion);
-        throw new Error('Failed to initialize application');
+
+        throw Object.assign(
+            new Error('Failed to initialize application'),
+            { isTimeout: true }
+        );
     })
 ]).catch((e) => {
-    document.dispatchEvent(new Event('load:failed'));
+    const failureEvent = Object.assign(
+        new Event('load:failed'),
+        { error: e }
+    );
+    document.dispatchEvent(failureEvent);
     reportError(e);
 
     appStartupPromise.then(() => {
