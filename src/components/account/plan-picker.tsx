@@ -254,7 +254,7 @@ interface PlanPickerProps {
 export class PlanPicker extends React.Component<PlanPickerProps> {
 
     @observable
-    planCycle: PlanCycle = 'annual';
+    planCycle: PlanCycle = 'monthly';
 
     render() {
         const { planCycle, toggleCycle, buyPlan, closePicker, getPlanMonthlyPrice } = this;
