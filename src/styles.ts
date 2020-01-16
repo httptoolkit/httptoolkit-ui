@@ -22,7 +22,7 @@ export const lightTheme = {
     lowlightTextOpacity: 0.65,
     pillContrast: 0.8,
 
-    primaryInputBackground: '#1f83e0',
+    primaryInputBackground: '#1076b9',
     primaryInputColor: '#fafafa',
 
     secondaryInputBorder: '#7ab2e2',
