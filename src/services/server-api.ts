@@ -6,7 +6,17 @@ import * as semver from 'semver';
 import { getDeferred } from '../util';
 import { serverVersion, DETAILED_CONFIG_RANGE } from './service-versions';
 
-const graphql = getGraphQL('http://127.0.0.1:45457/', { asJSON: true });
+const urlParams = new URLSearchParams(window.location.search);
+const authToken = urlParams.get('authToken');
+
+const graphql = getGraphQL('http://127.0.0.1:45457/', {
+    // The server *might* require a token for API auth. If so, we'll be given it
+    // in the query string, and we'll pass it with all requests.
+    headers: authToken
+        ? { 'Authorization': `Bearer ${authToken}` }
+        : { },
+    asJSON: true
+});
 
 export interface ServerInterceptor {
     id: string;
