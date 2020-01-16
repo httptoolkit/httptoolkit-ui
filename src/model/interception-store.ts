@@ -169,6 +169,7 @@ export class InterceptionStore {
     async initialize(accountStore: AccountStore) {
         await this.loadSettings(accountStore);
         await this.startIntercepting();
+        console.log('Interception store initialized');
     }
 
     private async loadSettings(accountStore: AccountStore) {
@@ -218,11 +219,14 @@ export class InterceptionStore {
 
         // Rebuild the rules, which might depends on these settings:
         this.resetRulesToDefault();
+
+        console.log('Interception settings loaded');
     }
 
     private startIntercepting = flow(function* (this: InterceptionStore) {
         yield startServer(this.server, this._portConfig);
         announceServerReady();
+        console.log('Server started');
 
         yield Promise.all([
             new Promise((resolve) => {
@@ -236,8 +240,8 @@ export class InterceptionStore {
                     (rules) => resolve(this.server.setRules(...rules)),
                     { fireImmediately: true }
                 )
-            }),
-            this.refreshInterceptors(),
+            }).then(() => console.log('Rules set')),
+            this.refreshInterceptors().then(() => console.log('Interceptors refreshed')),
             getConfig().then((config) => {
                 this.certPath = config.certificatePath;
                 this.certContent = config.certificateContent;
@@ -247,6 +251,7 @@ export class InterceptionStore {
                         .filter(a => !a.internal)
                         .map(a => a.address);
                 });
+                console.log('Config loaded');
             })
         ]);
 

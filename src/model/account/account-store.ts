@@ -45,6 +45,8 @@ export class AccountStore {
         loginEvents.on('logout', this.updateUser);
         setInterval(this.updateUser, 1000 * 60 * 10);
         this.updateUser();
+
+        console.log('Account store created');
     }
 
     @action.bound

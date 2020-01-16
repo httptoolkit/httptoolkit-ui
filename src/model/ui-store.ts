@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { configure, observable, action, autorun, computed, observe } from 'mobx';
 import { persist, create } from 'mobx-persist';
 
-import { Theme, lightTheme, ThemeName, Themes } from '../styles';
+import { Theme, ThemeName, Themes } from '../styles';
 import { AccountStore } from './account/account-store';
 
 configure({ enforceActions: 'observed' });
@@ -31,6 +31,8 @@ export class UiStore {
         });
 
         this.loadSettings();
+
+        console.log('UI store initialized');
     }
 
     private loadSettings() {

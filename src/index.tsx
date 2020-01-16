@@ -63,6 +63,8 @@ appStartupPromise.then(() => {
     // We now know that the server is running - tell it to check for updates
     triggerServerUpdate();
 
+    console.log('App started, rendering');
+
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
         <Provider interceptionStore={interceptionStore} accountStore={accountStore} uiStore={uiStore}>
