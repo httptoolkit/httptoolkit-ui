@@ -1,5 +1,8 @@
 import * as _ from 'lodash';
 
+// Before imports to avoid circular import with server-api
+export const RUNNING_IN_WORKER = typeof window === 'undefined';
+
 export type Empty = _.Dictionary<undefined>;
 export function empty(): Empty {
     return {};

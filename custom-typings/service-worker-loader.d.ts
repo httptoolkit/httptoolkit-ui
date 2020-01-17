@@ -3,5 +3,7 @@ declare module "service-worker-loader!*" {
         scope: string
     }): Promise<ServiceWorkerRegistration>;
 
+    export const scriptUrl: string;
+
     export class ServiceWorkerNoSupportError extends Error {}
 }

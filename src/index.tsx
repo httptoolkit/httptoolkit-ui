@@ -12,7 +12,10 @@ import { delay } from './util/promise';
 import { initTracking } from './tracking';
 import { appHistory } from './routing';
 
-import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./services/update-worker';
+import {
+    scriptUrl as updateWorkerUrl,
+    ServiceWorkerNoSupportError
+} from 'service-worker-loader!./services/update-worker';
 
 import { InterceptionStore } from './model/interception-store';
 import { AccountStore } from './model/account/account-store';
@@ -26,7 +29,19 @@ import { serverVersion } from './services/service-versions';
 
 const APP_ELEMENT_SELECTOR = '#app';
 
-registerUpdateWorker({ scope: '/' })
+function registerUpdateWorker(options: { scope: string }, authToken: string | null) {
+    if ('serviceWorker' in navigator) {
+        const params = authToken ? `?authToken=${authToken}` : '';
+        return navigator.serviceWorker.register(updateWorkerUrl + params, options);
+    }
+
+    return Promise.reject(new ServiceWorkerNoSupportError());
+}
+
+const urlParams = new URLSearchParams(window.location.search);
+const authToken = urlParams.get('authToken');
+
+registerUpdateWorker({ scope: '/' }, authToken)
 .then((registration) => {
     console.log('Service worker loaded');
 

@@ -3,10 +3,15 @@ import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
 import * as semver from 'semver';
 
+import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
 import { serverVersion, DETAILED_CONFIG_RANGE } from './service-versions';
 
-const urlParams = new URLSearchParams(window.location.search);
+const urlParams = new URLSearchParams(
+    RUNNING_IN_WORKER
+        ? (self as WorkerGlobalScope).location.search
+        : window.location.search
+);
 const authToken = urlParams.get('authToken');
 
 const graphql = getGraphQL('http://127.0.0.1:45457/', {
