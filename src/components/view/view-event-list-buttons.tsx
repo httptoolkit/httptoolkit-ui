@@ -6,7 +6,7 @@ import { styled } from '../../styles'
 import { Icon, IconProp } from '../../icons';
 import { HttpExchange } from '../../model/exchange';
 import { generateHar } from '../../model/har';
-import { saveFile, uploadFile } from '../../util';
+import { saveFile, uploadFile } from '../../util/ui';
 import { AccountStore } from '../../model/account/account-store';
 import { InterceptionStore } from '../../model/interception-store';
 

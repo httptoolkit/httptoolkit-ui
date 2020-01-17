@@ -4,7 +4,7 @@ import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
 import { styled, css } from "../../styles";
-import { isReactElement } from '../../util';
+import { isReactElement } from '../../util/ui';
 import { Icon } from '../../icons';
 
 interface CollapsibleSectionProps {

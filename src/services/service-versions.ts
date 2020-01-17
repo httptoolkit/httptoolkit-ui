@@ -1,4 +1,4 @@
-import { lazyObservablePromise } from "../util";
+import { lazyObservablePromise } from "../util/observable";
 import { getServerVersion, waitUntilServerReady } from "./server-api";
 import { getDesktopInjectedValue } from "./desktop-api";
 

@@ -7,7 +7,8 @@ import {
     BreakpointRequestResult,
     BreakpointResponseResult,
 } from "../types";
-import { getDeferred, Deferred, asHeaderArray } from "../util";
+import { asHeaderArray } from "../util";
+import { getDeferred, Deferred } from "../util/promise";
 import { reportError } from "../errors";
 
 import { decodeBody, encodeBody } from "../services/ui-worker-api";

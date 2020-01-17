@@ -9,7 +9,7 @@ import * as monacoTypes from 'monaco-editor';
 import _MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
 
 import { reportError } from '../../errors';
-import { delay } from '../../util';
+import { delay } from '../../util/promise';
 import { WritableKeys, Omit } from '../../types';
 import { styled, Theme } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';

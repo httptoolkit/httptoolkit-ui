@@ -12,7 +12,7 @@ import { lightTheme } from '../../styles';
 import { reportError } from '../../errors';
 
 import { SubscriptionPlanCode, getSubscriptionPlanCode } from './subscriptions';
-import { attempt } from '../../util';
+import { attempt } from '../../util/promise';
 
 const AUTH0_CLIENT_ID = 'KAJyF1Pq9nfBrv5l3LHjT9CrSQIleujj';
 const AUTH0_DOMAIN = 'login.httptoolkit.tech';

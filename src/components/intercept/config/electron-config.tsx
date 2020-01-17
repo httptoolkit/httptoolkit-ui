@@ -5,7 +5,7 @@ import { action } from 'mobx';
 
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { uploadFile } from '../../../util';
+import { uploadFile } from '../../../util/ui';
 
 import { Interceptor } from '../../../model/interceptors';
 import { UiStore } from '../../../model/ui-store';

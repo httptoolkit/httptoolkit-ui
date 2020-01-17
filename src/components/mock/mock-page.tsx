@@ -7,7 +7,7 @@ import * as dateFns from 'date-fns';
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 import { Icon } from '../../icons';
-import { uploadFile, saveFile } from '../../util';
+import { uploadFile, saveFile } from '../../util/ui';
 
 import { ActivatedStore } from '../../model/interception-store';
 import { AccountStore } from '../../model/account/account-store';

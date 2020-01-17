@@ -7,7 +7,7 @@ import * as HTTPSnippet from "httpsnippet";
 import { Omit } from "../../types";
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
-import { saveFile } from '../../util';
+import { saveFile } from '../../util/ui';
 
 import { AccountStore } from "../../model/account/account-store";
 import { HttpExchange } from "../../model/exchange";

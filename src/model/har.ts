@@ -4,7 +4,8 @@ import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
 
-import { ObservablePromise, lastHeader } from '../util';
+import { lastHeader } from '../util';
+import { ObservablePromise } from '../util/observable';
 import { Headers, HtkRequest, HarRequest, HarResponse } from '../types';
 import { HttpExchange, TimingEvents } from "./exchange";
 import { UI_VERSION } from '../services/service-versions';

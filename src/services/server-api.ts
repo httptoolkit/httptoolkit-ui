@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
 import * as semver from 'semver';
 
-import { getDeferred } from '../util';
+import { getDeferred } from '../util/promise';
 import { serverVersion, DETAILED_CONFIG_RANGE } from './service-versions';
 
 const urlParams = new URLSearchParams(window.location.search);

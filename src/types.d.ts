@@ -16,7 +16,7 @@ import {
 
 import { TrafficSource } from './model/sources';
 import { ViewableContentType } from './model/content-types';
-import { ObservablePromise } from './util';
+import { ObservablePromise } from './util/observable';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents'> &

@@ -17,13 +17,12 @@ import {
     InputCompletedRequest,
 } from "../types";
 import {
-    lazyObservablePromise,
-    ObservablePromise,
     fakeBuffer,
     FakeBuffer,
     asHeaderArray,
     lastHeader,
 } from '../util';
+import { lazyObservablePromise, ObservablePromise } from "../util/observable";
 
 import { parseSource } from './sources';
 import { getContentType } from './content-types';

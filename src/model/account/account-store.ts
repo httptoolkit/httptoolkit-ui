@@ -4,7 +4,7 @@ import { configure, observable, action, flow, computed, when } from 'mobx';
 
 import { reportError, reportErrorsAsUser } from '../../errors';
 import { trackEvent } from '../../tracking';
-import { delay } from '../../util';
+import { delay } from '../../util/promise';
 
 import {
     loginEvents,

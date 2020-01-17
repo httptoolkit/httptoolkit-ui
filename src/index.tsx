@@ -8,7 +8,7 @@ import * as ReactDOM from 'react-dom';
 import { Provider } from 'mobx-react';
 
 import { GlobalStyles } from './styles';
-import { delay } from './util';
+import { delay } from './util/promise';
 import { initTracking } from './tracking';
 import { appHistory } from './routing';
 

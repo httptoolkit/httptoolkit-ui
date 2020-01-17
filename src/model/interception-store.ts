@@ -40,7 +40,7 @@ import {
 import { serverVersion as serverVersionPromise } from '../services/service-versions';
 import { AccountStore } from './account/account-store';
 import { Interceptor, getInterceptOptions } from './interceptors';
-import { delay } from '../util';
+import { delay } from '../util/promise';
 import { parseHar } from './har';
 import { reportError } from '../errors';
 import { isValidPort } from './network';

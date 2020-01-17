@@ -6,7 +6,7 @@ import * as dedent from 'dedent';
 
 import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
-import { uploadFile } from '../../util';
+import { uploadFile } from '../../util/ui';
 
 import {
     Handler
