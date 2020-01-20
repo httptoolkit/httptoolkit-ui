@@ -41,8 +41,12 @@ function registerUpdateWorker(options: { scope: string }, authToken: string | nu
 const urlParams = new URLSearchParams(window.location.search);
 const authToken = urlParams.get('authToken');
 
-registerUpdateWorker({ scope: '/' }, authToken)
-.then((registration) => {
+// Set up a SW in the background to add offline support & instant startup.
+// This also checks for new versions after the first SW is already live.
+// Delayed to avoid competing for bandwidth with startup on slow connections.
+delay(10000).then(() =>
+    registerUpdateWorker({ scope: '/' }, authToken)
+).then((registration) => {
     console.log('Service worker loaded');
 
     // Check for SW updates every 5 minutes.
