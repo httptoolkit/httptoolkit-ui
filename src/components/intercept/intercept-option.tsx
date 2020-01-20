@@ -48,7 +48,7 @@ const InterceptOptionCard = styled<React.ComponentType<{
 
     ${p => {
         if (!p.expanded || !p.uiConfig) {
-            return `order: ${p.index}`;
+            return `order: ${p.index};`;
         }
 
         const width = p.uiConfig.columnWidth;
@@ -60,7 +60,7 @@ const InterceptOptionCard = styled<React.ComponentType<{
         const fixedOrder = Math.max(-1, p.index - width);
 
         return `
-            order: ${fixedOrder}
+            order: ${fixedOrder};
             grid-row: span ${height};
             grid-column: span ${width};
         `
