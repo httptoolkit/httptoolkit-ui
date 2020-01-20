@@ -2,10 +2,8 @@ import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import * as QRCode from 'qrcode.react';
 import {
-    handlers,
     matchers,
-    completionCheckers,
-    MockRuleData,
+    completionCheckers
 } from 'mockttp';
 
 import { styled } from '../../../styles';
@@ -16,6 +14,11 @@ import { MethodMatchers, StaticResponseHandler } from '../../../model/rules/rule
 
 const ConfigContainer = styled.div`
     user-select: text;
+
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
 
     > p {
         line-height: 1.2;
@@ -31,12 +34,18 @@ const ConfigContainer = styled.div`
 
     > canvas {
         margin: 0 auto;
+        /* Without white padding, the QR code sometimes isn't scannable */
+        padding: 5px;
+        background-color: #fff;
     }
 
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
+    a[href] {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
+    }
 `;
 
 const Spacer = styled.div`
