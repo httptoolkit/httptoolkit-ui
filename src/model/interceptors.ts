@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import * as semver from "semver";
 
 import { ServerInterceptor } from "../services/server-api";
+import { DETAILED_CONFIG_RANGE } from "../services/service-versions";
 import { IconProps, SourceIcons } from "../icons";
 
 import { InterceptorCustomUiConfig } from "../components/intercept/intercept-option";
@@ -17,9 +18,12 @@ interface InterceptorConfig {
     tags: string[];
     inProgress?: boolean;
     clientOnly?: true;
-    requiresServerRange?: string;
+    checkRequirements?: (options: {
+        interceptorVersion: string,
+        featureFlags: string[],
+        serverVersion?: string
+    }) => boolean;
     uiConfig?: InterceptorCustomUiConfig;
-    semverRange?: string;
 }
 
 export type Interceptor =
@@ -90,14 +94,19 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         description: 'Launch an Electron application with all its traffic intercepted',
         iconProps: SourceIcons.Electron,
         uiConfig: ElectronCustomUi,
-        semverRange: '^1.0.1',
+        checkRequirements: ({ interceptorVersion }) => {
+            return semver.satisfies(interceptorVersion, "^1.0.1")
+        },
         tags: ['electron', 'desktop', 'postman']
     },
     'android-device': {
         name: 'An Android device',
         description: 'Intercept all HTTP traffic from an Android device on your network',
         iconProps: SourceIcons.Android,
-        requiresServerRange: ">=0.1.30",
+        checkRequirements: ({ featureFlags, serverVersion }) => {
+            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
+                featureFlags.includes("android");
+        },
         clientOnly: true,
         uiConfig: AndroidCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
@@ -138,15 +147,24 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
 
 export function getInterceptOptions(
     serverInterceptorArray: ServerInterceptor[],
-    serverVersion?: string
+    serverVersion?: string,
+    featureFlags: string[] = []
 ) {
     const serverInterceptors = _.keyBy(serverInterceptorArray, 'id');
 
     return _.mapValues(INTERCEPT_OPTIONS, (option, id) => {
         if (
-            option.requiresServerRange &&
-            (!serverVersion || !semver.satisfies(serverVersion, option.requiresServerRange))
+            // If we need a server interceptor & it's not present
+            (!option.clientOnly && !serverInterceptors[id]) ||
+            // Or if we're missing other requirement (specific server version,
+            // feature flags, etc)
+            (option.checkRequirements && !option.checkRequirements({
+                interceptorVersion: (serverInterceptors[id] || {}).version,
+                featureFlags,
+                serverVersion
+            }))
         ) {
+            // The UI knows about this interceptor, but we can't use it for some reason.
             return _.assign({}, option, {
                 id: id,
                 isSupported: false,
@@ -154,8 +172,8 @@ export function getInterceptOptions(
                 isActivable: false
             });
         } else if (option.clientOnly) {
-            // Some interceptors don't need server support at all, so
-            // they're always supported & activable (e.g. manual setup guide).
+            // Some interceptors don't need server support at all, so as long as the requirements
+            // are fulfilled, they're always supported & activable (e.g. manual setup guide).
             return _.assign({}, option, {
                 id: id,
                 isSupported: true,
@@ -163,16 +181,13 @@ export function getInterceptOptions(
                 isActivable: true
             });
         } else {
-            // For everything else, the server tells us if it's supported, activable, or currently active.
-            // semverRange allows the UI to require certain minimum versions of interceptors
-            const serverInterceptor = serverInterceptors[id] &&
-                (!option.semverRange || semver.satisfies(serverInterceptors[id].version, option.semverRange))
-                ? serverInterceptors[id]
-                : { isActive: false, isActivable: false };
+            // For everything else: the UI & server supports this, we let the server tell us
+            // if it's activable/currently active.
+            const serverInterceptor = serverInterceptors[id];
 
             return _.assign({}, option, serverInterceptor, {
-                id: id,
-                isSupported: !!serverInterceptors[id]
+                id,
+                isSupported: true
             });
         }
     });
