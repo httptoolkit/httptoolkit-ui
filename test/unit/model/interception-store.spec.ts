@@ -29,7 +29,7 @@ describe("Interception store", () => {
             .map((char) => ({ id: char }) as HtkMockRule);
 
         beforeEach(() => {
-            store = new InterceptionStore(() => {});
+            store = new InterceptionStore(null as any, () => {});
             store.rules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
             store.draftRules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
         });

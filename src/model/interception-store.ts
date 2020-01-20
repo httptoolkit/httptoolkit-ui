@@ -156,6 +156,7 @@ export class InterceptionStore {
     //#region
 
     constructor(
+        private readonly accountStore: AccountStore,
         private readonly jumpToExchange: (exchangeId: string) => void
     ) {
         this.server = getLocal({
@@ -166,13 +167,14 @@ export class InterceptionStore {
         this.interceptors = getInterceptOptions([]);
     }
 
-    async initialize(accountStore: AccountStore) {
-        await this.loadSettings(accountStore);
+    async initialize() {
+        await this.loadSettings();
         await this.startIntercepting();
         console.log('Interception store initialized');
     }
 
-    private async loadSettings(accountStore: AccountStore) {
+    private async loadSettings() {
+        const { accountStore } = this;
         // Every time the user account data is updated from the server, consider resetting
         // paid settings to the free defaults. This ensures that they're reset on
         // logout & subscription expiration (even if that happened while the app was
@@ -714,9 +716,10 @@ export class InterceptionStore {
     async refreshInterceptors() {
         const serverInterceptors = await getInterceptors(this.server.port);
         const serverVersion = await serverVersionPromise;
+        const { featureFlags } = this.accountStore;
 
         runInAction(() => {
-            this.interceptors = getInterceptOptions(serverInterceptors, serverVersion);
+            this.interceptors = getInterceptOptions(serverInterceptors, serverVersion, featureFlags);
         });
     }
 

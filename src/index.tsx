@@ -69,11 +69,12 @@ serverVersion.then((version) => localStorage.setItem('last-server-version', vers
 const accountStore = new AccountStore();
 const uiStore = new UiStore();
 const interceptionStore = new InterceptionStore(
+    accountStore,
     (exchangeId: string) => appHistory.navigate(`/view/${exchangeId}`)
 );
 
 const appStartupPromise = Promise.all([
-    interceptionStore.initialize(accountStore),
+    interceptionStore.initialize(),
     uiStore.initialize(accountStore)
 ]);
 

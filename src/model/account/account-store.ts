@@ -98,8 +98,8 @@ export class AccountStore {
         return !!this.user.email;
     }
 
-    hasFeatureFlag(flag: FeatureFlag) {
-        return this.user.featureFlags.includes(flag);
+    @computed get featureFlags() {
+        return _.clone(this.user.featureFlags);
     }
 
     @computed get isPaidUser() {
