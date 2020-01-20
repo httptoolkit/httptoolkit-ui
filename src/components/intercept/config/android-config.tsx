@@ -1,4 +1,6 @@
+import * as _ from 'lodash';
 import * as React from 'react';
+import { when } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as QRCode from 'qrcode.react';
 import {
@@ -58,6 +60,12 @@ function urlSafeBase64(content: string) {
         .replace('/', '_');
 }
 
+function hasSeenConfigRequests(interceptionStore: InterceptionStore) {
+    return _.some(interceptionStore.exchanges, (exchange) =>
+        exchange.request.url === 'http://android.httptoolkit.tech/config'
+    );
+}
+
 @inject('interceptionStore')
 @observer
 class AndroidConfig extends React.Component<{
@@ -69,7 +77,8 @@ class AndroidConfig extends React.Component<{
 }> {
 
     async componentDidMount() {
-        this.props.interceptionStore!.ensureDefaultRuleExists({
+        const interceptionStore = this.props.interceptionStore!;
+        interceptionStore.ensureDefaultRuleExists({
             id: 'default-android-certificate',
             activated: true,
             matchers: [
@@ -85,6 +94,17 @@ class AndroidConfig extends React.Component<{
                 'content-type': 'application/json'
             })
         });
+
+        if (!hasSeenConfigRequests(interceptionStore)) {
+            // If there are no /config requests collected, wait until one appears, and
+            // then jump to the requests. The goal is that first setup is intuitive, but
+            // connecting more devices later if you want multiple devices isn't too annoying.
+            when(
+                () => hasSeenConfigRequests(interceptionStore)
+            ).then(
+                this.props.showRequests
+            );
+        }
     }
 
     render() {
