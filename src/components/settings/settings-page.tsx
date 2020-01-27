@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, inject } from "mobx-react";
-import { observable, action } from 'mobx';
+import { action, computed } from 'mobx';
 import * as dedent from 'dedent';
 import {
     distanceInWordsStrict, format
@@ -9,14 +9,14 @@ import {
 import { get } from 'typesafe-get';
 import * as semver from 'semver';
 
-import { Omit, WithInjected } from '../../types';
+import { WithInjected } from '../../types';
 import { styled, Theme, ThemeName } from '../../styles';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui-store';
 import { serverVersion, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
-import { CollapsibleCard, CollapsibleCardProps, CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
 import { ContentLabel, ContentValue } from '../common/text-content';
 import { Pill } from '../common/pill';
 import { Button } from '../common/inputs';
@@ -101,26 +101,33 @@ const EditorContainer = styled.div`
     flex-grow: 1;
 `;
 
+const cardKeys = [
+    'account',
+    'proxy',
+    'themes'
+] as const;
+
+type CardKey = typeof cardKeys[number];
+
 @inject('accountStore')
 @inject('uiStore')
 @observer
 class SettingsPage extends React.Component<SettingsPageProps> {
 
-    @observable
-    private cardProps = _.mapValues<{}, Omit<CollapsibleCardProps, 'children'>>({
-        'account': {},
-        'proxy': {},
-        'themes': {}
-    }, (_value: { collapsed?: boolean }, key) => ({
-        key: key,
-        collapsed: _value.collapsed || false,
-        onCollapseToggled: this.toggleCollapse.bind(this, key)
-    }));
+    @computed
+    get cardProps() {
+        return _.fromPairs(cardKeys.map((key) => [key, {
+            key,
+            collapsed: this.props.uiStore!.settingsCardStates[key].collapsed,
+            onCollapseToggled: this.toggleCollapse.bind(this, key)
+        }]));
+    }
 
     @action.bound
-    private toggleCollapse(key: string) {
-        const cardProps = this.cardProps[key];
-        cardProps.collapsed = !cardProps.collapsed;
+    private toggleCollapse(key: CardKey) {
+        const { settingsCardStates } = this.props.uiStore!;
+        const cardState = settingsCardStates[key];
+        cardState.collapsed = !cardState.collapsed;
     }
 
 

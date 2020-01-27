@@ -82,6 +82,14 @@ export class UiStore {
         'export': { collapsed: true }
     };
 
+    @observable
+    readonly settingsCardStates = {
+        'account': { collapsed: false },
+        'proxy': { collapsed: false },
+        'api': { collapsed: false },
+        'themes': { collapsed: false }
+    }
+
     @action.bound
     rememberElectronPath(path: string) {
         if (!this.previousElectronAppPaths.includes(path)) {
