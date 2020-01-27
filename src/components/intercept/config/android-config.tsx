@@ -143,7 +143,7 @@ class AndroidConfig extends React.Component<{
 
             <Spacer />
             <QRCode
-                size={150}
+                size={160}
                 value={
                     `https://android.httptoolkit.tech/connect/?data=${serializedSetupParams}`
                 }
