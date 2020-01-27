@@ -155,8 +155,8 @@ class AndroidConfig extends React.Component<{
                 and configure the device to trust its HTTPS certificate by default.
             </p>
             <p>
-                This won't work immediately for all apps. Some may need changes to trust HTTP Toolkit for
-                HTTPS traffic. <a
+                <strong>This won't work immediately for all apps.</strong> Some may need changes
+                to trust HTTP Toolkit for HTTPS traffic. <a
                     href="https://httptoolkit.tech/docs/guides/android"
                     target='_blank'
                     rel='noreferrer noopener'
