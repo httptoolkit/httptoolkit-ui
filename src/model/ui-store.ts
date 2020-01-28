@@ -1,16 +1,21 @@
 
 import * as _ from 'lodash';
-import { configure, observable, action, autorun, computed, observe } from 'mobx';
+import { observable, action, autorun, computed, observe } from 'mobx';
 import { persist, create } from 'mobx-persist';
 
 import { Theme, ThemeName, Themes } from '../styles';
+import { lazyObservablePromise } from '../util/observable';
 import { AccountStore } from './account/account-store';
-
-configure({ enforceActions: 'observed' });
 
 export class UiStore {
 
-    constructor() {
+    constructor(
+        private accountStore: AccountStore
+    ) { }
+
+    readonly initialized = lazyObservablePromise(async () => {
+        await this.accountStore.initialized;
+
         autorun(() => {
             // Any time the theme changes, update the HTML background to match
             document.querySelector('html')!.style.backgroundColor = this.theme.containerBackground;
@@ -19,25 +24,19 @@ export class UiStore {
             // from the index.html loading script, whether it's custom or computed
             localStorage.setItem('theme-background-color', this.theme.containerBackground);
         });
-    }
 
-    initialize(accountStore: AccountStore) {
         // Every time the user account data is updated from the server, consider resetting
         // paid settings to the free defaults. This ensures that they're reset on
         // logout & subscription expiration (even if that happened while the app was
         // closed), but don't get reset when the app starts with stale account data.
-        observe(accountStore, 'accountDataLastUpdated', () => {
-            if (!accountStore.isPaidUser) this.setTheme('light');
+        observe(this.accountStore, 'accountDataLastUpdated', () => {
+            if (!this.accountStore.isPaidUser) this.setTheme('light');
         });
 
-        this.loadSettings();
+        await create()('ui-store', this);
 
         console.log('UI store initialized');
-    }
-
-    private loadSettings() {
-        return create()('ui-store', this);
-    }
+    });
 
     @action.bound
     setTheme(themeNameOrObject: Theme | ThemeName) {

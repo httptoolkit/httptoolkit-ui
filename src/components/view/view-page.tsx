@@ -7,7 +7,8 @@ import * as portals from 'react-reverse-portal';
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
-import { ActivatedStore } from '../../model/interception-store';
+import { EventsStore } from '../../model/events-store';
+import { ServerStore } from '../../model/server-store';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -20,12 +21,14 @@ import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 interface ViewPageProps {
     className?: string;
-    interceptionStore: ActivatedStore;
+    eventsStore: EventsStore;
+    serverStore: ServerStore;
     navigate: (path: string) => void;
     eventId?: string;
 }
 
-@inject('interceptionStore')
+@inject('eventsStore')
+@inject('serverStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
@@ -34,7 +37,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @computed
     get selectedEvent() {
-        return _.find(this.props.interceptionStore.events, {
+        return _.find(this.props.eventsStore.events, {
             id: this.props.eventId
         });
     }
@@ -44,7 +47,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             // If you somehow have a non-existent event selected, unselect it
             if (
                 this.props.eventId &&
-                !_.includes(this.props.interceptionStore.events, this.selectedEvent)
+                !_.includes(this.props.eventsStore.events, this.selectedEvent)
             ) {
                 this.onSelected(undefined);
             }
@@ -55,9 +58,9 @@ class ViewPage extends React.Component<ViewPageProps> {
         const {
             events,
             clearInterceptedData,
-            isPaused,
-            certPath
-        } = this.props.interceptionStore;
+            isPaused
+        } = this.props.eventsStore;
+        const { certPath } = this.props.serverStore;
 
         let rightPane: JSX.Element;
         if (!this.selectedEvent) {
@@ -116,8 +119,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 }
 
 const StyledViewPage = styled(
-    // Exclude store from the external props, as it's injected
-    ViewPage as unknown as WithInjected<typeof ViewPage, 'interceptionStore' | 'navigate'>
+    // Exclude stores from the external props, as they're injected
+    ViewPage as unknown as WithInjected<typeof ViewPage, 'serverStore' | 'eventsStore' | 'navigate'>
 )`
     height: 100vh;
     position: relative;

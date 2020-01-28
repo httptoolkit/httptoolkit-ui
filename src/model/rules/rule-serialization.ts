@@ -3,9 +3,9 @@ import { toJS } from 'mobx';
 import { completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
-import { InterceptionStore } from '../interception-store';
 import { hasSerializrSchema } from '../serialization';
 
+import { RulesStore } from './rules-store';
 import { MatcherLookup, HandlerLookup } from './rules';
 import {
     HtkMockRule,
@@ -16,7 +16,7 @@ import {
 import { migrateRules } from './rule-migrations';
 
 export type DeserializationArgs = {
-    interceptionStore: InterceptionStore
+    rulesStore: RulesStore
 };
 
 const deserializeByType = <T extends { type: string, uiType?: string }>(

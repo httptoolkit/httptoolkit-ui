@@ -5,7 +5,7 @@ import * as semver from 'semver';
 
 import { styled } from '../../styles';
 
-import { InterceptionStore } from '../../model/interception-store';
+import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 import {
     HandlerClass,
@@ -54,7 +54,7 @@ const HandlerSelect = styled(Select)`
 
 const instantiateHandler = (
     handlerClass: HandlerClass,
-    interceptionStore: InterceptionStore
+    rulesStore: RulesStore
 ): Handler | undefined => {
     switch (handlerClass) {
         case StaticResponseHandler:
@@ -62,15 +62,15 @@ const instantiateHandler = (
         case FromFileResponseHandler:
             return new FromFileResponseHandler(200, undefined, '');
         case PassThroughHandler:
-            return new PassThroughHandler(interceptionStore);
+            return new PassThroughHandler(rulesStore);
         case ForwardToHostHandler:
-            return new ForwardToHostHandler('', true, interceptionStore);
+            return new ForwardToHostHandler('', true, rulesStore);
         case RequestBreakpointHandler:
-            return new RequestBreakpointHandler(interceptionStore);
+            return new RequestBreakpointHandler(rulesStore);
         case ResponseBreakpointHandler:
-            return new ResponseBreakpointHandler(interceptionStore);
+            return new ResponseBreakpointHandler(rulesStore);
         case RequestAndResponseBreakpointHandler:
-            return new RequestAndResponseBreakpointHandler(interceptionStore);
+            return new RequestAndResponseBreakpointHandler(rulesStore);
         case TimeoutHandler:
             return new TimeoutHandler();
         case CloseConnectionHandler:
@@ -82,8 +82,8 @@ const supportsFileHandlers = () =>
     _.isString(serverVersion.value) &&
     semver.satisfies(serverVersion.value, FROM_FILE_HANDLER_SERVER_RANGE);
 
-export const HandlerSelector = inject('interceptionStore', 'accountStore')(observer((p: {
-    interceptionStore?: InterceptionStore,
+export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p: {
+    rulesStore?: RulesStore,
     accountStore?: AccountStore,
     value: Handler,
     onChange: (handler: Handler) => void
@@ -112,7 +112,7 @@ export const HandlerSelector = inject('interceptionStore', 'accountStore')(obser
         value={getHandlerKey(p.value)}
         onChange={(event) => {
             const handlerClass = getHandlerClassByKey(event.target.value as HandlerClassKey);
-            const handler = instantiateHandler(handlerClass, p.interceptionStore!);
+            const handler = instantiateHandler(handlerClass, p.rulesStore!);
             if (!handler) return;
             p.onChange(handler);
         }}

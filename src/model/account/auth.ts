@@ -202,8 +202,6 @@ function getToken() {
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'deleted';
 
-export type FeatureFlag = "mock-page";
-
 type AppData = {
     email: string;
     subscription_status?: SubscriptionStatus;
@@ -229,7 +227,7 @@ type SubscriptionData = {
 export type User = {
     email?: string;
     subscription?: SubscriptionData;
-    featureFlags: string[]; // Should be only FeatureFlag, but could have future/old flags too
+    featureFlags: string[];
 };
 
 const anonUser = (): User => ({ featureFlags: [] });

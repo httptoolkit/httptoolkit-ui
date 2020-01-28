@@ -11,8 +11,11 @@ import {
 import { styled } from '../../../styles';
 
 import { Interceptor } from '../../../model/interceptors';
-import { InterceptionStore } from '../../../model/interception-store';
+import { ServerStore } from '../../../model/server-store';
+
 import { MethodMatchers, StaticResponseHandler } from '../../../model/rules/rule-definitions';
+import { RulesStore } from '../../../model/rules/rules-store';
+import { EventsStore } from '../../../model/events-store';
 
 const ConfigContainer = styled.div`
     user-select: text;
@@ -60,16 +63,21 @@ function urlSafeBase64(content: string) {
         .replace('/', '_');
 }
 
-function hasSeenConfigRequests(interceptionStore: InterceptionStore) {
-    return _.some(interceptionStore.exchanges, (exchange) =>
+function hasSeenConfigRequests(eventsStore: EventsStore) {
+    return _.some(eventsStore.exchanges, (exchange) =>
         exchange.request.url === 'http://android.httptoolkit.tech/config'
     );
 }
 
-@inject('interceptionStore')
+@inject('serverStore')
+@inject('rulesStore')
+@inject('eventsStore')
 @observer
 class AndroidConfig extends React.Component<{
-    interceptionStore?: InterceptionStore,
+    serverStore?: ServerStore,
+    rulesStore?: RulesStore,
+    eventsStore?: EventsStore,
+
     interceptor: Interceptor,
     activateInterceptor: () => Promise<void>,
     showRequests: () => void,
@@ -77,8 +85,10 @@ class AndroidConfig extends React.Component<{
 }> {
 
     async componentDidMount() {
-        const interceptionStore = this.props.interceptionStore!;
-        interceptionStore.ensureDefaultRuleExists({
+        const rulesStore = this.props.rulesStore!;
+        const eventsStore = this.props.eventsStore!;
+
+        rulesStore.ensureDefaultRuleExists({
             id: 'default-android-certificate',
             activated: true,
             matchers: [
@@ -89,18 +99,18 @@ class AndroidConfig extends React.Component<{
             ],
             completionChecker: new completionCheckers.Always(),
             handler: new StaticResponseHandler(200, undefined, JSON.stringify({
-                certificate: this.props.interceptionStore!.certContent
+                certificate: this.props.serverStore!.certContent
             }), {
                 'content-type': 'application/json'
             })
         });
 
-        if (!hasSeenConfigRequests(interceptionStore)) {
+        if (!hasSeenConfigRequests(eventsStore)) {
             // If there are no /config requests collected, wait until one appears, and
             // then jump to the requests. The goal is that first setup is intuitive, but
             // connecting more devices later if you want multiple devices isn't too annoying.
             when(
-                () => hasSeenConfigRequests(interceptionStore)
+                () => hasSeenConfigRequests(eventsStore)
             ).then(
                 this.props.showRequests
             );
@@ -112,7 +122,7 @@ class AndroidConfig extends React.Component<{
             certFingerprint,
             serverPort,
             networkAddresses
-        } = this.props.interceptionStore!;
+        } = this.props.serverStore!;
 
         const setupParams ={
             addresses: networkAddresses,

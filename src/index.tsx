@@ -5,6 +5,7 @@ initSentry(process.env.SENTRY_DSN);
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { configure } from 'mobx';
 import { Provider } from 'mobx-react';
 
 import { GlobalStyles } from './styles';
@@ -17,10 +18,13 @@ import {
     ServiceWorkerNoSupportError
 } from 'service-worker-loader!./services/update-worker';
 
-import { InterceptionStore } from './model/interception-store';
-import { AccountStore } from './model/account/account-store';
-import { triggerServerUpdate } from './services/server-api';
 import { UiStore } from './model/ui-store';
+import { AccountStore } from './model/account/account-store';
+import { ServerStore } from './model/server-store';
+import { EventsStore } from './model/events-store';
+import { RulesStore } from './model/rules/rules-store';
+import { InterceptorStore } from './model/interceptor-store';
+import { triggerServerUpdate } from './services/server-api';
 
 import { App } from './components/app';
 import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
@@ -66,17 +70,25 @@ initTracking();
 const lastServerVersion = localStorage.getItem('last-server-version');
 serverVersion.then((version) => localStorage.setItem('last-server-version', version));
 
+configure({ enforceActions: 'observed' });
+
 const accountStore = new AccountStore();
-const uiStore = new UiStore();
-const interceptionStore = new InterceptionStore(
+const uiStore = new UiStore(accountStore);
+const serverStore = new ServerStore(accountStore);
+const eventsStore = new EventsStore(serverStore);
+const interceptorStore = new InterceptorStore(serverStore, accountStore);
+const rulesStore = new RulesStore(
     accountStore,
+    serverStore,
+    eventsStore,
     (exchangeId: string) => appHistory.navigate(`/view/${exchangeId}`)
 );
 
-const appStartupPromise = Promise.all([
-    interceptionStore.initialize(),
-    uiStore.initialize(accountStore)
-]);
+const stores = { accountStore, uiStore, serverStore, eventsStore, interceptorStore, rulesStore };
+
+const appStartupPromise = Promise.all(
+    Object.values(stores).map(store => store.initialized)
+);
 
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
@@ -87,7 +99,7 @@ appStartupPromise.then(() => {
 
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
-        <Provider interceptionStore={interceptionStore} accountStore={accountStore} uiStore={uiStore}>
+        <Provider {...stores}>
             <StorePoweredThemeProvider>
                 <ErrorBoundary>
                     <GlobalStyles />

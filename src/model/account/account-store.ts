@@ -1,10 +1,11 @@
 import * as _ from 'lodash';
 import { get } from 'typesafe-get';
-import { configure, observable, action, flow, computed, when } from 'mobx';
+import { observable, action, flow, computed, when } from 'mobx';
 
 import { reportError, reportErrorsAsUser } from '../../errors';
 import { trackEvent } from '../../tracking';
 import { delay } from '../../util/promise';
+import { lazyObservablePromise } from '../../util/observable';
 
 import {
     loginEvents,
@@ -13,7 +14,6 @@ import {
     User,
     getLatestUserData,
     getLastUserData,
-    FeatureFlag,
     RefreshRejectedError
 } from './auth';
 import {
@@ -22,11 +22,9 @@ import {
     openCheckout
 } from './subscriptions';
 
-configure({ enforceActions: 'observed' });
-
 export class AccountStore {
 
-    constructor() {
+    readonly initialized = lazyObservablePromise(async () => {
         this.checkForPaddle();
 
         // Update account data automatically on login, logout & every 10 mins
@@ -47,7 +45,7 @@ export class AccountStore {
         this.updateUser();
 
         console.log('Account store created');
-    }
+    });
 
     @action.bound
     private checkForPaddle() {

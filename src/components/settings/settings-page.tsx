@@ -336,6 +336,6 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 // Annoying cast required to handle the store prop nicely in our types
 const InjectedSettingsPage = SettingsPage as unknown as WithInjected<
     typeof SettingsPage,
-    'accountStore' | 'uiStore' | 'interceptionStore'
+    'accountStore' | 'uiStore'
 >;
 export { InjectedSettingsPage as SettingsPage };

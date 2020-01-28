@@ -28,7 +28,7 @@ import {
     EditableContentType,
     getEditableContentType
 } from '../../model/content-types';
-import { InterceptionStore } from '../../model/interception-store';
+import { RulesStore } from '../../model/rules/rules-store';
 import { desktopVersion } from '../../services/service-versions';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
@@ -452,10 +452,10 @@ const UrlInput = styled(TextInput)`
     box-sizing: border-box;
 `;
 
-@inject('interceptionStore')
+@inject('rulesStore')
 @observer
 class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
-    interceptionStore?: InterceptionStore
+    rulesStore?: RulesStore
 }> {
 
     @observable
@@ -542,7 +542,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
                 }
             }
 
-            this.props.onChange(new ForwardToHostHandler(this.targetHost, this.updateHostHeader, this.props.interceptionStore!));
+            this.props.onChange(new ForwardToHostHandler(this.targetHost, this.updateHostHeader, this.props.rulesStore!));
             this.error = undefined;
         } catch (e) {
             console.log(e);

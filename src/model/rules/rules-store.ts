@@ -3,47 +3,26 @@ import * as _ from 'lodash';
 import {
     observable,
     action,
-    configure,
     flow,
     computed,
-    runInAction,
     observe,
     when,
     reaction
 } from 'mobx';
 import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
-import { HarParseError } from 'har-validator';
 import * as serializr from 'serializr';
 import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuffer';
 
-import { getLocal, Mockttp } from 'mockttp';
+import { MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
+import { lazyObservablePromise } from '../../util/observable';
+import { HttpExchange } from '../exchange';
 
-import {
-    InputResponse,
-    FailedTlsRequest,
-    InputTlsRequest,
-    PortRange,
-    InputInitiatedRequest,
-    InputCompletedRequest,
-    MockttpBreakpointedRequest,
-    MockttpBreakpointedResponse
-} from '../types';
-import { HttpExchange } from './exchange';
-import { parseSource } from './sources';
-import {
-    getInterceptors,
-    activateInterceptor,
-    getConfig,
-    announceServerReady,
-} from '../services/server-api';
-import { serverVersion as serverVersionPromise } from '../services/service-versions';
-import { AccountStore } from './account/account-store';
-import { Interceptor, getInterceptOptions } from './interceptors';
-import { delay } from '../util/promise';
-import { parseHar } from './har';
-import { reportError } from '../errors';
-import { isValidPort } from './network';
+import { AccountStore } from '../account/account-store';
+import { ServerStore } from '../server-store';
+import { EventsStore } from '../events-store';
+import { getDesktopInjectedValue } from '../../services/desktop-api';
+
 import {
     HtkMockRuleGroup,
     flattenRules,
@@ -60,78 +39,13 @@ import {
     HtkMockItem,
     HtkMockRule,
     areItemsEqual
-} from './rules/rules-structure';
+} from './rules-structure';
 import {
     buildDefaultGroup,
     buildDefaultRules,
     buildForwardingRuleIntegration
-} from './rules/rule-definitions';
-import { deserializeRules } from './rules/rule-serialization';
-import { getDesktopInjectedValue } from '../services/desktop-api';
-
-configure({ enforceActions: 'observed' });
-
-type WithSet<T, K extends keyof T> = T & { [k in K]: NonNullable<T[k]> };
-
-// All later components assume the store is fully activated - that means
-// all undefined/nullable fields have been set.
-export type ActivatedStore = WithSet<InterceptionStore, 'certPath' | 'portConfig'>;
-
-// Start the server, with slowly decreasing retry frequency (up to a limit).
-// Note that this never fails - any timeout to this process needs to happen elsewhere.
-function startServer(server: Mockttp, portConfig: PortRange | undefined, maxDelay = 1000, delayMs = 200): Promise<void> {
-    return server.start(portConfig).catch((e) => {
-        console.log('Server initialization failed', e);
-
-        if (e.response) {
-            // Server is listening, but failed to start as requested. Almost
-            // certainly means our port config is bad - retry immediately without it.
-            return startServer(server, undefined, maxDelay, delayMs);
-        }
-
-        // For anything else (unknown errors, or more likely server not listening yet),
-        // wait briefly and then retry the same config:
-        return delay(Math.min(delayMs, maxDelay)).then(() =>
-            startServer(server, portConfig, maxDelay, delayMs * 1.2)
-        );
-    });
-}
-
-export function isValidPortConfiguration(portConfig: PortRange | undefined) {
-    return portConfig === undefined || (
-        portConfig.endPort >= portConfig.startPort &&
-        isValidPort(portConfig.startPort) &&
-        isValidPort(portConfig.endPort)
-    );
-}
-
-// Would be nice to magically infer this from the overloaded on() type, but sadly:
-// https://github.com/Microsoft/TypeScript/issues/24275#issuecomment-390701982
-type EventTypesMap = {
-    'request-initiated': InputInitiatedRequest
-    'request': InputCompletedRequest
-    'response': InputResponse
-    'abort': InputInitiatedRequest
-    'tlsClientError': InputTlsRequest
-};
-
-const eventTypes = [
-    'request-initiated',
-    'request',
-    'response',
-    'abort',
-    'tlsClientError'
-] as const;
-
-type EventType = typeof eventTypes[number];
-
-type QueuedEvent = ({
-    [T in EventType]: { type: T, event: EventTypesMap[T] }
-}[EventType]);
-
-type OrphanableQueuedEvent =
-    | { type: 'response', event: InputResponse }
-    | { type: 'abort', event: InputInitiatedRequest };
+} from './rule-definitions';
+import { deserializeRules } from './rule-serialization';
 
 export type ClientCertificate = {
     readonly pfx: ArrayBuffer,
@@ -150,28 +64,43 @@ const clientCertificateSchema = pojoSchema({
     pfx: serializr.custom(encodeBase64, decodeBase64)
 });
 
-export class InterceptionStore {
-
-    // ** Overall setup & startup:
-    //#region
+export class RulesStore {
 
     constructor(
         private readonly accountStore: AccountStore,
+        private readonly serverStore: ServerStore,
+        private readonly eventsStore: EventsStore,
         private readonly jumpToExchange: (exchangeId: string) => void
-    ) {
-        this.server = getLocal({
-            cors: false,
-            suggestChanges: false,
-            standaloneServerUrl: 'http://127.0.0.1:45456'
-        });
-        this.interceptors = getInterceptOptions([]);
-    }
+    ) { }
 
-    async initialize() {
+    readonly initialized = lazyObservablePromise(async () => {
+        await Promise.all([
+            this.accountStore.initialized,
+            this.serverStore.initialized,
+            this.eventsStore.initialized
+        ]);
+
         await this.loadSettings();
-        await this.startIntercepting();
-        console.log('Interception store initialized');
-    }
+
+        const { setServerRules } = this.serverStore;
+
+        // Set the server rules, and subscribe future rule changes to update them later.
+        await new Promise((resolve) => {
+            reaction(
+                () => _.cloneDeep( // Clone to retain the pre-serialization definitions.
+                    flattenRules(this.rules)
+                    // Drop inactive or never-matching rules
+                    .filter(r => r.activated && r.matchers.length),
+                ),
+                (rules) => {
+                    resolve(setServerRules(...rules))
+                },
+                { fireImmediately: true }
+            )
+        })
+
+        console.log('Rules store initialized');
+    });
 
     private async loadSettings() {
         const { accountStore } = this;
@@ -181,30 +110,30 @@ export class InterceptionStore {
         // closed), but don't get reset when the app starts with stale account data.
         observe(accountStore, 'accountDataLastUpdated', () => {
             if (!accountStore.isPaidUser) {
-                this.setPortConfig(undefined);
                 this.draftWhitelistedCertificateHosts = ['localhost'];
                 this.draftClientCertificateHostMap = {};
             }
         });
 
-        // Load all persisted settings from storage
-        await create()('interception-store', this);
-
-        // Backward compat for store data before 2019-10-04 - drop this in a month or two
-        const rawData = localStorage.getItem('interception-store');
-        if (rawData) {
+        // Backward compat for store data before 2020-01-28 - drop this in a month or two
+        const oldData = localStorage.getItem('interception-store');
+        const newData = localStorage.getItem('rules-store');
+        if (oldData && !newData) {
             try {
-                const data = JSON.parse(rawData);
-                // Handle the migration from WL + initiallyWL to WL + draftWL.
-                if (data.whitelistedCertificateHosts && !data.draftWhitelistedCertificateHosts) {
-                    runInAction(() => {
-                        this.draftWhitelistedCertificateHosts = data.whitelistedCertificateHosts;
-                    });
-                }
+                const data = JSON.parse(oldData);
+
+                // Migrate data from the interception store to here:
+                localStorage.setItem('rules-store', JSON.stringify(_.pick(data, [
+                    'draftWhitelistedCertificateHosts',
+                    'draftClientCertificateHostMap'
+                ])));
             } catch (e) {
                 console.log(e);
             }
         }
+
+        // Load all persisted settings from storage
+        await create()('rules-store', this);
 
         // Support injection of a default forwarding rule by the desktop app, for integrations
         getDesktopInjectedValue('httpToolkitForwardingDefault').then(action((forwardingConfig: string) => {
@@ -221,104 +150,6 @@ export class InterceptionStore {
 
         // Rebuild the rules, which might depends on these settings:
         this.resetRulesToDefault();
-
-        console.log('Interception settings loaded');
-    }
-
-    private startIntercepting = flow(function* (this: InterceptionStore) {
-        yield startServer(this.server, this._portConfig);
-        announceServerReady();
-        console.log('Server started');
-
-        yield Promise.all([
-            new Promise((resolve) => {
-                // Autorun server rule configuration, so reruns if effective rules change later
-                reaction(
-                    () => _.cloneDeep( // Clone to retain the pre-serialization definitions.
-                        flattenRules(this.rules)
-                        // Drop inactive or never-matching rules
-                        .filter(r => r.activated && r.matchers.length),
-                    ),
-                    (rules) => resolve(this.server.setRules(...rules)),
-                    { fireImmediately: true }
-                )
-            }).then(() => console.log('Rules set')),
-            this.refreshInterceptors().then(() => console.log('Interceptors refreshed')),
-            getConfig().then((config) => {
-                this.certPath = config.certificatePath;
-                this.certContent = config.certificateContent;
-                this.certFingerprint = config.certificateFingerprint;
-                this.networkAddresses = _.flatMap(config.networkInterfaces, (addresses) => {
-                    return addresses
-                        .filter(a => !a.internal)
-                        .map(a => a.address);
-                });
-                console.log('Config loaded');
-            })
-        ]);
-
-        const refreshInterceptorInterval = setInterval(() =>
-            this.refreshInterceptors()
-        , 10000);
-
-        console.log(`Server started on port ${this.server.port}`);
-
-        eventTypes.forEach(<T extends EventType>(eventName: T) => {
-            // Lots of 'any' because TS can't handle overload + type interception
-            this.server.on(eventName as any, ((eventData: EventTypesMap[T]) => {
-                if (this.isPaused) return;
-                this.eventQueue.push({ type: eventName, event: eventData } as any);
-                this.queueEventFlush();
-            }) as any);
-        });
-
-        window.addEventListener('beforeunload', () => {
-            clearInterval(refreshInterceptorInterval);
-            this.server.stop().catch(() => { });
-        });
-    });
-
-    //#endregion
-    // ** Core server config
-    //#region
-
-    @observable.ref
-    private server: Mockttp;
-
-    @observable
-    certPath: string | undefined;
-
-    @observable
-    certContent: string | undefined;
-
-    @observable
-    certFingerprint: string | undefined;
-
-    @observable
-    networkAddresses: string[] | undefined;
-
-    @persist('object') @observable
-    private _portConfig: PortRange | undefined;
-
-    @computed get portConfig() {
-        return this._portConfig;
-    }
-
-    @action
-    setPortConfig(value: PortRange | undefined) {
-        if (!isValidPortConfiguration(value)) {
-            throw new TypeError(`Invalid port config: ${JSON.stringify(value)}`);
-        } else if (!value || (value.startPort === 8000 && value.endPort === 65535)) {
-            // If unset, or set to the default equivalent value, then
-            // we delegate to the server itself.
-            this._portConfig = undefined;
-        } else {
-            this._portConfig = value;
-        }
-    }
-
-    @computed get serverPort() {
-        return this.server.port;
     }
 
     get activePassthroughOptions() {
@@ -363,10 +194,6 @@ export class InterceptionStore {
         return _.isEqual(this.clientCertificateHostMap[host], this.draftClientCertificateHostMap[host]);
     }
 
-
-    //#endregion
-    // ** Rules:
-    //#region
 
     @observable
     rules: HtkMockRuleRoot = buildDefaultRules(this);
@@ -703,244 +530,8 @@ export class InterceptionStore {
 
     @action.bound
     loadSavedRules(savedData: any) {
-        this.rules = deserializeRules(savedData, { interceptionStore: this });
+        this.rules = deserializeRules(savedData, { rulesStore: this });
         this.resetRuleDrafts();
-    }
-
-    //#endregion
-    // ** Interceptors:
-    //#region
-
-    @observable interceptors: _.Dictionary<Interceptor>;
-
-    async refreshInterceptors() {
-        const serverInterceptors = await getInterceptors(this.server.port);
-        const serverVersion = await serverVersionPromise;
-        const { featureFlags } = this.accountStore;
-
-        runInAction(() => {
-            this.interceptors = getInterceptOptions(serverInterceptors, serverVersion, featureFlags);
-        });
-    }
-
-    activateInterceptor = flow(function * (
-        this: InterceptionStore,
-        interceptorId: string,
-        options?: any
-    ) {
-        this.interceptors[interceptorId].inProgress = true;
-        const result: unknown = yield activateInterceptor(
-            interceptorId,
-            this.server.port,
-            options
-        ).then(
-            (metadata) => metadata || true
-        ).catch((e) => {
-            reportError(e);
-            return false;
-        });
-
-        this.interceptors[interceptorId].inProgress = false;
-        yield this.refreshInterceptors();
-
-        return result;
-    });
-
-    //#endregion
-    // ** Server event subscriptions:
-    //#region
-
-    @observable
-    isPaused = false;
-
-    private eventQueue: Array<QueuedEvent> = [];
-    private orphanedEvents: { [id: string]: OrphanableQueuedEvent } = {};
-
-    private isFlushQueued = false;
-    private queueEventFlush() {
-        if (!this.isFlushQueued) {
-            this.isFlushQueued = true;
-            requestAnimationFrame(this.flushQueuedUpdates);
-        }
-    }
-
-    readonly events = observable.array<HttpExchange | FailedTlsRequest>([], { deep: false });
-
-    @computed
-    get exchanges(): Array<HttpExchange> {
-        return this.events.filter(
-            (event: any): event is HttpExchange => !!event.request
-        );
-    }
-
-    @computed get activeSources() {
-        return _(this.exchanges)
-            .map(e => e.request.headers['user-agent'])
-            .uniq()
-            .map(parseSource)
-            .uniqBy(s => s.summary)
-            .value();
-    }
-
-    @action.bound
-    private flushQueuedUpdates() {
-        this.isFlushQueued = false;
-
-        // We batch request updates until here. This runs in a mobx transaction and
-        // on request animation frame, so batches get larger and cheaper if
-        // the frame rate starts to drop.
-
-        this.eventQueue.forEach(this.updateFromQueuedEvent);
-        this.eventQueue = [];
-    }
-
-    private updateFromQueuedEvent = (queuedEvent: QueuedEvent) => {
-        switch (queuedEvent.type) {
-            case 'request-initiated':
-                this.addInitiatedRequest(queuedEvent.event);
-                return this.checkForOrphan(queuedEvent.event.id);
-            case 'request':
-                this.addCompletedRequest(queuedEvent.event);
-                return this.checkForOrphan(queuedEvent.event.id);
-            case 'response':
-                return this.setResponse(queuedEvent.event);
-            case 'abort':
-                return this.markRequestAborted(queuedEvent.event);
-            case 'tlsClientError':
-                return this.addFailedTlsRequest(queuedEvent.event);
-        }
-    }
-
-    private checkForOrphan(id: string) {
-        // Sometimes we receive events out of order (response/abort before request).
-        // They could be later in the same batch, or in a previous batch. If that happens,
-        // we store them separately, and we check later whether they're valid when subsequent
-        // completed/initiated request events come in. If so, we re-queue them.
-
-        const orphanEvent = this.orphanedEvents[id];
-
-        if (orphanEvent) {
-            delete this.orphanedEvents[id];
-            this.updateFromQueuedEvent(orphanEvent);
-        }
-    }
-
-    @action.bound
-    togglePause() {
-        this.isPaused = !this.isPaused;
-    }
-
-    @action
-    private addInitiatedRequest(request: InputInitiatedRequest) {
-        try {
-            // Due to race conditions, it's possible this request already exists. If so,
-            // we just skip this - the existing data will be more up to date.
-            const existingEventIndex = _.findIndex(this.events, { id: request.id });
-            if (existingEventIndex === -1) {
-                const exchange = new HttpExchange(request);
-                this.events.push(exchange);
-            }
-        } catch (e) {
-            reportError(e);
-        }
-    }
-
-    @action
-    private addCompletedRequest(request: InputCompletedRequest) {
-        try {
-            // The request should already exist: we get an event when the initial path & headers
-            // are received, and this one later when the full body is received.
-            // We add the request from scratch if it's somehow missing, which can happen given
-            // races or if the server doesn't support request-initiated events.
-            const existingEventIndex = _.findIndex(this.events, { id: request.id });
-            if (existingEventIndex >= 0) {
-                (this.events[existingEventIndex] as HttpExchange).updateFromCompletedRequest(request);
-            } else {
-                this.events.push(new HttpExchange(request));
-            }
-        } catch (e) {
-            reportError(e);
-        }
-    }
-
-    @action
-    private markRequestAborted(request: InputInitiatedRequest) {
-        try {
-            const exchange = _.find(this.exchanges, { id: request.id });
-
-            if (!exchange) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[request.id] = { type: 'abort', event: request };
-                return;
-            };
-
-            exchange.markAborted(request);
-        } catch (e) {
-            reportError(e);
-        }
-    }
-
-    @action
-    private setResponse(response: InputResponse) {
-        try {
-            const exchange = _.find(this.exchanges, { id: response.id });
-
-            if (!exchange) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[response.id] = { type: 'response', event: response };
-                return;
-            }
-
-            exchange.setResponse(response);
-        } catch (e) {
-            reportError(e);
-        }
-    }
-
-    @action
-    private addFailedTlsRequest(request: InputTlsRequest) {
-        try {
-            if (_.some(this.events, (event) =>
-                'hostname' in event &&
-                event.hostname === request.hostname &&
-                event.remoteIpAddress === request.remoteIpAddress
-            )) return; // Drop duplicate TLS failures
-
-            this.events.push(Object.assign(request, {
-                id: uuid(),
-                searchIndex: [request.hostname, request.remoteIpAddress]
-                    .filter((x): x is string => !!x)
-            }));
-        } catch (e) {
-            reportError(e);
-        }
-    }
-
-    @action.bound
-    clearInterceptedData() {
-        this.events.clear();
-        this.orphanedEvents = {};
-    }
-
-    async loadFromHar(harContents: {}) {
-        const { requests, responses, aborts } = await parseHar(harContents)
-            .catch((harParseError: HarParseError) => {
-                // Log all suberrors, for easier reporting & debugging.
-                // This does not include HAR data - only schema errors like
-                // 'bodySize is missing' at 'entries[1].request'
-                harParseError.errors.forEach((error) => {
-                    console.log(error);
-                });
-                throw harParseError;
-            });
-
-        // Arguably we could call addRequest/setResponse directly, but this is a little
-        // nicer just in case the UI thread is already under strain.
-        requests.forEach(r => this.eventQueue.push({ type: 'request', event: r }));
-        responses.forEach(r => this.eventQueue.push({ type: 'response', event: r }));
-        aborts.forEach(r => this.eventQueue.push({ type: 'abort', event: r }));
-
-        this.queueEventFlush();
     }
 
     readonly triggerRequestBreakpoint = (request: MockttpBreakpointedRequest) => {
@@ -958,7 +549,7 @@ export class InterceptionStore {
     }
 
     private triggerBreakpoint = flow(function * <T>(
-        this: InterceptionStore,
+        this: RulesStore,
         eventId: string,
         getEditedEvent: (exchange: HttpExchange) => Promise<T>
     ) {
@@ -966,7 +557,7 @@ export class InterceptionStore {
 
         // Wait until the event itself has arrived in the UI:
         yield when(() => {
-            exchange = _.find(this.exchanges, { id: eventId });
+            exchange = _.find(this.eventsStore.exchanges, { id: eventId });
 
             // Completed -> doesn't fire for initial requests -> no completed/initial req race
             return !!exchange && exchange.isCompletedRequest();
@@ -980,5 +571,4 @@ export class InterceptionStore {
         return (yield getEditedEvent(exchange!)) as T;
     });
 
-    //#endregion
 }

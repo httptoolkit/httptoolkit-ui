@@ -7,7 +7,8 @@ import { observer, inject } from 'mobx-react';
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
-import { ActivatedStore } from '../../model/interception-store';
+import { InterceptorStore } from '../../model/interceptor-store';
+import { EventsStore } from '../../model/events-store';
 import { MANUAL_INTERCEPT_ID } from '../../model/interceptors';
 
 import { ConnectedSources } from './connected-sources';
@@ -16,7 +17,8 @@ import { SearchBox } from '../common/search-box';
 
 interface InterceptPageProps {
     className?: string;
-    interceptionStore: ActivatedStore;
+    interceptorStore: InterceptorStore;
+    eventsStore: EventsStore;
     navigate: (path: string) => void;
 }
 
@@ -70,7 +72,8 @@ const InterceptSearchBox = styled(SearchBox).attrs(() => ({
     margin: 20px 0 0;
 `;
 
-@inject('interceptionStore')
+@inject('interceptorStore')
+@inject('eventsStore')
 @observer
 class InterceptPage extends React.Component<InterceptPageProps> {
 
@@ -79,7 +82,8 @@ class InterceptPage extends React.Component<InterceptPageProps> {
     private readonly gridRef = React.createRef<HTMLDivElement>();
 
     render(): JSX.Element {
-        const { activeSources, interceptors } = this.props.interceptionStore;
+        const { interceptors } = this.props.interceptorStore;
+        const { activeSources } = this.props.eventsStore;
 
         const filter = this.filter ? this.filter.toLocaleLowerCase() : false;
 
@@ -149,7 +153,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
 const StyledInterceptPage = styled(
     // Exclude store from the external props, as it's injected
-    InterceptPage as unknown as WithInjected<typeof InterceptPage, 'interceptionStore' | 'navigate'>
+    InterceptPage as unknown as WithInjected<typeof InterceptPage, 'interceptorStore' | 'eventsStore' | 'navigate'>
 )`
     height: 100%;
     overflow-y: auto;

@@ -9,7 +9,7 @@ import { WithInjected } from '../../types';
 import { Icon } from '../../icons';
 import { uploadFile, saveFile } from '../../util/ui';
 
-import { ActivatedStore } from '../../model/interception-store';
+import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 import { getNewRule } from '../../model/rules/rule-definitions';
 import { ItemPath, mapRules } from '../../model/rules/rules-structure';
@@ -21,7 +21,7 @@ import { MockRuleList } from './mock-rule-list';
 
 interface MockPageProps {
     className?: string;
-    interceptionStore: ActivatedStore;
+    rulesStore: RulesStore;
     accountStore: AccountStore;
 }
 
@@ -75,7 +75,7 @@ const OtherButton = styled(SecondaryButton)`
     margin-left: 10px;
 `;
 
-@inject('interceptionStore')
+@inject('rulesStore')
 @inject('accountStore')
 @observer
 class MockPage extends React.Component<MockPageProps> {
@@ -85,7 +85,7 @@ class MockPage extends React.Component<MockPageProps> {
     // Map from rule id -> collapsed (true/false)
     @observable
     collapsedRulesMap = _.fromPairs(
-        mapRules(this.props.interceptionStore.draftRules, (rule) =>
+        mapRules(this.props.rulesStore.draftRules, (rule) =>
             [rule.id, true] as [string, boolean]
         )
     );
@@ -94,7 +94,7 @@ class MockPage extends React.Component<MockPageProps> {
         // If the list of rules ever changes, update the collapsed list accordingly.
         // Drop now-unnecessary ids, and add new rules (defaulting to collapsed)
         disposeOnUnmount(this, autorun(() => {
-            const ruleIds = mapRules(this.props.interceptionStore.draftRules, r => r.id);
+            const ruleIds = mapRules(this.props.rulesStore.draftRules, r => r.id);
             const ruleMapIds = _.keys(this.collapsedRulesMap);
 
             const extraIds = _.difference(ruleMapIds, ruleIds);
@@ -122,7 +122,7 @@ class MockPage extends React.Component<MockPageProps> {
             moveDraftRule,
             updateGroupTitle,
             combineDraftRulesAsGroup
-        } = this.props.interceptionStore;
+        } = this.props.rulesStore;
         const { isPaidUser } = this.props.accountStore;
 
         return <MockPageContainer ref={this.containerRef}>
@@ -210,37 +210,37 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     saveRule(path: ItemPath) {
-        const savedRule = this.props.interceptionStore.saveItem(path);
+        const savedRule = this.props.rulesStore.saveItem(path);
         this.collapsedRulesMap[savedRule.id] = true;
     }
 
     @action.bound
     resetRule(path: ItemPath) {
-        this.props.interceptionStore.resetRule(path);
+        this.props.rulesStore.resetRule(path);
     }
 
     @action.bound
     saveAll() {
-        this.props.interceptionStore.saveRules();
+        this.props.rulesStore.saveRules();
         this.collapseAll();
     }
 
     @action.bound
     resetToDefaults() {
-        this.props.interceptionStore.resetRulesToDefault();
+        this.props.rulesStore.resetRulesToDefault();
         this.collapseAll();
     }
 
     @action.bound
     resetRuleDrafts() {
-        this.props.interceptionStore.resetRuleDrafts();
+        this.props.rulesStore.resetRuleDrafts();
         this.collapseAll();
     }
 
     @action.bound
     addRule() {
-        const rules = this.props.interceptionStore.draftRules;
-        const newRule = getNewRule(this.props.interceptionStore);
+        const rules = this.props.rulesStore.draftRules;
+        const newRule = getNewRule(this.props.rulesStore);
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
         rules.items.unshift(newRule);
@@ -270,7 +270,7 @@ class MockPage extends React.Component<MockPageProps> {
             'application/htkrules+json'
         ]);
         if (uploadedFile) {
-            this.props.interceptionStore.loadSavedRules(
+            this.props.rulesStore.loadSavedRules(
                 JSON.parse(uploadedFile)
             );
         }
@@ -278,7 +278,7 @@ class MockPage extends React.Component<MockPageProps> {
 
     readonly exportRules = async () => {
         const rulesetContent = JSON.stringify(
-            serializeRules(this.props.interceptionStore.draftRules)
+            serializeRules(this.props.rulesStore.draftRules)
         );
 
         const filename = `HTTPToolkit_${
@@ -292,6 +292,6 @@ class MockPage extends React.Component<MockPageProps> {
 // Annoying cast required to handle the store prop nicely in our types
 const InjectedMockPage = MockPage as unknown as WithInjected<
     typeof MockPage,
-    'interceptionStore' | 'accountStore'
+    'rulesStore' | 'accountStore'
 >;
 export { InjectedMockPage as MockPage };

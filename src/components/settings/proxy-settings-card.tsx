@@ -8,7 +8,8 @@ import * as semver from 'semver';
 import { styled, css } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
 
-import { InterceptionStore, isValidPortConfiguration } from '../../model/interception-store';
+import { isValidPortConfiguration, ServerStore } from '../../model/server-store';
+import { RulesStore } from '../../model/rules/rules-store';
 import { ValidationResult } from '../../model/crypto';
 import { validatePKCS } from '../../services/ui-worker-api';
 import { serverVersion, CLIENT_CERT_SERVER_RANGE } from '../../services/service-versions';
@@ -165,11 +166,13 @@ const SettingsExplanation = styled.p`
 
 const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 
-@inject('interceptionStore')
+@inject('serverStore')
+@inject('rulesStore')
 @observer
 export class ProxySettingsCard extends React.Component<
     Omit<CollapsibleCardProps, 'children'> & {
-        interceptionStore?: InterceptionStore
+        serverStore?: ServerStore
+        rulesStore?: RulesStore
     }
 > {
 
@@ -178,7 +181,7 @@ export class ProxySettingsCard extends React.Component<
 
     @action.bound
     unwhitelistHost(host: string) {
-        const { draftWhitelistedCertificateHosts } = this.props.interceptionStore!;
+        const { draftWhitelistedCertificateHosts } = this.props.rulesStore!;
         const hostIndex = draftWhitelistedCertificateHosts.indexOf(host);
         if (hostIndex > -1) {
             draftWhitelistedCertificateHosts.splice(hostIndex, 1);
@@ -187,7 +190,7 @@ export class ProxySettingsCard extends React.Component<
 
     @action.bound
     addHostToWhitelist() {
-        this.props.interceptionStore!.draftWhitelistedCertificateHosts.push(this.whitelistHostInput);
+        this.props.rulesStore!.draftWhitelistedCertificateHosts.push(this.whitelistHostInput);
         this.whitelistHostInput = '';
     }
 
@@ -210,13 +213,13 @@ export class ProxySettingsCard extends React.Component<
 
     @action.bound
     removeClientCertificate(host: string) {
-        const { draftClientCertificateHostMap: draftClientCertificatesHostMap } = this.props.interceptionStore!;
+        const { draftClientCertificateHostMap: draftClientCertificatesHostMap } = this.props.rulesStore!;
         delete draftClientCertificatesHostMap[host];
     }
 
     @action.bound
     addClientCertificate() {
-        const { draftClientCertificateHostMap: draftClientCertificatesHostMap } = this.props.interceptionStore!;
+        const { draftClientCertificateHostMap: draftClientCertificatesHostMap } = this.props.rulesStore!;
         draftClientCertificatesHostMap[this.clientCertHostInput] = this.clientCertData!;
 
         this.clientCertHostInput = '';
@@ -301,10 +304,10 @@ export class ProxySettingsCard extends React.Component<
     }
 
     @observable
-    minPortValue = (get(this.props.interceptionStore!.portConfig, 'startPort') || 8000).toString();
+    minPortValue = (get(this.props.serverStore!.portConfig, 'startPort') || 8000).toString();
 
     @observable
-    maxPortValue = (get(this.props.interceptionStore!.portConfig, 'endPort') || 65535).toString();
+    maxPortValue = (get(this.props.serverStore!.portConfig, 'endPort') || 65535).toString();
 
     @action.bound
     onMinPortChange({ target: { value } }: React.ChangeEvent<HTMLInputElement>) {
@@ -320,7 +323,7 @@ export class ProxySettingsCard extends React.Component<
 
     @computed
     get isCurrentPortInRange() {
-        const { serverPort, portConfig } = this.props.interceptionStore!;
+        const { serverPort, portConfig } = this.props.serverStore!;
 
         if (!portConfig) {
             return serverPort >= 8000;
@@ -344,20 +347,20 @@ export class ProxySettingsCard extends React.Component<
 
     updatePortConfig() {
         if (!this.isCurrentPortConfigValid) return;
-        else this.props.interceptionStore!.setPortConfig(this.portConfig);
+        else this.props.serverStore!.setPortConfig(this.portConfig);
     }
 
     render() {
-        const { interceptionStore, ...cardProps } = this.props;
+        const { serverStore, rulesStore, ...cardProps } = this.props;
+        const { serverPort } = serverStore!;
         const {
-            serverPort,
             draftWhitelistedCertificateHosts,
             areWhitelistedCertificatesUpToDate,
             isWhitelistedCertificateSaved,
             draftClientCertificateHostMap,
             areClientCertificatesUpToDate,
             isClientCertificateUpToDate
-        } = interceptionStore!;
+        } = rulesStore!;
 
         return <CollapsibleCard {...cardProps}>
             <header>

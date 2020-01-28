@@ -7,7 +7,7 @@ import { styled } from '../../styles';
 import { Icon } from '../../icons';
 import { trackEvent } from '../../tracking';
 import { Interceptor } from '../../model/interceptors';
-import { InterceptionStore } from '../../model/interception-store';
+import { InterceptorStore } from '../../model/interceptor-store';
 
 import { clickOnEnter } from '../component-utils';
 import { LittleCard } from '../common/card';
@@ -16,7 +16,7 @@ import { CloseButton } from '../common/close-button';
 
 interface InterceptOptionProps {
     className?: string;
-    interceptionStore?: InterceptionStore;
+    interceptorStore?: InterceptorStore;
     index: number;
     interceptor: Interceptor;
     showRequests: () => void;
@@ -132,7 +132,7 @@ function getStatusPill(interceptor: Interceptor) {
     }
 }
 
-@inject('interceptionStore')
+@inject('interceptorStore')
 @observer
 export class InterceptOption extends React.Component<InterceptOptionProps> {
 
@@ -201,13 +201,13 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
     }
 
     activateInterceptor = (options?: any) => {
-        const { interceptor, interceptionStore } = this.props;
-        return interceptionStore!.activateInterceptor(interceptor.id, options);
+        const { interceptor, interceptorStore } = this.props;
+        return interceptorStore!.activateInterceptor(interceptor.id, options);
     }
 
     @action.bound
     onClick() {
-        const { interceptor, interceptionStore, showRequests } = this.props;
+        const { interceptor, interceptorStore, showRequests } = this.props;
 
         trackEvent({
             category: 'Interceptors',
@@ -226,7 +226,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                 });
             });
         } else {
-            interceptionStore!.activateInterceptor(interceptor.id)
+            interceptorStore!.activateInterceptor(interceptor.id)
                 .then((successful) => {
                     if (successful) {
                         trackEvent({

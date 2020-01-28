@@ -4,7 +4,7 @@ import { observable } from 'mobx';
 import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
-import { InterceptionStore, ActivatedStore } from '../interception-store';
+import { RulesStore } from './rules-store';
 import { serializeAsTag } from '../serialization';
 
 import * as amIUsingHtml from '../../amiusing.html';
@@ -88,21 +88,21 @@ export class FromFileResponseHandler extends handlers.FileHandler {
 
 export class PassThroughHandler extends handlers.PassThroughHandler {
 
-    constructor(interceptionStore: InterceptionStore) {
-        super(interceptionStore.activePassthroughOptions);
+    constructor(rulesStore: RulesStore) {
+        super(rulesStore.activePassthroughOptions);
     }
 
 }
 
 serializr.createModelSchema(PassThroughHandler, {
     type: serializr.primitive()
-}, (context) => new PassThroughHandler(context.args.interceptionStore));
+}, (context) => new PassThroughHandler(context.args.rulesStore));
 
 export class ForwardToHostHandler extends handlers.PassThroughHandler {
 
-    constructor(forwardToLocation: string, updateHostHeader: boolean, interceptionStore: InterceptionStore) {
+    constructor(forwardToLocation: string, updateHostHeader: boolean, rulesStore: RulesStore) {
         super({
-            ...interceptionStore.activePassthroughOptions,
+            ...rulesStore.activePassthroughOptions,
             forwarding: {
                 targetHost: forwardToLocation,
                 updateHostHeader: updateHostHeader
@@ -121,16 +121,16 @@ serializr.createModelSchema(ForwardToHostHandler, {
     return new ForwardToHostHandler(
         data.forwarding.targetHost,
         data.forwarding.updateHostHeader,
-        context.args.interceptionStore
+        context.args.rulesStore
     );
 });
 
 export class RequestBreakpointHandler extends handlers.PassThroughHandler {
 
-    constructor(interceptionStore: InterceptionStore) {
+    constructor(rulesStore: RulesStore) {
         super({
-            ...interceptionStore.activePassthroughOptions,
-            beforeRequest: interceptionStore.triggerRequestBreakpoint
+            ...rulesStore.activePassthroughOptions,
+            beforeRequest: rulesStore.triggerRequestBreakpoint
         });
     }
 
@@ -142,14 +142,14 @@ export class RequestBreakpointHandler extends handlers.PassThroughHandler {
 serializr.createModelSchema(RequestBreakpointHandler, {
     uiType: serializeAsTag(() => 'request-breakpoint'),
     type: serializr.primitive()
-}, (context) => new RequestBreakpointHandler(context.args.interceptionStore));
+}, (context) => new RequestBreakpointHandler(context.args.rulesStore));
 
 export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
 
-    constructor(interceptionStore: InterceptionStore) {
+    constructor(rulesStore: RulesStore) {
         super({
-            ...interceptionStore.activePassthroughOptions,
-            beforeResponse: interceptionStore.triggerResponseBreakpoint
+            ...rulesStore.activePassthroughOptions,
+            beforeResponse: rulesStore.triggerResponseBreakpoint
         });
     }
 
@@ -161,16 +161,16 @@ export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
 serializr.createModelSchema(ResponseBreakpointHandler, {
     uiType: serializeAsTag(() => 'response-breakpoint'),
     type: serializr.primitive()
-}, (context) => new ResponseBreakpointHandler(context.args.interceptionStore));
+}, (context) => new ResponseBreakpointHandler(context.args.rulesStore));
 
 
 export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHandler {
 
-    constructor(interceptionStore: InterceptionStore) {
+    constructor(rulesStore: RulesStore) {
         super({
-            ...interceptionStore.activePassthroughOptions,
-            beforeRequest: interceptionStore.triggerRequestBreakpoint,
-            beforeResponse: interceptionStore.triggerResponseBreakpoint
+            ...rulesStore.activePassthroughOptions,
+            beforeRequest: rulesStore.triggerRequestBreakpoint,
+            beforeResponse: rulesStore.triggerResponseBreakpoint
         });
     }
 
@@ -182,20 +182,20 @@ export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHan
 serializr.createModelSchema(RequestAndResponseBreakpointHandler, {
     uiType: serializeAsTag(() => 'request-and-response-breakpoint'),
     type: serializr.primitive()
-}, (context) => new RequestAndResponseBreakpointHandler(context.args.interceptionStore));
+}, (context) => new RequestAndResponseBreakpointHandler(context.args.rulesStore));
 
 export type TimeoutHandler = handlers.TimeoutHandler;
 export const TimeoutHandler = handlers.TimeoutHandler;
 export type CloseConnectionHandler = handlers.CloseConnectionHandler;
 export const CloseConnectionHandler = handlers.CloseConnectionHandler;
 
-export function getNewRule(interceptionStore: ActivatedStore): HtkMockRule {
+export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     return observable({
         id: uuid(),
         activated: true,
         matchers: [ ],
         completionChecker: new completionCheckers.Always(),
-        handler: new PassThroughHandler(interceptionStore)
+        handler: new PassThroughHandler(rulesStore)
     });
 }
 
@@ -206,7 +206,7 @@ export const buildDefaultGroup = (...items: HtkMockItem[]): HtkMockRuleGroup => 
     items: items
 })
 
-export const buildDefaultRules = (interceptionStore: InterceptionStore) => ({
+export const buildDefaultRules = (rulesStore: RulesStore) => ({
     id: 'root',
     title: "HTTP Toolkit Rules",
     isRoot: true,
@@ -233,7 +233,7 @@ export const buildDefaultRules = (interceptionStore: InterceptionStore) => ({
                 activated: true,
                 matchers: [new DefaultWildcardMatcher()],
                 completionChecker: new completionCheckers.Always(),
-                handler: new PassThroughHandler(interceptionStore)
+                handler: new PassThroughHandler(rulesStore)
             }
         )
     ]
@@ -242,7 +242,7 @@ export const buildDefaultRules = (interceptionStore: InterceptionStore) => ({
 export const buildForwardingRuleIntegration = (
     sourceHost: string,
     targetHost: string,
-    interceptionStore: InterceptionStore
+    rulesStore: RulesStore
 ): HtkMockRule => ({
     id: 'default-forwarding-rule',
     activated: true,
@@ -251,5 +251,5 @@ export const buildForwardingRuleIntegration = (
         new matchers.HostMatcher(sourceHost)
     ],
     completionChecker: new completionCheckers.Always(),
-    handler: new ForwardToHostHandler(targetHost, true, interceptionStore)
+    handler: new ForwardToHostHandler(targetHost, true, rulesStore)
 });

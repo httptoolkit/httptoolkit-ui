@@ -4,11 +4,12 @@ import * as dateFns from 'date-fns';
 
 import { styled } from '../../styles'
 import { Icon, IconProp } from '../../icons';
+import { saveFile, uploadFile } from '../../util/ui';
+
+import { AccountStore } from '../../model/account/account-store';
+import { EventsStore } from '../../model/events-store';
 import { HttpExchange } from '../../model/exchange';
 import { generateHar } from '../../model/har';
-import { saveFile, uploadFile } from '../../util/ui';
-import { AccountStore } from '../../model/account/account-store';
-import { InterceptionStore } from '../../model/interception-store';
 
 const IconButton = styled((p: {
     className?: string,
@@ -91,10 +92,10 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
     />
 }));
 
-export const ImportHarButton = inject('interceptionStore', 'accountStore')(
+export const ImportHarButton = inject('eventsStore', 'accountStore')(
     observer((props: {
         accountStore?: AccountStore,
-        interceptionStore?: InterceptionStore
+        eventsStore?: EventsStore
     }) => {
         const { isPaidUser } = props.accountStore!;
 
@@ -111,17 +112,17 @@ export const ImportHarButton = inject('interceptionStore', 'accountStore')(
             disabled={!isPaidUser}
             onClick={async () => {
                 const uploadedFile = await uploadFile('text', ['.har', 'application/har', 'application/har+json']);
-                if (uploadedFile) props.interceptionStore!.loadFromHar(JSON.parse(uploadedFile));
+                if (uploadedFile) props.eventsStore!.loadFromHar(JSON.parse(uploadedFile));
             }}
         />
     })
 );
 
-export const PlayPauseButton = inject('interceptionStore')(
+export const PlayPauseButton = inject('eventsStore')(
     observer((props: {
-        interceptionStore?: InterceptionStore
+        eventsStore?: EventsStore
     }) => {
-        const { isPaused, togglePause } = props.interceptionStore!;
+        const { isPaused, togglePause } = props.eventsStore!;
 
         return <IconButton
             icon={['fas', isPaused ? 'play' : 'pause']}
