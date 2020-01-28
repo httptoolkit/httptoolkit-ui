@@ -41,7 +41,9 @@ export function uploadFile(
     acceptedMimeTypes: string[] = []
 ): Promise<ArrayBuffer | string | null> {
     if (type === 'path' && !desktopVersion.value) {
-        throw new Error("Path inputs can only be used from Electron");
+        return Promise.resolve(window.prompt(
+            "Path selection can only be used from Electron. Please enter a path manually:"
+        ));
     }
 
     const fileInput = document.createElement('input');
