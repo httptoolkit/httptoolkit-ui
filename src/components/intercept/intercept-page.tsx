@@ -7,9 +7,9 @@ import { observer, inject } from 'mobx-react';
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
-import { InterceptorStore } from '../../model/interceptor-store';
-import { EventsStore } from '../../model/events-store';
-import { MANUAL_INTERCEPT_ID } from '../../model/interceptors';
+import { InterceptorStore } from '../../model/interception/interceptor-store';
+import { EventsStore } from '../../model/http/events-store';
+import { MANUAL_INTERCEPT_ID } from '../../model/interception/interceptors';
 
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';

@@ -21,9 +21,9 @@ import {
 import { UiStore } from './model/ui-store';
 import { AccountStore } from './model/account/account-store';
 import { ServerStore } from './model/server-store';
-import { EventsStore } from './model/events-store';
+import { EventsStore } from './model/http/events-store';
 import { RulesStore } from './model/rules/rules-store';
-import { InterceptorStore } from './model/interceptor-store';
+import { InterceptorStore } from './model/interception/interceptor-store';
 import { triggerServerUpdate } from './services/server-api';
 
 import { App } from './components/app';

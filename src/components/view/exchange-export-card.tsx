@@ -10,8 +10,8 @@ import { Icon } from '../../icons';
 import { saveFile } from '../../util/ui';
 
 import { AccountStore } from "../../model/account/account-store";
-import { HttpExchange } from "../../model/exchange";
-import { generateHarRequest, generateHar } from "../../model/har";
+import { HttpExchange } from "../../model/http/exchange";
+import { generateHarRequest, generateHar } from "../../model/http/har";
 
 import { ProHeaderPill, CardSalesPitch } from "../account/pro-placeholders";
 import { CollapsibleCardHeading } from '../common/card';

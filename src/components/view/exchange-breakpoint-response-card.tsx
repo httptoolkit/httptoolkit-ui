@@ -5,8 +5,8 @@ import { observer } from 'mobx-react';
 import { Omit, BreakpointResponseResult } from '../../types';
 import { styled, Theme } from '../../styles';
 
-import { HttpExchange } from '../../model/exchange';
-import { getStatusColor } from '../../model/exchange-colors';
+import { HttpExchange } from '../../model/http/exchange';
+import { getStatusColor } from '../../model/http/exchange-colors';
 
 import { CollapsibleCardHeading } from '../common/card';
 import {

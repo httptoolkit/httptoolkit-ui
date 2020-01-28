@@ -8,8 +8,8 @@ import {
 } from 'date-fns';
 
 import { HttpExchange } from "./exchange";
-import { lastHeader, asHeaderArray, joinAnd } from "../util";
-import { ExchangeMessage } from '../types';
+import { lastHeader, asHeaderArray, joinAnd } from "../../util";
+import { ExchangeMessage } from '../../types';
 
 // https://tools.ietf.org/html/draft-ietf-httpbis-semantics-04#section-7.2.3
 const CACHEABLE_METHODS = ['GET', 'HEAD', 'POST'];

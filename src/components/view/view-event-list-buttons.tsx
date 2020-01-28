@@ -7,9 +7,9 @@ import { Icon, IconProp } from '../../icons';
 import { saveFile, uploadFile } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
-import { EventsStore } from '../../model/events-store';
-import { HttpExchange } from '../../model/exchange';
-import { generateHar } from '../../model/har';
+import { EventsStore } from '../../model/http/events-store';
+import { HttpExchange } from '../../model/http/exchange';
+import { generateHar } from '../../model/http/har';
 
 const IconButton = styled((p: {
     className?: string,

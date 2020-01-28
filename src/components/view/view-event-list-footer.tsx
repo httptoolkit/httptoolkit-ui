@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 
 import { styled } from '../../styles';
 
-import { HttpExchange } from '../../model/exchange';
+import { HttpExchange } from '../../model/http/exchange';
 
 import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchBox } from '../common/search-box';

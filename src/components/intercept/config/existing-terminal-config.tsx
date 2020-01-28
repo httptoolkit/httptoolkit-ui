@@ -4,7 +4,7 @@ import { observable, runInAction, computed, when } from 'mobx';
 
 import { styled, css } from '../../../styles';
 import { CopyButtonIcon } from '../../common/copy-button';
-import { Interceptor } from '../../../model/interceptors';
+import { Interceptor } from '../../../model/interception/interceptors';
 
 const CopyableCommand = styled<React.ComponentType<{
     className?: string,

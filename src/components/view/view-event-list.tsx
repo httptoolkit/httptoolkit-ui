@@ -11,8 +11,8 @@ import { styled } from '../../styles'
 import { Icon, WarningIcon } from '../../icons';
 import { FailedTlsRequest } from '../../types';
 
-import { HttpExchange } from '../../model/exchange';
-import { getExchangeSummaryColour, ExchangeCategory } from '../../model/exchange-colors';
+import { HttpExchange } from '../../model/http/exchange';
+import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
 
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';

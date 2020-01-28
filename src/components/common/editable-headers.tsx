@@ -5,7 +5,7 @@ import { observer } from 'mobx-react';
 
 import { Headers } from '../../types';
 import { styled } from '../../styles';
-import { HEADER_NAME_PATTERN } from '../../model/http-docs';
+import { HEADER_NAME_PATTERN } from '../../model/http/http-docs';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, TextInput } from './inputs';

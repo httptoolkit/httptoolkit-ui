@@ -22,12 +22,12 @@ import {
     CloseConnectionHandler,
     FromFileResponseHandler
 } from '../../model/rules/rule-definitions';
-import { HEADER_NAME_REGEX } from '../../model/http-docs';
+import { HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import {
     getDefaultMimeType,
     EditableContentType,
     getEditableContentType
-} from '../../model/content-types';
+} from '../../model/http/content-types';
 import { RulesStore } from '../../model/rules/rules-store';
 import { desktopVersion } from '../../services/service-versions';
 

@@ -15,22 +15,22 @@ import {
     MockttpBreakpointedResponse,
     BreakpointResponseResult,
     InputCompletedRequest,
-} from "../types";
+} from "../../types";
 import {
     fakeBuffer,
     FakeBuffer,
     asHeaderArray,
     lastHeader,
-} from '../util';
-import { lazyObservablePromise, ObservablePromise } from "../util/observable";
+} from '../../util';
+import { lazyObservablePromise, ObservablePromise } from "../../util/observable";
 
 import { parseSource } from './sources';
 import { getContentType } from './content-types';
 import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
 
-import { getMatchingAPI, ApiExchange } from './api/openapi';
-import { ApiMetadata } from './api/build-openapi';
-import { decodeBody } from '../services/ui-worker-api';
+import { getMatchingAPI, ApiExchange } from '../api/openapi';
+import { ApiMetadata } from '../api/build-openapi';
+import { decodeBody } from '../../services/ui-worker-api';
 import {
     RequestBreakpoint,
     ResponseBreakpoint,

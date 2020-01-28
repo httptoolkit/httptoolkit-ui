@@ -7,8 +7,8 @@ import * as portals from 'react-reverse-portal';
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
-import { EventsStore } from '../../model/events-store';
 import { ServerStore } from '../../model/server-store';
+import { EventsStore } from '../../model/http/events-store';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';

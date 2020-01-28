@@ -8,8 +8,8 @@ import * as portals from 'react-reverse-portal';
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
 import { lastHeader } from '../../util';
-import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/content-types';
-import { getReadableSize } from '../../model/bodies';
+import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/http/content-types';
+import { getReadableSize } from '../../model/http/bodies';
 
 import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';

@@ -5,7 +5,7 @@ import { inject, observer } from 'mobx-react';
 import { styled } from '../../../styles';
 import { Headers } from '../../../types';
 
-import { getHeaderDocs } from '../../../model/http-docs';
+import { getHeaderDocs } from '../../../model/http/http-docs';
 
 import { CollapsibleSection } from '../../common/collapsible-section';
 import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from '../exchange-card';

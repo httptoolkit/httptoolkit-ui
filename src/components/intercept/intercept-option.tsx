@@ -6,8 +6,8 @@ import { observer, inject } from 'mobx-react';
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
 import { trackEvent } from '../../tracking';
-import { Interceptor } from '../../model/interceptors';
-import { InterceptorStore } from '../../model/interceptor-store';
+import { Interceptor } from '../../model/interception/interceptors';
+import { InterceptorStore } from '../../model/interception/interceptor-store';
 
 import { clickOnEnter } from '../component-utils';
 import { LittleCard } from '../common/card';

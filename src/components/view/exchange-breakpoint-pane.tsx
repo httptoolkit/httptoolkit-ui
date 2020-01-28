@@ -5,7 +5,7 @@ import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
-import { HttpExchange } from '../../model/exchange';
+import { HttpExchange } from '../../model/http/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { ExchangeBodyCard } from './exchange-body-card';

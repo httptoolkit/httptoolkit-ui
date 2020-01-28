@@ -7,7 +7,7 @@ import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 import { uploadFile } from '../../../util/ui';
 
-import { Interceptor } from '../../../model/interceptors';
+import { Interceptor } from '../../../model/interception/interceptors';
 import { UiStore } from '../../../model/ui-store';
 
 import { Button, SecondaryButton, UnstyledButton } from '../../common/inputs';

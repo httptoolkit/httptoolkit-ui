@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { UAParser } from 'ua-parser-js';
 import { get } from 'typesafe-get';
 
-import { SourceIcons, IconProps, SourceIconName } from '../icons';
+import { SourceIcons, IconProps, SourceIconName } from '../../icons';
 
 export interface TrafficSource {
     ua: string;

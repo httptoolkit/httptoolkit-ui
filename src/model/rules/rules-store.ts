@@ -16,11 +16,11 @@ import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuff
 
 import { MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
 import { lazyObservablePromise } from '../../util/observable';
-import { HttpExchange } from '../exchange';
+import { HttpExchange } from '../http/exchange';
 
 import { AccountStore } from '../account/account-store';
 import { ServerStore } from '../server-store';
-import { EventsStore } from '../events-store';
+import { EventsStore } from '../http/events-store';
 import { getDesktopInjectedValue } from '../../services/desktop-api';
 
 import {

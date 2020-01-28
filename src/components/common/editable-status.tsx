@@ -4,7 +4,7 @@ import * as React from 'react';
 import { styled } from '../../styles';
 
 import { TextInput } from './inputs';
-import { getStatusMessage } from '../../model/http-docs';
+import { getStatusMessage } from '../../model/http/http-docs';
 
 const StatusContainer = styled.div`
     margin-top: 5px;

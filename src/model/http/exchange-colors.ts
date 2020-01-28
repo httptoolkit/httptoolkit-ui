@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
 
-import { ExchangeMessage } from '../types';
-import { lastHeader } from '../util';
-import { Theme } from '../styles';
+import { ExchangeMessage } from '../../types';
+import { lastHeader } from '../../util';
+import { Theme } from '../../styles';
 
 import { getBaseContentType } from './content-types';
 import { HttpExchange, SuccessfulExchange } from './exchange';

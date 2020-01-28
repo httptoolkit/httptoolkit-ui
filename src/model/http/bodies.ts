@@ -1,7 +1,7 @@
 import { IObservableValue, observable, action } from 'mobx';
 
-import { testEncodingsAsync } from '../services/ui-worker-api';
-import { ExchangeMessage } from '../types';
+import { testEncodingsAsync } from '../../services/ui-worker-api';
+import { ExchangeMessage } from '../../types';
 
 export function getReadableSize(bytes: number, siUnits = true) {
     let thresh = siUnits ? 1000 : 1024;

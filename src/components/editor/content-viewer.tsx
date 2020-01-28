@@ -14,7 +14,7 @@ import * as beautifyXml from 'xml-beautifier';
 
 import { ThemedSelfSizedEditor } from './base-editor';
 import { styled } from '../../styles';
-import { ViewableContentType } from '../../model/content-types';
+import { ViewableContentType } from '../../model/http/content-types';
 
 interface EditorFormatter {
     language: string;

@@ -7,8 +7,8 @@ import * as portals from 'react-reverse-portal';
 
 import { HtkResponse } from '../../types';
 import { styled } from '../../styles';
-import { getStatusColor } from '../../model/exchange-colors';
-import { HttpExchange } from '../../model/exchange';
+import { getStatusColor } from '../../model/http/exchange-colors';
+import { HttpExchange } from '../../model/http/exchange';
 import { UiStore } from '../../model/ui-store';
 
 import { Pill } from '../common/pill';

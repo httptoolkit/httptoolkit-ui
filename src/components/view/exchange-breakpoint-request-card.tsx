@@ -7,9 +7,9 @@ import { Omit, BreakpointRequestResult, RequestHeaders } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
-import { HttpExchange } from '../../model/exchange';
-import { TrafficSource } from '../../model/sources';
-import { getExchangeSummaryColour } from '../../model/exchange-colors';
+import { HttpExchange } from '../../model/http/exchange';
+import { TrafficSource } from '../../model/http/sources';
+import { getExchangeSummaryColour } from '../../model/http/exchange-colors';
 
 import { CollapsibleCardHeading } from '../common/card';
 import {

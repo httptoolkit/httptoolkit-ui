@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { styled } from '../../styles';
-import { TrafficSource } from '../../model/sources';
+import { TrafficSource } from '../../model/http/sources';
 
 import { BigCard } from "../common/card";
 import { EmptyState } from '../common/empty-state';

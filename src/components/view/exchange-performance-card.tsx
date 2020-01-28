@@ -8,15 +8,15 @@ import { Omit, ExchangeMessage } from '../../types';
 import { asHeaderArray, joinAnd } from '../../util';
 import { Icon, WarningIcon, SuggestionIcon } from '../../icons';
 
-import { HttpExchange, TimingEvents } from '../../model/exchange';
+import { HttpExchange, TimingEvents } from '../../model/http/exchange';
 import { AccountStore } from '../../model/account/account-store';
-import { getReadableSize, testEncodings } from '../../model/bodies';
+import { getReadableSize, testEncodings } from '../../model/http/bodies';
 import {
     explainCacheability,
     explainCacheLifetime,
     explainCacheMatching,
     explainValidCacheTypes
-} from '../../model/caching';
+} from '../../model/http/caching';
 
 import { CollapsibleCardHeading } from '../common/card';
 import {

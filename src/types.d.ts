@@ -14,8 +14,8 @@ import {
     CallbackResponseResult as MockttpBreakpointResponseResult
 } from 'mockttp/dist/rules/handlers';
 
-import { TrafficSource } from './model/sources';
-import { ViewableContentType } from './model/content-types';
+import { TrafficSource } from './model/http/sources';
+import { ViewableContentType } from './model/http/content-types';
 import { ObservablePromise } from './util/observable';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };

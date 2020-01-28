@@ -1,6 +1,6 @@
 import * as dateFns from 'date-fns';
 import { SourceIcons } from '../../src/icons';
-import { HttpExchange, ExchangeBody } from '../../src/model/exchange';
+import { HttpExchange, ExchangeBody } from '../../src/model/http/exchange';
 import { HtkRequest, HtkResponse } from '../../src/types';
 
 export const getExchangeData = ({

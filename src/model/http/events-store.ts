@@ -13,13 +13,13 @@ import {
     InputTlsRequest,
     InputInitiatedRequest,
     InputCompletedRequest,
-} from '../types';
+} from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 
-import { ServerStore } from "./server-store";
-import { lazyObservablePromise } from '../util/observable';
-import { reportError } from '../errors';
+import { ServerStore } from "../server-store";
+import { lazyObservablePromise } from '../../util/observable';
+import { reportError } from '../../errors';
 import { parseHar } from './har';
 
 // Would be nice to magically infer this from the overloaded on() type, but sadly:

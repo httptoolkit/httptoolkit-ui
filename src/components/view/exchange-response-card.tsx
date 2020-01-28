@@ -7,8 +7,8 @@ import { HtkResponse, Omit } from '../../types';
 import { Theme } from '../../styles';
 
 import { ApiExchange } from '../../model/api/openapi';
-import { getStatusColor } from '../../model/exchange-colors';
-import { getStatusDocs } from '../../model/http-docs';
+import { getStatusColor } from '../../model/http/exchange-colors';
+import { getStatusDocs } from '../../model/http/http-docs';
 
 import { CollapsibleCardHeading } from '../common/card';
 import { Pill } from '../common/pill';

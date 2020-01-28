@@ -1,13 +1,13 @@
 import { observable, runInAction, flow } from "mobx";
 
-import { reportError } from "../errors";
-import { lazyObservablePromise } from "../util/observable";
+import { reportError } from "../../errors";
+import { lazyObservablePromise } from "../../util/observable";
 
-import { ServerStore } from "./server-store";
-import { AccountStore } from "./account/account-store";
+import { ServerStore } from "../server-store";
+import { AccountStore } from "../account/account-store";
 
-import { getInterceptors, activateInterceptor } from "../services/server-api";
-import { serverVersion as serverVersionPromise } from '../services/service-versions';
+import { getInterceptors, activateInterceptor } from "../../services/server-api";
+import { serverVersion as serverVersionPromise } from '../../services/service-versions';
 import { Interceptor, getInterceptOptions } from "./interceptors";
 
 export class InterceptorStore {

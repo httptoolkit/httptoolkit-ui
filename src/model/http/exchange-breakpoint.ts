@@ -6,12 +6,12 @@ import {
     MockttpBreakpointRequestResult,
     BreakpointRequestResult,
     BreakpointResponseResult,
-} from "../types";
-import { asHeaderArray } from "../util";
-import { getDeferred, Deferred } from "../util/promise";
-import { reportError } from "../errors";
+} from "../../types";
+import { asHeaderArray } from "../../util";
+import { getDeferred, Deferred } from "../../util/promise";
+import { reportError } from "../../errors";
 
-import { decodeBody, encodeBody } from "../services/ui-worker-api";
+import { decodeBody, encodeBody } from "../../services/ui-worker-api";
 import { getStatusMessage } from "./http-docs";
 
 export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) {

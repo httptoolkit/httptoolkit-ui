@@ -1,15 +1,15 @@
 import * as _ from "lodash";
 import * as semver from "semver";
 
-import { ServerInterceptor } from "../services/server-api";
-import { DETAILED_CONFIG_RANGE } from "../services/service-versions";
-import { IconProps, SourceIcons } from "../icons";
+import { ServerInterceptor } from "../../services/server-api";
+import { DETAILED_CONFIG_RANGE } from "../../services/service-versions";
+import { IconProps, SourceIcons } from "../../icons";
 
-import { InterceptorCustomUiConfig } from "../components/intercept/intercept-option";
-import { ManualInterceptCustomUi } from "../components/intercept/config/manual-intercept-config";
-import { ExistingTerminalCustomUi } from "../components/intercept/config/existing-terminal-config";
-import { ElectronCustomUi } from '../components/intercept/config/electron-config';
-import { AndroidCustomUi } from "../components/intercept/config/android-config";
+import { InterceptorCustomUiConfig } from "../../components/intercept/intercept-option";
+import { ManualInterceptCustomUi } from "../../components/intercept/config/manual-intercept-config";
+import { ExistingTerminalCustomUi } from "../../components/intercept/config/existing-terminal-config";
+import { ElectronCustomUi } from '../../components/intercept/config/electron-config';
+import { AndroidCustomUi } from "../../components/intercept/config/android-config";
 
 interface InterceptorConfig {
     name: string;

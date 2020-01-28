@@ -12,7 +12,7 @@ import {
     ItemPath,
     HtkMockRuleGroup
 } from '../../model/rules/rules-structure';
-import { getMethodColor } from '../../model/exchange-colors';
+import { getMethodColor } from '../../model/http/exchange-colors';
 
 import { clickOnEnter } from '../component-utils';
 import { TextInput } from '../common/inputs';

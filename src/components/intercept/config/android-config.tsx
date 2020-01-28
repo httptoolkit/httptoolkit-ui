@@ -10,12 +10,15 @@ import {
 
 import { styled } from '../../../styles';
 
-import { Interceptor } from '../../../model/interceptors';
+import { Interceptor } from '../../../model/interception/interceptors';
 import { ServerStore } from '../../../model/server-store';
+import { EventsStore } from '../../../model/http/events-store';
 
-import { MethodMatchers, StaticResponseHandler } from '../../../model/rules/rule-definitions';
+import {
+    MethodMatchers,
+    StaticResponseHandler
+} from '../../../model/rules/rule-definitions';
 import { RulesStore } from '../../../model/rules/rules-store';
-import { EventsStore } from '../../../model/events-store';
 
 const ConfigContainer = styled.div`
     user-select: text;

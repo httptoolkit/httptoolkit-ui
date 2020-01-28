@@ -3,7 +3,7 @@ import * as dedent from "dedent";
 import { expect } from "../../test-setup";
 import { getExchangeData, httpDate } from '../unit-test-helpers';
 
-import { explainCacheability, explainValidCacheTypes, explainCacheMatching, explainCacheLifetime } from "../../../src/model/caching";
+import { explainCacheability, explainValidCacheTypes, explainCacheMatching, explainCacheLifetime } from "../../../src/model/http/caching";
 
 describe('Caching explanations', () => {
     describe('given a GET 200 with no explicit headers', () => {

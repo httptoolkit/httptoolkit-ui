@@ -18,7 +18,7 @@ import { HtkResponse, HtkRequest, Html, ExchangeMessage } from "../../types";
 import { firstMatch, empty, lastHeader, joinAnd } from '../../util';
 import { reportError } from '../../errors';
 
-import { HttpExchange } from '../exchange';
+import { HttpExchange } from '../http/exchange';
 import { ApiMetadata } from './build-openapi';
 import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 import { fromMarkdown } from '../markdown';

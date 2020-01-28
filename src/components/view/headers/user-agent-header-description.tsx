@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-import { parseSource } from '../../../model/sources';
-import { getHeaderDocs } from '../../../model/http-docs';
+import { parseSource } from '../../../model/http/sources';
+import { getHeaderDocs } from '../../../model/http/http-docs';
 
 import { Content } from '../../common/text-content';
 

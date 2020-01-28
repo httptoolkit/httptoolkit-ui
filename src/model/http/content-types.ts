@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { MessageBody } from '../types';
+import { MessageBody } from '../../types';
 
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
