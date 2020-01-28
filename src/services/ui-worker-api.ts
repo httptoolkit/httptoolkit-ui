@@ -19,7 +19,7 @@ import {
 import Worker from 'worker-loader!./ui-worker';
 
 import { Omit } from '../types';
-import { ApiMetadata } from '../model/openapi/build-api';
+import { ApiMetadata } from '../model/api/build-openapi';
 
 const worker = new Worker();
 

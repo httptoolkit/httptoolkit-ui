@@ -19,7 +19,7 @@ import { firstMatch, empty, lastHeader, joinAnd } from '../../util';
 import { reportError } from '../../errors';
 
 import { HttpExchange } from '../exchange';
-import { ApiMetadata } from './build-api';
+import { ApiMetadata } from './build-openapi';
 import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 import { fromMarkdown } from '../markdown';
 

@@ -8,7 +8,7 @@ import { OpenAPIObject } from 'openapi3-ts';
 import { compress as brotliCompress } from 'wasm-brotli';
 import * as zlib from 'zlib';
 
-import { buildApiMetadata, ApiMetadata } from '../model/openapi/build-api';
+import { buildApiMetadata, ApiMetadata } from '../model/api/build-openapi';
 import { validatePKCS12, ValidationResult } from '../model/crypto';
 
 const gzipCompress = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>

@@ -9,7 +9,7 @@ import { joinAnd } from '../../util';
 import { HttpExchange } from '../../model/exchange';
 import { TrafficSource } from '../../model/sources';
 import { getExchangeSummaryColour } from '../../model/exchange-colors';
-import { ApiExchange, Parameter } from '../../model/openapi/openapi';
+import { ApiExchange, Parameter } from '../../model/api/openapi';
 import { getMethodDocs } from '../../model/http-docs';
 
 import { CollapsibleCardHeading } from '../common/card';

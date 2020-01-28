@@ -28,8 +28,8 @@ import { parseSource } from './sources';
 import { getContentType } from './content-types';
 import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
 
-import { getMatchingAPI, ApiExchange } from './openapi/openapi';
-import { ApiMetadata } from './openapi/build-api';
+import { getMatchingAPI, ApiExchange } from './api/openapi';
+import { ApiMetadata } from './api/build-openapi';
 import { decodeBody } from '../services/ui-worker-api';
 import {
     RequestBreakpoint,
