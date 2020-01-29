@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 
 import {
-    findApi,
     OpenAPIObject,
     PathObject,
     OperationObject,
@@ -20,74 +19,36 @@ import { reportError } from '../../errors';
 
 import { HttpExchange } from '../http/exchange';
 import { ApiMetadata } from './build-openapi';
-import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 import { fromMarkdown } from '../markdown';
-
-const apiCache: _.Dictionary<Promise<ApiMetadata>> = {};
-
-async function getApi(specId: string) {
-    if (!apiCache[specId]) {
-        apiCache[specId] = fetchApiMetadata(specId)
-            .then(buildApiMetadataAsync)
-            .catch((e) => {
-                reportError(e);
-                throw e;
-            });
-    }
-    return apiCache[specId];
-}
-
-export function getMatchingAPI(request: HtkRequest): Promise<ApiMetadata> | undefined {
-    const { parsedUrl } = request;
-    const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
-
-    let specId = findApi(requestUrl);
-    if (!specId) return;
-    if (specId === 'microsoft.com/graph') {
-        // The graph API is enormous and doesn't actually build due to
-        // https://github.com/microsoftgraph/microsoft-graph-openapi/issues/9.
-        // Skip it rather than waiting ages before failing anyway.
-        return;
-    }
-
-    if (!Array.isArray(specId)) {
-        return getApi(specId);
-    }
-
-    // If we match multiple APIs, build all of them, try to match each one
-    // against the request, and return only the matching one. This happens if
-    // multiple services have the exact same base request URL (rds.amazonaws.com)
-    return Promise.all(specId.map(getApi)).then((apis) => {
-        const matchingApis = apis.filter((api) => matchOperation(api, request).matched);
-
-        // If we've successfully found one matching API, return it
-        if (matchingApis.length === 1) return matchingApis[0];
-
-        // If this is a non-matching request to one of these APIs, but we're not
-        // sure which, return the one with the most paths (as a best guess metric of
-        // which is the most popular service)
-        if (matchingApis.length === 0) return _.maxBy(apis, a => a.spec.paths.length)!;
-
-        // Otherwise we've matched multiple APIs which all define operations that
-        // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
-
-        // Report this so we can try to improve & avoid in future.
-        reportError('Overlapping APIs', matchingApis);
-
-        // Return our guess of the most popular service, from the matching services only
-        return _.maxBy(matchingApis, a => a.spec.paths.length)!;
-    });
-}
-
-async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
-    const specResponse = await fetch(`/api/${specId}.json`);
-    return specResponse.json();
-}
 
 const paramValidator = new Ajv({
     coerceTypes: 'array',
     unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
 });
+
+// If we match multiple APIs, build all of them, try to match each one
+// against the request, and return only the matching one. This happens if
+// multiple services have the exact same base request URL (rds.amazonaws.com)
+export function findBestMatchingApi(apis: ApiMetadata[], request: HtkRequest): ApiMetadata | undefined {
+    const matchingApis = apis.filter((api) => matchOperation(api, request).matched);
+
+    // If we've successfully found one matching API, return it
+    if (matchingApis.length === 1) return matchingApis[0];
+
+    // If this is a non-matching request to one of these APIs, but we're not
+    // sure which, return the one with the most paths (as a best guess metric of
+    // which is the most popular service)
+    if (matchingApis.length === 0) return _.maxBy(apis, a => a.spec.paths.length)!;
+
+    // Otherwise we've matched multiple APIs which all define operations that
+    // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
+
+    // Report this so we can try to improve & avoid in future.
+    reportError('Overlapping APIs', matchingApis);
+
+    // Return our guess of the most popular service, from the matching services only
+    return _.maxBy(matchingApis, a => a.spec.paths.length)!;
+}
 
 function getPath(api: ApiMetadata, request: HtkRequest): {
     pathSpec: PathObject,

@@ -7,6 +7,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { configure } from 'mobx';
 import { Provider } from 'mobx-react';
+import * as localForage from 'localforage';
 
 import { GlobalStyles } from './styles';
 import { delay } from './util/promise';
@@ -24,6 +25,7 @@ import { ServerStore } from './model/server-store';
 import { EventsStore } from './model/http/events-store';
 import { RulesStore } from './model/rules/rules-store';
 import { InterceptorStore } from './model/interception/interceptor-store';
+import { ApiStore } from './model/api/api-store';
 import { triggerServerUpdate } from './services/server-api';
 
 import { App } from './components/app';
@@ -71,11 +73,13 @@ const lastServerVersion = localStorage.getItem('last-server-version');
 serverVersion.then((version) => localStorage.setItem('last-server-version', version));
 
 configure({ enforceActions: 'observed' });
+localForage.config({ name: "httptoolkit", version: 1 });
 
 const accountStore = new AccountStore();
+const apiStore = new ApiStore(accountStore);
 const uiStore = new UiStore(accountStore);
 const serverStore = new ServerStore(accountStore);
-const eventsStore = new EventsStore(serverStore);
+const eventsStore = new EventsStore(serverStore, apiStore);
 const interceptorStore = new InterceptorStore(serverStore, accountStore);
 const rulesStore = new RulesStore(
     accountStore,
@@ -84,7 +88,15 @@ const rulesStore = new RulesStore(
     (exchangeId: string) => appHistory.navigate(`/view/${exchangeId}`)
 );
 
-const stores = { accountStore, uiStore, serverStore, eventsStore, interceptorStore, rulesStore };
+const stores = {
+    accountStore,
+    apiStore,
+    uiStore,
+    serverStore,
+    eventsStore,
+    interceptorStore,
+    rulesStore
+};
 
 const appStartupPromise = Promise.all(
     Object.values(stores).map(store => store.initialized)

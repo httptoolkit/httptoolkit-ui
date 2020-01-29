@@ -28,7 +28,8 @@ import { parseSource } from './sources';
 import { getContentType } from './content-types';
 import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
 
-import { getMatchingAPI, ApiExchange } from '../api/openapi';
+import { ApiStore } from '../api/api-store';
+import { ApiExchange } from '../api/openapi';
 import { ApiMetadata } from '../api/build-openapi';
 import { decodeBody } from '../../services/ui-worker-api';
 import {
@@ -38,6 +39,7 @@ import {
     getResponseBreakpoint,
     getDummyResponseBreakpoint
 } from './exchange-breakpoint';
+import { reportError } from '../../errors';
 
 export { TimingEvents };
 
@@ -130,7 +132,7 @@ export type SuccessfulExchange = Omit<HttpExchange, 'response'> & {
 
 export class HttpExchange {
 
-    constructor(request: InputRequest) {
+    constructor(apiStore: ApiStore, request: InputRequest) {
         this.request = addRequestMetadata(request);
 
         this.timingEvents = request.timingEvents;
@@ -152,7 +154,7 @@ export class HttpExchange {
         this.category = getExchangeCategory(this);
 
         // Start loading the relevant Open API specs for this request, if any.
-        this._apiMetadataPromise = getMatchingAPI(this.request);
+        this._apiMetadataPromise = apiStore.getApi(this.request);
     }
 
     // Logic elsewhere can put values into these caches to cache calculations
@@ -249,7 +251,7 @@ export class HttpExchange {
     // API metadata:
 
     // A convenient reference to the service-wide spec for this API - starts loading immediately
-    private _apiMetadataPromise: Promise<ApiMetadata> | undefined;
+    private _apiMetadataPromise: Promise<ApiMetadata | undefined>;
 
     // Parsed API info for this specific request, loaded & parsed lazily, only if it's used
     @observable.ref
@@ -257,7 +259,12 @@ export class HttpExchange {
         const apiMetadata = await this._apiMetadataPromise;
 
         if (apiMetadata) {
-            return new ApiExchange(apiMetadata, this);
+            try {
+                return new ApiExchange(apiMetadata, this);
+            } catch (e) {
+                reportError(e);
+                throw e;
+            }
         } else {
             return undefined;
         }

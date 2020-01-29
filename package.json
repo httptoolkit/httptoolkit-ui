@@ -79,6 +79,7 @@
     "js-beautify": "^1.8.8",
     "json-schema-ref-parser": "^6.1.0",
     "jsonwebtoken": "^8.4.0",
+    "localforage": "^1.7.3",
     "lodash": "^4.17.13",
     "mobx": "^5.15.0",
     "mobx-persist": "^0.4.1",

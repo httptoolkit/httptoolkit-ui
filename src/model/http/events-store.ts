@@ -18,6 +18,7 @@ import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 
 import { ServerStore } from "../server-store";
+import { ApiStore } from '../api/api-store';
 import { lazyObservablePromise } from '../../util/observable';
 import { reportError } from '../../errors';
 import { parseHar } from './har';
@@ -53,11 +54,15 @@ type OrphanableQueuedEvent =
 export class EventsStore {
 
     constructor(
-        private serverStore: ServerStore
+        private serverStore: ServerStore,
+        private apiStore: ApiStore
     ) { }
 
     readonly initialized = lazyObservablePromise(async () => {
-        await this.serverStore.initialized;
+        await Promise.all([
+            this.serverStore.initialized,
+            this.apiStore.initialized
+        ]);
 
         const { onServerEvent } = this.serverStore;
 
@@ -160,7 +165,7 @@ export class EventsStore {
             // we just skip this - the existing data will be more up to date.
             const existingEventIndex = _.findIndex(this.events, { id: request.id });
             if (existingEventIndex === -1) {
-                const exchange = new HttpExchange(request);
+                const exchange = new HttpExchange(this.apiStore, request);
                 this.events.push(exchange);
             }
         } catch (e) {
@@ -179,7 +184,7 @@ export class EventsStore {
             if (existingEventIndex >= 0) {
                 (this.events[existingEventIndex] as HttpExchange).updateFromCompletedRequest(request);
             } else {
-                this.events.push(new HttpExchange(request));
+                this.events.push(new HttpExchange(this.apiStore, request));
             }
         } catch (e) {
             reportError(e);
