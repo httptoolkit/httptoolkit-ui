@@ -19,6 +19,8 @@
             "webworker"
         ],
 
+        "incremental": true,
+
         // Limit the global types included, to fix https://github.com/DefinitelyTyped/DefinitelyTyped/issues/33015
         "types": [
           "node",
