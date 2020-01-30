@@ -1,8 +1,8 @@
-import { expect } from '../../test-setup';
+import { expect } from '../../../test-setup';
 
-import { SourceIcons } from '../../../src/icons';
+import { SourceIcons } from '../../../../src/icons';
 
-import { parseSource } from '../../../src/model/http/sources';
+import { parseSource } from '../../../../src/model/http/sources';
 
 const LINUX_CHROME = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36';
 const LINUX_FIREFOX = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:64.0) Gecko/20100101 Firefox/64.0';
