@@ -14,6 +14,12 @@ import { WritableKeys, Omit } from '../../types';
 import { styled, Theme } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
 
+// EditorOptions.lineHeight in Monaco. Due to the bundling separation requirements, we can't
+// easily import this directly, but this is tidy enough for now. Future Monaco updates
+// may require this to be updated or every editor will explode into crazy sizes.
+// The types know the getOptions result numberically, so will catch obvious mistakes.
+const MONACO_LINE_HEIGHT_OPTION = 47;
+
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
 // * don't delay first app start waiting for this massive chunk to load
@@ -172,7 +178,7 @@ export class BaseEditor extends React.Component<EditorProps> {
             // This is also available as model.getLineCount(), but the model
             // itself doesn't take line wrapping into account.
             const lineCount = (editor as any)._modelData.viewModel.getLineCount();
-            const lineHeight = editor.getConfiguration().lineHeight;
+            const lineHeight = editor.getOption(MONACO_LINE_HEIGHT_OPTION);
 
             this.props.onLinesUpdate(lineCount, lineHeight);
         }

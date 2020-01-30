@@ -35,7 +35,7 @@ export default <Webpack.Configuration>{
             use: [{ loader: 'awesome-typescript-loader' }],
             exclude: /node_modules/
         }, {
-            test: /\.(woff2|png|svg)$/,
+            test: /\.(woff2|ttf|png|svg)$/,
             loader: 'file-loader'
         }, {
             test: /\.css$/,

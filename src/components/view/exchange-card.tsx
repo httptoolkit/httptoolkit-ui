@@ -31,6 +31,7 @@ const cardDirectionCss = (direction?: string) =>
 
 export const ExchangeCard = styled(CollapsibleCard)`
     ${(p: ExchangeCardProps) => cardDirectionCss(p.direction)};
+    overflow: visible;
 `;
 
 const LoadingCardContent = styled.div<{ height?: string }>`
