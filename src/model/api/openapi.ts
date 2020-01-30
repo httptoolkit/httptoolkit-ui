@@ -238,6 +238,7 @@ export function getParameters(
 }
 
 export function getBodySchema(
+    spec: OpenAPIObject,
     bodyDefinition: RequestBodyObject | ResponseObject | undefined,
     message: ExchangeMessage | 'aborted' | undefined
 ): SchemaObject {
@@ -263,7 +264,10 @@ export function getBodySchema(
     if (!schemaKey) return {};
 
     return Object.assign(
-        { description: bodyDefinition.description },
+        {
+            description: bodyDefinition.description,
+            components: spec.components
+        },
         schemasByType[schemaKey].schema
     );
 }
@@ -298,16 +302,18 @@ export class ApiExchange {
         const { request } = exchange;
         this.service = new ApiService(api.spec);
 
+        this._spec = api.spec;
         this._opSpec = matchOperation(api, request);
 
         this.operation = new ApiOperation(this._opSpec);
-        this.request = new ApiRequest(this._opSpec, request);
+        this.request = new ApiRequest(api.spec, this._opSpec, request);
 
         if (exchange.response) {
             this.updateWithResponse(exchange.response);
         }
     }
 
+    private _spec: OpenAPIObject;
     private _opSpec: MatchedOperation;
 
     public readonly service: ApiService;
@@ -318,7 +324,7 @@ export class ApiExchange {
 
     updateWithResponse(response: HtkResponse | 'aborted' | undefined): void {
         if (response === 'aborted' || response === undefined) return;
-        this.response = new ApiResponse(this._opSpec, response);
+        this.response = new ApiResponse(this._spec, this._opSpec, response);
     }
 }
 
@@ -408,6 +414,7 @@ class ApiOperation {
 
 class ApiRequest {
     constructor(
+        spec: OpenAPIObject,
         op: MatchedOperation,
         request: HtkRequest
     ) {
@@ -417,7 +424,11 @@ class ApiRequest {
             request
         );
 
-        this.bodySchema = getBodySchema(op.spec.requestBody as RequestBodyObject | undefined, request);
+        this.bodySchema = getBodySchema(
+            spec,
+            op.spec.requestBody as RequestBodyObject | undefined,
+            request
+        );
     }
 
     parameters: Parameter[];
@@ -439,17 +450,21 @@ export interface Parameter {
 
 class ApiResponse {
     constructor(
+        spec: OpenAPIObject,
         op: MatchedOperation,
         response: HtkResponse
     ) {
-        const spec: RequestBodyObject | undefined = op.spec.responses ? (
-            op.spec.responses[response.statusCode.toString()] ||
-            op.spec.responses.default
-        ) : undefined;
+        const bodySpec: RequestBodyObject | undefined = op.spec.responses
+            ? (
+                op.spec.responses[response.statusCode.toString()] ||
+                op.spec.responses.default
+            )
+            : undefined;
 
-        this.description = spec && spec.description !== response.statusMessage ?
-            fromMarkdown(spec.description) : undefined;
-        this.bodySchema = getBodySchema(spec, response);
+        this.description = bodySpec && bodySpec.description !== response.statusMessage
+            ? fromMarkdown(bodySpec.description)
+            : undefined;
+        this.bodySchema = getBodySchema(spec, bodySpec, response);
     }
 
     description?: Html;

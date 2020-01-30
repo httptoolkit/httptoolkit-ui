@@ -1,11 +1,12 @@
-import { expect } from '../../test-setup';
-import { getExchangeData } from '../unit-test-helpers';
+import { expect } from '../../../test-setup';
+import { getExchangeData } from '../../unit-test-helpers';
 
-import { buildApiMetadata } from '../../../src/model/api/build-openapi';
-import { ApiExchange, getParameters, getBodySchema } from '../../../src/model/api/openapi';
+import { buildApiMetadata } from '../../../../src/model/api/build-openapi';
+import { ApiExchange, getParameters, getBodySchema } from '../../../../src/model/api/openapi';
 
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
 import slackSpec from 'openapi-directory/api/slack.com.json';
+import { OpenAPIObject } from 'openapi-directory';
 const stripeApi = buildApiMetadata(stripeSpec);
 const slackApi = buildApiMetadata(slackSpec);
 
@@ -495,6 +496,7 @@ describe('OpenAPI support', () => {
         it('should return the request body schema', () => {
             expect(
                 getBodySchema(
+                    {} as OpenAPIObject,
                     {
                         description: 'My request body',
                         content: {
@@ -519,10 +521,50 @@ describe('OpenAPI support', () => {
                 }
             });
         });
+        it('should return the request body schema with refs', () => {
+            expect(
+                getBodySchema(
+                    {
+                        components: {
+                            nameProp: {
+                                type: "string"
+                            }
+                        }
+                    } as unknown as OpenAPIObject,
+                    {
+                        description: 'My request body',
+                        content: {
+                            'text/plain': {
+                                schema: {
+                                    properties: {
+                                        name: { $ref: "#/components/nameProp" }
+                                    }
+                                }
+                            }
+                        }
+                    }, getExchangeData({
+                        requestHeaders: {
+                            'content-type': 'text/plain'
+                        }
+                    }).request
+                )
+            ).to.deep.match({
+                description: 'My request body',
+                components: {
+                    nameProp: {
+                        type: "string"
+                    }
+                },
+                properties: {
+                    name: { $ref: "#/components/nameProp" }
+                }
+            });
+        });
 
         it('should return the response body schema', () => {
             expect(
                 getBodySchema(
+                    {} as OpenAPIObject,
                     {
                         content: {
                             'text/plain': {
@@ -549,6 +591,7 @@ describe('OpenAPI support', () => {
         it('should match partially wildcard content types', () => {
             expect(
                 getBodySchema(
+                    {} as OpenAPIObject,
                     {
                         description: 'My request body',
                         content: {
@@ -583,6 +626,7 @@ describe('OpenAPI support', () => {
         it('should match completely wildcard content types', () => {
             expect(
                 getBodySchema(
+                    {} as OpenAPIObject,
                     {
                         description: 'My request body',
                         content: {
@@ -617,6 +661,7 @@ describe('OpenAPI support', () => {
         it('should match the most specific content type', () => {
             expect(
                 getBodySchema(
+                    {} as OpenAPIObject,
                     {
                         description: 'My request body',
                         content: {
@@ -658,6 +703,7 @@ describe('OpenAPI support', () => {
         it('should match the most specific content type, using wildcards where appropriate', () => {
             expect(
                 getBodySchema(
+                    {} as OpenAPIObject,
                     {
                         description: 'My request body',
                         content: {
