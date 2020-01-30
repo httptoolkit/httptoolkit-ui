@@ -1,12 +1,16 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
-        "module": "commonjs"
+        "module": "commonjs",
+        "types": [
+            "node",
+            "mocha",
+            "chai"
+        ]
     },
     "include": [
         "../custom-typings/*.d.ts",
-        "../src/**/*.ts",
-        "../src/**/*.tsx",
+        "../custom-test-typings/*.d.ts",
         "./**/*.ts"
     ]
 }

@@ -11,35 +11,28 @@
         "allowSyntheticDefaultImports": true,
 
         "strict": true,
+        "incremental": true,
 
         "lib": [
-            "dom",
-            "es2017",
-            "scripthost",
-            "webworker"
+          "dom",
+          "ES2017",
+          "ScriptHost",
+          "WebWorker"
         ],
-
-        "incremental": true,
 
         // Limit the global types included, to fix https://github.com/DefinitelyTyped/DefinitelyTyped/issues/33015
         "types": [
-          "node",
-          "webpack-dev-server",
-          "mocha",
-          "chai"
+          "node"
         ],
 
         "plugins": [
-          {
-            "name": "typescript-styled-plugin"
-          }
+          { "name": "typescript-styled-plugin" }
         ]
     },
-    "compileOnSave": true,
-    "buildOnSave": true,
+    "files": [
+      "src/index.tsx"
+    ],
     "include": [
-        "custom-typings/*.d.ts",
-        "src/**/*.ts",
-        "src/**/*.tsx"
+      "custom-typings/**/*.d.ts"
     ]
 }
