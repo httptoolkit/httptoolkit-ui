@@ -37,7 +37,10 @@ function templateStringToRegexString(template: string): string {
         .replace(/\/$/, '');
 }
 
-export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata> {
+export async function buildApiMetadata(
+    spec: OpenAPIObject,
+    baseUrlOverrides?: string[]
+): Promise<ApiMetadata> {
     const specId = `${
         spec.info['x-providerName'] || 'unknown'
     }/${
@@ -59,9 +62,14 @@ export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata
     // Now it's relatively small & tidy, dereference everything.
     spec = <OpenAPIObject> dereference(spec);
 
-    const serverRegexStrings = spec.servers!.map(s => templateStringToRegexString(s.url));
-    // Build a single regex that matches any URL for these base servers
-    const serverMatcher = new RegExp(`^(${serverRegexStrings.join('|')})`, 'i');
+    const serverUrlRegexSources = baseUrlOverrides && baseUrlOverrides.length
+        // Look for one of the given base URLs, ignoring trailing slashes
+        ? baseUrlOverrides.map(url => _.escapeRegExp(url).replace(/\/$/, ''))
+        // Look for any URL of the base servers in the spec
+        : spec.servers!.map(s => templateStringToRegexString(s.url));
+
+    // Build a regex that matches any of these at the start of a URL
+    const serverMatcher = new RegExp(`^(${serverUrlRegexSources.join('|')})`, 'i')
 
     const requestMatchers = new Map<RequestMatcher, Path>();
     _.entries(spec.paths)

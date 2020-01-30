@@ -20,7 +20,7 @@ import {
     CollapsibleCardHeading
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
-import { SettingsButton } from './settings-components';
+import { SettingsButton, SettingsExplanation } from './settings-components';
 
 const RestartApp = styled(SettingsButton).attrs(() => ({
     children: 'Restart app to activate',
@@ -158,10 +158,6 @@ const ProxyPortsContainer = styled.div`
 
 const ProxyPortStateExplanation = styled.p`
     margin-bottom: 10px;
-`;
-
-const SettingsExplanation = styled.p`
-    font-style: italic;
 `;
 
 const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);

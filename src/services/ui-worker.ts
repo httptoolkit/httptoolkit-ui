@@ -72,7 +72,8 @@ export interface TestEncodingsResponse extends Message {
 
 export interface BuildApiRequest extends Message {
     type: 'build-api';
-    spec: OpenAPIObject
+    spec: OpenAPIObject;
+    baseUrlOverrides?: string[];
 }
 
 export interface BuildApiResponse extends Message {
@@ -170,8 +171,8 @@ async function testEncodings(request: TestEncodingsRequest) {
 }
 
 async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
-    const { id, spec } = request;
-    return { id, api: await buildApiMetadata(spec) };
+    const { id, spec, baseUrlOverrides } = request;
+    return { id, api: await buildApiMetadata(spec, baseUrlOverrides) };
 }
 
 ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {

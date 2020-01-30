@@ -26,6 +26,7 @@ import { BaseEditor } from '../editor/base-editor';
 import * as amIUsingHtml from '../../amiusing.html';
 import { ProxySettingsCard } from './proxy-settings-card';
 import { SettingsButton, SettingsButtonLink } from './settings-components';
+import { ApiSettingsCard } from './api-settings-card';
 
 interface SettingsPageProps {
     accountStore: AccountStore;
@@ -104,7 +105,8 @@ const EditorContainer = styled.div`
 const cardKeys = [
     'account',
     'proxy',
-    'themes'
+    'themes',
+    'api'
 ] as const;
 
 type CardKey = typeof cardKeys[number];
@@ -266,6 +268,11 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     _.isString(serverVersion.value) &&
                     semver.satisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
                     <ProxySettingsCard {...this.cardProps.proxy} />
+                }
+
+                {
+                    this.props.accountStore!.featureFlags.includes('openapi') &&
+                    <ApiSettingsCard {...this.cardProps.api} />
                 }
 
                 <CollapsibleCard {...this.cardProps.themes}>

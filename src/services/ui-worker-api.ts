@@ -113,10 +113,14 @@ export async function testEncodingsAsync(decodedBuffer: Buffer) {
     })).encodingSizes;
 }
 
-export async function buildApiMetadataAsync(spec: OpenAPIObject): Promise<ApiMetadata> {
+export async function buildApiMetadataAsync(
+    spec: OpenAPIObject,
+    baseUrlOverrides?: string[]
+): Promise<ApiMetadata> {
     return (await callApi<BuildApiRequest, BuildApiResponse>({
         type: 'build-api',
-        spec
+        spec,
+        baseUrlOverrides
     })).api;
 }
 

@@ -11,3 +11,8 @@ export const SettingsButtonLink = styled(ButtonLink)`
     ${SettingsButtonCss}
     margin-right: 10px;
 `;
+
+export const SettingsExplanation = styled.p`
+    font-style: italic;
+    margin-top: 10px;
+`;

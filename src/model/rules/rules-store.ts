@@ -53,12 +53,7 @@ export type ClientCertificate = {
     readonly filename: string
 };
 
-const pojoSchema = (props: serializr.Props) => ({
-    factory: () => ({}),
-    props: props
-});
-
-const clientCertificateSchema = pojoSchema({
+const clientCertificateSchema = serializr.createSimpleSchema({
     passphrase: serializr.primitive(),
     filename: serializr.primitive(),
     pfx: serializr.custom(encodeBase64, decodeBase64)

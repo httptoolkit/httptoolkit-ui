@@ -49,10 +49,7 @@ const BaseButtonStyles = css`
     ${interactiveMouseoverStyles}
 `;
 
-export const Button = styled.button.attrs(() => ({
-    // 'submit' is the default, which makes 'enter' behaviour super wacky:
-    'type': 'button'
-}))`
+export const Button = styled.button`
     ${BaseButtonStyles}
 
     /*
@@ -71,6 +68,8 @@ export const Button = styled.button.attrs(() => ({
         background-color: ${p => p.theme.primaryInputBackground};
     }
 `;
+// 'submit' is the default, which makes 'enter' behaviour super wacky:
+Button.defaultProps = { type: "button" };
 
 export const ButtonLink = Button.withComponent('a');
 
