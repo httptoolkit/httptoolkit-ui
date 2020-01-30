@@ -3,9 +3,9 @@ import * as querystring from 'querystring';
 
 import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
-import * as refParser from 'json-schema-ref-parser';
 
 import { openApiSchema } from './openapi-schema';
+import { dereference } from './dereference-json-schema';
 
 interface Path {
     path: string;
@@ -57,10 +57,7 @@ export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata
     }
 
     // Now it's relatively small & tidy, dereference everything.
-    spec = <OpenAPIObject> await refParser.dereference(spec, {
-        dereference: { circular: "ignore" },
-        resolve: { external: false }
-    });
+    spec = <OpenAPIObject> dereference(spec);
 
     const serverRegexStrings = spec.servers!.map(s => templateStringToRegexString(s.url));
     // Build a single regex that matches any URL for these base servers
