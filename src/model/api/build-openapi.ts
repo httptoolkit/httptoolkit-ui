@@ -29,6 +29,8 @@ const filterSpec = new Ajv({
 
 function templateStringToRegexString(template: string): string {
     return template
+        // Escape all regex chars *except* { }
+        .replace(/[\^$\\.*+?()[\]|]/g, '\\$&')
         // Replace templates with wildcards
         .replace(/\{([^/}]+)}/g, '([^\/]*)')
         // Drop trailing slashes
