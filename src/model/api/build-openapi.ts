@@ -71,8 +71,8 @@ export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata
         .sort(([pathA], [pathB]) => {
             const charPairs = _.zip(
                 // For char comparison, normalize param names and drop fragments
-                pathA.replace(/\{[^}]+\}/g, '{param}').split('#')[0],
-                pathB.replace(/\{[^}]+\}/g, '{param}').split('#')[0]
+                [...pathA.replace(/\{[^}]+\}/g, '{param}').split('#')[0]],
+                [...pathB.replace(/\{[^}]+\}/g, '{param}').split('#')[0]]
             );
 
             for (let [charA, charB] of charPairs) {
@@ -124,5 +124,5 @@ export async function buildApiMetadata(spec: OpenAPIObject): Promise<ApiMetadata
         spec,
         serverMatcher,
         requestMatchers
-    }
+    };
 }
