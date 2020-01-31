@@ -29,7 +29,6 @@ import {
     getEditableContentType
 } from '../../model/http/content-types';
 import { RulesStore } from '../../model/rules/rules-store';
-import { desktopVersion } from '../../services/service-versions';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
@@ -376,14 +375,7 @@ class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<F
 
             <SectionLabel>Response body</SectionLabel>
             <BodyFileContainer>
-                <BodyFileButton
-                    onClick={this.selectFile}
-                    disabled={!desktopVersion.value}
-                    title={!desktopVersion.value
-                        ? 'Only supported in the full desktop app'
-                        : ''
-                    }
-                >
+                <BodyFileButton onClick={this.selectFile}>
                     { this.filePath
                         ? 'Change file'
                         : <>
