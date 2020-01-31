@@ -11,7 +11,7 @@ import _MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
 import { reportError } from '../../errors';
 import { delay } from '../../util/promise';
 import { WritableKeys, Omit } from '../../types';
-import { styled, Theme } from '../../styles';
+import { styled, Theme, defineMonacoThemes } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
 
 // EditorOptions.lineHeight in Monaco. Due to the bundling separation requirements, we can't
@@ -28,7 +28,12 @@ let rmeModulePromise = delay(100).then(() => loadMonacoEditor());
 
 async function loadMonacoEditor(retries = 5): Promise<void> {
     try {
+        // These might look like two sequential requests, but since they're a single chunk,
+        // it's actually just one load and then both will fire together.
         const rmeModule = await import(/* webpackChunkName: "react-monaco-editor" */ 'react-monaco-editor');
+        const monacoEditorModule = await import(/* webpackChunkName: "react-monaco-editor" */ 'monaco-editor/esm/vs/editor/editor.api');
+
+        defineMonacoThemes(monacoEditorModule);
         MonacoEditor = rmeModule.default;
     } catch (err) {
         if (retries <= 0) {

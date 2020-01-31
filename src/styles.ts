@@ -1,6 +1,7 @@
 import * as styledComponents from 'styled-components';
 import * as polished from 'polished';
 import { ThemeProps } from 'styled-components';
+import * as monacoTypes from 'monaco-editor';
 
 import reset from 'styled-reset'
 
@@ -41,7 +42,7 @@ export const lightTheme = {
     linkColor: '#0000EE',
     visitedLinkColor: '#551A8B',
 
-    monacoTheme: 'vs',
+    monacoTheme: 'vs-custom',
 
     modalGradient: 'radial-gradient(#40404b, #111118)',
 
@@ -79,7 +80,7 @@ export const darkTheme = {
     linkColor: '#8699ff',
     visitedLinkColor: '#ac7ada',
 
-    monacoTheme: 'vs-dark',
+    monacoTheme: 'vs-dark-custom',
 
     modalGradient: 'radial-gradient(#ffffff,#9c9c9c)',
 
@@ -129,7 +130,7 @@ export const highContrastTheme = {
     linkColor: '#8699ff',
     visitedLinkColor: '#ac7ada',
 
-    monacoTheme: 'hc-black',
+    monacoTheme: 'hc-black-custom',
 
     modalGradient: '#c0c0c0',
 
@@ -146,6 +147,23 @@ export const Themes = {
 
 export type ThemeName = keyof typeof Themes;
 export type Theme = typeof Themes[ThemeName];
+
+const monacoColorOverrides = {
+    'editorWarning.foreground': '#ff0000',
+};
+
+const monacoThemes = ['vs', 'vs-dark', 'hc-black'] as const;
+
+export function defineMonacoThemes(monaco: typeof monacoTypes) {
+    monacoThemes.forEach((themeName) => {
+        monaco.editor.defineTheme(`${themeName}-custom`, {
+            base: themeName,
+            inherit: true,
+            rules: [],
+            colors: monacoColorOverrides
+        });
+    });
+}
 
 const {
     default: styled,
