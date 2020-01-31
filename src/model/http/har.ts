@@ -59,8 +59,8 @@ function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
     return entries;
 }
 
-// We only include request/response bodies that are under 40KB
-const HAR_BODY_SIZE_LIMIT = 40960;
+// We only include request/response bodies that are under 500KB
+const HAR_BODY_SIZE_LIMIT = 500000;
 
 export function generateHarRequest(request: HtkRequest, waitForDecoding?: false): HarFormat.Request;
 export function generateHarRequest(
