@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import * as dateFns from 'date-fns';
+import * as dedent from 'dedent';
+import * as Ajv from 'ajv';
 
 import { styled } from '../../styles'
 import { Icon, IconProp } from '../../icons';
@@ -10,6 +12,8 @@ import { AccountStore } from '../../model/account/account-store';
 import { EventsStore } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { generateHar } from '../../model/http/har';
+import { reportError } from '../../errors';
+import { formatAjvError } from '../../util/json-schema';
 
 const IconButton = styled((p: {
     className?: string,
@@ -112,7 +116,36 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
             disabled={!isPaidUser}
             onClick={async () => {
                 const uploadedFile = await uploadFile('text', ['.har', 'application/har', 'application/har+json']);
-                if (uploadedFile) props.eventsStore!.loadFromHar(JSON.parse(uploadedFile));
+                if (uploadedFile) {
+                    try {
+                        const data = JSON.parse(uploadedFile);
+
+                        await props.eventsStore!.loadFromHar(data)
+                        .catch((error) => {
+                            if (error.name === 'HARError' && error.errors) {
+                                reportError(error);
+
+                                alert(dedent`
+                                    HAR file is not valid.
+
+                                    ${
+                                        error.errors
+                                        .map((e: Ajv.ErrorObject) => formatAjvError(data, e))
+                                        .join('\n')
+                                    }
+                                `);
+                            } else {
+                                throw error;
+                            }
+                        })
+                    } catch (error) {
+                        alert(dedent`
+                            Could not parse HAR file.
+
+                            ${error.message}
+                        `);
+                    }
+                }
             }}
         />
     })

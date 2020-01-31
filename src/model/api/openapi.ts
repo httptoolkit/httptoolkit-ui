@@ -14,7 +14,8 @@ import {
 import * as Ajv from 'ajv';
 
 import { HtkResponse, HtkRequest, Html, ExchangeMessage } from "../../types";
-import { firstMatch, empty, lastHeader, joinAnd } from '../../util';
+import { firstMatch, empty, lastHeader } from '../../util';
+import { formatAjvError } from '../../util/json-schema';
 import { reportError } from '../../errors';
 
 import { HttpExchange } from '../http/exchange';
@@ -214,15 +215,7 @@ export function getParameters(
                 if (!validated && paramValidator.errors) {
                     param.warnings.push(
                         ...paramValidator.errors.map(e =>
-                            e.dataPath.replace(/^\.value/, param.name) + ` (${
-                                JSON.stringify(_.get(valueWrapper, e.dataPath.slice(1)))
-                            }) ${e.message!}${
-                                e.keyword === 'enum' ?
-                                    ` (${joinAnd(
-                                        (e.params as Ajv.EnumParams).allowedValues, ', ', ', or ')
-                                    })` :
-                                ''
-                            }.`
+                            formatAjvError(valueWrapper, e, (path) => path.replace(/^\.value/, param.name))
                         )
                     );
                 }

@@ -5,7 +5,7 @@ import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
 
 import { openApiSchema } from './openapi-schema';
-import { dereference } from './dereference-json-schema';
+import { dereference } from '../../util/json-schema';
 
 interface Path {
     path: string;

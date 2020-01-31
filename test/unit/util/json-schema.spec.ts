@@ -1,8 +1,8 @@
-import { expect } from '../../../test-setup';
+import { expect } from '../../test-setup';
 
 import {
     dereference
-} from '../../../../src/model/api/dereference-json-schema';
+} from '../../../src/util/json-schema';
 
 describe("JSON dereferencing", () => {
     it("does nothing given no references", () => {

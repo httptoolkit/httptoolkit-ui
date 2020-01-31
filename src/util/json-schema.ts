@@ -1,5 +1,8 @@
 import * as _ from 'lodash';
 import * as traverse from 'traverse';
+import * as Ajv from 'ajv';
+
+import { joinAnd, truncate } from './index';
 
 type Ref = { $ref: string };
 
@@ -49,4 +52,26 @@ export function dereference<T extends object>(root: T): T {
         this.update(node);
     });
     return root;
+}
+
+export function formatAjvError(
+    data: any,
+    e: Ajv.ErrorObject,
+    pathTransform: (path: string) => string = _.identity
+) {
+    return (pathTransform(e.dataPath) || 'Document') + ` (${
+        truncate(
+            JSON.stringify(
+                e.dataPath.length
+                    ? _.get(data, e.dataPath.slice(1))
+                    : data
+            )
+        , 50)
+    }) ${e.message!}${
+        e.keyword === 'enum' ?
+            ` (${joinAnd(
+                (e.params as Ajv.EnumParams).allowedValues, ', ', ', or ')
+            })` :
+        ''
+    }.`
 }
