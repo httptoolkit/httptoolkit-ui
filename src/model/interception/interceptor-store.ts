@@ -34,6 +34,8 @@ export class InterceptorStore {
         window.addEventListener('beforeunload', () => {
             clearInterval(refreshInterceptorInterval);
         });
+
+        console.log('Interceptor store initialized');
     });
 
     @observable interceptors: _.Dictionary<Interceptor>;
