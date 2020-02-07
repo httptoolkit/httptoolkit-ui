@@ -82,6 +82,9 @@ const InterceptOptionCard = styled<React.ComponentType<{
 
     > p {
         color: ${p => p.theme.mainColor};
+        &:not(:first-of-type) {
+            margin-top: 10px;
+        }
     }
 
     position: relative;
@@ -182,7 +185,9 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                     />
                 </>
                 : <>
-                    <p>{ interceptor.description }</p>
+                    { interceptor.description.map(descParagraph =>
+                        <p>{ descParagraph }</p>
+                    ) }
 
                     { getStatusPill(interceptor) }
 

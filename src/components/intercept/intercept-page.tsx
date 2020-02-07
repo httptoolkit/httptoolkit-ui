@@ -90,7 +90,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
         const visibleInterceptOptions = _.pickBy(interceptors, (option) =>
             !filter ||
             _.includes(option.name.toLocaleLowerCase(), filter) ||
-            _.includes(option.description.toLocaleLowerCase(), filter) ||
+            _.includes(option.description.join(' ').toLocaleLowerCase(), filter) ||
             _.some(option.tags, t => _.includes(t.toLocaleLowerCase(), filter))
         );
 
