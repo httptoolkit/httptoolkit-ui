@@ -16,7 +16,7 @@ export class InterceptorStore {
         private serverStore: ServerStore,
         private accountStore: AccountStore
     ) {
-        this.interceptors = getInterceptOptions([]);
+        this.interceptors = getInterceptOptions([], accountStore);
     }
 
     readonly initialized = lazyObservablePromise(async () => {
@@ -43,10 +43,9 @@ export class InterceptorStore {
     async refreshInterceptors() {
         const serverInterceptors = await getInterceptors(this.serverStore.serverPort);
         const serverVersion = await serverVersionPromise;
-        const { featureFlags } = this.accountStore;
 
         runInAction(() => {
-            this.interceptors = getInterceptOptions(serverInterceptors, serverVersion, featureFlags);
+            this.interceptors = getInterceptOptions(serverInterceptors, this.accountStore, serverVersion);
         });
     }
 

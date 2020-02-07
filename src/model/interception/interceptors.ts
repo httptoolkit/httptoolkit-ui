@@ -4,6 +4,7 @@ import * as semver from "semver";
 import { ServerInterceptor } from "../../services/server-api";
 import { DETAILED_CONFIG_RANGE } from "../../services/service-versions";
 import { IconProps, SourceIcons } from "../../icons";
+import { AccountStore } from "../account/account-store";
 
 import { InterceptorCustomUiConfig } from "../../components/intercept/intercept-option";
 import { ManualInterceptCustomUi } from "../../components/intercept/config/manual-intercept-config";
@@ -20,7 +21,7 @@ interface InterceptorConfig {
     clientOnly?: true;
     checkRequirements?: (options: {
         interceptorVersion: string,
-        featureFlags: string[],
+        accountStore: AccountStore,
         serverVersion?: string
     }) => boolean;
     uiConfig?: InterceptorCustomUiConfig;
@@ -103,9 +104,9 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         name: 'An Android device',
         description: 'Intercept all HTTP traffic from an Android device on your network',
         iconProps: SourceIcons.Android,
-        checkRequirements: ({ featureFlags, serverVersion }) => {
+        checkRequirements: ({ accountStore, serverVersion }) => {
             return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
-                featureFlags.includes("android");
+                accountStore.featureFlags.includes("android");
         },
         clientOnly: true,
         uiConfig: AndroidCustomUi,
@@ -147,8 +148,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
 
 export function getInterceptOptions(
     serverInterceptorArray: ServerInterceptor[],
-    serverVersion?: string,
-    featureFlags: string[] = []
+    accountStore: AccountStore,
+    serverVersion?: string
 ) {
     const serverInterceptors = _.keyBy(serverInterceptorArray, 'id');
 
@@ -160,7 +161,7 @@ export function getInterceptOptions(
             // feature flags, etc)
             (option.checkRequirements && !option.checkRequirements({
                 interceptorVersion: (serverInterceptors[id] || {}).version,
-                featureFlags,
+                accountStore,
                 serverVersion
             }))
         ) {
