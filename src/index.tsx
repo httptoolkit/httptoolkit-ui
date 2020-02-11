@@ -14,10 +14,7 @@ import { delay } from './util/promise';
 import { initTracking } from './tracking';
 import { appHistory } from './routing';
 
-import {
-    scriptUrl as updateWorkerUrl,
-    ServiceWorkerNoSupportError
-} from 'service-worker-loader!./services/update-worker';
+import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./services/update-worker';
 
 import { UiStore } from './model/ui-store';
 import { AccountStore } from './model/account/account-store';
@@ -35,15 +32,6 @@ import { serverVersion } from './services/service-versions';
 
 const APP_ELEMENT_SELECTOR = '#app';
 
-function registerUpdateWorker(options: { scope: string }, authToken: string | null) {
-    if ('serviceWorker' in navigator) {
-        const params = authToken ? `?authToken=${authToken}` : '';
-        return navigator.serviceWorker.register(updateWorkerUrl + params, options);
-    }
-
-    return Promise.reject(new ServiceWorkerNoSupportError());
-}
-
 const urlParams = new URLSearchParams(window.location.search);
 const authToken = urlParams.get('authToken');
 
@@ -51,7 +39,11 @@ const authToken = urlParams.get('authToken');
 // This also checks for new versions after the first SW is already live.
 // Delayed to avoid competing for bandwidth with startup on slow connections.
 delay(10000).then(() =>
-    registerUpdateWorker({ scope: '/' }, authToken)
+    registerUpdateWorker(
+        // Pass the auth token to the service worker too when we start it, if we have one
+        (authToken ? url => url + `?authToken=${authToken}` : url => url),
+        { scope: '/' }
+    )
 ).then((registration) => {
     console.log('Service worker loaded');
 

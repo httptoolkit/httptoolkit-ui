@@ -1,7 +1,15 @@
 declare module "service-worker-loader!*" {
-    export default function registerServiceWorker(options: {
+    interface RegistrationOptions {
         scope: string
-    }): Promise<ServiceWorkerRegistration>;
+    }
+
+    export default function registerServiceWorker(
+        options: RegistrationOptions
+    ): Promise<ServiceWorkerRegistration>;
+    export default function registerServiceWorker(
+        mapScriptUrl: (url: string) => string,
+        options: RegistrationOptions
+    ): Promise<ServiceWorkerRegistration>;
 
     export const scriptUrl: string;
 

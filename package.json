@@ -163,7 +163,7 @@
     "puppeteer": "^1.18.1",
     "raw-loader": "^0.5.1",
     "rimraf": "^2.6.2",
-    "service-worker-loader": "^3.3.1",
+    "service-worker-loader": "^4.0.0",
     "source-map-loader": "^0.2.4",
     "static-server": "^2.2.1",
     "style-loader": "^0.21.0",
