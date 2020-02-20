@@ -143,7 +143,7 @@ class AndroidConfig extends React.Component<{
             <p>
                 Don't have a barcode scanner? Install the <a
                     href={
-                        `https://play.google.com/store/apps/details?id=tech.httptoolkit.android&referrer=${
+                        `https://play.google.com/store/apps/details?id=tech.httptoolkit.android.v1&referrer=${
                             serializedSetupParams
                         }`
                     }
