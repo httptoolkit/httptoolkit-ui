@@ -1,5 +1,12 @@
 import * as _ from 'lodash';
-import { createHistory, WindowLocation } from "@reach/router";
+import * as querystring from 'querystring';
+import { createHistory, WindowLocation, NavigateOptions } from "@reach/router";
+
+// Whatever params we're given at the initial load, we want to save & preserve
+// them, so they persist across all future navigations.
+const INITIAL_PARAMS = querystring.parse(
+    window.location.search.replace(/^\?/, '')
+);
 
 // Builds a history source backed by the real browser history API, but throttling
 // updates to that API, and covering that up by also tracking the current location
@@ -52,3 +59,15 @@ const buildThrottledHistorySource = () => {
 
 // Throttlesafe: even with Chrome's throttling us, it'll still work nicely.
 export const appHistory = createHistory(buildThrottledHistorySource());
+
+// Wrap navigate(), to always preserve our query params:
+const navigate = appHistory.navigate.bind(appHistory);
+appHistory.navigate = function (to: string, options: NavigateOptions<{}> = {}) {
+    const [pathString, searchString] = to.split("?");
+    const params = querystring.parse(searchString);
+
+    return navigate(pathString + "?" + querystring.stringify({
+        ...params,
+        ...INITIAL_PARAMS
+    }), options);
+};
