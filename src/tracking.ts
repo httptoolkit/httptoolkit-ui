@@ -65,13 +65,12 @@ export function trackPage(location: Window['location']) {
     const currentUrl = location.href;
     if (currentUrl === lastUrl) return;
     lastUrl = currentUrl;
-    const currentPath = window.location.pathname + location.search;
 
     ReactGA.set({
         location: location.href,
-        page: currentPath
+        page: window.location.pathname
     });
-    ReactGA.pageview(currentPath);
+    ReactGA.pageview(window.location.pathname);
 }
 
 export function trackEvent(event: ReactGA.EventArgs) {
