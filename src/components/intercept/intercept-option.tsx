@@ -185,8 +185,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                     />
                 </>
                 : <>
-                    { interceptor.description.map(descParagraph =>
-                        <p>{ descParagraph }</p>
+                    { interceptor.description.map((descParagraph, i) =>
+                        <p key={i}>{ descParagraph }</p>
                     ) }
 
                     { getStatusPill(interceptor) }
