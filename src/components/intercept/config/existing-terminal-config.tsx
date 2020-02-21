@@ -3,8 +3,11 @@ import { observer } from 'mobx-react';
 import { observable, runInAction, computed, when } from 'mobx';
 
 import { styled, css } from '../../../styles';
-import { CopyButtonIcon } from '../../common/copy-button';
+import { trackEvent } from '../../../tracking';
+
 import { Interceptor } from '../../../model/interception/interceptors';
+
+import { CopyButtonIcon } from '../../common/copy-button';
 
 const CopyableCommand = styled<React.ComponentType<{
     className?: string,
@@ -89,6 +92,12 @@ class ExistingTerminalConfig extends React.Component<{
             // When a terminal is first activated for real, jump to the requests
             when(() => this.props.interceptor.isActive, () => {
                 this.props.showRequests();
+
+                trackEvent({
+                    category: 'Interceptors',
+                    action: 'Successfully Activated',
+                    label: this.props.interceptor.id
+                });
             });
         }
     }

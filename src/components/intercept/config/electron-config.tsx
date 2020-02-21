@@ -5,11 +5,12 @@ import { action } from 'mobx';
 
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { uploadFile } from '../../../util/ui';
+import { trackEvent } from '../../../tracking';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { UiStore } from '../../../model/ui-store';
 
+import { uploadFile } from '../../../util/ui';
 import { Button, SecondaryButton, UnstyledButton } from '../../common/inputs';
 
 const ConfigContainer = styled.div`
@@ -155,6 +156,12 @@ class ElectronConfig extends React.Component<{
             // Activated successfully! Add it to the list & jump to /view
             this.props.uiStore!.rememberElectronPath(pathToApplication);
             showRequests();
+
+            trackEvent({
+                category: 'Interceptors',
+                action: 'Successfully Activated',
+                label: this.props.interceptor.id
+            });
         }));
     }
 
