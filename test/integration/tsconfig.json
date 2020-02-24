@@ -1,0 +1,17 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "types": [
+            "node",
+            "mocha",
+            "chai"
+        ]
+    },
+    "files": [],
+    "include": [
+        "../../custom-typings/*.d.ts",
+        "../custom-typings/*.d.ts",
+        "./**/*.ts"
+    ]
+}

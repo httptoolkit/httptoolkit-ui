@@ -1,5 +1,3 @@
-require('ts-node/register');
-
 const path = require('path');
 const tmp = require('tmp');
 tmp.setGracefulCleanup();
@@ -16,7 +14,7 @@ module.exports = function(config) {
             '/fixtures': '/absolute' + path.resolve('./test/fixtures')
         },
         mime: { 'text/x-typescript': ['ts', 'tsx'] },
-        webpack: require('../../automation/webpack.test').default,
+        webpack: require('../../automation/webpack.unittest').default,
         webpackMiddleware: {
             stats: 'errors-only'
         },

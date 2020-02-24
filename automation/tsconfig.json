@@ -5,6 +5,14 @@
         "types": [
             "node",
             "webpack-dev-server"
+        ],
+        "lib": [
+            "ES2017",
+            "ScriptHost"
         ]
-    }
+    },
+    "files": [],
+    "include": [
+        "./custom-typings/*.d.ts"
+    ]
 }

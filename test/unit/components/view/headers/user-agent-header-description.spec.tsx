@@ -1,6 +1,3 @@
-// Not clear why this is necessary, but it seems to be. Something to do with chai-enzyme?
-/// <reference path="../../../../../custom-typings/chai-deep-match.d.ts" />
-
 import * as React from 'react';
 import { shallow } from 'enzyme';
 
