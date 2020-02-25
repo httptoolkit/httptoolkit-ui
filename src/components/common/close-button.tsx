@@ -22,6 +22,7 @@ export const CloseButton = styled(
     onKeyPress: clickOnEnter
 }))`
     position: absolute;
+    z-index: 1;
     cursor: pointer;
 
     color: ${(p: CloseButtonProps) => p.inverted ?

@@ -10,7 +10,8 @@ import { InterceptorCustomUiConfig } from "../../components/intercept/intercept-
 import { ManualInterceptCustomUi } from "../../components/intercept/config/manual-intercept-config";
 import { ExistingTerminalCustomUi } from "../../components/intercept/config/existing-terminal-config";
 import { ElectronCustomUi } from '../../components/intercept/config/electron-config';
-import { AndroidCustomUi } from "../../components/intercept/config/android-config";
+import { AndroidDeviceCustomUi } from "../../components/intercept/config/android-device-config";
+import { AndroidAdbCustomUi } from "../../components/intercept/config/android-adb-config";
 
 interface InterceptorConfig {
     name: string;
@@ -102,15 +103,32 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     },
     'android-device': {
         name: 'Android device',
-        description: ["Intercept all HTTP traffic from an Android device on your network"],
+        description: [
+            'Intercept an Android device on your network',
+            'Manual setup required for HTTPS in some apps'
+        ],
         iconProps: SourceIcons.Android,
         checkRequirements: ({ accountStore, serverVersion }) => {
             return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
                 accountStore.featureFlags.includes("android");
         },
         clientOnly: true,
-        uiConfig: AndroidCustomUi,
+        uiConfig: AndroidDeviceCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
+    },
+    'android-adb': {
+        name: 'Android device connected via ADB',
+        description: [
+            'Intercept any Android device or emulator connected to ADB',
+            'Automatically injects system HTTPS certificates into rooted devices & most emulators'
+        ],
+        iconProps: _.defaults({ color: '#4285F4' }, SourceIcons.Android),
+        checkRequirements: ({ accountStore, serverVersion }) => {
+            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
+                accountStore.featureFlags.includes("android")
+        },
+        uiConfig: AndroidAdbCustomUi,
+        tags: [...MOBILE_TAGS, ...ANDROID_TAGS, 'emulator', 'root', 'adb']
     },
     'ios-device': {
         name: 'An iOS device',

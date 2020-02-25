@@ -19,3 +19,4 @@ export const HOST_MATCHER_SERVER_RANGE = '^0.1.22';
 export const CLIENT_CERT_SERVER_RANGE = '^0.1.26';
 export const FROM_FILE_HANDLER_SERVER_RANGE = '^0.1.28';
 export const DETAILED_CONFIG_RANGE = '^0.1.30';
+export const INTERCEPTOR_METADATA = '^0.1.31';

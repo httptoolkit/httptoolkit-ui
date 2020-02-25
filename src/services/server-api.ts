@@ -5,7 +5,7 @@ import * as semver from 'semver';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
-import { serverVersion, DETAILED_CONFIG_RANGE } from './service-versions';
+import { serverVersion, DETAILED_CONFIG_RANGE, INTERCEPTOR_METADATA } from './service-versions';
 
 const urlParams = new URLSearchParams(
     RUNNING_IN_WORKER
@@ -28,6 +28,7 @@ export interface ServerInterceptor {
     version: string;
     isActivable: boolean;
     isActive: boolean;
+    metadata?: any;
 }
 
 interface GraphQLError {
@@ -113,6 +114,11 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
                 version
                 isActive(proxyPort: $proxyPort)
                 isActivable
+
+                ${semver.satisfies(await serverVersion, INTERCEPTOR_METADATA)
+                    ? 'metadata'
+                    : ''
+                }
             }
         }
     `, { proxyPort }).catch(formatError('get-interceptors'));

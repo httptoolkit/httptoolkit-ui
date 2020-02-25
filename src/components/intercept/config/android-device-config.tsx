@@ -9,6 +9,7 @@ import {
 } from 'mockttp';
 
 import { styled } from '../../../styles';
+import { trackEvent } from '../../../tracking';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ServerStore } from '../../../model/server-store';
@@ -72,6 +73,47 @@ function hasSeenConfigRequests(eventsStore: EventsStore) {
     );
 }
 
+export function setUpAndroidCertificateRule(
+    interceptorId: string,
+    certContent: string,
+    rulesStore: RulesStore,
+    eventsStore: EventsStore,
+    showRequests: () => void
+) {
+    rulesStore.ensureDefaultRuleExists({
+        id: 'default-android-certificate',
+        activated: true,
+        matchers: [
+            new MethodMatchers.GET(),
+            new matchers.SimplePathMatcher(
+                "http://android.httptoolkit.tech/config"
+            )
+        ],
+        completionChecker: new completionCheckers.Always(),
+        handler: new StaticResponseHandler(200, undefined, JSON.stringify({
+            certificate: certContent
+        }), {
+            'content-type': 'application/json'
+        })
+    });
+
+    // If there are no /config requests collected, wait until one appears, and
+    // then jump to the requests. The goal is that first setup is intuitive, but
+    // connecting more devices later if you want multiple devices isn't too annoying.
+    const neverSeenConfigRequest = !hasSeenConfigRequests(eventsStore);
+    when(() =>
+        hasSeenConfigRequests(eventsStore)
+    ).then(() => {
+        if (neverSeenConfigRequest) showRequests();
+
+        trackEvent({
+            category: 'Interceptors',
+            action: 'Successfully Activated',
+            label: interceptorId
+        });
+    });
+}
+
 @inject('serverStore')
 @inject('rulesStore')
 @inject('eventsStore')
@@ -90,34 +132,13 @@ class AndroidConfig extends React.Component<{
     async componentDidMount() {
         const rulesStore = this.props.rulesStore!;
         const eventsStore = this.props.eventsStore!;
-
-        rulesStore.ensureDefaultRuleExists({
-            id: 'default-android-certificate',
-            activated: true,
-            matchers: [
-                new MethodMatchers.GET(),
-                new matchers.SimplePathMatcher(
-                    "http://android.httptoolkit.tech/config"
-                )
-            ],
-            completionChecker: new completionCheckers.Always(),
-            handler: new StaticResponseHandler(200, undefined, JSON.stringify({
-                certificate: this.props.serverStore!.certContent
-            }), {
-                'content-type': 'application/json'
-            })
-        });
-
-        if (!hasSeenConfigRequests(eventsStore)) {
-            // If there are no /config requests collected, wait until one appears, and
-            // then jump to the requests. The goal is that first setup is intuitive, but
-            // connecting more devices later if you want multiple devices isn't too annoying.
-            when(
-                () => hasSeenConfigRequests(eventsStore)
-            ).then(
-                this.props.showRequests
-            );
-        }
+        setUpAndroidCertificateRule(
+            this.props.interceptor.id,
+            this.props.serverStore!.certContent!,
+            rulesStore,
+            eventsStore,
+            this.props.showRequests
+        );
     }
 
     render() {
@@ -182,7 +203,7 @@ class AndroidConfig extends React.Component<{
 
 }
 
-export const AndroidCustomUi = {
+export const AndroidDeviceCustomUi = {
     columnWidth: 2,
     rowHeight: 2,
     configComponent: AndroidConfig

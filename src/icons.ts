@@ -52,6 +52,8 @@ import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
 import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
 import { faUnlock } from '@fortawesome/free-solid-svg-icons/faUnlock';
 import { faEdit } from '@fortawesome/free-solid-svg-icons/faEdit';
+import { faWindowMaximize } from '@fortawesome/free-regular-svg-icons/faWindowMaximize';
+import { faMobileAlt } from '@fortawesome/free-solid-svg-icons/faMobileAlt';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -123,6 +125,8 @@ library.add(
     faSave,
     faUnlock,
     faEdit,
+    faWindowMaximize,
+    faMobileAlt,
 
     faChrome,
     faFirefox,
@@ -178,7 +182,7 @@ export const SourceIcons = {
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
-    Android: { icon: ['fab', 'android'], color: '#A4C639' },
+    Android: { icon: ['fab', 'android'], color: '#78C257' },
     iOS: { icon: ['fab', 'apple'], color: '#000' },
     Electron: { icon: ['fas', 'atom'], color: '#9FEAF9' },
 
