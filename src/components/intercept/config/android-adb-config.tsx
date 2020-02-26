@@ -95,12 +95,6 @@ class AndroidAdbConfig extends React.Component<{
     @observable private inProgressIds: string[] = [];
 
     async componentDidMount() {
-        if (!this.props.accountStore!.isPaidUser) {
-            this.props.accountStore!.getPro('android-adb');
-            this.props.closeSelf();
-            return;
-        }
-
         const rulesStore = this.props.rulesStore!;
         const eventsStore = this.props.eventsStore!;
 
