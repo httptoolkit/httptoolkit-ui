@@ -39,6 +39,10 @@ const ANDROID_TAGS = ['samsung', 'galaxy', 'nokia', 'lg', 'android', 'google', '
 const IOS_TAGS = ['apple', 'ios', 'iphone', 'ipad'];
 const DOCKER_TAGS = ['bridge', 'services', 'images'];
 
+const androidInterceptIconProps = _.assign({
+    style: { bottom: '-32px' }
+}, SourceIcons.Android);
+
 export const MANUAL_INTERCEPT_ID = 'manual-setup';
 
 const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
@@ -107,7 +111,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             'Intercept an Android device on your network',
             'Manual setup required for HTTPS in some apps'
         ],
-        iconProps: SourceIcons.Android,
+        iconProps: androidInterceptIconProps,
         checkRequirements: ({ accountStore, serverVersion }) => {
             return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
                 accountStore.featureFlags.includes("android");
@@ -122,7 +126,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             'Intercept any Android device or emulator connected to ADB',
             'Automatically injects system HTTPS certificates into rooted devices & most emulators'
         ],
-        iconProps: _.defaults({ color: '#4285F4' }, SourceIcons.Android),
+        iconProps: _.defaults({ color: '#4285F4' }, androidInterceptIconProps),
         checkRequirements: ({ accountStore, serverVersion }) => {
             return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
                 accountStore.featureFlags.includes("android")
