@@ -179,10 +179,13 @@ export const SourceIcons = {
     Pycurl: { icon: ['fab', 'python'], color: '#4584b6' }, // Popular Python HTTP lib
     Pythonbindings: { icon: ['fab', 'python'], color: '#4584b6' }, // Stripe's Python HTTP lib
 
+    Android: { icon: ['fab', 'android'], color: '#78C257' },
+    Okhttp: { icon: ['fab', 'android'], color: '#78C257' }, // Popular Android HTTP lib
+    Fbandroidsdk: { icon: ['fab', 'android'], color: '#78C257' }, // FB Android SDK
+
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
-    Android: { icon: ['fab', 'android'], color: '#78C257' },
     iOS: { icon: ['fab', 'apple'], color: '#000' },
     Electron: { icon: ['fas', 'atom'], color: '#9FEAF9' },
 
