@@ -9,7 +9,7 @@ import { Icon, IconProp } from '../icons';
 import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
-import * as logo from '../images/logo-stacked.svg';
+import * as logo from '../images/logo-icon.svg';
 
 export interface SidebarItem {
     name: string;
@@ -65,6 +65,7 @@ const SidebarLogo = styled.img.attrs(() => ({
     alt: 'HTTP Toolkit logo'
 }))`
     ${sidebarItemStyles}
+    padding: 8px;
 `
 
 const SidebarSelectableItem = styled(Link)`
