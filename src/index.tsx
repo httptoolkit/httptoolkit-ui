@@ -37,8 +37,8 @@ const authToken = urlParams.get('authToken');
 
 // Set up a SW in the background to add offline support & instant startup.
 // This also checks for new versions after the first SW is already live.
-// Delayed to avoid competing for bandwidth with startup on slow connections.
-delay(10000).then(() =>
+// Slightly delayed to avoid competing for bandwidth with startup on slow connections.
+delay(5000).then(() =>
     registerUpdateWorker(
         // Pass the auth token to the service worker too when we start it, if we have one
         (authToken ? url => url + `?authToken=${authToken}` : url => url),
