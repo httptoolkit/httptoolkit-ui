@@ -1,5 +1,6 @@
 import * as localForage from 'localforage';
 
+import { RUNNING_IN_WORKER } from '../util';
 import { lazyObservablePromise } from "../util/observable";
 import { getServerVersion, waitUntilServerReady } from "./server-api";
 import { getDesktopInjectedValue } from "./desktop-api";
@@ -29,7 +30,9 @@ export const lastServerVersion =
     localForage.getItem<string>('last-server-version')
     // Fallback to previous localStorage data approach, just in case
     .then((version) => {
-        if (!version) return localStorage.getItem('last-server-version')
+        if (!version && !RUNNING_IN_WORKER) {
+            return localStorage.getItem('last-server-version')
+        }
         else return version;
     });
 
