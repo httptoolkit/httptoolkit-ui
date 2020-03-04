@@ -4,12 +4,14 @@ initSentry(process.env.SENTRY_DSN);
 import WorkboxNamespace from 'workbox-sw';
 import * as semver from 'semver';
 import * as kv from 'idb-keyval';
+import * as localForage from 'localforage';
 
 import * as appPackage from '../../package.json';
 import { getServerVersion } from './server-api';
 
 const appVersion = process.env.COMMIT_REF || "Unknown";
 const SW_LOG = 'sw-log';
+localForage.config({ name: "httptoolkit", version: 1 });
 
 async function readLog(): Promise<Array<any>> {
     const currentLog = await kv.get<Array<any>>(SW_LOG);
@@ -43,6 +45,33 @@ async function writeToLog(data: any) {
 
 writeToLog({ type: 'startup' });
 
+// Check if the server is accessible, and that we've been given the relevant auth
+// details. If we haven't, that means the desktop has started the server with an
+// auth token, but we haven't received it. In general, that means the UI hasn't
+// passed it on, because it's outdated and doesn't understand it. To fix this,
+// we forcibly update the UI immediately. Should only ever happen once.
+
+type ServerStatus = 'accessible' | 'auth-required' | 'inaccessible'
+const serverStatus: Promise<ServerStatus> =
+    fetch("http://localhost:45457/")
+    .then((response) => {
+        if (response.status === 403) return 'auth-required';
+        else return 'accessible';
+    })
+    .catch(() => 'inaccessible' as ServerStatus)
+    .then((status) => {
+        console.log('Service worker server status:', status);
+        return status;
+    });
+
+const forceUpdateRequired = serverStatus.then(async (status) => {
+    // Update should be forced if we're using a server that requires auth, but
+    // the UI hasn't given us any kind of auth token.
+    return status === 'auth-required' &&
+        !(new URLSearchParams(self.location.search).get('authToken')) &&
+        !(await localForage.getItem<string>('latest-auth-token'));
+});
+
 type PrecacheEntry = {
     url: string;
     revision: string;
@@ -70,9 +99,25 @@ function getPrecacheController() {
 const precacheController = getPrecacheController();
 
 async function precacheNewVersionIfSupported() {
+    if (await forceUpdateRequired) {
+        // Don't bother precaching: we want to take over & then force kill/refresh everything ASAP
+        self.skipWaiting();
+        return;
+    }
+
+    await checkServerVersion();
+
+    // Any required as the install return types haven't been updated for v4, so still use 'updatedEntries'
+    const result: any = await precacheController.install();
+    console.log(`New precache installed, ${result.updatedURLs.length} files updated.`);
+}
+
+async function checkServerVersion() {
     const serverVersion = await getServerVersion();
     console.log(`Connected httptoolkit-server version is ${serverVersion}.`);
-    console.log(`App requires server version satisfying ${appPackage.runtimeDependencies['httptoolkit-server']}.`);
+    console.log(`App requires server version satisfying ${
+        appPackage.runtimeDependencies['httptoolkit-server']
+    }.`);
 
     if (!semver.satisfies(serverVersion, appPackage.runtimeDependencies['httptoolkit-server'])) {
         throw new Error(
@@ -80,13 +125,9 @@ async function precacheNewVersionIfSupported() {
                 await serverVersion
             } is out of date - aborting`
         );
-    } else {
-        console.log('Server version is sufficient, continuing install...');
     }
 
-    // Any required as the install return types haven't been updated for v4, so still use 'updatedEntries'
-    const result: any = await precacheController.install();
-    console.log(`New precache installed, ${result.updatedURLs.length} files updated.`);
+    console.log('Server version is sufficient, continuing install...');
 }
 
 // Async, drop leftover caches from previous workbox versions:
@@ -110,20 +151,37 @@ self.addEventListener('install', (event: ExtendableEvent) => {
     event.waitUntil(precacheNewVersionIfSupported());
 });
 
-self.addEventListener('activate', (event) => {
-    writeToLog({ type: 'activate' });
-    console.log(`SW activating for version ${appVersion}`);
+self.addEventListener('activate', async (event) => {
+    event.waitUntil((async () => {
+        writeToLog({ type: 'activate' });
+        console.log(`SW activating for version ${appVersion}`);
 
-    // This can be removed only once we know that _nobody_ is using SWs from before 2019-05-09
-    deleteOldWorkboxCaches();
+        if (await forceUpdateRequired) {
+            console.log("SW forcibly refreshing");
+            writeToLog({ type: 'forcing-refresh' });
+            resettingSw = true; // Pass through all requests
 
-    event.waitUntil(
-        precacheController.activate()
-        .then(() => {
-            writeToLog({ type: 'activated' })
-            return null; // Don't wait for logging
-        })
-    );
+            // Take over and refresh all client pages:
+            await self.clients.claim();
+            const clients = await self.clients.matchAll({ type: 'window' });
+            clients.map((client) => {
+                console.log(`Refreshing ${client.url}`);
+                return (client as WindowClient).navigate(client.url);
+            });
+
+            writeToLog({ type: 'refresh-forced' });
+
+            // Unregister, so that future registration loads the SW & caches from scratch
+            self.registration.unregister();
+            console.log("SW forcibly refreshed");
+        } else {
+            // This can be removed only once we know that _nobody_ is using SWs from before 2019-05-09
+            deleteOldWorkboxCaches();
+
+            await precacheController.activate();
+            writeToLog({ type: 'activated' });
+        }
+    })());
 });
 
 // Webpack Dev Server goes straight to the network:

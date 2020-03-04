@@ -2,26 +2,39 @@ import { NetworkInterfaceInfo } from 'os';
 import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
 import * as semver from 'semver';
+import * as localForage from 'localforage';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
 import { serverVersion, DETAILED_CONFIG_RANGE, INTERCEPTOR_METADATA } from './service-versions';
 
-const urlParams = new URLSearchParams(
-    RUNNING_IN_WORKER
-        ? (self as WorkerGlobalScope).location.search
-        : window.location.search
-);
-const authToken = urlParams.get('authToken');
+const authTokenPromise = !RUNNING_IN_WORKER
+    // Main UI gets given the auth token directly in its URL:
+    ? Promise.resolve(new URLSearchParams(window.location.search).get('authToken'))
+    // New (March 2020) UI shares auth token with SW via IDB:
+    : localForage.getItem<string>('latest-auth-token')
+        .then((authToken) => {
+            if (authToken) return authToken;
 
-const graphql = getGraphQL('http://127.0.0.1:45457/', {
-    // The server *might* require a token for API auth. If so, we'll be given it
-    // in the query string, and we'll pass it with all requests.
-    headers: authToken
-        ? { 'Authorization': `Bearer ${authToken}` }
-        : { },
-    asJSON: true
+            // Old UI (Jan-March 2020) shares auth token via SW query param:
+            const workerParams = new URLSearchParams((self as WorkerGlobalScope).location.search);
+            return workerParams.get('authToken');
+
+            // Pre-Jan 2020 UI doesn't share auth token - ok with old desktop, fails with 0.1.18+.
+        });
+
+const graphQLPromise = authTokenPromise.then((authToken) => {
+    return getGraphQL('http://127.0.0.1:45457/', {
+        // If we have an auth token (always happens, except for old desktop apps or
+        // local dev), we send it as a bearer token with all server requests.
+        headers: authToken
+            ? { 'Authorization': `Bearer ${authToken}` }
+            : { },
+        asJSON: true
+    })
 });
+
+const graphql = async (...args: any[]) => (await graphQLPromise)(...args);
 
 export interface ServerInterceptor {
     id: string;

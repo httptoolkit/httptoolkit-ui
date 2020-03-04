@@ -1,3 +1,5 @@
+import * as localForage from 'localforage';
+
 import { lazyObservablePromise } from "../util/observable";
 import { getServerVersion, waitUntilServerReady } from "./server-api";
 import { getDesktopInjectedValue } from "./desktop-api";
@@ -9,9 +11,27 @@ export const desktopVersion = lazyObservablePromise(async () => {
     // Note that if we're running in a browser, not the desktop shell, this _never_ resolves.
 });
 
+// The current server version, directly checked against the running
+// server, not available until it starts up.
 export const serverVersion = lazyObservablePromise(() =>
-    waitUntilServerReady().then(getServerVersion)
+    waitUntilServerReady()
+        .then(getServerVersion)
+        .then((version) => {
+            localForage.setItem('last-server-version', version);
+            return version;
+        })
 );
+
+// The last known service version - immediately available (though still async),
+// but reports the previous startup version, not necessarily the latest one.
+// May be undefined if the app has never yet started successfully.
+export const lastServerVersion =
+    localForage.getItem<string>('last-server-version')
+    // Fallback to previous localStorage data approach, just in case
+    .then((version) => {
+        if (!version) return localStorage.getItem('last-server-version')
+        else return version;
+    });
 
 export const PORT_RANGE_SERVER_RANGE = '^0.1.14';
 export const MOCK_SERVER_RANGE = '^0.1.21';

@@ -1,13 +1,19 @@
 document.dispatchEvent(new Event('load:executing'));
 
+import * as localForage from 'localforage';
+localForage.config({ name: "httptoolkit", version: 1 });
+
+const urlParams = new URLSearchParams(window.location.search);
+const authToken = urlParams.get('authToken');
+localForage.setItem('latest-auth-token', authToken);
+
 import { initSentry, reportError } from './errors';
 initSentry(process.env.SENTRY_DSN);
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { configure } from 'mobx';
+import * as mobx from 'mobx';
 import { Provider } from 'mobx-react';
-import * as localForage from 'localforage';
 
 import { GlobalStyles } from './styles';
 import { delay } from './util/promise';
@@ -28,22 +34,17 @@ import { triggerServerUpdate } from './services/server-api';
 import { App } from './components/app';
 import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
 import { ErrorBoundary } from './components/error-boundary';
-import { serverVersion } from './services/service-versions';
+import { serverVersion, lastServerVersion } from './services/service-versions';
 
 const APP_ELEMENT_SELECTOR = '#app';
 
-const urlParams = new URLSearchParams(window.location.search);
-const authToken = urlParams.get('authToken');
+mobx.configure({ enforceActions: 'observed' });
 
 // Set up a SW in the background to add offline support & instant startup.
 // This also checks for new versions after the first SW is already live.
 // Slightly delayed to avoid competing for bandwidth with startup on slow connections.
 delay(5000).then(() =>
-    registerUpdateWorker(
-        // Pass the auth token to the service worker too when we start it, if we have one
-        (authToken ? url => url + `?authToken=${authToken}` : url => url),
-        { scope: '/' }
-    )
+    registerUpdateWorker({ scope: '/' })
 ).then((registration) => {
     console.log('Service worker loaded');
 
@@ -59,13 +60,6 @@ delay(5000).then(() =>
     }
     throw e;
 });
-
-initTracking();
-const lastServerVersion = localStorage.getItem('last-server-version');
-serverVersion.then((version) => localStorage.setItem('last-server-version', version));
-
-configure({ enforceActions: 'observed' });
-localForage.config({ name: "httptoolkit", version: 1 });
 
 const accountStore = new AccountStore();
 const apiStore = new ApiStore(accountStore);
@@ -93,6 +87,7 @@ const stores = {
 const appStartupPromise = Promise.all(
     Object.values(stores).map(store => store.initialized)
 );
+initTracking();
 
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
@@ -121,8 +116,8 @@ const STARTUP_TIMEOUT = 10000;
 // succeed later on, the above render() will still happen and hide the error.
 Promise.race([
     appStartupPromise,
-    delay(STARTUP_TIMEOUT).then(() => {
-        console.log('Previous server version was', lastServerVersion);
+    delay(STARTUP_TIMEOUT).then(async () => {
+        console.log('Previous server version was', await lastServerVersion);
 
         throw Object.assign(
             new Error('Failed to initialize application'),
@@ -138,8 +133,8 @@ Promise.race([
     reportError(e);
 
     appStartupPromise.then(() => {
-        serverVersion.then((currentVersion) => {
-            console.log('Server version was', lastServerVersion, 'now started late with', currentVersion);
+        serverVersion.then(async (currentVersion) => {
+            console.log('Server version was', await lastServerVersion, 'now started late with', currentVersion);
             reportError('Successfully initialized application, but after timeout');
         });
     });
