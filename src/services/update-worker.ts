@@ -66,10 +66,9 @@ const serverStatus: Promise<ServerStatus> =
     });
 
 const forceUpdateRequired = serverStatus.then(async (status) => {
-    // Update should be forced if we're using a server that requires auth, but
-    // the UI hasn't given us any kind of auth token.
+    // Update should be forced if we're using a server that requires auth,
+    // but the UI hasn't properly provided an auth token.
     return status === 'auth-required' &&
-        !(new URLSearchParams(self.location.search).get('authToken')) &&
         !(await localForage.getItem<string>('latest-auth-token'));
 });
 
