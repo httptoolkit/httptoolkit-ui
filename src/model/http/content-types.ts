@@ -125,7 +125,20 @@ export function getCompatibleTypes(
 ): ViewableContentType[] {
     let types = [contentType];
 
-    // Anything except raw & image can be shown as text
+    // First char of the body, assuming it's ASCII
+    let firstChar = body.decoded && body.decoded.slice(0, 1).toString('utf8');
+
+    // Allow formatting non-JSON text as JSON, if it looks like it might be
+    if (contentType === 'text' && (firstChar === '{' || firstChar === '[')) {
+        types.push('json');
+    }
+
+    // Allow formatting non-XML plain text as XML, if it looks like it might be
+    if (contentType === 'text' && firstChar === '<') {
+        types.push('xml');
+    }
+
+    // Anything except raw & image can be shown as plain text
     if (!_.includes(['raw', 'image', 'text'], contentType)) {
         types.push('text');
     }
