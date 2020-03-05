@@ -102,6 +102,7 @@ async function precacheNewVersionIfSupported() {
     if (await forceUpdateRequired) {
         // Don't bother precaching: we want to take over & then force kill/refresh everything ASAP
         self.skipWaiting();
+        reportError("Force update required on newly installed SW");
         return;
     }
 
@@ -170,7 +171,7 @@ self.addEventListener('activate', async (event) => {
         console.log(`SW activating for version ${appVersion}`);
 
         if (await forceUpdateRequired) {
-            console.log("SW forcibly refreshing");
+            reportError("Force update required on newly activated SW");
             writeToLog({ type: 'forcing-refresh' });
             resettingSw = true; // Pass through all requests
 
