@@ -10,15 +10,15 @@ import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-e
 
 import { reportError } from '../../errors';
 import { delay } from '../../util/promise';
-import { WritableKeys, Omit } from '../../types';
+import { Omit } from '../../types';
 import { styled, Theme, defineMonacoThemes } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
 
 // EditorOptions.lineHeight in Monaco. Due to the bundling separation requirements, we can't
 // easily import this directly, but this is tidy enough for now. Future Monaco updates
 // may require this to be updated or every editor will explode into crazy sizes.
-// The types know the getOptions result numberically, so will catch obvious mistakes.
-const MONACO_LINE_HEIGHT_OPTION = 47;
+// The types know the getOptions result numerically, so will catch obvious mistakes.
+const MONACO_LINE_HEIGHT_OPTION = 49;
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
@@ -43,28 +43,6 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
 
         return loadMonacoEditor(retries - 1);
     }
-}
-
-// Work around for https://github.com/Microsoft/monaco-editor/issues/311
-// Forcibly override various methods to ensure we return line decorations
-// for validation errors etc even if the editor is readonly.
-function enableMarkers(model: monacoTypes.editor.ITextModel | null) {
-    if (!model) return;
-
-    const methodsToFix:  Array<[WritableKeys<typeof model>, number]> = [
-        ['getLineDecorations', 2],
-        ['getLinesDecorations', 3],
-        ['getDecorationsInRange', 2],
-        ['getOverviewRulerDecorations', 1],
-        ['getAllDecorations', 1],
-    ];
-
-    methodsToFix.forEach(([functionName, maxArgs]) => {
-        const originalMethod = model[functionName] as Function;
-        model[functionName] = function() {
-            return originalMethod.apply(this, Array.from(arguments).slice(0, maxArgs));
-        };
-    });
 }
 
 export interface EditorProps extends MonacoEditorProps {
@@ -237,13 +215,10 @@ export class BaseEditor extends React.Component<EditorProps> {
         this.announceLineCount(editor);
 
         const model = editor.getModel();
-        enableMarkers(model);
-
         this.modelUri = model && model.uri.toString();
 
         this.editor.onDidChangeModelContent(() => this.announceLineCount(editor));
         this.editor.onDidChangeModel(action((e: monacoTypes.editor.IModelChangedEvent) => {
-            enableMarkers(editor.getModel());
             this.modelUri = e.newModelUrl && e.newModelUrl.toString()
         }));
     }
@@ -326,6 +301,8 @@ export class BaseEditor extends React.Component<EditorProps> {
 
         const options = _.defaults(this.props.options, {
             showFoldingControls: 'always',
+            foldingHighlight: true,
+            renderValidationDecorations: 'on',
 
             quickSuggestions: false,
             parameterHints: false,
@@ -341,7 +318,7 @@ export class BaseEditor extends React.Component<EditorProps> {
 
             fontSize: 16,
             wordWrap: 'on'
-        });
+        } as monacoTypes.editor.IEditorConstructionOptions);
 
         if (!options.readOnly) {
             return <EditorFocusWrapper>
