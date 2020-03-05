@@ -20,7 +20,7 @@ export function migrateRules(data: any) {
             if (defaultRules.length) {
                 data.items = [
                     ...otherRules,
-                    buildDefaultGroup(...defaultRules)
+                    buildDefaultGroup(defaultRules)
                 ];
             } else {
                 data.items = otherRules;

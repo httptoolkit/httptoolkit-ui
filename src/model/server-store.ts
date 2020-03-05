@@ -22,6 +22,7 @@ import { AccountStore } from './account/account-store';
 import { delay } from '../util/promise';
 import { lazyObservablePromise } from '../util/observable';
 import { isValidPort } from './network';
+import { serverVersion } from '../services/service-versions';
 
 // Start the server, with slowly decreasing retry frequency (up to a limit).
 // Note that this never fails - any timeout to this process needs to happen elsewhere.
@@ -82,11 +83,15 @@ export class ServerStore {
     @observable
     networkAddresses: string[] | undefined;
 
+    @observable
+    serverVersion!: string; // Definitely set *after* initialization
+
     readonly initialized = lazyObservablePromise(async () => {
         await this.accountStore.initialized;
 
         await this.loadSettings();
         await this.startIntercepting();
+        this.serverVersion = await serverVersion;
         console.log('Server store initialized');
     });
 

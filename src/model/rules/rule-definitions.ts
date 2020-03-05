@@ -3,12 +3,15 @@ import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
+import * as semver from 'semver';
 
 import { RulesStore } from './rules-store';
 import { serializeAsTag } from '../serialization';
 
 import * as amIUsingHtml from '../../amiusing.html';
 import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
+import { ServerStore } from '../server-store';
+import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -199,19 +202,19 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     });
 }
 
-export const buildDefaultGroup = (...items: HtkMockItem[]): HtkMockRuleGroup => ({
+export const buildDefaultGroup = (items: HtkMockItem[]): HtkMockRuleGroup => ({
     id: 'default-group',
     title: "Default rules",
     collapsed: true,
     items: items
 })
 
-export const buildDefaultRules = (rulesStore: RulesStore) => ({
+export const buildDefaultRules = (rulesStore: RulesStore, serverStore: ServerStore) => ({
     id: 'root',
     title: "HTTP Toolkit Rules",
     isRoot: true,
     items: [
-        buildDefaultGroup(
+        buildDefaultGroup([
             // Respond to amiusing.httptoolkit.tech with an emphatic YES
             {
                 id: 'default-amiusing',
@@ -227,6 +230,22 @@ export const buildDefaultRules = (rulesStore: RulesStore) => ({
                 })
             },
 
+            // Share the server certificate on a convenient URL, assuming it supports that
+            ...(semver.satisfies(serverStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
+                ? [{
+                    id: 'default-certificate',
+                    activated: true,
+                    matchers: [
+                        new MethodMatchers.GET(),
+                        new matchers.SimplePathMatcher("amiusing.httptoolkit.tech/certificate")
+                    ],
+                    completionChecker: new completionCheckers.Always(),
+                    handler: new FromFileResponseHandler(200, undefined, serverStore.certPath, {
+                        'content-type': 'application/x-x509-ca-cert'
+                    })
+                }] : []
+            ),
+
             // Pass through all other traffic to the real target
             {
                 id: 'default-wildcard',
@@ -235,7 +254,7 @@ export const buildDefaultRules = (rulesStore: RulesStore) => ({
                 completionChecker: new completionCheckers.Always(),
                 handler: new PassThroughHandler(rulesStore)
             }
-        )
+        ])
     ]
 } as HtkMockRuleRoot);
 

@@ -191,7 +191,7 @@ export class RulesStore {
 
 
     @observable
-    rules: HtkMockRuleRoot = buildDefaultRules(this);
+    rules: HtkMockRuleRoot = buildDefaultRules(this, this.serverStore);
 
     @observable
     draftRules: HtkMockRuleRoot = _.cloneDeep(this.rules);
@@ -211,7 +211,7 @@ export class RulesStore {
     @action.bound
     resetRulesToDefault() {
         // Set the rules back to the default settings
-        this.rules = buildDefaultRules(this);
+        this.rules = buildDefaultRules(this, this.serverStore);
         this.resetRuleDrafts();
     }
 
@@ -222,7 +222,7 @@ export class RulesStore {
 
     @computed
     get areSomeRulesNonDefault() {
-        const defaultRules = buildDefaultRules(this);
+        const defaultRules = buildDefaultRules(this, this.serverStore);
         return !_.isEqualWith(this.draftRules, defaultRules, areItemsEqual);
     }
 
@@ -513,7 +513,7 @@ export class RulesStore {
         let draftDefaultGroupPath = findItemPath(this.draftRules, { id: 'default-group' });
         if (!draftDefaultGroupPath) {
             // If there's no draft default rules at all, build one
-            this.draftRules.items.push(buildDefaultGroup(rule));
+            this.draftRules.items.push(buildDefaultGroup([rule]));
             draftDefaultGroupPath = [this.draftRules.items.length - 1];
         } else {
             const draftDefaultGroup = getItemAtPath(this.draftRules, draftDefaultGroupPath) as HtkMockRuleGroup;
