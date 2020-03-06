@@ -138,8 +138,8 @@ export function getCompatibleTypes(
         types.push('xml');
     }
 
-    // Anything except raw & image can be shown as plain text
-    if (!_.includes(['raw', 'image', 'text'], contentType)) {
+    // Pretty much anything can be shown as plain text, if you like
+    if (!_.includes(['text'], contentType)) {
         types.push('text');
     }
 
