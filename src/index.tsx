@@ -43,9 +43,13 @@ mobx.configure({ enforceActions: 'observed' });
 // Set up a SW in the background to add offline support & instant startup.
 // This also checks for new versions after the first SW is already live.
 // Slightly delayed to avoid competing for bandwidth with startup on slow connections.
-delay(5000).then(() =>
-    registerUpdateWorker({ scope: '/' })
-).then((registration) => {
+delay(5000).then(() => {
+    // Try to trigger a server update. Can't guarantee it'll work, and we also trigger
+    // after successful startup, but this tries to ensure that even if startup is broken,
+    // we still update the server (and hopefully thereby unbreak app startup).
+    triggerServerUpdate();
+    return registerUpdateWorker({ scope: '/' });
+}).then((registration) => {
     console.log('Service worker loaded');
 
     // Check for SW updates every 5 minutes.
