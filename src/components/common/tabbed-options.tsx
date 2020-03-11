@@ -71,7 +71,6 @@ export const Tab = styled((p: {
 
     padding: 10px 20px 10px 0;
 
-    cursor: pointer;
     user-select: none;
     &:hover, &:focus {
         outline: none;

@@ -61,8 +61,6 @@ const PlanCycleToggle = styled(UnstyledButton)`
     align-items: center;
     flex-direction: row;
 
-    cursor: pointer;
-
     > svg {
         margin: 0 10px;
     }

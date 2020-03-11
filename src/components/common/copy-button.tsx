@@ -11,7 +11,6 @@ import { PillButton } from './pill';
 const clipboardSupported = !!navigator.clipboard;
 
 const CopyButtonIconBase = styled(UnstyledButton)`
-    cursor: pointer;
     color: ${p => p.theme.mainColor};
 
     &:hover, &:focus {

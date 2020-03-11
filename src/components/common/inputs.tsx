@@ -28,6 +28,14 @@ export const UnstyledButton = styled.button.attrs(() => ({
     font-family: inherit;
     font-size: inherit;
     color: inherit;
+
+    &[disabled] {
+        cursor: default;
+    }
+
+    &:not([disabled]) {
+        cursor: pointer;
+    }
 ` as StyledComponent<"button", Theme>;
 
 const BaseButtonStyles = css`

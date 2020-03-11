@@ -29,7 +29,6 @@ const GetProButton = styled(UnstyledButton)`
 
     margin: 0 auto;
 
-    cursor: pointer;
     user-select: none;
 
     display: flex;

@@ -74,8 +74,6 @@ const InterceptButton = styled(SecondaryButton)`
 `;
 
 const ForgetPathButton = styled(UnstyledButton)`
-    cursor: pointer;
-
     &:hover {
         opacity: 0.6;
     }

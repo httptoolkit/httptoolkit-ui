@@ -126,7 +126,6 @@ const SidebarButton = styled(
 )`
     ${sidebarItemStyles}
 
-    cursor: pointer;
     opacity: 0.6;
 
     ${(p) => p.highlight && css`
