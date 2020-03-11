@@ -57,7 +57,7 @@ type CardKey = typeof cardKeys[number];
 export class ExchangeBreakpointPane extends React.Component<{
     exchange: HttpExchange,
 
-    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>
+    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 
     // Injected:
     uiStore?: UiStore

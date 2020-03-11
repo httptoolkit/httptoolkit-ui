@@ -15,7 +15,7 @@ interface ContentViewerProps {
     rawContentType?: string;
     contentType: ViewableContentType;
     contentObservable?: IObservableValue<string | undefined>;
-    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
 }
 
 @observer

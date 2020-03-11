@@ -43,7 +43,7 @@ export class ExchangeBodyCard extends React.Component<{
     direction: 'left' | 'right',
     collapsed: boolean,
     onCollapseToggled: () => void,
-    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>
+    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
 
     @observable

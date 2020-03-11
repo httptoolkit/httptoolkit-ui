@@ -32,8 +32,8 @@ interface ViewPageProps {
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    requestEditor = portals.createPortalNode<typeof ThemedSelfSizedEditor>();
-    responseEditor = portals.createPortalNode<typeof ThemedSelfSizedEditor>();
+    requestEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
+    responseEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
 
     @computed
     get selectedEvent() {

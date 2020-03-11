@@ -76,8 +76,8 @@ type CardKey = typeof cardKeys[number];
 export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange,
 
-    requestEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
-    responseEditor: portals.PortalNode<typeof ThemedSelfSizedEditor>,
+    requestEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
+    responseEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
 
     navigate: (path: string) => void
 

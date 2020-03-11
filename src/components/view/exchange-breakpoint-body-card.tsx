@@ -41,7 +41,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
     body: Buffer | undefined,
     headers: Headers,
     onChange: (result: string) => void,
-    editorNode: portals.PortalNode<typeof ThemedSelfSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
 }> {
 
     @observable
