@@ -13,7 +13,13 @@ interface EditorFormatter {
     render(content: Buffer): string;
 }
 
-type FormatComponent = React.ComponentType<{ content: Buffer, rawContentType: string | undefined }>;
+type FormatComponentProps = {
+    expanded: boolean,
+    content: Buffer,
+    rawContentType: string | undefined
+};
+
+type FormatComponent = React.ComponentType<FormatComponentProps>;
 
 type Formatter = EditorFormatter | FormatComponent;
 
@@ -96,11 +102,19 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
             });
         }
     },
-    image: styled.img.attrs((p: { content: Buffer, rawContentType: string | undefined }) => ({
+    image: styled.img.attrs((p: FormatComponentProps) => ({
         src: `data:${p.rawContentType || ''};base64,${p.content.toString('base64')}`
     }))`
         display: block;
         max-width: 100%;
         margin: 0 auto;
+
+        ${(p: FormatComponentProps) => p.expanded && `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-height: 100%;
+        `}
     ` as FormatComponent // Shouldn't be necessary, but somehow TS doesn't work this out
 };

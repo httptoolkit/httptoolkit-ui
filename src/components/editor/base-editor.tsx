@@ -80,12 +80,26 @@ interface SchemaMapping {
 }
 
 const EditorMaxHeightContainer = styled.div`
-    max-height: 560px;
+    ${(p: { expanded: boolean }) => p.expanded
+        ? `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: auto !important;
+        `
+        : `
+            max-height: 560px;
+        `
+    }
 `;
 
 @observer
 export class SelfSizedBaseEditor extends React.Component<
-    Omit<EditorProps, 'onLineCount'>
+    Omit<EditorProps, 'onLineCount'> & {
+        expanded?: boolean
+    }
 > {
 
     container = React.createRef<HTMLDivElement>();
@@ -128,6 +142,7 @@ export class SelfSizedBaseEditor extends React.Component<
     render() {
         return <EditorMaxHeightContainer
             ref={this.container}
+            expanded={!!this.props.expanded}
             style={{ 'height': this.lineCount * this.lineHeight + 'px' }}
         >
             <BaseEditor
@@ -140,7 +155,7 @@ export class SelfSizedBaseEditor extends React.Component<
 }
 
 export const ThemedSelfSizedEditor = withTheme(
-    ({ theme, ...otherProps }: { theme?: Theme } & Omit<EditorProps, 'onLineCount' | 'theme'>) =>
+    ({ theme, ...otherProps }: { theme?: Theme, expanded?: boolean } & Omit<EditorProps, 'onLineCount' | 'theme'>) =>
         <SelfSizedBaseEditor theme={theme!.monacoTheme} {...otherProps} />
 );
 

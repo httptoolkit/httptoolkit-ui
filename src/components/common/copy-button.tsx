@@ -15,7 +15,6 @@ const CopyButtonIconBase = styled(UnstyledButton)`
 
     &:hover, &:focus {
         color: ${p => p.theme.popColor};
-        font-weight: bold;
         outline: none;
     }
 

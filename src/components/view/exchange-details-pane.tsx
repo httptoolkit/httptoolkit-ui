@@ -1,14 +1,15 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
-import { action, computed } from 'mobx';
+import { action, computed, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { HtkResponse } from '../../types';
+import { HtkRequest, HtkResponse } from '../../types';
 import { styled } from '../../styles';
 import { getStatusColor } from '../../model/http/exchange-colors';
 import { HttpExchange } from '../../model/http/exchange';
+import { ApiExchange } from '../../model/api/openapi';
 import { UiStore } from '../../model/ui-store';
 
 import { Pill } from '../common/pill';
@@ -54,6 +55,20 @@ const ExchangeDetailsContentContainer = styled.div`
     padding-top: 20px;
 `;
 
+const ExchangeExpandedContentContainer = styled.div`
+    ${(p: { expandCompleted: boolean }) => !p.expandCompleted
+        ? `padding: 20px;`
+        : `
+            padding: 0;
+            transition: padding 0.1s;
+        `
+    }
+
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+`;
+
 // Used to push all cards below it to the bottom (when less than 100% height)
 const CardDivider = styled.div`
     margin-top: auto;
@@ -86,11 +101,16 @@ export class ExchangeDetailsPane extends React.Component<{
     accountStore?: AccountStore
 }> {
 
+    // Used to trigger animation on initial card expansion
+    @observable private expandCompleted = true;
+
     @computed
     get cardProps() {
         return _.fromPairs(cardKeys.map((key) => [key, {
             key,
-            collapsed: this.props.uiStore!.viewExchangeCardStates[key].collapsed,
+            expanded: key === this.props.uiStore!.expandedCard,
+            collapsed: this.props.uiStore!.viewExchangeCardStates[key].collapsed &&
+                !this.props.uiStore!.expandedCard,
             onCollapseToggled: this.toggleCollapse.bind(this, key)
         }]));
     }
@@ -98,11 +118,25 @@ export class ExchangeDetailsPane extends React.Component<{
     render() {
         const { exchange, uiStore, accountStore, navigate } = this.props;
         const { isPaidUser, getPro } = accountStore!;
+        const { expandedCard } = uiStore!;
+        const { expandCompleted } = this;
 
         const cards: JSX.Element[] = [];
 
         const { request, response, tags } = exchange;
         const apiExchange = isPaidUser ? exchange.api : undefined;
+
+        if (expandedCard === 'requestBody' && request.body.encoded.byteLength) {
+            return <ExchangeExpandedContentContainer expandCompleted={expandCompleted}>
+                { this.renderRequestBodyCard(request, apiExchange, true) }
+            </ExchangeExpandedContentContainer>;
+        }
+
+        if (expandedCard === 'responseBody' && hasCompletedBody(response)) {
+            return <ExchangeExpandedContentContainer expandCompleted={expandCompleted}>
+                { this.renderResponseBodyCard(response, apiExchange, true) }
+            </ExchangeExpandedContentContainer>;
+        }
 
         const errorHeaderProps = {
             key: 'error-header',
@@ -138,14 +172,7 @@ export class ExchangeDetailsPane extends React.Component<{
         />);
 
         if (request.body.encoded.byteLength) {
-            cards.push(<ExchangeBodyCard
-                title='Request Body'
-                direction='right'
-                message={request}
-                editorNode={this.props.requestEditor}
-                apiBodySchema={get(apiExchange, 'request', 'bodySchema')}
-                {...this.cardProps.requestBody}
-            />);
+            cards.push(this.renderRequestBodyCard(request, apiExchange, false));
         }
 
         if (response === 'aborted') {
@@ -170,14 +197,7 @@ export class ExchangeDetailsPane extends React.Component<{
             />);
 
             if (hasCompletedBody(response)) {
-                cards.push(<ExchangeBodyCard
-                    title='Response Body'
-                    direction='left'
-                    message={response}
-                    editorNode={this.props.responseEditor}
-                    apiBodySchema={get(apiExchange, 'response', 'bodySchema')}
-                    {...this.cardProps.responseBody}
-                />);
+                cards.push(this.renderResponseBodyCard(response, apiExchange, false));
             }
         }
 
@@ -201,11 +221,59 @@ export class ExchangeDetailsPane extends React.Component<{
         </ExchangeDetailsScrollContainer>;
     }
 
+    private renderRequestBodyCard(request: HtkRequest, api: ApiExchange | undefined, expanded: boolean) {
+        return <ExchangeBodyCard
+            title='Request Body'
+            direction='right'
+            expanded={expanded}
+            message={request}
+            editorNode={this.props.requestEditor}
+            apiBodySchema={get(api, 'request', 'bodySchema')}
+            onExpandToggled={this.toggleExpand.bind(this, 'requestBody')}
+
+            {...this.cardProps.requestBody}
+        />
+    }
+
+    private renderResponseBodyCard(response: HtkResponse, api: ApiExchange | undefined, expanded: boolean) {
+        return <ExchangeBodyCard
+            title='Response Body'
+            direction='left'
+            expanded={expanded}
+            message={response}
+            editorNode={this.props.responseEditor}
+            apiBodySchema={get(api, 'response', 'bodySchema')}
+            onExpandToggled={this.toggleExpand.bind(this, 'responseBody')}
+            {...this.cardProps.responseBody}
+        />
+    }
+
     @action.bound
     private toggleCollapse(key: CardKey) {
         const { viewExchangeCardStates } = this.props.uiStore!;
+
         const cardState = viewExchangeCardStates[key];
         cardState.collapsed = !cardState.collapsed;
+
+        this.props.uiStore!.expandedCard = undefined;
+    }
+
+
+    @action.bound
+    private toggleExpand(key: CardKey) {
+        const uiStore = this.props.uiStore!;
+
+        if (uiStore.expandedCard === key) {
+            uiStore.expandedCard = undefined;
+        } else if (key === 'requestBody' || key === 'responseBody') {
+            uiStore.viewExchangeCardStates[key].collapsed = false;
+            uiStore.expandedCard = key;
+
+            this.expandCompleted = false;
+            requestAnimationFrame(action(() => {
+                this.expandCompleted = true;
+            }));
+        }
     }
 
     @action.bound

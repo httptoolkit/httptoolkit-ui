@@ -54,6 +54,8 @@ import { faUnlock } from '@fortawesome/free-solid-svg-icons/faUnlock';
 import { faEdit } from '@fortawesome/free-solid-svg-icons/faEdit';
 import { faWindowMaximize } from '@fortawesome/free-regular-svg-icons/faWindowMaximize';
 import { faMobileAlt } from '@fortawesome/free-solid-svg-icons/faMobileAlt';
+import { faExpand } from '@fortawesome/free-solid-svg-icons/faExpand';
+import { faCompressArrowsAlt } from '@fortawesome/free-solid-svg-icons/faCompressArrowsAlt';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -127,6 +129,8 @@ library.add(
     faEdit,
     faWindowMaximize,
     faMobileAlt,
+    faExpand,
+    faCompressArrowsAlt,
 
     faChrome,
     faFirefox,

@@ -82,6 +82,9 @@ export class UiStore {
     };
 
     @observable
+    expandedCard: 'requestBody' | 'responseBody' | undefined;
+
+    @observable
     readonly settingsCardStates = {
         'account': { collapsed: false },
         'proxy': { collapsed: false },

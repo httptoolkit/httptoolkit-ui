@@ -131,6 +131,8 @@ export class ExchangeBreakpointPane extends React.Component<{
                     title='Request Body'
                     direction='right'
                     message={request}
+                    expanded={false}
+                    onExpandToggled={() => {}}
                     editorNode={this.props.editorNode}
                     {...this.cardProps.requestBody}
                 />);

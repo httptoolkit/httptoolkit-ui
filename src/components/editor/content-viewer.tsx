@@ -12,6 +12,7 @@ import { Formatters, isEditorFormatter } from '../../model/http/body-formatting'
 interface ContentViewerProps {
     children: Buffer | string;
     schema?: SchemaObject;
+    expanded: boolean;
     rawContentType?: string;
     contentType: ViewableContentType;
     contentObservable?: IObservableValue<string | undefined>;
@@ -65,6 +66,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                     language={this.formatter.language}
                     value={this.renderedContent!}
                     schema={this.props.schema}
+                    expanded={this.props.expanded}
                 />;
             } catch (e) {
                 return <div>
@@ -74,7 +76,11 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
             }
         } else {
             const Viewer = this.formatter;
-            return <Viewer content={this.contentBuffer} rawContentType={this.props.rawContentType} />;
+            return <Viewer
+                expanded={this.props.expanded}
+                content={this.contentBuffer}
+                rawContentType={this.props.rawContentType}
+            />;
         }
     }
 }

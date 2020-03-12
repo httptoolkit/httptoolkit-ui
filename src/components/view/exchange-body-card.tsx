@@ -7,10 +7,14 @@ import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
+import { Icon } from '../../icons';
 import { lastHeader } from '../../util';
+
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/http/content-types';
 import { getReadableSize } from '../../model/http/bodies';
 
+import { clickOnEnter } from '../component-utils';
+import { UnstyledButton } from '../common/inputs';
 import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
@@ -27,12 +31,36 @@ const EditorCardContent = styled.div`
     .monaco-editor-overlaymessage {
         display: none;
     }
+
+    position: relative;
+    flex-grow: 1;
+`;
+
+const CardButtons = styled.div`
+    margin-right: auto;
 `;
 
 const CopyBody = styled(CopyButtonIcon)`
     padding: 5px 10px;
-    margin-right: auto;
+`;
+
+const ExpandCollapseButton = styled(UnstyledButton)`
+    padding: 5px 10px;
     color: ${p => p.theme.mainColor};
+
+    &:hover, &:focus {
+        color: ${p => p.theme.popColor};
+        outline: none;
+    }
+
+    &:active {
+        color: ${p => p.theme.mainColor};
+    }
+`;
+
+const ExchangeBodyCardCard = styled(ExchangeCard)`
+    display: flex;
+    flex-direction: column;
 `;
 
 @observer
@@ -42,7 +70,9 @@ export class ExchangeBodyCard extends React.Component<{
     apiBodySchema?: SchemaObject,
     direction: 'left' | 'right',
     collapsed: boolean,
+    expanded: boolean,
     onCollapseToggled: () => void,
+    onExpandToggled: () => void,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
 
@@ -83,7 +113,9 @@ export class ExchangeBodyCard extends React.Component<{
             apiBodySchema,
             direction,
             collapsed,
+            expanded,
             onCollapseToggled,
+            onExpandToggled
         } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(
@@ -99,18 +131,27 @@ export class ExchangeBodyCard extends React.Component<{
         const currentRenderedContent = this.currentContent.get();
 
         return decodedBody ?
-            <ExchangeCard
+            <ExchangeBodyCardCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
+                expanded={expanded}
             >
                 <header>
-                    { !collapsed && currentRenderedContent &&
-                        // Can't show when collapsed, because no editor means the content might be outdated...
-                        // TODO: Fine a nicer solution that doesn't depend on the editor
-                        // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
-                        <CopyBody content={currentRenderedContent} />
-                    }
+                    <CardButtons>
+                        <ExpandCollapseButton
+                            onClick={onExpandToggled}
+                            onKeyPress={clickOnEnter}
+                        >
+                            <Icon icon={['fas', expanded ? 'compress-arrows-alt' : 'expand']} />
+                        </ExpandCollapseButton>
+                        { !collapsed && currentRenderedContent &&
+                            // Can't show when collapsed, because no editor means the content might be outdated...
+                            // TODO: Fine a nicer solution that doesn't depend on the editor
+                            // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
+                            <CopyBody content={currentRenderedContent} />
+                        }
+                    </CardButtons>
                     <Pill>{ getReadableSize(decodedBody.byteLength) }</Pill>
                     <PillSelector<ViewableContentType>
                         onChange={this.setContentType}
@@ -129,17 +170,19 @@ export class ExchangeBodyCard extends React.Component<{
                         contentType={contentType}
                         contentObservable={this.currentContent}
                         schema={apiBodySchema}
+                        expanded={!!expanded}
                     >
                         {decodedBody}
                     </ContentViewer>
                 </EditorCardContent>
-            </ExchangeCard>
+            </ExchangeBodyCardCard>
         :
             <LoadingExchangeCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
-                height='500px'
+                expanded={!!expanded}
+                height={expanded ? 'auto' : '500px'}
             >
                 <header>
                     <PillSelector<ViewableContentType>
