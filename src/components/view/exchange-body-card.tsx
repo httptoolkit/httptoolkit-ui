@@ -7,18 +7,16 @@ import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../types';
 import { styled } from '../../styles';
-import { Icon } from '../../icons';
 import { lastHeader } from '../../util';
 
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/http/content-types';
 import { getReadableSize } from '../../model/http/bodies';
 
-import { clickOnEnter } from '../component-utils';
-import { UnstyledButton } from '../common/inputs';
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading, CardButtons } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButtonIcon } from '../common/copy-button';
+import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { ContentViewer } from '../editor/content-viewer';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
@@ -36,26 +34,8 @@ const EditorCardContent = styled.div`
     flex-grow: 1;
 `;
 
-const CardButtons = styled.div`
-    margin-right: auto;
-`;
-
 const CopyBody = styled(CopyButtonIcon)`
     padding: 5px 10px;
-`;
-
-const ExpandCollapseButton = styled(UnstyledButton)`
-    padding: 5px 10px;
-    color: ${p => p.theme.mainColor};
-
-    &:hover, &:focus {
-        color: ${p => p.theme.popColor};
-        outline: none;
-    }
-
-    &:active {
-        color: ${p => p.theme.mainColor};
-    }
 `;
 
 const ExchangeBodyCardCard = styled(ExchangeCard)`
@@ -139,12 +119,11 @@ export class ExchangeBodyCard extends React.Component<{
             >
                 <header>
                     <CardButtons>
-                        <ExpandCollapseButton
+                        <ExpandShrinkButton
+                            expanded={expanded}
                             onClick={onExpandToggled}
-                            onKeyPress={clickOnEnter}
-                        >
-                            <Icon icon={['fas', expanded ? 'compress-arrows-alt' : 'expand']} />
-                        </ExpandCollapseButton>
+                        />
+
                         { !collapsed && currentRenderedContent &&
                             // Can't show when collapsed, because no editor means the content might be outdated...
                             // TODO: Fine a nicer solution that doesn't depend on the editor

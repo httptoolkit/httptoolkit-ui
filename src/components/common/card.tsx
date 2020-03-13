@@ -94,6 +94,10 @@ export const BigCard = styled(MediumCard)`
     }
 `;
 
+export const CardButtons = styled.div`
+    margin-right: auto;
+`;
+
 interface CollapseIconProps extends ThemeProps<Theme> {
     className?: string;
     onClick: () => void;
