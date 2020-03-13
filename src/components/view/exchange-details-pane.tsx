@@ -23,10 +23,11 @@ import { ExchangePerformanceCard } from './exchange-performance-card';
 import { ExchangeExportCard } from './exchange-export-card';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { ExchangeErrorHeader } from './exchange-error-header';
+import { ExchangeRequestBreakpointHeader, ExchangeResponseBreakpointHeader } from './exchange-breakpoint-header';
+import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
+import { ExchangeBreakpointResponseCard } from './exchange-breakpoint-response-card';
+import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
 
-function hasCompletedBody(res: HtkResponse | 'aborted' | undefined): res is HtkResponse {
-    return !!res && res !== 'aborted' && !!res.body.encoded.byteLength;
-}
 
 const ExchangeDetailsScrollContainer = styled.div`
     position: relative;
@@ -116,26 +117,58 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     render() {
-        const { exchange, uiStore, accountStore, navigate } = this.props;
-        const { isPaidUser, getPro } = accountStore!;
+        const { exchange, uiStore, accountStore } = this.props;
+        const { isPaidUser } = accountStore!;
         const { expandedCard } = uiStore!;
         const { expandCompleted } = this;
 
-        const cards: JSX.Element[] = [];
-
-        const { request, response, tags } = exchange;
+        const { requestBreakpoint, responseBreakpoint } = exchange;
         const apiExchange = isPaidUser ? exchange.api : undefined;
 
-        if (expandedCard === 'requestBody' && request.body.encoded.byteLength) {
+        const headerCard = this.renderHeaderCard(exchange);
+
+        if (expandedCard) {
             return <ExchangeExpandedContentContainer expandCompleted={expandCompleted}>
-                { this.renderRequestBodyCard(request, apiExchange, true) }
+                { headerCard }
+                { this.renderExpandedCard(expandedCard, exchange, apiExchange) }
             </ExchangeExpandedContentContainer>;
         }
 
-        if (expandedCard === 'responseBody' && hasCompletedBody(response)) {
-            return <ExchangeExpandedContentContainer expandCompleted={expandCompleted}>
-                { this.renderResponseBodyCard(response, apiExchange, true) }
-            </ExchangeExpandedContentContainer>;
+        const cards = (requestBreakpoint || responseBreakpoint)
+            ? this.renderBreakpointCards(exchange, apiExchange)
+            : this.renderNormalCards(exchange, apiExchange);
+
+        return <ExchangeDetailsScrollContainer>
+            <ExchangeDetailsContentContainer>
+                { headerCard }
+                { cards }
+            </ExchangeDetailsContentContainer>
+        </ExchangeDetailsScrollContainer>;
+    }
+
+    renderHeaderCard(exchange: HttpExchange): JSX.Element | null {
+        const { accountStore, navigate } = this.props;
+        const { isPaidUser, getPro } = accountStore!;
+        const {
+            requestBreakpoint,
+            respondToBreakpointedRequest,
+            responseBreakpoint,
+            tags
+        } = exchange;
+
+        if (requestBreakpoint) {
+            return <ExchangeRequestBreakpointHeader
+                key='breakpoint-header'
+                onCreateResponse={respondToBreakpointedRequest}
+                onResume={requestBreakpoint.resume}
+            />;
+        }
+
+        if (responseBreakpoint) {
+            return <ExchangeResponseBreakpointHeader
+                key='breakpoint-header'
+                onResume={responseBreakpoint.resume}
+            />;
         }
 
         const errorHeaderProps = {
@@ -151,19 +184,88 @@ export class ExchangeDetailsPane extends React.Component<{
             tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
             tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE")
         ) {
-            cards.push(<ExchangeErrorHeader type='untrusted' {...errorHeaderProps} />);
-        } else if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) {
-            cards.push(<ExchangeErrorHeader type='expired' {...errorHeaderProps} />);
-        } else if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) {
-            cards.push(<ExchangeErrorHeader type='wrong-host' {...errorHeaderProps} />);
-        } else if (
+            return <ExchangeErrorHeader type='untrusted' {...errorHeaderProps} />;
+        }
+
+        if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) {
+            return <ExchangeErrorHeader type='expired' {...errorHeaderProps} />;
+        }
+
+        if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) {
+            return <ExchangeErrorHeader type='wrong-host' {...errorHeaderProps} />;
+        }
+
+        if (
             tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
             tags.includes("passthrough-error:EPROTO")
         ) {
-            cards.push(<ExchangeErrorHeader type='tls-error' {...errorHeaderProps} />);
-        } else if (tags.includes("passthrough-error:ENOTFOUND")) {
-            cards.push(<ExchangeErrorHeader type='host-not-found' {...errorHeaderProps} />);
+            return <ExchangeErrorHeader type='tls-error' {...errorHeaderProps} />;
         }
+
+        if (tags.includes("passthrough-error:ENOTFOUND")) {
+            return <ExchangeErrorHeader type='host-not-found' {...errorHeaderProps} />;
+        }
+
+        return null;
+    }
+
+    private renderExpandedCard(
+        expandedCard: 'requestBody' | 'responseBody',
+        exchange: HttpExchange,
+        apiExchange: ApiExchange | undefined
+    ) {
+        if (expandedCard === 'requestBody') {
+            return this.renderRequestBody(exchange, apiExchange);
+        } else {
+            return this.renderResponseBody(exchange, apiExchange);
+        }
+    }
+
+    private renderBreakpointCards(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
+        const { uiStore } = this.props;
+        const { requestBreakpoint } = exchange;
+
+        const cards: JSX.Element[] = [];
+
+        if (requestBreakpoint) {
+            cards.push(<ExchangeBreakpointRequestCard
+                {...this.cardProps.request}
+                exchange={exchange}
+                onChange={requestBreakpoint.updateResult}
+            />);
+
+            cards.push(this.renderRequestBody(exchange, apiExchange));
+        } else {
+            const responseBreakpoint = exchange.responseBreakpoint!;
+
+            cards.push(<ExchangeRequestCard
+                {...this.cardProps.request}
+                exchange={exchange}
+                apiExchange={apiExchange}
+            />);
+
+            if (exchange.hasRequestBody()) {
+                cards.push(this.renderRequestBody(exchange, apiExchange));
+            }
+
+            cards.push(<ExchangeBreakpointResponseCard
+                {...this.cardProps.response}
+                exchange={exchange}
+                onChange={responseBreakpoint.updateResult}
+                theme={uiStore!.theme}
+            />);
+
+            cards.push(this.renderResponseBody(exchange, apiExchange));
+        }
+
+        return cards;
+    }
+
+    private renderNormalCards(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
+        const { uiStore } = this.props;
+        const { response } = exchange;
+
+        const cards: JSX.Element[] = [];
 
         cards.push(<ExchangeRequestCard
             {...this.cardProps.request}
@@ -171,8 +273,8 @@ export class ExchangeDetailsPane extends React.Component<{
             apiExchange={apiExchange}
         />);
 
-        if (request.body.encoded.byteLength) {
-            cards.push(this.renderRequestBodyCard(request, apiExchange, false));
+        if (exchange.hasRequestBody()) {
+            cards.push(this.renderRequestBody(exchange, apiExchange));
         }
 
         if (response === 'aborted') {
@@ -196,8 +298,8 @@ export class ExchangeDetailsPane extends React.Component<{
                 theme={uiStore!.theme}
             />);
 
-            if (hasCompletedBody(response)) {
-                cards.push(this.renderResponseBodyCard(response, apiExchange, false));
+            if (exchange.hasResponseBody()) {
+                cards.push(this.renderResponseBody(exchange, apiExchange));
             }
         }
 
@@ -214,38 +316,66 @@ export class ExchangeDetailsPane extends React.Component<{
             {...this.cardProps.export}
         />);
 
-        return <ExchangeDetailsScrollContainer>
-            <ExchangeDetailsContentContainer>
-                {cards}
-            </ExchangeDetailsContentContainer>
-        </ExchangeDetailsScrollContainer>;
+        return cards;
     }
 
-    private renderRequestBodyCard(request: HtkRequest, api: ApiExchange | undefined, expanded: boolean) {
-        return <ExchangeBodyCard
-            title='Request Body'
-            direction='right'
-            expanded={expanded}
-            message={request}
-            editorNode={this.props.requestEditor}
-            apiBodySchema={get(api, 'request', 'bodySchema')}
-            onExpandToggled={this.toggleExpand.bind(this, 'requestBody')}
+    private renderRequestBody(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
+        const { request, requestBreakpoint } = exchange;
 
-            {...this.cardProps.requestBody}
-        />
+        return requestBreakpoint
+            ? <ExchangeBreakpointBodyCard
+                {...this.requestBodyParams()}
+                body={requestBreakpoint.inProgressResult.body}
+                headers={requestBreakpoint.inProgressResult.headers}
+                onChange={requestBreakpoint.updateBody}
+            />
+            : <ExchangeBodyCard
+                {...this.requestBodyParams()}
+                message={request}
+                apiBodySchema={apiExchange?.request?.bodySchema}
+            />;
     }
 
-    private renderResponseBodyCard(response: HtkResponse, api: ApiExchange | undefined, expanded: boolean) {
-        return <ExchangeBodyCard
-            title='Response Body'
-            direction='left'
-            expanded={expanded}
-            message={response}
-            editorNode={this.props.responseEditor}
-            apiBodySchema={get(api, 'response', 'bodySchema')}
-            onExpandToggled={this.toggleExpand.bind(this, 'responseBody')}
-            {...this.cardProps.responseBody}
-        />
+    private renderResponseBody(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
+        const { response, responseBreakpoint } = exchange;
+
+        return responseBreakpoint
+            ? <ExchangeBreakpointBodyCard
+                {...this.responseBodyParams()}
+                body={responseBreakpoint.inProgressResult.body}
+                headers={responseBreakpoint.inProgressResult.headers}
+                onChange={responseBreakpoint.updateBody}
+            />
+            : <ExchangeBodyCard
+                {...this.responseBodyParams()}
+                message={response as HtkResponse}
+                apiBodySchema={apiExchange?.response?.bodySchema}
+            />;
+    }
+
+    // The common request body params, for both normal & breakpointed bodies
+    private requestBodyParams() {
+        return {
+            ...this.cardProps.requestBody,
+            title: 'Request Body',
+            direction: 'right' as const,
+            expanded: this.props.uiStore!.expandedCard === 'requestBody',
+            editorNode: this.props.requestEditor,
+            onExpandToggled: this.toggleExpand.bind(this, 'requestBody'),
+        };
+    }
+
+    // The common response body params, for both normal & breakpointed bodies
+    private responseBodyParams() {
+        return {
+            ...this.cardProps.responseBody,
+
+            title: 'Response Body',
+            direction: 'left' as const,
+            expanded: this.props.uiStore!.expandedCard === 'responseBody',
+            editorNode: this.props.responseEditor,
+            onExpandToggled: this.toggleExpand.bind(this, 'responseBody'),
+        };
     }
 
     @action.bound

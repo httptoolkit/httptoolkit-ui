@@ -17,7 +17,6 @@ import { EmptyState } from '../common/empty-state';
 
 import { ViewEventList, CollectedEvent } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
-import { ExchangeBreakpointPane } from './exchange-breakpoint-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
@@ -66,8 +65,16 @@ class ViewPage extends React.Component<ViewPageProps> {
             // for that pane, then disable the expansion
             if (
                 !(selectedEvent instanceof HttpExchange) ||
-                (expandedCard === 'requestBody' && !selectedEvent.hasRequestBody()) ||
-                (expandedCard === 'responseBody' && !selectedEvent.hasResponseBody())
+                (
+                    expandedCard === 'requestBody' &&
+                    !selectedEvent.hasRequestBody() &&
+                    !selectedEvent.requestBreakpoint
+                ) ||
+                (
+                    expandedCard === 'responseBody' &&
+                    !selectedEvent.hasResponseBody() &&
+                    !selectedEvent.responseBreakpoint
+                )
             ) {
                 runInAction(() => {
                     this.props.uiStore.expandedCard = undefined;
@@ -90,11 +97,6 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <EmptyState icon={['fas', 'arrow-left']}>
                 Select an exchange to see the full details.
             </EmptyState>;
-        } else if ('isBreakpointed' in this.selectedEvent && this.selectedEvent.isBreakpointed) {
-            rightPane = <ExchangeBreakpointPane
-                exchange={this.selectedEvent}
-                editorNode={this.requestEditor}
-            />
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}

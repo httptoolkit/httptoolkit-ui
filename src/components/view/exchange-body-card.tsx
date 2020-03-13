@@ -46,13 +46,14 @@ const ExchangeBodyCardCard = styled(ExchangeCard)`
 @observer
 export class ExchangeBodyCard extends React.Component<{
     title: string,
-    message: ExchangeMessage,
-    apiBodySchema?: SchemaObject,
     direction: 'left' | 'right',
     collapsed: boolean,
     expanded: boolean,
     onCollapseToggled: () => void,
     onExpandToggled: () => void,
+
+    message: ExchangeMessage,
+    apiBodySchema?: SchemaObject,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
 

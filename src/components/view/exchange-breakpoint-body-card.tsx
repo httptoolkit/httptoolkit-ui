@@ -15,9 +15,10 @@ import {
 } from '../../model/http/content-types';
 import { getReadableSize } from '../../model/http/bodies';
 
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading, CardButtons } from '../common/card';
 import { ExchangeCard } from './exchange-card';
 import { Pill, PillSelector } from '../common/pill';
+import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 const EditorCardContent = styled.div`
@@ -36,7 +37,9 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
     title: string,
     direction: 'left' | 'right',
     collapsed: boolean,
+    expanded: boolean,
     onCollapseToggled: () => void,
+    onExpandToggled: () => void,
 
     body: Buffer | undefined,
     headers: Headers,
@@ -65,7 +68,9 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
             title,
             direction,
             collapsed,
+            expanded,
             onCollapseToggled,
+            onExpandToggled
         } = this.props;
 
         // Quick fix to handle (and allow fixing) broken responses.
@@ -77,6 +82,13 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
             onCollapseToggled={onCollapseToggled}
         >
             <header>
+                <CardButtons>
+                    <ExpandShrinkButton
+                        expanded={expanded}
+                        onClick={onExpandToggled}
+                    />
+                </CardButtons>
+
                 <Pill>{ getReadableSize(body.byteLength) }</Pill>
                 <PillSelector<EditableContentType>
                     onChange={this.setContentType}
