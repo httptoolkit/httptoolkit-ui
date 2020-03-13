@@ -183,6 +183,15 @@ export class HttpExchange {
         return this.isCompletedExchange() && this.response !== 'aborted';
     }
 
+    hasRequestBody(): this is CompletedRequest {
+        return this.isCompletedRequest() && this.request.body.encoded.byteLength > 0;
+    }
+
+    hasResponseBody(): this is SuccessfulExchange {
+        return this.isSuccessfulExchange() &&
+            (this.response as HtkResponse).body.encoded.byteLength > 0;
+    }
+
     @observable
     public readonly timingEvents: TimingEvents | {};  // May be {} if using an old server (<0.1.7)
 

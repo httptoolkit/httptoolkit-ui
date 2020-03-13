@@ -108,6 +108,5 @@ export class UiStore {
     }
 
     @persist('list') @observable
-    previousElectronAppPaths: string[] = [
-    ];
+    previousElectronAppPaths: string[] = [];
 }

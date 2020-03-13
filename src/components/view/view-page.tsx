@@ -1,14 +1,16 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { autorun, action, computed } from 'mobx';
+import { autorun, action, computed, runInAction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
+import { UiStore } from '../../model/ui-store';
 import { ServerStore } from '../../model/server-store';
 import { EventsStore } from '../../model/http/events-store';
+import { HttpExchange } from '../../model/http/exchange';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -23,12 +25,14 @@ interface ViewPageProps {
     className?: string;
     eventsStore: EventsStore;
     serverStore: ServerStore;
+    uiStore: UiStore;
     navigate: (path: string) => void;
     eventId?: string;
 }
 
 @inject('eventsStore')
 @inject('serverStore')
+@inject('uiStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
@@ -44,12 +48,31 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
+            if (!this.props.eventId) return;
+
+            const selectedEvent = this.selectedEvent;
+
             // If you somehow have a non-existent event selected, unselect it
-            if (
-                this.props.eventId &&
-                !_.includes(this.props.eventsStore.events, this.selectedEvent)
-            ) {
+            if (!selectedEvent) {
                 this.onSelected(undefined);
+                return;
+            }
+
+            const { expandedCard } = this.props.uiStore;
+
+            if (!expandedCard) return;
+
+            // If you have a pane expanded, and select an event with no data
+            // for that pane, then disable the expansion
+            if (
+                !(selectedEvent instanceof HttpExchange) ||
+                (expandedCard === 'requestBody' && !selectedEvent.hasRequestBody()) ||
+                (expandedCard === 'responseBody' && !selectedEvent.hasResponseBody())
+            ) {
+                runInAction(() => {
+                    this.props.uiStore.expandedCard = undefined;
+                });
+                return;
             }
         }));
     }
@@ -120,7 +143,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
 const StyledViewPage = styled(
     // Exclude stores from the external props, as they're injected
-    ViewPage as unknown as WithInjected<typeof ViewPage, 'serverStore' | 'eventsStore' | 'navigate'>
+    ViewPage as unknown as WithInjected<typeof ViewPage, 'uiStore' | 'serverStore' | 'eventsStore' | 'navigate'>
 )`
     height: 100vh;
     position: relative;
