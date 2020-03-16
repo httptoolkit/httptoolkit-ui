@@ -4,10 +4,10 @@ import { observer } from 'mobx-react';
 import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/http/exchange';
+import { CollectedEvent } from '../../model/http/events-store';
 
 import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchBox } from '../common/search-box';
-import { CollectedEvent } from './view-event-list';
 
 export const HEADER_FOOTER_HEIGHT = 38;
 
@@ -87,7 +87,14 @@ export const TableFooter = styled(observer((props: {
             )
         } />
         <ImportHarButton />
-        <ClearAllButton disabled={props.allEvents.length === 0} onClear={props.onClear} />
+        <ClearAllButton
+            disabled={
+                props.allEvents
+                .filter((evt) => !('pinned' in evt) || !evt.pinned)
+                .length === 0
+            }
+            onClear={props.onClear}
+        />
     </ButtonsContainer>
 </div>))`
     position: absolute;

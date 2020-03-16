@@ -1,11 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { get } from 'typesafe-get';
 import { action, computed, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { HtkRequest, HtkResponse } from '../../types';
+import { HtkResponse } from '../../types';
 import { styled } from '../../styles';
 import { getStatusColor } from '../../model/http/exchange-colors';
 import { HttpExchange } from '../../model/http/exchange';
@@ -23,25 +22,30 @@ import { ExchangePerformanceCard } from './exchange-performance-card';
 import { ExchangeExportCard } from './exchange-export-card';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { ExchangeErrorHeader } from './exchange-error-header';
+import { ExchangeDetailsFooter } from './exchange-details-footer';
 import { ExchangeRequestBreakpointHeader, ExchangeResponseBreakpointHeader } from './exchange-breakpoint-header';
 import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
 import { ExchangeBreakpointResponseCard } from './exchange-breakpoint-response-card';
 import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
 
+const OuterContainer = styled.div`
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+`;
 
-const ExchangeDetailsScrollContainer = styled.div`
+const ScrollContainer = styled.div`
     position: relative;
     overflow-y: scroll;
 
-    height: 100%;
-    width: 100%;
-    box-sizing: border-box;
+    flex-grow: 1;
     padding: 0 20px 0 20px;
 
     background-color: ${p => p.theme.containerBackground};
 `;
 
-const ExchangeDetailsContentContainer = styled.div`
+const ContentContainer = styled.div`
     min-height: 100%;
     box-sizing: border-box;
 
@@ -56,7 +60,7 @@ const ExchangeDetailsContentContainer = styled.div`
     padding-top: 20px;
 `;
 
-const ExchangeExpandedContentContainer = styled.div`
+const ExpandedContentContainer = styled.div`
     ${(p: { expandCompleted: boolean }) => !p.expandCompleted
         ? `padding: 20px;`
         : `
@@ -128,22 +132,25 @@ export class ExchangeDetailsPane extends React.Component<{
         const headerCard = this.renderHeaderCard(exchange);
 
         if (expandedCard) {
-            return <ExchangeExpandedContentContainer expandCompleted={expandCompleted}>
+            return <ExpandedContentContainer expandCompleted={expandCompleted}>
                 { headerCard }
                 { this.renderExpandedCard(expandedCard, exchange, apiExchange) }
-            </ExchangeExpandedContentContainer>;
+            </ExpandedContentContainer>;
         }
 
         const cards = (requestBreakpoint || responseBreakpoint)
             ? this.renderBreakpointCards(exchange, apiExchange)
             : this.renderNormalCards(exchange, apiExchange);
 
-        return <ExchangeDetailsScrollContainer>
-            <ExchangeDetailsContentContainer>
-                { headerCard }
-                { cards }
-            </ExchangeDetailsContentContainer>
-        </ExchangeDetailsScrollContainer>;
+        return <OuterContainer>
+            <ScrollContainer>
+                <ContentContainer>
+                    { headerCard }
+                    { cards }
+                </ContentContainer>
+            </ScrollContainer>
+            <ExchangeDetailsFooter exchange={exchange} />
+        </OuterContainer>;
     }
 
     renderHeaderCard(exchange: HttpExchange): JSX.Element | null {

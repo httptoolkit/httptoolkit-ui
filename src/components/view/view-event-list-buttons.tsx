@@ -4,8 +4,6 @@ import * as dateFns from 'date-fns';
 import * as dedent from 'dedent';
 import * as Ajv from 'ajv';
 
-import { styled } from '../../styles'
-import { Icon, IconProp } from '../../icons';
 import { saveFile, uploadFile } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
@@ -15,55 +13,18 @@ import { generateHar } from '../../model/http/har';
 import { reportError } from '../../errors';
 import { formatAjvError } from '../../util/json-schema';
 
-const IconButton = styled((p: {
-    className?: string,
-    title: string,
-    icon: IconProp,
-    disabled?: boolean,
-    onClick: () => void
-}) =>
-    <button
-        className={p.className}
-        title={p.title}
-        tabIndex={p.disabled ? -1 : 0}
-        disabled={p.disabled}
-        onClick={p.onClick}
-    >
-        <Icon icon={p.icon} />
-    </button>
-)`
-    border: none;
-    background-color: transparent;
-    color: ${p => p.theme.mainColor};
-    font-size: 20px;
-    padding: 5px 10px;
-
-    &:disabled {
-        opacity: 0.5;
-    }
-
-    &:not([disabled]) {
-        cursor: pointer;
-
-        &:hover, &:focus {
-            outline: none;
-            color: ${p => p.theme.popColor};
-        }
-    }
-`;
+import { IconButton } from '../common/icon-button';
 
 export const ClearAllButton = observer((props: {
     className?: string,
     disabled: boolean,
     onClear: () => void
-}) => {
-    return <IconButton
-        icon={['far', 'trash-alt']}
-        title='Clear all'
-        disabled={props.disabled}
-        onClick={props.onClear}
-    />
-});
+}) => <IconButton
+    icon={['far', 'trash-alt']}
+    title='Clear all'
+    disabled={props.disabled}
+    onClick={props.onClear}
+/>);
 
 export const ExportAsHarButton = inject('accountStore')(observer((props: {
     className?: string,

@@ -171,6 +171,9 @@ export class HttpExchange {
     @observable
     public tags: string[];
 
+    @observable
+    public pinned: boolean = false;
+
     isCompletedRequest(): this is CompletedRequest {
         return !!this.matchedRuleId;
     }

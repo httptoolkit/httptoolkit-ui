@@ -51,6 +51,8 @@ type OrphanableQueuedEvent =
     | { type: 'response', event: InputResponse }
     | { type: 'abort', event: InputInitiatedRequest };
 
+export type CollectedEvent = HttpExchange | FailedTlsRequest
+
 export class EventsStore {
 
     constructor(
@@ -92,7 +94,7 @@ export class EventsStore {
         }
     }
 
-    readonly events = observable.array<HttpExchange | FailedTlsRequest>([], { deep: false });
+    readonly events = observable.array<CollectedEvent>([], { deep: false });
 
     @computed
     get exchanges(): Array<HttpExchange> {
@@ -245,8 +247,15 @@ export class EventsStore {
     }
 
     @action.bound
+    deleteEvent(event: CollectedEvent) {
+        this.events.remove(event);
+    }
+
+    @action.bound
     clearInterceptedData() {
+        const pinnedEvents = this.exchanges.filter(ex => ex.pinned);
         this.events.clear();
+        this.events.push(...pinnedEvents);
         this.orphanedEvents = {};
     }
 

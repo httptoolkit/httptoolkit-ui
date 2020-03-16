@@ -11,6 +11,7 @@ import { styled } from '../../styles'
 import { Icon, WarningIcon } from '../../icons';
 import { FailedTlsRequest } from '../../types';
 
+import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
 
@@ -25,8 +26,6 @@ const EmptyStateOverlay = styled(EmptyState)`
     bottom: ${HEADER_FOOTER_HEIGHT}px;
     height: auto;
 `;
-
-export type CollectedEvent = HttpExchange | FailedTlsRequest
 
 interface ViewEventListProps {
     className?: string;

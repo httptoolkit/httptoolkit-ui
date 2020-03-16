@@ -9,13 +9,13 @@ import { styled } from '../../styles';
 
 import { UiStore } from '../../model/ui-store';
 import { ServerStore } from '../../model/server-store';
-import { EventsStore } from '../../model/http/events-store';
+import { EventsStore, CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
 
-import { ViewEventList, CollectedEvent } from './view-event-list';
+import { ViewEventList } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
