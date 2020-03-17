@@ -6,6 +6,8 @@ import * as portals from 'react-reverse-portal';
 
 import { HtkResponse } from '../../types';
 import { styled } from '../../styles';
+import { reportError } from '../../errors';
+
 import { getStatusColor } from '../../model/http/exchange-colors';
 import { HttpExchange } from '../../model/http/exchange';
 import { ApiExchange } from '../../model/api/openapi';
@@ -221,10 +223,13 @@ export class ExchangeDetailsPane extends React.Component<{
         exchange: HttpExchange,
         apiExchange: ApiExchange | undefined
     ) {
-        if (expandedCard === 'requestBody') {
+        if (expandedCard === 'requestBody' && exchange.hasRequestBody()) {
             return this.renderRequestBody(exchange, apiExchange);
-        } else {
+        } else if (expandedCard === 'responseBody' && exchange.hasResponseBody()) {
             return this.renderResponseBody(exchange, apiExchange);
+        } else {
+            reportError(`Expanded ${expandedCard}, but can't show anything`);
+            return null; // Shouldn't ever happen, unless we get into a funky broken state
         }
     }
 
