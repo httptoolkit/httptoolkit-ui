@@ -12,6 +12,7 @@ import { getStatusColor } from '../../model/http/exchange-colors';
 import { HttpExchange } from '../../model/http/exchange';
 import { ApiExchange } from '../../model/api/openapi';
 import { UiStore } from '../../model/ui-store';
+import { CollectedEvent } from '../../model/http/events-store';
 
 import { Pill } from '../common/pill';
 import { CollapsibleCardHeading } from '../common/card';
@@ -101,7 +102,8 @@ export class ExchangeDetailsPane extends React.Component<{
     requestEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
     responseEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
 
-    navigate: (path: string) => void
+    navigate: (path: string) => void,
+    onDelete: (event: CollectedEvent) => void,
 
     // Injected:
     uiStore?: UiStore,
@@ -123,7 +125,7 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     render() {
-        const { exchange, uiStore, accountStore } = this.props;
+        const { exchange, onDelete, uiStore, accountStore } = this.props;
         const { isPaidUser } = accountStore!;
         const { expandedCard } = uiStore!;
         const { expandCompleted } = this;
@@ -151,7 +153,10 @@ export class ExchangeDetailsPane extends React.Component<{
                     { cards }
                 </ContentContainer>
             </ScrollContainer>
-            <ExchangeDetailsFooter exchange={exchange} />
+            <ExchangeDetailsFooter
+                exchange={exchange}
+                onDelete={onDelete}
+            />
         </OuterContainer>;
     }
 

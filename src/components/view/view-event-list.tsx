@@ -29,11 +29,16 @@ const EmptyStateOverlay = styled(EmptyState)`
 
 interface ViewEventListProps {
     className?: string;
-    selectedEvent: CollectedEvent | undefined;
-    onSelected: (event: CollectedEvent | undefined) => void;
-    onClear: () => void;
     events: CollectedEvent[];
+    filteredEvents: CollectedEvent[];
+    selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
+    searchInput: string;
+
+    onSelected: (event: CollectedEvent | undefined) => void;
+    onSearchInput: (input: string) => void;
+    onDelete: (event: CollectedEvent) => void;
+    onClear: () => void;
 }
 
 const ListContainer = styled.div`
@@ -353,23 +358,11 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             : undefined;
     }
 
-    @observable searchFilter: string | false = false;
-
     @computed get listItemData(): EventRowProps['data'] {
         return {
             selectedEvent: this.props.selectedEvent,
-            events: this.filteredEvents
+            events: this.props.filteredEvents
         };
-    }
-
-    @computed
-    private get filteredEvents() {
-        if (!this.searchFilter) return this.props.events;
-
-        let filter = this.searchFilter.toLocaleLowerCase();
-        return this.props.events.filter((event) => {
-            return event.searchIndex.includes(filter)
-        });
     }
 
     private listBodyRef = React.createRef<HTMLDivElement>();
@@ -391,16 +384,15 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     );
 
     render() {
-        const { events, onClear, isPaused } = this.props;
-        const { filteredEvents } = this;
+        const { events, filteredEvents, searchInput, onSearchInput, onClear, isPaused } = this.props;
 
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
             <TableFooter
                 allEvents={events}
                 filteredEvents={filteredEvents}
-                currentSearch={this.searchFilter || ''}
-                onSearch={this.onSearchInput}
+                currentSearch={searchInput}
+                onSearch={onSearchInput}
                 onClear={onClear}
             />
 
@@ -492,7 +484,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         if (!ariaRowIndex) return;
 
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
-        const event = this.filteredEvents[eventIndex];
+        const event = this.props.filteredEvents[eventIndex];
         if (event !== this.props.selectedEvent) {
             this.onEventSelected(eventIndex);
         } else {
@@ -503,7 +495,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onEventSelected(index: number) {
-        this.props.onSelected(this.filteredEvents[index]);
+        this.props.onSelected(this.props.filteredEvents[index]);
     }
 
     @action.bound
@@ -513,9 +505,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        if (this.filteredEvents.length === 0) return;
-
-        const { filteredEvents } = this;
+        const { filteredEvents } = this.props;
+        if (filteredEvents.length === 0) return;
 
         let currentIndex = _.findIndex(filteredEvents, { id: this.selectedEventId });
         let targetIndex: number | undefined;
@@ -557,10 +548,5 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             }
             event.preventDefault();
         }
-    }
-
-    @action.bound
-    onSearchInput(input: string) {
-        this.searchFilter = input || false;
     }
 }

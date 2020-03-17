@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { action } from 'mobx';
-import { observer, inject } from 'mobx-react';
+import { observer } from 'mobx-react';
 
 import { styled, css } from '../../styles';
 
-import { EventsStore } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
@@ -59,29 +58,25 @@ const DeleteButton = observer((p: {
     onClick={p.onDelete}
 />);
 
-export const ExchangeDetailsFooter = inject('eventsStore')(
-    observer(
-        (props: {
-            eventsStore?: EventsStore,
-            exchange: HttpExchange
-        }) => {
-            const { exchange } = props;
-            const { pinned } = exchange;
+export const ExchangeDetailsFooter = observer(
+    (props: {
+        exchange: HttpExchange,
+        onDelete: (event: HttpExchange) => void
+    }) => {
+        const { exchange } = props;
+        const { pinned } = exchange;
 
-            return <ButtonsContainer>
-                <PinButton
-                    pinned={pinned}
-                    onClick={action(() => {
-                        exchange.pinned = !exchange.pinned;
-                    })}
-                />
-                <DeleteButton
-                    disabled={pinned}
-                    onDelete={() => {
-                        props.eventsStore!.deleteEvent(exchange)
-                    }}
-                />
-            </ButtonsContainer>;
-        }
-    )
+        return <ButtonsContainer>
+            <PinButton
+                pinned={pinned}
+                onClick={action(() => {
+                    exchange.pinned = !exchange.pinned;
+                })}
+            />
+            <DeleteButton
+                dixabled={pinned}
+                onDelete={() => props.onDelete(exchange)}
+            />
+        </ButtonsContainer>;
+    }
 );

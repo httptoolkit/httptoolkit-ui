@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { autorun, action, computed, runInAction } from 'mobx';
+import { observable, autorun, action, computed, runInAction, when } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -37,6 +37,19 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     requestEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
     responseEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
+
+    @observable searchFilter: string = '';
+
+    @computed
+    get filteredEvents() {
+        const { events } = this.props.eventsStore;
+        if (!this.searchFilter) return events;
+
+        let filter = this.searchFilter.toLocaleLowerCase();
+        return events.filter((event) => {
+            return event.searchIndex.includes(filter)
+        });
+    }
 
     @computed
     get selectedEvent() {
@@ -87,6 +100,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     render(): JSX.Element {
         const {
             events,
+            deleteEvent,
             clearInterceptedData,
             isPaused
         } = this.props.eventsStore;
@@ -103,6 +117,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 requestEditor={this.requestEditor}
                 responseEditor={this.responseEditor}
                 navigate={this.props.navigate}
+                onDelete={this.onDelete}
             />;
         } else {
             rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
@@ -117,11 +132,16 @@ class ViewPage extends React.Component<ViewPageProps> {
                 maxSize={-300}
             >
                 <ViewEventList
-                    selectedEvent={this.selectedEvent}
-                    onSelected={this.onSelected}
-                    onClear={clearInterceptedData}
                     events={events}
+                    filteredEvents={this.filteredEvents}
+                    selectedEvent={this.selectedEvent}
                     isPaused={isPaused}
+                    searchInput={this.searchFilter}
+
+                    onSelected={this.onSelected}
+                    onSearchInput={this.onSearchInput}
+                    onDelete={deleteEvent}
+                    onClear={clearInterceptedData}
                 />
                 { rightPane }
             </SplitPane>
@@ -135,11 +155,38 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
+    onSearchInput(input: string) {
+        this.searchFilter = input;
+    }
+
+    @action.bound
     onSelected(event: CollectedEvent | undefined) {
         this.props.navigate(event
             ? `/view/${event.id}`
             : '/view'
         );
+    }
+
+    @action.bound
+    onDelete(event: CollectedEvent) {
+        const rowIndex = this.filteredEvents.indexOf(event);
+        const wasSelected = event === this.selectedEvent;
+
+        // If you delete the selected event, select the next event in the list
+        if (rowIndex !== -1 && wasSelected && this.filteredEvents.length > 0) {
+            // Because navigate is async, we can't delete & change selection together.
+            // Instead, we update the selection now, and delete the event later.
+            const nextEvent = this.filteredEvents[
+                Math.min(rowIndex + 1, this.filteredEvents.length - 1)
+            ];
+
+            this.onSelected(nextEvent);
+            when(() => this.selectedEvent === nextEvent, () => {
+                this.props.eventsStore.deleteEvent(event);
+            });
+        } else {
+            this.props.eventsStore.deleteEvent(event);
+        }
     }
 }
 
