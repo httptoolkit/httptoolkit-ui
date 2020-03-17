@@ -70,11 +70,15 @@ const Column = styled.div`
     padding: 3px 0;
 `;
 
-const RowPin = styled(Icon).attrs({
-    icon: ['fas', 'thumbtack']
-})`
+const RowPin = styled(Icon).attrs((p: { pinned: boolean }) => ({
+    icon: ['fas', 'thumbtack'],
+    title: p.pinned ? "This exchange is pinned, and won't be deleted by default" : ''
+}))`
     font-size: 90%;
     background-color: ${p => p.theme.containerBackground};
+
+    /* Without this, 0 width pins create a large & invisible but still clickable icon */
+    overflow: hidden;
 
     transition: width 0.1s, padding 0.1s, margin 0.1s;
 
