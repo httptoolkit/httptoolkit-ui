@@ -37,7 +37,7 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
         icon={['fas', 'download']}
         title={
             isPaidUser
-                ? 'Export these requests & responses as a HAR file'
+                ? 'Export these exchanges as a HAR file'
                 : (
                     'With Pro: Export requests & responses as a HAR file, ' +
                     'to save for later or share with others'
@@ -70,7 +70,7 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
                 isPaidUser
                     ? 'Import exchanges from a HAR file'
                     : (
-                        'With Pro: Imports requests & responses from HAR files, ' +
+                        'With Pro: Import requests & responses from HAR files, ' +
                         'to examine past recordings or data from other tools'
                     )
             }
@@ -120,7 +120,7 @@ export const PlayPauseButton = inject('eventsStore')(
 
         return <IconButton
             icon={['fas', isPaused ? 'play' : 'pause']}
-            title={`${isPaused ? 'Resume' : 'Pause'} collecting intercepted messages`}
+            title={`${isPaused ? 'Resume' : 'Pause'} collecting intercepted exchanges`}
             onClick={togglePause}
         />
     })

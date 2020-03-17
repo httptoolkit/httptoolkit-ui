@@ -37,8 +37,8 @@ const PinButton = styled(observer((p: {
     icon={['fas', 'thumbtack']}
     title={
         p.pinned
-            ? "Unpin this request so it can be deleted"
-            : "Pin this request, so it can't be deleted"
+            ? "Unpin this exchange so it can be deleted"
+            : "Pin this exchange, so it can't be deleted"
     }
     onClick={p.onClick}
 />))`
@@ -54,7 +54,7 @@ const DeleteButton = observer((p: {
     onDelete: () => void
 }) => <IconButton
     icon={['far', 'trash-alt']}
-    title='Delete this request and response'
+    title='Delete this exchange'
     disabled={p.disabled}
     onClick={p.onDelete}
 />);
