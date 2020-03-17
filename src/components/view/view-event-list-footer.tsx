@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
@@ -62,7 +63,7 @@ const ButtonsContainer = styled.div`
 
 export const TableFooter = styled(observer((props: {
     className?: string,
-    onClear: () => void,
+    onClear: (clearPinned: boolean) => void,
     currentSearch: string,
     onSearch: (input: string) => void,
 
@@ -88,12 +89,15 @@ export const TableFooter = styled(observer((props: {
         } />
         <ImportHarButton />
         <ClearAllButton
-            disabled={
-                props.allEvents
-                .filter((evt) => !('pinned' in evt) || !evt.pinned)
-                .length === 0
-            }
-            onClear={props.onClear}
+            disabled={props.allEvents.length === 0}
+            onClear={() => {
+                const allEventsPinned = props.allEvents.length > 0 && _.every(props.allEvents, (evt) =>
+                    evt instanceof HttpExchange && evt.pinned
+                );
+
+                const clearPinned = allEventsPinned && confirm("Delete pinned exchanges?");
+                props.onClear(clearPinned);
+            }}
         />
     </ButtonsContainer>
 </div>))`

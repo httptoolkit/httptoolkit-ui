@@ -38,7 +38,7 @@ interface ViewEventListProps {
     onSelected: (event: CollectedEvent | undefined) => void;
     onSearchInput: (input: string) => void;
     onDelete: (event: CollectedEvent) => void;
-    onClear: () => void;
+    onClear: (clearPinned: boolean) => void;
 }
 
 const ListContainer = styled.div`

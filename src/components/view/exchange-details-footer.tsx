@@ -49,13 +49,17 @@ const PinButton = styled(observer((p: {
 `;
 
 const DeleteButton = observer((p: {
-    disabled: boolean,
+    pinned: boolean,
     onDelete: () => void
 }) => <IconButton
     icon={['far', 'trash-alt']}
-    title='Delete this exchange'
-    disabled={p.disabled}
-    onClick={p.onDelete}
+    title={'Delete this exchange'}
+    onClick={() => {
+        if (
+            !p.pinned ||
+            confirm("Delete this pinned exchange?")
+        )  p.onDelete();
+    }}
 />);
 
 export const ExchangeDetailsFooter = observer(
@@ -74,7 +78,7 @@ export const ExchangeDetailsFooter = observer(
                 })}
             />
             <DeleteButton
-                dixabled={pinned}
+                pinned={pinned}
                 onDelete={() => props.onDelete(exchange)}
             />
         </ButtonsContainer>;

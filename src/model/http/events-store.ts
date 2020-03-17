@@ -252,9 +252,13 @@ export class EventsStore {
     }
 
     @action.bound
-    clearInterceptedData() {
-        const pinnedEvents = this.exchanges.filter(ex => ex.pinned);
+    clearInterceptedData(clearPinned: boolean) {
+        const pinnedEvents = clearPinned
+            ? []
+            : this.exchanges.filter(ex => ex.pinned);
+
         this.events.clear();
+
         this.events.push(...pinnedEvents);
         this.orphanedEvents = {};
     }
