@@ -65,6 +65,16 @@ const Column = styled.div`
     padding: 3px 0;
 `;
 
+const RowPin = styled(Icon).attrs({
+    icon: ['fas', 'thumbtack']
+})`
+    padding: 8px 7px;
+    background-color: ${p => p.theme.containerBackground};
+    font-size: 90%;
+
+    && { margin-right: -3px; }
+`;
+
 const RowMarker = styled(Column)`
     transition: color 0.2s;
     color: ${(p: { category: ExchangeCategory }) => getExchangeSummaryColour(p.category)};
@@ -86,7 +96,11 @@ const MarkerHeader = styled.div`
 `;
 
 const Method = styled(Column)`
-    flex-basis: 71px;
+    ${(p: { pinned?: boolean }) =>
+        p.pinned
+        ? 'flex-basis: 50px;'
+        : 'flex-basis: 71px;'
+    }
     flex-shrink: 0;
     flex-grow: 0;
 `;
@@ -238,7 +252,7 @@ const ExchangeRow = observer(({
     index,
     isSelected,
     style,
-    exchange: { id, category, isBreakpointed, request, response }
+    exchange: { id, category, pinned, isBreakpointed, request, response }
 }: {
     index: number,
     isSelected: boolean,
@@ -255,8 +269,9 @@ const ExchangeRow = observer(({
         className={isSelected ? 'selected' : ''}
         style={style}
     >
+        { pinned && <RowPin /> }
         <RowMarker category={category} />
-        <Method>{ request.method }</Method>
+        <Method pinned={pinned}>{ request.method }</Method>
         <Status>
             {
                 response === 'aborted'
