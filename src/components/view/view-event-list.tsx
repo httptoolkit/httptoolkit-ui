@@ -509,7 +509,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        const { filteredEvents } = this.props;
+        const { filteredEvents, selectedEvent } = this.props;
         if (filteredEvents.length === 0) return;
 
         let currentIndex = _.findIndex(filteredEvents, { id: this.selectedEventId });
@@ -539,10 +539,16 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                     : Math.min(currentIndex + 10, filteredEvents.length - 1);
                 break;
             case 'p':
-                const event = this.props.selectedEvent;
-                if (event instanceof HttpExchange) {
-                    event.pinned = !event.pinned;
+                event.preventDefault();
+                if (selectedEvent instanceof HttpExchange) {
+                    selectedEvent.pinned = !selectedEvent.pinned;
                 }
+                break;
+            case 'Delete':
+                event.preventDefault();
+                if (!selectedEvent) return;
+                this.props.onDelete(selectedEvent);
+                break;
         }
 
         if (targetIndex !== undefined) {

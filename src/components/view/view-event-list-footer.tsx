@@ -95,7 +95,8 @@ export const TableFooter = styled(observer((props: {
                     evt instanceof HttpExchange && evt.pinned
                 );
 
-                const clearPinned = allEventsPinned && confirm("Delete pinned exchanges?");
+                const clearPinned = allEventsPinned &&
+                    confirm("Delete pinned exchanges?");
                 props.onClear(clearPinned);
             }}
         />

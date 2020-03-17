@@ -100,7 +100,6 @@ class ViewPage extends React.Component<ViewPageProps> {
     render(): JSX.Element {
         const {
             events,
-            deleteEvent,
             clearInterceptedData,
             isPaused
         } = this.props.eventsStore;
@@ -140,7 +139,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                     onSelected={this.onSelected}
                     onSearchInput={this.onSearchInput}
-                    onDelete={deleteEvent}
+                    onDelete={this.onDelete}
                     onClear={clearInterceptedData}
                 />
                 { rightPane }
@@ -169,6 +168,13 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onDelete(event: CollectedEvent) {
+        // Prompt before deleting pinned events:
+        if (
+            'pinned' in event &&
+            event.pinned &&
+            !confirm("Delete this pinned exchange?")
+        ) return;
+
         const rowIndex = this.filteredEvents.indexOf(event);
         const wasSelected = event === this.selectedEvent;
 

@@ -54,12 +54,7 @@ const DeleteButton = observer((p: {
 }) => <IconButton
     icon={['far', 'trash-alt']}
     title={'Delete this exchange'}
-    onClick={() => {
-        if (
-            !p.pinned ||
-            confirm("Delete this pinned exchange?")
-        )  p.onDelete();
-    }}
+    onClick={p.onDelete}
 />);
 
 export const ExchangeDetailsFooter = observer(
