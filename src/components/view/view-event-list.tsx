@@ -543,6 +543,11 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                     ? undefined
                     : Math.min(currentIndex + 10, filteredEvents.length - 1);
                 break;
+            case 'p':
+                const event = this.props.selectedEvent;
+                if (event instanceof HttpExchange) {
+                    event.pinned = !event.pinned;
+                }
         }
 
         if (targetIndex !== undefined) {
