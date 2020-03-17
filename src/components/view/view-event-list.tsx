@@ -68,11 +68,24 @@ const Column = styled.div`
 const RowPin = styled(Icon).attrs({
     icon: ['fas', 'thumbtack']
 })`
-    padding: 8px 7px;
-    background-color: ${p => p.theme.containerBackground};
     font-size: 90%;
+    background-color: ${p => p.theme.containerBackground};
 
-    && { margin-right: -3px; }
+    transition: width 0.1s, padding 0.1s, margin 0.1s;
+
+    ${(p: { pinned: boolean }) =>
+        p.pinned
+        ? `
+            width: auto;
+            padding: 8px 7px;
+            && { margin-right: -3px; }
+        `
+        : `
+            padding: 8px 0;
+            width: 0 !important;
+            margin: 0 !important;
+        `
+    }
 `;
 
 const RowMarker = styled(Column)`
@@ -96,11 +109,13 @@ const MarkerHeader = styled.div`
 `;
 
 const Method = styled(Column)`
+    transition: flex-basis 0.1s;
     ${(p: { pinned?: boolean }) =>
         p.pinned
         ? 'flex-basis: 50px;'
         : 'flex-basis: 71px;'
     }
+
     flex-shrink: 0;
     flex-grow: 0;
 `;
@@ -269,7 +284,7 @@ const ExchangeRow = observer(({
         className={isSelected ? 'selected' : ''}
         style={style}
     >
-        { pinned && <RowPin /> }
+        <RowPin pinned={pinned}/>
         <RowMarker category={category} />
         <Method pinned={pinned}>{ request.method }</Method>
         <Status>

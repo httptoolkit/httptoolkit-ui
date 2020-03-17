@@ -42,8 +42,9 @@ const PinButton = styled(observer((p: {
     }
     onClick={p.onClick}
 />))`
+    transition: transform 0.1s;
+
     ${p => !p.pinned && css`
-        transition: transform 0.1s;
         transform: rotate(45deg);
     `}
 `;
