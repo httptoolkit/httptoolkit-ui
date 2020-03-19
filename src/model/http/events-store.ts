@@ -238,6 +238,7 @@ export class EventsStore {
 
             this.events.push(Object.assign(request, {
                 id: uuid(),
+                pinned: false,
                 searchIndex: [request.hostname, request.remoteIpAddress]
                     .filter((x): x is string => !!x)
             }));
@@ -255,7 +256,7 @@ export class EventsStore {
     clearInterceptedData(clearPinned: boolean) {
         const pinnedEvents = clearPinned
             ? []
-            : this.exchanges.filter(ex => ex.pinned);
+            : this.events.filter(ex => ex.pinned);
 
         this.events.clear();
 

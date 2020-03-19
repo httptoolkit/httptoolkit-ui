@@ -4,7 +4,7 @@ import { observer } from 'mobx-react';
 
 import { styled, css } from '../../styles';
 
-import { HttpExchange } from '../../model/http/exchange';
+import { CollectedEvent } from '../../model/http/events-store';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 import { IconButton } from '../common/icon-button';
@@ -26,6 +26,14 @@ const ButtonsContainer = styled.div`
     z-index: 1;
     box-shadow: 0 -10px 30px -5px rgba(0,0,0,0.1);
 `;
+
+const ScrollToButton = observer((p: {
+    onClick: () => void
+}) => <IconButton
+    icon={['fas', 'eye']}
+    title={'Scroll the list to show this exchange'}
+    onClick={p.onClick}
+/>);
 
 const PinButton = styled(observer((p: {
     className?: string,
@@ -50,31 +58,35 @@ const PinButton = styled(observer((p: {
 
 const DeleteButton = observer((p: {
     pinned: boolean,
-    onDelete: () => void
+    onClick: () => void
 }) => <IconButton
     icon={['far', 'trash-alt']}
     title={'Delete this exchange'}
-    onClick={p.onDelete}
+    onClick={p.onClick}
 />);
 
 export const ExchangeDetailsFooter = observer(
     (props: {
-        exchange: HttpExchange,
-        onDelete: (event: HttpExchange) => void
+        event: CollectedEvent,
+        onDelete: (event: CollectedEvent) => void,
+        onScrollToEvent: (event: CollectedEvent) => void
     }) => {
-        const { exchange } = props;
-        const { pinned } = exchange;
+        const { event } = props;
+        const { pinned } = event;
 
         return <ButtonsContainer>
+            <ScrollToButton
+                onClick={() => props.onScrollToEvent(props.event)}
+            />
             <PinButton
                 pinned={pinned}
                 onClick={action(() => {
-                    exchange.pinned = !exchange.pinned;
+                    event.pinned = !event.pinned;
                 })}
             />
             <DeleteButton
                 pinned={pinned}
-                onDelete={() => props.onDelete(exchange)}
+                onClick={() => props.onDelete(event)}
             />
         </ButtonsContainer>;
     }

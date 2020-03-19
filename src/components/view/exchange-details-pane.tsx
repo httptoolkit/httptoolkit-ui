@@ -104,6 +104,7 @@ export class ExchangeDetailsPane extends React.Component<{
 
     navigate: (path: string) => void,
     onDelete: (event: CollectedEvent) => void,
+    onScrollToEvent: (event: CollectedEvent) => void,
 
     // Injected:
     uiStore?: UiStore,
@@ -125,7 +126,13 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     render() {
-        const { exchange, onDelete, uiStore, accountStore } = this.props;
+        const {
+            exchange,
+            onDelete,
+            onScrollToEvent,
+            uiStore,
+            accountStore
+        } = this.props;
         const { isPaidUser } = accountStore!;
         const { expandedCard } = uiStore!;
         const { expandCompleted } = this;
@@ -154,8 +161,9 @@ export class ExchangeDetailsPane extends React.Component<{
                 </ContentContainer>
             </ScrollContainer>
             <ExchangeDetailsFooter
-                exchange={exchange}
+                event={exchange}
                 onDelete={onDelete}
+                onScrollToEvent={onScrollToEvent}
             />
         </OuterContainer>;
     }

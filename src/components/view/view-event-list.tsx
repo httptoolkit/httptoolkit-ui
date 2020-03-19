@@ -461,7 +461,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             const rowElement = listBody.querySelector(
                 `[data-event-id='${this.selectedEventId}']`
             ) as HTMLDivElement;
-            if (rowElement) rowElement.focus();
+            rowElement?.focus();
         } else {
             const listWindow = listBody.parentElement!;
             listWindow.focus();
@@ -470,6 +470,27 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     componentDidUpdate() {
         this.focusSelectedEvent();
+    }
+
+    public scrollToEvent(event: CollectedEvent) {
+        if (!this.listRef.current) return;
+
+        const targetIndex = this.props.events.indexOf(event);
+        if (targetIndex === -1) return;
+
+        this.listRef.current?.scrollToItem(targetIndex, "center");
+
+        requestAnimationFrame(() => {
+            // Focus the row, to make it extra obvious:
+
+            const listBody = this.listBodyRef.current;
+            if (!listBody) return;
+
+            const rowElement = listBody.querySelector(
+                `[data-event-id='${event.id}']`
+            ) as HTMLDivElement;
+            rowElement?.focus();
+        });
     }
 
     onListMouseDown = (mouseEvent: React.MouseEvent) => {

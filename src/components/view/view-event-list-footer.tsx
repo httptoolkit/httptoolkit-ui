@@ -91,9 +91,8 @@ export const TableFooter = styled(observer((props: {
         <ClearAllButton
             disabled={props.allEvents.length === 0}
             onClear={() => {
-                const allEventsPinned = props.allEvents.length > 0 && _.every(props.allEvents, (evt) =>
-                    evt instanceof HttpExchange && evt.pinned
-                );
+                const allEventsPinned = props.allEvents.length > 0 &&
+                    _.every(props.allEvents, (evt) => evt.pinned);
 
                 const clearPinned = allEventsPinned &&
                     confirm("Delete pinned exchanges?");

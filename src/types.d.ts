@@ -63,6 +63,7 @@ export {
 export type FailedTlsRequest = InputTlsRequest & {
     id: string;
     searchIndex: string[];
+    pinned: boolean;
 }
 
 export type HtkRequest = Omit<InputRequest, 'body'> & {

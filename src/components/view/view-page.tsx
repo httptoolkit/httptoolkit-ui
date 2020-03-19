@@ -38,6 +38,8 @@ class ViewPage extends React.Component<ViewPageProps> {
     requestEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
     responseEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
 
+    private listRef = React.createRef<ViewEventList>();
+
     @observable searchFilter: string = '';
 
     @computed
@@ -117,6 +119,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 responseEditor={this.responseEditor}
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
+                onScrollToEvent={this.onScrollToEvent}
             />;
         } else {
             rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
@@ -141,6 +144,8 @@ class ViewPage extends React.Component<ViewPageProps> {
                     onSearchInput={this.onSearchInput}
                     onDelete={this.onDelete}
                     onClear={clearInterceptedData}
+
+                    ref={this.listRef}
                 />
                 { rightPane }
             </SplitPane>
@@ -169,11 +174,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onDelete(event: CollectedEvent) {
         // Prompt before deleting pinned events:
-        if (
-            'pinned' in event &&
-            event.pinned &&
-            !confirm("Delete this pinned exchange?")
-        ) return;
+        if (event.pinned && !confirm("Delete this pinned exchange?")) return;
 
         const rowIndex = this.filteredEvents.indexOf(event);
         const wasSelected = event === this.selectedEvent;
@@ -193,6 +194,11 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else {
             this.props.eventsStore.deleteEvent(event);
         }
+    }
+
+    @action.bound
+    onScrollToEvent(event: CollectedEvent) {
+        this.listRef.current?.scrollToEvent(event);
     }
 }
 
