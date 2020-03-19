@@ -228,9 +228,9 @@ export class ExchangeDetailsPane extends React.Component<{
         exchange: HttpExchange,
         apiExchange: ApiExchange | undefined
     ) {
-        if (expandedCard === 'requestBody' && exchange.hasRequestBody()) {
+        if (expandedCard === 'requestBody') {
             return this.renderRequestBody(exchange, apiExchange);
-        } else if (expandedCard === 'responseBody' && exchange.hasResponseBody()) {
+        } else if (expandedCard === 'responseBody' && exchange.isSuccessfulExchange()) {
             return this.renderResponseBody(exchange, apiExchange);
         } else {
             reportError(`Expanded ${expandedCard}, but can't show anything`);
