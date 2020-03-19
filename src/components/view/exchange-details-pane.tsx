@@ -230,7 +230,11 @@ export class ExchangeDetailsPane extends React.Component<{
     ) {
         if (expandedCard === 'requestBody') {
             return this.renderRequestBody(exchange, apiExchange);
-        } else if (expandedCard === 'responseBody' && exchange.isSuccessfulExchange()) {
+        } else if (
+            expandedCard === 'responseBody' && (
+                exchange.isSuccessfulExchange() ||
+                !!exchange.responseBreakpoint
+            )) {
             return this.renderResponseBody(exchange, apiExchange);
         } else {
             reportError(`Expanded ${expandedCard}, but can't show anything`);
