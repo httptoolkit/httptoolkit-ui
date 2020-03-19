@@ -25,7 +25,7 @@ export const IconButton = styled((p: {
     </UnstyledButton>
 )`
     color: ${p => p.theme.mainColor};
-    font-size: 20px;
+    font-size: ${p => p.theme.textSize};
     padding: 5px 10px;
 
     &:disabled {

@@ -5,12 +5,12 @@ import { styled } from '../../styles';
 import { reportError } from '../../errors';
 
 import { clickOnEnter } from '../component-utils';
-import { UnstyledButton } from './inputs';
 import { PillButton } from './pill';
+import { IconButton } from './icon-button';
 
 const clipboardSupported = !!navigator.clipboard;
 
-const CopyButtonIconBase = styled(UnstyledButton)`
+const CopyIconButton = styled(IconButton)`
     color: ${p => p.theme.mainColor};
 
     &:hover, &:focus {
@@ -23,24 +23,29 @@ const CopyButtonIconBase = styled(UnstyledButton)`
     }
 `;
 
-const buildCopyComponent = (BaseComponent: typeof CopyButtonIconBase | typeof PillButton) =>
-    (p: { className?: string, content: string, children?: React.ReactNode }) =>
-        clipboardSupported
-            ? <BaseComponent
-                    className={p.className}
-                    tabIndex={0}
-                    onKeyDown={clickOnEnter}
-                    onClick={() => copyToClipboard(p.content)}
-                >
-                    <Icon
-                        icon={['far', 'copy']}
-                    />
-                    { p.children }
-                </BaseComponent>
-            : null;
+export const CopyButtonIcon = (p: {
+    className?: string,
+    content: string
+}) => clipboardSupported
+    ? <CopyIconButton
+            title="Copy this to your clipboard"
+            className={p.className}
+            icon={['far', 'copy']}
+            onClick={() => copyToClipboard(p.content)}
+        />
+    : null;
 
-export const CopyButtonIcon = buildCopyComponent(CopyButtonIconBase);
-export const CopyButtonPill = buildCopyComponent(PillButton);
+export const CopyButtonPill = (p: { content: string, children?: React.ReactNode }) =>
+    clipboardSupported
+        ? <PillButton
+            tabIndex={0}
+            onKeyDown={clickOnEnter}
+            onClick={() => copyToClipboard(p.content)}
+        >
+            <Icon icon={['far', 'copy']} />
+            { p.children }
+        </PillButton>
+    : null;
 
 async function copyToClipboard(content: string) {
     try {
