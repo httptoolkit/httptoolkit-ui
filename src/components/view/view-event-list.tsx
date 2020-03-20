@@ -473,12 +473,24 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     }
 
     public scrollToEvent(event: CollectedEvent) {
-        if (!this.listRef.current) return;
+        const list = this.listRef.current;
+        const listBody = this.listBodyRef.current;
+        if (!list || !listBody) return;
+        const listWindow = listBody.parentElement!;
 
         const targetIndex = this.props.events.indexOf(event);
         if (targetIndex === -1) return;
 
-        this.listRef.current?.scrollToItem(targetIndex, "center");
+        // TODO: scrollToItem("center") doesn't work well, need to resolve
+        // https://github.com/bvaughn/react-window/issues/441 to fix this.
+        const rowCount = this.props.filteredEvents.length;
+        const rowHeight = 32;
+        const windowHeight = listWindow.clientHeight;
+        const halfHeight = windowHeight / 2;
+        const rowOffset = targetIndex * rowHeight;
+        const maxOffset = Math.max(0, rowCount * rowHeight - windowHeight);
+        const targetOffset = rowOffset - halfHeight + rowHeight / 2;
+        list.scrollTo(_.clamp(targetOffset, 0, maxOffset));
 
         requestAnimationFrame(() => {
             // Focus the row, to make it extra obvious:
