@@ -23,7 +23,7 @@ const CollapsedItemPlaceholder = styled.div<{
     borderColor: string
 }>`
     position: absolute;
-    top: calc(50% - ${p => p.index * 4}px);
+    top: calc(50% - ${p => p.index * 3}px);
     transform: translateY(-50%);
     height: 150%;
 
@@ -64,11 +64,20 @@ const GroupHeaderContainer = styled.header<{
     collapsed: boolean,
     editingTitle: boolean
 }>`
-    margin-top: 25px;
+    ${p => p.collapsed
+        ? `
+            margin-top: 22px;
+            margin-bottom: 17px;
+        `
+        : `
+            margin-top: 10px;
+        `
+    }
 
     width: calc(100% - 5px - ${p => p.depth * 40}px);
     margin-left: calc(5px + ${p => p.depth * 40}px);
 
+    transition: padding 0.1s ease-out;
     padding: ${p => p.collapsed
         ? '5px 20px 5px 15px'
         : '5px 20px 5px 0px'};
@@ -264,7 +273,7 @@ export const GroupHeader = (p: {
 
 const GroupTailPlaceholder = styled.div`
     width: 100%;
-    height: 40px;
+    height: 30px;
     margin-bottom: -20px;
 `;
 

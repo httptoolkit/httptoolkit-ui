@@ -37,7 +37,7 @@ const RowContainer = styled<React.ComponentType<{
     borderColor: string,
     depth: number
 } & React.ComponentProps<'section'>>>(LittleCard)`
-    margin-top: 20px;
+    margin-top: 10px;
 
     width: calc(100% - ${p => p.depth * 40}px);
     margin-left: ${p => p.depth * 40}px;
@@ -56,21 +56,21 @@ const RowContainer = styled<React.ComponentType<{
     overflow: initial;
 
     ${(p) => p.collapsed && !p.disabled
-            ? css`
-                user-select: none;
+        ? css`
+            user-select: none;
 
-                &:hover {
-                    ${MenuContainer} {
-                        display: flex;
-                    }
-
-                    ${DragHandle} {
-                        opacity: 0.5;
-                    }
+            &:hover {
+                ${MenuContainer} {
+                    display: flex;
                 }
 
-                ${p.deactivated && 'opacity: 0.6;'}
-            `
+                ${DragHandle} {
+                    opacity: 0.5;
+                }
+            }
+
+            ${p.deactivated && 'opacity: 0.6;'}
+        `
         : !p.collapsed
             ? css`
                 ${MenuContainer} {
@@ -109,6 +109,8 @@ export const AddRuleRow = styled((p: {
         Add a new rule to rewrite requests or responses
     </RowContainer>
 )`
+    margin-top: 20px;
+
     justify-content: center;
     background-color: ${p =>
         polished.rgba(p.theme.mainBackground, 0.4)
@@ -186,7 +188,6 @@ const IconButton = styled(React.memo((p: {
     onKeyPress={clickOnEnter}
     onClick={p.disabled ? _.noop : p.onClick}
 />))`
-    margin: 0 0 0 10px;
     padding: 5px;
 
     font-size: 1.2em;

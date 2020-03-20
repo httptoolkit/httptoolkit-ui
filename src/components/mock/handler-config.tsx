@@ -52,7 +52,6 @@ abstract class HandlerConfig<
 > extends React.Component<HandlerConfigProps<H> & P> { }
 
 const ConfigContainer = styled.div`
-    margin-bottom: 5px;
     font-size: ${p => p.theme.textSize};
 `;
 
