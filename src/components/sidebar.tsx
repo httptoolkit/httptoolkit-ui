@@ -26,7 +26,7 @@ interface SidebarProps {
     items: Array<SidebarItem>;
 }
 
-export const SIDEBAR_WIDTH = '90px';
+export const SIDEBAR_WIDTH = '80px';
 
 const SidebarNav = styled.nav`
     width: ${SIDEBAR_WIDTH};
@@ -47,7 +47,7 @@ const SidebarNav = styled.nav`
 `
 
 const sidebarItemStyles = css`
-    width: 80px;
+    width: 70px;
     height: 70px;
     margin: 0 auto;
 
