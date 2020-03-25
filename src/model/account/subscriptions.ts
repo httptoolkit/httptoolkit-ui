@@ -26,23 +26,62 @@ export const SubscriptionPlans = {
     'team-annual': { id: 550788, name: 'Team (annual)' },
 };
 
-_.map(SubscriptionPlans, async (PlanDetails: SubscriptionPlan) => {
-    const planPricing = await getPlanPrices(PlanDetails.id);
+async function loadPlanPrices() {
+    const response = await fetch(
+        `https://accounts.httptoolkit.tech/.netlify/functions/get-prices?product_ids=${
+            Object.values(SubscriptionPlans).map(plan => plan.id).join(',')
+        }`
+    );
 
-    const planPrice = planPricing.price.net.replace(/[\.\,]00/g, '');
-    const monthlyPrice = planPricing.recurring.subscription.type === 'year'
-        ? planPrice.replace(
-            /[\d.,]+$/g,
-            (d) => _.round((parseFloat(
-                // Replace all punctuation except the last. This ensures we can parse
-                // numbers in the 1,000s without assuming either . or , separators.
-                d.replace(/[,.](?=\d+[,.])/g, '')
-            ) / 12), 2).toString()
-        )
-        : planPrice;
+    if (!response.ok) {
+        console.log(response);
+        throw new Error(`Failed to look up prices, got ${response.status}: ${response.statusText}`);
+    }
 
-    PlanDetails.prices = { total: planPrice, monthly: monthlyPrice };
-});
+    const data = await response.json();
+
+    if (!data.success) {
+        console.log(data);
+        throw new Error("Price lookup request was unsuccessful");
+    }
+
+    const productPrices = data.response.products as Array<{
+        product_id: number,
+        currency: string,
+        price: { net: number },
+        subscription: { interval: string }
+    }>;
+
+    productPrices.forEach((productPrice) => {
+        const plan = _.find(SubscriptionPlans,
+            { id: productPrice.product_id }
+        ) as SubscriptionPlan | undefined;
+
+        if (!plan) return;
+
+        const currency = productPrice.currency;
+        const totalPrice = productPrice.price.net;
+        const monthlyPrice = productPrice.subscription.interval === 'year'
+            ? totalPrice / 12
+            : totalPrice;
+
+        plan.prices = {
+            total: formatPrice(currency, totalPrice),
+            monthly: formatPrice(currency, monthlyPrice)
+        };
+    });
+}
+// Async load all plan prices
+loadPlanPrices();
+
+function formatPrice(currency: string, price: number) {
+    return Number(price).toLocaleString(undefined, {
+        style:"currency",
+        currency: currency,
+        minimumFractionDigits: _.round(price) === price ? 0 : 2,
+        maximumFractionDigits: 2
+    })
+}
 
 export type SubscriptionPlanCode = keyof typeof SubscriptionPlans;
 
