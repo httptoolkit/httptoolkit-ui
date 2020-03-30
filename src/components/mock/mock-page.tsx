@@ -23,6 +23,9 @@ interface MockPageProps {
     className?: string;
     rulesStore: RulesStore;
     accountStore: AccountStore;
+
+    navigate: (path: string) => void;
+    initialRuleId?: string;
 }
 
 const MockPageContainer = styled.section`
@@ -86,7 +89,10 @@ class MockPage extends React.Component<MockPageProps> {
     @observable
     collapsedRulesMap = _.fromPairs(
         mapRules(this.props.rulesStore.draftRules, (rule) =>
-            [rule.id, true] as [string, boolean]
+            [
+                rule.id,
+                rule.id !== this.props.initialRuleId // We might start with a rule expanded
+            ] as [string, boolean]
         )
     );
 
@@ -289,9 +295,9 @@ class MockPage extends React.Component<MockPageProps> {
     }
 }
 
-// Annoying cast required to handle the store prop nicely in our types
+// Exclude stores etc from the external props, as they're injected
 const InjectedMockPage = MockPage as unknown as WithInjected<
     typeof MockPage,
-    'rulesStore' | 'accountStore'
+    'rulesStore' | 'accountStore' | 'navigate'
 >;
 export { InjectedMockPage as MockPage };

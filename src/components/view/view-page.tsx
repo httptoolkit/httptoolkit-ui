@@ -203,7 +203,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 }
 
 const StyledViewPage = styled(
-    // Exclude stores from the external props, as they're injected
+    // Exclude stores etc from the external props, as they're injected
     ViewPage as unknown as WithInjected<typeof ViewPage, 'uiStore' | 'serverStore' | 'eventsStore' | 'navigate'>
 )`
     height: 100vh;

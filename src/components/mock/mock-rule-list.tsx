@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, action } from 'mobx';
 import { observer, Observer } from 'mobx-react'
-import { Draggable, Droppable, DragDropContext, BeforeCapture, DropResult } from 'react-beautiful-dnd';
+import { Droppable, DragDropContext, BeforeCapture, DropResult } from 'react-beautiful-dnd';
 
 import { styled } from '../../styles';
 

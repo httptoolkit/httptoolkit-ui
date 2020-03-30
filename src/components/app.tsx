@@ -166,6 +166,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     <Route path={'/view'} pageComponent={ViewPage} />
                     <Route path={'/view/:eventId'} pageComponent={ViewPage} />
                     <Route path={'/mock'} pageComponent={MockPage} />
+                    <Route path={'/mock/:initialRuleId'} pageComponent={MockPage} />
                     <Route path={'/settings'} pageComponent={SettingsPage} />
                 </Router>
             </AppContainer>
