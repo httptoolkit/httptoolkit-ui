@@ -50,8 +50,12 @@ export const EditableStatus = (props: {
 
                 if (_.isNaN(newStatusCode)) return;
 
-                // Empty status messages reset to default when the status is changed:
-                const newStatusMessage = props.statusMessage || undefined;
+                // If the status message was the default message, update it to
+                // match the new status code
+                const newStatusMessage = (statusMessage === getStatusMessage(statusCode))
+                    ? getStatusMessage(newStatusCode)
+                    : props.statusMessage;
+
                 props.onChange(newStatusCode, newStatusMessage);
             }}
         />
