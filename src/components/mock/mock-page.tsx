@@ -116,6 +116,18 @@ class MockPage extends React.Component<MockPageProps> {
                 });
             });
         }));
+
+        // If a rule was initially selected, scroll to it.
+        const { initialRuleId } = this.props;
+        const container = this.containerRef.current;
+        if (initialRuleId && container) {
+            const ruleElement = container.querySelector(
+                `[data-rbd-draggable-id="${initialRuleId}"]`
+            );
+
+            // Leave a little time for e.g. Monaco to render, then hop to it.
+            requestAnimationFrame(() => ruleElement?.scrollIntoView());
+        }
     }
 
     render(): JSX.Element {
