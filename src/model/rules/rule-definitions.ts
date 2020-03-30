@@ -12,6 +12,7 @@ import * as amIUsingHtml from '../../amiusing.html';
 import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
 import { ServerStore } from '../server-store';
 import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
+import { HttpExchange } from '../http/exchange';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -200,6 +201,45 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
         completionChecker: new completionCheckers.Always(),
         handler: new PassThroughHandler(rulesStore)
     });
+}
+
+export function buildRuleFromEvent(exchange: HttpExchange): HtkMockRule {
+    const requestRule = {
+        id: uuid(),
+        activated: true,
+        matchers: [
+            new MethodMatchers[exchange.request.method as MethodName]() ||
+                new WildcardMatcher(),
+            new matchers.SimplePathMatcher(
+                exchange.request.parsedUrl.toString().split('?')[0]
+            )
+        ],
+        completionChecker: new completionCheckers.Always(),
+    };
+
+    if (exchange.isSuccessfulExchange()) {
+        return {
+            ...requestRule,
+            handler: new StaticResponseHandler(
+                exchange.response.statusCode,
+                exchange.response.statusMessage,
+                exchange.response.body.decoded || "A mock response",
+                _.omit(
+                    exchange.response.headers,
+                    ['date', 'expires']
+                )
+            )
+        }
+    } else {
+        return {
+            ...requestRule,
+            handler: new StaticResponseHandler(
+                200,
+                undefined,
+                "A mock response"
+            )
+        }
+    }
 }
 
 export const buildDefaultGroup = (items: HtkMockItem[]): HtkMockRuleGroup => ({

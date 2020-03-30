@@ -1,10 +1,13 @@
 import * as React from 'react';
 import { action } from 'mobx';
-import { observer } from 'mobx-react';
+import { observer, inject } from 'mobx-react';
 
 import { styled, css } from '../../styles';
 
 import { CollectedEvent } from '../../model/http/events-store';
+import { HttpExchange } from '../../model/http/exchange';
+import { RulesStore } from '../../model/rules/rules-store';
+import { buildRuleFromEvent } from '../../model/rules/rule-definitions';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 import { IconButton } from '../common/icon-button';
@@ -65,29 +68,53 @@ const DeleteButton = observer((p: {
     onClick={p.onClick}
 />);
 
-export const ExchangeDetailsFooter = observer(
-    (props: {
-        event: CollectedEvent,
-        onDelete: (event: CollectedEvent) => void,
-        onScrollToEvent: (event: CollectedEvent) => void
-    }) => {
-        const { event } = props;
-        const { pinned } = event;
+const MockButton = observer((p: {
+    disabled: boolean,
+    onClick: () => void
+}) => <IconButton
+    icon={['fas', 'theater-masks']}
+    title={'Create a mock rule from this exchange'}
+    onClick={p.onClick}
+    disabled={p.disabled}
+/>);
 
-        return <ButtonsContainer>
-            <ScrollToButton
-                onClick={() => props.onScrollToEvent(props.event)}
-            />
-            <PinButton
-                pinned={pinned}
-                onClick={action(() => {
-                    event.pinned = !event.pinned;
-                })}
-            />
-            <DeleteButton
-                pinned={pinned}
-                onClick={() => props.onDelete(event)}
-            />
-        </ButtonsContainer>;
-    }
+export const ExchangeDetailsFooter = inject('rulesStore')(
+    observer(
+        (props: {
+            event: CollectedEvent,
+            onDelete: (event: CollectedEvent) => void,
+            onScrollToEvent: (event: CollectedEvent) => void,
+            rulesStore?: RulesStore,
+            navigate: (url: string) => void
+        }) => {
+            const { event } = props;
+            const { pinned } = event;
+
+            return <ButtonsContainer>
+                <ScrollToButton
+                    onClick={() => props.onScrollToEvent(props.event)}
+                />
+                <PinButton
+                    pinned={pinned}
+                    onClick={action(() => {
+                        event.pinned = !event.pinned;
+                    })}
+                />
+                <DeleteButton
+                    pinned={pinned}
+                    onClick={() => props.onDelete(event)}
+                />
+                <MockButton
+                    disabled={!(event instanceof HttpExchange)}
+                    onClick={action(() => {
+                        const rule = buildRuleFromEvent(
+                            event as HttpExchange
+                        );
+                        props.rulesStore!.draftRules.items.unshift(rule);
+                        props.navigate(`/mock/${rule.id}`);
+                    })}
+                />
+            </ButtonsContainer>;
+        }
+    )
 );
