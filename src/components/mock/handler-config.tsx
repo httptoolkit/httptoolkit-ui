@@ -195,7 +195,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
         // If you set the editor content type, keep the content-type header up to date
         disposeOnUnmount(this, observe(this, 'contentType', ({
-            oldValue: oldContentType,
+            oldValue: previousContentType,
             newValue: newContentType
         }) => {
             const contentTypeHeader = getContentTypeHeader(this.headers);
@@ -209,12 +209,31 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 const headerContentType = getContentTypeFromHeader(contentTypeHeader);
 
                 // If the body type changes, and the old header matched the old type, update the header
-                if (oldContentType === headerContentType) {
+                if (previousContentType === headerContentType) {
                     runInAction(() => {
                         contentTypeHeader[1] = getDefaultMimeType(newContentType);
                     });
                 }
                 // If there is a header, but it didn't match the body, leave it as-is
+            }
+        }));
+
+        // If you change the body, and the content length _was_ correct, keep it up to date
+        disposeOnUnmount(this, observe(this, 'body', ({
+            oldValue: previousBody,
+            newValue: newBody
+        }) => {
+            const lengthHeader = _.find(this.headers, (header) =>
+                header[0].toLowerCase() === 'content-length'
+            );
+            if (!lengthHeader) return;
+            const contentLength = lengthHeader[1];
+
+            if (parseInt(contentLength || '', 10) === (previousBody || '').length) {
+                runInAction(() => {
+                    // If the content-length was previously correct, keep it correct:
+                    lengthHeader[1] = newBody.length.toString();
+                });
             }
         }));
     }
