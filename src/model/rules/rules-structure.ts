@@ -156,7 +156,7 @@ export function mapRules<R>(
             );
         } else {
             return result.concat(
-                fn(item, currentPath.concat(index) as ItemPath, totalIndex)
+                [fn(item, currentPath.concat(index) as ItemPath, totalIndex)]
             );
         }
     }, []);
