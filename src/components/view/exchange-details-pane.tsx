@@ -166,6 +166,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 onDelete={onDelete}
                 onScrollToEvent={onScrollToEvent}
                 navigate={navigate}
+                isPaidUser={isPaidUser}
             />
         </OuterContainer>;
     }

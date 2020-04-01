@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { action } from 'mobx';
+import { action, runInAction } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled, css } from '../../styles';
@@ -69,22 +69,29 @@ const DeleteButton = observer((p: {
 />);
 
 const MockButton = observer((p: {
-    disabled: boolean,
+    isExchange: boolean,
+    isPaidUser: boolean,
     onClick: () => void
 }) => <IconButton
     icon={['fas', 'theater-masks']}
-    title={'Create a mock rule from this exchange'}
     onClick={p.onClick}
-    disabled={p.disabled}
+    title={
+        p.isPaidUser
+            ? 'Create a mock rule from this exchange'
+            : 'With Pro: create a mock rule from this exchange'
+    }
+    disabled={!p.isExchange || !p.isPaidUser}
 />);
 
 export const ExchangeDetailsFooter = inject('rulesStore')(
     observer(
         (props: {
+            rulesStore?: RulesStore,
+
             event: CollectedEvent,
             onDelete: (event: CollectedEvent) => void,
             onScrollToEvent: (event: CollectedEvent) => void,
-            rulesStore?: RulesStore,
+            isPaidUser: boolean,
             navigate: (url: string) => void
         }) => {
             const { event } = props;
@@ -105,14 +112,17 @@ export const ExchangeDetailsFooter = inject('rulesStore')(
                     onClick={() => props.onDelete(event)}
                 />
                 <MockButton
-                    disabled={!(event instanceof HttpExchange)}
-                    onClick={action(() => {
+                    isExchange={event instanceof HttpExchange}
+                    isPaidUser={props.isPaidUser}
+                    onClick={() => {
                         const rule = buildRuleFromEvent(
                             event as HttpExchange
                         );
-                        props.rulesStore!.draftRules.items.unshift(rule);
+                        runInAction(() => {
+                            props.rulesStore!.draftRules.items.unshift(rule);
+                        });
                         props.navigate(`/mock/${rule.id}`);
-                    })}
+                    }}
                 />
             </ButtonsContainer>;
         }

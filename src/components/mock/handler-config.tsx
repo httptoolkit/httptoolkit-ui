@@ -137,8 +137,8 @@ const BodyContainer = styled.div`
     }
 `;
 
-function getContentTypeHeader(headers: Array<[string, string]>): [string, string] | undefined {
-    return (_.find(headers, ([key]) => key.toLowerCase() === 'content-type'));
+function getHeader(headers: Array<[string, string]>, headerName: string): [string, string] | undefined {
+    return _.find(headers, ([key]) => key.toLowerCase() === headerName);
 }
 
 function getContentTypeFromHeader(contentTypeHeader: string | undefined | [string, string]): EditableContentType | undefined {
@@ -186,7 +186,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
         // If you enter a relevant content-type header, consider updating the editor content type:
         disposeOnUnmount(this, autorun(() => {
-            const detectedContentType = getContentTypeFromHeader(getContentTypeHeader(this.headers));
+            const detectedContentType = getContentTypeFromHeader(getHeader(this.headers, 'content-type'));
             if (detectedContentType) runInAction(() => {
                 this.contentType = detectedContentType;
             });
@@ -198,7 +198,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             oldValue: previousContentType,
             newValue: newContentType
         }) => {
-            const contentTypeHeader = getContentTypeHeader(this.headers);
+            const contentTypeHeader = getHeader(this.headers, 'content-type');
 
             if (!contentTypeHeader) {
                 // If you pick a body content type with no header set, we add one
