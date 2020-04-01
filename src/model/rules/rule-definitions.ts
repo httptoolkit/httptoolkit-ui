@@ -12,6 +12,7 @@ import * as amIUsingHtml from '../../amiusing.html';
 import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
 import { ServerStore } from '../server-store';
 import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
+import { HtkResponse, Headers } from '../../types';
 import { HttpExchange } from '../http/exchange';
 
 type MethodName = keyof typeof Method;
@@ -204,7 +205,36 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
 }
 
 export function buildRuleFromEvent(exchange: HttpExchange): HtkMockRule {
-    const requestRule = {
+    const { statusCode, statusMessage, headers } = exchange.isSuccessfulExchange()
+        ? exchange.response
+        : { statusCode: 200, statusMessage: "OK", headers: {} as Headers };
+
+    const useResponseBody = (
+        exchange.isSuccessfulExchange() &&
+        // Don't include automatically include the body if it's too large
+        // for manual editing (> 1MB), just for UX reasons
+        exchange.response.body.encoded.byteLength <= 1024 * 1024 &&
+        !!exchange.response.body.decoded // If we can't decode it, don't include it
+    );
+
+    const bodyContent = useResponseBody
+        ? (exchange.response as HtkResponse).body.decoded!
+        : "A mock response";
+
+    // Copy headers so we can mutate them independently:
+    const mockRuleHeaders = Object.assign({}, headers);
+
+    delete mockRuleHeaders['date'];
+    delete mockRuleHeaders['expires'];
+
+    // Problematic for the mock rule UI, so skip for now:
+    delete mockRuleHeaders['content-encoding'];
+
+    if (mockRuleHeaders['content-length']) {
+        mockRuleHeaders['content-length'] = bodyContent.length.toString();
+    }
+
+    return {
         id: uuid(),
         activated: true,
         matchers: [
@@ -214,32 +244,14 @@ export function buildRuleFromEvent(exchange: HttpExchange): HtkMockRule {
                 exchange.request.parsedUrl.toString().split('?')[0]
             )
         ],
+        handler: new StaticResponseHandler(
+            statusCode,
+            statusMessage,
+            bodyContent,
+            mockRuleHeaders
+        ),
         completionChecker: new completionCheckers.Always(),
     };
-
-    if (exchange.isSuccessfulExchange()) {
-        return {
-            ...requestRule,
-            handler: new StaticResponseHandler(
-                exchange.response.statusCode,
-                exchange.response.statusMessage,
-                exchange.response.body.decoded || "A mock response",
-                _.omit(
-                    exchange.response.headers,
-                    ['date', 'expires']
-                )
-            )
-        }
-    } else {
-        return {
-            ...requestRule,
-            handler: new StaticResponseHandler(
-                200,
-                undefined,
-                "A mock response"
-            )
-        }
-    }
 }
 
 export const buildDefaultGroup = (items: HtkMockItem[]): HtkMockRuleGroup => ({
