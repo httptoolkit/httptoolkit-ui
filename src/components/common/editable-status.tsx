@@ -22,6 +22,10 @@ const StatusContainer = styled.div`
     }
 `;
 
+function isDefaultMessage(statusMessage: string, statusCode: number | string) {
+    return statusMessage.toLowerCase() === getStatusMessage(statusCode).toLowerCase()
+}
+
 export const EditableStatus = (props: {
     className?: string,
     statusCode: number | '',
@@ -52,8 +56,8 @@ export const EditableStatus = (props: {
 
                 // If the status message was the default message, update it to
                 // match the new status code
-                const newStatusMessage = (statusMessage === getStatusMessage(statusCode))
-                    ? getStatusMessage(newStatusCode)
+                const newStatusMessage = isDefaultMessage(statusMessage, statusCode)
+                    ? undefined
                     : props.statusMessage;
 
                 props.onChange(newStatusCode, newStatusMessage);
@@ -65,7 +69,7 @@ export const EditableStatus = (props: {
             onChange={(event) => {
                 let newMessage: string | undefined = event.target.value;
 
-                if (newMessage === getStatusMessage(statusCode)) {
+                if (isDefaultMessage(newMessage, statusCode)) {
                     newMessage = undefined;
                 }
 
