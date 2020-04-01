@@ -19,6 +19,7 @@ import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
 import { TableFooter, HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
+import { filterProps } from '../component-utils';
 
 const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
@@ -70,7 +71,9 @@ const Column = styled.div`
     padding: 3px 0;
 `;
 
-const RowPin = styled(Icon).attrs((p: { pinned: boolean }) => ({
+const RowPin = styled(
+    filterProps(Icon, 'pinned')
+).attrs((p: { pinned: boolean }) => ({
     icon: ['fas', 'thumbtack'],
     title: p.pinned ? "This exchange is pinned, and won't be deleted by default" : ''
 }))`
