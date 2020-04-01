@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import { observable, observe, computed } from "mobx";
-import { create, persist } from "mobx-persist";
 import * as localForage from 'localforage';
 import * as serializr from 'serializr';
 import { findApi as findPublicOpenApi, OpenAPIObject } from 'openapi-directory';
@@ -8,6 +7,7 @@ import { findApi as findPublicOpenApi, OpenAPIObject } from 'openapi-directory';
 import { HtkRequest } from '../../types';
 import { reportError } from '../../errors';
 import { lazyObservablePromise } from "../../util/observable";
+import { hydrate, persist } from "../../util/mobx-persist/persist";
 
 import { AccountStore } from "../account/account-store";
 import { ApiMetadata } from "./build-openapi";
@@ -57,11 +57,13 @@ export class ApiStore {
             if (!this.accountStore.isPaidUser) this.customOpenApiSpecs = {};
         });
 
-        await create({
+        await hydrate({
             // Stored in WebSQL, not local storage, for performance because specs can be *big*
             storage: localForage,
-            jsonify: false
-        })('api-store', this);
+            jsonify: false,
+            key: 'api-store',
+            store: this
+        });
 
         console.log('API store initialized');
     });

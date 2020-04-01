@@ -1,10 +1,9 @@
-
 import * as _ from 'lodash';
 import { observable, action, autorun, computed, observe } from 'mobx';
-import { persist, create } from 'mobx-persist';
 
 import { Theme, ThemeName, Themes } from '../styles';
 import { lazyObservablePromise } from '../util/observable';
+import { persist, hydrate } from '../util/mobx-persist/persist';
 import { AccountStore } from './account/account-store';
 
 export class UiStore {
@@ -33,7 +32,10 @@ export class UiStore {
             if (!this.accountStore.isPaidUser) this.setTheme('light');
         });
 
-        await create()('ui-store', this);
+        await hydrate({
+            key: 'ui-store',
+            store: this
+        });
 
         console.log('UI store initialized');
     });

@@ -7,7 +7,6 @@ import {
     observe,
     runInAction,
 } from 'mobx';
-import { persist, create } from 'mobx-persist';
 import { getLocal, Mockttp } from 'mockttp';
 
 import {
@@ -21,6 +20,7 @@ import { AccountStore } from './account/account-store';
 
 import { delay } from '../util/promise';
 import { lazyObservablePromise } from '../util/observable';
+import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
 import { serverVersion } from '../services/service-versions';
 
@@ -108,7 +108,10 @@ export class ServerStore {
         });
 
         // Load all persisted settings from storage
-        await create()('server-store', this);
+        await hydrate({
+            key: 'server-store',
+            store: this
+        });
 
         // Backward compat for store data before 2020-01-28 - drop this in a month or two
         const rawData = localStorage.getItem('interception-store');

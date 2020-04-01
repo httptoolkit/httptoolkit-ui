@@ -9,13 +9,13 @@ import {
     when,
     reaction
 } from 'mobx';
-import { persist, create } from 'mobx-persist';
 import * as uuid from 'uuid/v4';
 import * as serializr from 'serializr';
 import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuffer';
 
 import { MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
 import { lazyObservablePromise } from '../../util/observable';
+import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { HttpExchange } from '../http/exchange';
 
 import { AccountStore } from '../account/account-store';
@@ -45,7 +45,7 @@ import {
     buildDefaultRules,
     buildForwardingRuleIntegration
 } from './rule-definitions';
-import { deserializeRules } from './rule-serialization';
+import { deserializeRules, MockRulesetSchema, DeserializationArgs } from './rule-serialization';
 
 export type ClientCertificate = {
     readonly pfx: ArrayBuffer,
@@ -99,16 +99,6 @@ export class RulesStore {
 
     private async loadSettings() {
         const { accountStore } = this;
-        // Every time the user account data is updated from the server, consider resetting
-        // paid settings to the free defaults. This ensures that they're reset on
-        // logout & subscription expiration (even if that happened while the app was
-        // closed), but don't get reset when the app starts with stale account data.
-        observe(accountStore, 'accountDataLastUpdated', () => {
-            if (!accountStore.isPaidUser) {
-                this.draftWhitelistedCertificateHosts = ['localhost'];
-                this.draftClientCertificateHostMap = {};
-            }
-        });
 
         // Backward compat for store data before 2020-01-28 - drop this in a month or two
         const oldData = localStorage.getItem('interception-store');
@@ -127,24 +117,52 @@ export class RulesStore {
             }
         }
 
-        // Load all persisted settings from storage
-        await create()('rules-store', this);
+        // Load rule configuration settings from storage
+        await hydrate({
+            key: 'rules-store',
+            store: this,
+            dataFilter: (data: {}) => _.omit(data, 'rules'),
+        });
 
-        // Support injection of a default forwarding rule by the desktop app, for integrations
-        getDesktopInjectedValue('httpToolkitForwardingDefault').then(action((forwardingConfig: string) => {
-            const [sourceHost, targetHost] = forwardingConfig.split('|');
-            const forwardingRule = buildForwardingRuleIntegration(sourceHost, targetHost, this);
-
-            this.rules.items.unshift(forwardingRule);
-            this.draftRules.items.unshift(_.cloneDeep(forwardingRule));
-        }));
-
-        // On startup the draft host settings take effect, becoming the real settings:
+        // Only on startup do draft host settings take effect, becoming the real settings:
         this.whitelistedCertificateHosts = _.clone(this.draftWhitelistedCertificateHosts);
         this.clientCertificateHostMap = _.clone(this.draftClientCertificateHostMap);
 
-        // Rebuild the rules, which might depends on these settings:
-        this.resetRulesToDefault();
+        if (accountStore.mightBePaidUser) {
+            // Load the actual rules from storage (separately, so deserialization can use settings loaded above)
+            await hydrate({
+                key: 'rules-store',
+                store: this,
+                dataFilter: (data: {}) => _.pick(data, 'rules'),
+                customArgs: { rulesStore: this } as DeserializationArgs
+            });
+            this.resetRuleDrafts(); // Drafts aren't persisted, so need updating to match loaded data.
+        } else {
+            // For free users, reset rules to default (separately, so defaults can use settings loaded above)
+            this.resetRulesToDefault();
+        }
+
+        // Support injection of a default forwarding rule by the desktop app, for integrations
+        this.ensureRuleDoesNotExist('default-forwarding-rule');
+        getDesktopInjectedValue('httpToolkitForwardingDefault').then(action((forwardingConfig: string) => {
+            const [sourceHost, targetHost] = forwardingConfig.split('|');
+            const forwardingRule = buildForwardingRuleIntegration(sourceHost, targetHost, this);
+            this.ensureRuleExists(forwardingRule);
+        }));
+
+        // Every time the user account data is updated from the server, consider resetting
+        // paid settings to the free defaults. This ensures that they're reset on
+        // logout & subscription expiration (even if that happened while the app was
+        // closed), but don't get reset when the app starts with stale account data.
+        observe(accountStore, 'accountDataLastUpdated', () => {
+            if (!accountStore.isPaidUser) {
+                this.draftWhitelistedCertificateHosts = ['localhost'];
+                this.draftClientCertificateHostMap = {};
+
+                // We don't reset the rules on expiry/log out, but they won't persist, so
+                // they're reset next time the app is started.
+            }
+        });
     }
 
     get activePassthroughOptions() {
@@ -189,8 +207,7 @@ export class RulesStore {
         return _.isEqual(this.clientCertificateHostMap[host], this.draftClientCertificateHostMap[host]);
     }
 
-
-    @observable
+    @persist('object', MockRulesetSchema) @observable
     rules: HtkMockRuleRoot = buildDefaultRules(this, this.serverStore);
 
     @observable
@@ -484,7 +501,7 @@ export class RulesStore {
     }
 
     @action.bound
-    ensureDefaultRuleExists(rule: HtkMockItem) {
+    ensureRuleExists(rule: HtkMockItem) {
         const activeRulePath = findItemPath(this.rules, { id: rule.id });
         const activeRule = activeRulePath
             ? getItemAtPath(this.rules, activeRulePath) as HtkMockRule
@@ -521,6 +538,19 @@ export class RulesStore {
         }
 
         this.saveItem(draftDefaultGroupPath.concat(0));
+    }
+
+    @action.bound
+    ensureRuleDoesNotExist(ruleId: string) {
+        const activeRulePath = findItemPath(this.rules, { id: ruleId });
+        if (activeRulePath) {
+            deleteItemAtPath(this.rules, activeRulePath);
+        }
+
+        const draftRulePath = findItemPath(this.draftRules, { id: ruleId });
+        if (draftRulePath) {
+            deleteItemAtPath(this.draftRules, draftRulePath);
+        }
     }
 
     @action.bound

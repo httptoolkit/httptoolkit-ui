@@ -80,7 +80,7 @@ export function setUpAndroidCertificateRule(
     eventsStore: EventsStore,
     showRequests: () => void
 ) {
-    rulesStore.ensureDefaultRuleExists({
+    rulesStore.ensureRuleExists({
         id: 'default-android-certificate',
         activated: true,
         matchers: [

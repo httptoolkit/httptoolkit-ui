@@ -103,7 +103,7 @@ interface MockRuleset extends HtkMockRuleRoot {
     version: undefined;
 }
 
-const MockRulesetSchema = serializr.createSimpleSchema<MockRuleset>({
+export const MockRulesetSchema = serializr.createSimpleSchema<MockRuleset>({
     id: serializr.primitive(),
     title: serializr.primitive(),
     isRoot: serializr.optional(serializr.primitive()),
