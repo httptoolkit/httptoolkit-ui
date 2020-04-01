@@ -116,8 +116,8 @@ type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
     invalid?: boolean
 }
 
-export const TextInput = styled.input.attrs(() => ({
-    type: 'text'
+export const TextInput = styled.input.attrs((p: { type?: string }) => ({
+    type: p.type || "text"
 }))`
     font-size: ${p => p.theme.textInputFontSize};
     padding: 5px 10px;
