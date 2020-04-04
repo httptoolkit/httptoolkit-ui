@@ -91,19 +91,16 @@ export async function encodeBody(decodedBuffer: Buffer, encodings: string[]) {
         (encodings.length === 1 && encodings[0] === 'identity')
     ) {
         // Shortcut to skip encoding when we know it's not required
-        return { encoded: decodedBuffer, decoded: decodedBuffer };
+        return decodedBuffer;
     }
 
     const result = await callApi<EncodeRequest, EncodeResponse>({
         type: 'encode',
         buffer: decodedBuffer.buffer as ArrayBuffer,
         encodings
-    }, [decodedBuffer.buffer]);
+    });
 
-    return {
-        decoded: Buffer.from(result.inputBuffer),
-        encoded: Buffer.from(result.encodedBuffer)
-    };
+    return Buffer.from(result.encodedBuffer);
 }
 
 export async function testEncodingsAsync(decodedBuffer: Buffer) {

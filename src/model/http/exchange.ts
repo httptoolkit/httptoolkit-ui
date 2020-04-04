@@ -13,8 +13,8 @@ import {
     InputMessage,
     MockttpBreakpointedRequest,
     MockttpBreakpointedResponse,
-    BreakpointResponseResult,
     InputCompletedRequest,
+    MockttpBreakpointResponseResult,
 } from "../../types";
 import {
     fakeBuffer,
@@ -345,7 +345,7 @@ export class HttpExchange {
 
         // When the response resumes, return it as the request result's response
         this._responseBreakpoint.waitForCompletedResult().then(
-            action((responseResult: BreakpointResponseResult) => {
+            action((responseResult: MockttpBreakpointResponseResult) => {
                 requestBreakpoint.respondDirectly(responseResult);
                 this._responseBreakpoint = undefined;
             })

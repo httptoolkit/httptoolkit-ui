@@ -56,7 +56,6 @@ export interface EncodeRequest extends Message {
 
 export interface EncodeResponse extends Message {
     error?: Error;
-    inputBuffer: ArrayBuffer; // Send the input back, since we transferred it
     encodedBuffer: ArrayBuffer;
 }
 
@@ -151,7 +150,6 @@ async function encodeRequest(request: EncodeRequest): Promise<EncodeResponse> {
 
     return {
         id,
-        inputBuffer: buffer,
         encodedBuffer: result.buffer
     };
 }
@@ -188,10 +186,7 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
 
             case 'encode':
                 const encodeResult = await encodeRequest(event.data);
-                ctx.postMessage(encodeResult, [
-                    encodeResult.inputBuffer,
-                    encodeResult.encodedBuffer
-                ]);
+                ctx.postMessage(encodeResult, [encodeResult.encodedBuffer]);
                 break;
 
             case 'test-encodings':

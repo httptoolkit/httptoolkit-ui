@@ -4,7 +4,7 @@ import { observable, action, reaction } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { Headers } from '../../types';
+import { Headers, BreakpointBody } from '../../types';
 import { styled } from '../../styles';
 import { lastHeader } from '../../util';
 import {
@@ -41,7 +41,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
     onCollapseToggled: () => void,
     onExpandToggled: () => void,
 
-    body: Buffer | undefined,
+    body: Buffer,
     headers: Headers,
     onChange: (result: string) => void,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
@@ -65,6 +65,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
 
     render() {
         const {
+            body,
             title,
             direction,
             collapsed,
@@ -72,9 +73,6 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
             onCollapseToggled,
             onExpandToggled
         } = this.props;
-
-        // Quick fix to handle (and allow fixing) broken responses.
-        const body = this.props.body || Buffer.from("ERROR: COULD NOT DECODE BUFFER")
 
         return <ExchangeCard
             direction={direction}

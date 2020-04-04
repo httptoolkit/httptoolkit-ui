@@ -1,4 +1,5 @@
-import { observable, action } from "mobx";
+import * as _ from 'lodash';
+import { observable, action, reaction, observe } from "mobx";
 
 import {
     MockttpBreakpointedRequest,
@@ -6,38 +7,63 @@ import {
     MockttpBreakpointRequestResult,
     BreakpointRequestResult,
     BreakpointResponseResult,
+    BreakpointBody,
+    MockttpBreakpointResponseResult,
 } from "../../types";
 import { asHeaderArray } from "../../util";
 import { getDeferred, Deferred } from "../../util/promise";
 import { reportError } from "../../errors";
 
-import { decodeBody, encodeBody } from "../../services/ui-worker-api";
+import { decodeBody } from "../../services/ui-worker-api";
+import { EditableBody } from './editable-body';
 import { getStatusMessage } from "./http-docs";
+import dedent from 'dedent';
 
-export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) {
-    return new RequestBreakpoint({
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        body: (
-            await decodeBody(
-                request.body.buffer,
-                asHeaderArray(request.headers['content-encoding'])
-            ).catch((e) => {
-                reportError(e);
-                return { decoded: Buffer.from('') };
-            })
-        ).decoded
+function getBody(message: MockttpBreakpointedRequest | MockttpBreakpointedResponse) {
+    return decodeBody(
+        message.body.buffer,
+        asHeaderArray(message.headers['content-encoding'])
+    ).catch((e) => {
+        reportError(e);
+        const error = dedent`
+            HTTP TOOLKIT ERROR: Could not decode body, \
+            check content-encoding
+        `;
+        return {
+            encoded: Buffer.from(error),
+            decoded: Buffer.from(error)
+        };
     });
 }
 
+export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) {
+    const { encoded, decoded } = await getBody(request);
+
+    const headers = observable(request.headers);
+
+    return new RequestBreakpoint(
+        {
+            method: request.method,
+            url: request.url,
+            headers: headers,
+        },
+        decoded,
+        encoded
+    );
+}
+
 export function getDummyResponseBreakpoint() {
-    return new Breakpoint<BreakpointResponseResult, BreakpointResponseResult>({
-        statusCode: 200,
-        statusMessage: undefined,
-        headers: {},
-        body: Buffer.from('')
-    });
+    const breakpoint = new Breakpoint<BreakpointResponseResult>(
+        {
+            statusCode: 200,
+            statusMessage: undefined,
+            headers: {},
+        },
+        Buffer.from(''),
+        Buffer.from('')
+    );
+
+    return breakpoint;
 }
 
 export async function getResponseBreakpoint(response: MockttpBreakpointedResponse) {
@@ -45,68 +71,102 @@ export async function getResponseBreakpoint(response: MockttpBreakpointedRespons
     const statusMessage = expectedStatusMessage === response.statusMessage
         ? undefined
         : response.statusMessage;
+    const { encoded, decoded } = await getBody(response);
 
-    return new Breakpoint<BreakpointResponseResult, BreakpointResponseResult>({
-        statusCode: response.statusCode,
-        statusMessage: statusMessage,
-        headers: response.headers,
-        body: (
-            await decodeBody(
-                response.body.buffer,
-                asHeaderArray(response.headers['content-encoding'])
-            ).catch((e) => {
-                reportError(e);
-                return { decoded: Buffer.from('') };
-            })
-        ).decoded
-    });
+    return new Breakpoint<BreakpointResponseResult>(
+        {
+            statusCode: response.statusCode,
+            statusMessage: statusMessage,
+            headers: response.headers
+        },
+        decoded,
+        encoded
+    );
 }
 
-export class Breakpoint<
-    R extends MockttpBreakpointRequestResult | BreakpointResponseResult,
-    T extends R & (BreakpointRequestResult | BreakpointResponseResult)
-> {
+type BreakpointInProgress = BreakpointRequestResult | BreakpointResponseResult;
 
-    protected readonly deferred: Deferred<R>;
+type BreakpointMetadata = Omit<BreakpointInProgress, 'body'>;
 
-    @observable.ref
-    private _inProgressResult: T;
+type BreakpointResumeType<T extends BreakpointInProgress> =
+    T extends BreakpointRequestResult
+        ? MockttpBreakpointRequestResult
+        : MockttpBreakpointResponseResult;
 
-    constructor(result: T) {
-        this.deferred = getDeferred<R>();
-        this._inProgressResult = result;
+
+export class Breakpoint<T extends BreakpointInProgress> {
+
+    protected readonly deferred: Deferred<BreakpointResumeType<T>>;
+
+    @observable.shallow
+    private resultMetadata: Omit<T, 'body'>;
+    private readonly editableBody: EditableBody;
+
+    constructor(
+        result: Omit<T, 'body'>,
+        decodedBody: Buffer,
+        encodedBody: Buffer | undefined
+    ) {
+        this.deferred = getDeferred();
+        this.resultMetadata = result;
+        this.editableBody = new EditableBody(
+            decodedBody,
+            encodedBody,
+            () => this.resultMetadata.headers['content-encoding']
+        );
+
+        // Update the content-length when necessary, if it was previously correct
+        observe(this.editableBody, 'contentLength', ({
+            oldValue: previousEncodedLength,
+            newValue: newEncodedLength
+        }) => {
+            const { headers } = this.resultMetadata;
+            const previousContentLength = parseInt(headers['content-length'] || '', 10);
+
+            // If the content-length was previously correct, keep it correct:
+            if (previousContentLength === previousEncodedLength) {
+                this.updateMetadata({
+                    headers: {
+                        ...headers,
+                        'content-length': newEncodedLength.toString()
+                    }
+                });
+            }
+        });
+
+        // When content-length is first added, default to the correct value
+        let lastContentLength = this.resultMetadata.headers['content-length'];
+        reaction(() => this.resultMetadata.headers['content-length'], (newContentLength) => {
+            if (lastContentLength === undefined && newContentLength === "") {
+                const correctLength = this.editableBody.contentLength.toString()
+                this.inProgressResult.headers['content-length'] = correctLength;
+            }
+
+            lastContentLength = newContentLength;
+        });
     }
 
-    get inProgressResult() {
-        return this._inProgressResult;
+    get inProgressResult(): T {
+        return Object.assign(
+            {
+                body: this.editableBody as BreakpointBody
+            },
+            this.resultMetadata,
+        ) as T;
     }
 
     @action.bound
-    updateResult(result: Partial<T>) {
-        this._inProgressResult = Object.assign({},
-            this._inProgressResult,
-            result
-        );
+    updateMetadata(update: Partial<BreakpointMetadata>) {
+        this.resultMetadata = {
+            ...this.resultMetadata,
+            ..._.omit(update, 'body')
+        };
     }
 
     @action.bound
     updateBody(body: string) {
         const bodyBuffer = Buffer.from(body);
-        const { headers: previousHeaders, body: previousBody } = this.inProgressResult;
-
-        let headers = previousHeaders;
-
-        if (parseInt(headers['content-length'] || '', 10) === (previousBody || '').length) {
-            // If the content-length was previous correct, keep it correct:
-            headers = Object.assign({}, previousHeaders, {
-                'content-length': bodyBuffer.length.toString()
-            });
-        }
-
-        this.updateResult({
-            body: bodyBuffer,
-            headers: headers
-        } as Partial<T>);
+        this.editableBody.updateDecodedBody(bodyBuffer);
     }
 
     waitForCompletedResult() {
@@ -114,26 +174,11 @@ export class Breakpoint<
     }
 
     readonly resume = async () => {
-        const { _inProgressResult: inProgressResult } = this;
-
-        let body = inProgressResult.body;
-
-        if (body) {
-            // Encode the body according to the content-encoding specified:
-            const encodings = asHeaderArray(inProgressResult.headers['content-encoding']);
-            body = (
-                await encodeBody(body, encodings).catch((e) => {
-                    reportError(e, { encodings });
-                    return {
-                        encoded: Buffer.from('HTTP TOOLKIT ERROR: COULD NOT ENCODE BODY')
-                    };
-                })
-            ).encoded;
-        }
-
-        this.deferred.resolve(
-            Object.assign({}, inProgressResult, { body })
-        );
+        this.deferred.resolve({
+            ...this.resultMetadata,
+            // Build the full encoded body before sending
+            body: await this.editableBody.encoded
+        } as unknown as BreakpointResumeType<T>);
     }
 
     reject(error: Error) {
@@ -141,11 +186,8 @@ export class Breakpoint<
     }
 }
 
-class RequestBreakpoint extends Breakpoint<
-    MockttpBreakpointRequestResult,
-    BreakpointRequestResult
-> {
-    respondDirectly(result: BreakpointResponseResult) {
+class RequestBreakpoint extends Breakpoint<BreakpointRequestResult> {
+    respondDirectly(result: MockttpBreakpointResponseResult) {
         this.deferred.resolve({ response: result });
     }
 }
@@ -153,7 +195,4 @@ class RequestBreakpoint extends Breakpoint<
 type RequestBreakpointType = RequestBreakpoint;
 
 export { RequestBreakpointType as RequestBreakpoint };
-export type ResponseBreakpoint = Breakpoint<
-    BreakpointResponseResult,
-    BreakpointResponseResult
->;
+export type ResponseBreakpoint = Breakpoint<BreakpointResponseResult>;

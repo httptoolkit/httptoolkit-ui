@@ -6,7 +6,12 @@ import {
     CompletedRequest as MockttpCompletedRequest,
     CompletedResponse as MockttpResponse
 } from 'mockttp';
-import { Headers, RequestHeaders, TimingEvents, TlsRequest } from 'mockttp/dist/types';
+import {
+    Headers,
+    RequestHeaders,
+    TimingEvents,
+    TlsRequest
+} from 'mockttp/dist/types';
 import { PortRange } from 'mockttp/dist/mockttp';
 import {
     PassThroughResponse as MockttpBreakpointedResponse,
@@ -31,28 +36,32 @@ export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 
+export interface BreakpointBody {
+    decoded: Buffer;
+    encoded: ObservablePromise<Buffer>;
+    contentLength: number;
+}
+
 // Define the restricted form of request BP result we'll use internally
-export type BreakpointRequestResult = Pick<
-    Required<MockttpBreakpointRequestResult>,
-    | 'method'
-    | 'url'
-    | 'headers'
-> & {
-    body: Buffer
+export type BreakpointRequestResult = {
+    method: string,
+    url: string,
+    headers: Headers,
+    body: BreakpointBody
 };
 
 // We still need this for the places where we actually interact with Mockttp
-export { MockttpBreakpointRequestResult };
+export {
+    MockttpBreakpointRequestResult,
+    MockttpBreakpointResponseResult
+};
 
 // Define the restricted form of response BP result we'll use internally
-export type BreakpointResponseResult = Pick<
-    MockttpBreakpointResponseResult, 'statusMessage'
-> & Pick<
-    Required<MockttpBreakpointResponseResult>,
-    | 'statusCode'
-    | 'headers'
-> & {
-    body: Buffer
+export type BreakpointResponseResult = {
+    statusCode: number,
+    statusMessage?: string,
+    headers: Headers,
+    body: BreakpointBody
 };
 
 export {

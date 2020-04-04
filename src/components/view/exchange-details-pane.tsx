@@ -263,7 +263,7 @@ export class ExchangeDetailsPane extends React.Component<{
             cards.push(<ExchangeBreakpointRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
-                onChange={requestBreakpoint.updateResult}
+                onChange={requestBreakpoint.updateMetadata}
             />);
 
             cards.push(this.renderRequestBody(exchange, apiExchange));
@@ -283,7 +283,7 @@ export class ExchangeDetailsPane extends React.Component<{
             cards.push(<ExchangeBreakpointResponseCard
                 {...this.cardProps.response}
                 exchange={exchange}
-                onChange={responseBreakpoint.updateResult}
+                onChange={responseBreakpoint.updateMetadata}
                 theme={uiStore!.theme}
             />);
 
@@ -357,7 +357,7 @@ export class ExchangeDetailsPane extends React.Component<{
         return requestBreakpoint
             ? <ExchangeBreakpointBodyCard
                 {...this.requestBodyParams()}
-                body={requestBreakpoint.inProgressResult.body}
+                body={requestBreakpoint.inProgressResult.body.decoded}
                 headers={requestBreakpoint.inProgressResult.headers}
                 onChange={requestBreakpoint.updateBody}
             />
@@ -374,7 +374,7 @@ export class ExchangeDetailsPane extends React.Component<{
         return responseBreakpoint
             ? <ExchangeBreakpointBodyCard
                 {...this.responseBodyParams()}
-                body={responseBreakpoint.inProgressResult.body}
+                body={responseBreakpoint.inProgressResult.body.decoded}
                 headers={responseBreakpoint.inProgressResult.headers}
                 onChange={responseBreakpoint.updateBody}
             />
