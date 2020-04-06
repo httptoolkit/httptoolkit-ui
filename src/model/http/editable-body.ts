@@ -48,7 +48,7 @@ export class EditableBody implements BreakpointBody {
         return asHeaderArray(this.getContentEncodingHeader());
     }
 
-    private updateEncodedBody = _.debounce(() => {
+    private updateEncodedBody = _.throttle(() => {
         const encodeBodyPromise = observablePromise((async () => {
             const encodings = this.contentEncodings;
 
