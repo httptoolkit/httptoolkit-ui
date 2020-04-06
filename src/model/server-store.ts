@@ -29,7 +29,7 @@ import { serverVersion } from '../services/service-versions';
 function startServer(
     server: Mockttp,
     portConfig: PortRange | undefined,
-    maxDelay = 1000,
+    maxDelay = 500,
     delayMs = 200
 ): Promise<void> {
     return server.start(portConfig).catch((e) => {
