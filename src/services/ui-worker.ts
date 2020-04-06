@@ -117,18 +117,20 @@ function decodeRequest(request: DecodeRequest): DecodeResponse {
 }
 
 const encodeContent = async (body: Buffer, encoding: string) => {
-    // This mirrors handleContentEncoding in Mockttp
+    // Encode the content. This is used everywhere that we need to translate to the right encoding.
+    // Since we only care about the format, not the compression itself, we *always* trade size for
+    // speed. This is all based on handleContentEncoding in Mockttp.
     if (encoding === 'gzip' || encoding === 'x-gzip') {
-        return gzipCompress(body);
+        return gzipCompress(body, { level: 1 });
     } else if (encoding === 'deflate' || encoding === 'x-deflate') {
         // Deflate is ambiguous, and may or may not have a zlib wrapper.
         // This checks the buffer header directly, based on
         // https://stackoverflow.com/a/37528114/68051
         const lowNibble = body[0] & 0xF;
         if (lowNibble === 8) {
-            return deflate(body);
+            return deflate(body, { level: 1 });
         } else {
-            return deflateRaw(body);
+            return deflateRaw(body, { level: 1 });
         }
     } else if (encoding === 'br') {
         return new Buffer(await brotliCompress(body));
