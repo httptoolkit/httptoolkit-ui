@@ -9,6 +9,7 @@ import * as localForage from 'localforage';
 import * as appPackage from '../../package.json';
 import { getServerVersion } from './server-api';
 import { lastServerVersion } from './service-versions';
+import { delay } from '../util/promise';
 
 const appVersion = process.env.COMMIT_REF || "Unknown";
 const SW_LOG = 'sw-log';
@@ -180,7 +181,13 @@ self.addEventListener('activate', async (event) => {
             const clients = await self.clients.matchAll({ type: 'window' });
             clients.map((client) => {
                 console.log(`Refreshing ${client.url}`);
-                return (client as WindowClient).navigate(client.url);
+                return (client as WindowClient).navigate(client.url)
+                    .catch(async (e) => {
+                        // On the first error, try once more, after a brief delay. Sometimes
+                        // claim() might not process fast enough, and this is necessary.
+                        await delay(100);
+                        return (client as WindowClient).navigate(client.url);
+                    });
             });
 
             writeToLog({ type: 'refresh-forced' });
