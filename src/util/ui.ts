@@ -11,7 +11,7 @@ export function isReactElement(node: any): node is React.ReactElement {
 export function saveFile(filename: string, mimeType: string, content: string): void {
     const element = document.createElement('a');
 
-    const data = new Blob([content], {type: 'application/har+json'});
+    const data = new Blob([content], { type: mimeType });
 
     const objectUrl = window.URL.createObjectURL(data);
     element.setAttribute('href', objectUrl);
