@@ -41,7 +41,7 @@ const ExchangeBodyCardCard = styled(ExchangeCard)`
     flex-direction: column;
 `;
 
-function getFilename(message: HtkResponse | HtkRequest): string | undefined {
+function getFilename(url: string, message: HtkResponse | HtkRequest): string | undefined {
     const contentDisposition = lastHeader(message.headers['content-disposition']) || "";
     const filenameMatch = / filename="([^"]+)"/.exec(contentDisposition);
 
@@ -49,6 +49,9 @@ function getFilename(message: HtkResponse | HtkRequest): string | undefined {
         const suggestedFilename = filenameMatch[1];
         return _.last(_.last(suggestedFilename.split('/') as string[])!.split('\\')); // Strip any path info
     }
+
+    const urlBaseName = _.last(url.split('/'));
+    if (urlBaseName?.includes(".")) return urlBaseName;
 }
 
 @observer
@@ -61,6 +64,7 @@ export class ExchangeBodyCard extends React.Component<{
     onExpandToggled: () => void,
 
     isPaidUser: boolean,
+    url: string,
     message: ExchangeMessage,
     apiBodySchema?: SchemaObject,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
@@ -92,6 +96,7 @@ export class ExchangeBodyCard extends React.Component<{
     render() {
         const {
             title,
+            url,
             message,
             apiBodySchema,
             direction,
@@ -134,7 +139,7 @@ export class ExchangeBodyCard extends React.Component<{
                             }
                             disabled={!isPaidUser}
                             onClick={() => saveFile(
-                                getFilename(message) || "",
+                                getFilename(url, message) || "",
                                 lastHeader(message.headers['content-type']) ||
                                     'application/octet-stream',
                                 decodedBody

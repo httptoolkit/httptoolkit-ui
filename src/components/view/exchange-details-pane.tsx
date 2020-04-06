@@ -364,6 +364,7 @@ export class ExchangeDetailsPane extends React.Component<{
             : <ExchangeBodyCard
                 {...this.requestBodyParams()}
                 isPaidUser={this.props.accountStore!.isPaidUser}
+                url={exchange.request.url}
                 message={request}
                 apiBodySchema={apiExchange?.request?.bodySchema}
             />;
@@ -382,6 +383,7 @@ export class ExchangeDetailsPane extends React.Component<{
             : <ExchangeBodyCard
                 {...this.responseBodyParams()}
                 isPaidUser={this.props.accountStore!.isPaidUser}
+                url={exchange.request.url}
                 message={response as HtkResponse}
                 apiBodySchema={apiExchange?.response?.bodySchema}
             />;
