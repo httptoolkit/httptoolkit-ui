@@ -12,8 +12,9 @@ import { lastHeader } from '../../util';
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/http/content-types';
 import { getReadableSize } from '../../model/http/bodies';
 
-import { CollapsibleCardHeading, CardButtons } from '../common/card';
+import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
+import { CollapsingButtons } from '../common/collapsing-buttons';
 import { Pill, PillSelector } from '../common/pill';
 import { CopyButtonIcon } from '../common/copy-button';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
@@ -119,7 +120,7 @@ export class ExchangeBodyCard extends React.Component<{
                 expanded={expanded}
             >
                 <header>
-                    <CardButtons>
+                    <CollapsingButtons>
                         <ExpandShrinkButton
                             expanded={expanded}
                             onClick={onExpandToggled}
@@ -131,7 +132,7 @@ export class ExchangeBodyCard extends React.Component<{
                             // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
                             <CopyBody content={currentRenderedContent} />
                         }
-                    </CardButtons>
+                    </CollapsingButtons>
                     <Pill>{ getReadableSize(decodedBody.byteLength) }</Pill>
                     <PillSelector<ViewableContentType>
                         onChange={this.setContentType}

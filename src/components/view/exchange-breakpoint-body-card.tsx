@@ -15,8 +15,9 @@ import {
 } from '../../model/http/content-types';
 import { getReadableSize } from '../../model/http/bodies';
 
-import { CollapsibleCardHeading, CardButtons } from '../common/card';
+import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard } from './exchange-card';
+import { CollapsingButtons } from '../common/collapsing-buttons';
 import { Pill, PillSelector } from '../common/pill';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
@@ -80,12 +81,12 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
             onCollapseToggled={onCollapseToggled}
         >
             <header>
-                <CardButtons>
+                <CollapsingButtons>
                     <ExpandShrinkButton
                         expanded={expanded}
                         onClick={onExpandToggled}
                     />
-                </CardButtons>
+                </CollapsingButtons>
 
                 <Pill>{ getReadableSize(body.byteLength) }</Pill>
                 <PillSelector<EditableContentType>

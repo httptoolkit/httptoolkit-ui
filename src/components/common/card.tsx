@@ -6,6 +6,8 @@ import { styled, Theme, ThemeProps, css } from '../../styles';
 import { Icon } from '../../icons';
 import { Omit } from '../../types';
 
+import { CollapsingButtons } from './collapsing-buttons';
+
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
     disabled?: boolean;
@@ -92,10 +94,6 @@ export const BigCard = styled(MediumCard)`
     > header:not(:last-child), > h1:not(:last-child) {
         margin-bottom: 30px;
     }
-`;
-
-export const CardButtons = styled.div`
-    margin-right: auto;
 `;
 
 interface CollapseIconProps extends ThemeProps<Theme> {

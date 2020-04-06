@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { desktopVersion } from '../services/service-versions';
 import { getDeferred, delay } from './promise';
+import { reportError } from '../errors';
 
 export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
@@ -95,4 +96,30 @@ export function uploadFile(
         .then(() => fileInput.remove());
 
     return result.promise;
+}
+
+export function useSize(ref: React.RefObject<HTMLElement>, defaultValue: number) {
+    const [spaceAvailable, setSpaceAvailable] = React.useState(defaultValue);
+
+    React.useEffect(() => {
+        const resizeObserver = new ResizeObserver(() => {
+            const container = ref.current;
+
+            if (container) {
+                setSpaceAvailable(container.clientWidth);
+            } else {
+                reportError("Element resized, but no ref available");
+            }
+        });
+
+        if (ref.current) {
+            resizeObserver.observe(ref.current);
+        } else {
+            reportError("No element to observe for resizing!");
+        }
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    return spaceAvailable;
 }

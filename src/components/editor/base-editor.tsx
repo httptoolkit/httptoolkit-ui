@@ -130,9 +130,6 @@ export class SelfSizedBaseEditor extends React.Component<
     }
 
     componentWillUnmount() {
-        if (this.container.current) {
-            this.resizeObserver.unobserve(this.container.current);
-        }
         this.resizeObserver.disconnect();
     }
 
