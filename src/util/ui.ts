@@ -8,7 +8,11 @@ export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
 }
 
-export function saveFile(filename: string, mimeType: string, content: string): void {
+export function saveFile(
+    filename: string,
+    mimeType: string,
+    content: string | Buffer
+): void {
     const element = document.createElement('a');
 
     const data = new Blob([content], { type: mimeType });

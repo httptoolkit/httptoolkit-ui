@@ -5,9 +5,10 @@ import { disposeOnUnmount, observer } from 'mobx-react';
 import { SchemaObject } from 'openapi-directory';
 import * as portals from 'react-reverse-portal';
 
-import { ExchangeMessage } from '../../types';
+import { ExchangeMessage, HtkResponse, HtkRequest } from '../../types';
 import { styled } from '../../styles';
 import { lastHeader } from '../../util';
+import { saveFile } from '../../util/ui';
 
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/http/content-types';
 import { getReadableSize } from '../../model/http/bodies';
@@ -16,10 +17,10 @@ import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { Pill, PillSelector } from '../common/pill';
-import { CopyButtonIcon } from '../common/copy-button';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { ContentViewer } from '../editor/content-viewer';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { IconButton } from '../common/icon-button';
 
 const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
@@ -35,14 +36,20 @@ const EditorCardContent = styled.div`
     flex-grow: 1;
 `;
 
-const CopyBody = styled(CopyButtonIcon)`
-    padding: 5px 10px;
-`;
-
 const ExchangeBodyCardCard = styled(ExchangeCard)`
     display: flex;
     flex-direction: column;
 `;
+
+function getFilename(message: HtkResponse | HtkRequest): string | undefined {
+    const contentDisposition = lastHeader(message.headers['content-disposition']) || "";
+    const filenameMatch = / filename="([^"]+)"/.exec(contentDisposition);
+
+    if (filenameMatch) {
+        const suggestedFilename = filenameMatch[1];
+        return _.last(_.last(suggestedFilename.split('/') as string[])!.split('\\')); // Strip any path info
+    }
+}
 
 @observer
 export class ExchangeBodyCard extends React.Component<{
@@ -53,6 +60,7 @@ export class ExchangeBodyCard extends React.Component<{
     onCollapseToggled: () => void,
     onExpandToggled: () => void,
 
+    isPaidUser: boolean,
     message: ExchangeMessage,
     apiBodySchema?: SchemaObject,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
@@ -60,13 +68,6 @@ export class ExchangeBodyCard extends React.Component<{
 
     @observable
     private selectedContentType: ViewableContentType | undefined;
-
-    /*
-     * Bit of a hack... We pass an observable down into the child editor component, who
-     * writes to it when they've got rendered content (or not), which automatically
-     * updates the copy button's rendered content.
-     */
-    private currentContent = observable.box<string | undefined>();
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
@@ -94,6 +95,7 @@ export class ExchangeBodyCard extends React.Component<{
             message,
             apiBodySchema,
             direction,
+            isPaidUser,
             collapsed,
             expanded,
             onCollapseToggled,
@@ -110,8 +112,6 @@ export class ExchangeBodyCard extends React.Component<{
 
         const decodedBody = message.body.decoded;
 
-        const currentRenderedContent = this.currentContent.get();
-
         return decodedBody ?
             <ExchangeBodyCardCard
                 direction={direction}
@@ -125,13 +125,21 @@ export class ExchangeBodyCard extends React.Component<{
                             expanded={expanded}
                             onClick={onExpandToggled}
                         />
-
-                        { !collapsed && currentRenderedContent &&
-                            // Can't show when collapsed, because no editor means the content might be outdated...
-                            // TODO: Fine a nicer solution that doesn't depend on the editor
-                            // Maybe refactor content rendering out, and pass the rendered result _down_ instead?
-                            <CopyBody content={currentRenderedContent} />
-                        }
+                        <IconButton
+                            icon={['fas', 'download']}
+                            title={
+                                isPaidUser
+                                    ? "Save this response as a file"
+                                    : "With Pro: Save this response as a file"
+                            }
+                            disabled={!isPaidUser}
+                            onClick={() => saveFile(
+                                getFilename(message) || "",
+                                lastHeader(message.headers['content-type']) ||
+                                    'application/octet-stream',
+                                decodedBody
+                            )}
+                        />
                     </CollapsingButtons>
                     <Pill>{ getReadableSize(decodedBody.byteLength) }</Pill>
                     <PillSelector<ViewableContentType>
@@ -149,7 +157,6 @@ export class ExchangeBodyCard extends React.Component<{
                         editorNode={this.props.editorNode}
                         rawContentType={lastHeader(message.headers['content-type'])}
                         contentType={contentType}
-                        contentObservable={this.currentContent}
                         schema={apiBodySchema}
                         expanded={!!expanded}
                     >

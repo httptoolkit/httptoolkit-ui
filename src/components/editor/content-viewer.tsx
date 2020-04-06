@@ -15,7 +15,6 @@ interface ContentViewerProps {
     expanded: boolean;
     rawContentType?: string;
     contentType: ViewableContentType;
-    contentObservable?: IObservableValue<string | undefined>;
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
 }
 
@@ -43,14 +42,6 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
         if (isEditorFormatter(this.formatter)) {
             return this.formatter.render(this.contentBuffer);
         }
-    }
-
-    componentDidMount() {
-        disposeOnUnmount(this, autorun(() => {
-            if (this.props.contentObservable) {
-                runInAction(() => this.props.contentObservable!.set(this.renderedContent));
-            }
-        }));
     }
 
     private readonly editorOptions = {
