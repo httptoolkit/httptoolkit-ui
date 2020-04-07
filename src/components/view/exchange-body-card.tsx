@@ -134,8 +134,8 @@ export class ExchangeBodyCard extends React.Component<{
                             icon={['fas', 'download']}
                             title={
                                 isPaidUser
-                                    ? "Save this response as a file"
-                                    : "With Pro: Save this response as a file"
+                                    ? "Save this body as a file"
+                                    : "With Pro: Save this body as a file"
                             }
                             disabled={!isPaidUser}
                             onClick={() => saveFile(
