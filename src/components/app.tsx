@@ -25,7 +25,7 @@ import { ViewPage } from './view/view-page';
 import { MockPage } from './mock/mock-page';
 import { SettingsPage } from './settings/settings-page';
 import { PlanPicker } from './account/plan-picker';
-import { ModalOverlay } from './account/modal-overlay';
+import { ModalOverlay, ModalButton } from './account/modal-overlay';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -37,15 +37,37 @@ const AppContainer = styled.div<{ inert?: boolean }>`
     }
 `;
 
-const Spinner = styled((p: { className?: string }) => (
+const Spinner = styled((p: { className?: string, onCancel: () => void }) => (
     <div className={p.className}>
+        <p>
+            The checkout has been opened in your browser.
+            <br/>
+            Please follow the steps there to complete your subscription.
+        </p>
+        <p>
+            Having trouble? Email <strong>billing@httptoolkit.tech</strong>.
+        </p>
         <Icon
             icon={['fac', 'spinner-arc']}
             spin
             size='10x'
         />
+        <ModalButton onClick={p.onCancel}>
+            Cancel checkout
+        </ModalButton>
     </div>
 ))`
+    > p {
+        max-width: 500px;
+    }
+
+    > p, > svg {
+        color: #fff;
+        margin: 20px auto;
+    }
+
+    text-align: center;
+
     position: absolute;
     top: 50%;
     left: 50%;
@@ -146,7 +168,8 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             subscriptionPlans,
             userEmail,
             logIn,
-            logOut
+            logOut,
+            cancelCheckout
         } = this.props.accountStore;
 
         return <LocationProvider history={appHistory}>
@@ -171,10 +194,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 </Router>
             </AppContainer>
 
-            { !!modal && <ModalOverlay opacity={
-                // Override for checkout, as it has an independent overlay
-                modal === 'checkout' ? 0.5 : undefined
-            } /> }
+            { !!modal && <ModalOverlay /> }
 
             { modal === 'pick-a-plan' &&
                 <PlanPicker
@@ -186,7 +206,11 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 />
             }
 
-            { modal === 'post-checkout' && <Spinner /> }
+            { modal === 'post-checkout' &&
+                <Spinner
+                    onCancel={cancelCheckout}
+                />
+            }
         </LocationProvider>;
     }
 }

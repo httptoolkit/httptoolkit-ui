@@ -88,15 +88,13 @@ export type SubscriptionPlanCode = keyof typeof SubscriptionPlans;
 export const getSubscriptionPlanCode = (id: number | undefined) =>
     _.findKey(SubscriptionPlans, { id: id }) as SubscriptionPlanCode | undefined;
 
-export const openCheckout = async (email: string, planCode: SubscriptionPlanCode): Promise<boolean> => {
-    return new Promise<boolean>((resolve) => {
-        Paddle.Checkout.open({
-            product: SubscriptionPlans[planCode].id,
-            email: email,
-            disableLogout: true,
-            allowQuantity: false,
-            successCallback: () => resolve(true),
-            closeCallback: () => resolve(false)
-        });
-    });
+export const openCheckout = async (email: string, planCode: SubscriptionPlanCode) => {
+    window.open(
+        `https://pay.paddle.com/checkout/${
+            SubscriptionPlans[planCode].id
+        }?guest_email=${
+            encodeURIComponent(email)
+        }&referring_domain=app.httptoolkit.tech`,
+        '_blank'
+    );
 }

@@ -87,7 +87,7 @@ export class AccountStore {
     readonly subscriptionPlans = SubscriptionPlans;
 
     @observable
-    modal: 'login' | 'pick-a-plan' | 'checkout' | 'post-checkout' | undefined;
+    modal: 'login' | 'pick-a-plan' | 'post-checkout' | undefined;
 
     @observable
     private selectedPlan: SubscriptionPlanCode | undefined;
@@ -205,35 +205,54 @@ export class AccountStore {
     }
 
     private purchasePlan = flow(function * (this: AccountStore, email: string, planCode: SubscriptionPlanCode) {
-        this.modal = 'checkout';
+        openCheckout(email, planCode);
+        this.modal = 'post-checkout';
 
-        const purchased: boolean = yield openCheckout(email, planCode);
+        let focused = true;
 
-        if (purchased) {
-            this.modal = 'post-checkout';
+        const setFocused = () => {
+            focused = true;
+            this.updateUser();
+        };
 
-            yield this.updateUser();
-            let retries = 30;
-            while (!this.isPaidUser && retries > 0) {
-                retries -= 1;
-                yield delay(1000);
+        const setUnfocused = () => {
+            focused = false;
+        };
+
+        window.addEventListener('focus', setFocused);
+        window.addEventListener('blur', setUnfocused);
+
+        // Keep checking the user's subscription data whilst they check out in their browser...
+        yield this.updateUser();
+        let ticksSinceCheck = 0;
+        while (!this.isPaidUser && this.modal) {
+            yield delay(500);
+            ticksSinceCheck += 1;
+
+            if (focused || ticksSinceCheck > 20) {
+                // Every 10s while blurred or 500ms while focused, check the user data:
+                ticksSinceCheck = 0;
                 yield this.updateUser();
-            }
-
-            // After 30 seconds, fail - this will report an error and then refresh
-            if (!this.isPaidUser) {
-                throw new Error('Checkout failed to complete');
             }
         }
 
+        if (this.isPaidUser && !focused) window.focus(); // Jump back to the front after checkout
+
+        window.removeEventListener('focus', setFocused);
+        window.removeEventListener('blur', setUnfocused);
+
         trackEvent({
             category: 'Account',
-            action: purchased ? 'Checkout complete' : 'Checkout cancelled',
+            action: this.isPaidUser ? 'Checkout complete' : 'Checkout cancelled',
             label: planCode
         });
 
         this.modal = undefined;
-        return purchased;
     });
+
+    @action.bound
+    cancelCheckout() {
+        this.modal = this.selectedPlan = undefined;
+    }
 
 }
