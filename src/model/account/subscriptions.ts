@@ -1,16 +1,5 @@
 import * as _ from 'lodash';
 
-import * as Paddle from 'val-loader!./paddle';
-
-const PADDLE_VENDOR_ID = 37222;
-Paddle.Setup({ vendor: PADDLE_VENDOR_ID, enableTracking: false });
-
-async function getPlanPrices(planId: number) {
-    return new Promise<Paddle.Pricing>((resolve) => {
-        Paddle.Product.Prices(planId, 1, resolve);
-    });
-}
-
 export interface SubscriptionPlan {
     id: number;
     prices?: {

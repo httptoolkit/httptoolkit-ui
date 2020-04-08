@@ -25,8 +25,6 @@ import {
 export class AccountStore {
 
     readonly initialized = lazyObservablePromise(async () => {
-        this.checkForPaddle();
-
         // Update account data automatically on login, logout & every 10 mins
         loginEvents.on('authenticated', async () => {
             await this.updateUser();
@@ -46,18 +44,6 @@ export class AccountStore {
 
         console.log('Account store created');
     });
-
-    @action.bound
-    private checkForPaddle() {
-        this.paddleLoaded = !!(window as any).Paddle;
-
-        if (!this.paddleLoaded) {
-            setTimeout(this.checkForPaddle, 500);
-        }
-    }
-
-    @observable
-    private paddleLoaded: boolean = false;
 
     @observable
     private user: User = getLastUserData();
