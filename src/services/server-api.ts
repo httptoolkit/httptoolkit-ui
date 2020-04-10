@@ -154,8 +154,8 @@ export async function activateInterceptor(id: string, proxyPort: number, options
     ) {
         return result.activateInterceptor.metadata;
     } else {
-        console.log('Activation result', result);
-        throw new Error('Failed to activate interceptor');
+        console.log('Activation result', JSON.stringify(result));
+        throw new Error(`Failed to activate interceptor ${id}`);
     }
 }
 
