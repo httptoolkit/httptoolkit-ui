@@ -3,11 +3,13 @@ import React from "react";
 import { observable, action } from "mobx";
 import { inject, observer } from "mobx-react";
 import * as HTTPSnippet from "httpsnippet";
+import dedent from 'dedent';
 
 import { Omit } from "../../types";
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
 import { saveFile } from '../../util/ui';
+import { reportError } from '../../errors';
 
 import { AccountStore } from "../../model/account/account-store";
 import { HttpExchange } from "../../model/http/exchange";
@@ -83,7 +85,19 @@ const ExportSnippetEditor = observer((p: {
 }) => {
     const { target, client, link, description } = p.exportOption;
     const harRequest = generateHarRequest(p.exchange.request);
-    const snippet = new HTTPSnippet(harRequest).convert(target, client);
+
+    let snippet: string;
+    try {
+        snippet = new HTTPSnippet(harRequest).convert(target, client);
+    } catch (e) {
+        console.log(`Failed to export request for ${target}--${client}`);
+        reportError(e);
+        snippet = dedent`
+            Could not generate a snippet for this request
+
+            Is this unexpected? Please file a bug at github.com/httptoolkit/feedback.
+        `;
+    }
 
     return <>
         <SnippetDescriptionContainer>
