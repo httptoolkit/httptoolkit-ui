@@ -24,8 +24,8 @@ import { ViewableContentType } from './model/http/content-types';
 import { ObservablePromise } from './util/observable';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
-export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents'> &
-    { body: HarBody; timingEvents: TimingEvents };
+export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &
+    { body: HarBody; timingEvents: TimingEvents, matchedRuleId: "?" };
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 

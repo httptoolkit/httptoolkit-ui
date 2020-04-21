@@ -209,7 +209,7 @@ export class HttpExchange {
 
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new ExchangeBody(request, request.headers);
-        this.matchedRuleId = request.matchedRuleId;
+        this.matchedRuleId = request.matchedRuleId || "?";
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);
