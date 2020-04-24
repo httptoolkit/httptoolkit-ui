@@ -13,6 +13,8 @@ import { HttpExchange } from '../../model/http/exchange';
 import { ApiExchange } from '../../model/api/openapi';
 import { UiStore } from '../../model/ui-store';
 import { CollectedEvent } from '../../model/http/events-store';
+import { RulesStore } from '../../model/rules/rules-store';
+import { buildRuleFromRequest } from '../../model/rules/rule-definitions';
 
 import { Pill } from '../common/pill';
 import { CollapsibleCardHeading } from '../common/card';
@@ -95,6 +97,7 @@ type CardKey = typeof cardKeys[number];
 
 @inject('uiStore')
 @inject('accountStore')
+@inject('rulesStore')
 @observer
 export class ExchangeDetailsPane extends React.Component<{
     exchange: HttpExchange,
@@ -108,7 +111,8 @@ export class ExchangeDetailsPane extends React.Component<{
 
     // Injected:
     uiStore?: UiStore,
-    accountStore?: AccountStore
+    accountStore?: AccountStore,
+    rulesStore?: RulesStore
 }> {
 
     // Used to trigger animation on initial card expansion
@@ -201,6 +205,7 @@ export class ExchangeDetailsPane extends React.Component<{
             isPaidUser,
             getPro,
             navigate,
+            mockRequest: this.mockRequest,
             ignoreError: this.ignoreError
         };
 
@@ -453,6 +458,15 @@ export class ExchangeDetailsPane extends React.Component<{
                 this.expandCompleted = true;
             }));
         }
+    }
+
+    @action.bound
+    private mockRequest() {
+        const { exchange, rulesStore, navigate } = this.props;
+
+        const rule = buildRuleFromRequest(rulesStore!, exchange.request);
+        rulesStore!.draftRules.items.unshift(rule);
+        navigate(`/mock/${rule.id}`);
     }
 
     @action.bound

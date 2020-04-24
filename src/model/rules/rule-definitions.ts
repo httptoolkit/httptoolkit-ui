@@ -12,7 +12,7 @@ import * as amIUsingHtml from '../../amiusing.html';
 import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
 import { ServerStore } from '../server-store';
 import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
-import { HtkResponse, Headers } from '../../types';
+import { HtkResponse, Headers, HtkRequest } from '../../types';
 import { HttpExchange } from '../http/exchange';
 
 type MethodName = keyof typeof Method;
@@ -204,7 +204,24 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     });
 }
 
-export function buildRuleFromEvent(exchange: HttpExchange): HtkMockRule {
+function buildRequestMatchers(request: HtkRequest) {
+    return [
+        new MethodMatchers[request.method as MethodName]() || new WildcardMatcher(),
+        new matchers.SimplePathMatcher(request.parsedUrl.toString().split('?')[0])
+    ];
+}
+
+export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest): HtkMockRule {
+    return {
+        id: uuid(),
+        activated: true,
+        matchers: buildRequestMatchers(request),
+        handler: new RequestBreakpointHandler(rulesStore),
+        completionChecker: new completionCheckers.Always(),
+    };
+}
+
+export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
     const { statusCode, statusMessage, headers } = exchange.isSuccessfulExchange()
         ? exchange.response
         : { statusCode: 200, statusMessage: "OK", headers: {} as Headers };
@@ -237,13 +254,7 @@ export function buildRuleFromEvent(exchange: HttpExchange): HtkMockRule {
     return {
         id: uuid(),
         activated: true,
-        matchers: [
-            new MethodMatchers[exchange.request.method as MethodName]() ||
-                new WildcardMatcher(),
-            new matchers.SimplePathMatcher(
-                exchange.request.parsedUrl.toString().split('?')[0]
-            )
-        ],
+        matchers: buildRequestMatchers(exchange.request),
         handler: new StaticResponseHandler(
             statusCode,
             statusMessage,

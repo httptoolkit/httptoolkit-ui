@@ -7,7 +7,7 @@ import { styled, css } from '../../styles';
 import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { RulesStore } from '../../model/rules/rules-store';
-import { buildRuleFromEvent } from '../../model/rules/rule-definitions';
+import { buildRuleFromExchange } from '../../model/rules/rule-definitions';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 import { IconButton } from '../common/icon-button';
@@ -115,7 +115,7 @@ export const ExchangeDetailsFooter = inject('rulesStore')(
                     isExchange={event instanceof HttpExchange}
                     isPaidUser={props.isPaidUser}
                     onClick={() => {
-                        const rule = buildRuleFromEvent(
+                        const rule = buildRuleFromExchange(
                             event as HttpExchange
                         );
                         runInAction(() => {

@@ -63,6 +63,7 @@ export const ExchangeErrorHeader = (p: {
     type: ErrorType,
     getPro: (source: string) => void,
     navigate: (path: string) => void,
+    mockRequest: () => void,
     ignoreError: () => void
 }) =>
     <ExchangeHeaderCard>
@@ -169,8 +170,8 @@ export const ExchangeErrorHeader = (p: {
         </HeaderButton>
 
         { isMockable(p.type)
-            ? <HeaderButton onClick={() => p.navigate('/mock')} onKeyPress={clickOnEnter}>
-                Go to the Mock page
+            ? <HeaderButton onClick={p.mockRequest} onKeyPress={clickOnEnter}>
+                Mock requests like this
             </HeaderButton>
         : isWhitelistable(p.type)
             ? (p.isPaidUser
