@@ -215,7 +215,7 @@ export class HttpExchange {
         this.tags = _.union(this.tags, request.tags);
     }
 
-    markAborted(request: InputInitiatedRequest) {
+    markAborted(request: Pick<InputInitiatedRequest, 'timingEvents' | 'tags'>) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
 

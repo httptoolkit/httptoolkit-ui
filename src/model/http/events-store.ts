@@ -13,6 +13,8 @@ import {
     InputTlsRequest,
     InputInitiatedRequest,
     InputCompletedRequest,
+    InputClientError,
+    RequestHeaders,
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
@@ -30,7 +32,8 @@ type EventTypesMap = {
     'request': InputCompletedRequest
     'response': InputResponse
     'abort': InputInitiatedRequest
-    'tlsClientError': InputTlsRequest
+    'tls-client-error': InputTlsRequest,
+    'client-error': InputClientError
 };
 
 const eventTypes = [
@@ -38,7 +41,8 @@ const eventTypes = [
     'request',
     'response',
     'abort',
-    'tlsClientError'
+    'tls-client-error',
+    'client-error'
 ] as const;
 
 type EventType = typeof eventTypes[number];
@@ -136,8 +140,10 @@ export class EventsStore {
                 return this.setResponse(queuedEvent.event);
             case 'abort':
                 return this.markRequestAborted(queuedEvent.event);
-            case 'tlsClientError':
+            case 'tls-client-error':
                 return this.addFailedTlsRequest(queuedEvent.event);
+            case 'client-error':
+                return this.addClientError(queuedEvent.event);
         }
     }
 
@@ -242,6 +248,32 @@ export class EventsStore {
                 searchIndex: [request.hostname, request.remoteIpAddress]
                     .filter((x): x is string => !!x)
             }));
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
+    @action
+    private addClientError(error: InputClientError) {
+        try {
+            const exchange = new HttpExchange(this.apiStore, {
+                ...error.request,
+                protocol: error.request.protocol || '<?>',
+                method: error.request.method || '<?>',
+                url: error.request.url || `${
+                    error.request.protocol || 'http'
+                }://<?>/`,
+                path: error.request.path || '/<?>',
+                headers: (error.request.headers as RequestHeaders)
+            });
+
+            if (error.response === 'aborted') {
+                exchange.markAborted(error.request);
+            } else {
+                exchange.setResponse(error.response);
+            }
+
+            this.events.push(exchange);
         } catch (e) {
             reportError(e);
         }

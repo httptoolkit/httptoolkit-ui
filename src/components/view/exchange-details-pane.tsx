@@ -26,7 +26,7 @@ import { AccountStore } from '../../model/account/account-store';
 import { ExchangePerformanceCard } from './exchange-performance-card';
 import { ExchangeExportCard } from './exchange-export-card';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { ExchangeErrorHeader } from './exchange-error-header';
+import { ExchangeErrorHeader, tagsToErrorType } from './exchange-error-header';
 import { ExchangeDetailsFooter } from './exchange-details-footer';
 import { ExchangeRequestBreakpointHeader, ExchangeResponseBreakpointHeader } from './exchange-breakpoint-header';
 import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
@@ -209,52 +209,13 @@ export class ExchangeDetailsPane extends React.Component<{
             ignoreError: this.ignoreError
         };
 
-        if (
-            tags.includes("passthrough-error:SELF_SIGNED_CERT_IN_CHAIN") ||
-            tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
-            tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
-            tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY")
-        ) {
-            return <ExchangeErrorHeader type='untrusted' {...errorHeaderProps} />;
-        }
+        const errorType = tagsToErrorType(tags);
 
-        if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) {
-            return <ExchangeErrorHeader type='expired' {...errorHeaderProps} />;
+        if (errorType) {
+            return <ExchangeErrorHeader type={errorType} {...errorHeaderProps} />;
+        } else {
+            return null;
         }
-
-        if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) {
-            return <ExchangeErrorHeader type='wrong-host' {...errorHeaderProps} />;
-        }
-
-        if (
-            tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
-            tags.includes("passthrough-error:EPROTO")
-        ) {
-            return <ExchangeErrorHeader type='tls-error' {...errorHeaderProps} />;
-        }
-
-        if (tags.includes("passthrough-error:ENOTFOUND")) {
-            return <ExchangeErrorHeader type='host-not-found' {...errorHeaderProps} />;
-        }
-
-        if (tags.includes("passthrough-error:ECONNREFUSED")) {
-            return <ExchangeErrorHeader type='connection-refused' {...errorHeaderProps} />;
-        }
-
-        if (tags.includes("passthrough-error:ECONNRESET")) {
-            return <ExchangeErrorHeader type='connection-reset' {...errorHeaderProps} />;
-        }
-
-        if (tags.includes("passthrough-error:ETIMEDOUT")) {
-            return <ExchangeErrorHeader type='timeout' {...errorHeaderProps} />;
-        }
-
-        if (tags.filter(t => t.startsWith("passthrough-error:")).length > 0) {
-            reportError(`Unrecognized passthrough error tag ${JSON.stringify(tags)}`);
-            return <ExchangeErrorHeader type='unknown' {...errorHeaderProps} />;
-        }
-
-        return null;
     }
 
     private renderExpandedCard(
@@ -481,7 +442,9 @@ export class ExchangeDetailsPane extends React.Component<{
         // Drop all error tags from this exchange
         exchange.tags = exchange.tags.filter(t =>
             !t.startsWith('passthrough-error:') &&
-            !t.startsWith('passthrough-tls-error:')
+            !t.startsWith('passthrough-tls-error:') &&
+            !t.startsWith('client-error:') &&
+            !['header-overflow', 'http-2'].includes(t)
         );
     }
 

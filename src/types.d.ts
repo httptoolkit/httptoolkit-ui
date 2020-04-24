@@ -10,7 +10,8 @@ import {
     Headers,
     RequestHeaders,
     TimingEvents,
-    TlsRequest
+    TlsRequest,
+    ClientError
 } from 'mockttp/dist/types';
 import { PortRange } from 'mockttp/dist/mockttp';
 import {
@@ -29,6 +30,7 @@ export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' |
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
+export type InputClientError = ClientError;
 export type InputTlsRequest = TlsRequest;
 export type InputInitiatedRequest = MockttpInitiatedRequest;
 export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;

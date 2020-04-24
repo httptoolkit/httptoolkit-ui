@@ -1,7 +1,11 @@
 import * as React from 'react';
+import * as semver from 'semver';
 
 import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
+import { reportError } from '../../errors';
+
+import { desktopVersion, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../services/service-versions';
 
 import { clickOnEnter } from '../component-utils';
 import { Button } from '../common/inputs';
@@ -31,11 +35,85 @@ type ErrorType =
     | 'connection-refused'
     | 'connection-reset'
     | 'timeout'
+    | 'invalid-http-version'
+    | 'invalid-method'
+    | 'unparseable-url'
+    | 'unparseable'
+    | 'header-overflow'
+    | 'invalid-headers'
     | 'unknown';
+
+export function tagsToErrorType(tags: string[]): ErrorType | undefined {
+    if (
+        tags.includes("passthrough-error:SELF_SIGNED_CERT_IN_CHAIN") ||
+        tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
+        tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
+        tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY")
+    ) {
+        return 'untrusted';
+    }
+
+    if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) {
+        return 'expired';
+    }
+
+    if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) {
+        return 'wrong-host';
+    }
+
+    if (
+        tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
+        tags.includes("passthrough-error:EPROTO")
+    ) {
+        return 'tls-error';
+    }
+
+    if (tags.includes("passthrough-error:ENOTFOUND")) return 'host-not-found';
+    if (tags.includes("passthrough-error:ECONNREFUSED")) return 'connection-refused';
+    if (tags.includes("passthrough-error:ECONNRESET")) return 'connection-reset';
+    if (tags.includes("passthrough-error:ETIMEDOUT")) return 'timeout';
+
+    if (tags.includes("http-2") || tags.includes("client-error:HPE_INVALID_VERSION")) {
+        return 'invalid-http-version';
+    }
+
+    if (tags.includes("client-error:HPE_INVALID_METHOD")) return 'invalid-method'; // QWE / HTTP/1.1
+    if (tags.includes("client-error:HPE_INVALID_URL")) return 'unparseable-url'; // http://<unicode>
+    if (tags.includes("client-error:HPE_INVALID_CONSTANT")) return 'unparseable'; // ABC/1.1
+    if (tags.includes("client-error:HPE_HEADER_OVERFLOW")) return 'header-overflow'; // More than ~80KB of headers
+    if (
+        tags.includes("client-error:HPE_INVALID_CONTENT_LENGTH") ||
+        tags.includes("client-error:HPE_INVALID_TRANSFER_ENCODING") ||
+        tags.includes("client-error:HPE_INVALID_HEADER_TOKEN")
+    ) return 'invalid-headers';
+
+    if (
+        tags.filter(t => t.startsWith("passthrough-error:")).length > 0 ||
+        tags.filter(t => t.startsWith("client-error:")).length > 0
+    ) {
+        reportError(`Unrecognized error tag ${JSON.stringify(tags)}`);
+        return 'unknown';
+    }
+}
 
 function typeCheck<T extends string>(types: readonly T[]) {
     return (type: string): type is T => types.includes(type as T);
 }
+
+const isInitialRequestError = typeCheck([
+    'invalid-http-version',
+    'invalid-method',
+    'unparseable',
+    'unparseable-url',
+    'header-overflow',
+    'invalid-headers'
+]);
+
+const isClientBug = typeCheck([
+    'unparseable',
+    'unparseable-url',
+    'invalid-headers'
+]);
 
 const wasNotForwarded = typeCheck([
     'untrusted',
@@ -67,15 +145,44 @@ export const ExchangeErrorHeader = (p: {
     navigate: (path: string) => void,
     mockRequest: () => void,
     ignoreError: () => void
-}) =>
-    <ExchangeHeaderCard>
+}) => {
+    const advancedHeaderOverflowSupported =
+        desktopVersion.state === 'fulfilled' &&
+        semver.valid(desktopVersion.value as string) &&
+        semver.satisfies(
+            desktopVersion.value as string,
+            DESKTOP_HEADER_LIMIT_CONFIGURABLE
+        );
+
+    return <ExchangeHeaderCard>
         <HeaderExplanation>
-            <WarningIcon /> <strong>This request was not forwarded successfully</strong>
+            <WarningIcon /> {
+                isInitialRequestError(p.type) || p.type === 'unknown'
+                ? <strong>This request could not be handled</strong>
+                : <strong>This request was not forwarded successfully</strong>
+            }
         </HeaderExplanation>
 
         <HeaderExplanation>
-            { wasNotForwarded(p.type)
-                 ? <>
+            { isInitialRequestError(p.type)
+                ? <>
+                    The client's request {
+                        p.type === 'invalid-method'
+                            ? 'used an unsupported HTTP method'
+                        : p.type === 'invalid-http-version'
+                            ? 'used an unsupported HTTP version'
+                        : p.type === 'invalid-headers'
+                            ? 'included an unparseable header'
+                        : p.type === 'unparseable-url'
+                            ? 'included an unparseable URL'
+                        : p.type === 'header-overflow'
+                            ? 'headers were too large to be processed'
+                        : // unparseable
+                            'could not be parsed'
+                    }, so HTTP Toolkit did not handle this request.
+                </>
+            : wasNotForwarded(p.type)
+                ? <>
                     The upstream server {
                         p.type === 'wrong-host'
                             ? 'responded with an HTTPS certificate for the wrong hostname'
@@ -91,15 +198,16 @@ export const ExchangeErrorHeader = (p: {
                             'refused the connection'
                     }, so HTTP Toolkit did not forward the request.
                 </>
-                : <>
-                    The upstream request failed because {
+            : // Unknown/upstream issue:
+                <>
+                    The request failed because {
                         p.type === 'connection-reset'
-                            ? 'the connection was reset'
+                            ? 'the connection to the server was reset'
                         : p.type === 'timeout'
-                            ? 'the connection timed out'
+                            ? 'the connection to the server timed out'
                         : // unknown
                             'of an unknown error'
-                    }, so HTTP Toolkit could not return the response.
+                    }, so HTTP Toolkit could not return a response.
                 </>
             }
         </HeaderExplanation>
@@ -167,10 +275,57 @@ export const ExchangeErrorHeader = (p: {
                 the request, or you can mock requests like this to avoid sending them upstream
                 at all.
             </HeaderExplanation>
+        : isClientBug(p.type)
+            ? <HeaderExplanation>
+                This means the client sent HTTP Toolkit some fundamentally invalid data that does
+                not follow the HTTP spec. That suggests either a major bug in the client, or that
+                they're not sending HTTP at all.
+            </HeaderExplanation>
+        : p.type === 'header-overflow'
+            ? <HeaderExplanation>
+                { desktopVersion.value && advancedHeaderOverflowSupported
+                    ? <>
+                        This means the request included more than 100KB of headers. The HTTP specification
+                        doesn't set a max length, but most servers will refuse to process anything longer
+                        than 8KB. This is likely an issue with your client, but if necessary you can increase
+                        the HTTP Toolkit limit by setting <code>max-http-header-size</code> using the <code>HTTPTOOLKIT_NODE_OPTIONS</code> environment variable.
+                    </>
+                : desktopVersion.value // Old desktop:
+                    ? <>
+                        In more recent HTTP Toolkit versions the built-in limit has been increased, so please
+                        update HTTP Toolkit to handle requests like these.
+                    </>
+                : // Non-desktop use:
+                    <>
+                        The HTTP specification doesn't set a max length for HTTP headers, but most
+                        servers will refuse to process anything longer than 8KB.
+                    </>
+                }
+            </HeaderExplanation>
+        : p.type === 'invalid-method'
+            ? <HeaderExplanation>
+                Because this method is unrecognized, HTTP Toolkit doesn't know how it should
+                be handled, and cannot safely forward it on elsewhere. If you think this
+                method should be supported, please <a
+                    href='https://github.com/httptoolkit/feedback/issues/new'
+                >
+                    get in touch
+                </a>.
+            </HeaderExplanation>
+        : p.type === 'invalid-http-version'
+            ? <HeaderExplanation>
+                The client may be using a newer or experimental HTTP version that HTTP
+                Toolkit doesn't yet support. If you think this version should be supported,
+                please <a
+                    href='https://github.com/httptoolkit/feedback/issues/new'
+                >
+                    get in touch
+                </a>.
+            </HeaderExplanation>
         : // 'unknown':
             <HeaderExplanation>
                 It's not clear what's gone wrong here, but for some reason HTTP Toolkit
-                couldn't successfully and/or securely connect to the requested server.
+                couldn't successfully and/or securely complete this request.
                 This might be an intermittent issue, and may be resolved by retrying
                 the request.
             </HeaderExplanation>
@@ -199,3 +354,4 @@ export const ExchangeErrorHeader = (p: {
         : null }
 
     </ExchangeHeaderCard>;
+};
