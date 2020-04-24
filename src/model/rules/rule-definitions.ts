@@ -206,7 +206,7 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
 
 function buildRequestMatchers(request: HtkRequest) {
     return [
-        new MethodMatchers[request.method as MethodName]() || new WildcardMatcher(),
+        new (MethodMatchers[request.method as MethodName] || WildcardMatcher)(),
         new matchers.SimplePathMatcher(request.parsedUrl.toString().split('?')[0])
     ];
 }
