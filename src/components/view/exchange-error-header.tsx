@@ -29,7 +29,8 @@ export const ExchangeErrorHeader = (p: {
         | 'expired'
         | 'wrong-host'
         | 'tls-error'
-        | 'host-not-found',
+        | 'host-not-found'
+        | 'unknown',
     getPro: (source: string) => void,
     navigate: (path: string) => void,
     ignoreError: () => void
@@ -89,13 +90,25 @@ export const ExchangeErrorHeader = (p: {
                         that don't exist.
                     </HeaderExplanation>
                 </>
-            : <HeaderExplanation>
-                By default this is only allowed for localhost servers, but {
-                    p.isPaidUser
-                        ? 'other hosts can be added to the whitelist from the Settings page.'
-                        : 'Pro users can whitelist other custom hosts.'
-                }
-            </HeaderExplanation>
+            : [
+                "untrusted",
+                "expired",
+                "wrong-host"
+            ].includes(p.type)
+                ? <HeaderExplanation>
+                    By default this is only allowed for localhost servers, but {
+                        p.isPaidUser
+                            ? 'other hosts can be added to the whitelist from the Settings page.'
+                            : 'Pro users can whitelist other custom hosts.'
+                    }
+                </HeaderExplanation>
+            : // 'unknown':
+                <HeaderExplanation>
+                    It's not clear what's gone wrong here, but for some reason HTTP Toolkit
+                    couldn't successfully and/or securely connect to the requested server.
+                    This might be an intermittent issue, and may be resolved by retrying
+                    the request.
+                </HeaderExplanation>
         }
 
         <HeaderButton onClick={p.ignoreError} onKeyPress={clickOnEnter}>
