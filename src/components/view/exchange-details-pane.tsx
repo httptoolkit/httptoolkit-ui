@@ -231,6 +231,14 @@ export class ExchangeDetailsPane extends React.Component<{
             return <ExchangeErrorHeader type='host-not-found' {...errorHeaderProps} />;
         }
 
+        if (tags.includes("passthrough-error:ECONNREFUSED")) {
+            return <ExchangeErrorHeader type='connection-refused' {...errorHeaderProps} />;
+        }
+
+        if (tags.includes("passthrough-error:ECONNRESET")) {
+            return <ExchangeErrorHeader type='connection-reset' {...errorHeaderProps} />;
+        }
+
         if (tags.filter(t => t.startsWith("passthrough-error:")).length > 0) {
             reportError(`Unrecognized passthrough error tag ${JSON.stringify(tags)}`);
             return <ExchangeErrorHeader type='unknown' {...errorHeaderProps} />;

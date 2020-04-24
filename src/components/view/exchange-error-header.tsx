@@ -22,15 +22,45 @@ const HeaderButton = styled(Button)`
     align-self: stretch;
 `;
 
+type ErrorType =
+    | 'untrusted'
+    | 'expired'
+    | 'wrong-host'
+    | 'tls-error'
+    | 'host-not-found'
+    | 'connection-refused'
+    | 'connection-reset'
+    | 'unknown';
+
+function typeCheck<T extends string>(types: readonly T[]) {
+    return (type: string): type is T => types.includes(type as T);
+}
+
+const wasNotForwarded = typeCheck([
+    'untrusted',
+    'expired',
+    'wrong-host',
+    'tls-error',
+    'host-not-found',
+    'connection-refused'
+]);
+
+const isWhitelistable = typeCheck([
+    'untrusted',
+    'expired',
+    'wrong-host',
+    'tls-error'
+]);
+
+const isMockable = typeCheck([
+    'host-not-found',
+    'connection-refused',
+    'connection-reset'
+]);
+
 export const ExchangeErrorHeader = (p: {
     isPaidUser: boolean,
-    type:
-        | 'untrusted'
-        | 'expired'
-        | 'wrong-host'
-        | 'tls-error'
-        | 'host-not-found'
-        | 'unknown',
+    type: ErrorType,
     getPro: (source: string) => void,
     navigate: (path: string) => void,
     ignoreError: () => void
@@ -41,19 +71,32 @@ export const ExchangeErrorHeader = (p: {
         </HeaderExplanation>
 
         <HeaderExplanation>
-            The upstream server {
-                p.type === 'wrong-host'
-                    ? 'responded with an HTTPS certificate for the wrong hostname'
-                : p.type === 'expired'
-                    ? 'has an expired HTTPS certificate'
-                : p.type === 'untrusted'
-                    ? 'has an untrusted HTTPS certificate'
-                : p.type === 'tls-error'
-                    ? 'failed to complete a TLS handshake'
-                : p.type === 'host-not-found'
-                    ? 'hostname could be not found'
-                : 'failed to communicate, due to an unknown error'
-            }, so HTTP Toolkit did not forward the request.
+            { wasNotForwarded(p.type)
+                 ? <>
+                    The upstream server {
+                        p.type === 'wrong-host'
+                            ? 'responded with an HTTPS certificate for the wrong hostname'
+                        : p.type === 'expired'
+                            ? 'has an expired HTTPS certificate'
+                        : p.type === 'untrusted'
+                            ? 'has an untrusted HTTPS certificate'
+                        : p.type === 'tls-error'
+                            ? 'failed to complete a TLS handshake'
+                        : p.type === 'host-not-found'
+                            ? 'hostname could be not found'
+                        : // connection-refused
+                            'refused the connection'
+                    }, so HTTP Toolkit did not forward the request.
+                </>
+                : <>
+                    The upstream request failed because {
+                        p.type === 'connection-reset'
+                            ? 'the connection was reset'
+                        : // unknown
+                            'of an unknown error'
+                    }, so HTTP Toolkit could not return the response.
+                </>
+            }
         </HeaderExplanation>
 
         { p.type === 'tls-error'
@@ -78,57 +121,69 @@ export const ExchangeErrorHeader = (p: {
                     }
                 </HeaderExplanation>
             </>
-            : p.type === 'host-not-found'
-                ? <>
-                    <HeaderExplanation>
-                        This typically means the host doesn't exist, although it
-                        could be an issue with your DNS or network configuration.
-                    </HeaderExplanation>
-                    <HeaderExplanation>
-                        You can define mock responses for requests like this from the
-                        Mock page, to return fake data even for servers and hostnames
-                        that don't exist.
-                    </HeaderExplanation>
-                </>
-            : [
-                "untrusted",
-                "expired",
-                "wrong-host"
-            ].includes(p.type)
-                ? <HeaderExplanation>
-                    By default this is only allowed for localhost servers, but {
-                        p.isPaidUser
-                            ? 'other hosts can be added to the whitelist from the Settings page.'
-                            : 'Pro users can whitelist other custom hosts.'
-                    }
-                </HeaderExplanation>
-            : // 'unknown':
+        : p.type === 'host-not-found'
+            ? <>
                 <HeaderExplanation>
-                    It's not clear what's gone wrong here, but for some reason HTTP Toolkit
-                    couldn't successfully and/or securely connect to the requested server.
-                    This might be an intermittent issue, and may be resolved by retrying
-                    the request.
+                    This typically means the host doesn't exist, although it
+                    could be an issue with your DNS or network configuration.
                 </HeaderExplanation>
+                <HeaderExplanation>
+                    You can define mock responses for requests like this from the
+                    Mock page, to return fake data even for servers and hostnames
+                    that don't exist.
+                </HeaderExplanation>
+            </>
+        : isWhitelistable(p.type)
+            ? <HeaderExplanation>
+                By default this is only allowed for localhost servers, but {
+                    p.isPaidUser
+                        ? 'other hosts can be added to the whitelist from the Settings page.'
+                        : 'Pro users can whitelist other custom hosts.'
+                }
+            </HeaderExplanation>
+        : p.type === 'connection-refused'
+            ? <HeaderExplanation>
+                This typically means the server isn't running right now on the port you're using,
+                although it's possible this is an intermittent connection issue. You can either
+                try again, or you can mock requests like this to avoid sending them upstream
+                at all.
+            </HeaderExplanation>
+        : p.type === 'connection-reset'
+            ? <HeaderExplanation>
+                This could be due to a connection issue, or a timeout from the server.
+                It's likely that this is an intermittent issue that will be solved by retrying
+                the request, or you can mock requests like this to avoid sending them upstream
+                at all.
+            </HeaderExplanation>
+        : // 'unknown':
+            <HeaderExplanation>
+                It's not clear what's gone wrong here, but for some reason HTTP Toolkit
+                couldn't successfully and/or securely connect to the requested server.
+                This might be an intermittent issue, and may be resolved by retrying
+                the request.
+            </HeaderExplanation>
         }
 
         <HeaderButton onClick={p.ignoreError} onKeyPress={clickOnEnter}>
             Ignore
         </HeaderButton>
 
-        { p.type ==='host-not-found'
+        { isMockable(p.type)
             ? <HeaderButton onClick={() => p.navigate('/mock')} onKeyPress={clickOnEnter}>
                 Go to the Mock page
             </HeaderButton>
-            : p.isPaidUser
+        : isWhitelistable(p.type)
+            ? (p.isPaidUser
                 ? <HeaderButton onClick={() => p.navigate('/settings')} onKeyPress={clickOnEnter}>
                     Go to Settings
                 </HeaderButton>
-            : <HeaderButton
-                onClick={() => p.getPro(`error-header-${p.type}`)}
-                onKeyPress={clickOnEnter}
-            >
-                Get Pro
-            </HeaderButton>
-        }
+                : <HeaderButton
+                    onClick={() => p.getPro(`error-header-${p.type}`)}
+                    onKeyPress={clickOnEnter}
+                >
+                    Get Pro
+                </HeaderButton>
+            )
+        : null }
 
     </ExchangeHeaderCard>;
