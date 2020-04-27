@@ -244,6 +244,10 @@ export class ExchangeDetailsPane extends React.Component<{
             return <ExchangeErrorHeader type='connection-reset' {...errorHeaderProps} />;
         }
 
+        if (tags.includes("passthrough-error:ETIMEDOUT")) {
+            return <ExchangeErrorHeader type='timeout' {...errorHeaderProps} />;
+        }
+
         if (tags.filter(t => t.startsWith("passthrough-error:")).length > 0) {
             reportError(`Unrecognized passthrough error tag ${JSON.stringify(tags)}`);
             return <ExchangeErrorHeader type='unknown' {...errorHeaderProps} />;

@@ -30,6 +30,7 @@ type ErrorType =
     | 'host-not-found'
     | 'connection-refused'
     | 'connection-reset'
+    | 'timeout'
     | 'unknown';
 
 function typeCheck<T extends string>(types: readonly T[]) {
@@ -55,7 +56,8 @@ const isWhitelistable = typeCheck([
 const isMockable = typeCheck([
     'host-not-found',
     'connection-refused',
-    'connection-reset'
+    'connection-reset',
+    'timeout'
 ]);
 
 export const ExchangeErrorHeader = (p: {
@@ -93,6 +95,8 @@ export const ExchangeErrorHeader = (p: {
                     The upstream request failed because {
                         p.type === 'connection-reset'
                             ? 'the connection was reset'
+                        : p.type === 'timeout'
+                            ? 'the connection timed out'
                         : // unknown
                             'of an unknown error'
                     }, so HTTP Toolkit could not return the response.
@@ -151,8 +155,15 @@ export const ExchangeErrorHeader = (p: {
             </HeaderExplanation>
         : p.type === 'connection-reset'
             ? <HeaderExplanation>
-                This could be due to a connection issue, or a timeout from the server.
-                It's likely that this is an intermittent issue that will be solved by retrying
+                This could be due to a connection issue, or may be caused by an issue on the server.
+                In many cases, this is an intermittent issue that will be solved by retrying
+                the request. You can also mock requests like this, to avoid sending them upstream
+                at all.
+            </HeaderExplanation>
+        : p.type === 'timeout'
+            ? <HeaderExplanation>
+                This could be due to connection issues, general issues on the server, or issues
+                with handling this request specifically. This might be resolved by retrying
                 the request, or you can mock requests like this to avoid sending them upstream
                 at all.
             </HeaderExplanation>
