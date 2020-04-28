@@ -212,7 +212,8 @@ export class ExchangeDetailsPane extends React.Component<{
         if (
             tags.includes("passthrough-error:SELF_SIGNED_CERT_IN_CHAIN") ||
             tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
-            tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE")
+            tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
+            tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY")
         ) {
             return <ExchangeErrorHeader type='untrusted' {...errorHeaderProps} />;
         }
