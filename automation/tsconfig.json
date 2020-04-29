@@ -2,6 +2,7 @@
     "extends": "../tsconfig.json",
     "compilerOptions": {
         "module": "commonjs",
+        "esModuleInterop": true,
         "types": [
             "node",
             "webpack-dev-server"
@@ -12,7 +13,5 @@
         ]
     },
     "files": [],
-    "include": [
-        "./custom-typings/*.d.ts"
-    ]
+    "include": []
 }

@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as Webpack from 'webpack';
 
-import * as HtmlWebpackPlugin from 'html-webpack-plugin';
-import * as GoogleFontsPlugin from '@beyonk/google-fonts-webpack-plugin';
-import * as CopyPlugin from 'copy-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import GoogleFontsPlugin from 'google-fonts-plugin';
+import CopyPlugin from 'copy-webpack-plugin';
 import { InjectManifest } from 'workbox-webpack-plugin';
 
 // Webpack (but not tsc) gets upset about this, so let's opt out
@@ -95,7 +95,8 @@ export default <Webpack.Configuration>{
                 { family: "Fira Mono" },
                 { family: "Lato" }
             ],
-            formats: ['woff2'] // Supported by Chrome, FF, Edge, Safari 12+
+            formats: ['woff2'], // Supported by Chrome, FF, Edge, Safari 12+
+            filename: 'fonts.css'
         }),
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null,

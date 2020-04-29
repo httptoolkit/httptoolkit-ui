@@ -3,7 +3,7 @@ import * as polished from 'polished';
 import { ThemeProps } from 'styled-components';
 import * as monacoTypes from 'monaco-editor';
 
-import reset from 'styled-reset'
+import reset from 'styled-reset';
 
 const fontSizes = {
     textInputFontSize: '13px',

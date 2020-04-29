@@ -26,7 +26,6 @@
     "httptoolkit-server": "^0.1.7"
   },
   "dependencies": {
-    "@beyonk/google-fonts-webpack-plugin": "^1.2.3",
     "@fortawesome/fontawesome-svg-core": "^1.2.27",
     "@fortawesome/free-brands-svg-icons": "^5.12.1",
     "@fortawesome/free-regular-svg-icons": "^5.12.1",
@@ -148,6 +147,7 @@
     "enzyme": "^3.9.0",
     "enzyme-adapter-react-16": "^1.10.0",
     "file-loader": "^2.0.0",
+    "google-fonts-plugin": "^5.0.2",
     "html-webpack-plugin": "^3.2.0",
     "httptoolkit-server": "^0.1.32",
     "json-loader": "^0.5.7",

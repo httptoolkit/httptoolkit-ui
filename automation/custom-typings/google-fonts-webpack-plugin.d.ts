@@ -1,1 +1,0 @@
-declare module '@beyonk/google-fonts-webpack-plugin';
