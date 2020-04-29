@@ -127,7 +127,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 : []
             ),
 
-            (this.props.accountStore.isPaidUser
+            (this.props.accountStore.isPaidUser || this.props.accountStore.isPastDueUser
                 ? {
                     name: 'Settings',
                     icon: ['fas', 'cog'],

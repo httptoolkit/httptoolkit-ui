@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { get } from 'typesafe-get';
 import { observable, action, flow, computed, when } from 'mobx';
 
 import { reportError, reportErrorsAsUser } from '../../errors';
@@ -56,7 +55,7 @@ export class AccountStore {
     }
 
     @computed get userSubscription() {
-        return this.isPaidUser
+        return this.isPaidUser || this.isPastDueUser
             ? this.user.subscription
             : undefined;
     }
@@ -86,30 +85,48 @@ export class AccountStore {
         return _.clone(this.user.featureFlags);
     }
 
+    @computed private get isStatusUnexpired() {
+        const subscriptionExpiry = this.user.subscription?.expiry;
+        const subscriptionStatus = this.user.subscription?.status;
+
+        const expiryMargin = subscriptionStatus === 'active'
+            // If we're offline during subscription renewal, and the sub was active last
+            // we checked, then we might just have outdated data, so leave extra slack.
+            // This gives a week of offline usage. Should be enough, given that most HTTP
+            // development needs network connectivity anyway.
+            ? 1000 * 60 * 60 * 24 * 7
+            : 0;
+
+        return !!subscriptionExpiry &&
+            subscriptionExpiry.valueOf() + expiryMargin > Date.now();
+    }
+
     @computed get isPaidUser() {
         // ------------------------------------------------------------------
         // You could set this to true to become a paid user for free.
         // I'd rather you didn't. HTTP Toolkit takes time & love to build,
         // and I can't do that if it doesn't pay my bills!
         //
-        // Fund open source - if you want pro, help pay for its development.
+        // Fund open source - if you want Pro, help pay for its development.
         // Can't afford it? Get in touch: tim@httptoolkit.tech.
         // ------------------------------------------------------------------
 
-        // Set with the last known subscription details
-        const subscriptionExpiry = get(this.user.subscription, 'expiry');
-        const subscriptionStatus = get(this.user.subscription, 'status');
+        // If you're before the last expiry date, your subscription is valid,
+        // unless it's past_due, in which case you're in a strange ambiguous
+        // zone, and the expiry date is the next retry. In that case, your
+        // status is unexpired, but _not_ considered as valid for Pro features.
+        // Note that explicitly cancelled ('deleted') subscriptions are still
+        // valid until the end of the last paid period though!
+        return this.user.subscription?.status !== 'past_due' &&
+            this.isStatusUnexpired;
+    }
 
-        // If we're offline during subscription renewal, and the sub was active last
-        // we checked, then we might just have outdated data, so leave some slack.
-        // This gives a week of offline usage. Should be enough, given that most HTTP
-        // development needs network connectivity anyway.
-        const expiryMargin = subscriptionStatus === 'active'
-            ? 1000 * 60 * 60 * 24 * 7
-            : 0;
-
-        return !!subscriptionExpiry &&
-            subscriptionExpiry.valueOf() + expiryMargin > Date.now();
+    @computed get isPastDueUser() {
+        // Is the user a subscribed user whose payments are failing? Keep them
+        // in an intermediate state so they can fix it (for now, until payment
+        // retries fail, and their subscription cancels & expires completely).
+        return this.user.subscription?.status === 'past_due' &&
+            this.isStatusUnexpired;
     }
 
     getPro = flow(function * (this: AccountStore, source: string) {

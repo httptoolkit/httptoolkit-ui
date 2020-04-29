@@ -137,6 +137,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
         const { uiStore } = this.props;
         const {
             isPaidUser,
+            isPastDueUser,
             userEmail,
             userSubscription,
             subscriptionPlans,
@@ -144,7 +145,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             logOut
         } = this.props.accountStore;
 
-        if (!isPaidUser) {
+        if (!isPaidUser && !isPastDueUser) {
             // Can only happen if you log out whilst on this page.
             return <SettingsPagePlaceholder>
                 <Button onClick={() => getPro('settings-page')}>Get Pro</Button>
@@ -182,17 +183,12 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 ({
                                     'active': 'Active',
                                     'trialing': 'Active (trial)',
-                                    'past_due': <>
-                                        Active <Pill
-                                            color='#fff'
-                                            title={dedent`
-                                                Your subscription payment failed, and will be reattempted.
-                                                If retried payments fail your subscription will be cancelled.
-                                            `}
-                                        >
-                                            PAST DUE
-                                        </Pill>
-                                    </>,
+                                    'past_due': <strong
+                                        title={dedent`
+                                            Your subscription payment failed, and will be reattempted.
+                                            If retried payments fail your subscription will be cancelled.
+                                        `}
+                                    >Past due</strong>,
                                     'deleted': 'Cancelled'
                                 }[sub.status]) || 'Unknown'
                             }
@@ -264,77 +260,88 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     </AccountContactFooter>
                 </CollapsibleCard>
 
-                {
-                    _.isString(serverVersion.value) &&
-                    semver.satisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
-                    <ProxySettingsCard {...this.cardProps.proxy} />
-                }
 
-                {
-                    this.props.accountStore!.featureFlags.includes('openapi') &&
-                    <ApiSettingsCard {...this.cardProps.api} />
-                }
+                {/*
+                    This above shows for both active paid users, and recently paid users whose most recent
+                    payments failed. For those users, we drop other Pro features, but keep the settings
+                    UI so they can easily log out, update billing details or cancel fully.
 
-                <CollapsibleCard {...this.cardProps.themes}>
-                    <header>
-                        <CollapsibleCardHeading onCollapseToggled={
-                            this.cardProps.themes.onCollapseToggled
-                        }>
-                            Themes
-                        </CollapsibleCardHeading>
-                    </header>
-                    <TabbedOptionsContainer>
-                        <TabsContainer
-                            onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
-                            isSelected={(value: ThemeName | Theme) => {
-                                if (typeof value === 'string') {
-                                    return uiStore.themeName === value
-                                } else {
-                                    return _.isEqual(value, uiStore.theme);
-                                }
-                            }}
-                        >
-                            <Tab
-                                icon={['fas', 'sun']}
-                                value='light'
-                            >
-                                Light
-                            </Tab>
-                            <Tab
-                                icon={['fas', 'moon']}
-                                value='dark'
-                            >
-                                Dark
-                            </Tab>
-                            <Tab
-                                icon={['fas', 'adjust']}
-                                value={'high-contrast'}
-                            >
-                                High Contrast
-                            </Tab>
-                        </TabsContainer>
-                        <ThemeColors>
-                            <ThemeColorBlock themeColor='mainColor' />
-                            <ThemeColorBlock themeColor='mainBackground' />
-                            <ThemeColorBlock themeColor='highlightColor' />
-                            <ThemeColorBlock themeColor='highlightBackground' />
-                            <ThemeColorBlock themeColor='primaryInputColor' />
-                            <ThemeColorBlock themeColor='primaryInputBackground' />
-                            <ThemeColorBlock themeColor='containerWatermark' />
-                            <ThemeColorBlock themeColor='containerBorder' />
-                            <ThemeColorBlock themeColor='mainLowlightBackground' />
-                            <ThemeColorBlock themeColor='containerBackground' />
-                        </ThemeColors>
+                    The rest is active paid users only:
+                 */}
 
-                        <EditorContainer>
-                            <BaseEditor
-                                language='html'
-                                theme={uiStore.theme.monacoTheme}
-                                defaultValue={amIUsingHtml}
-                            />
-                        </EditorContainer>
-                    </TabbedOptionsContainer>
-                </CollapsibleCard>
+                { isPaidUser && <>
+                    {
+                        _.isString(serverVersion.value) &&
+                        semver.satisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
+                        <ProxySettingsCard {...this.cardProps.proxy} />
+                    }
+
+                    {
+                        this.props.accountStore!.featureFlags.includes('openapi') &&
+                        <ApiSettingsCard {...this.cardProps.api} />
+                    }
+
+                    <CollapsibleCard {...this.cardProps.themes}>
+                        <header>
+                            <CollapsibleCardHeading onCollapseToggled={
+                                this.cardProps.themes.onCollapseToggled
+                            }>
+                                Themes
+                            </CollapsibleCardHeading>
+                        </header>
+                        <TabbedOptionsContainer>
+                            <TabsContainer
+                                onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
+                                isSelected={(value: ThemeName | Theme) => {
+                                    if (typeof value === 'string') {
+                                        return uiStore.themeName === value
+                                    } else {
+                                        return _.isEqual(value, uiStore.theme);
+                                    }
+                                }}
+                            >
+                                <Tab
+                                    icon={['fas', 'sun']}
+                                    value='light'
+                                >
+                                    Light
+                                </Tab>
+                                <Tab
+                                    icon={['fas', 'moon']}
+                                    value='dark'
+                                >
+                                    Dark
+                                </Tab>
+                                <Tab
+                                    icon={['fas', 'adjust']}
+                                    value={'high-contrast'}
+                                >
+                                    High Contrast
+                                </Tab>
+                            </TabsContainer>
+                            <ThemeColors>
+                                <ThemeColorBlock themeColor='mainColor' />
+                                <ThemeColorBlock themeColor='mainBackground' />
+                                <ThemeColorBlock themeColor='highlightColor' />
+                                <ThemeColorBlock themeColor='highlightBackground' />
+                                <ThemeColorBlock themeColor='primaryInputColor' />
+                                <ThemeColorBlock themeColor='primaryInputBackground' />
+                                <ThemeColorBlock themeColor='containerWatermark' />
+                                <ThemeColorBlock themeColor='containerBorder' />
+                                <ThemeColorBlock themeColor='mainLowlightBackground' />
+                                <ThemeColorBlock themeColor='containerBackground' />
+                            </ThemeColors>
+
+                            <EditorContainer>
+                                <BaseEditor
+                                    language='html'
+                                    theme={uiStore.theme.monacoTheme}
+                                    defaultValue={amIUsingHtml}
+                                />
+                            </EditorContainer>
+                        </TabbedOptionsContainer>
+                    </CollapsibleCard>
+                </> }
             </SettingPageContainer>
         </SettingsPageScrollContainer>;
     }
