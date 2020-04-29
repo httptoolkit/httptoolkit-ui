@@ -43,12 +43,36 @@ import { reportError } from '../../errors';
 
 export { TimingEvents };
 
+function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undefined  {
+    try {
+        return Object.assign(
+            new URL(request.url, `${request.protocol}://${request.hostname || 'unknown.invalid'}`),
+            { parseable: true } as const
+        );
+    } catch (e) {
+        console.log(request.url);
+        reportError(e);
+    }
+}
+
+function getFallbackUrl(request: InputRequest): URL & { parseable: false } {
+    try {
+        return Object.assign(
+            new URL("/[unparseable]", `${request.protocol}://${request.hostname || 'unknown.invalid'}`),
+            { parseable: false } as const
+        );
+    } catch (e) {
+        return Object.assign(
+            new URL("http://unparseable.invalid/"),
+            { parseable: false } as const
+        );
+    }
+}
+
 function addRequestMetadata(request: InputRequest): HtkRequest {
     try {
-        const parsedUrl = new URL(request.url, `${request.protocol}://${request.hostname}`);
-
         return Object.assign(request, {
-            parsedUrl,
+            parsedUrl: tryParseUrl(request) || getFallbackUrl(request),
             source: parseSource(request.headers['user-agent']),
             body: new ExchangeBody(request, request.headers),
             contentType: getContentType(lastHeader(request.headers['content-type'])) || 'text',
@@ -141,7 +165,8 @@ export class HttpExchange {
         this.id = this.request.id;
         this.matchedRuleId = this.request.matchedRuleId;
         this.searchIndex = [
-                this.request.parsedUrl.protocol + '//' +
+            this.request.url,
+            this.request.parsedUrl.protocol + '//' +
                 this.request.parsedUrl.hostname +
                 this.request.parsedUrl.pathname +
                 this.request.parsedUrl.search

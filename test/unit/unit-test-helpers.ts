@@ -22,7 +22,10 @@ export const getExchangeData = ({
         httpVersion: '1.1',
         method,
         url: `${protocol}://${hostname}${path}${query}`,
-        parsedUrl: new URL(`${protocol}://${hostname}${path}${query}`),
+        parsedUrl: Object.assign(
+            new URL(`${protocol}://${hostname}${path}${query}`),
+            { parseable: true }
+        ),
         protocol,
         hostname,
         path,

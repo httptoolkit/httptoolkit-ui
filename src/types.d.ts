@@ -78,7 +78,7 @@ export type FailedTlsRequest = InputTlsRequest & {
 }
 
 export type HtkRequest = Omit<InputRequest, 'body'> & {
-    parsedUrl: URL,
+    parsedUrl: URL & { parseable: boolean },
     source: TrafficSource,
     contentType: ViewableContentType,
     cache: ObservableMap<symbol, unknown>,

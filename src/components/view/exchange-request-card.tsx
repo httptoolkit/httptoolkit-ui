@@ -77,7 +77,9 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
         <CollapsibleSection prefixTrigger={true}>
             <ExchangeCollapsibleSummary>
                 <UrlLabel>{
-                    p.request.parsedUrl.toString()
+                    p.request.parsedUrl.parseable
+                        ? p.request.parsedUrl.toString()
+                        : p.request.url
                 }</UrlLabel>
             </ExchangeCollapsibleSummary>
 
