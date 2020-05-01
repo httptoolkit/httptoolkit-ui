@@ -258,12 +258,10 @@ export class EventsStore {
         try {
             const exchange = new HttpExchange(this.apiStore, {
                 ...error.request,
-                protocol: error.request.protocol || '?',
-                method: error.request.method || '?',
-                url: error.request.url || `${
-                    error.request.protocol || 'http'
-                }://<?>/`,
-                path: error.request.path || '/<?>',
+                protocol: error.request.protocol || '',
+                method: error.request.method || '',
+                url: error.request.url || `${error.request.protocol || 'http'}://`,
+                path: error.request.path || '/',
                 headers: (error.request.headers as RequestHeaders)
             });
 

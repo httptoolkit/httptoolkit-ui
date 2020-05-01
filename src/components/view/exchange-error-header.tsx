@@ -331,6 +331,11 @@ export const ExchangeErrorHeader = (p: {
             </HeaderExplanation>
         }
 
+        { isInitialRequestError(p.type) && <HeaderExplanation>
+            The data shown below is a best guess from the data that was available
+            and parseable, and may be incomplete or inaccurate.
+        </HeaderExplanation> }
+
         <HeaderButton onClick={p.ignoreError} onKeyPress={clickOnEnter}>
             Ignore
         </HeaderButton>

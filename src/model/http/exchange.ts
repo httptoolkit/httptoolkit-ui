@@ -50,7 +50,11 @@ function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undef
             { parseable: true } as const
         );
     } catch (e) {
-        console.log(request.url);
+        console.log('Unparseable URL:', request.url);
+
+        // Don't bother reporting empty URLs - we use these as placeholders for some bad requests
+        if (request.url === 'http://' || request.url === 'https://') return;
+
         reportError(e);
     }
 }
