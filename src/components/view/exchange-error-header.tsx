@@ -32,6 +32,7 @@ type ErrorType =
     | 'wrong-host'
     | 'tls-error'
     | 'host-not-found'
+    | 'dns-error'
     | 'connection-refused'
     | 'connection-reset'
     | 'timeout'
@@ -69,6 +70,7 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     }
 
     if (tags.includes("passthrough-error:ENOTFOUND")) return 'host-not-found';
+    if (tags.includes("passthrough-error:EAI_AGAIN")) return 'dns-error';
     if (tags.includes("passthrough-error:ECONNREFUSED")) return 'connection-refused';
     if (tags.includes("passthrough-error:ECONNRESET")) return 'connection-reset';
     if (tags.includes("passthrough-error:ETIMEDOUT")) return 'timeout';
@@ -121,6 +123,7 @@ const wasNotForwarded = typeCheck([
     'wrong-host',
     'tls-error',
     'host-not-found',
+    'dns-error',
     'connection-refused'
 ]);
 
@@ -133,6 +136,7 @@ const isWhitelistable = typeCheck([
 
 const isMockable = typeCheck([
     'host-not-found',
+    'dns-error',
     'connection-refused',
     'connection-reset',
     'timeout'
@@ -192,7 +196,7 @@ export const ExchangeErrorHeader = (p: {
                             ? 'has an untrusted HTTPS certificate'
                         : p.type === 'tls-error'
                             ? 'failed to complete a TLS handshake'
-                        : p.type === 'host-not-found'
+                        : p.type === 'host-not-found' || p.type === 'dns-error'
                             ? 'hostname could be not found'
                         : // connection-refused
                             'refused the connection'
@@ -244,6 +248,19 @@ export const ExchangeErrorHeader = (p: {
                     You can define mock responses for requests like this from the
                     Mock page, to return fake data even for servers and hostnames
                     that don't exist.
+                </HeaderExplanation>
+            </>
+        : p.type === 'dns-error'
+            ? <>
+                <HeaderExplanation>
+                    The DNS server hit an unknown error looking up this hostname.
+                    This is likely due to a issue in your DNS configuration or network
+                    connectivity, and may just be a temporary issue.
+                </HeaderExplanation>
+                <HeaderExplanation>
+                    You can define mock responses for requests like this from the
+                    Mock page, to return fake data even for servers and hostnames
+                    that don't exist or aren't accessible.
                 </HeaderExplanation>
             </>
         : isWhitelistable(p.type)
