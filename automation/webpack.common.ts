@@ -79,7 +79,6 @@ export default <Webpack.Configuration>{
                 'bracketMatching',
                 'caretOperations',
                 'clipboard',
-                'colorDetector',
                 'find',
                 'folding',
                 'hover',
