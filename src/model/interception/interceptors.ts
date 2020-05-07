@@ -120,12 +120,6 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: recoloured(SourceIcons.Edge, '#ffc225'),
         tags: BROWSER_TAGS
     },
-    'fresh-opera': {
-        name: 'Opera',
-        description: ["Open a preconfigured fresh Opera window"],
-        iconProps: SourceIcons.Opera,
-        tags: BROWSER_TAGS
-    },
     'docker-all': {
         name: 'All Docker Containers',
         description: ["Intercept all local Docker traffic"],
