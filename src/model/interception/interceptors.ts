@@ -94,7 +94,10 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         name: 'Firefox',
         description: ["Open a preconfigured fresh Firefox window"],
         iconProps: SourceIcons.Firefox,
-        tags: BROWSER_TAGS
+        tags: BROWSER_TAGS,
+        checkRequirements: ({ interceptorVersion }) => {
+            return semver.satisfies(interceptorVersion, "^1.1.0")
+        },
     },
     'fresh-safari': {
         name: 'Safari',
