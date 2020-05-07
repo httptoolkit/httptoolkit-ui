@@ -292,6 +292,10 @@ export class EventsStore {
 
         this.events.push(...pinnedEvents);
         this.orphanedEvents = {};
+
+        // If GC is exposed (desktop 0.1.22+), trigger it when data is cleared,
+        // as this is the perfect point to pack everything down.
+        if ('gc' in window) (window as any).gc();
     }
 
     async loadFromHar(harContents: {}) {
