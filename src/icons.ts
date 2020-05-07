@@ -68,6 +68,7 @@ import { faApple } from '@fortawesome/free-brands-svg-icons/faApple';
 import { faSafari } from '@fortawesome/free-brands-svg-icons/faSafari';
 import { faEdge } from '@fortawesome/free-brands-svg-icons/faEdge';
 import { faInternetExplorer } from '@fortawesome/free-brands-svg-icons/faInternetExplorer';
+import { faOpera } from '@fortawesome/free-brands-svg-icons/faOpera';
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons/faCodeBranch';
 import { faNpm } from '@fortawesome/free-brands-svg-icons/faNpm';
 import { faNodeJs } from '@fortawesome/free-brands-svg-icons/faNodeJs';
@@ -75,19 +76,8 @@ import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
 import { faPython } from '@fortawesome/free-brands-svg-icons/faPython';
 import { faAtom } from '@fortawesome/free-solid-svg-icons/faAtom';
 
-const customSpinnerArc: IconDefinition = {
-    // Based on https://codepen.io/aurer/pen/jEGbA
-    prefix: <IconPrefix>'fac',
-    iconName: <IconName>'spinner-arc',
-    icon: [
-        // height x width
-        50, 50,
-        [],
-        '',
-        // SVG path
-        'M25.251,6.461c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615V6.461z'
-    ]
-};
+import { customSpinnerArc } from './images/custom-spinner';
+import { braveBrowser } from './images/brave-browser';
 
 library.add(
     customSpinnerArc,
@@ -146,6 +136,8 @@ library.add(
     faSafari,
     faEdge,
     faInternetExplorer,
+    faOpera,
+    braveBrowser,
     faCodeBranch,
     faNpm,
     faNodeJs,
@@ -168,6 +160,8 @@ export const SourceIcons = {
     Safari: { icon: ['fab', 'safari'], color: '#448aff' },
     Edge: { icon: ['fab', 'edge'], color: '#2c75be' },
     IE: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
+    Opera: { icon: ['fab', 'opera'], color: '#cb0b1e' },
+    Brave: { icon: ['fac', 'brave-browser'], color: '#fb542b' },
     Git: { icon: ['fas', 'code-branch'], color: '#f05033' },
     Php: { icon: ['fab', 'php'], color: '#8892bf' },
 
@@ -204,7 +198,7 @@ export const SourceIcons = {
 } as const;
 
 import { FontAwesomeIcon, Props as FAIProps } from '@fortawesome/react-fontawesome';
-type ExtendedIconProp = IconProp | ['fac', string] | readonly [IconPrefix, IconName];
+type ExtendedIconProp = IconProp | readonly ['fac', string] | readonly [IconPrefix, IconName];
 export const Icon = React.memo(
     FontAwesomeIcon as (props: Omit<FAIProps, 'icon'> & {
         icon: ExtendedIconProp,
