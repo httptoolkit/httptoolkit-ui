@@ -255,6 +255,12 @@ export class EventsStore {
 
     @action
     private addClientError(error: InputClientError) {
+        if (error.errorCode === 'ECONNRESET' && !error.request.method && !error.request.url) {
+            // We don't bother showing client resets before any data was sent at all.
+            // Not interesting, nothing to show, and generally all a bit noisey.
+            return;
+        }
+
         try {
             const exchange = new HttpExchange(this.apiStore, {
                 ...error.request,
