@@ -9,16 +9,16 @@ import { Interceptor } from '../../../model/interception/interceptors';
 
 import { CopyButtonIcon } from '../../common/copy-button';
 
-const CopyableCommand = styled<React.ComponentType<{
-    className?: string,
-    disabled: boolean,
-    children: string
-}>>((p) =>
+const CopyableCommand = styled((p) =>
     <div className={p.className}>
         <code>{ p.children }</code>
         <CopyButtonIcon content={ p.children } />
     </div>
-)`
+)<{
+    className?: string,
+    disabled: boolean,
+    children: string
+}>`
     display: inline-block;
     margin: 20px auto;
 

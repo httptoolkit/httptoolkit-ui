@@ -37,12 +37,12 @@ export interface InterceptorCustomUiConfig {
     customPill?: React.ComponentType<{}>;
 }
 
-const InterceptOptionCard = styled<React.ComponentType<{
+const InterceptOptionCard = styled(LittleCard)<{
     disabled: boolean,
     expanded: boolean,
     index: number,
     uiConfig?: InterceptorCustomUiConfig
-} & React.ComponentProps<'section'>>>(LittleCard)`
+}>`
     height: 100%;
     width: 100%;
 

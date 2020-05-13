@@ -30,13 +30,13 @@ import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
 import { DragHandle } from './mock-drag-handle';
 
-const RowContainer = styled<React.ComponentType<{
+const RowContainer = styled(LittleCard)<{
     deactivated?: boolean,
     collapsed: boolean,
     disabled: boolean,
     borderColor: string,
     depth: number
-} & React.ComponentProps<'section'>>>(LittleCard)`
+}>`
     margin-top: 10px;
 
     width: calc(100% - ${p => p.depth * 40}px);

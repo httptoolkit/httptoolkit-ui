@@ -22,12 +22,12 @@ const SearchInput = styled.input.attrs(() => ({
     font-size: ${p => p.theme.headingSize};
 `;
 
-const ClearSearchButton = styled<React.ComponentType<{
+const ClearSearchButton = styled(filterProps(Icon, 'visible'))<{
     visible: boolean,
     icon: IconProp,
     size?: SizeProp,
     onClick: () => void
-}>>(filterProps(Icon, 'visible'))`
+}>`
     position: absolute;
 
     right: 15px;
