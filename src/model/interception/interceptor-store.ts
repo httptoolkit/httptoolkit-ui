@@ -67,7 +67,7 @@ export class InterceptorStore {
         });
 
         this.interceptors[interceptorId].inProgress = false;
-        yield this.refreshInterceptors();
+        this.refreshInterceptors();
 
         return result;
     });
