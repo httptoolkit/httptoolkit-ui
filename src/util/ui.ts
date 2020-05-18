@@ -8,6 +8,10 @@ export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
 }
 
+export const Ctrl = navigator.platform.startsWith('Mac')
+    ? 'Cmd'
+    : 'Ctrl';
+
 export function saveFile(
     filename: string,
     mimeType: string,

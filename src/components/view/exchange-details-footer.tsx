@@ -3,6 +3,7 @@ import { action, runInAction } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { styled, css } from '../../styles';
+import { Ctrl } from '../../util/ui';
 
 import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
@@ -46,9 +47,11 @@ const PinButton = styled(observer((p: {
     className={p.className}
     icon={['fas', 'thumbtack']}
     title={
-        p.pinned
+        (
+            p.pinned
             ? "Unpin this exchange so it can be deleted"
             : "Pin this exchange, so it can't be deleted"
+        ) + ` (${Ctrl}+P)`
     }
     onClick={p.onClick}
 />))`
@@ -64,7 +67,7 @@ const DeleteButton = observer((p: {
     onClick: () => void
 }) => <IconButton
     icon={['far', 'trash-alt']}
-    title={'Delete this exchange'}
+    title={`Delete this exchange (${Ctrl}+Delete)`}
     onClick={p.onClick}
 />);
 

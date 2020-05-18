@@ -4,7 +4,7 @@ import * as dateFns from 'date-fns';
 import * as dedent from 'dedent';
 import * as Ajv from 'ajv';
 
-import { saveFile, uploadFile } from '../../util/ui';
+import { saveFile, uploadFile, Ctrl } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
 import { EventsStore } from '../../model/http/events-store';
@@ -21,7 +21,7 @@ export const ClearAllButton = observer((props: {
     onClear: () => void
 }) => <IconButton
     icon={['far', 'trash-alt']}
-    title='Clear all'
+    title={`Clear all (${Ctrl}+Shift+Delete)`}
     disabled={props.disabled}
     onClick={props.onClear}
 />);

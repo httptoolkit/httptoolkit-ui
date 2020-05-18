@@ -51,15 +51,14 @@ const ViewPageKeyboardShortcuts = (props: {
     onDelete: (event: CollectedEvent) => void,
     onClear: () => void
 }) => {
-    useHotkeys('p', (event) => {
-        if (isEditable(event.target)) return;
-
+    useHotkeys('Ctrl+p, Cmd+p', (event) => {
         if (props.selectedEvent instanceof HttpExchange) {
             props.onPin(props.selectedEvent);
+            event.preventDefault();
         }
     }, [props.selectedEvent, props.onPin]);
 
-    useHotkeys('Delete', (event) => {
+    useHotkeys('Ctrl+Delete, Cmd+Delete', (event) => {
         if (isEditable(event.target)) return;
 
         if (props.selectedEvent) {
