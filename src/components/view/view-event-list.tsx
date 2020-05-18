@@ -38,7 +38,6 @@ interface ViewEventListProps {
 
     onSelected: (event: CollectedEvent | undefined) => void;
     onSearchInput: (input: string) => void;
-    onDelete: (event: CollectedEvent) => void;
     onClear: (clearPinned: boolean) => void;
 }
 
@@ -545,7 +544,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        const { filteredEvents, selectedEvent } = this.props;
+        const { filteredEvents } = this.props;
         if (filteredEvents.length === 0) return;
 
         let currentIndex = _.findIndex(filteredEvents, { id: this.selectedEventId });
@@ -573,17 +572,6 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 targetIndex = currentIndex === -1
                     ? undefined
                     : Math.min(currentIndex + 10, filteredEvents.length - 1);
-                break;
-            case 'p':
-                event.preventDefault();
-                if (selectedEvent instanceof HttpExchange) {
-                    selectedEvent.pinned = !selectedEvent.pinned;
-                }
-                break;
-            case 'Delete':
-                event.preventDefault();
-                if (!selectedEvent) return;
-                this.props.onDelete(selectedEvent);
                 break;
         }
 

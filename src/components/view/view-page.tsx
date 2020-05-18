@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import { observable, autorun, action, computed, runInAction, when } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
+import { useHotkeys as rawUseHotkeys } from "react-hotkeys-hook";
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
@@ -28,6 +29,45 @@ interface ViewPageProps {
     navigate: (path: string) => void;
     eventId?: string;
 }
+
+// Is the element an editable field, for which we shouldn't add keyboard shortcuts?
+// We don't worry about readonly, because that might still be surprising.
+const isEditable = (target: EventTarget | null) => {
+    if (!target) return false;
+    const element = target as HTMLElement;
+    const tagName = element.tagName;
+    return element.isContentEditable ||
+        tagName === 'TEXTAREA' ||
+        tagName === 'INPUT' ||
+        tagName === 'SELECT';
+}
+
+const useHotkeys = (keys: string, callback: (event: KeyboardEvent) => void, deps: any[]) =>
+    rawUseHotkeys(keys, callback, { filter: () => true }, deps);
+
+const ViewPageKeyboardShortcuts = (props: {
+    selectedEvent: CollectedEvent | undefined,
+    onPin: (event: HttpExchange) => void,
+    onDelete: (event: CollectedEvent) => void
+}) => {
+    useHotkeys('p', (event) => {
+        if (isEditable(event.target)) return;
+
+        if (props.selectedEvent instanceof HttpExchange) {
+            props.onPin(props.selectedEvent);
+        }
+    }, [props.selectedEvent, props.onPin]);
+
+    useHotkeys('Delete', (event) => {
+        if (isEditable(event.target)) return;
+
+        if (props.selectedEvent) {
+            props.onDelete(props.selectedEvent);
+        }
+    }, [props.selectedEvent, props.onDelete]);
+
+    return null;
+};
 
 @inject('eventsStore')
 @inject('serverStore')
@@ -126,6 +166,11 @@ class ViewPage extends React.Component<ViewPageProps> {
         }
 
         return <div className={this.props.className}>
+            <ViewPageKeyboardShortcuts
+                selectedEvent={this.selectedEvent}
+                onPin={this.onPin}
+                onDelete={this.onDelete}
+            />
             <SplitPane
                 split='vertical'
                 primary='second'
@@ -142,7 +187,6 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                     onSelected={this.onSelected}
                     onSearchInput={this.onSearchInput}
-                    onDelete={this.onDelete}
                     onClear={clearInterceptedData}
 
                     ref={this.listRef}
@@ -169,6 +213,11 @@ class ViewPage extends React.Component<ViewPageProps> {
             ? `/view/${event.id}`
             : '/view'
         );
+    }
+
+    @action.bound
+    onPin(event: HttpExchange) {
+        event.pinned = !event.pinned;
     }
 
     @action.bound
