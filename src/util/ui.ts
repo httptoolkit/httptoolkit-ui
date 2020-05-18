@@ -10,7 +10,7 @@ export function isReactElement(node: any): node is React.ReactElement {
 }
 
 export const Ctrl = navigator.platform.startsWith('Mac')
-    ? 'Cmd'
+    ? '⌘'
     : 'Ctrl';
 
 // Is the element an editable field, for which we shouldn't add keyboard shortcuts?
