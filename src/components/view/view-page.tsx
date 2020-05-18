@@ -3,10 +3,10 @@ import * as _ from 'lodash';
 import { observable, autorun, action, computed, runInAction, when } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
-import { useHotkeys as rawUseHotkeys } from "react-hotkeys-hook";
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
+import { useHotkeys, isEditable } from '../../util/ui';
 
 import { UiStore } from '../../model/ui-store';
 import { ServerStore } from '../../model/server-store';
@@ -29,21 +29,6 @@ interface ViewPageProps {
     navigate: (path: string) => void;
     eventId?: string;
 }
-
-// Is the element an editable field, for which we shouldn't add keyboard shortcuts?
-// We don't worry about readonly, because that might still be surprising.
-const isEditable = (target: EventTarget | null) => {
-    if (!target) return false;
-    const element = target as HTMLElement;
-    const tagName = element.tagName;
-    return element.isContentEditable ||
-        tagName === 'TEXTAREA' ||
-        tagName === 'INPUT' ||
-        tagName === 'SELECT';
-}
-
-const useHotkeys = (keys: string, callback: (event: KeyboardEvent) => void, deps: any[]) =>
-    rawUseHotkeys(keys, callback, { filter: () => true }, deps);
 
 const ViewPageKeyboardShortcuts = (props: {
     selectedEvent: CollectedEvent | undefined,

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useHotkeys as rawUseHotkeys } from "react-hotkeys-hook";
 
 import { desktopVersion } from '../services/service-versions';
 import { getDeferred, delay } from './promise';
@@ -11,6 +12,21 @@ export function isReactElement(node: any): node is React.ReactElement {
 export const Ctrl = navigator.platform.startsWith('Mac')
     ? 'Cmd'
     : 'Ctrl';
+
+// Is the element an editable field, for which we shouldn't add keyboard shortcuts?
+// We don't worry about readonly, because that might still be surprising.
+export const isEditable = (target: EventTarget | null) => {
+    if (!target) return false;
+    const element = target as HTMLElement;
+    const tagName = element.tagName;
+    return element.isContentEditable ||
+        tagName === 'TEXTAREA' ||
+        tagName === 'INPUT' ||
+        tagName === 'SELECT';
+}
+
+export const useHotkeys = (keys: string, callback: (event: KeyboardEvent) => void, deps: any[]) =>
+    rawUseHotkeys(keys, callback, { filter: () => true }, deps);
 
 export function saveFile(
     filename: string,

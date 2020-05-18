@@ -18,6 +18,7 @@ export interface SidebarItem {
     highlight?: true;
 
     type: 'web' | 'router' | 'callback';
+    title: string;
     url?: string;
     onClick?: () => void;
 }
@@ -150,6 +151,7 @@ export const Sidebar = observer((props: SidebarProps) => {
                 position: item.position,
                 component: <SidebarLink
                     key={item.name}
+                    title={item.title}
                     highlight={item.highlight}
                     href={item.url}
                     target='_blank'
@@ -166,6 +168,7 @@ export const Sidebar = observer((props: SidebarProps) => {
                 >{({ match }) =>
                     <SidebarSelectableItem
                         to={item.url}
+                        title={item.title}
                         selected={!!match}
                     >
                         { itemContent }
@@ -177,6 +180,7 @@ export const Sidebar = observer((props: SidebarProps) => {
                 position: item.position,
                 component: <SidebarButton
                     key={item.name}
+                    title={item.title}
                     highlight={item.highlight}
                     onClick={item.onClick}
                 >

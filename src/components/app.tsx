@@ -15,6 +15,7 @@ import { Icon } from '../icons';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
 import { appHistory } from '../routing';
+import { useHotkeys, Ctrl } from '../util/ui';
 
 import { AccountStore } from '../model/account/account-store';
 import { serverVersion, MOCK_SERVER_RANGE } from '../services/service-versions';
@@ -88,15 +89,45 @@ const Route = ({ children, ...props }: ExtendProps & RouteComponentProps): React
 	)
 };
 
+const AppKeyboardShortcuts = (props: {
+    navigate: (path: string) => void,
+    canVisitSettings: boolean
+}) => {
+    useHotkeys('Ctrl+1,Cmd+1', (e) => {
+        props.navigate('/intercept');
+        e.preventDefault();
+    }, [props.navigate]);
+    useHotkeys('Ctrl+2,Cmd+2', (e) => {
+        props.navigate('/view');
+        e.preventDefault();
+    }, [props.navigate]);
+    useHotkeys('Ctrl+3,Cmd+3', (e) => {
+        props.navigate('/mock');
+        e.preventDefault();
+    }, [props.navigate]);
+    useHotkeys('Ctrl+0,Cmd+0', (e) => {
+        if (props.canVisitSettings) props.navigate('/settings');
+        e.preventDefault();
+    }, [props.navigate, props.canVisitSettings]);
+
+    return null;
+};
+
 @inject('accountStore')
 @observer
 class App extends React.Component<{ accountStore: AccountStore }> {
+
+    @computed
+    get canVisitSettings() {
+        return this.props.accountStore.isPaidUser || this.props.accountStore.isPastDueUser;
+    }
 
     @computed
     get menuItems() {
         return [
             {
                 name: 'Intercept',
+                title: `Connect clients to HTTP Toolkit (${Ctrl}+1)`,
                 icon: ['fas', 'plug'],
                 position: 'top',
                 type: 'router',
@@ -104,6 +135,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             },
             {
                 name: 'View',
+                title: `View intercepted HTTP traffic (${Ctrl}+2)`,
                 icon: ['fas', 'search'],
                 position: 'top',
                 type: 'router',
@@ -119,6 +151,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 )
                 ? [{
                     name: 'Mock',
+                    title: `Add rules to mock & rewrite HTTP traffic (${Ctrl}+3)`,
                     icon: ['fas', 'theater-masks'],
                     position: 'top',
                     type: 'router',
@@ -127,9 +160,10 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 : []
             ),
 
-            (this.props.accountStore.isPaidUser || this.props.accountStore.isPastDueUser
+            (this.canVisitSettings
                 ? {
                     name: 'Settings',
+                    title: `Reconfigure HTTP Toolkit and manage your account (${Ctrl}+0)`,
                     icon: ['fas', 'cog'],
                     position: 'bottom',
                     type: 'router',
@@ -137,6 +171,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 }
                 : {
                     name: 'Get Pro',
+                    title: "Sign up for HTTP Toolkit Pro",
                     icon: ['far', 'star'],
                     position: 'bottom',
                     type: 'callback',
@@ -146,6 +181,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
 
             {
                 name: 'Give feedback',
+                title: "Suggest features or report issues",
                 icon: ['far', 'comment'],
                 position: 'bottom',
                 highlight: true,
@@ -173,6 +209,10 @@ class App extends React.Component<{ accountStore: AccountStore }> {
         } = this.props.accountStore;
 
         return <LocationProvider history={appHistory}>
+            <AppKeyboardShortcuts
+                navigate={appHistory.navigate}
+                canVisitSettings={this.canVisitSettings}
+            />
             <AppContainer
                 aria-hidden={!!modal}
                 inert={!!modal}
