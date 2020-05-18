@@ -105,7 +105,7 @@ const AppKeyboardShortcuts = (props: {
         props.navigate('/mock');
         e.preventDefault();
     }, [props.navigate]);
-    useHotkeys('Ctrl+0,Cmd+0', (e) => {
+    useHotkeys('Ctrl+9,Cmd+9', (e) => {
         if (props.canVisitSettings) props.navigate('/settings');
         e.preventDefault();
     }, [props.navigate, props.canVisitSettings]);
@@ -163,7 +163,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             (this.canVisitSettings
                 ? {
                     name: 'Settings',
-                    title: `Reconfigure HTTP Toolkit and manage your account (${Ctrl}+0)`,
+                    title: `Reconfigure HTTP Toolkit and manage your account (${Ctrl}+9)`,
                     icon: ['fas', 'cog'],
                     position: 'bottom',
                     type: 'router',
