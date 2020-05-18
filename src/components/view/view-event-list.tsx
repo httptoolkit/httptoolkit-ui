@@ -36,6 +36,7 @@ interface ViewEventListProps {
     isPaused: boolean;
     searchInput: string;
 
+    moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
     onSearchInput: (input: string) => void;
     onClear: () => void;
@@ -544,43 +545,25 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        const { filteredEvents } = this.props;
-        if (filteredEvents.length === 0) return;
-
-        let currentIndex = _.findIndex(filteredEvents, { id: this.selectedEventId });
-        let targetIndex: number | undefined;
+        const { moveSelection } = this.props;
 
         switch (event.key) {
-            case 'j':
             case 'ArrowDown':
-                targetIndex = currentIndex === -1
-                    ? 0
-                    : Math.min(currentIndex + 1, filteredEvents.length - 1);
+                moveSelection(1);
                 break;
-            case 'k':
             case 'ArrowUp':
-                targetIndex = currentIndex === -1
-                    ? filteredEvents.length - 1
-                    : Math.max(currentIndex - 1, 0);
+                moveSelection(-1);
                 break;
             case 'PageUp':
-                targetIndex = currentIndex === -1
-                    ? undefined
-                    : Math.max(currentIndex - 10, 0);
+                moveSelection(-10);
                 break;
             case 'PageDown':
-                targetIndex = currentIndex === -1
-                    ? undefined
-                    : Math.min(currentIndex + 10, filteredEvents.length - 1);
+                moveSelection(10);
                 break;
+            default:
+                return;
         }
 
-        if (targetIndex !== undefined) {
-            this.onEventSelected(targetIndex);
-            if (this.listRef.current) {
-                this.listRef.current.scrollToItem(targetIndex);
-            }
-            event.preventDefault();
-        }
+        event.preventDefault();
     }
 }

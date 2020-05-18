@@ -47,10 +47,21 @@ const useHotkeys = (keys: string, callback: (event: KeyboardEvent) => void, deps
 
 const ViewPageKeyboardShortcuts = (props: {
     selectedEvent: CollectedEvent | undefined,
+    moveSelection: (distance: number) => void,
     onPin: (event: HttpExchange) => void,
     onDelete: (event: CollectedEvent) => void,
     onClear: () => void
 }) => {
+    useHotkeys('j', (event) => {
+        if (isEditable(event.target)) return;
+        props.moveSelection(1);
+    }, [props.moveSelection]);
+
+    useHotkeys('k', (event) => {
+        if (isEditable(event.target)) return;
+        props.moveSelection(-1);
+    }, [props.moveSelection]);
+
     useHotkeys('Ctrl+p, Cmd+p', (event) => {
         if (props.selectedEvent instanceof HttpExchange) {
             props.onPin(props.selectedEvent);
@@ -172,6 +183,7 @@ class ViewPage extends React.Component<ViewPageProps> {
         return <div className={this.props.className}>
             <ViewPageKeyboardShortcuts
                 selectedEvent={this.selectedEvent}
+                moveSelection={this.moveSelection}
                 onPin={this.onPin}
                 onDelete={this.onDelete}
                 onClear={this.onClear}
@@ -190,6 +202,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                     isPaused={isPaused}
                     searchInput={this.searchFilter}
 
+                    moveSelection={this.moveSelection}
                     onSelected={this.onSelected}
                     onSearchInput={this.onSearchInput}
                     onClear={this.onClear}
@@ -218,6 +231,27 @@ class ViewPage extends React.Component<ViewPageProps> {
             ? `/view/${event.id}`
             : '/view'
         );
+    }
+
+    @action.bound
+    moveSelection(distance: number) {
+        if (this.filteredEvents.length === 0) return;
+
+        const currentIndex = this.selectedEvent
+            ? _.findIndex(this.filteredEvents, { id: this.selectedEvent.id })
+            : -1;
+
+        const targetIndex = (currentIndex === -1)
+            ? (distance >= 0 ? 0 : this.filteredEvents.length - 1) // Jump to the start or end
+            : _.clamp(  // Move, but clamped to valid values
+                currentIndex + distance,
+                0,
+                this.filteredEvents.length - 1
+            );
+
+        const targetEvent = this.filteredEvents[targetIndex];
+        this.onSelected(targetEvent);
+        this.onScrollToEvent(targetEvent);
     }
 
     @action.bound
