@@ -48,7 +48,8 @@ const useHotkeys = (keys: string, callback: (event: KeyboardEvent) => void, deps
 const ViewPageKeyboardShortcuts = (props: {
     selectedEvent: CollectedEvent | undefined,
     onPin: (event: HttpExchange) => void,
-    onDelete: (event: CollectedEvent) => void
+    onDelete: (event: CollectedEvent) => void,
+    onClear: () => void
 }) => {
     useHotkeys('p', (event) => {
         if (isEditable(event.target)) return;
@@ -65,6 +66,11 @@ const ViewPageKeyboardShortcuts = (props: {
             props.onDelete(props.selectedEvent);
         }
     }, [props.selectedEvent, props.onDelete]);
+
+    useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete', (event) => {
+        props.onClear();
+        event.preventDefault();
+    }, [props.onClear]);
 
     return null;
 };
@@ -142,7 +148,6 @@ class ViewPage extends React.Component<ViewPageProps> {
     render(): JSX.Element {
         const {
             events,
-            clearInterceptedData,
             isPaused
         } = this.props.eventsStore;
         const { certPath } = this.props.serverStore;
@@ -170,6 +175,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 selectedEvent={this.selectedEvent}
                 onPin={this.onPin}
                 onDelete={this.onDelete}
+                onClear={this.onClear}
             />
             <SplitPane
                 split='vertical'
@@ -187,7 +193,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                     onSelected={this.onSelected}
                     onSearchInput={this.onSearchInput}
-                    onClear={clearInterceptedData}
+                    onClear={this.onClear}
 
                     ref={this.listRef}
                 />
@@ -243,6 +249,20 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else {
             this.props.eventsStore.deleteEvent(event);
         }
+    }
+
+    @action.bound
+    onClear() {
+        const { events } = this.props.eventsStore;
+        const allEventsPinned = events.length > 0 &&
+            _.every(events, (evt) => evt.pinned);
+
+        // Either clear unpinned only, or confirm first:
+        const clearPinned = allEventsPinned &&
+            confirm("Delete pinned exchanges?");
+
+        this.props.eventsStore.clearInterceptedData(clearPinned);
+        this.searchFilter = '';
     }
 
     @action.bound

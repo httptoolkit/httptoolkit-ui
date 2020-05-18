@@ -63,7 +63,7 @@ const ButtonsContainer = styled.div`
 
 export const TableFooter = styled(observer((props: {
     className?: string,
-    onClear: (clearPinned: boolean) => void,
+    onClear: () => void,
     currentSearch: string,
     onSearch: (input: string) => void,
 
@@ -90,14 +90,7 @@ export const TableFooter = styled(observer((props: {
         <ImportHarButton />
         <ClearAllButton
             disabled={props.allEvents.length === 0}
-            onClear={() => {
-                const allEventsPinned = props.allEvents.length > 0 &&
-                    _.every(props.allEvents, (evt) => evt.pinned);
-
-                const clearPinned = allEventsPinned &&
-                    confirm("Delete pinned exchanges?");
-                props.onClear(clearPinned);
-            }}
+            onClear={props.onClear}
         />
     </ButtonsContainer>
 </div>))`
