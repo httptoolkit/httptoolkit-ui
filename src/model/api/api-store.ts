@@ -5,7 +5,6 @@ import * as localForage from 'localforage';
 import * as serializr from 'serializr';
 import { findApi as findPublicOpenApi, OpenAPIObject } from 'openapi-directory';
 
-
 import { HtkRequest } from '../../types';
 import { reportError } from '../../errors';
 import { lazyObservablePromise } from "../../util/observable";

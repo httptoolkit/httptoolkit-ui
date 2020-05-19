@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
-import { SchemaObject } from 'openapi-directory';
+import type { SchemaObject } from 'openapi-directory';
 import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage, HtkResponse, HtkRequest } from '../../types';

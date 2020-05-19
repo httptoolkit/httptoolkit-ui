@@ -3,10 +3,10 @@ import * as React from 'react';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import { observable, action, autorun } from 'mobx';
 import { withTheme } from 'styled-components';
-import { SchemaObject } from 'openapi-directory';
+import type { SchemaObject } from 'openapi-directory';
 
-import * as monacoTypes from 'monaco-editor';
-import _MonacoEditor, { MonacoEditorProps } from 'react-monaco-editor';
+import type * as monacoTypes from 'monaco-editor';
+import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-editor';
 
 import { reportError } from '../../errors';
 import { delay } from '../../util/promise';

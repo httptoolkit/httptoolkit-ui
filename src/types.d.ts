@@ -1,28 +1,28 @@
-import { ComponentClass } from 'react';
-import { ObservableMap } from 'mobx';
+import type { ComponentClass } from 'react';
+import type { ObservableMap } from 'mobx';
 
-import {
+import type {
     InitiatedRequest as MockttpInitiatedRequest,
     CompletedRequest as MockttpCompletedRequest,
     CompletedResponse as MockttpResponse
 } from 'mockttp';
-import {
+import type {
     Headers,
     RequestHeaders,
     TimingEvents,
     TlsRequest,
     ClientError
 } from 'mockttp/dist/types';
-import { PortRange } from 'mockttp/dist/mockttp';
-import {
+import type { PortRange } from 'mockttp/dist/mockttp';
+import type {
     PassThroughResponse as MockttpBreakpointedResponse,
     CallbackRequestResult as MockttpBreakpointRequestResult,
     CallbackResponseResult as MockttpBreakpointResponseResult
 } from 'mockttp/dist/rules/handlers';
 
-import { TrafficSource } from './model/http/sources';
-import { ViewableContentType } from './model/http/content-types';
-import { ObservablePromise } from './util/observable';
+import type { TrafficSource } from './model/http/sources';
+import type { ViewableContentType } from './model/http/content-types';
+import type { ObservablePromise } from './util/observable';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &

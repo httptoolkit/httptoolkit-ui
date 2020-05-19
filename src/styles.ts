@@ -1,7 +1,7 @@
 import * as styledComponents from 'styled-components';
 import * as polished from 'polished';
-import { ThemeProps } from 'styled-components';
-import * as monacoTypes from 'monaco-editor';
+import type { ThemeProps } from 'styled-components';
+import type * as monacoTypes from 'monaco-editor';
 
 import reset from 'styled-reset';
 

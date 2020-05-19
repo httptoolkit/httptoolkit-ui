@@ -1,8 +1,8 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
-import { OpenAPIObject } from 'openapi-directory';
+import type { OpenAPIObject } from 'openapi-directory';
 
-import {
+import type {
     BackgroundRequest,
     BackgroundResponse,
     DecodeRequest,

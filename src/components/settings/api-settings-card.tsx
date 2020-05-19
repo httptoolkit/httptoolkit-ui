@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { action, flow, observable } from 'mobx';
 import { observer, inject } from "mobx-react";
-import { OpenAPIObject } from 'openapi-directory';
+import type { OpenAPIObject } from 'openapi-directory';
 import * as semver from 'semver';
 import * as yaml from 'yaml';
 import * as swagger2OpenApi from 'swagger2openapi';

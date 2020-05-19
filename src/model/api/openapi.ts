@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { get } from 'typesafe-get';
 
-import {
+import type {
     OpenAPIObject,
     PathObject,
     OperationObject,
