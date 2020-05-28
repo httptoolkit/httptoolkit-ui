@@ -312,15 +312,12 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             & caching performance analysis
                         </Feature>
                         <Feature>
-                            <strong>Validation & documentation for 1400+ APIs</strong>,
-                            from AWS to GitHub to Stripe, powered by OpenAPI
-                        </Feature>
-                        <Feature>
                             <strong>Automated HTTP mocking & rewriting</strong>, including fixed
                             responses, request forwarding, connection failures, timeouts & more
                         </Feature>
                         <Feature>
-                            <strong>Import/export mock rules</strong>, to reuse & share your mock environments
+                            <strong>Reusable mock rules</strong>. Persistent by default, plus
+                            import/export so you can store, reuse & share them later.
                         </Feature>
                         <Feature>
                             <strong>Import/export collected traffic</strong>, as either <a
@@ -330,6 +327,10 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             >
                                 HARs
                             </a> or ready-to-use code for 20+ tools
+                        </Feature>
+                        <Feature>
+                            <strong>Validation & documentation for 1400+ APIs</strong>,
+                            from AWS to GitHub to Stripe, powered by OpenAPI
                         </Feature>
                         <Feature>
                             <strong>Advanced customization</strong>, including port configuration,
