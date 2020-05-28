@@ -100,23 +100,6 @@ export class RulesStore {
     private async loadSettings() {
         const { accountStore } = this;
 
-        // Backward compat for store data before 2020-01-28 - drop this in a month or two
-        const oldData = localStorage.getItem('interception-store');
-        const newData = localStorage.getItem('rules-store');
-        if (oldData && !newData) {
-            try {
-                const data = JSON.parse(oldData);
-
-                // Migrate data from the interception store to here:
-                localStorage.setItem('rules-store', JSON.stringify(_.pick(data, [
-                    'draftWhitelistedCertificateHosts',
-                    'draftClientCertificateHostMap'
-                ])));
-            } catch (e) {
-                console.log(e);
-            }
-        }
-
         // Load rule configuration settings from storage
         await hydrate({
             key: 'rules-store',
