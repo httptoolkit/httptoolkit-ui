@@ -327,7 +327,7 @@ describe("Rules store", () => {
     describe("default rule management", () => {
 
         it("should create rules & the default group if neither exist", () => {
-            store.ensureDefaultRuleExists(a);
+            store.ensureRuleExists(a);
 
             expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
             expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
@@ -337,7 +337,7 @@ describe("Rules store", () => {
             store.rules.items = [defaultGroup(a)];
             store.draftRules.items = [defaultGroup(a)];
 
-            store.ensureDefaultRuleExists(a);
+            store.ensureRuleExists(a);
 
             expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
             expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
@@ -347,7 +347,7 @@ describe("Rules store", () => {
             store.rules.items = [];
             store.draftRules.items = [defaultGroup(a)];
 
-            store.ensureDefaultRuleExists(a);
+            store.ensureRuleExists(a);
 
             expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
             expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
@@ -357,7 +357,7 @@ describe("Rules store", () => {
             store.rules.items = [defaultGroup(a)];
             store.draftRules.items = [];
 
-            store.ensureDefaultRuleExists(a);
+            store.ensureRuleExists(a);
 
             expect(store.rules.items).to.deep.equal([defaultGroup(a)]);
             expect(store.draftRules.items).to.deep.equal([defaultGroup(a)]);
@@ -367,7 +367,7 @@ describe("Rules store", () => {
             store.rules.items = [defaultGroup(a)];
             store.draftRules.items = [defaultGroup(a)];
 
-            store.ensureDefaultRuleExists(b);
+            store.ensureRuleExists(b);
 
             expect(store.rules.items).to.deep.equal([defaultGroup(b, a)]);
             expect(store.draftRules.items).to.deep.equal([defaultGroup(b, a)]);
@@ -377,7 +377,7 @@ describe("Rules store", () => {
             store.rules.items = [a];
             store.draftRules.items = [a];
 
-            store.ensureDefaultRuleExists(a);
+            store.ensureRuleExists(a);
 
             expect(store.rules.items).to.deep.equal([a]);
             expect(store.draftRules.items).to.deep.equal([a]);
@@ -387,7 +387,7 @@ describe("Rules store", () => {
             store.rules.items = [{ ...a, activated: false }];
             store.draftRules.items = [{ ...a, activated: false }];
 
-            store.ensureDefaultRuleExists(a);
+            store.ensureRuleExists(a);
 
             expect(store.rules.items).to.deep.equal([a]);
             expect(store.draftRules.items).to.deep.equal([a]);
