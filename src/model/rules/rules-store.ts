@@ -46,7 +46,7 @@ import {
     buildForwardingRuleIntegration
 } from './rule-definitions';
 import { deserializeRules, MockRulesetSchema, DeserializationArgs } from './rule-serialization';
-import { migrateRules as migrateRuleDate } from './rule-migrations';
+import { migrateRuleData } from './rule-migrations';
 
 export type ClientCertificate = {
     readonly pfx: ArrayBuffer,
@@ -118,7 +118,7 @@ export class RulesStore {
                 key: 'rules-store',
                 store: this,
                 dataTransform: (data: { rules: any }) => ({
-                    rules: migrateRuleDate(data.rules)
+                    rules: migrateRuleData(data.rules)
                 }),
                 customArgs: { rulesStore: this } as DeserializationArgs
             });

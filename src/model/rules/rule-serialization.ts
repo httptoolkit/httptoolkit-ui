@@ -11,9 +11,10 @@ import {
     HtkMockRule,
     HtkMockItem,
     HtkMockRuleRoot,
-    isRuleGroup
+    isRuleGroup,
+    HtkMockRuleGroup
 } from './rules-structure';
-import { migrateRules } from './rule-migrations';
+import { migrateRuleData } from './rule-migrations';
 
 export type DeserializationArgs = {
     rulesStore: RulesStore
@@ -86,14 +87,16 @@ const MockItemSerializer: serializr.PropSchema = serializr.custom(
     },
     (data: HtkMockItem, context: any, oldValue: any, done: (err: any, result: any) => any) => {
         if (isRuleGroup(data)) {
-            return serializr.deserialize(MockRuleGroupSchema, data, done, context.args);
+            const group = serializr.deserialize(MockRuleGroupSchema, data, done, context.args);
+            group.collapsed = true; // Groups always start collapsed when unpersisted/imported.
+            return group;
         } else {
             return MockRuleSerializer.deserializer(data, done, context, oldValue);
         }
     }
 );
 
-const MockRuleGroupSchema = serializr.createSimpleSchema({
+const MockRuleGroupSchema = serializr.createSimpleSchema<HtkMockRuleGroup>({
     id: serializr.primitive(),
     title: serializr.primitive(),
     items: serializr.list(MockItemSerializer)
@@ -117,6 +120,6 @@ export const serializeRules = (rules: HtkMockRuleRoot): MockRuleset => {
 
 export const deserializeRules = (data: any, args: DeserializationArgs): HtkMockRuleRoot => {
     return (
-        serializr.deserialize(MockRulesetSchema, migrateRules(data), undefined, args)
+        serializr.deserialize(MockRulesetSchema, migrateRuleData(data), undefined, args)
     ) as HtkMockRuleRoot;
 }
