@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "prebuild": "rimraf dist/*",
-    "build": "env-cmd -f ./automation/ts-node.env node node_modules/.bin/webpack --config ./automation/webpack.prod.ts",
+    "build": "env-cmd -f ./automation/ts-node.env node --max_old_space_size=4096 node_modules/.bin/webpack --config ./automation/webpack.prod.ts",
     "start": "node-dev ./node_modules/.bin/httptoolkit-server start & npm run start:web",
     "start:web": "env-cmd -f ./automation/ts-node.env webpack-dev-server --config ./automation/webpack.dev.ts",
     "test": "npm run test:unit && npm run test:integration",
