@@ -4,11 +4,11 @@ import * as dedent from 'dedent';
 import { isRuleGroup } from './rules-structure';
 import { buildDefaultGroup } from './rule-definitions';
 
-// Take some raw rule data, exported from any version of the app since HTTP Mock was launched,
-// and convert it into raw modern rule data, ready to be deserialized.
+// Take some raw serialized rule data, exported from any version of the app since HTTP Mock was
+// launched, and convert it into raw modern rule data, ready to be deserialized.
 export function migrateRules(data: any) {
-    // Right now all rule data is unversioned, but with this check we can safely start
-    // versioning as soon as it's necessary
+    // Right now all rule data is unversioned, but with this check we can safely
+    // start versioning as soon as it's necessary
     if (data.version === undefined) {
         if (data.rules) {
             data.id = 'root';
@@ -30,11 +30,10 @@ export function migrateRules(data: any) {
 
         data.items = data.items.map(migrateRuleItem);
     } else {
-        alert(dedent`
-            The imported rules are in a new & unsupported format.
+        throw new Error(dedent`
+            Could not migrate rules from unknown format (${data.version}).
             Please restart HTTP Toolkit to update.
         `);
-        throw new Error(`Could not migrate rules from unknown version ${data.version}`);
     }
 
     return data;

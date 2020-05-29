@@ -7,6 +7,7 @@ import * as dateFns from 'date-fns';
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 import { Icon } from '../../icons';
+import { reportError } from '../../errors';
 import { uploadFile, saveFile } from '../../util/ui';
 
 import { RulesStore } from '../../model/rules/rules-store';
@@ -288,9 +289,14 @@ class MockPage extends React.Component<MockPageProps> {
             'application/htkrules+json'
         ]);
         if (uploadedFile) {
-            this.props.rulesStore.loadSavedRules(
-                JSON.parse(uploadedFile)
-            );
+            try {
+                this.props.rulesStore.loadSavedRules(
+                    JSON.parse(uploadedFile)
+                );
+            } catch (e) {
+                reportError(e);
+                alert(`Rules could not be imported: ${e}`);
+            }
         }
     }
 

@@ -46,6 +46,7 @@ import {
     buildForwardingRuleIntegration
 } from './rule-definitions';
 import { deserializeRules, MockRulesetSchema, DeserializationArgs } from './rule-serialization';
+import { migrateRules as migrateRuleDate } from './rule-migrations';
 
 export type ClientCertificate = {
     readonly pfx: ArrayBuffer,
@@ -104,7 +105,7 @@ export class RulesStore {
         await hydrate({
             key: 'rules-store',
             store: this,
-            dataFilter: (data: {}) => _.omit(data, 'rules'),
+            dataTransform: (data: {}) => _.omit(data, 'rules'),
         });
 
         // Only on startup do draft host settings take effect, becoming the real settings:
@@ -116,7 +117,9 @@ export class RulesStore {
             await hydrate({
                 key: 'rules-store',
                 store: this,
-                dataFilter: (data: {}) => _.pick(data, 'rules'),
+                dataTransform: (data: { rules: any }) => ({
+                    rules: migrateRuleDate(data.rules)
+                }),
                 customArgs: { rulesStore: this } as DeserializationArgs
             });
             this.resetRuleDrafts(); // Drafts aren't persisted, so need updating to match loaded data.

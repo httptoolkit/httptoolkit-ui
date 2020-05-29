@@ -3,7 +3,7 @@ import { toJS } from 'mobx';
 import { completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
-import { hasSerializrSchema } from '../serialization';
+import { hasSerializrSchema, serializeAsTag } from '../serialization';
 
 import { RulesStore } from './rules-store';
 import { MatcherLookup, HandlerLookup } from './rules';
@@ -106,6 +106,7 @@ interface MockRuleset extends HtkMockRuleRoot {
 export const MockRulesetSchema = serializr.createSimpleSchema<MockRuleset>({
     id: serializr.primitive(),
     title: serializr.primitive(),
+    version: serializeAsTag(() => undefined), // All compatible, so we don't version yet, but we _could_.
     isRoot: serializr.optional(serializr.primitive()),
     items: serializr.list(MockItemSerializer)
 });

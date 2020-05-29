@@ -37,14 +37,14 @@ export async function hydrate<T extends Object>(options: {
     store: T,
     storage?: typeof Storage,
     jsonify?: boolean,
-    dataFilter?: <T>(data: T) => Partial<T>,
+    dataTransform?: (data: any) => any,
     customArgs?: any
 }): Promise<void> {
-    const { key, store, storage, jsonify, dataFilter, customArgs } = _.defaults(options, {
+    const { key, store, storage, jsonify, dataTransform, customArgs } = _.defaults(options, {
         customArgs: {},
         storage: Storage,
         jsonify: true,
-        dataFilter: _.identity
+        dataTransform: _.identity
     });
 
     const schema = getDefaultModelSchema(store as any);
@@ -56,7 +56,7 @@ export async function hydrate<T extends Object>(options: {
 
         if (data && typeof data === 'object') {
             runInAction(() => {
-                update(schema, store, dataFilter(data), undefined, customArgs);
+                update(schema, store, dataTransform(data), undefined, customArgs);
             });
         }
     }
