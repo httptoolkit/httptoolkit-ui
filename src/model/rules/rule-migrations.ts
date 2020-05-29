@@ -7,6 +7,8 @@ import { buildDefaultGroup } from './rule-definitions';
 // Take some raw serialized rule data, exported from any version of the app since HTTP Mock was
 // launched, and convert it into raw modern rule data, ready to be deserialized.
 export function migrateRuleData(data: any) {
+    if (!data) return data;
+
     // Right now all rule data is unversioned, but with this check we can safely
     // start versioning as soon as it's necessary
     if (data.version === undefined) {

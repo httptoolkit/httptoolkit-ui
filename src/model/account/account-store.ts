@@ -132,7 +132,8 @@ export class AccountStore {
     @computed get mightBePaidUser() {
         // Like isPaidUser, but returns true for users who have subscription data
         // locally that's expired, until we successfully make a first check.
-        return this.user.subscription?.status !== 'past_due' &&
+        return this.user.subscription?.status &&
+            this.user.subscription?.status !== 'past_due' &&
             (this.isStatusUnexpired || this.accountDataLastUpdated === 0);
     }
 
