@@ -1,7 +1,10 @@
 import * as _ from 'lodash';
+import { reportError } from '../../errors';
+import { delay, doWhile } from '../../util/promise';
 
 export interface SubscriptionPlan {
     id: number;
+    name: string;
     prices?: {
         monthly: string;
         total: string;
@@ -9,10 +12,10 @@ export interface SubscriptionPlan {
 }
 
 export const SubscriptionPlans = {
-    'pro-monthly': { id: 550380, name: 'Pro (monthly)' },
-    'pro-annual': { id: 550382, name: 'Pro (annual)' },
-    'team-monthly': { id: 550789, name: 'Team (monthly)' },
-    'team-annual': { id: 550788, name: 'Team (annual)' },
+    'pro-monthly': { id: 550380, name: 'Pro (monthly)' } as SubscriptionPlan,
+    'pro-annual': { id: 550382, name: 'Pro (annual)' } as SubscriptionPlan,
+    'team-monthly': { id: 550789, name: 'Team (monthly)' } as SubscriptionPlan,
+    'team-annual': { id: 550788, name: 'Team (annual)' } as SubscriptionPlan,
 };
 
 async function loadPlanPrices() {
@@ -60,8 +63,19 @@ async function loadPlanPrices() {
         };
     });
 }
-// Async load all plan prices
-loadPlanPrices();
+
+// Async load all plan prices, repeatedly, until it works
+doWhile(
+    // Do: load the prices, with a timeout
+    () => Promise.race([
+        loadPlanPrices().catch(reportError),
+        delay(5000) // 5s timeout
+    ]).then(() => delay(1000)), // Limit the frequency
+
+    // While: if any subs didn't successfully get data, try again:
+    () => _.some(SubscriptionPlans, (plan) => !plan.prices),
+);
+
 
 function formatPrice(currency: string, price: number) {
     return Number(price).toLocaleString(undefined, {
