@@ -162,7 +162,10 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onScrollToEvent={this.onScrollToEvent}
             />;
         } else {
-            rightPane = <TlsFailureDetailsPane failure={this.selectedEvent} certPath={certPath} />;
+            rightPane = <TlsFailureDetailsPane
+                failure={this.selectedEvent}
+                certPath={certPath}
+            />;
         }
 
         return <div className={this.props.className}>

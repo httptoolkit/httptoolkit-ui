@@ -3,6 +3,8 @@ import * as React from 'react';
 
 import { FailedTlsRequest } from '../../types';
 import { styled } from '../../styles';
+import { Icon, SourceIcons } from '../../icons';
+
 import { MediumCard } from '../common/card';
 import { getReadableIP } from '../../model/network';
 import { ContentLabelBlock, Content, CopyableMonoValue } from '../common/text-content';
@@ -20,6 +22,15 @@ const TlsFailureContainer = styled.div`
     flex-direction: column;
 
     background-color: ${p => p.theme.containerBackground};
+`;
+
+const AndroidIcon = styled(Icon).attrs({
+    icon: SourceIcons.Android.icon
+})`
+    float: left;
+    margin-right: 10px;
+    margin-top: 3px;
+    color: ${SourceIcons.Android.color};
 `;
 
 export class TlsFailureDetailsPane extends React.Component<{
@@ -74,11 +85,10 @@ export class TlsFailureDetailsPane extends React.Component<{
                 <Content>{
                     failure.failureCause === 'cert-rejected'
                         ? <p>
-                            This means that the client hasn't yet been 100% configured
+                            This means that the client hasn't yet been fully configured
                             to work with HTTP Toolkit. It has the proxy settings,
                             but it doesn't trust our certificate authority (CA), so we
-                            can't imitate HTTPS sites and we can't collect or see its
-                            HTTPS traffic.
+                            can't we can't intercept its HTTPS traffic.
                         </p>
                     : failure.failureCause === 'no-shared-cipher'
                         ? <>
@@ -135,34 +145,30 @@ export class TlsFailureDetailsPane extends React.Component<{
                             { certPath }
                         </CopyableMonoValue>
                     </p>
+                    <AndroidIcon />
                     <p>
-                        <strong>For Android devices specifically</strong>, note that apps may not
+                        <strong>For Android devices</strong>, modern apps will not
                         trust your installed CA certificates by default. For apps targeting
-                        API level 24+, the app must opt in to doing so. To resolve this, you need
-                        to edit the app's network security configuration so that it trusts the
-                        user certificate store, or root your device. See <a
-                            href="https://developer.android.com/training/articles/security-config"
-                        >Android's network security documentation</a> for more details.
+                        API level 24+, the app must opt in to trusting user CA certificates, or
+                        you need to inject a system certificate (only possible on rooted devices
+                        and emulators).
+                    </p>
+                    <p>
+                        Trusting user CA certificates in your own app is a small & simple
+                        configuration change, see <a
+                            href="https://httptoolkit.tech/docs/guides/android#intercepting-traffic-from-your-own-app"
+                        >the HTTP Toolkit docs</a> for more details. Alternatively HTTP Toolkit
+                        can inject the system certificate for you automatically, on devices that
+                        support this, by connecting the device with ADB and using the "Android
+                        device connected via ADB" interception option.
+                    </p>
+                    <p>
+                        Take a look at the <a href="https://httptoolkit.tech/docs/guides/android/">
+                            Android interception guide
+                        </a> for more information.
                     </p>
                 </Content>
             </MediumCard>
         </TlsFailureContainer>;
     }
 }
-
-/*
-
-The request was sent by 127.0.0.1 (this machine/a device on your local network/a docker container/)
-
-This can be caused by a few things:
-* The client might no longer want to make the request
-* The client might have connection issues
-* The client might not trust our HTTPS certificate
-
-This means that this client is not fully configured to work with HTTP Toolkit, as it hasn't been configured to trust our certificate authority.
-or
-This could be caused by the client not being fully configured to work with HTTP Toolkit.
-
-
-
-*/
