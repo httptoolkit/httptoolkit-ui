@@ -156,7 +156,7 @@ export class TlsFailureDetailsPane extends React.Component<{
                     <p>
                         Trusting user CA certificates in your own app is a small & simple
                         configuration change, see <a
-                            href="https://httptoolkit.tech/docs/guides/android#intercepting-traffic-from-your-own-app"
+                            href="https://httptoolkit.tech/docs/guides/android#intercepting-traffic-from-your-own-android-app"
                         >the HTTP Toolkit docs</a> for more details. Alternatively HTTP Toolkit
                         can inject the system certificate for you automatically, on devices that
                         support this, by connecting the device with ADB and using the "Android
