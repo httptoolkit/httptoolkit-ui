@@ -10,6 +10,7 @@ import { ViewableContentType } from './content-types';
 
 interface EditorFormatter {
     language: string;
+    cacheKey: Symbol;
     render(content: Buffer): string;
 }
 
@@ -30,6 +31,7 @@ export function isEditorFormatter(input: any): input is EditorFormatter {
 export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
         language: 'text',
+        cacheKey: Symbol('raw'),
         // Poor man's hex editor:
         render(content: Buffer) {
             return content.toString('hex').replace(
@@ -39,30 +41,35 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     },
     text: {
         language: 'text',
+        cacheKey: Symbol('text'),
         render(content: Buffer) {
             return content.toString('utf8');
         }
     },
     base64: {
         language: 'text',
+        cacheKey: Symbol('base64'),
         render(content: Buffer) {
             return Buffer.from(content.toString('utf8'), 'base64').toString('utf8');
         }
     },
     markdown: {
         language: 'markdown',
+        cacheKey: Symbol('markdown'),
         render(content: Buffer) {
             return content.toString('utf8');
         }
     },
     yaml: {
         language: 'yaml',
+        cacheKey: Symbol('yaml'),
         render(content: Buffer) {
             return content.toString('utf8');
         }
     },
     html: {
         language: 'html',
+        cacheKey: Symbol('html'),
         render(content: Buffer) {
             return beautifyHtml(content.toString('utf8'), {
                 indent_size: 2
@@ -71,12 +78,14 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     },
     xml: {
         language: 'xml',
+        cacheKey: Symbol('xml'),
         render(content: Buffer) {
             return beautifyXml(content.toString('utf8'), '  ');
         }
     },
     json: {
         language: 'json',
+        cacheKey: Symbol('json'),
         render(content: Buffer) {
             const asString = content.toString('utf8');
             try {
@@ -88,6 +97,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     },
     javascript: {
         language: 'javascript',
+        cacheKey: Symbol('javascript'),
         render(content: Buffer) {
             return beautifyJs(content.toString('utf8'), {
                 indent_size: 2
@@ -96,6 +106,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     },
     css: {
         language: 'css',
+        cacheKey: Symbol('css'),
         render(content: Buffer) {
             return beautifyCss(content.toString('utf8'), {
                 indent_size: 2

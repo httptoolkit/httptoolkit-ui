@@ -1,13 +1,14 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { observer, disposeOnUnmount } from 'mobx-react';
-import { computed, IObservableValue, autorun, runInAction } from 'mobx';
+import { observer } from 'mobx-react';
+import { computed, ObservableMap } from 'mobx';
 import { SchemaObject } from 'openapi3-ts';
 import * as portals from 'react-reverse-portal';
 
-import { ThemedSelfSizedEditor } from './base-editor';
 import { ViewableContentType } from '../../model/http/content-types';
 import { Formatters, isEditorFormatter } from '../../model/http/body-formatting';
+
+import { ThemedSelfSizedEditor } from './base-editor';
 
 interface ContentViewerProps {
     children: Buffer | string;
@@ -16,6 +17,7 @@ interface ContentViewerProps {
     rawContentType?: string;
     contentType: ViewableContentType;
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
+    cache: ObservableMap<Symbol, unknown>;
 }
 
 @observer
@@ -39,9 +41,17 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
 
     @computed
     private get renderedContent() {
-        if (isEditorFormatter(this.formatter)) {
-            return this.formatter.render(this.contentBuffer);
-        }
+        if (!isEditorFormatter(this.formatter)) return;
+
+        const { cache } = this.props;
+        const cacheKey = this.formatter.cacheKey;
+        const cachedValue = cache.get(cacheKey) as string | undefined;
+
+        const renderingContent = cachedValue ||
+            this.formatter.render(this.contentBuffer);
+        if (!cachedValue) cache.set(cacheKey, renderingContent);
+
+        return renderingContent;
     }
 
     private readonly editorOptions = {

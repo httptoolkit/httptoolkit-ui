@@ -164,6 +164,7 @@ export class ExchangeBodyCard extends React.Component<{
                         contentType={contentType}
                         schema={apiBodySchema}
                         expanded={!!expanded}
+                        cache={message.cache}
                     >
                         {decodedBody}
                     </ContentViewer>
