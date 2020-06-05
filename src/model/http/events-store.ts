@@ -286,15 +286,18 @@ export class EventsStore {
     @action.bound
     deleteEvent(event: CollectedEvent) {
         this.events.remove(event);
+        if ('cleanup' in event) event.cleanup();
     }
 
     @action.bound
     clearInterceptedData(clearPinned: boolean) {
-        const pinnedEvents = clearPinned
-            ? []
-            : this.events.filter(ex => ex.pinned);
+        const [pinnedEvents, unpinnedEvents] = _.partition(
+            this.events,
+            clearPinned ? () => false : (ex) => ex.pinned
+        );
 
         this.events.clear();
+        unpinnedEvents.forEach((event) => { if ('cleanup' in event) event.cleanup() });
 
         this.events.push(...pinnedEvents);
         this.orphanedEvents = {};

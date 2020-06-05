@@ -81,20 +81,21 @@ export type HtkRequest = Omit<InputRequest, 'body'> & {
     parsedUrl: URL & { parseable: boolean },
     source: TrafficSource,
     contentType: ViewableContentType,
-    cache: ObservableMap<symbol, unknown>,
+    cache: Map<symbol, unknown>,
     body: MessageBody
 };
 
 export type HtkResponse = Omit<InputResponse, 'body'> & {
     contentType: ViewableContentType,
-    cache: ObservableMap<symbol, unknown>,
+    cache: Map<symbol, unknown>,
     body: MessageBody
 };
 
 export type MessageBody = {
     encoded: { byteLength: number } | Buffer,
     decoded: Buffer | undefined,
-    decodedPromise: ObservablePromise<Buffer | undefined>
+    decodedPromise: ObservablePromise<Buffer | undefined>,
+    cleanup(): void
 };
 
 export type ExchangeMessage = HtkRequest | HtkResponse;

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import { observer } from 'mobx-react';
-import { computed, ObservableMap } from 'mobx';
+import { computed } from 'mobx';
 import { SchemaObject } from 'openapi3-ts';
 import * as portals from 'react-reverse-portal';
 
@@ -17,7 +17,7 @@ interface ContentViewerProps {
     rawContentType?: string;
     contentType: ViewableContentType;
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
-    cache: ObservableMap<Symbol, unknown>;
+    cache: Map<Symbol, unknown>;
 }
 
 @observer

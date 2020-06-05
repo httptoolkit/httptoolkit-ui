@@ -22,7 +22,7 @@ import {
     asHeaderArray,
     lastHeader,
 } from '../../util';
-import { lazyObservablePromise, ObservablePromise } from "../../util/observable";
+import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 
 import { parseSource } from './sources';
 import { getContentType } from './content-types';
@@ -142,9 +142,22 @@ export class ExchangeBody implements MessageBody {
             return undefined;
         }
     });
+
     get decoded() {
         // We exclude 'Error' from the value - errors should always become undefined
         return this.decodedPromise.value as Buffer | undefined;
+    }
+
+    // Must only be called when the exchange & body will no longer be used. Ensures that large data is
+    // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
+    // Important: for safety, this leaves the body in a *VALID* but reset state - not a totally blank one.
+    cleanup() {
+        const emptyBuffer = Buffer.from([]);
+
+        // Set to a valid state for an un-decoded but totally empty body.
+        this._decoded = undefined;
+        this._encoded = emptyBuffer;
+        this.decodedPromise = observablePromise(Promise.resolve(emptyBuffer));
     }
 }
 
@@ -287,6 +300,21 @@ export class HttpExchange {
                 return api;
             })
         );
+    }
+
+    // Must only be called when the exchange will no longer be used. Ensures that large data is
+    // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
+    // Important: for safety, this leaves the exchange in a *VALID* but reset state - not a totally blank one.
+    cleanup() {
+        this.cache.clear();
+
+        this.request.cache.clear();
+        this.request.body.cleanup();
+
+        if (this.isSuccessfulExchange()) {
+            this.response.cache.clear();
+            this.response.body.cleanup();
+        }
     }
 
     // API metadata:
