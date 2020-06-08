@@ -7,6 +7,7 @@ import * as beautifyXml from 'xml-beautifier';
 
 import { styled } from '../../styles';
 import { ViewableContentType } from './content-types';
+import { getReadableSize } from './bodies';
 
 interface EditorFormatter {
     language: string;
@@ -28,15 +29,33 @@ export function isEditorFormatter(input: any): input is EditorFormatter {
     return !!input.language;
 }
 
+const truncationMarker = (length: number) => `\n[-- Truncated to ${getReadableSize(length, false)} --]`;
+const FIVE_MB = 1024 * 1024 * 5;
+
 export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
         language: 'text',
         cacheKey: Symbol('raw'),
         // Poor man's hex editor:
         render(content: Buffer) {
-            return content.toString('hex').replace(
-                /(\w\w)/g, '$1 '
-            ).trimRight();
+            // Truncate the content if necessary. Nobody should manually dig
+            // through more than 5MB of content, and the full content is
+            // available by downloading the whole body.
+            const needsTruncation = content.length > FIVE_MB;
+            if (needsTruncation) {
+                content = content.slice(0, FIVE_MB)
+            }
+
+            const formattedContent =
+                 content.toString('hex')
+                    .replace(/(\w\w)/g, '$1 ')
+                    .trimRight();
+
+            if (needsTruncation) {
+                return formattedContent + truncationMarker(FIVE_MB);
+            } else {
+                return formattedContent;
+            }
         }
     },
     text: {
