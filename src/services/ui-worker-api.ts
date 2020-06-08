@@ -14,12 +14,15 @@ import type {
     EncodeRequest,
     EncodeResponse,
     ValidatePKCSRequest,
-    ValidatePKCSResponse
+    ValidatePKCSResponse,
+    FormatRequest,
+    FormatResponse
 } from './ui-worker';
 import Worker from 'worker-loader!./ui-worker';
 
 import { Omit } from '../types';
 import { ApiMetadata } from '../model/api/build-openapi';
+import { WorkerFormatterKey } from './ui-worker-formatters';
 
 const worker = new Worker();
 
@@ -127,4 +130,12 @@ export async function validatePKCS(buffer: ArrayBuffer, passphrase: string | und
         buffer,
         passphrase
     })).result;
+}
+
+export async function formatBufferAsync(buffer: ArrayBuffer, format: WorkerFormatterKey) {
+    return (await callApi<FormatRequest, FormatResponse>({
+        type: 'format',
+        buffer,
+        format
+    })).formatted;
 }

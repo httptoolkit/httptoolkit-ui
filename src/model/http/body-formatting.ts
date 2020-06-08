@@ -1,18 +1,14 @@
-import {
-    js as beautifyJs,
-    html as beautifyHtml,
-    css as beautifyCss
-} from 'js-beautify/js/lib/beautifier';
-import * as beautifyXml from 'xml-beautifier';
-
 import { styled } from '../../styles';
 import { ViewableContentType } from './content-types';
-import { getReadableSize } from './bodies';
+import { ObservablePromise, observablePromise } from '../../util/observable';
+
+import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
+import { formatBufferAsync } from '../../services/ui-worker-api';
 
 interface EditorFormatter {
     language: string;
     cacheKey: Symbol;
-    render(content: Buffer): string;
+    render(content: Buffer): string | ObservablePromise<string>;
 }
 
 type FormatComponentProps = {
@@ -29,108 +25,63 @@ export function isEditorFormatter(input: any): input is EditorFormatter {
     return !!input.language;
 }
 
-const truncationMarker = (length: number) => `\n[-- Truncated to ${getReadableSize(length, false)} --]`;
-const FIVE_MB = 1024 * 1024 * 5;
+const buildAsyncRenderer = (formatKey: WorkerFormatterKey) =>
+    (input: Buffer) => observablePromise(
+        formatBufferAsync(input, formatKey)
+    );
 
 export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
         language: 'text',
         cacheKey: Symbol('raw'),
-        // Poor man's hex editor:
-        render(content: Buffer) {
-            // Truncate the content if necessary. Nobody should manually dig
-            // through more than 5MB of content, and the full content is
-            // available by downloading the whole body.
-            const needsTruncation = content.length > FIVE_MB;
-            if (needsTruncation) {
-                content = content.slice(0, FIVE_MB)
-            }
-
-            const formattedContent =
-                 content.toString('hex')
-                    .replace(/(\w\w)/g, '$1 ')
-                    .trimRight();
-
-            if (needsTruncation) {
-                return formattedContent + truncationMarker(FIVE_MB);
-            } else {
-                return formattedContent;
-            }
-        }
+        render: buildAsyncRenderer('raw')
     },
     text: {
         language: 'text',
         cacheKey: Symbol('text'),
-        render(content: Buffer) {
-            return content.toString('utf8');
+        render: (input: Buffer) => {
+            return input.toString('utf8');
         }
     },
     base64: {
         language: 'text',
         cacheKey: Symbol('base64'),
-        render(content: Buffer) {
-            return Buffer.from(content.toString('utf8'), 'base64').toString('utf8');
-        }
+        render: buildAsyncRenderer('base64')
     },
     markdown: {
         language: 'markdown',
         cacheKey: Symbol('markdown'),
-        render(content: Buffer) {
-            return content.toString('utf8');
-        }
+        render: buildAsyncRenderer('markdown')
     },
     yaml: {
         language: 'yaml',
         cacheKey: Symbol('yaml'),
-        render(content: Buffer) {
-            return content.toString('utf8');
-        }
+        render: buildAsyncRenderer('yaml')
     },
     html: {
         language: 'html',
         cacheKey: Symbol('html'),
-        render(content: Buffer) {
-            return beautifyHtml(content.toString('utf8'), {
-                indent_size: 2
-            });
-        }
+        render: buildAsyncRenderer('html')
     },
     xml: {
         language: 'xml',
         cacheKey: Symbol('xml'),
-        render(content: Buffer) {
-            return beautifyXml(content.toString('utf8'), '  ');
-        }
+        render: buildAsyncRenderer('xml')
     },
     json: {
         language: 'json',
         cacheKey: Symbol('json'),
-        render(content: Buffer) {
-            const asString = content.toString('utf8');
-            try {
-                return JSON.stringify(JSON.parse(asString), null, 2);
-            } catch (e) {
-                return asString;
-            }
-        }
+        render: buildAsyncRenderer('json')
     },
     javascript: {
         language: 'javascript',
         cacheKey: Symbol('javascript'),
-        render(content: Buffer) {
-            return beautifyJs(content.toString('utf8'), {
-                indent_size: 2
-            });
-        }
+        render: buildAsyncRenderer('javascript')
     },
     css: {
         language: 'css',
         cacheKey: Symbol('css'),
-        render(content: Buffer) {
-            return beautifyCss(content.toString('utf8'), {
-                indent_size: 2
-            });
-        }
+        render: buildAsyncRenderer('css')
     },
     image: styled.img.attrs((p: FormatComponentProps) => ({
         src: `data:${p.rawContentType || ''};base64,${p.content.toString('base64')}`

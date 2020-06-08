@@ -10,6 +10,7 @@ import * as zlib from 'zlib';
 
 import { buildApiMetadata, ApiMetadata } from '../model/api/build-openapi';
 import { validatePKCS12, ValidationResult } from '../model/crypto';
+import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 
 const gzipCompress = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
     new Promise<Buffer>((resolve, reject) => {
@@ -91,19 +92,32 @@ export interface ValidatePKCSResponse extends Message {
     result: ValidationResult;
 }
 
+export interface FormatRequest extends Message {
+    type: 'format';
+    buffer: ArrayBuffer;
+    format: WorkerFormatterKey;
+}
+
+export interface FormatResponse extends Message {
+    error?: Error;
+    formatted: string;
+}
+
 export type BackgroundRequest =
     | DecodeRequest
     | EncodeRequest
     | TestEncodingsRequest
     | BuildApiRequest
-    | ValidatePKCSRequest;
+    | ValidatePKCSRequest
+    | FormatRequest;
 
 export type BackgroundResponse =
     | DecodeResponse
     | EncodeResponse
     | TestEncodingsResponse
     | BuildApiResponse
-    | ValidatePKCSResponse;
+    | ValidatePKCSResponse
+    | FormatResponse;
 
 function decodeRequest(request: DecodeRequest): DecodeResponse {
     const { id, buffer, encodings } = request;
@@ -203,6 +217,11 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
             case 'validate-pkcs12':
                 const result = validatePKCS12(event.data.buffer, event.data.passphrase);
                 ctx.postMessage({ id: event.data.id, result });
+                break;
+
+            case 'format':
+                const formatted = formatBuffer(event.data.buffer, event.data.format);
+                ctx.postMessage({ id: event.data.id, formatted });
                 break;
 
             default:

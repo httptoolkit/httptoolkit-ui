@@ -34,7 +34,11 @@ export const ExchangeCard = styled(CollapsibleCard)`
     overflow: visible;
 `;
 
-const LoadingCardContent = styled.div<{ height?: string }>`
+export const LoadingCardContent = styled((props: { height?: string, className?: string }) =>
+    <div className={props.className}>
+        <Icon spin icon={['fac', 'spinner-arc']} size='8x' />
+    </div>
+)`
     ${p => p.height && css`
         height: ${p.height};
     `}
@@ -52,9 +56,7 @@ export const LoadingExchangeCard = (props:
         <header>
             { props.children }
         </header>
-        <LoadingCardContent height={props.height}>
-            <Icon spin icon={['fac', 'spinner-arc']} size='8x' />
-        </LoadingCardContent>
+        <LoadingCardContent height={props.height} />
     </ExchangeCard>;
 
 export const ExchangeCollapsibleBody = styled(CollapsibleSectionBody)`

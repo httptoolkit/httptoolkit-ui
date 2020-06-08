@@ -37,6 +37,15 @@ export function observablePromise<T>(p: Promise<T> |  ObservablePromise<T>): Obs
     return observable;
 }
 
+export function isObservablePromise<T>(p: any): p is ObservablePromise<T> {
+    return typeof p === 'object' &&
+        'then' in p &&
+        'catch' in p &&
+        'case' in p &&
+        'value' in p &&
+        'state' in p;
+}
+
 // Creates an observable promise which doesn't run until somebody tries
 // to check the value or wait for it to resolve somehow.
 export function lazyObservablePromise<T>(p: () => PromiseLike<T>): ObservablePromise<T> {
