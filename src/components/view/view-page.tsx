@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { observable, autorun, action, computed, runInAction, when } from 'mobx';
+import { observable, autorun, action, computed, runInAction, when, reaction } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -19,7 +19,7 @@ import { EmptyState } from '../common/empty-state';
 import { ViewEventList } from './view-event-list';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
 
 interface ViewPageProps {
     className?: string;
@@ -76,8 +76,11 @@ const ViewPageKeyboardShortcuts = (props: {
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    requestEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
-    responseEditor = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
+    requestEditorNode = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
+    responseEditorNode = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
+
+    requestEditorRef = React.createRef<SelfSizedBaseEditor>();
+    responseEditorRef = React.createRef<SelfSizedBaseEditor>();
 
     private listRef = React.createRef<ViewEventList>();
 
@@ -138,6 +141,15 @@ class ViewPage extends React.Component<ViewPageProps> {
                 return;
             }
         }));
+
+        // Every time the selected event changes, reset the editors:
+        disposeOnUnmount(this,
+            reaction(() => this.selectedEvent, () => {
+                [this.requestEditorRef, this.responseEditorRef].forEach((editorRef) => {
+                    editorRef.current?.resetUIState();
+                });
+            })
+        );
     }
 
     render(): JSX.Element {
@@ -155,8 +167,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestEditor}
-                responseEditor={this.responseEditor}
+                requestEditor={this.requestEditorNode}
+                responseEditor={this.responseEditorNode}
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
                 onScrollToEvent={this.onScrollToEvent}
@@ -200,9 +212,11 @@ class ViewPage extends React.Component<ViewPageProps> {
                 { rightPane }
             </SplitPane>
 
-            {[this.requestEditor, this.responseEditor].map((editorNode, i) =>
+            {[this.requestEditorNode, this.responseEditorNode].map((editorNode, i) =>
                 <portals.InPortal key={i} node={editorNode}>
-                    <ThemedSelfSizedEditor />
+                    <ThemedSelfSizedEditor
+                        ref={i === 0 ? this.requestEditorRef : this.responseEditorRef}
+                    />
                 </portals.InPortal>
             )}
         </div>;

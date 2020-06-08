@@ -133,6 +133,10 @@ export class SelfSizedBaseEditor extends React.Component<
         this.resizeObserver.disconnect();
     }
 
+    public resetUIState() {
+        this.editor.current?.resetUIState();
+    }
+
     @observable lineCount: number = 0;
     @observable lineHeight: number = 0;
 
@@ -152,8 +156,15 @@ export class SelfSizedBaseEditor extends React.Component<
 }
 
 export const ThemedSelfSizedEditor = withTheme(
-    ({ theme, ...otherProps }: { theme?: Theme, expanded?: boolean } & Omit<EditorProps, 'onLineCount' | 'theme'>) =>
-        <SelfSizedBaseEditor theme={theme!.monacoTheme} {...otherProps} />
+    React.forwardRef(
+        (
+            { theme, ...otherProps }: {
+                theme?: Theme,
+                expanded?: boolean
+            } & Omit<EditorProps, 'onLineCount' | 'theme'>,
+            ref: React.Ref<SelfSizedBaseEditor>
+        ) => <SelfSizedBaseEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
+    )
 );
 
 const EditorFocusWrapper = styled(FocusWrapper)`
@@ -206,6 +217,15 @@ export class BaseEditor extends React.Component<EditorProps> {
             this.editor.layout();
             // If the layout has changed, the line count may have too (due to wrapping)
             this.announceLineCount(this.editor);
+        }
+    }
+
+    public async resetUIState() {
+        if (this.editor && this.monaco) {
+            this.editor.setSelection(
+                new this.monaco.Selection(1, 1, 1, 1)
+            );
+            this.relayout();
         }
     }
 
