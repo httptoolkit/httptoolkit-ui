@@ -480,7 +480,11 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     }
 
     componentDidUpdate() {
-        this.focusSelectedEvent();
+        if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
+            // If we previously had something here focused, and we've updated, update
+            // the focus too, to make sure it's in the right place.
+            this.focusSelectedEvent();
+        }
     }
 
     public scrollToEvent(event: CollectedEvent) {
