@@ -385,7 +385,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 onFocus={this.focusSelectedEvent}
                 onKeyDown={this.onKeyDown}
                 onMouseDown={this.onListMouseDown}
-                tabIndex={this.props.selectedEvent != null ? -1 : 0}
+                tabIndex={this.isSelectedEventVisible() ? -1 : 0}
             />
         )
     );
@@ -449,6 +449,15 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 }</AutoSizer>
             }
         </ListContainer>;
+    }
+
+    private isSelectedEventVisible = () => {
+        if (!this.selectedEventId) return false;
+
+        const listBody = this.listBodyRef.current;
+        if (!listBody) return false;
+
+        return !!listBody.querySelector(`[data-event-id='${this.selectedEventId}']`);
     }
 
     private focusEvent(event?: CollectedEvent) {
