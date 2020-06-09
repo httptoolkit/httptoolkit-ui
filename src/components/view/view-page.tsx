@@ -171,7 +171,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 responseEditor={this.responseEditorNode}
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
-                onScrollToEvent={this.onScrollToEvent}
+                onScrollToEvent={this.onScrollToCenterEvent}
             />;
         } else {
             rightPane = <TlsFailureDetailsPane
@@ -303,6 +303,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onScrollToEvent(event: CollectedEvent) {
         this.listRef.current?.scrollToEvent(event);
+    }
+
+    @action.bound
+    onScrollToCenterEvent(event: CollectedEvent) {
+        this.listRef.current?.scrollToCenterEvent(event);
     }
 }
 

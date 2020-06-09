@@ -451,18 +451,13 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         </ListContainer>;
     }
 
-    focusSelectedEvent = () => {
-        if (!this.listRef.current || !this.listBodyRef.current) return;
-
+    private focusEvent(event?: CollectedEvent) {
         const listBody = this.listBodyRef.current;
-        const listWindow = listBody.parentElement!;
-        if (!listWindow.contains(document.activeElement)) return;
+        if (!listBody) return;
 
-        // Something in the table is focused, make sure it's the correct thing:
-
-        if (this.selectedEventId != null) {
+        if (event) {
             const rowElement = listBody.querySelector(
-                `[data-event-id='${this.selectedEventId}']`
+                `[data-event-id='${event.id}']`
             ) as HTMLDivElement;
             rowElement?.focus();
         } else {
@@ -471,17 +466,30 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         }
     }
 
+    private focusSelectedEvent = () => {
+        this.focusEvent(this.props.selectedEvent);
+    }
+
     componentDidUpdate() {
         this.focusSelectedEvent();
     }
 
     public scrollToEvent(event: CollectedEvent) {
+        const targetIndex = this.props.filteredEvents.indexOf(event);
+        if (targetIndex === -1) return;
+
+        this.listRef.current?.scrollToItem(targetIndex);
+
+        requestAnimationFrame(() => this.focusEvent(event));
+    }
+
+    public scrollToCenterEvent(event: CollectedEvent) {
         const list = this.listRef.current;
         const listBody = this.listBodyRef.current;
         if (!list || !listBody) return;
         const listWindow = listBody.parentElement!;
 
-        const targetIndex = this.props.events.indexOf(event);
+        const targetIndex = this.props.filteredEvents.indexOf(event);
         if (targetIndex === -1) return;
 
         // TODO: scrollToItem("center") doesn't work well, need to resolve
@@ -495,17 +503,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const targetOffset = rowOffset - halfHeight + rowHeight / 2;
         list.scrollTo(_.clamp(targetOffset, 0, maxOffset));
 
-        requestAnimationFrame(() => {
-            // Focus the row, to make it extra obvious:
-
-            const listBody = this.listBodyRef.current;
-            if (!listBody) return;
-
-            const rowElement = listBody.querySelector(
-                `[data-event-id='${event.id}']`
-            ) as HTMLDivElement;
-            rowElement?.focus();
-        });
+        // Focus the row, after the UI has updated, to make it extra obvious:
+        requestAnimationFrame(() => this.focusEvent(event));
     }
 
     onListMouseDown = (mouseEvent: React.MouseEvent) => {
