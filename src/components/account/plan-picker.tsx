@@ -227,10 +227,14 @@ const PlanSmallPrint = styled.div`
 
     margin-top: 10px;
     text-align: center;
+    line-height: 1.2;
+
+    strong {
+        font-weight: bold;
+    }
 
     a {
         color: ${p => p.theme.mainBackground};
-        font-weight: bold;
     }
 
     p {
@@ -273,6 +277,9 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     { email && <p>
                         Logged in as <Nowrap>{ email }</Nowrap>.
                     </p> }
+                    <p>
+                        <strong>Cancel anytime, in exactly two clicks</strong>. <br/>Have questions? Email billing@httptoolkit.tech.
+                    </p>
                     <p>
                         By subscribing to a paid plan, you accept <Nowrap>
                             <a href="https://httptoolkit.tech/terms-of-service">
