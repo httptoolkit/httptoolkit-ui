@@ -333,6 +333,7 @@ export class BaseEditor extends React.Component<EditorProps> {
             minimap: { enabled: false },
             contextmenu: false,
             scrollBeyondLastLine: false,
+            colorDecorators: false,
 
             // TODO: Would like to set a fontFace here, but due to
             // https://github.com/Microsoft/monaco-editor/issues/392

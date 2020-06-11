@@ -76,6 +76,8 @@ export default <Webpack.Configuration>{
                 'yaml'
             ],
             features: [
+                // These are the only features we explicitly include, but note that some others will be
+                // included too, due to interdependencies in the features themselves.
                 'bracketMatching',
                 'caretOperations',
                 'clipboard',
