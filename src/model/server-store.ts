@@ -15,6 +15,8 @@ import {
 import {
     getConfig,
     announceServerReady,
+    getNetworkInterfaces,
+    NetworkInterfaces,
 } from '../services/server-api';
 import { AccountStore } from './account/account-store';
 
@@ -81,7 +83,7 @@ export class ServerStore {
     certFingerprint: string | undefined;
 
     @observable
-    networkAddresses: string[] | undefined;
+    networkAddresses: string[] = [];
 
     @observable
     serverVersion!: string; // Definitely set *after* initialization
@@ -142,11 +144,7 @@ export class ServerStore {
             this.certPath = config.certificatePath;
             this.certContent = config.certificateContent;
             this.certFingerprint = config.certificateFingerprint;
-            this.networkAddresses = _.flatMap(config.networkInterfaces, (addresses) => {
-                return addresses
-                    .filter(a => !a.internal)
-                    .map(a => a.address);
-            });
+            this.setNetworkAddresses(config.networkInterfaces);
             console.log('Config loaded');
         });
 
@@ -189,5 +187,17 @@ export class ServerStore {
     @computed get onServerEvent() {
         return this.server.on.bind(this.server);
     }
+
+    private setNetworkAddresses(networkInterfaces: NetworkInterfaces) {
+        this.networkAddresses = _.flatMap(networkInterfaces, (addresses) => {
+            return addresses
+                .filter(a => !a.internal)
+                .map(a => a.address);
+        })
+    }
+
+    public refreshNetworkAddresses = flow(function* (this: ServerStore) {
+        this.setNetworkAddresses(yield getNetworkInterfaces());
+    });
 
 }

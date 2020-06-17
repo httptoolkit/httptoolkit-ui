@@ -82,11 +82,13 @@ export async function getServerVersion(): Promise<string> {
     return response.version;
 }
 
+export type NetworkInterfaces = { [index: string]: NetworkInterfaceInfo[] };
+
 export async function getConfig(): Promise<{
     certificatePath: string;
     certificateContent?: string;
     certificateFingerprint?: string;
-    networkInterfaces?: { [index: string]: NetworkInterfaceInfo[] };
+    networkInterfaces: NetworkInterfaces;
 }> {
     const response = await graphql(`
         query getConfig {
@@ -115,8 +117,23 @@ export async function getConfig(): Promise<{
             networkInterfaces: response.networkInterfaces
         }
     } else {
-        return response.config;
+        return {
+            ...response.config,
+            networkInterfaces: {}
+        }
     }
+}
+
+export async function getNetworkInterfaces(): Promise<NetworkInterfaces> {
+    if (!semver.satisfies(await serverVersion, DETAILED_CONFIG_RANGE)) return {};
+
+    const response = await graphql(`
+        query getNetworkInterfaces {
+            networkInterfaces
+        }
+    `, {}).catch(formatError('get-network-interfaces'));
+
+    return response.networkInterfaces;
 }
 
 export async function getInterceptors(proxyPort: number): Promise<ServerInterceptor[]> {

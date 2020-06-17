@@ -132,6 +132,8 @@ class AndroidConfig extends React.Component<{
     async componentDidMount() {
         const rulesStore = this.props.rulesStore!;
         const eventsStore = this.props.eventsStore!;
+        const serverStore = this.props.serverStore!;
+
         setUpAndroidCertificateRule(
             this.props.interceptor.id,
             this.props.serverStore!.certContent!,
@@ -139,6 +141,9 @@ class AndroidConfig extends React.Component<{
             eventsStore,
             this.props.showRequests
         );
+
+        // Just in case the network addresses have changed:
+        serverStore.refreshNetworkAddresses();
     }
 
     render() {
