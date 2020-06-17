@@ -5,7 +5,7 @@ import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 import * as semver from 'semver';
 
-import { HtkResponse, Headers, HtkRequest } from '../../types';
+import { HtkResponse, Headers, HtkRequest, MockttpSerializedBuffer } from '../../types';
 import { byteLength } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
 
@@ -82,10 +82,34 @@ export class AmIUsingMatcher extends matchers.RegexPathMatcher {
 export class StaticResponseHandler extends handlers.SimpleHandler {
     explain() {
         return `respond with status ${this.status}${
-            this.data ? ' and static content' : ''
+            byteLength(this.data) ? ' and static content' : ''
         }`;
     }
 }
+
+// Ensure that JSON-ified buffers deserialize as real buffers
+serializr.createModelSchema(StaticResponseHandler, {
+    data: serializr.custom(
+        (data) => data,
+        (serializedData: string | MockttpSerializedBuffer | undefined) => {
+            if (!serializedData) {
+                return undefined;
+            } else if (typeof serializedData === 'string') {
+                return serializedData;
+            } else {
+                return new Buffer(serializedData.data);
+            }
+        },
+    ),
+    '*': Object.assign(
+        serializr.custom(
+            (x) => x,
+            (x) => x
+        ),
+        { pattern: { test: (key: string) => key !== 'data' } }
+    )
+}, (context) => new StaticResponseHandler(context.args.rulesStore));
+
 
 export class FromFileResponseHandler extends handlers.FileHandler {
     explain() {

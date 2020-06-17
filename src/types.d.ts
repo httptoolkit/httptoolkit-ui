@@ -17,7 +17,8 @@ import type { PortRange } from 'mockttp/dist/mockttp';
 import type {
     PassThroughResponse as MockttpBreakpointedResponse,
     CallbackRequestResult as MockttpBreakpointRequestResult,
-    CallbackResponseResult as MockttpBreakpointResponseResult
+    CallbackResponseResult as MockttpBreakpointResponseResult,
+    SerializedBuffer as MockttpSerializedBuffer
 } from 'mockttp/dist/rules/handlers';
 
 import type { TrafficSource } from './model/http/sources';
@@ -55,7 +56,8 @@ export type BreakpointRequestResult = {
 // We still need this for the places where we actually interact with Mockttp
 export {
     MockttpBreakpointRequestResult,
-    MockttpBreakpointResponseResult
+    MockttpBreakpointResponseResult,
+    MockttpSerializedBuffer
 };
 
 // Define the restricted form of response BP result we'll use internally

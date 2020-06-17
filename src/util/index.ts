@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { MockttpSerializedBuffer } from '../types';
 
 // Before imports to avoid circular import with server-api
 export const RUNNING_IN_WORKER = typeof window === 'undefined';
@@ -67,12 +68,20 @@ export function fakeBuffer(byteLength: number): FakeBuffer {
 }
 export type FakeBuffer = { byteLength: number };
 
+function isSerializedBuffer(obj: any): obj is MockttpSerializedBuffer {
+    return obj && obj.type === 'Buffer' && !!obj.data;
+}
+
 // Get the length of the given data in bytes, not characters.
 // If that's a buffer, the length is used raw, but if it's a string
 // it returns the length when encoded as UTF8.
-export function byteLength(input: string | Buffer) {
-    if (typeof input === 'string') {
+export function byteLength(input: string | Buffer | MockttpSerializedBuffer | undefined) {
+    if (!input) {
+        return 0;
+    } else if (typeof input === 'string') {
         return new Blob([input]).size;
+    } else if (isSerializedBuffer(input)) {
+        return input.data.length;
     } else {
         return input.length;
     }
