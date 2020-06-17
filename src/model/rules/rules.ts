@@ -21,7 +21,6 @@ import {
     CloseConnectionHandler,
     FromFileResponseHandler
 } from './rule-definitions';
-import { HtkMockRule, HtkMockItem, isRuleGroup, HtkMockRuleGroup } from './rules-structure';
 
 // Define maps to/from matcher keys to matcher classes, and
 // types for the matchers & classes themselves; both the built-in

@@ -66,3 +66,14 @@ export function fakeBuffer(byteLength: number): FakeBuffer {
     return { byteLength: byteLength };
 }
 export type FakeBuffer = { byteLength: number };
+
+// Get the length of the given data in bytes, not characters.
+// If that's a buffer, the length is used raw, but if it's a string
+// it returns the length when encoded as UTF8.
+export function byteLength(input: string | Buffer) {
+    if (typeof input === 'string') {
+        return new Blob([input]).size;
+    } else {
+        return input.length;
+    }
+}

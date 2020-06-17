@@ -5,15 +5,17 @@ import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 import * as semver from 'semver';
 
-import { RulesStore } from './rules-store';
-import { serializeAsTag } from '../serialization';
-
+import { HtkResponse, Headers, HtkRequest } from '../../types';
+import { byteLength } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
-import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
+
 import { ServerStore } from '../server-store';
 import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
-import { HtkResponse, Headers, HtkRequest } from '../../types';
 import { HttpExchange } from '../http/exchange';
+
+import { serializeAsTag } from '../serialization';
+import { RulesStore } from './rules-store';
+import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -248,7 +250,7 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
     delete mockRuleHeaders['content-encoding'];
 
     if (mockRuleHeaders['content-length']) {
-        mockRuleHeaders['content-length'] = bodyContent.length.toString();
+        mockRuleHeaders['content-length'] = byteLength(bodyContent).toString();
     }
 
     return {

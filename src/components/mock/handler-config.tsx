@@ -39,6 +39,7 @@ import {
     headersArrayToHeaders
 } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
+import { byteLength } from '../../util';
 
 type HandlerConfigProps<H extends Handler> = {
     handler: H;
@@ -229,10 +230,10 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             if (!lengthHeader) return;
             const contentLength = lengthHeader[1];
 
-            if (parseInt(contentLength || '', 10) === (previousBody || '').length) {
+            if (parseInt(contentLength || '', 10) === byteLength((previousBody || ''))) {
                 runInAction(() => {
                     // If the content-length was previously correct, keep it correct:
-                    lengthHeader[1] = newBody.length.toString();
+                    lengthHeader[1] = byteLength(newBody).toString();
                 });
             }
         }));
