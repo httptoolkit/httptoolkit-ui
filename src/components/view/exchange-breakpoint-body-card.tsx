@@ -21,17 +21,7 @@ import { CollapsingButtons } from '../common/collapsing-buttons';
 import { Pill, PillSelector } from '../common/pill';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
-
-const EditorCardContent = styled.div`
-    margin: 0 -20px -20px -20px;
-    border-top: solid 1px ${p => p.theme.containerBorder};
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
-
-    .monaco-editor-overlaymessage {
-        display: none;
-    }
-`;
+import { ExchangeBodyCardCard, EditorCardContent } from './exchange-body-card';
 
 @observer
 export class ExchangeBreakpointBodyCard extends React.Component<{
@@ -86,10 +76,11 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
 
         const bodyString = body.toString(this.textEncoding);
 
-        return <ExchangeCard
+        return <ExchangeBodyCardCard
             direction={direction}
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled}
+            expanded={expanded}
         >
             <header>
                 <CollapsingButtons>
@@ -116,9 +107,10 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
                     language={this.contentType}
                     value={bodyString}
                     onChange={this.onBodyChange}
+                    expanded={expanded}
                 />
             </EditorCardContent>
-        </ExchangeCard>;
+        </ExchangeBodyCardCard>;
     }
 
     private onBodyChange = (body: string) => {

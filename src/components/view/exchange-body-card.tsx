@@ -22,7 +22,7 @@ import { ContentViewer } from '../editor/content-viewer';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { IconButton } from '../common/icon-button';
 
-const EditorCardContent = styled.div`
+export const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
     border-top: solid 1px ${p => p.theme.containerBorder};
     background-color: ${p => p.theme.highlightBackground};
@@ -36,7 +36,7 @@ const EditorCardContent = styled.div`
     flex-grow: 1;
 `;
 
-const ExchangeBodyCardCard = styled(ExchangeCard)`
+export const ExchangeBodyCardCard = styled(ExchangeCard)`
     display: flex;
     flex-direction: column;
 `;
@@ -163,7 +163,7 @@ export class ExchangeBodyCard extends React.Component<{
                         rawContentType={lastHeader(message.headers['content-type'])}
                         contentType={contentType}
                         schema={apiBodySchema}
-                        expanded={!!expanded}
+                        expanded={expanded}
                         cache={message.cache}
                     >
                         {decodedBody}
@@ -175,7 +175,7 @@ export class ExchangeBodyCard extends React.Component<{
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
-                expanded={!!expanded}
+                expanded={expanded}
                 height={expanded ? 'auto' : '500px'}
             >
                 <header>

@@ -83,4 +83,6 @@ export const ExchangeHeaderCard = styled(MediumCard)`
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
+
+    flex-shrink: 0;
 `;

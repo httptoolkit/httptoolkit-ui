@@ -141,6 +141,7 @@ const CollapsibleCardContainer = styled(MediumCard)`
         height: 100%;
         width: 100%;
         border-radius: 0;
+        margin: 0;
     `}
 
     &:focus {

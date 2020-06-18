@@ -77,6 +77,9 @@ const ExpandedContentContainer = styled.div`
     box-sizing: border-box;
     height: 100%;
     width: 100%;
+
+    display: flex;
+    flex-direction: column;
 `;
 
 // Used to push all cards below it to the bottom (when less than 100% height)
