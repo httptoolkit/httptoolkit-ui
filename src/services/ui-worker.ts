@@ -147,7 +147,7 @@ const encodeContent = async (body: Buffer, encoding: string) => {
             return deflateRaw(body, { level: 1 });
         }
     } else if (encoding === 'br') {
-        return new Buffer(await brotliCompress(body));
+        return Buffer.from(await brotliCompress(body));
     } else if (!encoding || encoding === 'identity') {
         return body;
     } else {

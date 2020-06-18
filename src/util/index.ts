@@ -68,8 +68,38 @@ export function fakeBuffer(byteLength: number): FakeBuffer {
 }
 export type FakeBuffer = { byteLength: number };
 
+const encoder = new TextDecoder('utf8', { fatal: true });
+
+// Not a perfect or full check, but a quick test to see if the data in a buffer
+// is valid UTF8 (so we should treat it as text) or not (so we should treat it as
+// raw binary data). For viewing content as text we don't care (we just always show
+// as UTF8) but for _editing_ binary data we need a lossless encoding, not utf8.
+// (Monaco isn't perfectly lossless editing binary anyway, but we can try).
+export function isProbablyUtf8(buffer: Buffer) {
+    try {
+        // Just check the first 1kb, in case it's a huge file
+        const dataToCheck = buffer.slice(0, 1024);
+        encoder.decode(dataToCheck);
+        return true; // Decoded OK, probably safe
+    } catch (e) {
+        return false; // Decoding failed, definitely not valid UTF8
+    }
+}
+
 function isSerializedBuffer(obj: any): obj is MockttpSerializedBuffer {
     return obj && obj.type === 'Buffer' && !!obj.data;
+}
+
+export function asBuffer(data: string | Buffer | MockttpSerializedBuffer | undefined) {
+    if (!data) {
+        return Buffer.from([]);
+    } else if (typeof data === 'string') {
+        return Buffer.from(data, 'utf8');
+    } else if (isSerializedBuffer(data)) {
+        return Buffer.from(data.data);
+    } else {
+        return data;
+    }
 }
 
 // Get the length of the given data in bytes, not characters.

@@ -97,7 +97,7 @@ serializr.createModelSchema(StaticResponseHandler, {
             } else if (typeof serializedData === 'string') {
                 return serializedData;
             } else {
-                return new Buffer(serializedData.data);
+                return Buffer.from(serializedData.data);
             }
         },
     ),

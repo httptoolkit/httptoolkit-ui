@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, observable, reaction, autorun, observe, runInAction } from 'mobx';
+import { action, observable, reaction, autorun, observe, runInAction, computed } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as dedent from 'dedent';
 
@@ -39,7 +39,7 @@ import {
     headersArrayToHeaders
 } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
-import { byteLength } from '../../util';
+import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 type HandlerConfigProps<H extends Handler> = {
     handler: H;
@@ -166,7 +166,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     contentType: EditableContentType = 'text';
 
     @observable
-    body = (this.props.handler.data || '').toString();
+    body = asBuffer(this.props.handler.data);
 
     componentDidMount() {
         // If any of our data fields change, rebuild & update the handler
@@ -181,7 +181,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
                 this.statusCode = status;
                 this.statusMessage = statusMessage;
                 this.headers = headersToHeadersArray(headers || {});
-                this.body = (data || '').toString();
+                this.body = asBuffer(data);
             });
         }));
 
@@ -230,7 +230,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             if (!lengthHeader) return;
             const contentLength = lengthHeader[1];
 
-            if (parseInt(contentLength || '', 10) === byteLength((previousBody || ''))) {
+            if (parseInt(contentLength || '', 10) === byteLength(previousBody)) {
                 runInAction(() => {
                     // If the content-length was previously correct, keep it correct:
                     lengthHeader[1] = byteLength(newBody).toString();
@@ -239,8 +239,20 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
         }));
     }
 
+    @computed
+    private get textEncoding() {
+        // If we're handling text data, we want to show & edit it as UTF8.
+        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
+        return isProbablyUtf8(this.body)
+            ? 'utf8'
+            : 'binary';
+    }
+
+
     render() {
         const { statusCode, statusMessage, headers, body } = this;
+
+        const bodyAsString = body.toString(this.textEncoding);
 
         return <ConfigContainer>
             <SectionLabel>Status</SectionLabel>
@@ -270,7 +282,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             <BodyContainer>
                 <ThemedSelfSizedEditor
                     language={this.contentType}
-                    value={body}
+                    value={bodyAsString}
                     onChange={this.setBody}
                 />
             </BodyContainer>
@@ -296,7 +308,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
     @action.bound
     setBody(body: string) {
-        this.body = body;
+        this.body = Buffer.from(body, this.textEncoding);
     }
 
     updateHandler() {

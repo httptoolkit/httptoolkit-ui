@@ -1,12 +1,12 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, reaction } from 'mobx';
+import { observable, action, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { Headers, BreakpointBody } from '../../types';
+import { Headers } from '../../types';
 import { styled } from '../../styles';
-import { lastHeader } from '../../util';
+import { lastHeader, isProbablyUtf8 } from '../../util';
 import {
     EditableContentType,
     EditableContentTypes,
@@ -44,7 +44,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
 
     body: Buffer,
     headers: Headers,
-    onChange: (result: string) => void,
+    onChange: (result: Buffer) => void,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
 }> {
 
@@ -64,6 +64,15 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
         }, { fireImmediately: true }));
     }
 
+    @computed
+    private get textEncoding() {
+        // If we're handling text data, we want to show & edit it as UTF8.
+        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
+        return isProbablyUtf8(this.props.body)
+            ? 'utf8'
+            : 'binary';
+    }
+
     render() {
         const {
             body,
@@ -74,6 +83,8 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
             onCollapseToggled,
             onExpandToggled
         } = this.props;
+
+        const bodyString = body.toString(this.textEncoding);
 
         return <ExchangeCard
             direction={direction}
@@ -103,11 +114,15 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
                 <portals.OutPortal<typeof ThemedSelfSizedEditor>
                     node={this.props.editorNode}
                     language={this.contentType}
-                    value={body.toString('utf8')}
-                    onChange={this.props.onChange}
+                    value={bodyString}
+                    onChange={this.onBodyChange}
                 />
             </EditorCardContent>
         </ExchangeCard>;
+    }
+
+    private onBodyChange = (body: string) => {
+        this.props.onChange(Buffer.from(body, this.textEncoding));
     }
 
 }

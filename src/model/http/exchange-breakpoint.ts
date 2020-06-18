@@ -164,9 +164,8 @@ export class Breakpoint<T extends BreakpointInProgress> {
     }
 
     @action.bound
-    updateBody(body: string) {
-        const bodyBuffer = Buffer.from(body);
-        this.editableBody.updateDecodedBody(bodyBuffer);
+    updateBody(body: Buffer) {
+        this.editableBody.updateDecodedBody(body);
     }
 
     waitForCompletedResult() {

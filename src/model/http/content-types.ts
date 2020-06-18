@@ -125,8 +125,8 @@ export function getCompatibleTypes(
 ): ViewableContentType[] {
     let types = [contentType];
 
-    // First char of the body, assuming it's ASCII
-    let firstChar = body.decoded && body.decoded.slice(0, 1).toString('utf8');
+    // Examine the first char of the body, assuming it's ascii
+    let firstChar = body.decoded && body.decoded.slice(0, 1).toString('ascii');
 
     // Allow formatting non-JSON text as JSON, if it looks like it might be
     if (contentType === 'text' && (firstChar === '{' || firstChar === '[')) {
