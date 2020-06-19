@@ -28,6 +28,7 @@ export function initSentry(dsn: string | undefined) {
         // stop reporting errors after the page starts unloading
         if (typeof window !== 'undefined') {
             window.addEventListener('beforeunload', () => {
+                Sentry.getCurrentHub().getClient().getOptions().enabled = false;
                 sentryInitialized = false;
             });
         }
