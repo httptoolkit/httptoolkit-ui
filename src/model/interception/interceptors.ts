@@ -165,8 +165,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         ],
         iconProps: androidInterceptIconProps,
         checkRequirements: ({ accountStore, serverVersion }) => {
-            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
-                accountStore.featureFlags.includes("android");
+            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
         },
         clientOnly: true,
         uiConfig: AndroidDeviceCustomUi,
@@ -180,8 +179,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         ],
         iconProps: recoloured(androidInterceptIconProps, '#4285F4'),
         checkRequirements: ({ accountStore, serverVersion }) => {
-            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE) &&
-                accountStore.featureFlags.includes("android")
+            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
         },
         uiConfig: AndroidAdbCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS, 'emulator', 'root', 'adb']
