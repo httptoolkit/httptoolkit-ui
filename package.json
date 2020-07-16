@@ -81,7 +81,7 @@
     "js-beautify": "^1.8.8",
     "jsonwebtoken": "^8.4.0",
     "localforage": "^1.7.3",
-    "lodash": "^4.17.13",
+    "lodash": "^4.17.19",
     "mobx": "^5.15.0",
     "mobx-persist": "^0.4.1",
     "mobx-react": "^5.4.0",
