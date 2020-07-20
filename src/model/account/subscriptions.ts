@@ -14,6 +14,7 @@ export interface SubscriptionPlan {
 export const SubscriptionPlans = {
     'pro-monthly': { id: 550380, name: 'Pro (monthly)' } as SubscriptionPlan,
     'pro-annual': { id: 550382, name: 'Pro (annual)' } as SubscriptionPlan,
+    'pro-perpetual': { id: 599788, name: 'Pro (perpetual)' } as SubscriptionPlan,
     'team-monthly': { id: 550789, name: 'Team (monthly)' } as SubscriptionPlan,
     'team-annual': { id: 550788, name: 'Team (annual)' } as SubscriptionPlan,
 };
