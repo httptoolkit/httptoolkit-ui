@@ -59,7 +59,7 @@ export function isValidPortConfiguration(portConfig: PortRange | undefined) {
     );
 }
 
-export class ServerStore {
+export class ProxyStore {
 
     constructor(
         private readonly accountStore: AccountStore
@@ -94,7 +94,7 @@ export class ServerStore {
         await this.loadSettings();
         await this.startIntercepting();
         this.serverVersion = await serverVersion;
-        console.log('Server store initialized');
+        console.log('Proxy store initialized');
     });
 
     private async loadSettings() {
@@ -132,10 +132,10 @@ export class ServerStore {
             }
         }
 
-        console.log('Server settings loaded');
+        console.log('Proxy settings loaded');
     }
 
-    private startIntercepting = flow(function* (this: ServerStore) {
+    private startIntercepting = flow(function* (this: ProxyStore) {
         yield startServer(this.server, this._portConfig);
         announceServerReady();
         console.log('Server started');
@@ -196,7 +196,7 @@ export class ServerStore {
         })
     }
 
-    public refreshNetworkAddresses = flow(function* (this: ServerStore) {
+    public refreshNetworkAddresses = flow(function* (this: ProxyStore) {
         this.setNetworkAddresses(yield getNetworkInterfaces());
     });
 

@@ -6,7 +6,7 @@ import { observer, inject } from 'mobx-react';
 import { styled } from '../../../styles';
 
 import { Interceptor } from '../../../model/interception/interceptors';
-import { ServerStore } from '../../../model/server-store';
+import { ProxyStore } from '../../../model/proxy-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { EventsStore } from '../../../model/http/events-store';
 import { RulesStore } from '../../../model/rules/rules-store';
@@ -71,13 +71,13 @@ const AdbDeviceButton = styled(Button)`
     }
 `;
 
-@inject('serverStore')
+@inject('proxyStore')
 @inject('rulesStore')
 @inject('eventsStore')
 @inject('accountStore')
 @observer
 class AndroidAdbConfig extends React.Component<{
-    serverStore?: ServerStore,
+    proxyStore?: ProxyStore,
     rulesStore?: RulesStore,
     eventsStore?: EventsStore,
     accountStore?: AccountStore,
@@ -100,7 +100,7 @@ class AndroidAdbConfig extends React.Component<{
 
         setUpAndroidCertificateRule(
             this.props.interceptor.id,
-            this.props.serverStore!.certContent!,
+            this.props.proxyStore!.certContent!,
             rulesStore,
             eventsStore,
             this.props.showRequests

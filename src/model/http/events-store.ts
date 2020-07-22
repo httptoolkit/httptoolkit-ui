@@ -19,7 +19,7 @@ import {
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
 
-import { ServerStore } from "../server-store";
+import { ProxyStore } from "../proxy-store";
 import { ApiStore } from '../api/api-store';
 import { lazyObservablePromise } from '../../util/observable';
 import { reportError } from '../../errors';
@@ -60,17 +60,17 @@ export type CollectedEvent = HttpExchange | FailedTlsRequest
 export class EventsStore {
 
     constructor(
-        private serverStore: ServerStore,
+        private proxyStore: ProxyStore,
         private apiStore: ApiStore
     ) { }
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
-            this.serverStore.initialized,
+            this.proxyStore.initialized,
             this.apiStore.initialized
         ]);
 
-        const { onServerEvent } = this.serverStore;
+        const { onServerEvent } = this.proxyStore;
 
         eventTypes.forEach(<T extends EventType>(eventName: T) => {
             // Lots of 'any' because TS can't handle overload + type interception

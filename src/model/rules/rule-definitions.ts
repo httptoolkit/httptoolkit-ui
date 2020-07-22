@@ -9,7 +9,7 @@ import { HtkResponse, Headers, HtkRequest, MockttpSerializedBuffer } from '../..
 import { byteLength } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
 
-import { ServerStore } from '../server-store';
+import { ProxyStore } from '../proxy-store';
 import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
 import { HttpExchange } from '../http/exchange';
 
@@ -298,7 +298,7 @@ export const buildDefaultGroup = (items: HtkMockItem[]): HtkMockRuleGroup => ({
     items: items
 })
 
-export const buildDefaultRules = (rulesStore: RulesStore, serverStore: ServerStore) => ({
+export const buildDefaultRules = (rulesStore: RulesStore, proxyStore: ProxyStore) => ({
     id: 'root',
     title: "HTTP Toolkit Rules",
     isRoot: true,
@@ -320,7 +320,7 @@ export const buildDefaultRules = (rulesStore: RulesStore, serverStore: ServerSto
             },
 
             // Share the server certificate on a convenient URL, assuming it supports that
-            ...(semver.satisfies(serverStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
+            ...(semver.satisfies(proxyStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
                 ? [{
                     id: 'default-certificate',
                     activated: true,
@@ -329,7 +329,7 @@ export const buildDefaultRules = (rulesStore: RulesStore, serverStore: ServerSto
                         new matchers.SimplePathMatcher("amiusing.httptoolkit.tech/certificate")
                     ],
                     completionChecker: new completionCheckers.Always(),
-                    handler: new FromFileResponseHandler(200, undefined, serverStore.certPath, {
+                    handler: new FromFileResponseHandler(200, undefined, proxyStore.certPath, {
                         'content-type': 'application/x-x509-ca-cert'
                     })
                 }] : []

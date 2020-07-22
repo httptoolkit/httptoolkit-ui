@@ -5,7 +5,7 @@ import { styled } from '../../../styles';
 
 import { StatusPill } from '../intercept-option';
 import { CopyableMonoValue } from '../../common/text-content';
-import { ServerStore } from '../../../model/server-store';
+import { ProxyStore } from '../../../model/proxy-store';
 
 const InstructionsContainer = styled.div`
     display: flex;
@@ -52,22 +52,22 @@ const Nowrap = styled.span`
     white-space: nowrap;
 `;
 
-const ManualInterceptPill = inject('serverStore')(observer(
+const ManualInterceptPill = inject('proxyStore')(observer(
     (p: {
-        serverStore?: ServerStore,
+        proxyStore?: ProxyStore,
         children?: React.ReactNode
     }) =>
         <StatusPill color='#4caf7d'>
-            Proxy port: { p.serverStore!.serverPort }
+            Proxy port: { p.proxyStore!.serverPort }
         </StatusPill>
 ));
 
-const ManualInterceptConfig = inject('serverStore')(observer(
+const ManualInterceptConfig = inject('proxyStore')(observer(
     (p: {
-        serverStore?: ServerStore,
+        proxyStore?: ProxyStore,
         children?: React.ReactNode
     }) => {
-        const { serverPort, certPath } = p.serverStore!;
+        const { serverPort, certPath } = p.proxyStore!;
 
         return <InstructionsContainer>
             <InstructionsStep>

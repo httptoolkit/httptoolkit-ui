@@ -24,7 +24,7 @@ import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worke
 
 import { UiStore } from './model/ui-store';
 import { AccountStore } from './model/account/account-store';
-import { ServerStore } from './model/server-store';
+import { ProxyStore } from './model/proxy-store';
 import { EventsStore } from './model/http/events-store';
 import { RulesStore } from './model/rules/rules-store';
 import { InterceptorStore } from './model/interception/interceptor-store';
@@ -68,12 +68,12 @@ delay(5000).then(() => {
 const accountStore = new AccountStore();
 const apiStore = new ApiStore(accountStore);
 const uiStore = new UiStore(accountStore);
-const serverStore = new ServerStore(accountStore);
-const eventsStore = new EventsStore(serverStore, apiStore);
-const interceptorStore = new InterceptorStore(serverStore, accountStore);
+const proxyStore = new ProxyStore(accountStore);
+const eventsStore = new EventsStore(proxyStore, apiStore);
+const interceptorStore = new InterceptorStore(proxyStore, accountStore);
 const rulesStore = new RulesStore(
     accountStore,
-    serverStore,
+    proxyStore,
     eventsStore,
     (exchangeId: string) => appHistory.navigate(`/view/${exchangeId}`)
 );
@@ -82,7 +82,7 @@ const stores = {
     accountStore,
     apiStore,
     uiStore,
-    serverStore,
+    proxyStore,
     eventsStore,
     interceptorStore,
     rulesStore

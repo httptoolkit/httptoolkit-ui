@@ -3,7 +3,7 @@ import { observable, runInAction, flow } from "mobx";
 import { reportError } from "../../errors";
 import { lazyObservablePromise } from "../../util/observable";
 
-import { ServerStore } from "../server-store";
+import { ProxyStore } from "../proxy-store";
 import { AccountStore } from "../account/account-store";
 
 import { getInterceptors, activateInterceptor } from "../../services/server-api";
@@ -13,7 +13,7 @@ import { Interceptor, getInterceptOptions } from "./interceptors";
 export class InterceptorStore {
 
     constructor(
-        private serverStore: ServerStore,
+        private proxyStore: ProxyStore,
         private accountStore: AccountStore
     ) {
         this.interceptors = getInterceptOptions([], accountStore);
@@ -21,7 +21,7 @@ export class InterceptorStore {
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
-            this.serverStore.initialized,
+            this.proxyStore.initialized,
             this.accountStore.initialized
         ]);
 
@@ -41,7 +41,7 @@ export class InterceptorStore {
     @observable interceptors: _.Dictionary<Interceptor>;
 
     async refreshInterceptors() {
-        const serverInterceptors = await getInterceptors(this.serverStore.serverPort);
+        const serverInterceptors = await getInterceptors(this.proxyStore.serverPort);
         const serverVersion = await serverVersionPromise;
 
         runInAction(() => {
@@ -57,7 +57,7 @@ export class InterceptorStore {
         this.interceptors[interceptorId].inProgress = true;
         const result: unknown = yield activateInterceptor(
             interceptorId,
-            this.serverStore.serverPort,
+            this.proxyStore.serverPort,
             options
         ).then(
             (metadata) => metadata || true

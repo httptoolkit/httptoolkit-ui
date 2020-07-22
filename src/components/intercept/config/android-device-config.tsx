@@ -12,7 +12,7 @@ import { styled } from '../../../styles';
 import { trackEvent } from '../../../tracking';
 
 import { Interceptor } from '../../../model/interception/interceptors';
-import { ServerStore } from '../../../model/server-store';
+import { ProxyStore } from '../../../model/proxy-store';
 import { EventsStore } from '../../../model/http/events-store';
 
 import {
@@ -114,12 +114,12 @@ export function setUpAndroidCertificateRule(
     });
 }
 
-@inject('serverStore')
+@inject('proxyStore')
 @inject('rulesStore')
 @inject('eventsStore')
 @observer
 class AndroidConfig extends React.Component<{
-    serverStore?: ServerStore,
+    proxyStore?: ProxyStore,
     rulesStore?: RulesStore,
     eventsStore?: EventsStore,
 
@@ -132,18 +132,18 @@ class AndroidConfig extends React.Component<{
     async componentDidMount() {
         const rulesStore = this.props.rulesStore!;
         const eventsStore = this.props.eventsStore!;
-        const serverStore = this.props.serverStore!;
+        const proxyStore = this.props.proxyStore!;
 
         setUpAndroidCertificateRule(
             this.props.interceptor.id,
-            this.props.serverStore!.certContent!,
+            this.props.proxyStore!.certContent!,
             rulesStore,
             eventsStore,
             this.props.showRequests
         );
 
         // Just in case the network addresses have changed:
-        serverStore.refreshNetworkAddresses();
+        proxyStore.refreshNetworkAddresses();
     }
 
     render() {
@@ -151,7 +151,7 @@ class AndroidConfig extends React.Component<{
             certFingerprint,
             serverPort,
             networkAddresses
-        } = this.props.serverStore!;
+        } = this.props.proxyStore!;
 
         const setupParams ={
             addresses: networkAddresses,

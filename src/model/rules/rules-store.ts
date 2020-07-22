@@ -19,7 +19,7 @@ import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { HttpExchange } from '../http/exchange';
 
 import { AccountStore } from '../account/account-store';
-import { ServerStore } from '../server-store';
+import { ProxyStore } from '../proxy-store';
 import { EventsStore } from '../http/events-store';
 import { getDesktopInjectedValue } from '../../services/desktop-api';
 
@@ -64,7 +64,7 @@ export class RulesStore {
 
     constructor(
         private readonly accountStore: AccountStore,
-        private readonly serverStore: ServerStore,
+        private readonly proxyStore: ProxyStore,
         private readonly eventsStore: EventsStore,
         private readonly jumpToExchange: (exchangeId: string) => void
     ) { }
@@ -72,13 +72,13 @@ export class RulesStore {
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
             this.accountStore.initialized,
-            this.serverStore.initialized,
+            this.proxyStore.initialized,
             this.eventsStore.initialized
         ]);
 
         await this.loadSettings();
 
-        const { setServerRules } = this.serverStore;
+        const { setServerRules } = this.proxyStore;
 
         // Set the server rules, and subscribe future rule changes to update them later.
         await new Promise((resolve) => {
@@ -194,7 +194,7 @@ export class RulesStore {
     }
 
     @persist('object', MockRulesetSchema) @observable
-    rules: HtkMockRuleRoot = buildDefaultRules(this, this.serverStore);
+    rules: HtkMockRuleRoot = buildDefaultRules(this, this.proxyStore);
 
     @observable
     draftRules: HtkMockRuleRoot = _.cloneDeep(this.rules);
@@ -214,7 +214,7 @@ export class RulesStore {
     @action.bound
     resetRulesToDefault() {
         // Set the rules back to the default settings
-        this.rules = buildDefaultRules(this, this.serverStore);
+        this.rules = buildDefaultRules(this, this.proxyStore);
         this.resetRuleDrafts();
     }
 
@@ -225,7 +225,7 @@ export class RulesStore {
 
     @computed
     get areSomeRulesNonDefault() {
-        const defaultRules = buildDefaultRules(this, this.serverStore);
+        const defaultRules = buildDefaultRules(this, this.proxyStore);
         return !_.isEqualWith(this.draftRules, defaultRules, areItemsEqual);
     }
 

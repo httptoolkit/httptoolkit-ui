@@ -8,7 +8,7 @@ import * as semver from 'semver';
 import { styled, css } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
 
-import { isValidPortConfiguration, ServerStore } from '../../model/server-store';
+import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { ValidationResult } from '../../model/crypto';
 import { validatePKCS } from '../../services/ui-worker-api';
@@ -162,12 +162,12 @@ const ProxyPortStateExplanation = styled.p`
 
 const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 
-@inject('serverStore')
+@inject('proxyStore')
 @inject('rulesStore')
 @observer
 export class ProxySettingsCard extends React.Component<
     Omit<CollapsibleCardProps, 'children'> & {
-        serverStore?: ServerStore
+        proxyStore?: ProxyStore
         rulesStore?: RulesStore
     }
 > {
@@ -300,10 +300,10 @@ export class ProxySettingsCard extends React.Component<
     }
 
     @observable
-    minPortValue = (get(this.props.serverStore!.portConfig, 'startPort') || 8000).toString();
+    minPortValue = (get(this.props.proxyStore!.portConfig, 'startPort') || 8000).toString();
 
     @observable
-    maxPortValue = (get(this.props.serverStore!.portConfig, 'endPort') || 65535).toString();
+    maxPortValue = (get(this.props.proxyStore!.portConfig, 'endPort') || 65535).toString();
 
     @action.bound
     onMinPortChange({ target: { value } }: React.ChangeEvent<HTMLInputElement>) {
@@ -319,7 +319,7 @@ export class ProxySettingsCard extends React.Component<
 
     @computed
     get isCurrentPortInRange() {
-        const { serverPort, portConfig } = this.props.serverStore!;
+        const { serverPort, portConfig } = this.props.proxyStore!;
 
         if (!portConfig) {
             return serverPort >= 8000;
@@ -343,12 +343,12 @@ export class ProxySettingsCard extends React.Component<
 
     updatePortConfig() {
         if (!this.isCurrentPortConfigValid) return;
-        else this.props.serverStore!.setPortConfig(this.portConfig);
+        else this.props.proxyStore!.setPortConfig(this.portConfig);
     }
 
     render() {
-        const { serverStore, rulesStore, ...cardProps } = this.props;
-        const { serverPort } = serverStore!;
+        const { proxyStore, rulesStore, ...cardProps } = this.props;
+        const { serverPort } = proxyStore!;
         const {
             draftWhitelistedCertificateHosts,
             areWhitelistedCertificatesUpToDate,

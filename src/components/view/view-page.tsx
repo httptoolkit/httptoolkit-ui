@@ -9,7 +9,7 @@ import { styled } from '../../styles';
 import { useHotkeys, isEditable } from '../../util/ui';
 
 import { UiStore } from '../../model/ui-store';
-import { ServerStore } from '../../model/server-store';
+import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore, CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 
@@ -24,7 +24,7 @@ import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-edito
 interface ViewPageProps {
     className?: string;
     eventsStore: EventsStore;
-    serverStore: ServerStore;
+    proxyStore: ProxyStore;
     uiStore: UiStore;
     navigate: (path: string) => void;
     eventId?: string;
@@ -71,7 +71,7 @@ const ViewPageKeyboardShortcuts = (props: {
 };
 
 @inject('eventsStore')
-@inject('serverStore')
+@inject('proxyStore')
 @inject('uiStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
@@ -157,7 +157,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             events,
             isPaused
         } = this.props.eventsStore;
-        const { certPath } = this.props.serverStore;
+        const { certPath } = this.props.proxyStore;
 
         let rightPane: JSX.Element;
         if (!this.selectedEvent) {
@@ -313,7 +313,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
 const StyledViewPage = styled(
     // Exclude stores etc from the external props, as they're injected
-    ViewPage as unknown as WithInjected<typeof ViewPage, 'uiStore' | 'serverStore' | 'eventsStore' | 'navigate'>
+    ViewPage as unknown as WithInjected<typeof ViewPage, 'uiStore' | 'proxyStore' | 'eventsStore' | 'navigate'>
 )`
     height: 100vh;
     position: relative;
