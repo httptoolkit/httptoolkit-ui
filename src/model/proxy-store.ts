@@ -66,11 +66,7 @@ export class ProxyStore {
     ) { }
 
     @observable.ref
-    private server: Mockttp = getLocal({
-        cors: false,
-        suggestChanges: false,
-        standaloneServerUrl: 'http://127.0.0.1:45456'
-    });
+    private server!: Mockttp; // Definitely set *after* initialization
 
     @observable
     // !-asserted, because it's definitely set *after initialized*
@@ -87,6 +83,8 @@ export class ProxyStore {
 
     @observable
     serverVersion!: string; // Definitely set *after* initialization
+
+    private websocketWhitelistedHosts: string[] = [];
 
     readonly initialized = lazyObservablePromise(async () => {
         await this.accountStore.initialized;
@@ -132,10 +130,24 @@ export class ProxyStore {
             }
         }
 
+        // Very hacky fix to borrow whitelisted host info from the rules store here.
+        // We don't want to actually migrate those settings to live here though, as it
+        // really should be over there! Just doesn't work yet, until full WS support arrives.
+        const rulesData = JSON.parse(localStorage.getItem('rules-store') || "{}");
+        this.websocketWhitelistedHosts = rulesData.draftWhitelistedCertificateHosts ||
+            ["localhost"];
+
         console.log('Proxy settings loaded');
     }
 
     private startIntercepting = flow(function* (this: ProxyStore) {
+        this.server = getLocal({
+            cors: false,
+            suggestChanges: false,
+            standaloneServerUrl: 'http://127.0.0.1:45456',
+            ignoreWebsocketHostCertificateErrors: this.websocketWhitelistedHosts
+        });
+
         yield startServer(this.server, this._portConfig);
         announceServerReady();
         console.log('Server started');
