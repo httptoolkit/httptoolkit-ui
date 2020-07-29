@@ -142,6 +142,7 @@ export class ProxyStore {
 
     private startIntercepting = flow(function* (this: ProxyStore) {
         this.server = getLocal({
+            http2: 'fallback',
             cors: false,
             suggestChanges: false,
             standaloneServerUrl: 'http://127.0.0.1:45456',
