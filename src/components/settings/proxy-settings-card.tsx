@@ -165,10 +165,6 @@ const ProxyPortStateExplanation = styled.p`
 const Http2SettingsContainer = styled.div`
     margin-top: 40px;
 
-    ${ContentLabel} {
-        display: inlineblock-;
-    }
-
     ${Pill} {
         display: inline-block;
         margin-left: 5px;
