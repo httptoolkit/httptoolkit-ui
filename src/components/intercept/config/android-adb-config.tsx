@@ -89,7 +89,7 @@ class AndroidAdbConfig extends React.Component<{
 }> {
 
     @computed private get deviceIds(): string[] {
-        return this.props.interceptor.metadata.deviceIds;
+        return this.props.interceptor.metadata?.deviceIds || [];
     }
 
     @observable private inProgressIds: string[] = [];
