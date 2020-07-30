@@ -104,6 +104,8 @@ export class ProxyStore {
         observe(accountStore, 'accountDataLastUpdated', () => {
             if (!accountStore.isPaidUser) {
                 this.setPortConfig(undefined);
+                this.websocketWhitelistedHosts = [];
+                this.http2Enabled = 'fallback';
             }
         });
 
@@ -142,12 +144,14 @@ export class ProxyStore {
 
     private startIntercepting = flow(function* (this: ProxyStore) {
         this.server = getLocal({
-            http2: 'fallback',
             cors: false,
             suggestChanges: false,
             standaloneServerUrl: 'http://127.0.0.1:45456',
+            // User configurable settings:
+            http2: this.http2Enabled,
             ignoreWebsocketHostCertificateErrors: this.websocketWhitelistedHosts
         });
+        this._http2CurrentlyEnabled = this.http2Enabled;
 
         yield startServer(this.server, this._portConfig);
         announceServerReady();
@@ -191,6 +195,13 @@ export class ProxyStore {
 
     @computed get serverPort() {
         return this.server.port;
+    }
+
+    @persist @observable
+    http2Enabled: true | false | 'fallback' = 'fallback';
+    private _http2CurrentlyEnabled = this.http2Enabled;
+    get http2CurrentlyEnabled() {
+        return this._http2CurrentlyEnabled;
     }
 
     @computed get setServerRules() {

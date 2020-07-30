@@ -12,7 +12,7 @@ import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { ValidationResult } from '../../model/crypto';
 import { validatePKCS } from '../../services/ui-worker-api';
-import { serverVersion, CLIENT_CERT_SERVER_RANGE } from '../../services/service-versions';
+import { serverVersion, CLIENT_CERT_SERVER_RANGE, INITIAL_HTTP2_RANGE } from '../../services/service-versions';
 
 import {
     CollapsibleCardProps,
@@ -20,6 +20,8 @@ import {
     CollapsibleCardHeading
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
+import { Select } from '../common/inputs';
+import { Pill } from '../common/pill';
 import { SettingsButton, SettingsExplanation } from './settings-components';
 
 const RestartApp = styled(SettingsButton).attrs(() => ({
@@ -158,6 +160,27 @@ const ProxyPortsContainer = styled.div`
 
 const ProxyPortStateExplanation = styled.p`
     margin-bottom: 10px;
+`;
+
+const Http2SettingsContainer = styled.div`
+    margin-top: 40px;
+
+    ${ContentLabel} {
+        display: inlineblock-;
+    }
+
+    ${Pill} {
+        display: inline-block;
+        margin-left: 5px;
+    }
+
+    ${Select} {
+        display: inline-block;
+        margin-top: 10px;
+        width: auto;
+        font-size: ${p => p.theme.textSize};
+        padding: 3px;
+    }
 `;
 
 const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
@@ -348,7 +371,7 @@ export class ProxySettingsCard extends React.Component<
 
     render() {
         const { proxyStore, rulesStore, ...cardProps } = this.props;
-        const { serverPort } = proxyStore!;
+        const { serverPort, http2Enabled, http2CurrentlyEnabled } = proxyStore!;
         const {
             draftWhitelistedCertificateHosts,
             areWhitelistedCertificatesUpToDate,
@@ -370,7 +393,8 @@ export class ProxySettingsCard extends React.Component<
                 visible={
                     (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
                     !areWhitelistedCertificatesUpToDate() ||
-                    !areClientCertificatesUpToDate()
+                    !areClientCertificatesUpToDate() ||
+                    http2Enabled !== http2CurrentlyEnabled
                 }
             />
             <ContentLabel>
@@ -554,6 +578,34 @@ export class ProxySettingsCard extends React.Component<
                 this range that is available. If all ports in the range are in use, the
                 first free port above 8000 will be used instead.
             </SettingsExplanation>
+
+            {
+                _.isString(serverVersion.value) &&
+                semver.satisfies(serverVersion.value, INITIAL_HTTP2_RANGE) &&
+                <Http2SettingsContainer>
+                    <div>
+                        <ContentLabel>HTTP/2 Support</ContentLabel>
+                        <Pill color="#f1971f">Experimental</Pill>
+                    </div>
+
+                    <Select
+                        value={JSON.stringify(http2Enabled)}
+                        onChange={action((event: React.ChangeEvent<HTMLSelectElement>) => {
+                            const value = event.currentTarget.value;
+                            if (value) {
+                                proxyStore!.http2Enabled = JSON.parse(value);
+                            }
+                        })}
+                    >
+                        <option value={'true'}>Enabled for all clients</option>
+                        <option value={'"fallback"'}>Disabled, except for HTTP/2-only clients</option>
+                        <option value={'false'}>Disabled for all clients</option>
+                    </Select>
+                    { http2Enabled !== http2CurrentlyEnabled &&
+                        <UnsavedIcon />
+                    }
+                </Http2SettingsContainer>
+            }
         </CollapsibleCard>
     }
 }
