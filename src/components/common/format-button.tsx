@@ -1,0 +1,47 @@
+import * as React from 'react';
+
+import {
+    Formatters,
+    isEditorFormatter,
+    EditorFormatter
+} from '../../model/http/body-formatting';
+import { getContentEditorName } from '../../model/http/content-types';
+
+import { IconButton } from './icon-button';
+
+export const FormatButton = (props: {
+    format: keyof typeof Formatters,
+    content: Buffer,
+    onFormatted: (content: string) => void
+}) => {
+    const { format, content, onFormatted } = props;
+
+    const formatter = Formatters[format];
+    const canFormat = !!formatter &&
+        isEditorFormatter(formatter) &&
+        [
+            'json',
+            'html',
+            'xml',
+            'javascript',
+            'css'
+        ].includes(format);
+
+    return <IconButton
+        title={canFormat
+            ? `Format as ${getContentEditorName(props.format)}`
+            : ""
+        }
+        disabled={!canFormat}
+        icon={['fas', 'align-left']}
+        onClick={async () => {
+            // This is often async, and in that case it'll have a race condition: if you
+            // format content and then keep editing, when its formatted you lose your edits.
+            // That gap should be very short though, and arguably this is expected,
+            // so we ignore it.
+            onFormatted(
+                await (formatter as EditorFormatter).render(content)
+            );
+        }}
+    />;
+}

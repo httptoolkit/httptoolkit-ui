@@ -5,7 +5,7 @@ import { ObservablePromise, observablePromise } from '../../util/observable';
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
 
-interface EditorFormatter {
+export interface EditorFormatter {
     language: string;
     cacheKey: Symbol;
     render(content: Buffer): string | ObservablePromise<string>;

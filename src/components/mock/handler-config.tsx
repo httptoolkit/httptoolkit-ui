@@ -39,6 +39,7 @@ import {
     headersArrayToHeaders
 } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
+import { FormatButton } from '../common/format-button';
 import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 type HandlerConfigProps<H extends Handler> = {
@@ -117,13 +118,19 @@ const ConfigSelect = styled(Select)`
 const BodyHeader = styled.div`
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
+    align-items: baseline;
 
     margin-bottom: 5px;
 
     > ${SectionLabel} {
+        align-self: flex-end;
         flex-grow: 1;
         margin-bottom: 0;
+    }
+
+    > button {
+        padding-top: 0;
+        padding-bottom: 0;
     }
 `;
 
@@ -270,6 +277,11 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
             <BodyHeader>
                 <SectionLabel>Response body</SectionLabel>
+                <FormatButton
+                    format={this.contentType}
+                    content={body}
+                    onFormatted={this.setBody}
+                />
                 <ConfigSelect value={this.contentType} onChange={this.setContentType}>
                     <option value="text">Plain text</option>
                     <option value="json">JSON</option>

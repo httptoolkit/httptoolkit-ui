@@ -5,7 +5,6 @@ import { styled } from './styles';
 import {
     library,
     IconPrefix,
-    IconDefinition,
     IconName,
     IconLookup,
     icon,
@@ -59,6 +58,7 @@ import { faCompressArrowsAlt } from '@fortawesome/free-solid-svg-icons/faCompres
 import { faThumbtack } from '@fortawesome/free-solid-svg-icons/faThumbtack';
 import { faEye } from '@fortawesome/free-solid-svg-icons/faEye';
 import { faCaretDown } from '@fortawesome/free-solid-svg-icons/faCaretDown';
+import { faAlignLeft } from '@fortawesome/free-solid-svg-icons/faAlignLeft';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -127,6 +127,7 @@ library.add(
     faThumbtack,
     faEye,
     faCaretDown,
+    faAlignLeft,
 
     faChrome,
     faFirefox,
