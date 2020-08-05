@@ -16,10 +16,10 @@ import {
 import { getReadableSize } from '../../model/http/bodies';
 
 import { CollapsibleCardHeading } from '../common/card';
-import { ExchangeCard } from './exchange-card';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { Pill, PillSelector } from '../common/pill';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
+import { FormatButton } from '../common/format-button';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { ExchangeBodyCardCard, EditorCardContent } from './exchange-body-card';
 
@@ -87,6 +87,11 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
                     <ExpandShrinkButton
                         expanded={expanded}
                         onClick={onExpandToggled}
+                    />
+                    <FormatButton
+                        format={this.contentType}
+                        content={body}
+                        onFormatted={this.onBodyChange}
                     />
                 </CollapsingButtons>
 
