@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
-import * as semver from 'semver';
 
 import { styled } from '../../styles';
 
@@ -29,7 +28,7 @@ import {
 } from '../../model/rules/rule-definitions';
 
 import { Select } from '../common/inputs';
-import { serverVersion, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
+import { serverVersion, versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
 
 const getHandlerKey = (h: HandlerClass | Handler) =>
     HandlerKeys.get(h as any) || HandlerKeys.get(h.constructor as any);
@@ -80,7 +79,7 @@ const instantiateHandler = (
 
 const supportsFileHandlers = () =>
     _.isString(serverVersion.value) &&
-    semver.satisfies(serverVersion.value, FROM_FILE_HANDLER_SERVER_RANGE);
+    versionSatisfies(serverVersion.value, FROM_FILE_HANDLER_SERVER_RANGE);
 
 export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p: {
     rulesStore?: RulesStore,

@@ -5,7 +5,7 @@ import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { reportError } from '../../errors';
 
-import { desktopVersion, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../services/service-versions';
+import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../services/service-versions';
 
 import { clickOnEnter } from '../component-utils';
 import { Button } from '../common/inputs';
@@ -153,7 +153,7 @@ export const ExchangeErrorHeader = (p: {
     const advancedHeaderOverflowSupported =
         desktopVersion.state === 'fulfilled' &&
         semver.valid(desktopVersion.value as string) &&
-        semver.satisfies(
+        versionSatisfies(
             desktopVersion.value as string,
             DESKTOP_HEADER_LIMIT_CONFIGURABLE
         );

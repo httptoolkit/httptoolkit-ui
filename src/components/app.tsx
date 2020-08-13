@@ -8,7 +8,6 @@ import {
     Redirect,
     LocationProvider
 } from '@reach/router';
-import * as semver from 'semver';
 
 import { styled } from '../styles';
 import { Icon } from '../icons';
@@ -18,7 +17,7 @@ import { appHistory } from '../routing';
 import { useHotkeys, Ctrl } from '../util/ui';
 
 import { AccountStore } from '../model/account/account-store';
-import { serverVersion, MOCK_SERVER_RANGE } from '../services/service-versions';
+import { serverVersion, versionSatisfies, MOCK_SERVER_RANGE } from '../services/service-versions';
 
 import { Sidebar, SidebarItem, SIDEBAR_WIDTH } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
@@ -147,7 +146,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     // Hide Mock option if the server is too old for proper support.
                     // We show by default to avoid flicker in the most common case
                     serverVersion.state !== 'fulfilled' ||
-                    semver.satisfies(serverVersion.value as string, MOCK_SERVER_RANGE)
+                    versionSatisfies(serverVersion.value as string, MOCK_SERVER_RANGE)
                 )
                 ? [{
                     name: 'Mock',

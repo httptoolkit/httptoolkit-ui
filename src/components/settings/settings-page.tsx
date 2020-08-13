@@ -7,18 +7,16 @@ import {
     distanceInWordsStrict, format
 } from 'date-fns';
 import { get } from 'typesafe-get';
-import * as semver from 'semver';
 
 import { WithInjected } from '../../types';
 import { styled, Theme, ThemeName } from '../../styles';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui-store';
-import { serverVersion, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
+import { serverVersion, versionSatisfies, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
 import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
 import { ContentLabel, ContentValue } from '../common/text-content';
-import { Pill } from '../common/pill';
 import { Button } from '../common/inputs';
 import { TabbedOptionsContainer, Tab, TabsContainer } from '../common/tabbed-options';
 import { BaseEditor } from '../editor/base-editor';
@@ -272,7 +270,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                 { isPaidUser && <>
                     {
                         _.isString(serverVersion.value) &&
-                        semver.satisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
+                        versionSatisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
                         <ProxySettingsCard {...this.cardProps.proxy} />
                     }
 

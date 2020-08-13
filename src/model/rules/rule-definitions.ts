@@ -3,14 +3,13 @@ import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
-import * as semver from 'semver';
 
 import { HtkResponse, Headers, HtkRequest, MockttpSerializedBuffer } from '../../types';
 import { byteLength } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';
-import { FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
+import { versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
 import { HttpExchange } from '../http/exchange';
 
 import { serializeAsTag } from '../serialization';
@@ -320,7 +319,7 @@ export const buildDefaultRules = (rulesStore: RulesStore, proxyStore: ProxyStore
             },
 
             // Share the server certificate on a convenient URL, assuming it supports that
-            ...(semver.satisfies(proxyStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
+            ...(versionSatisfies(proxyStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
                 ? [{
                     id: 'default-certificate',
                     activated: true,

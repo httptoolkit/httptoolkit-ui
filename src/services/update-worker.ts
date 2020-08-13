@@ -2,13 +2,12 @@ import { initSentry, reportError, Sentry } from '../errors';
 initSentry(process.env.SENTRY_DSN);
 
 import WorkboxNamespace from 'workbox-sw';
-import * as semver from 'semver';
 import * as kv from 'idb-keyval';
 import * as localForage from 'localforage';
 
 import * as appPackage from '../../package.json';
 import { getServerVersion } from './server-api';
-import { lastServerVersion } from './service-versions';
+import { lastServerVersion, versionSatisfies } from './service-versions';
 import { delay } from '../util/promise';
 
 const appVersion = process.env.COMMIT_REF || "Unknown";
@@ -134,7 +133,7 @@ async function checkServerVersion() {
         appPackage.runtimeDependencies['httptoolkit-server']
     }.`);
 
-    if (!semver.satisfies(serverVersion, appPackage.runtimeDependencies['httptoolkit-server'])) {
+    if (!versionSatisfies(serverVersion, appPackage.runtimeDependencies['httptoolkit-server'])) {
         throw new Error(
             `New app version ${appVersion} available, but server ${
                 await serverVersion

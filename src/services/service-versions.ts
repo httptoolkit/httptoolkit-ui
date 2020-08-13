@@ -1,4 +1,5 @@
 import * as localForage from 'localforage';
+import * as semver from 'semver';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { lazyObservablePromise } from "../util/observable";
@@ -38,6 +39,10 @@ export const lastServerVersion =
         }
         else return version;
     });
+
+export function versionSatisfies(version: string, range: string) {
+    return semver.satisfies(version, range, { includePrerelease: true });
+}
 
 // Notable server versions:
 export const PORT_RANGE_SERVER_RANGE = '^0.1.14';

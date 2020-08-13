@@ -1,12 +1,11 @@
 import { NetworkInterfaceInfo } from 'os';
 import * as _ from 'lodash';
 import * as getGraphQL from 'graphql.js';
-import * as semver from 'semver';
 import * as localForage from 'localforage';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
-import { serverVersion, DETAILED_CONFIG_RANGE, INTERCEPTOR_METADATA } from './service-versions';
+import { serverVersion, versionSatisfies, DETAILED_CONFIG_RANGE, INTERCEPTOR_METADATA } from './service-versions';
 
 const authTokenPromise = !RUNNING_IN_WORKER
     // Main UI gets given the auth token directly in its URL:
@@ -93,7 +92,7 @@ export async function getConfig(): Promise<{
     const response = await graphql(`
         query getConfig {
 
-            ${semver.satisfies(await serverVersion, DETAILED_CONFIG_RANGE)
+            ${versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)
                 ?  `
                     config {
                         certificatePath
@@ -125,7 +124,7 @@ export async function getConfig(): Promise<{
 }
 
 export async function getNetworkInterfaces(): Promise<NetworkInterfaces> {
-    if (!semver.satisfies(await serverVersion, DETAILED_CONFIG_RANGE)) return {};
+    if (!versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)) return {};
 
     const response = await graphql(`
         query getNetworkInterfaces {
@@ -145,7 +144,7 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
                 isActive(proxyPort: $proxyPort)
                 isActivable
 
-                ${semver.satisfies(await serverVersion, INTERCEPTOR_METADATA)
+                ${versionSatisfies(await serverVersion, INTERCEPTOR_METADATA)
                     ? 'metadata'
                     : ''
                 }

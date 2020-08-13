@@ -3,7 +3,6 @@ import * as React from 'react';
 import { observable, action, computed, flow } from 'mobx';
 import { observer, inject } from "mobx-react";
 import { get } from 'typesafe-get';
-import * as semver from 'semver';
 
 import { styled, css } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
@@ -12,7 +11,12 @@ import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { ValidationResult } from '../../model/crypto';
 import { validatePKCS } from '../../services/ui-worker-api';
-import { serverVersion, CLIENT_CERT_SERVER_RANGE, INITIAL_HTTP2_RANGE } from '../../services/service-versions';
+import {
+    serverVersion,
+    versionSatisfies,
+    CLIENT_CERT_SERVER_RANGE,
+    INITIAL_HTTP2_RANGE
+} from '../../services/service-versions';
 
 import {
     CollapsibleCardProps,
@@ -440,7 +444,7 @@ export class ProxySettingsCard extends React.Component<
 
             {
                 _.isString(serverVersion.value) &&
-                semver.satisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) && <>
+                versionSatisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) && <>
                 <ClientCertContentLabel>
                     Client Certificates
                 </ClientCertContentLabel>
@@ -577,7 +581,7 @@ export class ProxySettingsCard extends React.Component<
 
             {
                 _.isString(serverVersion.value) &&
-                semver.satisfies(serverVersion.value, INITIAL_HTTP2_RANGE) &&
+                versionSatisfies(serverVersion.value, INITIAL_HTTP2_RANGE) &&
                 <Http2SettingsContainer>
                     <div>
                         <ContentLabel>HTTP/2 Support</ContentLabel>

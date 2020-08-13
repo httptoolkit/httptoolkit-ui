@@ -1,8 +1,7 @@
 import * as _ from "lodash";
-import * as semver from "semver";
 
 import { ServerInterceptor } from "../../services/server-api";
-import { DETAILED_CONFIG_RANGE } from "../../services/service-versions";
+import { versionSatisfies, DETAILED_CONFIG_RANGE } from "../../services/service-versions";
 import { IconProps, SourceIcons } from "../../icons";
 import { AccountStore } from "../account/account-store";
 
@@ -96,7 +95,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: SourceIcons.Firefox,
         tags: BROWSER_TAGS,
         checkRequirements: ({ interceptorVersion }) => {
-            return semver.satisfies(interceptorVersion, "^1.1.0")
+            return versionSatisfies(interceptorVersion, "^1.1.0")
         },
     },
     'fresh-safari': {
@@ -129,7 +128,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: SourceIcons.Opera,
         tags: BROWSER_TAGS,
         checkRequirements: ({ interceptorVersion }) => {
-            return semver.satisfies(interceptorVersion, "^1.0.3")
+            return versionSatisfies(interceptorVersion, "^1.0.3")
         },
     },
     'docker-all': {
@@ -165,7 +164,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         ],
         iconProps: androidInterceptIconProps,
         checkRequirements: ({ accountStore, serverVersion }) => {
-            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
+            return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
         },
         clientOnly: true,
         uiConfig: AndroidDeviceCustomUi,
@@ -179,7 +178,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         ],
         iconProps: recoloured(androidInterceptIconProps, '#4285F4'),
         checkRequirements: ({ accountStore, serverVersion }) => {
-            return semver.satisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
+            return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
         },
         uiConfig: AndroidAdbCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS, 'emulator', 'root', 'adb']
@@ -214,7 +213,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: SourceIcons.Electron,
         uiConfig: ElectronCustomUi,
         checkRequirements: ({ interceptorVersion }) => {
-            return semver.satisfies(interceptorVersion, "^1.0.1")
+            return versionSatisfies(interceptorVersion, "^1.0.1")
         },
         tags: ['electron', 'desktop', 'postman']
     },
