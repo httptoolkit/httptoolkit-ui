@@ -261,6 +261,12 @@ export class EventsStore {
             return;
         }
 
+        if (error.errorCode === 'ERR_SSL_DECRYPTION_FAILED_OR_BAD_RECORD_MAC') {
+            // The TLS connection was interrupted by a bad packet. Generally paired with
+            // an abort event for ongoing requests, so no need for a separate error.
+            return;
+        }
+
         try {
             const exchange = new HttpExchange(this.apiStore, {
                 ...error.request,
