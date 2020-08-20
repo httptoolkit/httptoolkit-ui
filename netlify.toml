@@ -3,3 +3,8 @@
     from = "/*"
     to = "/"
     status = 200
+
+[[headers]]
+    for = "/*"
+    [headers.values]
+        Content-Security-Policy = "frame-ancestors 'none'"
