@@ -23,7 +23,7 @@
   "author": "Tim Perry <tim@httptoolkit.tech>",
   "license": "AGPL-3.0-or-later",
   "runtimeDependencies": {
-    "httptoolkit-server": "^0.1.7"
+    "httptoolkit-server": "^0.1.7 || ^1.0.0"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.27",

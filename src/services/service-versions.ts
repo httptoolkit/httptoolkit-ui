@@ -45,11 +45,11 @@ export function versionSatisfies(version: string, range: string) {
 }
 
 // Notable server versions:
-export const PORT_RANGE_SERVER_RANGE = '^0.1.14';
-export const MOCK_SERVER_RANGE = '^0.1.21';
-export const HOST_MATCHER_SERVER_RANGE = '^0.1.22';
-export const CLIENT_CERT_SERVER_RANGE = '^0.1.26';
-export const FROM_FILE_HANDLER_SERVER_RANGE = '^0.1.28';
-export const DETAILED_CONFIG_RANGE = '^0.1.30';
-export const INTERCEPTOR_METADATA = '^0.1.31';
-export const INITIAL_HTTP2_RANGE = '^0.1.44';
+export const PORT_RANGE_SERVER_RANGE = '^0.1.14 || ^1.0.0';
+export const MOCK_SERVER_RANGE = '^0.1.21 || ^1.0.0';
+export const HOST_MATCHER_SERVER_RANGE = '^0.1.22 || ^1.0.0';
+export const CLIENT_CERT_SERVER_RANGE = '^0.1.26 || ^1.0.0';
+export const FROM_FILE_HANDLER_SERVER_RANGE = '^0.1.28 || ^1.0.0';
+export const DETAILED_CONFIG_RANGE = '^0.1.30 || ^1.0.0';
+export const INTERCEPTOR_METADATA = '^0.1.31 || ^1.0.0';
+export const INITIAL_HTTP2_RANGE = '^0.1.44 || ^1.0.0';
