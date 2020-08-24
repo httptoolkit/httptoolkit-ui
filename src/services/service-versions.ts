@@ -25,7 +25,7 @@ export const serverVersion = lazyObservablePromise(() =>
 );
 
 // Notable desktop versions:
-export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20";
+export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
 
 // The last known service version - immediately available (though still async),
 // but reports the previous startup version, not necessarily the latest one.
