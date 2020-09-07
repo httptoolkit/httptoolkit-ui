@@ -284,10 +284,7 @@ function stripTags(input: string): string;
 function stripTags(input: undefined): undefined;
 function stripTags(input: string | undefined): string | undefined {
     if (!input) return input;
-
-    // Need to cast to string, as dompurify may returned TrustedHTML, in
-    // environments where that's supported.
-    return (input + '').replace(/(<([^>]+)>)/ig, '');
+    return input.replace(/(<([^>]+)>)/ig, '');
 }
 
 export class ApiExchange {
