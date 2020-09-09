@@ -156,32 +156,32 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         uiConfig: ExistingTerminalCustomUi,
         tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
     },
-    'android-device': {
-        name: 'Android device',
+    'android-adb': {
+        name: 'Android device connected via ADB',
         description: [
-            'Intercept an Android device on your network',
-            'Manual setup required for HTTPS in some apps'
+            'Intercept an Android device or emulator connected to ADB',
+            'Automatically injects system HTTPS certificates into rooted devices & most emulators'
         ],
         iconProps: androidInterceptIconProps,
+        checkRequirements: ({ accountStore, serverVersion }) => {
+            return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
+        },
+        uiConfig: AndroidAdbCustomUi,
+        tags: [...MOBILE_TAGS, ...ANDROID_TAGS, 'emulator', 'root', 'adb']
+    },
+    'android-device': {
+        name: 'Android device via QR code',
+        description: [
+            'Intercept any Android device on your network',
+            'Manual setup required for HTTPS in some apps'
+        ],
+        iconProps: recoloured(androidInterceptIconProps, '#4285F4'),
         checkRequirements: ({ accountStore, serverVersion }) => {
             return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
         },
         clientOnly: true,
         uiConfig: AndroidDeviceCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
-    },
-    'android-adb': {
-        name: 'Android device connected via ADB',
-        description: [
-            'Intercept any Android device or emulator connected to ADB',
-            'Automatically injects system HTTPS certificates into rooted devices & most emulators'
-        ],
-        iconProps: recoloured(androidInterceptIconProps, '#4285F4'),
-        checkRequirements: ({ accountStore, serverVersion }) => {
-            return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
-        },
-        uiConfig: AndroidAdbCustomUi,
-        tags: [...MOBILE_TAGS, ...ANDROID_TAGS, 'emulator', 'root', 'adb']
     },
     'ios-device': {
         name: 'An iOS device',
