@@ -83,7 +83,7 @@ const ManualInterceptConfig = inject('proxyStore')(observer(
                 </p>
                 <p>
                     Want your client to be supported automatically? <Nowrap>
-                        <a href='https://github.com/httptoolkit/feedback/issues/new'>
+                        <a href='https://github.com/httptoolkit/httptoolkit/issues/new'>
                             Send some feedback
                         </a>
                     </Nowrap>.

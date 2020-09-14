@@ -95,7 +95,7 @@ const ExportSnippetEditor = observer((p: {
         snippet = dedent`
             Could not generate a snippet for this request
 
-            Is this unexpected? Please file a bug at github.com/httptoolkit/feedback.
+            Is this unexpected? Please file a bug at github.com/httptoolkit/httptoolkit.
         `;
     }
 
