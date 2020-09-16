@@ -29,6 +29,9 @@ export const lightTheme = {
     secondaryInputBorder: '#7ab2e2',
     secondaryInputColor: '#1665af',
 
+    textInputBackground: '#fafafa',
+    textInputColor: '#222222',
+
     highlightBackground: '#ffffff',
     highlightColor: '#222',
 
@@ -67,6 +70,9 @@ export const darkTheme = {
 
     secondaryInputBorder: '#1b5b96',
     secondaryInputColor: '#6babe6',
+
+    textInputBackground: '#fafafa',
+    textInputColor: '#222222',
 
     highlightBackground: '#111111',
     highlightColor: '#efefef',
@@ -117,6 +123,9 @@ export const highContrastTheme = {
 
     secondaryInputBorder: '#ffffff',
     secondaryInputColor: '#ffffff',
+
+    textInputBackground: '#ffffff',
+    textInputColor: '#000000',
 
     highlightBackground: '#ffffff',
     highlightColor: '#000',

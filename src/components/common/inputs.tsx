@@ -126,6 +126,13 @@ export const TextInput = styled.input.attrs((p: { type?: string }) => ({
 
     min-width: 20px; /* Without this, editable headers especially refuse to shrink */
 
+    background-color: ${p => p.theme.textInputBackground};
+    color: ${p => p.theme.textInputColor};
+
+    &:disabled {
+        opacity: 0.6;
+    }
+
     &:invalid {
         ${invalidTextCss}
     }
