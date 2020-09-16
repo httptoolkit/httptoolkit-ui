@@ -11,6 +11,7 @@ import * as amIUsingHtml from '../../amiusing.html';
 import { ProxyStore } from '../proxy-store';
 import { versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
 import { HttpExchange } from '../http/exchange';
+import { getStatusMessage } from '../http/http-docs';
 
 import { serializeAsTag } from '../serialization';
 import { RulesStore } from './rules-store';
@@ -283,7 +284,7 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
         matchers: buildRequestMatchers(exchange.request),
         handler: new StaticResponseHandler(
             statusCode,
-            statusMessage,
+            statusMessage || getStatusMessage(statusCode),
             bodyContent,
             mockRuleHeaders
         ),
