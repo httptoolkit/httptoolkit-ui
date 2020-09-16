@@ -268,6 +268,7 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
 
     delete mockRuleHeaders['date'];
     delete mockRuleHeaders['expires'];
+    delete mockRuleHeaders[':status']; // Pseudoheaders aren't set directly
 
     // Problematic for the mock rule UI, so skip for now:
     delete mockRuleHeaders['content-encoding'];

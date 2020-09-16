@@ -1,7 +1,9 @@
 import * as _ from 'lodash';
 import { observable, action, reaction, observe } from "mobx";
+import dedent from 'dedent';
 
 import {
+    Headers,
     MockttpBreakpointedRequest,
     MockttpBreakpointedResponse,
     MockttpBreakpointRequestResult,
@@ -17,7 +19,6 @@ import { reportError } from "../../errors";
 import { decodeBody } from "../../services/ui-worker-api";
 import { EditableBody } from './editable-body';
 import { getStatusMessage } from "./http-docs";
-import dedent from 'dedent';
 
 function getBody(message: MockttpBreakpointedRequest | MockttpBreakpointedResponse) {
     return decodeBody(
@@ -35,6 +36,9 @@ function getBody(message: MockttpBreakpointedRequest | MockttpBreakpointedRespon
         };
     });
 }
+
+const omitPsuedoHeaders = (headers: Headers) =>
+    _.omitBy(headers, (_v, key) => key.startsWith(':')) as Headers;
 
 export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) {
     const { encoded, decoded } = await getBody(request);
@@ -176,7 +180,10 @@ export class Breakpoint<T extends BreakpointInProgress> {
         this.deferred.resolve({
             ...this.resultMetadata,
             // Build the full encoded body before sending
-            body: await this.editableBody.encoded
+            body: await this.editableBody.encoded,
+            // Psuedo-headers those will be generated automatically from the other,
+            // fields, as part of the rest of the request process.
+            headers: omitPsuedoHeaders(this.resultMetadata.headers)
         } as unknown as BreakpointResumeType<T>);
     }
 
