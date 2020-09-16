@@ -56,12 +56,12 @@ export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) 
     );
 }
 
-export function getDummyResponseBreakpoint() {
+export function getDummyResponseBreakpoint(httpVersion: 1 | 2) {
     const breakpoint = new Breakpoint<BreakpointResponseResult>(
         {
             statusCode: 200,
             statusMessage: undefined,
-            headers: {},
+            headers: httpVersion === 2 ? { ':status': '200' } : {},
         },
         Buffer.from(''),
         Buffer.from('')

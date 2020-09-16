@@ -401,7 +401,8 @@ export class HttpExchange {
     @action.bound
     respondToBreakpointedRequest() {
         // Replace the request breakpoint with an empty response breakpoint
-        this._responseBreakpoint = getDummyResponseBreakpoint();
+        this._responseBreakpoint = getDummyResponseBreakpoint(this.httpVersion);
+
         const requestBreakpoint = this.requestBreakpoint!;
         this._requestBreakpoint = undefined;
 

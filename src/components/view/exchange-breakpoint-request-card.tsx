@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { action } from 'mobx';
+import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
@@ -114,6 +114,11 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
         </ExchangeCard>;
     }
 
+    @computed
+    get isHttp2() {
+        return this.props.exchange.httpVersion === 2;
+    }
+
     @action.bound
     onMethodChanged(event: React.ChangeEvent<HTMLSelectElement>) {
         const method = event.target.value;
@@ -121,7 +126,14 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
 
         if (method === inProgressResult.method) return;
 
-        this.props.onChange({ method });
+        if (this.isHttp2) {
+            const headers = Object.assign({}, inProgressResult.headers, {
+                ':method': method
+            });
+            this.props.onChange({ method, headers });
+        } else {
+            this.props.onChange({ method });
+        }
     }
 
     @action.bound
@@ -132,10 +144,16 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
         let headers = inProgressResult.headers;
 
         try {
-            // Automatically update the host header to match, if we can:
+            // Automatically update the host/H2 headers to match, if we can:
             const parsedUrl = new URL(url);
-            if (parsedUrl.host) {
-                headers = Object.assign({}, headers, { host: parsedUrl.host });
+
+            if (this.isHttp2) {
+                headers = Object.assign({}, headers);
+                if (parsedUrl.host) headers[':authority'] = parsedUrl.host;
+                if (parsedUrl.pathname) headers[':path'] = parsedUrl.pathname + (parsedUrl.search);
+                if (parsedUrl.protocol) headers[':scheme'] = parsedUrl.protocol.slice(0, -1);
+            } else if (parsedUrl.host) {
+                headers = Object.assign({}, headers, { 'host': parsedUrl.host });
             }
         } catch (e) { }
 

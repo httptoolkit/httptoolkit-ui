@@ -84,7 +84,15 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
 
     @action.bound
     onStatusChange(statusCode: number | '', statusMessage: string | undefined) {
-        this.props.onChange({ statusCode: statusCode || NaN, statusMessage });
+        if (this.props.exchange.httpVersion === 2) {
+            const headers = Object.assign({},
+                this.props.exchange.responseBreakpoint!.inProgressResult.headers,
+                { ':status': statusCode.toString() }
+            );
+            this.props.onChange({ statusCode: statusCode || NaN, statusMessage, headers });
+        } else {
+            this.props.onChange({ statusCode: statusCode || NaN, statusMessage });
+        }
     }
 
 }
