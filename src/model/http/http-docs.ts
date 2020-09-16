@@ -796,7 +796,7 @@ const METHODS: { [key: string]: DocsInfo | undefined } = {
 };
 
 // Based RFC7230, 3.2.6:
-export const HEADER_NAME_PATTERN = '[!#$%&\'*+\-;^_`|~A-Za-z0-9]+';
+export const HEADER_NAME_PATTERN = '^[!#$%&\'*+\\-.^_`|~A-Za-z0-9]+$';
 export const HEADER_NAME_REGEX = new RegExp(HEADER_NAME_PATTERN);
 
 function getDocs(data: { [key: string]: DocsInfo | undefined }, key: string) {

@@ -70,17 +70,26 @@ export const EditableHeaders = observer((props: EditableHeadersProps) => {
                 value={key}
                 required
                 pattern={HEADER_NAME_PATTERN}
+                title={"Header names must contain only alphanumeric characters and !#$%&'*+-.^_`|~ symbols"}
+                disabled={key.startsWith(':')}
                 spellCheck={false}
                 key={`${i}-key`}
                 onChange={action((event: React.ChangeEvent<HTMLInputElement>) => {
                     event.target.reportValidity();
-                    headers[i][0] = event.target.value;
+
+                    let headerKey = event.target.value;
+
+                    // Drop leading :'s when editing, since they're not allowed
+                    while (headerKey.startsWith(':')) headerKey = headerKey.slice(1);
+
+                    headers[i][0] = headerKey;
                     onChange(headers);
                 })}
             />,
             <TextInput
                 value={value}
                 required
+                disabled={key.startsWith(':')}
                 spellCheck={false}
                 key={`${i}-val`}
                 onChange={action((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +100,7 @@ export const EditableHeaders = observer((props: EditableHeadersProps) => {
             />,
             <HeaderDeleteButton
                 key={`${i}-del`}
+                disabled={key.startsWith(':')}
                 onClick={action(() => {
                     headers.splice(i, 1);
                     onChange(headers);
@@ -107,7 +117,11 @@ export const EditableHeaders = observer((props: EditableHeadersProps) => {
                 spellCheck={false}
                 key={`${headers.length}-key`}
                 onChange={action((event: React.ChangeEvent<HTMLInputElement>) => {
-                    headers.push([event.target.value, '']);
+                    let headerKey = event.target.value;
+
+                    while (headerKey.startsWith(':')) headerKey = headerKey.slice(1);
+
+                    if (headerKey) headers.push([headerKey, '']);
                     onChange(headers);
                 })}
             />,
