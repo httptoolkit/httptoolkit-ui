@@ -66,9 +66,21 @@ export function uploadFile(
     acceptedMimeTypes: string[] = []
 ): Promise<ArrayBuffer | string | null> {
     if (type === 'path' && !desktopVersion.value) {
-        return Promise.resolve(window.prompt(
-            "Path selection can only be used from Electron. Please enter a path manually:"
-        ));
+        try {
+            const promptResult = window.prompt(
+                "Path selection can only be used from Electron. Please enter a path manually:"
+            )
+            return Promise.resolve(promptResult);
+        } catch (e) {
+            if ((e as Error)?.message?.includes("prompt() is and will not be supported")) {
+                // Somehow we've tried to trigger prompt() in Electron - presumably we haven't
+                // detected the desktop app info yet for some reason. Never mind though, in
+                // this case its safe to swallow this, continue, and do Electron things anyway.
+                console.warn("Unexpected Electron prompt() error");
+            } else {
+                return Promise.reject(e);
+            }
+        }
     }
 
     const fileInput = document.createElement('input');
