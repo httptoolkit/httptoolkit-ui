@@ -62,6 +62,7 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
             <StatusContainer>
                 <ContentLabel>Status:</ContentLabel>
                 <InlineEditableStatus
+                    httpVersion={exchange.httpVersion}
                     statusCode={statusCode}
                     statusMessage= {statusMessage}
                     onChange={this.onStatusChange}

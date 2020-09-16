@@ -216,6 +216,11 @@ export class HttpExchange {
     @observable
     public pinned: boolean = false;
 
+    @computed
+    get httpVersion() {
+        return this.request.httpVersion === '2.0' ? 2 : 1;
+    }
+
     isCompletedRequest(): this is CompletedRequest {
         return !!this.matchedRuleId;
     }

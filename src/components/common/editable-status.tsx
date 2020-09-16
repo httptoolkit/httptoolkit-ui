@@ -28,6 +28,7 @@ function isDefaultMessage(statusMessage: string, statusCode: number | string) {
 
 export const EditableStatus = (props: {
     className?: string,
+    httpVersion: 1 | 2,
     statusCode: number | '',
     statusMessage: string | undefined,
     onChange: (statusCode: number | '', statusMessage: string | undefined) => void
@@ -36,7 +37,7 @@ export const EditableStatus = (props: {
 
     // Undefined status message = use default. Note that the status
     // message can still be shown as _empty_, just not undefined.
-    const statusMessage = props.statusMessage === undefined
+    const statusMessage = props.statusMessage === undefined || props.httpVersion === 2
         ? getStatusMessage(statusCode)
         : props.statusMessage;
 
@@ -65,6 +66,7 @@ export const EditableStatus = (props: {
         />
 
         <TextInput
+            disabled={props.httpVersion === 2}
             value={statusMessage}
             onChange={(event) => {
                 let newMessage: string | undefined = event.target.value;

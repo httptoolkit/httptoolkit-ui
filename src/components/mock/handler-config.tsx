@@ -264,6 +264,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
         return <ConfigContainer>
             <SectionLabel>Status</SectionLabel>
             <EditableStatus
+                httpVersion={1}
                 statusCode={statusCode}
                 statusMessage={statusMessage}
                 onChange={this.setStatus}
@@ -405,6 +406,7 @@ class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<F
         return <ConfigContainer>
             <SectionLabel>Status</SectionLabel>
             <EditableStatus
+                httpVersion={1}
                 statusCode={statusCode}
                 statusMessage={statusMessage}
                 onChange={this.setStatus}
