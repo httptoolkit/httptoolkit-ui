@@ -2,7 +2,7 @@ dist: xenial
 sudo: required
 language: node_js
 node_js:
-    - '10'
+    - '14'
 install:
     - npm ci
 services:
