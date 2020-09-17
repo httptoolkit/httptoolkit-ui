@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { get } from 'typesafe-get';
 import { observer, Observer } from 'mobx-react';
-import { observable, action, computed } from 'mobx';
+import { action, computed } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
@@ -14,6 +14,7 @@ import { FailedTlsRequest } from '../../types';
 import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
+import { Filter } from '../../model/filters/search-filters';
 
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
@@ -34,11 +35,11 @@ interface ViewEventListProps {
     filteredEvents: CollectedEvent[];
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
-    searchInput: string;
+    searchFilters: Filter[];
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
-    onSearchInput: (input: string) => void;
+    onSearchFiltersChanged: (filters: Filter[]) => void;
     onClear: () => void;
 }
 
@@ -391,15 +392,15 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     );
 
     render() {
-        const { events, filteredEvents, searchInput, onSearchInput, onClear, isPaused } = this.props;
+        const { events, filteredEvents, searchFilters, onSearchFiltersChanged, onClear, isPaused } = this.props;
 
         return <ListContainer>
             {/* Footer is above the table in HTML order to ensure correct tab order */}
             <TableFooter
                 allEvents={events}
                 filteredEvents={filteredEvents}
-                currentSearch={searchInput}
-                onSearch={onSearchInput}
+                searchFilters={searchFilters}
+                onSearchFiltersChanged={onSearchFiltersChanged}
                 onClear={onClear}
             />
 

@@ -12,6 +12,7 @@ import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore, CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
+import { Filter } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -84,17 +85,16 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private listRef = React.createRef<ViewEventList>();
 
-    @observable searchFilter: string = '';
+    @observable searchFilters: Filter[] = [];
 
     @computed
     get filteredEvents() {
         const { events } = this.props.eventsStore;
-        if (!this.searchFilter) return events;
 
-        let filter = this.searchFilter.toLocaleLowerCase();
-        return events.filter((event) => {
-            return event.searchIndex.includes(filter)
-        });
+        if (this.searchFilters.length === 0) return events;
+        else return events.filter((event) =>
+            this.searchFilters.every((f) => f.matches(event))
+        );
     }
 
     @computed
@@ -200,11 +200,11 @@ class ViewPage extends React.Component<ViewPageProps> {
                     filteredEvents={this.filteredEvents}
                     selectedEvent={this.selectedEvent}
                     isPaused={isPaused}
-                    searchInput={this.searchFilter}
+                    searchFilters={this.searchFilters}
 
                     moveSelection={this.moveSelection}
                     onSelected={this.onSelected}
-                    onSearchInput={this.onSearchInput}
+                    onSearchFiltersChanged={this.onSearchFiltersChanged}
                     onClear={this.onClear}
 
                     ref={this.listRef}
@@ -223,8 +223,8 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onSearchInput(input: string) {
-        this.searchFilter = input;
+    onSearchFiltersChanged(filters: Filter[]) {
+        this.searchFilters = filters;
     }
 
     @action.bound
@@ -297,7 +297,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             confirm("Delete pinned exchanges?");
 
         this.props.eventsStore.clearInterceptedData(clearPinned);
-        this.searchFilter = '';
+        this.searchFilters = [];
     }
 
     @action.bound

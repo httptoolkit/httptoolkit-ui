@@ -6,9 +6,10 @@ import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/http/exchange';
 import { CollectedEvent } from '../../model/http/events-store';
+import { Filter } from '../../model/filters/search-filters';
 
 import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
-import { SearchBox } from '../common/search-box';
+import { SearchFilter } from './filters/search-filter';
 
 export const HEADER_FOOTER_HEIGHT = 38;
 
@@ -48,14 +49,6 @@ const RequestCounter = styled(observer((props: {
     }
 `;
 
-const EventSearchBox = styled(SearchBox)`
-    flex-basis: 60%;
-
-    > input {
-        font-size: ${p => p.theme.textSize};
-        padding: 5px 12px;
-    }
-`;
 
 const ButtonsContainer = styled.div`
     display: flex;
@@ -64,15 +57,15 @@ const ButtonsContainer = styled.div`
 export const TableFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
-    currentSearch: string,
-    onSearch: (input: string) => void,
+    searchFilters: Filter[],
+    onSearchFiltersChanged: (filters: Filter[]) => void,
 
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[]
 }) => <div className={props.className}>
-    <EventSearchBox
-        value={props.currentSearch}
-        onSearch={props.onSearch}
+    <SearchFilter
+        searchFilters={props.searchFilters}
+        onSearchFiltersChanged={props.onSearchFiltersChanged}
         placeholder='Filter by URL, headers, status...'
     />
     <RequestCounter
