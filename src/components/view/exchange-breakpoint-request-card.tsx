@@ -3,7 +3,7 @@ import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { Omit, BreakpointRequestResult, RequestHeaders } from '../../types';
+import { Omit, BreakpointRequestResult, Headers } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
@@ -162,7 +162,7 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
 
     @action.bound
     onHeadersChanged(headers: HeadersArray) {
-        this.props.onChange({ headers: headersArrayToHeaders(headers) as RequestHeaders });
+        this.props.onChange({ headers: headersArrayToHeaders(headers) });
     }
 
 }

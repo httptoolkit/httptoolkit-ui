@@ -14,7 +14,7 @@ import {
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
-    RequestHeaders,
+    Headers,
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
@@ -274,7 +274,7 @@ export class EventsStore {
                 method: error.request.method || '',
                 url: error.request.url || `${error.request.protocol || 'http'}://`,
                 path: error.request.path || '/',
-                headers: (error.request.headers as RequestHeaders)
+                headers: error.request.headers
             });
 
             if (error.response === 'aborted') {

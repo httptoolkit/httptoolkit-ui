@@ -8,7 +8,6 @@ import type {
 } from 'mockttp';
 import type {
     Headers,
-    RequestHeaders,
     TimingEvents,
     TlsRequest,
     ClientError
@@ -104,7 +103,6 @@ export type ExchangeMessage = HtkRequest | HtkResponse;
 
 export {
     Headers,
-    RequestHeaders,
     PortRange,
     TimingEvents
 };
