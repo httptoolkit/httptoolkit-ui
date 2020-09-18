@@ -573,6 +573,12 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             case 'PageDown':
                 moveSelection(10);
                 break;
+            case 'Home':
+                moveSelection(-Infinity);
+                break;
+            case 'End':
+                moveSelection(Infinity);
+                break;
             default:
                 return;
         }
