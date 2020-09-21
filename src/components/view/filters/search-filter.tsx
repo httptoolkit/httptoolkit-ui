@@ -46,6 +46,10 @@ const SearchFilterInput = styled.input`
     background-color: ${p => p.theme.highlightBackground};
     color: ${p => p.theme.highlightColor};
     font-size: ${p => p.theme.textSize};
+
+    &:not(:first-child) {
+        margin-left: 0;
+    }
 `;
 
 const ClearSearchButton = styled(IconButton)`
@@ -73,6 +77,20 @@ export const SearchFilter = (props: {
         props.onSearchFiltersChanged(buildFilters(event.target.value))
     , [props.onSearchFiltersChanged]);
 
+    const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        const input = event.currentTarget;
+        const filters = props.searchFilters;
+
+        if (input.selectionStart === 0 && input.selectionEnd === 0 && filters.length > 1) {
+            // We're in the 0th position, with no text selected, but filters to the left
+            if (event.key === 'Backspace') {
+                props.onSearchFiltersChanged(
+                    [filters[0] as StringFilter, ...filters.slice(2)] // Drop filter #1
+                );
+            }
+        }
+    };
+
     const onFiltersCleared = React.useCallback(() =>
         props.onSearchFiltersChanged([])
     , [props.onSearchFiltersChanged]);
@@ -99,6 +117,7 @@ export const SearchFilter = (props: {
         <SearchFilterInput
             value={textInputValue}
             onChange={onInputChanged}
+            onKeyDown={onInputKeyDown}
             placeholder={props.placeholder}
             {..._.omit(props, ['searchFilters', 'onSearchFiltersChanged'])}
         />
