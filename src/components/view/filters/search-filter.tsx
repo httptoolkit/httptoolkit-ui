@@ -68,6 +68,15 @@ const deleteFilter = (filters: FilterSet, filter: Filter): FilterSet => {
     ) as FilterSet;
 };
 
+const deleteFilterIndex = (filters: FilterSet, index: number): FilterSet => {
+    if (index === 0 || filters.length === 0) return filters; // No-op, we never remove the StringFilter
+    else return [
+        filters[0] as StringFilter,
+        ...filters.slice(1, index),
+        ...filters.slice(index + 1)
+    ];
+};
+
 export const SearchFilter = (props: {
     searchFilters: FilterSet,
     onSearchFiltersChanged: (filters: FilterSet) => void,
@@ -79,14 +88,55 @@ export const SearchFilter = (props: {
 
     const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         const input = event.currentTarget;
-        const filters = props.searchFilters;
+        const filterBox = input.parentElement!;
 
-        if (input.selectionStart === 0 && input.selectionEnd === 0 && filters.length > 1) {
-            // We're in the 0th position, with no text selected, but filters to the left
+        const filters = props.searchFilters;
+        if (filters.length <= 1) return;
+
+        if (input.selectionStart === 0 && input.selectionEnd === 0) {
+            // We're in the 0th position of the input, with no text selected, and filters to the left
             if (event.key === 'Backspace') {
-                props.onSearchFiltersChanged(
-                    [filters[0] as StringFilter, ...filters.slice(2)] // Drop filter #1
-                );
+                // If you delete past the start of the input, delete the last filter
+                props.onSearchFiltersChanged(deleteFilterIndex(props.searchFilters, 1));
+            } else if (event.key === 'ArrowLeft') {
+                // If you <- past the start of the input, focus the last filter tag
+                const boxElements = Array.from(filterBox.children);
+                const inputIndex = boxElements.indexOf(input);
+                const preceedingFilter = boxElements[inputIndex - 1];
+                if (!preceedingFilter) return;
+
+                (preceedingFilter as HTMLElement).focus();
+            }
+        }
+    };
+
+    const onFilterTagKeyDown = (filterIndex: number, event: React.KeyboardEvent<HTMLDivElement>) => {
+        const filterTag = event.currentTarget;
+        const filterBox = filterTag.parentElement!;
+
+        const boxElements = Array.from(filterBox.children);
+        const tagElementIndex = boxElements.indexOf(filterTag);
+
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+            // Delete this filter
+            props.onSearchFiltersChanged(deleteFilterIndex(props.searchFilters, filterIndex));
+            // If we're not the last filter, React will magically shift focus to the next filter
+            // for us, because we index elements by key. If we are last though, we need to shift manually
+            if (filterIndex === 1) (filterBox.querySelector('input[type=text]') as HTMLElement).focus();
+            event.preventDefault();
+        } else if (event.key === 'ArrowLeft' && filterIndex < props.searchFilters.length - 1) {
+            // Move the focus to the previous filter tag
+            const otherFilter = boxElements[tagElementIndex - 1];
+            if (!otherFilter) return;
+            (otherFilter as HTMLElement).focus();
+        } else if (event.key === 'ArrowRight') {
+            // Move the focus to the next filter tag or the input element
+            const otherFilter = boxElements[tagElementIndex + 1];
+            if (!otherFilter) return;
+            (otherFilter as HTMLElement).focus();
+            if (otherFilter instanceof HTMLInputElement) {
+                otherFilter.setSelectionRange(0, 0);
+                event.preventDefault();
             }
         }
     };
@@ -108,6 +158,7 @@ export const SearchFilter = (props: {
                 <FilterTag
                     key={i}
                     filter={f}
+                    onKeyDown={(e) => onFilterTagKeyDown(otherFilters.length - i, e)}
                     onDelete={() => props.onSearchFiltersChanged(
                         deleteFilter(props.searchFilters, f)
                     )}
@@ -115,6 +166,7 @@ export const SearchFilter = (props: {
             )
         }
         <SearchFilterInput
+            type='text'
             value={textInputValue}
             onChange={onInputChanged}
             onKeyDown={onInputKeyDown}

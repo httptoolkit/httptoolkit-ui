@@ -41,9 +41,11 @@ const FilterTagContainer = styled.div`
     box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
     border-radius: 3px;
 
-    &:hover {
+    &:hover, &:focus-within {
         box-shadow: 0 2px 4px 0 rgba(0,0,0,0.4);
+    }
 
+    &:hover {
         > ${FilterTagDelete} {
             right: 0;
         }
@@ -58,9 +60,13 @@ const FilterTagContainer = styled.div`
 export const FilterTag = (props: {
     filter: Filter,
     onDelete: () => void
+    onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void
 }) => {
 
-    return <FilterTagContainer tabIndex={-1}>
+    return <FilterTagContainer
+        tabIndex={-1}
+        onKeyDown={props.onKeyDown}
+    >
         <FilterTagName>{ props.filter.toString() }</FilterTagName>
         <FilterTagDelete onClick={props.onDelete} />
     </FilterTagContainer>;
