@@ -113,6 +113,12 @@ const SidebarLink = styled.a<{ highlight?: true }>`
         color:  ${p.theme.popColor};
         font-weight: bold;
     `};
+
+    &:hover, &:focus {
+        outline: none;
+        color: ${p => p.highlight ? p.theme.mainColor : p.theme.popColor};
+    }
+
     text-decoration: none;
 
     margin-bottom: 5px;
