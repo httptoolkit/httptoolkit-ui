@@ -6,7 +6,7 @@ import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/http/exchange';
 import { CollectedEvent } from '../../model/http/events-store';
-import { Filter } from '../../model/filters/search-filters';
+import { FilterSet } from '../../model/filters/search-filters';
 
 import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchFilter } from './filters/search-filter';
@@ -57,8 +57,8 @@ const ButtonsContainer = styled.div`
 export const TableFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
-    searchFilters: Filter[],
-    onSearchFiltersChanged: (filters: Filter[]) => void,
+    searchFilters: FilterSet,
+    onSearchFiltersChanged: (filters: FilterSet) => void,
 
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[]
@@ -92,7 +92,7 @@ export const TableFooter = styled(observer((props: {
 
     height: ${HEADER_FOOTER_HEIGHT}px;
     width: 100%;
-    padding-left: 5px;
+    padding-left: 2px;
     box-sizing: border-box;
 
     background-color: ${p => p.theme.mainBackground};

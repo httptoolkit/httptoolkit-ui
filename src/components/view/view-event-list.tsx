@@ -14,7 +14,7 @@ import { FailedTlsRequest } from '../../types';
 import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
-import { Filter } from '../../model/filters/search-filters';
+import { Filter, FilterSet } from '../../model/filters/search-filters';
 
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
@@ -37,11 +37,11 @@ interface ViewEventListProps {
     filteredEvents: CollectedEvent[];
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
-    searchFilters: Filter[];
+    searchFilters: FilterSet;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
-    onSearchFiltersChanged: (filters: Filter[]) => void;
+    onSearchFiltersChanged: (filters: FilterSet) => void;
     onClear: () => void;
 }
 

@@ -12,7 +12,7 @@ import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore, CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
-import { Filter } from '../../model/filters/search-filters';
+import { Filter, FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -85,7 +85,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private listRef = React.createRef<ViewEventList>();
 
-    @observable searchFilters: Filter[] = [];
+    @observable searchFilters: FilterSet = [];
 
     @computed
     get filteredEvents() {
@@ -223,7 +223,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onSearchFiltersChanged(filters: Filter[]) {
+    onSearchFiltersChanged(filters: FilterSet) {
         this.searchFilters = filters;
     }
 
