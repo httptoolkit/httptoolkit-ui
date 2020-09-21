@@ -22,6 +22,8 @@ import { StatusCode } from '../common/status-code';
 import { TableFooter, HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 import { filterProps } from '../component-utils';
 
+const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
+
 const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
     top: ${HEADER_FOOTER_HEIGHT}px;
@@ -443,6 +445,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                             itemCount={filteredEvents.length}
                             itemSize={32}
                             itemData={this.listItemData}
+
+                            onScroll={this.updateScrolledState}
                         >
                             { EventRow }
                         </List>
@@ -480,11 +484,34 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         this.focusEvent(this.props.selectedEvent);
     }
 
+    private isListAtBottom() {
+        const listWindow = this.listBodyRef.current?.parentElement;
+        if (!listWindow) return true; // This means no rows, so we are effectively at the bottom
+        else return (listWindow.scrollTop + SCROLL_BOTTOM_MARGIN) >= (listWindow.scrollHeight - listWindow.offsetHeight);
+    }
+
+    private wasListAtBottom = true;
+    private updateScrolledState = () => {
+        requestAnimationFrame(() => { // Measure async, once the scroll has actually happened
+            this.wasListAtBottom = this.isListAtBottom();
+        });
+    }
+
+    componentDidMount() {
+        this.updateScrolledState();
+    }
+
     componentDidUpdate() {
         if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
             // If we previously had something here focused, and we've updated, update
             // the focus too, to make sure it's in the right place.
             this.focusSelectedEvent();
+        }
+
+        // If we previously were scrolled to the bottom of the list, but now we're not,
+        // scroll there again ourselves now.
+        if (this.wasListAtBottom && !this.isListAtBottom()) {
+            this.listRef.current?.scrollToItem(this.props.events.length - 1);
         }
     }
 
