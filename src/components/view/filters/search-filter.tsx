@@ -144,9 +144,12 @@ export const SearchFilter = (props: {
         ]);
     };
 
-    const onFiltersCleared = React.useCallback(() =>
-        props.onSearchFiltersChanged([])
-    , [props.onSearchFiltersChanged]);
+    const onFiltersCleared = () => {
+        props.onSearchFiltersChanged([]);
+
+        const textInput = (boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
+        textInput?.focus();
+    }
 
     // Note that the model stores filters in the opposite order to how they're shown in the UI.
     // Mainly just because destructuring (of types & values) only works this way round.
