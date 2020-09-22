@@ -56,11 +56,6 @@ const ClearSearchButton = styled(IconButton)`
     padding: 4px 10px;
 `;
 
-const buildFilters = (input: string): FilterSet => {
-    if (input.length === 0) return [];
-    else return [new StringFilter(input)];
-}
-
 const deleteFilter = (filters: FilterSet, filter: Filter): FilterSet => {
     return filters.filter((f, i) =>
         f !== filter || // Keep all except our given filter
@@ -82,16 +77,15 @@ export const SearchFilter = (props: {
     onSearchFiltersChanged: (filters: FilterSet) => void,
     placeholder?: string
 }) => {
-    const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) =>
-        props.onSearchFiltersChanged(buildFilters(event.target.value))
-    , [props.onSearchFiltersChanged]);
+    const boxRef = React.useRef<HTMLDivElement>(null);
 
     const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        const input = event.currentTarget;
-        const filterBox = input.parentElement!;
-
         const filters = props.searchFilters;
         if (filters.length <= 1) return;
+
+        const input = event.currentTarget;
+        const filterBox = boxRef.current;
+        if (!filterBox) return;
 
         if (input.selectionStart === 0 && input.selectionEnd === 0) {
             // We're in the 0th position of the input, with no text selected, and filters to the left
@@ -100,22 +94,21 @@ export const SearchFilter = (props: {
                 props.onSearchFiltersChanged(deleteFilterIndex(props.searchFilters, 1));
             } else if (event.key === 'ArrowLeft') {
                 // If you <- past the start of the input, focus the last filter tag
-                const boxElements = Array.from(filterBox.children);
-                const inputIndex = boxElements.indexOf(input);
-                const preceedingFilter = boxElements[inputIndex - 1];
-                if (!preceedingFilter) return;
-
-                (preceedingFilter as HTMLElement).focus();
+                const filterTags = filterBox.querySelectorAll('.filter-tag');
+                const lastFilterTag = _.last(filterTags);
+                if (!lastFilterTag) return;
+                (lastFilterTag as HTMLElement).focus();
             }
         }
     };
 
     const onFilterTagKeyDown = (filterIndex: number, event: React.KeyboardEvent<HTMLDivElement>) => {
         const filterTag = event.currentTarget;
-        const filterBox = filterTag.parentElement!;
+        const filterBox = boxRef.current;
+        if (!filterBox) return;
 
-        const boxElements = Array.from(filterBox.children);
-        const tagElementIndex = boxElements.indexOf(filterTag);
+        const filterTags = Array.from(filterBox.querySelectorAll('.filter-tag'));
+        const tagElementIndex = filterTags.indexOf(filterTag);
 
         if (event.key === 'Backspace' || event.key === 'Delete') {
             // Delete this filter
@@ -124,21 +117,31 @@ export const SearchFilter = (props: {
             // for us, because we index elements by key. If we are last though, we need to shift manually
             if (filterIndex === 1) (filterBox.querySelector('input[type=text]') as HTMLElement).focus();
             event.preventDefault();
-        } else if (event.key === 'ArrowLeft' && filterIndex < props.searchFilters.length - 1) {
+        } else if (event.key === 'ArrowLeft' && tagElementIndex >= 1) {
             // Move the focus to the previous filter tag
-            const otherFilter = boxElements[tagElementIndex - 1];
-            if (!otherFilter) return;
-            (otherFilter as HTMLElement).focus();
+            const previousFilter = filterTags[tagElementIndex - 1];
+            if (!previousFilter) return;
+            (previousFilter as HTMLElement).focus();
         } else if (event.key === 'ArrowRight') {
-            // Move the focus to the next filter tag or the input element
-            const otherFilter = boxElements[tagElementIndex + 1];
-            if (!otherFilter) return;
-            (otherFilter as HTMLElement).focus();
-            if (otherFilter instanceof HTMLInputElement) {
-                otherFilter.setSelectionRange(0, 0);
+            const nextFilter = (tagElementIndex < filterTags.length - 1)
+                ? filterTags[tagElementIndex + 1]
+                : filterBox.querySelector('input[type=text]');
+
+            if (!nextFilter) return;
+
+            (nextFilter as HTMLElement).focus();
+            if (nextFilter instanceof HTMLInputElement) {
+                nextFilter.setSelectionRange(0, 0);
                 event.preventDefault();
             }
         }
+    };
+
+    const onInputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+        props.onSearchFiltersChanged([
+            new StringFilter(event.target.value),
+            ...props.searchFilters.slice(1)
+        ]);
     };
 
     const onFiltersCleared = React.useCallback(() =>
@@ -152,7 +155,7 @@ export const SearchFilter = (props: {
     // The text input always edits the first (last, in the UI) filter directly as a string
     const textInputValue = stringFilter?.filter ?? '';
 
-    return <SearchFilterBox>
+    return <SearchFilterBox ref={boxRef}>
         {
             otherFilters.reverse().map((f, i) =>
                 <FilterTag

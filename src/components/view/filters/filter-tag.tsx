@@ -66,6 +66,7 @@ export const FilterTag = (props: {
 }) => {
 
     return <FilterTagContainer
+        className='filter-tag'
         tabIndex={-1}
         onKeyDown={props.onKeyDown}
     >
