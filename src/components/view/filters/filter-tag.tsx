@@ -27,6 +27,8 @@ const FilterTagName = styled.span`
 `
 
 const FilterTagContainer = styled.div`
+    flex-shrink: 0;
+
     display: flex;
     align-items: center;
 
