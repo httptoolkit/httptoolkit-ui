@@ -82,6 +82,12 @@ const PlanPickerButtons = styled.div`
 
     width: 300px;
     margin: 50px auto 0;
+
+    > p {
+        margin-bottom: 10px;
+        text-align: center;
+        word-break: break-word;
+    }
 `;
 
 const PlanSecondaryButton = styled(SecondaryButton)`
@@ -274,11 +280,10 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                 </PlanCycleToggle>
 
                 <PlanSmallPrint>
-                    { email && <p>
-                        Logged in as <Nowrap>{ email }</Nowrap>.
-                    </p> }
                     <p>
-                        <strong>Cancel anytime, in exactly two clicks</strong>. <br/>Have questions? Email billing@httptoolkit.tech.
+                        <strong>Cancel in two clicks, anytime</strong>. <br/>Have questions? <strong><a
+                            href="https://httptoolkit.tech/docs/guides/subscription-faq"
+                        >Read the FAQ</a></strong> or email billing@httptoolkit.tech.
                     </p>
                     <p>
                         By subscribing to a paid plan, you accept <Nowrap>
@@ -290,6 +295,9 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                 </PlanSmallPrint>
 
                 <PlanPickerButtons>
+                    { email && <p>
+                        Logged in as <Nowrap>{ email }</Nowrap>.
+                    </p> }
                     {
                         email
                             ? <PlanSecondaryButton onClick={logOut}>Log out</PlanSecondaryButton>
