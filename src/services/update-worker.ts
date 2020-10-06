@@ -54,7 +54,7 @@ writeToLog({ type: 'startup' });
 
 type ServerStatus = 'accessible' | 'auth-required' | 'inaccessible'
 const serverStatus: Promise<ServerStatus> =
-    fetch("http://localhost:45457/")
+    fetch("http://127.0.0.1:45457/", { method: 'POST' })
     .then((response) => {
         if (response.status === 403) return 'auth-required';
         else return 'accessible';

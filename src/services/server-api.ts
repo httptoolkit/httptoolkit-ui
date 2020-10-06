@@ -9,7 +9,7 @@ import { serverVersion, versionSatisfies, DETAILED_CONFIG_RANGE, INTERCEPTOR_MET
 const authTokenPromise = !RUNNING_IN_WORKER
     // Main UI gets given the auth token directly in its URL:
     ? Promise.resolve(new URLSearchParams(window.location.search).get('authToken'))
-    // New (March 2020) UI shares auth token with SW via IDB:
+    // For workers, the new (March 2020) UI shares the auth token with SW via IDB:
     : localForage.getItem<string>('latest-auth-token')
         .then((authToken) => {
             if (authToken) return authToken;
