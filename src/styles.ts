@@ -8,7 +8,9 @@ import reset from 'styled-reset';
 const fontSizes = {
     textInputFontSize: '13px',
     textSize: '15px',
+    subHeadingSize: '18px',
     headingSize: '20px',
+    largeHeadingSize: '24px',
     loudHeadingSize: '38px',
 };
 

@@ -121,7 +121,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
     border: 1px solid ${p => p.theme.containerBorder};
 
     > * {
-        padding: 10px 20px;
+        padding: 0 20px;
     }
 
     flex: 1 1;
@@ -159,9 +159,8 @@ const TierPriceBlock = styled.div`
     margin: 0 20px;
 `;
 
-
 const TierPrice = styled.div`
-    font-size: ${p => p.theme.headingSize};
+    font-size: ${p => p.theme.largeHeadingSize};
     color: ${p => p.theme.mainColor};
     font-weight: bold;
 `;
@@ -181,6 +180,7 @@ const TierLicense = styled.div`
 const TierFeatures = styled.ul`
     padding: 40px 20px 30px;
     font-size: ${p => p.theme.textSize};
+    line-height: 1.2;
 `;
 
 const FeatureHeading = styled.li`
@@ -209,16 +209,16 @@ const SubFeature = styled(Feature)`
 `;
 
 const SubFeatures = styled.ul`
-    margin-top: 20px;
+    margin-top: 15px;
 
     > ${SubFeature} {
-        margin-top: 10px;
+        margin-top: 4px;
     }
 `;
 
 const PricingCTA = styled.div`
-    margin-top: auto;
-    margin-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 20px;
     font-weight: bold;
 
     > ${Button} {
@@ -315,7 +315,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     <TierPriceBlock>
                         <TierPrice>{getPlanMonthlyPrice('pro')} / month</TierPrice>
                         <TierPriceCaveats>
-                            plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
+                            plus local tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
                         <TierLicense title='Licensed for a specific individual. See the terms of service for full details.'>
                             Personal user account
@@ -323,33 +323,31 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     </TierPriceBlock>
                     <TierFeatures>
                         <Feature>
-                            <strong>In-depth HTTP debugging tools</strong>, including compression
-                            & caching performance analysis
-                        </Feature>
-                        <Feature>
-                            <strong>Automated HTTP mocking & rewriting</strong>, including fixed
-                            responses, request forwarding, connection failures, timeouts & more
+                            <strong>Automated HTTP mocking & rewriting</strong>, including traffic redirection, mock responses, and errors & timeouts.
                         </Feature>
                         <Feature>
                             <strong>Reusable mock rules</strong>. Persistent by default, plus
                             import/export so you can store, reuse & share them later.
                         </Feature>
                         <Feature>
-                            <strong>Import/export collected traffic</strong>, as either <a
+                            <strong>Import/export for collected traffic</strong>, as either <a
                                 href="https://en.wikipedia.org/wiki/HAR_(file_format)"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 HARs
-                            </a> or ready-to-use code for 20+ tools
+                            </a> or ready-to-use code for 20+ tools.
+                        </Feature>
+                        <Feature>
+                            <strong>Advanced HTTP debugging & inspection tools</strong>, including compression & caching performance analysis.
                         </Feature>
                         <Feature>
                             <strong>Validation & documentation for 1400+ APIs</strong>,
-                            from AWS to GitHub to Stripe, powered by OpenAPI
+                            from AWS to GitHub to Stripe, powered by OpenAPI.
                         </Feature>
                         <Feature>
-                            <strong>Advanced customization</strong>, including port configuration,
-                            whitelisted & client certificates, and UI themes
+                            <strong>Advanced customization</strong>, including UI themes,
+                            whitelisted & client certificates, and port configuration.
                         </Feature>
                         <Feature>
                             <strong>Support ongoing development!</strong>
@@ -369,7 +367,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     <TierPriceBlock>
                         <TierPrice>{getPlanMonthlyPrice('team')} / user / month</TierPrice>
                         <TierPriceCaveats>
-                            plus tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
+                            plus local tax, paid {this.planCycle === 'annual' ? 'annually' : 'monthly'}
                         </TierPriceCaveats>
                         <TierLicense title='One team license, linked to many individuals, who can be added and removed. See the terms of service for details.'>
                             Team account
@@ -383,7 +381,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             <strong>Centralized billing</strong> to simplify payment for your team
                         </Feature>
                         <Feature>Licensed to your team, rather than individuals</Feature>
-                        <Feature>Add or remove team members whenever you need to</Feature>
+                        <Feature><strong>Centralized control</strong> to easily manage your team members and subscription</Feature>
                         <Feature>
                             <strong>Team workspaces</strong> for low-friction collaboration <Nowrap>
                                 (<em>coming soon</em>)
