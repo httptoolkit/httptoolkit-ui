@@ -153,7 +153,7 @@ export class AccountStore {
             yield this.purchasePlan(this.user.email!, selectedPlan);
         } catch (error) {
             reportError(error);
-            alert(`${error.message}\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.tech.`);
+            alert(`${error.message || error.code || 'Error'}\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.tech.`);
             this.modal = undefined;
         }
     }.bind(this));
