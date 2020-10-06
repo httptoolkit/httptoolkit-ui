@@ -98,7 +98,13 @@ export const showLoginDialog = () => {
         loginEvents.once('hide', () => resolve(false));
 
         loginEvents.once('unrecoverable_error', reject);
-        loginEvents.once('authorization_error', reject);
+        loginEvents.on('authorization_error', (err) => {
+            if (err.code === 'invalid_user_password') return; // Invalid login token, no worries
+            else {
+                console.log("Unexpected auth error", err);
+                reject(err);
+            }
+        });
     });
 };
 
