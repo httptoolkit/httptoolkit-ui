@@ -10,7 +10,6 @@ import {
 } from '@reach/router';
 
 import { styled } from '../styles';
-import { Icon } from '../icons';
 import { WithInjected } from '../types';
 import { trackPage } from '../tracking';
 import { appHistory } from '../routing';
@@ -25,7 +24,8 @@ import { ViewPage } from './view/view-page';
 import { MockPage } from './mock/mock-page';
 import { SettingsPage } from './settings/settings-page';
 import { PlanPicker } from './account/plan-picker';
-import { ModalOverlay, ModalButton } from './account/modal-overlay';
+import { ModalOverlay } from './account/modal-overlay';
+import { CheckoutSpinner } from './account/checkout-spinner';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -35,44 +35,6 @@ const AppContainer = styled.div<{ inert?: boolean }>`
         flex: 1 1;
         width: calc(100% - ${SIDEBAR_WIDTH});
     }
-`;
-
-const Spinner = styled((p: { className?: string, onCancel: () => void }) => (
-    <div className={p.className}>
-        <p>
-            The checkout has been opened in your browser.
-            <br/>
-            Please follow the steps there to complete your subscription.
-        </p>
-        <p>
-            Having trouble? Email <strong>billing@httptoolkit.tech</strong>.
-        </p>
-        <Icon
-            icon={['fac', 'spinner-arc']}
-            spin
-            size='10x'
-        />
-        <ModalButton onClick={p.onCancel}>
-            Cancel checkout
-        </ModalButton>
-    </div>
-))`
-    > p {
-        max-width: 500px;
-    }
-
-    > p, > svg {
-        color: #fff;
-        margin: 20px auto;
-    }
-
-    text-align: center;
-
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(2);
-    z-index: 100;
 `;
 
 interface ExtendProps extends React.PropsWithChildren<any> {
@@ -246,7 +208,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             }
 
             { modal === 'post-checkout' &&
-                <Spinner
+                <CheckoutSpinner
                     onCancel={cancelCheckout}
                 />
             }
