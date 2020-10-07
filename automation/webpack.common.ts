@@ -107,7 +107,8 @@ export default <Webpack.Configuration>{
         }),
         new InjectManifest({
             swSrc: 'update-worker.js',
-            importWorkboxFrom: 'local'
+            importWorkboxFrom: 'local',
+            exclude: ['google-fonts']
         })
     ],
 };
