@@ -65,16 +65,13 @@ const serverStatus: Promise<ServerStatus> =
         return status;
     });
 
-const timeSinceLatestForceUpdate = async () =>
-    Date.now() - ((await localForage.getItem<number>('latest-force-update')) || 0);
-
 const forceUpdateRequired = serverStatus.then(async (status) => {
     // Update should be forced if we're using a server that requires auth,
-    // the UI hasn't properly provided an auth token, and there was no
-    // update forced in the last 20 seconds (to prevent loops).
+    // the UI hasn't properly provided an auth token, and there is
+    // currently an active service worker (i.e. a cached UI)
     return status === 'auth-required' &&
         !(await localForage.getItem<string>('latest-auth-token')) &&
-        (await timeSinceLatestForceUpdate() > 1000 * 20);
+        !!self.registration.active;
 });
 
 type PrecacheEntry = {
@@ -180,9 +177,6 @@ self.addEventListener('activate', async (event) => {
             writeToLog({ type: 'forcing-refresh' });
 
             resettingSw = true; // Pass through all requests
-
-            // Record a timestap, to avoid loops in some super super broken cases
-            localForage.setItem('latest-force-update', Date.now());
 
             // Take over and refresh all client pages:
             await self.clients.claim();
