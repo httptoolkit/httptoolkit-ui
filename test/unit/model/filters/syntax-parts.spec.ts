@@ -3,7 +3,8 @@ import { expect } from '../../../test-setup';
 import {
     FixedStringSyntax,
     NumberSyntax,
-    FixedLengthNumberSyntax
+    FixedLengthNumberSyntax,
+    StringOptionsSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("String syntax", () => {
@@ -248,6 +249,135 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions.length).to.equal(1);
         expect(suggestions[0].showAs).to.equal('500');
         expect(suggestions[0].value).to.equal('500');
+    });
+
+});
+
+describe("String options syntax", () => {
+
+    it("should not match completely different strings", () => {
+        const part = new StringOptionsSyntax(["a", "b"]);
+        expect(part.match("c", 0)).to.equal(undefined);
+    });
+
+    it("should partially match string prefixes", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const match = part.match("a", 0)!;
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(1);
+    });
+
+    it("should fully match string matches", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const match = part.match("bc", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(2);
+    });
+
+    it("should prefer the longest full match", () => {
+        const part = new StringOptionsSyntax(["a", "ab", "abc"]);
+
+        const match = part.match("ab", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(2);
+    });
+
+    it("should match strings with suffixes", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const match = part.match("abcd", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(2);
+    });
+
+    it("should not match strings with prefixes", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        expect(part.match("prefix-on-ab", 0)).to.equal(undefined);
+    });
+
+    it("should partially match strings with prefixes before the index", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const match = part.match("prefix-on-a", 10)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(1);
+    });
+
+    it("should fully match strings with prefixes before the index", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const match = part.match("prefix-on-ab", 10)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(2);
+    });
+
+    it("should partially match at the end of a string", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const match = part.match("prefix", 6)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(0);
+    });
+
+    it("should suggest completing the string", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const suggestions = part.getSuggestions("a", 0)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].showAs).to.equal('ab');
+        expect(suggestions[0].value).to.equal('ab');
+    });
+
+    it("should suggest all valid completions of the string", () => {
+        const part = new StringOptionsSyntax(["ab", "abc", "ad", "bc"]);
+
+        const suggestions = part.getSuggestions("a", 0)!;
+
+        expect(suggestions.length).to.equal(3);
+        expect(suggestions).to.deep.equal([
+            { showAs: "abc", value: "abc" },
+            { showAs: "ab", value: "ab" },
+            { showAs: "ad", value: "ad" }
+        ]);
+    });
+
+    it("should suggest completing a completed string", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const suggestions = part.getSuggestions("ab", 0)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].showAs).to.equal('ab');
+        expect(suggestions[0].value).to.equal('ab');
+    });
+
+    it("should suggest completing the string at a given index", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const suggestions = part.getSuggestions("prefix-on-a", 10)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].showAs).to.equal('ab');
+        expect(suggestions[0].value).to.equal('ab');
+    });
+
+    it("should suggest completion at the end of a string", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const suggestions = part.getSuggestions("prefix", 6)!;
+
+        expect(suggestions.length).to.equal(2);
+        expect(suggestions).to.deep.equal([
+            { showAs: "ab", value: "ab" },
+            { showAs: "bc", value: "bc" }
+        ]);
     });
 
 });

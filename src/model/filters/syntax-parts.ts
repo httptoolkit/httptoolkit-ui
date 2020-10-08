@@ -25,11 +25,10 @@ export interface SyntaxPart {
     match(value: string, index: number): undefined | SyntaxMatch;
 
     /**
-     * Given that there was a partial match, this returns a list of
+     * Given that there was a full or partial match, this returns a list of
      * possible values that would make this syntax part match fully.
      *
-     * Don't call it without a partial match, as the behaviour is
-     * undefined.
+     * Don't call it without a match, as the behaviour is undefined.
      */
     getSuggestions(value: string, index: number): Suggestion[];
 };
@@ -134,6 +133,7 @@ export class NumberSyntax implements SyntaxPart {
     }
 
 }
+
 export class FixedLengthNumberSyntax implements SyntaxPart {
 
     constructor(
@@ -174,4 +174,35 @@ export class FixedLengthNumberSyntax implements SyntaxPart {
         }
     }
 
+}
+
+export class StringOptionsSyntax implements SyntaxPart {
+
+    private optionMatchers: FixedStringSyntax[];
+
+    constructor(
+        options: string[]
+    ) {
+        this.optionMatchers = _.sortBy(options.reverse(), o => o.length)
+            .reverse() // Reversed twice, to get longest first but preserve other order
+            .map(s => new FixedStringSyntax(s));
+    }
+
+    match(value: string, index: number): SyntaxMatch | undefined {
+        const matches = this.optionMatchers
+            .map(m => m.match(value, index))
+            .filter(m => !!m);
+
+        const [fullMatches, partialMatches] = _.partition(matches, { type: 'full' });
+
+        if (fullMatches.length) return fullMatches[0];
+        else return partialMatches[0];
+    }
+
+    getSuggestions(value: string, index: number): Suggestion[] {
+        const matchers = this.optionMatchers
+            .filter(m => !!m.match(value, index));
+
+        return _.flatMap(matchers, m => m.getSuggestions(value, index));
+    }
 }
