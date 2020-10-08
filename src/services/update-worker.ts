@@ -118,6 +118,15 @@ async function precacheNewVersionIfSupported() {
 async function checkServerVersion() {
     const serverVersion = await getServerVersion().catch(async (e) => {
         console.log("Failed to get server version. Fallback back to last version anyway...");
+
+        console.log(
+            "Version unavailable but not forcing update, why?",
+            "status", await serverStatus,
+            "got token", !!(await localForage.getItem<string>('latest-auth-token')),
+            "SW registrations", self.registration,
+            "active SW", !!self.registration?.active
+        );
+
         reportError(e);
 
         // This isn't perfect, but it's a pretty good approximation of when it's safe to update
