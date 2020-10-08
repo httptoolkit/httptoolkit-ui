@@ -1,12 +1,39 @@
 import * as _ from 'lodash';
 
 export type SyntaxMatch = {
+    /**
+     * If full, this part was completely matched and would be valid as-is
+     * If partial, this part could become valid, iff more content was appended
+     *
+     * Note that the exact end of the string should be a partial match for all
+     * syntax parts, since you should always be able to append content to match
+     * that part.
+     */
     type: 'partial' | 'full';
+
+    /**
+     * How many characters were matched successfully.
+     */
     consumed: number;
 };
 
+/**
+ * A suggestion for some content to insert. This is fleshed out further by
+ * getSuggestions in filter-matching, once a filter & full string are
+ * being applied.
+ *
+ * Suggestions may be concatenated, by simply concatenating their showAs
+ * and value strings directly.
+ */
 export interface Suggestion {
+    /**
+     * The text that should show as the autocompleted example
+     */
     showAs: string;
+
+    /**
+     * The text that should actually insert if you select the example
+     */
     value: string;
 }
 
