@@ -6,7 +6,10 @@ import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/http/exchange';
 import { CollectedEvent } from '../../model/http/events-store';
-import { FilterSet } from '../../model/filters/search-filters';
+import {
+    FilterSet,
+    SelectableSearchFilterClasses
+} from '../../model/filters/search-filters';
 
 import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchFilter } from './filters/search-filter';
@@ -66,6 +69,7 @@ export const TableFooter = styled(observer((props: {
     <SearchFilter
         searchFilters={props.searchFilters}
         onSearchFiltersChanged={props.onSearchFiltersChanged}
+        availableFilters={SelectableSearchFilterClasses}
         placeholder='Filter by URL, headers, status...'
     />
     <RequestCounter

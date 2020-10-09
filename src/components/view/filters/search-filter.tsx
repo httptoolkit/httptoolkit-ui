@@ -6,11 +6,14 @@ import { styled } from '../../../styles';
 import {
     Filter,
     FilterSet,
-    StringFilter
+    StringFilter,
+    FilterClass
 } from '../../../model/filters/search-filters';
 
 import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
+import { FilterInput } from './filter-input';
+import { FilterSuggestion, applySuggestionToFilters } from '../../../model/filters/filter-matching';
 
 const SearchFilterBox = styled.div`
     position: relative;
@@ -33,22 +36,14 @@ const SearchFilterBox = styled.div`
     font-size: ${p => p.theme.textSize};
 
     display: flex;
-`;
 
-const SearchFilterInput = styled.input`
-    flex-grow: 1;
+    .react-autosuggest__container {
+        flex-grow: 1;
+        margin: 3px;
 
-    padding: 1px 0;
-    margin: 3px;
-    border: none;
-    outline: none;
-
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
-    font-size: ${p => p.theme.textSize};
-
-    &:not(:first-child) {
-        margin-left: 0;
+        &:not(:first-child) {
+            margin-left: 0;
+        }
     }
 `;
 
@@ -75,6 +70,7 @@ const deleteFilterIndex = (filters: FilterSet, index: number): FilterSet => {
 export const SearchFilter = (props: {
     searchFilters: FilterSet,
     onSearchFiltersChanged: (filters: FilterSet) => void,
+    availableFilters: FilterClass[]
     placeholder?: string
 }) => {
     const boxRef = React.useRef<HTMLDivElement>(null);
@@ -144,6 +140,10 @@ export const SearchFilter = (props: {
         ]);
     };
 
+    const onSuggestionSelected = (suggestion: FilterSuggestion) => {
+        props.onSearchFiltersChanged(applySuggestionToFilters(props.searchFilters, suggestion));
+    }
+
     const onFiltersCleared = () => {
         props.onSearchFiltersChanged([]);
 
@@ -171,13 +171,14 @@ export const SearchFilter = (props: {
                 />
             )
         }
-        <SearchFilterInput
+        <FilterInput
             type='text'
             value={textInputValue}
             onChange={onInputChanged}
             onKeyDown={onInputKeyDown}
+            onSuggestionSelected={onSuggestionSelected}
             placeholder={props.placeholder}
-            {..._.omit(props, ['searchFilters', 'onSearchFiltersChanged'])}
+            availableFilters={props.availableFilters}
         />
         { (!!textInputValue || !!otherFilters.length) &&
             <ClearSearchButton
