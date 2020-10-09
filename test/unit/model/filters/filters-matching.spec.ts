@@ -143,6 +143,23 @@ describe("Suggestion generation", () => {
         ]);
     });
 
+    it("should suggest the final part, given a multi-step full match", () => {
+        const availableFilters = [
+            mockFilterClass([new FixedStringSyntax('qwe'), new NumberSyntax()])
+        ];
+
+        const suggestions = getSuggestions(availableFilters, "qwe123");
+
+        expect(suggestions).to.deep.equal([
+            {
+                index: 3,
+                showAs: "123",
+                value: "123",
+                filterClass: availableFilters[0]
+            }
+        ]);
+    });
+
     it("should not suggest completions after the end of the match", () => {
         const availableFilters = [
             mockFilterClass([new FixedStringSyntax('status')])

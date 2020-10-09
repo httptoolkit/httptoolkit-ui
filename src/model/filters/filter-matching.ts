@@ -66,6 +66,13 @@ type FilterMatch = {
      * For partial matches, this-1 is the index of the partially matched part.
      */
     partsMatched: number;
+
+    /**
+     * For full matches, the string index at the start of the last part.
+     * For partial matches, the string index at the start of the partially
+     * matching part (i.e. the last *matched* part, not the last part overall)
+     */
+    lastPartStringIndex: number;
 };
 
 function matchFilter(filter: FilterClass, value: string): undefined | FilterMatch {
@@ -75,12 +82,14 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
     let fullyConsumed = 0;
     let syntaxIndex: number;
     let wasPartialMatch = false;
+    let lastPartStringIndex = 0;
 
     for (
         syntaxIndex = 0;
         syntaxIndex < syntax.length && stringIndex <= value.length && !wasPartialMatch;
         syntaxIndex++
     ) {
+        lastPartStringIndex = stringIndex;
         const partMatch = syntax[syntaxIndex].match(value, stringIndex);
         if (!partMatch) return;
 
@@ -96,7 +105,8 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
             : 'partial',
         fullyConsumed,
         partiallyConsumed: stringIndex,
-        partsMatched: syntaxIndex
+        partsMatched: syntaxIndex,
+        lastPartStringIndex
     };
 }
 
@@ -127,7 +137,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
 
     if (fullMatches.length) {
         return _.flatMap(fullMatches, ({ filterClass, match }) => {
-            const stringIndex = 0;
+            const stringIndex = match!.lastPartStringIndex;
             const syntaxIndex = filterClass.filterSyntax.length - 1;
 
             return filterClass.filterSyntax[syntaxIndex]
