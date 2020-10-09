@@ -158,7 +158,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
         m.match!.partsMatched === maxMatchedParts
     );
 
-    return _.flatMap(bestPartialMatches, ({ filterClass, match }) => {
+    const matchSuggestions = _.flatMap(bestPartialMatches, ({ filterClass, match }) => {
         const syntaxPartIndex = match!.partsMatched - 1;
         const stringIndex = match!.fullyConsumed;
         // For partially matched filters, partsMatched is always the index+1
@@ -167,9 +167,46 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
 
         return nextPartToMatch.getSuggestions(value, stringIndex)
             .map((suggestion) => ({
-                ...suggestion,
+                suggestion: {
+                    ...suggestion,
+                    filterClass,
+                    index: stringIndex
+                },
                 filterClass,
-                index: stringIndex
+                match
             }));
     });
+
+    if (matchSuggestions.length !== 1) {
+        return matchSuggestions.map(({ suggestion }) => suggestion);
+    }
+
+    const { filterClass, match, suggestion: originalSuggestion } = matchSuggestions[0];
+
+    // Iteratively expand the suggestion to include future parts, if possible, until we have >1 option:
+    let suggestions = [originalSuggestion];
+    let syntaxPartIndex = match!.partsMatched; // Without -1, i.e. this is the next part we would match
+
+    while (suggestions.length === 1 && syntaxPartIndex < filterClass.filterSyntax.length) {
+        const singleSuggestion = suggestions[0];
+        const updatedText = applySuggestionToText(value, singleSuggestion);
+
+        suggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
+            updatedText,
+            updatedText.length
+        ).map((suggestion) => ({
+            value: singleSuggestion.value + suggestion.value,
+            showAs: singleSuggestion.value + suggestion.value,
+            filterClass,
+            index: singleSuggestion.index
+        }));
+
+        syntaxPartIndex += 1;
+    }
+
+    return suggestions;
+}
+
+function applySuggestionToText(value: string, suggestion: FilterSuggestion) {
+    return value.slice(0, suggestion.index) + suggestion.value;
 }

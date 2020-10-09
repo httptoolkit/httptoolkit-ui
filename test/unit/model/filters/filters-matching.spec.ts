@@ -343,4 +343,56 @@ describe("Suggestion generation", () => {
             }
         ]);
     });
+
+    it("should combine suggestions given single option parts of a filter", () => {
+        const availableFilters = [
+            mockFilterClass([
+                new FixedStringSyntax('status'),
+                new StringOptionsSyntax(['=', '>=', '<=']),
+            ])
+        ];
+
+        const suggestions = getSuggestions(availableFilters, "sta");
+
+        expect(suggestions).to.deep.equal([
+            {
+                index: 0,
+                showAs: "status>=",
+                value: "status>=",
+                filterClass: availableFilters[0]
+            },
+            {
+                index: 0,
+                showAs: "status<=",
+                value: "status<=",
+                filterClass: availableFilters[0]
+            },
+            {
+                index: 0,
+                showAs: "status=",
+                value: "status=",
+                filterClass: availableFilters[0]
+            }
+        ]);
+    });
+
+    it("should give up combining suggestions if all parts of a filter are single-option", () => {
+        const availableFilters = [
+            mockFilterClass([
+                new FixedStringSyntax('status'),
+                new StringOptionsSyntax(['=404']),
+            ])
+        ];
+
+        const suggestions = getSuggestions(availableFilters, "sta");
+
+        expect(suggestions).to.deep.equal([
+            {
+                index: 0,
+                showAs: "status=404",
+                value: "status=404",
+                filterClass: availableFilters[0]
+            }
+        ]);
+    });
 });
