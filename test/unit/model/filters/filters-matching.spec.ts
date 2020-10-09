@@ -310,7 +310,7 @@ describe("Suggestion generation", () => {
         expect(suggestions).to.deep.equal([
             {
                 index: 7,
-                showAs: "<3-digit number>",
+                showAs: "{3-digit number}",
                 value: "000",
                 filterClass: availableFilters[0]
             }

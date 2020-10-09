@@ -196,7 +196,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
             updatedText.length
         ).map((suggestion) => ({
             value: singleSuggestion.value + suggestion.value,
-            showAs: singleSuggestion.value + suggestion.value,
+            showAs: singleSuggestion.showAs + suggestion.showAs,
             filterClass,
             index: singleSuggestion.index
         }));

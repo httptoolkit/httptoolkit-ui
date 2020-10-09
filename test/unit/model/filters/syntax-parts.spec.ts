@@ -167,7 +167,7 @@ describe("Number syntax", () => {
         const suggestions = part.getSuggestions("value=", 6)!;
 
         expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('<number>');
+        expect(suggestions[0].showAs).to.equal('{number}');
         expect(suggestions[0].value).to.equal('0');
     });
 
@@ -237,7 +237,7 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=", 6)!;
 
         expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('<3-digit number>');
+        expect(suggestions[0].showAs).to.equal('{3-digit number}');
         expect(suggestions[0].value).to.equal('000');
     });
 

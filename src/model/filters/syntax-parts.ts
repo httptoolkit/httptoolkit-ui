@@ -148,7 +148,7 @@ export class NumberSyntax implements SyntaxPart {
 
         if (!matchingNumber) {
             return [{
-                showAs: "<number>",
+                showAs: "{number}",
                 value: '0'
             }];
         } else {
@@ -187,7 +187,7 @@ export class FixedLengthNumberSyntax implements SyntaxPart {
 
         if (!matchingNumber) {
             return [{
-                showAs: `<${this.requiredLength}-digit number>`,
+                showAs: `{${this.requiredLength}-digit number}`,
                 value: _.repeat("0", this.requiredLength)
             }];
         } else {
