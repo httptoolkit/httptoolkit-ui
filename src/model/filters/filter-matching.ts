@@ -110,7 +110,7 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
     };
 }
 
-type FilterSuggestion = Suggestion & {
+export type FilterSuggestion = Suggestion & {
     index: number,
     filterClass: FilterClass
 };
@@ -209,4 +209,32 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
 
 function applySuggestionToText(value: string, suggestion: FilterSuggestion) {
     return value.slice(0, suggestion.index) + suggestion.value;
+}
+
+/**
+ * Given a selected suggestion and the current list of filters, returns
+ * a new list of filters with the suggestion applied.
+ *
+ * This either updates the string content (given the suggestion for part
+ * of a rule) or clears the string content and creates a new filter.
+ */
+export function applySuggestionToFilters(filterSet: FilterSet, suggestion: FilterSuggestion): FilterSet {
+    const text = filterSet[0]?.filter;
+    if (!text) return filterSet;
+
+    const updatedText = applySuggestionToText(text, suggestion);
+    const filterMatch = matchFilter(suggestion.filterClass, updatedText);
+
+    if (filterMatch && filterMatch.type === 'full') {
+        return [
+            new StringFilter(""),
+            new suggestion.filterClass(text.trim()),
+            ...filterSet.slice(1)
+        ];
+    } else {
+        return [
+            new StringFilter(updatedText),
+            ...filterSet.slice(1)
+        ];
+    }
 }
