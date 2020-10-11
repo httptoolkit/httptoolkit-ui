@@ -1,12 +1,19 @@
 import { expect } from '../../../test-setup';
 
-import { matchFilters, getSuggestions } from "../../../../src/model/filters/filter-matching";
 import { FilterClass, StringFilter } from '../../../../src/model/filters/search-filters';
 import {
     SyntaxPart,
     FixedStringSyntax,
-    StringOptionsSyntax, FixedLengthNumberSyntax, NumberSyntax
+    StringOptionsSyntax,
+    FixedLengthNumberSyntax,
+    NumberSyntax
 } from '../../../../src/model/filters/syntax-parts';
+
+import {
+    matchFilters,
+    getSuggestions,
+    applySuggestionToFilters
+} from "../../../../src/model/filters/filter-matching";
 
 const mockFilterClass = (syntaxParts: SyntaxPart[]) => (class MockFilterClass {
     static filterSyntax = syntaxParts;
@@ -394,5 +401,76 @@ describe("Suggestion generation", () => {
                 filterClass: availableFilters[0]
             }
         ]);
+    });
+});
+
+describe("Applying suggestions", () => {
+    it("completes initial single-part suggestions", () => {
+        const filterClass = mockFilterClass([
+            new FixedStringSyntax('status'),
+            new StringOptionsSyntax(['=404']),
+        ]);
+
+        const result = applySuggestionToFilters(
+            [new StringFilter("sta")],
+            { index: 0, value: "status", showAs: "STATUS", filterClass }
+        );
+
+        expect(result.length).to.equal(1);
+        const updatedText = result[0]!.filter;
+        expect(updatedText).to.equal("status");
+    });
+
+    it("completes second part suggestions", () => {
+        const filterClass = mockFilterClass([
+            new FixedStringSyntax('status'),
+            new StringOptionsSyntax(['=', '!=']),
+            new NumberSyntax()
+        ]);
+
+        const result = applySuggestionToFilters(
+            [new StringFilter("status!")],
+            { index: 6, value: "!=", showAs: "!=", filterClass }
+        );
+
+        expect(result.length).to.equal(1);
+        const updatedText = result[0]!.filter;
+        expect(updatedText).to.equal("status!=");
+    });
+
+    it("does nothing for template suggestions", () => {
+        const filterClass = mockFilterClass([
+            new FixedStringSyntax('status='),
+            new NumberSyntax()
+        ]);
+
+        const result = applySuggestionToFilters(
+            [new StringFilter("status=")],
+            { index: 7, value: undefined, showAs: "{number}", filterClass }
+        );
+
+        expect(result.length).to.equal(1);
+        const updatedText = result[0]!.filter;
+        expect(updatedText).to.equal("status=");
+    });
+
+    it("fully completes and creates filters with final part suggestions", () => {
+        const filterClass = mockFilterClass([
+            new FixedStringSyntax('status'),
+            new StringOptionsSyntax(['=', '!=']),
+            new NumberSyntax()
+        ]);
+
+        const result = applySuggestionToFilters(
+            [new StringFilter("status!=40")],
+            { index: 8, value: "404", showAs: "404", filterClass }
+        );
+
+        expect(result.length).to.equal(2);
+
+        const updatedText = result[0]!.filter;
+        expect(updatedText).to.equal("");
+
+        expect((result[1] as MockFilter).builtFrom).to.equal("status!=404");
     });
 });
