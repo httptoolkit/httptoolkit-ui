@@ -236,7 +236,7 @@ export function applySuggestionToFilters(filterSet: FilterSet, suggestion: Filte
     if (filterMatch && filterMatch.type === 'full') {
         return [
             new StringFilter(""),
-            new suggestion.filterClass(text.trim()),
+            new suggestion.filterClass(updatedText.trim()),
             ...filterSet.slice(1)
         ];
     } else {
