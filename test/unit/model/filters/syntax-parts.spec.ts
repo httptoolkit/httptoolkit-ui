@@ -168,7 +168,7 @@ describe("Number syntax", () => {
 
         expect(suggestions.length).to.equal(1);
         expect(suggestions[0].showAs).to.equal('{number}');
-        expect(suggestions[0].value).to.equal('0');
+        expect(suggestions[0].value).to.equal(undefined);
     });
 
     it("should suggest completing an existing number", () => {
@@ -238,7 +238,7 @@ describe("Fixed-length number syntax", () => {
 
         expect(suggestions.length).to.equal(1);
         expect(suggestions[0].showAs).to.equal('{3-digit number}');
-        expect(suggestions[0].value).to.equal('000');
+        expect(suggestions[0].value).to.equal(undefined);
     });
 
     it("should suggest extending a number to the right length", () => {

@@ -311,7 +311,7 @@ describe("Suggestion generation", () => {
             {
                 index: 7,
                 showAs: "{3-digit number}",
-                value: "000",
+                value: undefined,
                 filterClass: availableFilters[0]
             }
             // I.e. it doesn't show == here, it shows the final suggestion instead, since

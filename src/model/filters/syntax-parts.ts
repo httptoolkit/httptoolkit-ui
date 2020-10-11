@@ -32,9 +32,12 @@ export interface Suggestion {
     showAs: string;
 
     /**
-     * The text that should actually insert if you select the example
+     * The text that should actually insert if you select the example.
+     *
+     * If this suggestion is a template (e.g. 'enter a number') where
+     * no value can be immediately provided, this is undefined.
      */
-    value: string;
+    value: string | undefined;
 }
 
 export interface SyntaxPart {
@@ -149,7 +152,7 @@ export class NumberSyntax implements SyntaxPart {
         if (!matchingNumber) {
             return [{
                 showAs: "{number}",
-                value: '0'
+                value: undefined
             }];
         } else {
             return [{
@@ -188,7 +191,7 @@ export class FixedLengthNumberSyntax implements SyntaxPart {
         if (!matchingNumber) {
             return [{
                 showAs: `{${this.requiredLength}-digit number}`,
-                value: _.repeat("0", this.requiredLength)
+                value: undefined
             }];
         } else {
             const extendedNumber = matchingNumber +
