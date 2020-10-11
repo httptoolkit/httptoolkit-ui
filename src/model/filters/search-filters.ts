@@ -14,9 +14,6 @@ export type FilterSet = [StringFilter, ...Filter[]] | [];
 
 export type FilterClass = {
     new (input: string): Filter;
-
-    filterName: string;
-    filterDescription: string;
     filterSyntax: SyntaxPart[];
 };
 
@@ -45,7 +42,8 @@ const operations = {
     ">": (value: any, expected: any) => value > expected,
     ">=": (value: any, expected: any) => value >= expected,
     "<": (value: any, expected: any) => value < expected,
-    "<=": (value: any, expected: any) => value <= expected
+    "<=": (value: any, expected: any) => value <= expected,
+    "!=": (value: any, expected: any) => value !== expected
 } as const;
 
 type OperationKey = keyof typeof operations;
@@ -53,20 +51,19 @@ type OperationKey = keyof typeof operations;
 class StatusFilter implements Filter {
 
     private status: number;
+    private op: OperationKey;
     private predicate: (status: number, expectedStatus: number) => boolean;
 
     constructor(filter: string) {
         const opIndex = "status".length;
         const opMatch = StatusFilter.filterSyntax[1].match(filter, opIndex)!;
-        const op = filter.slice(opIndex, opMatch.consumed) as OperationKey;
-        this.predicate = operations[op];
+        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as OperationKey;
+        this.predicate = operations[this.op];
 
         const numberIndex = "status".length + opMatch.consumed;
         this.status = parseInt(filter.slice(numberIndex), 10);
     }
 
-    static filterName = "Status";
-    static filterDescription = "Match the status of the response";
     static filterSyntax = [
         new FixedStringSyntax("status"),
         new StringOptionsSyntax([
@@ -74,8 +71,9 @@ class StatusFilter implements Filter {
             ">",
             ">=",
             "<",
-            "<="
-        ]),
+            "<=",
+            "!="
+        ] as Array<OperationKey>),
         new FixedLengthNumberSyntax(3)
     ];
 
@@ -86,13 +84,12 @@ class StatusFilter implements Filter {
     }
 
     toString() {
-        return `Status = ${this.status}`;
+        return `Status ${this.op} ${this.status}`;
     }
 }
 
 class CompletedFilter implements Filter {
-    static filterName = "Completed";
-    static filterDescription = "Match only completed requests";
+
     static filterSyntax = [new FixedStringSyntax("completed")]
 
     matches(event: CollectedEvent): boolean {
@@ -106,8 +103,7 @@ class CompletedFilter implements Filter {
 }
 
 class PendingFilter implements Filter {
-    static filterName = "Pending";
-    static filterDescription = "Match only incomplete requests";
+
     static filterSyntax = [new FixedStringSyntax("pending")]
 
     matches(event: CollectedEvent): boolean {
