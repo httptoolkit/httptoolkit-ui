@@ -59,7 +59,7 @@
     "@types/semver": "^7.3.1",
     "@types/serialize-error": "^2.1.0",
     "@types/set-cookie-parser": "0.0.3",
-    "@types/styled-components": "^5.1.0",
+    "@types/styled-components": "^5.1.4",
     "@types/traverse": "^0.6.32",
     "@types/ua-parser-js": "^0.7.33",
     "@types/uuid": "^3.4.4",
