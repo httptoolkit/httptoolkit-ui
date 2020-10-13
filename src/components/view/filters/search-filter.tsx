@@ -140,10 +140,6 @@ export const SearchFilter = (props: {
         ]);
     };
 
-    const onSuggestionSelected = (suggestion: FilterSuggestion) => {
-        props.onSearchFiltersChanged(applySuggestionToFilters(props.searchFilters, suggestion));
-    }
-
     const onFiltersCleared = () => {
         props.onSearchFiltersChanged([]);
 
@@ -176,8 +172,9 @@ export const SearchFilter = (props: {
             value={textInputValue}
             onChange={onInputChanged}
             onKeyDown={onInputKeyDown}
-            onSuggestionSelected={onSuggestionSelected}
+            onFiltersChanged={props.onSearchFiltersChanged}
             placeholder={props.placeholder}
+            currentFilters={props.searchFilters}
             availableFilters={props.availableFilters}
         />
         { (!!textInputValue || !!otherFilters.length) &&

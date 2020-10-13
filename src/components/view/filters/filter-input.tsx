@@ -4,10 +4,11 @@ import * as Autosuggest from 'react-autosuggest';
 
 import { styled } from '../../../styles';
 
-import { FilterClass } from '../../../model/filters/search-filters';
+import { Filter, FilterClass, FilterSet } from '../../../model/filters/search-filters';
 import {
     getSuggestions,
-    FilterSuggestion
+    FilterSuggestion,
+    applySuggestionToFilters
 } from '../../../model/filters/filter-matching';
 
 const FilterInputField = styled.input`
@@ -51,9 +52,12 @@ const renderSuggestionsBox = (props: { containerProps: any, children: any }) =>
     </FilterSuggestionsBox>;
 
 export const FilterInput = (props: {
+    currentFilters: FilterSet,
     availableFilters: FilterClass[],
-    onSuggestionSelected: (suggestion: FilterSuggestion) => void
+    onFiltersChanged: (filters: FilterSet) => void
 } & Autosuggest.InputProps<any>) => {
+    const autosuggestRef = React.useRef<Autosuggest>(null);
+
     const [suggestions, setSuggestions] = React.useState<
         FilterSuggestion[]
     >([]);
@@ -64,18 +68,34 @@ export const FilterInput = (props: {
         );
     };
 
-    const clearSuggestions = () => {
-        setSuggestions([]);
-    };
+    // Ephemerally track the updated suggestions, so we can detect a selection in clearSuggestions()
+    // and update to show ongoing suggestions instead of hiding suggestions.
+    let updatedFilters: FilterSet | undefined = undefined;
 
     const selectSuggestion = (
         event: React.FormEvent<any>,
         data: { suggestion: FilterSuggestion }
     ) => {
-        props.onSuggestionSelected(data.suggestion)
+        updatedFilters = applySuggestionToFilters(props.currentFilters, data.suggestion);
+        props.onFiltersChanged(updatedFilters);
+    };
+
+    const clearSuggestions = () => {
+        if (updatedFilters && updatedFilters.length === props.currentFilters.length) {
+            // If this is from a filter update, but a new filter hasn't been created (i.e. we had a
+            // partial match, for a single part) then keep the suggestions visible & update them:
+            const autosuggest = autosuggestRef.current as any;
+            updateSuggestions({ value: updatedFilters[0]?.filter || '' });
+            autosuggest.justSelectedSuggestion = false;
+            autosuggest.revealSuggestions();
+            updatedFilters = undefined;
+        } else {
+            setSuggestions([]);
+        }
     };
 
     return <Autosuggest
+        ref={autosuggestRef}
         multiSection={false}
         suggestions={suggestions}
         onSuggestionsFetchRequested={updateSuggestions}
@@ -85,8 +105,8 @@ export const FilterInput = (props: {
         renderSuggestion={Suggestion}
         renderInputComponent={renderInputField}
         renderSuggestionsContainer={renderSuggestionsBox}
-        inputProps={_.omit(props, ['availableFilters', 'onSuggestionSelected'])}
-    />
+        inputProps={_.omit(props, ['currentFilters', 'availableFilters', 'onFiltersChanged'])}
+    />;
 };
 
 const SuggestionRow = styled.div<{ isHighlighted: boolean }>`
