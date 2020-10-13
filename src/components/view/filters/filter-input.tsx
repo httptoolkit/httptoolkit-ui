@@ -99,6 +99,7 @@ export const FilterInput = (props: {
         ref={autosuggestRef}
         multiSection={false}
         suggestions={suggestions}
+        highlightFirstSuggestion={true}
         onSuggestionsFetchRequested={updateSuggestions}
         onSuggestionsClearRequested={clearSuggestions}
         onSuggestionSelected={selectSuggestion}
