@@ -30,6 +30,7 @@ const FilterSuggestionsBox = styled.div`
     left: 0;
     right: 0;
     padding: 8px;
+    z-index: 1;
 
     background-color: ${p => p.theme.highlightBackground};
     border: 1px solid ${p => p.theme.containerBorder};
