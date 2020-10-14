@@ -4,11 +4,12 @@ import * as Autosuggest from 'react-autosuggest';
 
 import { styled } from '../../../styles';
 
-import { Filter, FilterClass, FilterSet } from '../../../model/filters/search-filters';
+import { FilterClass, FilterSet } from '../../../model/filters/search-filters';
 import {
     getSuggestions,
     FilterSuggestion,
-    applySuggestionToFilters
+    applySuggestionToFilters,
+    applySuggestionToText
 } from '../../../model/filters/filter-matching';
 
 const FilterInputField = styled.input`
@@ -59,15 +60,13 @@ export const FilterInput = (props: {
 } & Autosuggest.InputProps<any>) => {
     const autosuggestRef = React.useRef<Autosuggest>(null);
 
-    const [suggestions, setSuggestions] = React.useState<
-        FilterSuggestion[]
-    >([]);
-
-    const updateSuggestions = (request: { value: string }) => {
-        setSuggestions(
-            getSuggestions(props.availableFilters, request.value)
-        );
-    };
+    // React-autosuggest wants us to track state, and only update it when requested. We're going
+    // to ignore that, mainly because we want more direct control to update and show the
+    // suggestions more aggressively than it expects. Instead of updating on request, we useMemo
+    // to update the suggestions every time the value changes:
+    const suggestions = React.useMemo(() =>
+        getSuggestions(props.availableFilters, props.value)
+    , [props.availableFilters, props.value]);
 
     // Ephemerally track the updated suggestions, so we can detect a selection in clearSuggestions()
     // and update to show ongoing suggestions instead of hiding suggestions.
@@ -83,27 +82,29 @@ export const FilterInput = (props: {
 
     const clearSuggestions = () => {
         if (updatedFilters && updatedFilters.length === props.currentFilters.length) {
-            // If this is from a filter update, but a new filter hasn't been created (i.e. we had a
-            // partial match, for a single part) then keep the suggestions visible & update them:
+            // If this is due to a filter update, but a new filter hasn't been created (i.e. we
+            // had a partial match, for a single part) then force the suggestions to stay visible:
             const autosuggest = autosuggestRef.current as any;
-            updateSuggestions({ value: updatedFilters[0]?.filter || '' });
             autosuggest.justSelectedSuggestion = false;
             autosuggest.revealSuggestions();
             updatedFilters = undefined;
-        } else {
-            setSuggestions([]);
         }
+        // We ignore actual requests to clear the suggestions, because we show the
+        // suggestions in almost all cases anyway.
     };
+
+    const getSuggestionTextValue = (suggestion: FilterSuggestion) =>
+        applySuggestionToText(props.value, suggestion);
 
     return <Autosuggest
         ref={autosuggestRef}
         multiSection={false}
         suggestions={suggestions}
         highlightFirstSuggestion={true}
-        onSuggestionsFetchRequested={updateSuggestions}
+        onSuggestionsFetchRequested={_.noop} // No-op: we useMemo to keep suggestion up to date manually
         onSuggestionsClearRequested={clearSuggestions}
         onSuggestionSelected={selectSuggestion}
-        getSuggestionValue={() => props.value} // We effectively disable this
+        getSuggestionValue={getSuggestionTextValue}
         renderSuggestion={Suggestion}
         renderInputComponent={renderInputField}
         renderSuggestionsContainer={renderSuggestionsBox}

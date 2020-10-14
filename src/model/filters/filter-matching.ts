@@ -214,7 +214,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
     return suggestions;
 }
 
-function applySuggestionToText(value: string, suggestion: FilterSuggestion) {
+export function applySuggestionToText(value: string, suggestion: FilterSuggestion) {
     if (suggestion.value === undefined) return value; // Templates don't update the value
     return value.slice(0, suggestion.index) + suggestion.value;
 }
