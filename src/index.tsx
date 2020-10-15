@@ -51,7 +51,7 @@ delay(5000).then(() => {
     return registerUpdateWorker({ scope: '/' });
 }).then((registration) => {
     console.log('Service worker loaded');
-    registration.update();
+    registration.update().catch(console.log);
 
     // Check for SW updates every 5 minutes.
     setInterval(() => {
