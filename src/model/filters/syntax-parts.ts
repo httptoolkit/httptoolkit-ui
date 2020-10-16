@@ -63,6 +63,47 @@ export interface SyntaxPart {
     getSuggestions(value: string, index: number): Suggestion[];
 };
 
+type CharRange = readonly [number, number];
+
+export function charRange(charA: string, charB: string): CharRange {
+    return [charA.charCodeAt(0), charB.charCodeAt(0)];
+}
+
+function matchesRange(charCode: number, range: CharRange) {
+    return charCode >= range[0] && charCode <= range[1];
+}
+
+const getNumberAt = (value: string, index: number) =>
+    getStringAt(value, index, [NUMBER_CHARS]);
+
+/**
+ * Match a string at a given position, allowing only characters from
+ * the given range
+ */
+function getStringAt(value: string, index: number, allowedCharRanges: CharRange[]) {
+    let i: number;
+
+    // Keep reading chars until we either hit the end of the
+    // string (maybe immediately) or hit an invalid character
+    for (i = index; i < value.length; i++) {
+        const nextChar = value.charCodeAt(i);
+        if (!_.some(allowedCharRanges, r => matchesRange(nextChar, r))) break;
+    }
+
+    if (i !== index) {
+        // We found at least one character, that's a match:
+        return value.substring(index, i);
+    } else if (i === value.length) {
+        // We were at the end of the string, that's an empty partial match:
+        return "";
+    } else {
+        // We found no characters, and no end of string: fail
+        return undefined;
+    }
+}
+
+const NUMBER_CHARS = [48, 59] as const; // 0-9 ascii codes
+
 export class FixedStringSyntax implements SyntaxPart {
 
     constructor(
@@ -97,47 +138,20 @@ export class FixedStringSyntax implements SyntaxPart {
 
 }
 
-function isNumberChar(char: string) {
-    const code = char.charCodeAt(0);
-    return code >= 48 && code <= 59; // 0-9 ascii codes
-}
+export class StringSyntax implements SyntaxPart {
 
-/**
- * Match a number at this position. Returns the number (as a string)
- * if one is present here, an empty string if this is the end of the
- * string, so a number _could_ be appended here, and undefined if
- * it could not (i.e. a non-number is already present)
- */
-function getNumberAt(value: string, index: number) {
-    let i: number;
-
-    // Keep reading number chars until we either hit the end of the
-    // string (maybe immediately) or hit a non-number
-    for (i = index; i < value.length; i++) {
-        if (!isNumberChar(value[i])) break;
-    }
-
-    if (i !== index) {
-        // We found at least one number, that's a match:
-        return value.substring(index, i);
-    } else if (i === value.length) {
-        // We were at the end of the string, that's an empty partial match:
-        return "";
-    } else {
-        // We found no characters, and no end of string: fail
-        return undefined;
-    }
-}
-
-export class NumberSyntax implements SyntaxPart {
+    constructor(
+        private allowedCharRanges: CharRange[],
+        private templateText: string
+    ) {}
 
     match(value: string, index: number): undefined | SyntaxMatch {
-        const matchingNumber = getNumberAt(value, index);
-        if (matchingNumber === undefined) return;
+        const matchingString = getStringAt(value, index, this.allowedCharRanges);
+        if (matchingString === undefined) return;
 
-        const consumedChars = matchingNumber.length;
+        const consumedChars = matchingString.length;
 
-        // Any number is a full match, any empty space is a potential number
+        // Any string is a full match, any empty space is a potential string
         return {
             type: (consumedChars > 0)
                 ? 'full'
@@ -147,19 +161,27 @@ export class NumberSyntax implements SyntaxPart {
     }
 
     getSuggestions(value: string, index: number): Suggestion[] {
-        const matchingNumber = getNumberAt(value, index);
+        const matchingString = getStringAt(value, index, this.allowedCharRanges);
 
-        if (!matchingNumber) {
+        if (!matchingString) {
             return [{
-                showAs: "{number}",
+                showAs: `{${this.templateText}}`,
                 value: undefined
             }];
         } else {
             return [{
-                showAs: matchingNumber,
-                value: matchingNumber
+                showAs: matchingString,
+                value: matchingString
             }];
         }
+    }
+
+}
+
+export class NumberSyntax extends StringSyntax {
+
+    constructor() {
+        super([NUMBER_CHARS], "number");
     }
 
 }

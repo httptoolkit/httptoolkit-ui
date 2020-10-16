@@ -383,7 +383,7 @@ describe("Suggestion generation", () => {
         ]);
     });
 
-    it("should give up combining suggestions if all parts of a filter are single-option", () => {
+    it("should successfully combine suggestions if all parts of a filter are single-option", () => {
         const availableFilters = [
             mockFilterClass([
                 new FixedStringSyntax('status'),
@@ -398,6 +398,27 @@ describe("Suggestion generation", () => {
                 index: 0,
                 showAs: "status=404",
                 value: "status=404",
+                filterClass: availableFilters[0]
+            }
+        ]);
+    });
+
+    it("should stop combining suggestions if a template value is found", () => {
+        const availableFilters = [
+            mockFilterClass([
+                new FixedStringSyntax('bodySize='),
+                new NumberSyntax(),
+                new FixedStringSyntax('bytes')
+            ])
+        ];
+
+        const suggestions = getSuggestions(availableFilters, "bodySize");
+
+        expect(suggestions).to.deep.equal([
+            {
+                index: 0,
+                showAs: "bodySize={number}",
+                value: "bodySize=",
                 filterClass: availableFilters[0]
             }
         ]);

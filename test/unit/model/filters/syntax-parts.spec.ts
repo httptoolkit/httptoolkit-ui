@@ -1,13 +1,16 @@
 import { expect } from '../../../test-setup';
 
 import {
+    charRange,
     FixedStringSyntax,
+    StringSyntax,
     NumberSyntax,
     FixedLengthNumberSyntax,
-    StringOptionsSyntax
+    StringOptionsSyntax,
+    charRange
 } from "../../../../src/model/filters/syntax-parts";
 
-describe("String syntax", () => {
+describe("Fixed string syntax", () => {
 
     it("should not match completely different strings", () => {
         const part = new FixedStringSyntax("a-string");
@@ -249,6 +252,86 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions.length).to.equal(1);
         expect(suggestions[0].showAs).to.equal('500');
         expect(suggestions[0].value).to.equal('500');
+    });
+
+});
+
+describe("String syntax", () => {
+
+    it("should not match invalid chars", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+        expect(part.match("ABC", 0)).to.equal(undefined);
+    });
+
+    it("should match valid chars", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const match = part.match("abc", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(3);
+    });
+
+    it("should not match valid chars with prefixes", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const match = part.match("123-abc", 0)!;
+        expect(match).to.equal(undefined);
+    });
+
+    it("should fully match valid chars with suffixes", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const match = part.match("abcABC", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(3);
+    });
+
+    it("should fully match valid chars with prefixes before the index", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const match = part.match("123-abc", 4)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(3);
+    });
+
+    it("should match from multiple sets of valid chars", () => {
+        const part = new StringSyntax(
+            [charRange("a", "z"), charRange("A", "Z")],
+        "a string");
+
+        const match = part.match("aBc123", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(3);
+    });
+
+    it("should partially match at the end of a string", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const match = part.match("string-", 7)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(0);
+    });
+
+    it("should suggest inserting valid chars", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const suggestions = part.getSuggestions("value=", 6)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].showAs).to.equal('{a string}');
+        expect(suggestions[0].value).to.equal(undefined);
+    });
+
+    it("should suggest completing existing valid chars", () => {
+        const part = new StringSyntax([charRange("a", "z")], "a string");
+
+        const suggestions = part.getSuggestions("value=chars", 6)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].showAs).to.equal('chars');
+        expect(suggestions[0].value).to.equal('chars');
     });
 
 });
