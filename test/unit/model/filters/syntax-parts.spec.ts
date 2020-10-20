@@ -6,8 +6,7 @@ import {
     StringSyntax,
     NumberSyntax,
     FixedLengthNumberSyntax,
-    StringOptionsSyntax,
-    charRange
+    StringOptionsSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("Fixed string syntax", () => {

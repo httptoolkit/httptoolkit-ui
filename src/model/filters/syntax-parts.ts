@@ -237,12 +237,12 @@ export class FixedLengthNumberSyntax implements SyntaxPart {
 
 }
 
-export class StringOptionsSyntax implements SyntaxPart {
+export class StringOptionsSyntax<OptionsType extends string = string> implements SyntaxPart {
 
     private optionMatchers: FixedStringSyntax[];
 
     constructor(
-        options: string[]
+        options: Array<OptionsType>
     ) {
         this.optionMatchers = _.sortBy(options.reverse(), o => o.length)
             .reverse() // Reversed twice, to get longest first but preserve other order
