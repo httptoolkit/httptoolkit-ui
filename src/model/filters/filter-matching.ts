@@ -189,24 +189,23 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
 
     while (suggestions.length === 1 && syntaxPartIndex < filterClass.filterSyntax.length) {
         const singleSuggestion = suggestions[0];
-        const suggestedValue = singleSuggestion.value;
-        if (suggestedValue === undefined) break; // A blank template, don't append further
+        if (singleSuggestion.template) break;
 
         const updatedText = applySuggestionToText(value, singleSuggestion);
 
         suggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
             updatedText,
             updatedText.length
-        ).map((suggestion) => ({
-            value: suggestedValue + (suggestion.value || ''), // For templates, the value is untouched.
-            showAs: singleSuggestion.showAs + suggestion.showAs,
+        ).map((nextSuggestion) => ({
+            value: singleSuggestion.value + nextSuggestion.value,
+            showAs: singleSuggestion.showAs + nextSuggestion.showAs,
             filterClass,
-            index: singleSuggestion.index
+            index: singleSuggestion.index,
+            ...(nextSuggestion.template ? { template: true } : {})
         }));
 
-        // If we hit a fixed point (in practice, if an added suggestion is a blank template),
-        // then don't keep trying to append - we need a concrete value added first.
-        if (suggestions.some(s => s.value === singleSuggestion.value)) break;
+        // If any suggestion is a template, then don't keep trying to extend any further.
+        if (suggestions.some(s => s.template)) break;
 
         syntaxPartIndex += 1;
     }
@@ -215,7 +214,6 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
 }
 
 export function applySuggestionToText(value: string, suggestion: FilterSuggestion) {
-    if (suggestion.value === undefined) return value; // Templates don't update the value
     return value.slice(0, suggestion.index) + suggestion.value;
 }
 

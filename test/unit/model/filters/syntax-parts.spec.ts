@@ -169,9 +169,13 @@ describe("Number syntax", () => {
 
         const suggestions = part.getSuggestions("value=", 6)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('{number}');
-        expect(suggestions[0].value).to.equal(undefined);
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: '{number}',
+                value: '',
+                template: true
+            }
+        ]);
     });
 
     it("should suggest completing an existing number", () => {
@@ -179,9 +183,12 @@ describe("Number syntax", () => {
 
         const suggestions = part.getSuggestions("value=123", 6)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('123');
-        expect(suggestions[0].value).to.equal('123');
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: '123',
+                value: '123'
+            }
+        ]);
     });
 
 });
@@ -239,9 +246,13 @@ describe("Fixed-length number syntax", () => {
 
         const suggestions = part.getSuggestions("value=", 6)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('{3-digit number}');
-        expect(suggestions[0].value).to.equal(undefined);
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: '{3-digit number}',
+                value: '',
+                template: true
+            }
+        ]);
     });
 
     it("should suggest extending a number to the right length", () => {
@@ -249,9 +260,12 @@ describe("Fixed-length number syntax", () => {
 
         const suggestions = part.getSuggestions("value=50", 6)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('500');
-        expect(suggestions[0].value).to.equal('500');
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: '500',
+                value: '500'
+            }
+        ]);
     });
 
 });
@@ -319,9 +333,13 @@ describe("String syntax", () => {
 
         const suggestions = part.getSuggestions("value=", 6)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('{a string}');
-        expect(suggestions[0].value).to.equal(undefined);
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: '{a string}',
+                value: '',
+                template: true
+            }
+        ]);
     });
 
     it("should suggest completing existing valid chars", () => {
@@ -329,9 +347,12 @@ describe("String syntax", () => {
 
         const suggestions = part.getSuggestions("value=chars", 6)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('chars');
-        expect(suggestions[0].value).to.equal('chars');
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: 'chars',
+                value: 'chars'
+            }
+        ]);
     });
 
 });
@@ -413,9 +434,12 @@ describe("String options syntax", () => {
 
         const suggestions = part.getSuggestions("a", 0)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('ab');
-        expect(suggestions[0].value).to.equal('ab');
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: 'ab',
+                value: 'ab'
+            }
+        ]);
     });
 
     it("should suggest all valid completions of the string", () => {
@@ -436,9 +460,12 @@ describe("String options syntax", () => {
 
         const suggestions = part.getSuggestions("ab", 0)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('ab');
-        expect(suggestions[0].value).to.equal('ab');
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: 'ab',
+                value: 'ab'
+            }
+        ]);
     });
 
     it("should suggest completing the string at a given index", () => {
@@ -446,9 +473,12 @@ describe("String options syntax", () => {
 
         const suggestions = part.getSuggestions("prefix-on-a", 10)!;
 
-        expect(suggestions.length).to.equal(1);
-        expect(suggestions[0].showAs).to.equal('ab');
-        expect(suggestions[0].value).to.equal('ab');
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: 'ab',
+                value: 'ab'
+            }
+        ]);
     });
 
     it("should suggest completion at the end of a string", () => {

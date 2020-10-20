@@ -318,7 +318,8 @@ describe("Suggestion generation", () => {
             {
                 index: 7,
                 showAs: "{3-digit number}",
-                value: undefined,
+                value: "",
+                template: true,
                 filterClass: availableFilters[0]
             }
             // I.e. it doesn't show == here, it shows the final suggestion instead, since
@@ -419,6 +420,7 @@ describe("Suggestion generation", () => {
                 index: 0,
                 showAs: "bodySize={number}",
                 value: "bodySize=",
+                template: true,
                 filterClass: availableFilters[0]
             }
         ]);
@@ -467,7 +469,7 @@ describe("Applying suggestions", () => {
 
         const result = applySuggestionToFilters(
             [new StringFilter("status=")],
-            { index: 7, value: undefined, showAs: "{number}", filterClass }
+            { index: 7, value: "", showAs: "{number}", template: true, filterClass }
         );
 
         expect(result.length).to.equal(1);

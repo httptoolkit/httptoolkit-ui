@@ -34,10 +34,17 @@ export interface Suggestion {
     /**
      * The text that should actually insert if you select the example.
      *
-     * If this suggestion is a template (e.g. 'enter a number') where
-     * no value can be immediately provided, this is undefined.
+     * If this is not a template suggestion, then inserting the suggestion
+     * must result in a string that fully matches this syntax part.
      */
-    value: string | undefined;
+    value: string;
+
+    /**
+     * True for a template, undefined otherwise. Template suggestions are
+     * those that require user interaction, and act as visible prompts
+     * for input, rather than complete suggestions in and of themselves.
+     */
+    template?: true;
 }
 
 export interface SyntaxPart {
@@ -166,7 +173,8 @@ export class StringSyntax implements SyntaxPart {
         if (!matchingString) {
             return [{
                 showAs: `{${this.templateText}}`,
-                value: undefined
+                value: "",
+                template: true
             }];
         } else {
             return [{
@@ -213,7 +221,8 @@ export class FixedLengthNumberSyntax implements SyntaxPart {
         if (!matchingNumber) {
             return [{
                 showAs: `{${this.requiredLength}-digit number}`,
-                value: undefined
+                value: "",
+                template: true
             }];
         } else {
             const extendedNumber = matchingNumber +
