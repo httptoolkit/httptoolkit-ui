@@ -1,11 +1,12 @@
 import * as dateFns from 'date-fns';
 import { SourceIcons } from '../../src/icons';
 import { HttpExchange, ExchangeBody } from '../../src/model/http/exchange';
-import { HtkRequest, HtkResponse } from '../../src/types';
+import { FailedTlsRequest, HtkRequest, HtkResponse } from '../../src/types';
 
 export const getExchangeData = ({
     hostname = 'example.com',
     protocol = 'https',
+    httpVersion = '1.1',
     method = 'GET',
     path = '/',
     query = '',
@@ -14,12 +15,13 @@ export const getExchangeData = ({
     statusCode = 200,
     statusMessage = '',
     responseBody = '',
-    responseHeaders = {}
-} = {}) => ({
+    responseHeaders = {},
+    responseState = 'completed'
+} = {}) => Object.assign(Object.create(HttpExchange.prototype), {
     id: '',
     request: {
         id: '',
-        httpVersion: '1.1',
+        httpVersion: httpVersion,
         method,
         url: `${protocol}://${hostname}${path}${query}`,
         parsedUrl: Object.assign(
@@ -40,7 +42,11 @@ export const getExchangeData = ({
         tags: [],
         cache: new Map() as any
     } as HtkRequest,
-    response: {
+    response: responseState === 'aborted'
+        ? 'aborted'
+    : responseState === 'pending'
+        ? undefined
+    : {
         id: '',
         statusCode,
         statusMessage,
@@ -57,8 +63,18 @@ export const getExchangeData = ({
     timingEvents: { startTime: Date.now() },
     searchIndex: '',
     category: 'unknown',
-    cache: new Map() as any
+    cache: new Map() as any,
+    tags: []
 }) as HttpExchange;
+
+export const getFailedTls = ({
+    remoteIpAddress = "10.0.0.1",
+    failureCause = 'cert-rejected'
+} = {}) => ({
+    remoteIpAddress,
+    failureCause,
+    tags: [] as string[]
+}) as FailedTlsRequest;
 
 export function httpDate(date: Date) {
     const utcDate = dateFns.addMinutes(date, date.getTimezoneOffset());

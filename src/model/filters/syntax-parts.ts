@@ -72,8 +72,12 @@ export interface SyntaxPart {
 
 type CharRange = readonly [number, number];
 
-export function charRange(charA: string, charB: string): CharRange {
-    return [charA.charCodeAt(0), charB.charCodeAt(0)];
+export function charRange(charA: string, charB?: string): CharRange {
+    if (charB) {
+        return [charA.charCodeAt(0), charB.charCodeAt(0)];
+    } else {
+        return [charA.charCodeAt(0), charA.charCodeAt(0)];
+    }
 }
 
 function matchesRange(charCode: number, range: CharRange) {
@@ -188,8 +192,8 @@ export class StringSyntax implements SyntaxPart {
 
 export class NumberSyntax extends StringSyntax {
 
-    constructor() {
-        super([NUMBER_CHARS], "number");
+    constructor(name: string = "number") {
+        super([NUMBER_CHARS], name);
     }
 
 }

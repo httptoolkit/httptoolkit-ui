@@ -112,7 +112,7 @@ class StatusFilter implements Filter {
 
 class CompletedFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("completed")]
+    static filterSyntax = [new FixedStringSyntax("is-completed")]
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
@@ -126,7 +126,7 @@ class CompletedFilter implements Filter {
 
 class PendingFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("pending")]
+    static filterSyntax = [new FixedStringSyntax("is-pending")]
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
@@ -138,8 +138,199 @@ class PendingFilter implements Filter {
     }
 }
 
+class AbortedFilter implements Filter {
+
+    static filterSyntax = [new FixedStringSyntax("is-aborted")]
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            event.response === 'aborted'
+    }
+
+    toString() {
+        return `Aborted`;
+    }
+}
+
+class ErrorFilter implements Filter {
+
+    static filterSyntax = [new FixedStringSyntax("is-error")]
+
+    matches(event: CollectedEvent): boolean {
+        return !(event instanceof HttpExchange) || // TLS Error
+            event.tags.some(tag =>
+                tag.startsWith('client-error') ||
+                tag.startsWith('passthrough-error')
+            );
+    }
+
+    toString() {
+        return `Error`;
+    }
+}
+
+class HttpVersionFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("httpVersion"),
+        new FixedStringSyntax("="), // Separate, so initial suggestions are names only
+        new StringOptionsSyntax(["1", "2"])
+    ];
+
+    private expectedVersion: number;
+
+    constructor(filter: string) {
+        const versionIndex = "httpVersion=".length;
+        this.expectedVersion = parseInt(filter.slice(versionIndex), 10);
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            event.httpVersion === this.expectedVersion;
+    }
+
+    toString() {
+        return `HTTP ${this.expectedVersion}`;
+    }
+}
+
+class MethodFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("method"),
+        new FixedStringSyntax("="),
+        new StringSyntax([
+            charRange('a', 'z'),
+            charRange('A', 'Z')
+        ], "method")
+    ];
+
+    private expectedMethod: string;
+
+    constructor(filter: string) {
+        const methodIndex = "method=".length;
+        this.expectedMethod = filter.slice(methodIndex).toUpperCase();
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            event.request.method.toUpperCase() === this.expectedMethod;
+    }
+
+    toString() {
+        return `Method = ${this.expectedMethod}`;
+    }
+
+}
+
+class HostnameFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("hostname"),
+        new StringOptionsSyntax<StringOperation>([
+            "=",
+            "!=",
+            "*=",
+            "^=",
+            "$="
+        ]),
+        new StringSyntax([
+            charRange("a", "z"),
+            charRange("A", "Z"),
+            charRange("0", "9"),
+            charRange("-"),
+            charRange(".")
+        ], "hostname")
+    ];
+
+    private expectedHostname: string;
+    private op: StringOperation;
+    private predicate: (host: string, expectedHost: string) => boolean;
+
+    constructor(filter: string) {
+        const opIndex = "hostname".length;
+        const opMatch = HostnameFilter.filterSyntax[1].match(filter, opIndex)!;
+        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as StringOperation;
+        this.predicate = stringOperations[this.op];
+
+        const hostIndex = opIndex + opMatch.consumed;
+        this.expectedHostname = filter.slice(hostIndex).toLowerCase();
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            this.predicate(
+                event.request.parsedUrl.hostname.toLowerCase(),
+                this.expectedHostname
+            );
+    }
+
+    toString() {
+        return `Hostname ${this.op} ${this.expectedHostname}`;
+    }
+}
+
+const PROTOCOL_DEFAULT_PORTS = {
+    'http': 80,
+    'https': 443
+} as const;
+
+class PortFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("port"),
+        new StringOptionsSyntax<NumberOperation>([
+            "=",
+            "!=",
+            ">",
+            ">=",
+            "<",
+            "<="
+        ]),
+        new NumberSyntax("port")
+    ];
+
+    private expectedPort: number;
+    private op: NumberOperation;
+    private predicate: (port: number, expectedPort: number) => boolean;
+
+    constructor(filter: string) {
+        const opIndex = "port".length;
+        const opMatch = PortFilter.filterSyntax[1].match(filter, opIndex)!;
+        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as NumberOperation;
+        this.predicate = numberOperations[this.op];
+
+        const portIndex = opIndex + opMatch.consumed;
+        this.expectedPort = parseInt(filter.slice(portIndex), 10);
+    }
+
+    matches(event: CollectedEvent): boolean {
+        if (!(event instanceof HttpExchange)) return false;
+
+        const { protocol, port: explicitPort } = event.request.parsedUrl;
+        const port = parseInt((
+            explicitPort ||
+            PROTOCOL_DEFAULT_PORTS[protocol as 'http' | 'https'] ||
+            0
+        ).toString(), 10);
+
+        return event instanceof HttpExchange &&
+            this.predicate(port, this.expectedPort);
+    }
+
+    toString() {
+        return `Port ${this.op} ${this.expectedPort}`;
+    }
+}
+
 export const SelectableSearchFilterClasses: FilterClass[] = [
     StatusFilter,
     CompletedFilter,
-    PendingFilter
+    PendingFilter,
+    AbortedFilter,
+    ErrorFilter,
+    HttpVersionFilter,
+    MethodFilter,
+    HostnameFilter,
+    PortFilter
 ];
