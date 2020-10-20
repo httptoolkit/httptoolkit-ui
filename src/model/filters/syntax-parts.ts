@@ -109,7 +109,7 @@ function getStringAt(value: string, index: number, allowedCharRanges: CharRange[
     }
 }
 
-const NUMBER_CHARS = [48, 59] as const; // 0-9 ascii codes
+const NUMBER_CHARS = [48, 57] as const; // 0-9 ascii codes
 
 export class FixedStringSyntax implements SyntaxPart {
 
