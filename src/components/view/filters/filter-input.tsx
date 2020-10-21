@@ -99,6 +99,10 @@ export const FilterInput = (props: {
         // suggestions in almost all cases anyway.
     };
 
+    const shouldRenderSuggestions = (value: string, reason: string) =>
+        value.trim().length > 0 ||
+        (reason !== 'input-focused' && reason !== 'input-changed');
+
     const getSuggestionTextValue = (suggestion: FilterSuggestion) =>
         applySuggestionToText(props.value, suggestion);
 
@@ -107,6 +111,7 @@ export const FilterInput = (props: {
         multiSection={false}
         suggestions={suggestions}
         highlightFirstSuggestion={true}
+        shouldRenderSuggestions={shouldRenderSuggestions}
         onSuggestionsFetchRequested={_.noop} // No-op: we useMemo to keep suggestion up to date manually
         onSuggestionsClearRequested={clearSuggestions}
         onSuggestionSelected={selectSuggestion}
