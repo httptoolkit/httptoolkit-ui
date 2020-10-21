@@ -247,6 +247,7 @@ export class EventsStore {
                 pinned: false,
                 searchIndex: [request.hostname, request.remoteIpAddress]
                     .filter((x): x is string => !!x)
+                    .join('\n')
             }));
         } catch (e) {
             reportError(e);
