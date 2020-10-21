@@ -327,6 +327,14 @@ describe("String syntax", () => {
         expect(match.consumed).to.equal(0);
     });
 
+    it("should allow any chars if no range is specified", () => {
+        const part = new StringSyntax("a string");
+
+        const match = part.match("abc123!!!", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(9);
+    });
+
     it("should suggest inserting valid chars", () => {
         const part = new StringSyntax([charRange("a", "z")], "a string");
 

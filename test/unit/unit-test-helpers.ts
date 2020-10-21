@@ -5,7 +5,7 @@ import { FailedTlsRequest, HtkRequest, HtkResponse } from '../../src/types';
 
 export const getExchangeData = ({
     hostname = 'example.com',
-    protocol = 'https',
+    protocol = 'https:',
     httpVersion = '1.1',
     method = 'GET',
     path = '/',
@@ -23,9 +23,9 @@ export const getExchangeData = ({
         id: '',
         httpVersion: httpVersion,
         method,
-        url: `${protocol}://${hostname}${path}${query}`,
+        url: `${protocol}//${hostname}${path}${query}`,
         parsedUrl: Object.assign(
-            new URL(`${protocol}://${hostname}${path}${query}`),
+            new URL(`${protocol}//${hostname}${path}${query}`),
             { parseable: true }
         ),
         protocol,

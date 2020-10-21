@@ -169,31 +169,6 @@ class ErrorFilter implements Filter {
     }
 }
 
-class HttpVersionFilter implements Filter {
-
-    static filterSyntax = [
-        new FixedStringSyntax("httpVersion"),
-        new FixedStringSyntax("="), // Separate, so initial suggestions are names only
-        new StringOptionsSyntax(["1", "2"])
-    ];
-
-    private expectedVersion: number;
-
-    constructor(filter: string) {
-        const versionIndex = "httpVersion=".length;
-        this.expectedVersion = parseInt(filter.slice(versionIndex), 10);
-    }
-
-    matches(event: CollectedEvent): boolean {
-        return event instanceof HttpExchange &&
-            event.httpVersion === this.expectedVersion;
-    }
-
-    toString() {
-        return `HTTP ${this.expectedVersion}`;
-    }
-}
-
 class MethodFilter implements Filter {
 
     static filterSyntax = [
@@ -221,6 +196,62 @@ class MethodFilter implements Filter {
         return `Method = ${this.expectedMethod}`;
     }
 
+}
+
+class HttpVersionFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("httpVersion"),
+        new FixedStringSyntax("="), // Separate, so initial suggestions are names only
+        new StringOptionsSyntax(["1", "2"])
+    ];
+
+    private expectedVersion: number;
+
+    constructor(filter: string) {
+        const versionIndex = "httpVersion=".length;
+        this.expectedVersion = parseInt(filter.slice(versionIndex), 10);
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            event.httpVersion === this.expectedVersion;
+    }
+
+    toString() {
+        return `HTTP ${this.expectedVersion}`;
+    }
+}
+
+class ProtocolFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("protocol"),
+        new FixedStringSyntax("="),
+        new StringOptionsSyntax([
+            "http",
+            "https"
+        ])
+    ];
+
+    private expectedProtocol: string;
+
+    constructor(filter: string) {
+        const protocolIndex = "protocol=".length;
+        this.expectedProtocol = filter.slice(protocolIndex).toLowerCase();
+    }
+
+    matches(event: CollectedEvent): boolean {
+        if (!(event instanceof HttpExchange)) return false;
+
+        // Parsed protocol is either http: or https: - with the colon
+        const protocol = event.request.parsedUrl.protocol.toLowerCase().slice(0, -1);
+        return protocol === this.expectedProtocol;
+    }
+
+    toString() {
+        return `${this.expectedProtocol.toUpperCase()}`;
+    }
 }
 
 class HostnameFilter implements Filter {
@@ -271,8 +302,8 @@ class HostnameFilter implements Filter {
 }
 
 const PROTOCOL_DEFAULT_PORTS = {
-    'http': 80,
-    'https': 443
+    'http:': 80,
+    'https:': 443
 } as const;
 
 class PortFilter implements Filter {
@@ -310,7 +341,7 @@ class PortFilter implements Filter {
         const { protocol, port: explicitPort } = event.request.parsedUrl;
         const port = parseInt((
             explicitPort ||
-            PROTOCOL_DEFAULT_PORTS[protocol as 'http' | 'https'] ||
+            PROTOCOL_DEFAULT_PORTS[protocol as 'http:' | 'https:'] ||
             0
         ).toString(), 10);
 
@@ -323,14 +354,93 @@ class PortFilter implements Filter {
     }
 }
 
+class PathFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("path"),
+        new StringOptionsSyntax<StringOperation>([
+            "=",
+            "!=",
+            "*=",
+            "^=",
+            "$="
+        ]),
+        new StringSyntax("path")
+    ];
+
+    private expectedPath: string;
+    private op: StringOperation;
+    private predicate: (path: string, expectedPath: string) => boolean;
+
+    constructor(filter: string) {
+        const opIndex = "path".length;
+        const opMatch = PathFilter.filterSyntax[1].match(filter, opIndex)!;
+        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as StringOperation;
+        this.predicate = stringOperations[this.op];
+
+        const pathIndex = opIndex + opMatch.consumed;
+        this.expectedPath = filter.slice(pathIndex);
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            this.predicate(event.request.parsedUrl.pathname, this.expectedPath);
+    }
+
+    toString() {
+        return `Path ${this.op} ${this.expectedPath}`;
+    }
+}
+
+class QueryFilter implements Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("query"),
+        new StringOptionsSyntax<StringOperation>([
+            "=",
+            "!=",
+            "*=",
+            "^=",
+            "$="
+        ]),
+        new StringSyntax("query")
+    ];
+
+    private expectedQuery: string;
+    private op: StringOperation;
+    private predicate: (query: string, expectedQuery: string) => boolean;
+
+    constructor(filter: string) {
+        const opIndex = "query".length;
+        const opMatch = QueryFilter.filterSyntax[1].match(filter, opIndex)!;
+        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as StringOperation;
+        this.predicate = stringOperations[this.op];
+
+        const queryIndex = opIndex + opMatch.consumed;
+        this.expectedQuery = filter.slice(queryIndex);
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            this.predicate(event.request.parsedUrl.search, this.expectedQuery);
+    }
+
+    toString() {
+        return `Query ${this.op} ${this.expectedQuery}`;
+    }
+}
+
 export const SelectableSearchFilterClasses: FilterClass[] = [
     StatusFilter,
     CompletedFilter,
     PendingFilter,
     AbortedFilter,
     ErrorFilter,
-    HttpVersionFilter,
     MethodFilter,
+    HttpVersionFilter,
+    ProtocolFilter,
     HostnameFilter,
-    PortFilter
+    PortFilter,
+    PathFilter,
+    QueryFilter,
 ];

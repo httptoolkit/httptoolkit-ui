@@ -151,10 +151,23 @@ export class FixedStringSyntax implements SyntaxPart {
 
 export class StringSyntax implements SyntaxPart {
 
+    private allowedCharRanges: CharRange[];
+    private templateText: string;
+
+    constructor(templateText: string);
+    constructor(allowedCharRanges: CharRange[], templateText: string);
     constructor(
-        private allowedCharRanges: CharRange[],
-        private templateText: string
-    ) {}
+        allowedCharRangesOrTemplate: CharRange[] | string,
+        templateText?: string
+    ) {
+        if (templateText === undefined) {
+            this.allowedCharRanges = [[0, 255]];
+            this.templateText = allowedCharRangesOrTemplate as string;
+        } else {
+            this.allowedCharRanges = allowedCharRangesOrTemplate as CharRange[];
+            this.templateText = templateText!;
+        }
+    }
 
     match(value: string, index: number): undefined | SyntaxMatch {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);

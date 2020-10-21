@@ -24,10 +24,13 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "is-pending" },
                 { index: 0, showAs: "is-aborted" },
                 { index: 0, showAs: "is-error" },
-                { index: 0, showAs: "httpVersion" },
                 { index: 0, showAs: "method" },
+                { index: 0, showAs: "httpVersion" },
+                { index: 0, showAs: "protocol" },
                 { index: 0, showAs: "hostname" },
-                { index: 0, showAs: "port" }
+                { index: 0, showAs: "port" },
+                { index: 0, showAs: "path" },
+                { index: 0, showAs: "query" },
             ]);
         });
 
@@ -43,10 +46,13 @@ describe("Search filter model integration test:", () => {
             "is-pending",
             "is-aborted",
             "is-error",
-            "httpVersion=2",
             "method=POST",
+            "httpVersion=2",
+            "protocol=http",
             "hostname=httptoolkit.tech",
             "port=8080",
+            "path^=/api",
+            "query*=id=",
         ].forEach((filterString) => {
             it(`should allow creating a filters from ${filterString}`, () => {
                 const initialFilters: FilterSet = [new StringFilter(filterString)];
@@ -71,10 +77,13 @@ describe("Search filter model integration test:", () => {
                     getExchangeData({ responseState: 'pending' }),
                     getExchangeData({ responseState: 'aborted' }),
                     getFailedTls(),
-                    getExchangeData({ httpVersion: '2.0' }),
                     getExchangeData({ method: 'POST' }),
+                    getExchangeData({ httpVersion: '2.0' }),
+                    getExchangeData({ protocol: 'http:' }),
                     getExchangeData({ hostname: 'httptoolkit.tech' }),
                     getExchangeData({ hostname: 'example.com:8080' }),
+                    getExchangeData({ path: '/api/get-all-users' }),
+                    getExchangeData({ query: '?a=b&id=4&type=4' }),
                 ];
 
                 // Each filter must successfully match at least one item from our example list:
