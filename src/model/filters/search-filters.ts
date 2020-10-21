@@ -174,10 +174,12 @@ class MethodFilter implements Filter {
     static filterSyntax = [
         new FixedStringSyntax("method"),
         new FixedStringSyntax("="),
-        new StringSyntax([
-            charRange('a', 'z'),
-            charRange('A', 'Z')
-        ], "method")
+        new StringSyntax("method", {
+            allowedChars: [
+                charRange('a', 'z'),
+                charRange('A', 'Z')
+            ]
+        })
     ];
 
     private expectedMethod: string;
@@ -265,13 +267,15 @@ class HostnameFilter implements Filter {
             "^=",
             "$="
         ]),
-        new StringSyntax([
-            charRange("a", "z"),
-            charRange("A", "Z"),
-            charRange("0", "9"),
-            charRange("-"),
-            charRange(".")
-        ], "hostname")
+        new StringSyntax("hostname", {
+            allowedChars: [
+                charRange("a", "z"),
+                charRange("A", "Z"),
+                charRange("0", "9"),
+                charRange("-"),
+                charRange(".")
+            ]
+        })
     ];
 
     private expectedHostname: string;
@@ -403,7 +407,9 @@ class QueryFilter implements Filter {
             "^=",
             "$="
         ]),
-        new StringSyntax("query")
+        new StringSyntax("query", {
+            allowEmpty: true
+        })
     ];
 
     private expectedQuery: string;

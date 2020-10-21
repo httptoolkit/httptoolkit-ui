@@ -272,12 +272,12 @@ describe("Fixed-length number syntax", () => {
 describe("String syntax", () => {
 
     it("should not match invalid chars", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
         expect(part.match("ABC", 0)).to.equal(undefined);
     });
 
     it("should match valid chars", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const match = part.match("abc", 0)!;
         expect(match.type).to.equal('full');
@@ -285,14 +285,14 @@ describe("String syntax", () => {
     });
 
     it("should not match valid chars with prefixes", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const match = part.match("123-abc", 0)!;
         expect(match).to.equal(undefined);
     });
 
     it("should fully match valid chars with suffixes", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const match = part.match("abcABC", 0)!;
         expect(match.type).to.equal('full');
@@ -300,7 +300,7 @@ describe("String syntax", () => {
     });
 
     it("should fully match valid chars with prefixes before the index", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const match = part.match("123-abc", 4)!;
 
@@ -310,16 +310,26 @@ describe("String syntax", () => {
 
     it("should match from multiple sets of valid chars", () => {
         const part = new StringSyntax(
-            [charRange("a", "z"), charRange("A", "Z")],
-        "a string");
+            "a string",
+            { allowedChars: [charRange("a", "z"), charRange("A", "Z")] }
+        );
 
         const match = part.match("aBc123", 0)!;
         expect(match.type).to.equal('full');
         expect(match.consumed).to.equal(3);
     });
 
+    it("should partially match an empty string", () => {
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
+
+        const match = part.match("", 0)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(0);
+    });
+
     it("should partially match at the end of a string", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const match = part.match("string-", 7)!;
 
@@ -335,8 +345,16 @@ describe("String syntax", () => {
         expect(match.consumed).to.equal(9);
     });
 
+    it("should allow empty strings if requested", () => {
+        const part = new StringSyntax("a string", { allowEmpty: true });
+
+        const match = part.match("", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(0);
+    });
+
     it("should suggest inserting valid chars", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const suggestions = part.getSuggestions("value=", 6)!;
 
@@ -350,7 +368,7 @@ describe("String syntax", () => {
     });
 
     it("should suggest completing existing valid chars", () => {
-        const part = new StringSyntax([charRange("a", "z")], "a string");
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
         const suggestions = part.getSuggestions("value=chars", 6)!;
 

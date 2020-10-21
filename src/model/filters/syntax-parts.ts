@@ -152,21 +152,15 @@ export class FixedStringSyntax implements SyntaxPart {
 export class StringSyntax implements SyntaxPart {
 
     private allowedCharRanges: CharRange[];
-    private templateText: string;
 
-    constructor(templateText: string);
-    constructor(allowedCharRanges: CharRange[], templateText: string);
     constructor(
-        allowedCharRangesOrTemplate: CharRange[] | string,
-        templateText?: string
+        private templateText: string,
+        private options: {
+            allowEmpty?: boolean
+            allowedChars?: CharRange[]
+        } = {}
     ) {
-        if (templateText === undefined) {
-            this.allowedCharRanges = [[0, 255]];
-            this.templateText = allowedCharRangesOrTemplate as string;
-        } else {
-            this.allowedCharRanges = allowedCharRangesOrTemplate as CharRange[];
-            this.templateText = templateText!;
-        }
+        this.allowedCharRanges = options.allowedChars || [[0, 255]];
     }
 
     match(value: string, index: number): undefined | SyntaxMatch {
@@ -177,7 +171,7 @@ export class StringSyntax implements SyntaxPart {
 
         // Any string is a full match, any empty space is a potential string
         return {
-            type: (consumedChars > 0)
+            type: (consumedChars > 0 || this.options.allowEmpty)
                 ? 'full'
                 : 'partial',
             consumed: consumedChars
@@ -206,7 +200,7 @@ export class StringSyntax implements SyntaxPart {
 export class NumberSyntax extends StringSyntax {
 
     constructor(name: string = "number") {
-        super([NUMBER_CHARS], name);
+        super(name, { allowedChars: [NUMBER_CHARS] });
     }
 
 }
