@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import { expect } from '../../../test-setup';
 
 import {
+    Filter,
     FilterSet,
     SelectableSearchFilterClasses, StringFilter
 } from "../../../../src/model/filters/search-filters";
@@ -12,6 +13,27 @@ import {
     getSuggestions
 } from "../../../../src/model/filters/filter-matching";
 import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
+import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
+import { FailedTlsRequest } from '../../../../src/types';
+
+// Given an exact input for a filter, creates the filter and returns it
+function createFilter(input: string): Filter {
+    const initialFilters: FilterSet = [new StringFilter(input)];
+
+    const suggestions = getSuggestions(
+        SelectableSearchFilterClasses,
+        initialFilters[0].filter
+    );
+
+    expect(suggestions.length).to.equal(1);
+
+    const updatedFilters = applySuggestionToFilters(initialFilters, suggestions[0]);
+
+    expect(updatedFilters.length).to.equal(2);
+    expect(updatedFilters[0]!.filter).to.equal("");
+
+    return updatedFilters[1]!;
+}
 
 describe("Search filter model integration test:", () => {
     describe("Simple filter usage", () => {
@@ -39,63 +61,9 @@ describe("Search filter model integration test:", () => {
 
             expect(suggestions).to.deep.equal([]);
         });
-
-        [
-            "status=404",
-            "is-completed",
-            "is-pending",
-            "is-aborted",
-            "is-error",
-            "method=POST",
-            "httpVersion=2",
-            "protocol=http",
-            "hostname=httptoolkit.tech",
-            "port=8080",
-            "path^=/api",
-            "query*=id=",
-        ].forEach((filterString) => {
-            it(`should allow creating a filters from ${filterString}`, () => {
-                const initialFilters: FilterSet = [new StringFilter(filterString)];
-
-                const suggestions = getSuggestions(
-                    SelectableSearchFilterClasses,
-                    initialFilters[0].filter
-                );
-
-                expect(suggestions.length).to.equal(1);
-
-                const updatedFilters = applySuggestionToFilters(initialFilters, suggestions[0]);
-
-                expect(updatedFilters.length).to.equal(2);
-                expect(updatedFilters[0]!.filter).to.equal("");
-
-                const createdFilter = updatedFilters[1]!;
-                expect(createdFilter.toString().length).to.be.greaterThan(0);
-
-                const exampleEvents = [
-                    getExchangeData({ statusCode: 404 }),
-                    getExchangeData({ responseState: 'pending' }),
-                    getExchangeData({ responseState: 'aborted' }),
-                    getFailedTls(),
-                    getExchangeData({ method: 'POST' }),
-                    getExchangeData({ httpVersion: '2.0' }),
-                    getExchangeData({ protocol: 'http:' }),
-                    getExchangeData({ hostname: 'httptoolkit.tech' }),
-                    getExchangeData({ hostname: 'example.com:8080' }),
-                    getExchangeData({ path: '/api/get-all-users' }),
-                    getExchangeData({ query: '?a=b&id=4&type=4' }),
-                ];
-
-                // Each filter must successfully match at least one item from our example list:
-                const matchedEvents = exampleEvents.filter(e => createdFilter.matches(e));
-                expect(matchedEvents.length).to.be.greaterThan(0);
-                // But not all of them:
-                expect(matchedEvents.length).to.be.lessThan(exampleEvents.length);
-            });
-        });
     });
 
-    describe("Entering a search filter", () => {
+    describe("Status filters", () => {
         it("should suggest status operators once it's clear you want status", () => {
             const suggestions = getSuggestions(SelectableSearchFilterClasses, "sta");
 
@@ -136,6 +104,373 @@ describe("Search filter model integration test:", () => {
             expect(filters.length).to.equal(2);
             expect(filters[0]!.filter).to.equal("");
             expect(filters[1]!.toString()).to.equal("Status >= 300");
+        });
+
+        it("should correctly filter for exact statuses", () => {
+            const statusFilter = createFilter("status=404");
+
+            const exampleEvents = [
+                getExchangeData({ statusCode: 404 }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => statusFilter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(404);
+        });
+
+        it("should correctly filter for filter ranges", () => {
+            const statusFilter = createFilter("status>=300");
+
+            const exampleEvents = [
+                getExchangeData({ statusCode: 404 }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 301 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => statusFilter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(404);
+            expect((matchedEvents[1] as SuccessfulExchange).response.statusCode).to.equal(301);
+        });
+    });
+
+    describe("Completed filters", () => {
+        it("should correctly filter for completed responses", () => {
+            const filter = createFilter("is-completed");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as HttpExchange).response).to.equal('aborted');
+            expect((matchedEvents[1] as SuccessfulExchange).response.statusCode).to.equal(200);
+        });
+    });
+
+    describe("Pending filters", () => {
+        it("should correctly filter for pending responses", () => {
+            const filter = createFilter("is-pending");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as HttpExchange).response).to.equal(undefined);
+        });
+    });
+
+    describe("Aborted filters", () => {
+        it("should correctly filter for aborted responses", () => {
+            const filter = createFilter("is-aborted");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as HttpExchange).response).to.equal('aborted');
+        });
+    });
+
+    describe("Error filters", () => {
+        it("should correctly filter for error responses", () => {
+            const filter = createFilter("is-error");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ statusCode: 500, responseTags: ["passthrough-error:ECONNRESET"] }),
+                getFailedTls({ failureCause: 'cert-rejected' })
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(500);
+            expect((matchedEvents[1] as FailedTlsRequest).failureCause).to.equal('cert-rejected');
+        });
+    });
+
+    describe("Method filters", () => {
+        it("should correctly filter for the given method", () => {
+            const filter = createFilter("method=POST");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ method: 'POST', statusCode: 409 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).request.method).to.equal('POST');
+        });
+    });
+
+    describe("HTTP version filters", () => {
+        it("should correctly filter for the given version", () => {
+            const filter = createFilter("httpVersion=2");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ httpVersion: '2.0' }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).httpVersion).to.equal(2);
+        });
+    });
+
+    describe("Protocol filters", () => {
+        it("should correctly filter for the given protocol", () => {
+            const filter = createFilter("protocol=http");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ protocol: 'http:', statusCode: 301 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(301);
+        });
+    });
+
+    describe("Hostname filters", () => {
+        it("should correctly filter for a given exact hostname", () => {
+            const filter = createFilter("hostname=httptoolkit.tech");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 404 }),
+                getExchangeData({ hostname: 'httptoolkit.tech', statusCode: 200 }),
+                getExchangeData({ hostname: 'httptoolkit.tech:8080', statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(200);
+            expect((matchedEvents[1] as SuccessfulExchange).request.parsedUrl.port).to.equal('8080');
+        });
+
+        it("should correctly filter for a hostname part", () => {
+            const filter = createFilter("hostname*=tech");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 404 }),
+                getExchangeData({ hostname: 'httptoolkit.tech', statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(200);
+        });
+
+        it("should correctly filter for a hostname starting component", () => {
+            const filter = createFilter("hostname^=google");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 404 }),
+                getExchangeData({ hostname: 'google.com', statusCode: 200 }),
+                getExchangeData({ hostname: 'google.es', statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('google.com');
+            expect((matchedEvents[1] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('google.es');
+        });
+
+        it("should correctly filter for a hostname ending component", () => {
+            const filter = createFilter("hostname$=com");
+
+            const exampleEvents = [
+                getExchangeData({ hostname: 'example.com:8080', statusCode: 404 }),
+                getExchangeData({ hostname: 'google.com', statusCode: 200 }),
+                getExchangeData({ hostname: 'google.es', statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('example.com');
+            expect((matchedEvents[1] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('google.com');
+        });
+
+        it("should correctly filter for hostnames != to a given hostname", () => {
+            const filter = createFilter("hostname!=google.com");
+
+            const exampleEvents = [
+                getExchangeData({ hostname: 'example.com', statusCode: 404 }),
+                getExchangeData({ hostname: 'google.com', statusCode: 200 }),
+                getExchangeData({ hostname: 'google.es', statusCode: 200 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('example.com');
+            expect((matchedEvents[1] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('google.es');
+        });
+    });
+
+    describe("Port filters", () => {
+        it("should correctly filter for a given port", () => {
+            const filter = createFilter("port=8080");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 404 }),
+                getExchangeData({ hostname: 'httptoolkit.tech:8080' }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.hostname).to.equal('httptoolkit.tech');
+        });
+
+        it("should correctly filter for a implicit default port", () => {
+            const filter = createFilter("port=80");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ protocol: 'https:', statusCode: 404 }),
+                getExchangeData({ protocol: 'http:', statusCode: 301 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(301);
+        });
+    });
+
+    describe("Path filters", () => {
+        it("should correctly filter for a given path", () => {
+            const filter = createFilter("path=/home");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ path: '/', statusCode: 200 }),
+                getExchangeData({ path: '/home', statusCode: 200 }),
+                getExchangeData({ path: '/home/missing', statusCode: 404 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.pathname).to.equal('/home');
+        });
+
+        it("should correctly filter for a given path prefix", () => {
+            const filter = createFilter("path^=/home");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ path: '/', statusCode: 200 }),
+                getExchangeData({ path: '/home', query: '?id=1', statusCode: 200 }),
+                getExchangeData({ path: '/home/missing', statusCode: 404 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(2);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.pathname).to.equal('/home');
+            expect((matchedEvents[1] as SuccessfulExchange).request.parsedUrl.pathname).to.equal('/home/missing');
+        });
+    });
+
+    describe("Query filters", () => {
+        it("should correctly filter for a given exact query", () => {
+            const filter = createFilter("query=?a=b");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ path: '/home', query: '', statusCode: 200 }),
+                getExchangeData({ path: '/user', query: '?a=b', statusCode: 302 }),
+                getExchangeData({ path: '/user', query: '?id=123', statusCode: 404 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(302);
+        });
+
+        it("should correctly filter for a blank query", () => {
+            const filter = createFilter("query=");
+
+            const exampleEvents = [
+                getExchangeData({ path: '/home', query: '', statusCode: 200 }),
+                getExchangeData({ path: '/user', query: '?a=b', statusCode: 302 }),
+                getExchangeData({ path: '/user', query: '?id=123', statusCode: 404 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.pathname).to.equal('/home');
+        });
+
+        it("should correctly filter for a given query part", () => {
+            const filter = createFilter("query*=id=1");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ path: '/home', query: '', statusCode: 200 }),
+                getExchangeData({ path: '/user', query: '?a=b', statusCode: 302 }),
+                getExchangeData({ path: '/user', query: '?a=b&id=1&since=123', statusCode: 404 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(404);
         });
     });
 });

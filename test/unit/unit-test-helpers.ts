@@ -12,11 +12,13 @@ export const getExchangeData = ({
     query = '',
     requestBody = '',
     requestHeaders = {},
+    requestTags = [] as string[],
     statusCode = 200,
     statusMessage = '',
     responseBody = '',
     responseHeaders = {},
-    responseState = 'completed'
+    responseState = 'completed',
+    responseTags = [] as string[],
 } = {}) => Object.assign(Object.create(HttpExchange.prototype), {
     id: '',
     request: {
@@ -39,7 +41,7 @@ export const getExchangeData = ({
         contentType: 'text',
         source: { ua: '', summary: 'Unknown client', icon: SourceIcons.Unknown },
         timingEvents: { startTime: Date.now() },
-        tags: [],
+        tags: requestTags,
         cache: new Map() as any
     } as HtkRequest,
     response: responseState === 'aborted'
@@ -57,14 +59,14 @@ export const getExchangeData = ({
         ),
         contentType: 'text',
         timingEvents: { startTime: Date.now() },
-        tags: [],
+        tags: responseTags,
         cache: new Map()  as any
     } as HtkResponse,
     timingEvents: { startTime: Date.now() },
     searchIndex: '',
     category: 'unknown',
     cache: new Map() as any,
-    tags: []
+    tags: requestTags.concat(responseTags)
 }) as HttpExchange;
 
 export const getFailedTls = ({

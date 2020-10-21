@@ -13,7 +13,6 @@ import {
 import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
-import { FilterSuggestion, applySuggestionToFilters } from '../../../model/filters/filter-matching';
 
 const SearchFilterBox = styled.div`
     position: relative;
