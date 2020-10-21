@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import * as Autosuggest from 'react-autosuggest';
 
-import { styled } from '../../../styles';
+import { styled, css } from '../../../styles';
 
 import { FilterClass, FilterSet } from '../../../model/filters/search-filters';
 import {
@@ -30,13 +30,19 @@ const FilterSuggestionsBox = styled.div`
     bottom: calc(100% + 10px);
     left: 0;
     right: 0;
-    padding: 8px;
     z-index: 1;
 
-    background-color: ${p => p.theme.highlightBackground};
+    background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerBorder};
     box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
+
     border-radius: 4px;
+    .react-autosuggest__suggestion:first-child > * {
+        border-radius: 4px 4px 0 0;
+    }
+    .react-autosuggest__suggestion:last-child > * {
+        border-radius: 0 0 4px 4px;
+    }
 
     color: ${p => p.theme.highlightColor};
     font-size: ${p => p.theme.textSize};
@@ -112,16 +118,58 @@ export const FilterInput = (props: {
     />;
 };
 
+const ExistingText = styled.span`
+`;
+
+const SuggestedText = styled.span`
+    opacity: 0.7;
+`;
+
 const SuggestionRow = styled.div<{ isHighlighted: boolean }>`
-    ${p => p.isHighlighted && `
-        font-weight: bold;
+    background-color: ${p => p.isHighlighted
+        ? p.theme.mainBackground
+        : p.theme.mainLowlightBackground
+    };
+
+    ${p => p.isHighlighted && css`
+        ${SuggestedText} {
+            opacity: 1;
+        }
     `}
+
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+
+    font-size: ${p => p.theme.textSize};
 `;
 
 const Suggestion = (filterSuggestion: FilterSuggestion, params: {
     query: string,
     isHighlighted: boolean
-}) =>
-    <SuggestionRow isHighlighted={params.isHighlighted}>
-        <strong>{ params.query.slice(0, filterSuggestion.index) }</strong>{ filterSuggestion.showAs }
+}) => {
+    const { query } = params;
+
+    // Work out how many chars of the query are included in the showAs text
+    const partiallyMatchedChars = filterSuggestion.value === filterSuggestion.showAs
+        ? Math.min(
+            params.query.length - filterSuggestion.index,
+            filterSuggestion.showAs.length // A filter may be shorter than the input!
+        )
+        : 0;
+
+    // If there is overlap, treat the existing+suggested chars as just existing text
+    const existingText = query.slice(0, filterSuggestion.index + partiallyMatchedChars);
+    const suggestedAddition = filterSuggestion.showAs.slice(partiallyMatchedChars);
+
+    return <SuggestionRow isHighlighted={params.isHighlighted}>
+        <ExistingText>{ existingText }</ExistingText>
+        <SuggestedText>{ suggestedAddition }</SuggestedText>
     </SuggestionRow>;
+}
