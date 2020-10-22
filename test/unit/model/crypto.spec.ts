@@ -20,7 +20,7 @@ describe("validatePfx", () => {
     // The published p12 from badssl.com
     let badSslPfxData: ArrayBuffer;
 
-    beforeEach(async () => {
+    before(async () => {
         goodPfxData = await loadFixture('test.pfx');
         corruptPfxData = await loadFixture('corrupt.pfx');
         badSslPfxData = await loadFixture('badssl.p12');
