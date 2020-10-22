@@ -12,8 +12,7 @@ jobs:
         with:
           node-version: 14
 
-      # Install dependencies required for native module builds
-      - run: sudo apt update && sudo apt install -y build-essential
+      # Install Python, for native module builds
       - uses: actions/setup-python@v2
 
       # Install & build & test:
