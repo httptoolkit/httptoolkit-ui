@@ -1,0 +1,21 @@
+name: CI
+on: push
+jobs:
+  build:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Install Node 14
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      # Install dependencies required for native module builds
+      - run: sudo apt update && sudo apt install -y build-essential
+      - uses: actions/setup-python@v2
+
+      # Install & build & test:
+      - run: npm ci
+      - run: npm test

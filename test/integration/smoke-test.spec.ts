@@ -24,7 +24,8 @@ describe('Smoke test', function () {
             puppeteer.launch({
                 headless: true,
                 slowMo: 0,
-                timeout: 10000
+                timeout: 10000,
+                args: ['--no-sandbox']
             }),
             runHTK({}),
             startWebServer()
