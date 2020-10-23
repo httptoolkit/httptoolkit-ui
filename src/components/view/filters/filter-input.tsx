@@ -40,7 +40,7 @@ const FilterSuggestionsBox = styled.div`
     .react-autosuggest__suggestion:first-child > * {
         border-radius: 4px 4px 0 0;
     }
-    .react-autosuggest__suggestion:last-child > * {
+    .react-autosuggest__suggestion:last-child > *, .react-autosuggest__suggestion:last-child > * > * {
         border-radius: 0 0 4px 4px;
     }
 
