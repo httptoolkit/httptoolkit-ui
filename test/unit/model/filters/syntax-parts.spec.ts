@@ -113,6 +113,11 @@ describe("Fixed string syntax", () => {
         expect(suggestions[0].value).to.equal('a-string');
     });
 
+    it("should be able to parse a completed value", () => {
+        const part = new FixedStringSyntax("a-string");
+        expect(part.parse("a-string", 0)).to.equal("a-string");
+    });
+
 });
 
 describe("Number syntax", () => {
@@ -190,6 +195,11 @@ describe("Number syntax", () => {
         ]);
     });
 
+    it("should be able to parse a completed value", () => {
+        const part = new NumberSyntax();
+        expect(part.parse("123", 0)).to.equal(123);
+    });
+
 });
 
 describe("Fixed-length number syntax", () => {
@@ -265,6 +275,11 @@ describe("Fixed-length number syntax", () => {
                 value: '500'
             }
         ]);
+    });
+
+    it("should be able to parse a completed value", () => {
+        const part = new FixedLengthNumberSyntax(3);
+        expect(part.parse("123", 0)).to.equal(123);
     });
 
 });
@@ -378,6 +393,11 @@ describe("String syntax", () => {
                 value: 'chars'
             }
         ]);
+    });
+
+    it("should be able to parse a completed value", () => {
+        const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
+        expect(part.parse("abcd", 0)).to.equal("abcd");
     });
 
 });
@@ -516,6 +536,13 @@ describe("String options syntax", () => {
             { showAs: "ab", value: "ab" },
             { showAs: "bc", value: "bc" }
         ]);
+    });
+
+    it("should be able to parse a completed value", () => {
+        const part = new StringOptionsSyntax(["ab", "bc"]);
+
+        const parsedValue: "ab" | "bc" = part.parse("ab", 0); // Test type inference too
+        expect(parsedValue).to.equal("ab");
     });
 
 });

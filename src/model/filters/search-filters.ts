@@ -10,7 +10,8 @@ import {
     NumberSyntax,
     StringOptionsSyntax,
     StringSyntax,
-    SyntaxPart
+    SyntaxPart,
+    SyntaxPartValue
 } from './syntax-parts';
 
 export interface Filter {
@@ -21,8 +22,16 @@ export interface Filter {
 export type FilterSet = [StringFilter, ...Filter[]] | [];
 
 export type FilterClass = {
+    /**
+     * The constructor for the filter, which can take a string that fully matches
+     * all syntax parts of this filter.
+     */
     new (input: string): Filter;
-    filterSyntax: SyntaxPart[];
+
+    /**
+     * A list of syntax parts that describe how to enter the filter as a string
+     */
+    filterSyntax: readonly SyntaxPart[];
 };
 
 /**
@@ -70,6 +79,23 @@ const stringOperations = {
 type NumberOperation = keyof typeof numberOperations;
 type StringOperation = keyof typeof stringOperations;
 
+type SyntaxPartValues<
+    F extends FilterClass,
+    S = F['filterSyntax']
+> = { [K in keyof S]: S[K] extends SyntaxPart ? SyntaxPartValue<S[K]> : never }
+
+function parseFilter<F extends FilterClass>(filterClass: F, value: string): SyntaxPartValues<F> {
+    let index = 0;
+    const parts = [];
+
+    for (let part of filterClass.filterSyntax) {
+        parts.push(part.parse(value, index));
+        index += part.match(value, index)!.consumed;
+    }
+
+    return parts as unknown as SyntaxPartValues<F>;
+}
+
 class StatusFilter implements Filter {
 
     static filterSyntax = [
@@ -83,20 +109,15 @@ class StatusFilter implements Filter {
             "!="
         ]),
         new FixedLengthNumberSyntax(3)
-    ];
+    ] as const;
 
     private status: number;
     private op: NumberOperation;
     private predicate: (status: number, expectedStatus: number) => boolean;
 
     constructor(filter: string) {
-        const opIndex = "status".length;
-        const opMatch = StatusFilter.filterSyntax[1].match(filter, opIndex)!;
-        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as NumberOperation;
+        [, this.op, this.status] = parseFilter(StatusFilter, filter);
         this.predicate = numberOperations[this.op];
-
-        const numberIndex = opIndex + opMatch.consumed;
-        this.status = parseInt(filter.slice(numberIndex), 10);
     }
 
     matches(event: CollectedEvent): boolean {
@@ -112,7 +133,7 @@ class StatusFilter implements Filter {
 
 class CompletedFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-completed")]
+    static filterSyntax = [new FixedStringSyntax("is-completed")] as const;
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
@@ -126,7 +147,7 @@ class CompletedFilter implements Filter {
 
 class PendingFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-pending")]
+    static filterSyntax = [new FixedStringSyntax("is-pending")];
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
@@ -140,7 +161,7 @@ class PendingFilter implements Filter {
 
 class AbortedFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-aborted")]
+    static filterSyntax = [new FixedStringSyntax("is-aborted")] as const;
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
@@ -154,7 +175,7 @@ class AbortedFilter implements Filter {
 
 class ErrorFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-error")]
+    static filterSyntax = [new FixedStringSyntax("is-error")] as const;
 
     matches(event: CollectedEvent): boolean {
         return !(event instanceof HttpExchange) || // TLS Error
@@ -180,13 +201,13 @@ class MethodFilter implements Filter {
                 charRange('A', 'Z')
             ]
         })
-    ];
+    ] as const;
 
     private expectedMethod: string;
 
     constructor(filter: string) {
-        const methodIndex = "method=".length;
-        this.expectedMethod = filter.slice(methodIndex).toUpperCase();
+        const [,, method] = parseFilter(MethodFilter, filter);
+        this.expectedMethod = method.toUpperCase();
     }
 
     matches(event: CollectedEvent): boolean {
@@ -206,13 +227,13 @@ class HttpVersionFilter implements Filter {
         new FixedStringSyntax("httpVersion"),
         new FixedStringSyntax("="), // Separate, so initial suggestions are names only
         new StringOptionsSyntax(["1", "2"])
-    ];
+    ] as const;
 
     private expectedVersion: number;
 
     constructor(filter: string) {
-        const versionIndex = "httpVersion=".length;
-        this.expectedVersion = parseInt(filter.slice(versionIndex), 10);
+        const [,, versionString] = parseFilter(HttpVersionFilter, filter);
+        this.expectedVersion = parseInt(versionString, 10);
     }
 
     matches(event: CollectedEvent): boolean {
@@ -234,19 +255,19 @@ class ProtocolFilter implements Filter {
             "http",
             "https"
         ])
-    ];
+    ] as const;
 
     private expectedProtocol: string;
 
     constructor(filter: string) {
-        const protocolIndex = "protocol=".length;
-        this.expectedProtocol = filter.slice(protocolIndex).toLowerCase();
+        const [,, protocol] = parseFilter(ProtocolFilter, filter);
+        this.expectedProtocol = protocol.toLowerCase();
     }
 
     matches(event: CollectedEvent): boolean {
         if (!(event instanceof HttpExchange)) return false;
 
-        // Parsed protocol is either http: or https: - with the colon
+        // Parsed protocol is either http: or https:, so we strip the colon
         const protocol = event.request.parsedUrl.protocol.toLowerCase().slice(0, -1);
         return protocol === this.expectedProtocol;
     }
@@ -276,20 +297,17 @@ class HostnameFilter implements Filter {
                 charRange(".")
             ]
         })
-    ];
+    ] as const;
 
     private expectedHostname: string;
     private op: StringOperation;
     private predicate: (host: string, expectedHost: string) => boolean;
 
     constructor(filter: string) {
-        const opIndex = "hostname".length;
-        const opMatch = HostnameFilter.filterSyntax[1].match(filter, opIndex)!;
-        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as StringOperation;
-        this.predicate = stringOperations[this.op];
-
-        const hostIndex = opIndex + opMatch.consumed;
-        this.expectedHostname = filter.slice(hostIndex).toLowerCase();
+        const [, op, hostname] = parseFilter(HostnameFilter, filter);
+        this.op = op;
+        this.predicate = stringOperations[op];
+        this.expectedHostname = hostname.toLowerCase();
     }
 
     matches(event: CollectedEvent): boolean {
@@ -323,20 +341,15 @@ class PortFilter implements Filter {
             "<="
         ]),
         new NumberSyntax("port")
-    ];
+    ] as const;
 
     private expectedPort: number;
     private op: NumberOperation;
     private predicate: (port: number, expectedPort: number) => boolean;
 
     constructor(filter: string) {
-        const opIndex = "port".length;
-        const opMatch = PortFilter.filterSyntax[1].match(filter, opIndex)!;
-        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as NumberOperation;
+        [, this.op, this.expectedPort] = parseFilter(PortFilter, filter);
         this.predicate = numberOperations[this.op];
-
-        const portIndex = opIndex + opMatch.consumed;
-        this.expectedPort = parseInt(filter.slice(portIndex), 10);
     }
 
     matches(event: CollectedEvent): boolean {
@@ -370,20 +383,15 @@ class PathFilter implements Filter {
             "$="
         ]),
         new StringSyntax("path")
-    ];
+    ] as const;
 
     private expectedPath: string;
     private op: StringOperation;
     private predicate: (path: string, expectedPath: string) => boolean;
 
     constructor(filter: string) {
-        const opIndex = "path".length;
-        const opMatch = PathFilter.filterSyntax[1].match(filter, opIndex)!;
-        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as StringOperation;
+        [, this.op, this.expectedPath] = parseFilter(PathFilter, filter);
         this.predicate = stringOperations[this.op];
-
-        const pathIndex = opIndex + opMatch.consumed;
-        this.expectedPath = filter.slice(pathIndex);
     }
 
     matches(event: CollectedEvent): boolean {
@@ -410,20 +418,15 @@ class QueryFilter implements Filter {
         new StringSyntax("query", {
             allowEmpty: true
         })
-    ];
+    ] as const;
 
     private expectedQuery: string;
     private op: StringOperation;
     private predicate: (query: string, expectedQuery: string) => boolean;
 
     constructor(filter: string) {
-        const opIndex = "query".length;
-        const opMatch = QueryFilter.filterSyntax[1].match(filter, opIndex)!;
-        this.op = filter.slice(opIndex, opIndex + opMatch.consumed) as StringOperation;
+        [, this.op, this.expectedQuery] = parseFilter(QueryFilter, filter);
         this.predicate = stringOperations[this.op];
-
-        const queryIndex = opIndex + opMatch.consumed;
-        this.expectedQuery = filter.slice(queryIndex);
     }
 
     matches(event: CollectedEvent): boolean {

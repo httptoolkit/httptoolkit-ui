@@ -47,7 +47,7 @@ export interface Suggestion {
     template?: true;
 }
 
-export interface SyntaxPart {
+export interface SyntaxPart<P = unknown> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
      * some text were appended to the string.
@@ -68,7 +68,16 @@ export interface SyntaxPart {
      * Don't call it without a match, as the behaviour is undefined.
      */
     getSuggestions(value: string, index: number): Suggestion[];
+
+    /**
+     * For a part that fully matches, this will return the fully matched
+     * content in a content-appropriate type, e.g. strings for strings,
+     * numbers for numbers.
+     */
+    parse(value: string, index: number): P;
 };
+
+export type SyntaxPartValue<P extends SyntaxPart> = P extends SyntaxPart<infer V> ? V : never;
 
 type CharRange = readonly [number, number];
 
@@ -115,7 +124,16 @@ function getStringAt(value: string, index: number, allowedCharRanges: CharRange[
 
 const NUMBER_CHARS = [48, 57] as const; // 0-9 ascii codes
 
-export class FixedStringSyntax implements SyntaxPart {
+function getParsedValue(part: SyntaxPart, value: string, index: number): string {
+    const match = part.match(value, index);
+    if (!match || match.type !== 'full') {
+        console.log("Unparseable expected-parseable input", value);
+        throw new Error("Can't parse expected-parseable value");
+    }
+    return value.slice(index, index + match.consumed);
+}
+
+export class FixedStringSyntax implements SyntaxPart<string> {
 
     constructor(
         private matcher: string
@@ -147,9 +165,13 @@ export class FixedStringSyntax implements SyntaxPart {
         }];
     }
 
+    parse(value: string, index: number): string {
+        return getParsedValue(this, value, index);
+    }
+
 }
 
-export class StringSyntax implements SyntaxPart {
+export class StringSyntax implements SyntaxPart<string> {
 
     private allowedCharRanges: CharRange[];
 
@@ -195,17 +217,36 @@ export class StringSyntax implements SyntaxPart {
         }
     }
 
-}
-
-export class NumberSyntax extends StringSyntax {
-
-    constructor(name: string = "number") {
-        super(name, { allowedChars: [NUMBER_CHARS] });
+    parse(value: string, index: number): string {
+        return getParsedValue(this, value, index);
     }
 
 }
 
-export class FixedLengthNumberSyntax implements SyntaxPart {
+export class NumberSyntax implements SyntaxPart<number> {
+
+    private stringSyntax: StringSyntax;
+
+    constructor(name: string = "number") {
+        this.stringSyntax = new StringSyntax(name, { allowedChars: [NUMBER_CHARS] });
+    }
+
+    match(value: string, index: number): SyntaxMatch | undefined {
+        return this.stringSyntax.match(value, index);
+    }
+
+    getSuggestions(value: string, index: number): Suggestion[] {
+        return this.stringSyntax.getSuggestions(value, index);
+    }
+
+    parse(value: string, index: number): number {
+        const valueAsString = this.stringSyntax.parse(value, index);
+        return parseInt(valueAsString, 10);
+    }
+
+}
+
+export class FixedLengthNumberSyntax implements SyntaxPart<number> {
 
     constructor(
         private requiredLength: number
@@ -246,9 +287,14 @@ export class FixedLengthNumberSyntax implements SyntaxPart {
         }
     }
 
+    parse(value: string, index: number): number {
+        const valueAsString = getParsedValue(this, value, index);
+        return parseInt(valueAsString, 10);
+    }
+
 }
 
-export class StringOptionsSyntax<OptionsType extends string = string> implements SyntaxPart {
+export class StringOptionsSyntax<OptionsType extends string = string> implements SyntaxPart<OptionsType> {
 
     private optionMatchers: FixedStringSyntax[];
 
@@ -285,4 +331,9 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
             matcher.getSuggestions(value, index)
         );
     }
+
+    parse(value: string, index: number): OptionsType {
+        return getParsedValue(this, value, index) as OptionsType;
+    }
+
 }
