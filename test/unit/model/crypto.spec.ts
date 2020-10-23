@@ -2,29 +2,16 @@ import { expect } from '../../test-setup';
 
 import { validatePKCS12 } from "../../../src/model/crypto";
 
-const loadFixture = async (name: string) => {
-    const response = await fetch('/fixtures/' + name);
-    if (response.ok) {
-        return await response.arrayBuffer();
-    } else {
-        throw new Error(`Failed to load ${name} with ${response.status}`);
-    }
-}
+// A manually generated PFX (using the Mockttp test cert+key)
+import * as goodPfxData from 'arraybuffer-loader!../../fixtures/test.pfx';
+
+// The same PFX, with some random corruption added
+import * as corruptPfxData from 'arraybuffer-loader!../../fixtures/corrupt.pfx';
+
+// The published p12 from badssl.com
+import * as badSslPfxData from 'arraybuffer-loader!../../fixtures/badssl.p12';
 
 describe("validatePfx", () => {
-
-    // A manually generated PFX (using the Mockttp test cert+key)
-    let goodPfxData: ArrayBuffer;
-    // The same PFX, with some random corruption added
-    let corruptPfxData: ArrayBuffer;
-    // The published p12 from badssl.com
-    let badSslPfxData: ArrayBuffer;
-
-    before(async () => {
-        goodPfxData = await loadFixture('test.pfx');
-        corruptPfxData = await loadFixture('corrupt.pfx');
-        badSslPfxData = await loadFixture('badssl.p12');
-    });
 
     it("should validate successfully with the right passphrase", () => {
         expect(

@@ -7,12 +7,8 @@ module.exports = function(config) {
         frameworks: ['mocha', 'chai'],
         files: [
             './**/*.spec.ts',
-            './**/*.spec.tsx',
-            { pattern: '../fixtures/*', included: false, served: true }
+            './**/*.spec.tsx'
         ],
-        proxies: {
-            '/fixtures': '/absolute' + path.resolve('./test/fixtures')
-        },
         mime: { 'text/x-typescript': ['ts', 'tsx'] },
         webpack: require('../../automation/webpack.unittest').default,
         webpackMiddleware: {
