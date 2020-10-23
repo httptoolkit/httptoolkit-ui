@@ -56,6 +56,27 @@ describe("Search filter model integration test:", () => {
             ]);
         });
 
+        it("can provide initial descriptions for all filters", () => {
+            const descriptions = SelectableSearchFilterClasses.map((f) =>
+                f.filterDescription("")
+            );
+
+            expect(descriptions).to.deep.equal([
+                "Match responses with a given status code",
+                "Match requests that have either received a response or aborted",
+                "Match requests that are still waiting for a response",
+                "Match requests that were aborted before receiving a response",
+                "Match requests that weren't transmitted successfully",
+                "Match requests with a given method",
+                "Match exchanges using a given version of HTTP",
+                "Match exchanges using either HTTP or HTTPS",
+                "Match requests sent to a given hostname",
+                "Match requests sent to a given port",
+                "Match requests sent to a given path",
+                "Match requests sent with a given query string"
+            ]);
+        });
+
         it("should suggest nothing given free text input", () => {
             const suggestions = getSuggestions(SelectableSearchFilterClasses, "free text");
 
@@ -138,6 +159,55 @@ describe("Search filter model integration test:", () => {
             expect(matchedEvents.length).to.equal(2);
             expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(404);
             expect((matchedEvents[1] as SuccessfulExchange).response.statusCode).to.equal(301);
+        });
+
+        it("should show a more specific description given a partial operator", () => {
+            const input = "status!";
+            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
+                .filterClass
+                .filterDescription(input);
+
+            expect(description).to.equal("Match responses with a given status code");
+        });
+
+        it("should show a more specific description given a complete operator", () => {
+            const input = "status>=";
+            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
+                .filterClass
+                .filterDescription(input);
+
+            expect(description).to.equal("Match responses with a status code greater than or equal to a given value");
+        });
+
+        it("should show a basic description given a partial value", () => {
+            const input = "status>4";
+            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
+                .filterClass
+                .filterDescription(input);
+
+            expect(description).to.equal("Match responses with a status code greater than a given value");
+        });
+
+        it("should show a fully specific description given a full input", () => {
+            const input = "status>=201";
+            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
+                .filterClass
+                .filterDescription(input);
+
+            expect(description).to.equal(
+                "Match responses with a status code greater than or equal to 201"
+            );
+        });
+
+        it("should show a fully specific description given a full input and exact value", () => {
+            const input = "status=201";
+            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
+                .filterClass
+                .filterDescription(input);
+
+            expect(description).to.equal(
+                "Match responses with status code 201"
+            );
         });
     });
 

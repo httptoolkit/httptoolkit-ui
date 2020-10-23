@@ -32,6 +32,18 @@ export type FilterClass = {
      * A list of syntax parts that describe how to enter the filter as a string
      */
     filterSyntax: readonly SyntaxPart[];
+
+    /**
+     * A function which takes a string that fully or partially matches the
+     * syntax parts for this input, and returns a human readable descriptio
+     * of what the filter will do.
+     *
+     * This function can safely assume it will never be called with strings
+     * that do not match the syntax parts.
+     *
+     * Generally, this should get more precise as more input is entered.
+     */
+    filterDescription: (input: string) => string;
 };
 
 /**
@@ -79,11 +91,30 @@ const stringOperations = {
 type NumberOperation = keyof typeof numberOperations;
 type StringOperation = keyof typeof stringOperations;
 
+const operationDescriptions: { [key in NumberOperation | StringOperation]: string } = {
+    "=": "equal to",
+    "!=": "not equal to",
+    ">": "greater than",
+    ">=": "greater than or equal to",
+    "<": "less than",
+    "<=": "less than or equal to",
+    "*=": "containing",
+    "^=": "that starts with",
+    "$=": "that ends with"
+} as const;
+
 type SyntaxPartValues<
     F extends FilterClass,
     S = F['filterSyntax']
 > = { [K in keyof S]: S[K] extends SyntaxPart ? SyntaxPartValue<S[K]> : never }
 
+/**
+ * Given that there's a full match for the given filter against the given input,
+ * parse the input with the syntax array of the filter and return an array of
+ * the parsed values.
+ *
+ * Throws an error if the value does not fully match the filter.
+ */
 function parseFilter<F extends FilterClass>(filterClass: F, value: string): SyntaxPartValues<F> {
     let index = 0;
     const parts = [];
@@ -94,6 +125,25 @@ function parseFilter<F extends FilterClass>(filterClass: F, value: string): Synt
     }
 
     return parts as unknown as SyntaxPartValues<F>;
+}
+
+/**
+ * Try to parse the filter, returning an array of all syntax parts that can be
+ * parsed successfully, but stopping as soon as a part does not match.
+ */
+function tryParseFilter<F extends FilterClass>(filterClass: F, value: string): Partial<SyntaxPartValues<F>> {
+    let index = 0;
+    const parts = [];
+
+    for (let part of filterClass.filterSyntax) {
+        const match = part.match(value, index);
+        if (!match || match.type !== 'full') break;
+
+        parts.push(part.parse(value, index));
+        index += match.consumed;
+    }
+
+    return parts as unknown as Partial<SyntaxPartValues<F>>;
 }
 
 class StatusFilter implements Filter {
@@ -110,6 +160,20 @@ class StatusFilter implements Filter {
         ]),
         new FixedLengthNumberSyntax(3)
     ] as const;
+
+    static filterDescription(value: string) {
+        const [, op, status] = tryParseFilter(StatusFilter, value);
+
+        if (!op || (op == '=' && !status)) {
+            return "Match responses with a given status code";
+        } else if (!status) {
+            return `Match responses with a status code ${operationDescriptions[op]} a given value`
+        } else if (op === '=') {
+            return `Match responses with status code ${status}`;
+        } else {
+            return `Match responses with a status code ${operationDescriptions[op]} ${status}`
+        }
+    }
 
     private status: number;
     private op: NumberOperation;
@@ -135,6 +199,10 @@ class CompletedFilter implements Filter {
 
     static filterSyntax = [new FixedStringSyntax("is-completed")] as const;
 
+    static filterDescription(value: string) {
+        return "Match requests that have either received a response or aborted";
+    }
+
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
             event.isCompletedExchange();
@@ -148,6 +216,10 @@ class CompletedFilter implements Filter {
 class PendingFilter implements Filter {
 
     static filterSyntax = [new FixedStringSyntax("is-pending")];
+
+    static filterDescription(value: string) {
+        return "Match requests that are still waiting for a response";
+    }
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
@@ -163,6 +235,10 @@ class AbortedFilter implements Filter {
 
     static filterSyntax = [new FixedStringSyntax("is-aborted")] as const;
 
+    static filterDescription(value: string) {
+        return "Match requests that were aborted before receiving a response";
+    }
+
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
             event.response === 'aborted'
@@ -176,6 +252,10 @@ class AbortedFilter implements Filter {
 class ErrorFilter implements Filter {
 
     static filterSyntax = [new FixedStringSyntax("is-error")] as const;
+
+    static filterDescription(value: string) {
+        return "Match requests that weren't transmitted successfully";
+    }
 
     matches(event: CollectedEvent): boolean {
         return !(event instanceof HttpExchange) || // TLS Error
@@ -203,6 +283,16 @@ class MethodFilter implements Filter {
         })
     ] as const;
 
+    static filterDescription(value: string) {
+        const [, , method] = tryParseFilter(MethodFilter, value);
+
+        if (!method) {
+            return "Match requests with a given method";
+        } else {
+            return `Match ${method.toUpperCase()} requests`;
+        }
+    }
+
     private expectedMethod: string;
 
     constructor(filter: string) {
@@ -228,6 +318,16 @@ class HttpVersionFilter implements Filter {
         new FixedStringSyntax("="), // Separate, so initial suggestions are names only
         new StringOptionsSyntax(["1", "2"])
     ] as const;
+
+    static filterDescription(value: string) {
+        const [, , version] = tryParseFilter(HttpVersionFilter, value);
+
+        if (!version) {
+            return "Match exchanges using a given version of HTTP";
+        } else {
+            return `Match exchanges using HTTP/${version}`;
+        }
+    }
 
     private expectedVersion: number;
 
@@ -256,6 +356,16 @@ class ProtocolFilter implements Filter {
             "https"
         ])
     ] as const;
+
+    static filterDescription(value: string) {
+        const [, , protocol] = tryParseFilter(ProtocolFilter, value);
+
+        if (!protocol) {
+            return "Match exchanges using either HTTP or HTTPS";
+        } else {
+            return `Match exchanges using ${protocol.toUpperCase()}`;
+        }
+    }
 
     private expectedProtocol: string;
 
@@ -298,6 +408,18 @@ class HostnameFilter implements Filter {
             ]
         })
     ] as const;
+
+    static filterDescription(value: string) {
+        const [, op, hostname] = tryParseFilter(HostnameFilter, value);
+
+        if (!op || (!hostname && op === '=')) {
+            return "Match requests sent to a given hostname";
+        } else if (op === '=') {
+            return `Match requests sent to ${hostname}`;
+        } else {
+            return `Match requests sent to a hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
+        }
+    }
 
     private expectedHostname: string;
     private op: StringOperation;
@@ -343,6 +465,18 @@ class PortFilter implements Filter {
         new NumberSyntax("port")
     ] as const;
 
+    static filterDescription(value: string) {
+        const [, op, port] = tryParseFilter(PortFilter, value);
+
+        if (!op || (!port && op === '=')) {
+            return "Match requests sent to a given port";
+        } else if (op === '=') {
+            return `Match requests sent to port ${port}`;
+        } else {
+            return `Match requests sent to a port ${operationDescriptions[op]} ${port || 'a given port'}`;
+        }
+    }
+
     private expectedPort: number;
     private op: NumberOperation;
     private predicate: (port: number, expectedPort: number) => boolean;
@@ -385,6 +519,18 @@ class PathFilter implements Filter {
         new StringSyntax("path")
     ] as const;
 
+    static filterDescription(value: string) {
+        const [, op, path] = tryParseFilter(PathFilter, value);
+
+        if (!op || (!path && op === '=')) {
+            return "Match requests sent to a given path";
+        } else if (op === '=') {
+            return `Match requests sent to ${path}`;
+        } else {
+            return `Match requests sent to a path ${operationDescriptions[op]} ${path || 'a given path'}`;
+        }
+    }
+
     private expectedPath: string;
     private op: StringOperation;
     private predicate: (path: string, expectedPath: string) => boolean;
@@ -419,6 +565,20 @@ class QueryFilter implements Filter {
             allowEmpty: true
         })
     ] as const;
+
+    static filterDescription(value: string) {
+        const [, op, query] = tryParseFilter(QueryFilter, value);
+
+        if (!op) {
+            return "Match requests sent with a given query string";
+        } else if (op === '=' && query === '') {
+            return "Match requests sent with no query string";
+        } else {
+            return `Match requests sent with a query string ${operationDescriptions[op]} ${
+                query || 'a given query string'
+            }`;
+        }
+    }
 
     private expectedQuery: string;
     private op: StringOperation;

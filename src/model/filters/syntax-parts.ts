@@ -47,7 +47,7 @@ export interface Suggestion {
     template?: true;
 }
 
-export interface SyntaxPart<P = unknown> {
+export interface SyntaxPart<P extends string | number= string | number> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
      * some text were appended to the string.
@@ -73,6 +73,8 @@ export interface SyntaxPart<P = unknown> {
      * For a part that fully matches, this will return the fully matched
      * content in a content-appropriate type, e.g. strings for strings,
      * numbers for numbers.
+     *
+     * If the part does not fully match, this throws an error.
      */
     parse(value: string, index: number): P;
 };
