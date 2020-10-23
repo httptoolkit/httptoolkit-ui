@@ -124,6 +124,7 @@ export const FilterInput = (props: {
 };
 
 const ExistingText = styled.span`
+    font-weight: bold;
 `;
 
 const SuggestedText = styled.span`
@@ -132,8 +133,8 @@ const SuggestedText = styled.span`
 
 const SuggestionRow = styled.div<{ isHighlighted: boolean }>`
     background-color: ${p => p.isHighlighted
-        ? p.theme.mainBackground
-        : p.theme.mainLowlightBackground
+        ? p.theme.highlightBackground
+        : p.theme.mainBackground
     };
 
     ${p => p.isHighlighted && css`
@@ -143,16 +144,30 @@ const SuggestionRow = styled.div<{ isHighlighted: boolean }>`
     `}
 
     width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
     cursor: pointer;
 
     font-size: ${p => p.theme.textSize};
+`;
+
+const SuggestionRowPart = styled.p`
+    padding: 8px;
+`;
+
+const SuggestionDetails = styled(SuggestionRowPart)`
+    ${(p: { isHighlighted: boolean }) => p.isHighlighted && css`
+        box-shadow: 0px -8px 10px -10px rgba(0,0,0,0.3);
+    `}
+`;
+
+const SuggestionDescription = styled(SuggestionRowPart)`
+    background-color: ${p => p.theme.mainLowlightBackground};
+    box-shadow:
+        inset 0px 12px 8px -10px rgba(0,0,0,0.15),
+        inset 0px -8px 8px -10px rgba(0,0,0,0.15);
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const Suggestion = (filterSuggestion: FilterSuggestion, params: {
@@ -174,7 +189,12 @@ const Suggestion = (filterSuggestion: FilterSuggestion, params: {
     const suggestedAddition = filterSuggestion.showAs.slice(partiallyMatchedChars);
 
     return <SuggestionRow isHighlighted={params.isHighlighted}>
-        <ExistingText>{ existingText }</ExistingText>
-        <SuggestedText>{ suggestedAddition }</SuggestedText>
+        <SuggestionDetails isHighlighted={params.isHighlighted}>
+            <ExistingText>{ existingText }</ExistingText>
+            <SuggestedText>{ suggestedAddition }</SuggestedText>
+        </SuggestionDetails>
+        { params.isHighlighted && <SuggestionDescription>
+            { filterSuggestion.filterClass.filterDescription(applySuggestionToText(query, filterSuggestion)) }
+        </SuggestionDescription> }
     </SuggestionRow>;
 }
