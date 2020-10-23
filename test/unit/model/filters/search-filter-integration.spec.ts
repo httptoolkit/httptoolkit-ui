@@ -63,7 +63,7 @@ describe("Search filter model integration test:", () => {
 
             expect(descriptions).to.deep.equal([
                 "Match responses with a given status code",
-                "Match requests that have either received a response or aborted",
+                "Match requests that have received a response",
                 "Match requests that are still waiting for a response",
                 "Match requests that aborted before receiving a response",
                 "Match requests that weren't transmitted successfully",
@@ -223,9 +223,8 @@ describe("Search filter model integration test:", () => {
             ];
 
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
-            expect(matchedEvents.length).to.equal(2);
-            expect((matchedEvents[0] as HttpExchange).response).to.equal('aborted');
-            expect((matchedEvents[1] as SuccessfulExchange).response.statusCode).to.equal(200);
+            expect(matchedEvents.length).to.equal(1);
+            expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(200);
         });
     });
 

@@ -200,12 +200,12 @@ class CompletedFilter implements Filter {
     static filterSyntax = [new FixedStringSyntax("is-completed")] as const;
 
     static filterDescription(value: string) {
-        return "Match requests that have either received a response or aborted";
+        return "Match requests that have received a response";
     }
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
-            event.isCompletedExchange();
+            event.isSuccessfulExchange();
     }
 
     toString() {
