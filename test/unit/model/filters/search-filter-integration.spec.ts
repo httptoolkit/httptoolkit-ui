@@ -65,7 +65,7 @@ describe("Search filter model integration test:", () => {
                 "Match responses with a given status code",
                 "Match requests that have either received a response or aborted",
                 "Match requests that are still waiting for a response",
-                "Match requests that were aborted before receiving a response",
+                "Match requests that aborted before receiving a response",
                 "Match requests that weren't transmitted successfully",
                 "Match requests with a given method",
                 "Match exchanges using a given version of HTTP",
@@ -73,7 +73,7 @@ describe("Search filter model integration test:", () => {
                 "Match requests sent to a given hostname",
                 "Match requests sent to a given port",
                 "Match requests sent to a given path",
-                "Match requests sent with a given query string"
+                "Match requests with a given query string"
             ]);
         });
 
@@ -176,7 +176,7 @@ describe("Search filter model integration test:", () => {
                 .filterClass
                 .filterDescription(input);
 
-            expect(description).to.equal("Match responses with a status code greater than or equal to a given value");
+            expect(description).to.equal("Match responses with a status greater than or equal to a given value");
         });
 
         it("should show a basic description given a partial value", () => {
@@ -185,17 +185,17 @@ describe("Search filter model integration test:", () => {
                 .filterClass
                 .filterDescription(input);
 
-            expect(description).to.equal("Match responses with a status code greater than a given value");
+            expect(description).to.equal("Match responses with a status greater than a given value");
         });
 
         it("should show a fully specific description given a full input", () => {
-            const input = "status>=201";
+            const input = "status<=201";
             const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
                 .filterClass
                 .filterDescription(input);
 
             expect(description).to.equal(
-                "Match responses with a status code greater than or equal to 201"
+                "Match responses with a status less than or equal to 201"
             );
         });
 
@@ -206,7 +206,7 @@ describe("Search filter model integration test:", () => {
                 .filterDescription(input);
 
             expect(description).to.equal(
-                "Match responses with status code 201"
+                "Match responses with status 201"
             );
         });
     });

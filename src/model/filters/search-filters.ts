@@ -167,11 +167,11 @@ class StatusFilter implements Filter {
         if (!op || (op == '=' && !status)) {
             return "Match responses with a given status code";
         } else if (!status) {
-            return `Match responses with a status code ${operationDescriptions[op]} a given value`
+            return `Match responses with a status ${operationDescriptions[op]} a given value`
         } else if (op === '=') {
-            return `Match responses with status code ${status}`;
+            return `Match responses with status ${status}`;
         } else {
-            return `Match responses with a status code ${operationDescriptions[op]} ${status}`
+            return `Match responses with a status ${operationDescriptions[op]} ${status}`
         }
     }
 
@@ -236,7 +236,7 @@ class AbortedFilter implements Filter {
     static filterSyntax = [new FixedStringSyntax("is-aborted")] as const;
 
     static filterDescription(value: string) {
-        return "Match requests that were aborted before receiving a response";
+        return "Match requests that aborted before receiving a response";
     }
 
     matches(event: CollectedEvent): boolean {
@@ -415,9 +415,9 @@ class HostnameFilter implements Filter {
         if (!op || (!hostname && op === '=')) {
             return "Match requests sent to a given hostname";
         } else if (op === '=') {
-            return `Match requests sent to ${hostname}`;
+            return `Match requests to ${hostname}`;
         } else {
-            return `Match requests sent to a hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
+            return `Match requests to a hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
         }
     }
 
@@ -471,9 +471,9 @@ class PortFilter implements Filter {
         if (!op || (!port && op === '=')) {
             return "Match requests sent to a given port";
         } else if (op === '=') {
-            return `Match requests sent to port ${port}`;
+            return `Match requests to port ${port}`;
         } else {
-            return `Match requests sent to a port ${operationDescriptions[op]} ${port || 'a given port'}`;
+            return `Match requests to a port ${operationDescriptions[op]} ${port || 'a given port'}`;
         }
     }
 
@@ -525,9 +525,9 @@ class PathFilter implements Filter {
         if (!op || (!path && op === '=')) {
             return "Match requests sent to a given path";
         } else if (op === '=') {
-            return `Match requests sent to ${path}`;
+            return `Match requests to ${path}`;
         } else {
-            return `Match requests sent to a path ${operationDescriptions[op]} ${path || 'a given path'}`;
+            return `Match requests to a path ${operationDescriptions[op]} ${path || 'a given path'}`;
         }
     }
 
@@ -570,11 +570,9 @@ class QueryFilter implements Filter {
         const [, op, query] = tryParseFilter(QueryFilter, value);
 
         if (!op) {
-            return "Match requests sent with a given query string";
-        } else if (op === '=' && query === '') {
-            return "Match requests sent with no query string";
+            return "Match requests with a given query string";
         } else {
-            return `Match requests sent with a query string ${operationDescriptions[op]} ${
+            return `Match requests with a query string ${operationDescriptions[op]} ${
                 query || 'a given query string'
             }`;
         }
