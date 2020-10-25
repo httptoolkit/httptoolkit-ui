@@ -43,6 +43,9 @@ const FilterSuggestionsBox = styled.div`
     .react-autosuggest__suggestion:last-child > *, .react-autosuggest__suggestion:last-child > * > * {
         border-radius: 0 0 4px 4px;
     }
+    .react-autosuggest__suggestion:first-child:last-child > * {
+        border-radius: 4px;
+    }
 
     color: ${p => p.theme.highlightColor};
     font-size: ${p => p.theme.textSize};
