@@ -206,7 +206,7 @@ describe("Search filter model integration test:", () => {
                 .filterDescription(input);
 
             expect(description).to.equal(
-                "Match responses with status 201"
+                "Match responses with status 201 (Created)"
             );
         });
     });

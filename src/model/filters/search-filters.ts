@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 
 import { CollectedEvent } from '../http/events-store';
 import { HttpExchange } from '../http/exchange';
+import { getStatusDocs } from '../http/http-docs';
 
 import {
     charRange,
@@ -168,10 +169,22 @@ class StatusFilter implements Filter {
             return "Match responses with a given status code";
         } else if (!status) {
             return `Match responses with a status ${operationDescriptions[op]} a given value`
-        } else if (op === '=') {
-            return `Match responses with status ${status}`;
         } else {
-            return `Match responses with a status ${operationDescriptions[op]} ${status}`
+            const statusMessage = getStatusDocs(status)?.message;
+
+            // For exact matches, include the status description for easy reference
+            const describeStatus = (op === '=' || op === '!=') && statusMessage
+                ? ` (${statusMessage})`
+                : '';
+
+            if (op === '=') {
+                // Simplify descriptions for the most common case
+                return `Match responses with status ${status}${describeStatus}`;
+            } else {
+                return `Match responses with a status ${
+                    operationDescriptions[op]
+                } ${status}${describeStatus}`
+            }
         }
     }
 

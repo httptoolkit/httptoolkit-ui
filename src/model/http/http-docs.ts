@@ -1,4 +1,4 @@
-interface DocsInfo {
+interface DocsData {
     mdnSlug: string;
     name: string;
     summary: string;
@@ -25,7 +25,7 @@ interface DocsInfo {
  * .value())
  * console.log(JSON.stringify(output, null, 2));
  */
-const STATUSES: { [key: string]: DocsInfo | undefined } = {
+const STATUSES: { [key: string]: DocsData | undefined } = {
     "100": {
         "name": "100 Continue",
         "mdnSlug": "Web/HTTP/Status/100",
@@ -289,7 +289,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
  * .value())
  * console.log(JSON.stringify(output, null, 2));
  */
-const HEADERS: { [key: string]: DocsInfo | undefined } = {
+const HEADERS: { [key: string]: DocsData | undefined } = {
     "accept": {
         "mdnSlug": "Web/HTTP/Headers/Accept",
         "name": "Accept",
@@ -747,7 +747,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
  * .value())
  * console.log(JSON.stringify(output, null, 2));
  */
-const METHODS: { [key: string]: DocsInfo | undefined } = {
+const METHODS: { [key: string]: DocsData | undefined } = {
     "connect": {
         "mdnSlug": "Web/HTTP/Methods/CONNECT",
         "name": "CONNECT",
@@ -799,12 +799,22 @@ const METHODS: { [key: string]: DocsInfo | undefined } = {
 export const HEADER_NAME_PATTERN = '^[!#$%&\'*+\\-.^_`|~A-Za-z0-9]+$';
 export const HEADER_NAME_REGEX = new RegExp(HEADER_NAME_PATTERN);
 
-function getDocs(data: { [key: string]: DocsInfo | undefined }, key: string) {
+type DocsInfo = {
+    url: string,
+    name: string;
+    summary: string;
+};
+
+function getDocs(
+    data: { [key: string]: DocsData | undefined },
+    key: string
+): DocsInfo | undefined {
     const docsInfo = data[key];
 
     if (!docsInfo) return undefined;
     return {
         url: `https://developer.mozilla.org/en-US/docs/${docsInfo.mdnSlug}`,
+        name: docsInfo.name,
         summary: docsInfo.summary
     };
 }
@@ -813,8 +823,14 @@ export function getHeaderDocs(headerName: string) {
     return getDocs(HEADERS, headerName.toLowerCase());
 }
 
+type StatusDocsInfo = DocsInfo & { message: string };
+
 export function getStatusDocs(statusCode: string | number) {
-    return getDocs(STATUSES, statusCode.toString());
+    const statusDocs = getDocs(STATUSES, statusCode.toString()) as Partial<StatusDocsInfo>;
+    if (!statusDocs) return;
+
+    statusDocs.message = statusDocs.name!.split(' ').slice(1).join(' ');
+    return statusDocs as StatusDocsInfo;
 }
 
 export function getMethodDocs(methodName: string) {
