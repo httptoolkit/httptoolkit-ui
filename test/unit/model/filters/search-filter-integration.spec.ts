@@ -41,18 +41,18 @@ describe("Search filter model integration test:", () => {
             const suggestions = getSuggestions(SelectableSearchFilterClasses, "");
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 0, showAs: "method" },
+                { index: 0, showAs: "hostname" },
+                { index: 0, showAs: "path" },
+                { index: 0, showAs: "query" },
                 { index: 0, showAs: "status" },
                 { index: 0, showAs: "is-completed" },
                 { index: 0, showAs: "is-pending" },
                 { index: 0, showAs: "is-aborted" },
                 { index: 0, showAs: "is-error" },
-                { index: 0, showAs: "method" },
-                { index: 0, showAs: "httpVersion" },
-                { index: 0, showAs: "protocol" },
-                { index: 0, showAs: "hostname" },
                 { index: 0, showAs: "port" },
-                { index: 0, showAs: "path" },
-                { index: 0, showAs: "query" },
+                { index: 0, showAs: "protocol" },
+                { index: 0, showAs: "httpVersion" },
             ]);
         });
 
@@ -62,18 +62,18 @@ describe("Search filter model integration test:", () => {
             );
 
             expect(descriptions).to.deep.equal([
+                "Match requests with a given method",
+                "Match requests sent to a given hostname",
+                "Match requests sent to a given path",
+                "Match requests with a given query string",
                 "Match responses with a given status code",
                 "Match requests that have received a response",
                 "Match requests that are still waiting for a response",
                 "Match requests that aborted before receiving a response",
                 "Match requests that weren't transmitted successfully",
-                "Match requests with a given method",
-                "Match exchanges using a given version of HTTP",
-                "Match exchanges using either HTTP or HTTPS",
-                "Match requests sent to a given hostname",
                 "Match requests sent to a given port",
-                "Match requests sent to a given path",
-                "Match requests with a given query string"
+                "Match exchanges using either HTTP or HTTPS",
+                "Match exchanges using a given version of HTTP"
             ]);
         });
 

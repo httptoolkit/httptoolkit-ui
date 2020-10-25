@@ -611,16 +611,16 @@ class QueryFilter implements Filter {
 }
 
 export const SelectableSearchFilterClasses: FilterClass[] = [
+    MethodFilter,
+    HostnameFilter,
+    PathFilter,
+    QueryFilter,
     StatusFilter,
     CompletedFilter,
     PendingFilter,
     AbortedFilter,
     ErrorFilter,
-    MethodFilter,
-    HttpVersionFilter,
-    ProtocolFilter,
-    HostnameFilter,
     PortFilter,
-    PathFilter,
-    QueryFilter,
+    ProtocolFilter,
+    HttpVersionFilter,
 ];
