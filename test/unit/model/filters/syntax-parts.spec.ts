@@ -24,10 +24,26 @@ describe("Fixed string syntax", () => {
         expect(match.consumed).to.equal(4);
     });
 
+    it("should partially match strings ignoring case", () => {
+        const part = new FixedStringSyntax("a-string");
+
+        const match = part.match("A-ST", 0)!;
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(4);
+    });
+
     it("should fully match string matches", () => {
         const part = new FixedStringSyntax("a-string");
 
         const match = part.match("a-string", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(8);
+    });
+
+    it("should fully match string matches ignoring case", () => {
+        const part = new FixedStringSyntax("a-string");
+
+        const match = part.match("A-STRING", 0)!;
         expect(match.type).to.equal('full');
         expect(match.consumed).to.equal(8);
     });
@@ -116,6 +132,11 @@ describe("Fixed string syntax", () => {
     it("should be able to parse a completed value", () => {
         const part = new FixedStringSyntax("a-string");
         expect(part.parse("a-string", 0)).to.equal("a-string");
+    });
+
+    it("should be able to parse a completed value ignoring case", () => {
+        const part = new FixedStringSyntax("a-string");
+        expect(part.parse("A-STRING", 0)).to.equal("a-string");
     });
 
 });

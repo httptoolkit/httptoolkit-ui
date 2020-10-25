@@ -142,11 +142,12 @@ export class FixedStringSyntax implements SyntaxPart<string> {
     ) {}
 
     match(value: string, index: number): undefined | SyntaxMatch {
+        const expected = this.matcher.toLowerCase();
         let i: number;
 
         // Compare char by char over the common size
         for (i = index; (i - index) < this.matcher.length && i < value.length; i++) {
-            if (this.matcher[i - index] !== value[i]) return undefined;
+            if (expected[i - index] !== value[i].toLowerCase()) return undefined;
         }
 
         const consumedChars = i - index;
@@ -168,7 +169,10 @@ export class FixedStringSyntax implements SyntaxPart<string> {
     }
 
     parse(value: string, index: number): string {
-        return getParsedValue(this, value, index);
+        // Ensure the parsing matches correctly
+        getParsedValue(this, value, index);
+        // Return the expected string (ignoring input case) not the matched text:
+        return this.matcher;
     }
 
 }
