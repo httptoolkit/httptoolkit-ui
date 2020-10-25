@@ -210,7 +210,7 @@ class StatusFilter implements Filter {
 
 class CompletedFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-completed")] as const;
+    static filterSyntax = [new FixedStringSyntax("completed")] as const;
 
     static filterDescription(value: string) {
         return "Match requests that have received a response";
@@ -228,7 +228,7 @@ class CompletedFilter implements Filter {
 
 class PendingFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-pending")];
+    static filterSyntax = [new FixedStringSyntax("pending")];
 
     static filterDescription(value: string) {
         return "Match requests that are still waiting for a response";
@@ -246,7 +246,7 @@ class PendingFilter implements Filter {
 
 class AbortedFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-aborted")] as const;
+    static filterSyntax = [new FixedStringSyntax("aborted")] as const;
 
     static filterDescription(value: string) {
         return "Match requests that aborted before receiving a response";
@@ -264,7 +264,7 @@ class AbortedFilter implements Filter {
 
 class ErrorFilter implements Filter {
 
-    static filterSyntax = [new FixedStringSyntax("is-error")] as const;
+    static filterSyntax = [new FixedStringSyntax("errored")] as const;
 
     static filterDescription(value: string) {
         return "Match requests that weren't transmitted successfully";

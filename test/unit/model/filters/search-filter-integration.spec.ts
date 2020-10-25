@@ -46,10 +46,10 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "path" },
                 { index: 0, showAs: "query" },
                 { index: 0, showAs: "status" },
-                { index: 0, showAs: "is-completed" },
-                { index: 0, showAs: "is-pending" },
-                { index: 0, showAs: "is-aborted" },
-                { index: 0, showAs: "is-error" },
+                { index: 0, showAs: "completed" },
+                { index: 0, showAs: "pending" },
+                { index: 0, showAs: "aborted" },
+                { index: 0, showAs: "errored" },
                 { index: 0, showAs: "port" },
                 { index: 0, showAs: "protocol" },
                 { index: 0, showAs: "httpVersion" },
@@ -213,7 +213,7 @@ describe("Search filter model integration test:", () => {
 
     describe("Completed filters", () => {
         it("should correctly filter for completed responses", () => {
-            const filter = createFilter("is-completed");
+            const filter = createFilter("completed");
 
             const exampleEvents = [
                 getExchangeData({ responseState: 'aborted' }),
@@ -230,7 +230,7 @@ describe("Search filter model integration test:", () => {
 
     describe("Pending filters", () => {
         it("should correctly filter for pending responses", () => {
-            const filter = createFilter("is-pending");
+            const filter = createFilter("pending");
 
             const exampleEvents = [
                 getExchangeData({ responseState: 'aborted' }),
@@ -247,7 +247,7 @@ describe("Search filter model integration test:", () => {
 
     describe("Aborted filters", () => {
         it("should correctly filter for aborted responses", () => {
-            const filter = createFilter("is-aborted");
+            const filter = createFilter("aborted");
 
             const exampleEvents = [
                 getExchangeData({ responseState: 'aborted' }),
@@ -264,7 +264,7 @@ describe("Search filter model integration test:", () => {
 
     describe("Error filters", () => {
         it("should correctly filter for error responses", () => {
-            const filter = createFilter("is-error");
+            const filter = createFilter("errored");
 
             const exampleEvents = [
                 getExchangeData({ responseState: 'aborted' }),
