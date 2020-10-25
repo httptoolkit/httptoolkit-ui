@@ -89,11 +89,11 @@ describe("Search filter model integration test:", () => {
             const suggestions = getSuggestions(SelectableSearchFilterClasses, "sta");
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 0, showAs: "status>=" },
-                { index: 0, showAs: "status<=" },
-                { index: 0, showAs: "status!=" },
                 { index: 0, showAs: "status=" },
+                { index: 0, showAs: "status!=" },
+                { index: 0, showAs: "status>=" },
                 { index: 0, showAs: "status>" },
+                { index: 0, showAs: "status<=" },
                 { index: 0, showAs: "status<" }
             ]);
         });

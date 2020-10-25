@@ -494,8 +494,8 @@ describe("String options syntax", () => {
 
         expect(suggestions.length).to.equal(3);
         expect(suggestions).to.deep.equal([
-            { showAs: "abc", value: "abc" },
             { showAs: "ab", value: "ab" },
+            { showAs: "abc", value: "abc" },
             { showAs: "ad", value: "ad" }
         ]);
     });

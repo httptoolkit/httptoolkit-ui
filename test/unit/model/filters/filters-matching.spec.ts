@@ -284,6 +284,12 @@ describe("Suggestion generation", () => {
         expect(suggestions).to.deep.equal([
             {
                 index: 2,
+                showAs: "=",
+                value: "=",
+                filterClass: availableFilters[0]
+            },
+            {
+                index: 2,
                 showAs: ">=",
                 value: ">=",
                 filterClass: availableFilters[0]
@@ -292,12 +298,6 @@ describe("Suggestion generation", () => {
                 index: 2,
                 showAs: "<=",
                 value: "<=",
-                filterClass: availableFilters[0]
-            },
-            {
-                index: 2,
-                showAs: "=",
-                value: "=",
                 filterClass: availableFilters[0]
             }
         ]);
@@ -339,14 +339,14 @@ describe("Suggestion generation", () => {
         expect(suggestions).to.deep.equal([
             {
                 index: 4,
-                showAs: "==",
-                value: "==",
+                showAs: "=",
+                value: "=",
                 filterClass: availableFilters[1]
             },
             {
                 index: 4,
-                showAs: "=",
-                value: "=",
+                showAs: "==",
+                value: "==",
                 filterClass: availableFilters[1]
             }
         ]);
@@ -365,6 +365,12 @@ describe("Suggestion generation", () => {
         expect(suggestions).to.deep.equal([
             {
                 index: 0,
+                showAs: "status=",
+                value: "status=",
+                filterClass: availableFilters[0]
+            },
+            {
+                index: 0,
                 showAs: "status>=",
                 value: "status>=",
                 filterClass: availableFilters[0]
@@ -373,12 +379,6 @@ describe("Suggestion generation", () => {
                 index: 0,
                 showAs: "status<=",
                 value: "status<=",
-                filterClass: availableFilters[0]
-            },
-            {
-                index: 0,
-                showAs: "status=",
-                value: "status=",
                 filterClass: availableFilters[0]
             }
         ]);

@@ -303,9 +303,7 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
     constructor(
         options: Array<OptionsType>
     ) {
-        this.optionMatchers = _.sortBy(options.reverse(), o => o.length)
-            .reverse() // Reversed twice, to get longest first but preserve other order
-            .map(s => new FixedStringSyntax(s));
+        this.optionMatchers = options.map(s => new FixedStringSyntax(s));
     }
 
     match(value: string, index: number): SyntaxMatch | undefined {
@@ -315,8 +313,8 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
 
         const [fullMatches, partialMatches] = _.partition(matches, { type: 'full' });
 
-        if (fullMatches.length) return fullMatches[0];
-        else return partialMatches[0];
+        const bestMatches = fullMatches.length ? fullMatches : partialMatches;
+        return _.maxBy(bestMatches, (m) => m?.consumed); // The longest best matching option
     }
 
     getSuggestions(value: string, index: number): Suggestion[] {

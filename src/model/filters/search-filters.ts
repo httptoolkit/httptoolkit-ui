@@ -152,11 +152,11 @@ class StatusFilter implements Filter {
         new FixedStringSyntax("status"),
         new StringOptionsSyntax<NumberOperation>([
             "=",
-            ">",
+            "!=",
             ">=",
-            "<",
+            ">",
             "<=",
-            "!="
+            "<"
         ]),
         new FixedLengthNumberSyntax(3)
     ] as const;
@@ -457,10 +457,10 @@ class PortFilter implements Filter {
         new StringOptionsSyntax<NumberOperation>([
             "=",
             "!=",
-            ">",
             ">=",
-            "<",
-            "<="
+            ">",
+            "<=",
+            "<"
         ]),
         new NumberSyntax("port")
     ] as const;
