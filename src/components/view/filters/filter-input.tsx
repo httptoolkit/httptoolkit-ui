@@ -3,6 +3,7 @@ import * as React from 'react';
 import * as Autosuggest from 'react-autosuggest';
 
 import { styled, css } from '../../../styles';
+import { trackEvent } from '../../../tracking';
 
 import { FilterClass, FilterSet } from '../../../model/filters/search-filters';
 import {
@@ -86,6 +87,11 @@ export const FilterInput = (props: {
         data: { suggestion: FilterSuggestion }
     ) => {
         updatedFilters = applySuggestionToFilters(props.currentFilters, data.suggestion);
+        trackEvent({
+            category: 'Filters',
+            action: 'Create',
+            label: data.suggestion.filterClass.name // Track most used filters, *not* input or params
+        });
         props.onFiltersChanged(updatedFilters);
     };
 
