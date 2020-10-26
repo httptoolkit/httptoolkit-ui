@@ -5,7 +5,7 @@ import { observable, action } from 'mobx';
 
 import { styled, css } from "../../styles";
 import { isReactElement } from '../../util/ui';
-import { Icon } from '../../icons';
+import { Icon, IconProp } from '../../icons';
 
 interface CollapsibleSectionProps {
     children: React.ReactNode;
@@ -146,6 +146,9 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
     }
 }
 
+const OPEN_ICON: IconProp = ['fas', 'minus'];
+const CLOSED_ICON: IconProp = ['fas', 'plus'];
+
 const CollapsibleTrigger = styled((p: {
     open: boolean,
     canOpen: boolean,
@@ -153,10 +156,7 @@ const CollapsibleTrigger = styled((p: {
     onClick: (e: React.SyntheticEvent) => void
 }) =>
     <button {..._.omit(p, ['open', 'canOpen', 'withinGrid'])}>
-        <Icon icon={[
-            'fas',
-            p.open ? 'minus' : 'plus'
-        ]} />
+        <Icon icon={p.open ? OPEN_ICON : CLOSED_ICON} />
     </button>
 )`
     border: none;
