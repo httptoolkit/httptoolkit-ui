@@ -14,20 +14,19 @@ import { FailedTlsRequest } from '../../types';
 import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
-import { Filter, FilterSet } from '../../model/filters/search-filters';
 
+import { filterProps } from '../component-utils';
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
-import { TableFooter, HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
-import { filterProps } from '../component-utils';
+import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 
 const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
 
 const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
     top: ${HEADER_FOOTER_HEIGHT}px;
-    bottom: ${HEADER_FOOTER_HEIGHT}px;
+    bottom: 4px; /* Matches -4px in view page LeftPane */
     height: auto;
 `;
 
@@ -37,29 +36,24 @@ interface ViewEventListProps {
     filteredEvents: CollectedEvent[];
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
-    searchFilters: FilterSet;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
-    onSearchFiltersChanged: (filters: FilterSet) => void;
-    onClear: () => void;
 }
 
 const ListContainer = styled.div`
+    position: relative;
     width: 100%;
     height: 100%;
-
-    /* For unclear reasons, we need -4 to make the autosizer size this correctly: */
-    padding-bottom: ${HEADER_FOOTER_HEIGHT - 4}px;
     box-sizing: border-box;
 
     font-size: ${p => p.theme.textSize};
 
-    &::after {
+    &::after { /* Insert shadow over table contents */
         content: '';
         position: absolute;
         top: ${HEADER_FOOTER_HEIGHT}px;
-        bottom: ${HEADER_FOOTER_HEIGHT}px;
+        bottom: 4px; /* Matches -4px in view page LeftPane */
         left: 0;
         right: 0;
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
@@ -394,18 +388,9 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     );
 
     render() {
-        const { events, filteredEvents, searchFilters, onSearchFiltersChanged, onClear, isPaused } = this.props;
+        const { events, filteredEvents, isPaused } = this.props;
 
         return <ListContainer>
-            {/* Footer is above the table in HTML order to ensure correct tab order */}
-            <TableFooter
-                allEvents={events}
-                filteredEvents={filteredEvents}
-                searchFilters={searchFilters}
-                onSearchFiltersChanged={onSearchFiltersChanged}
-                onClear={onClear}
-            />
-
             <TableHeader>
                 <MarkerHeader />
                 <Method>Method</Method>

@@ -18,6 +18,7 @@ import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
 
 import { ViewEventList } from './view-event-list';
+import { HEADER_FOOTER_HEIGHT, ViewEventListFooter } from './view-event-list-footer';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
@@ -195,20 +196,26 @@ class ViewPage extends React.Component<ViewPageProps> {
                 minSize={300}
                 maxSize={-300}
             >
-                <ViewEventList
-                    events={events}
-                    filteredEvents={this.filteredEvents}
-                    selectedEvent={this.selectedEvent}
-                    isPaused={isPaused}
-                    searchFilters={this.searchFilters}
+                <LeftPane>
+                    <ViewEventListFooter // Footer above the list to ensure correct tab order
+                        allEvents={events}
+                        filteredEvents={this.filteredEvents}
+                        searchFilters={this.searchFilters}
+                        onSearchFiltersChanged={this.onSearchFiltersChanged}
+                        onClear={this.onClear}
+                    />
+                    <ViewEventList
+                        events={events}
+                        filteredEvents={this.filteredEvents}
+                        selectedEvent={this.selectedEvent}
+                        isPaused={isPaused}
 
-                    moveSelection={this.moveSelection}
-                    onSelected={this.onSelected}
-                    onSearchFiltersChanged={this.onSearchFiltersChanged}
-                    onClear={this.onClear}
+                        moveSelection={this.moveSelection}
+                        onSelected={this.onSelected}
 
-                    ref={this.listRef}
-                />
+                        ref={this.listRef}
+                    />
+                </LeftPane>
                 { rightPane }
             </SplitPane>
 
@@ -310,6 +317,16 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.listRef.current?.scrollToCenterEvent(event);
     }
 }
+
+const LeftPane = styled.div`
+    position: relative;
+
+    height: 100%;
+    box-sizing: border-box;
+
+    /* For unclear reasons, we need -4 to make the table autosizer handle this correctly: */
+    padding-bottom: ${HEADER_FOOTER_HEIGHT - 4}px;
+`;
 
 const StyledViewPage = styled(
     // Exclude stores etc from the external props, as they're injected

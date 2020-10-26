@@ -57,7 +57,7 @@ const ButtonsContainer = styled.div`
     display: flex;
 `;
 
-export const TableFooter = styled(observer((props: {
+export const ViewEventListFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
     searchFilters: FilterSet,
