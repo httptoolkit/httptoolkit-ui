@@ -4,6 +4,7 @@ jobs:
   build:
     name: Build & test
     runs-on: ubuntu-latest
+    container: httptoolkit/act-build-base
     steps:
       - uses: actions/checkout@v2
 
@@ -11,9 +12,6 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 14
-
-      # Install Python, for native module builds
-      - uses: actions/setup-python@v2
 
       # Install & build & test:
       - run: npm ci
