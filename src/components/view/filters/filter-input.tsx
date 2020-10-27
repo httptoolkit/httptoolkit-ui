@@ -67,7 +67,8 @@ const renderSuggestionsBox = (props: { containerProps: any, children: any }) =>
 export const FilterInput = (props: {
     currentFilters: FilterSet,
     availableFilters: FilterClass[],
-    onFiltersChanged: (filters: FilterSet) => void
+    onFiltersChanged: (filters: FilterSet) => void,
+    onFiltersConsidered: (filters: FilterSet | undefined) => void
 } & Autosuggest.InputProps<any>) => {
     const autosuggestRef = React.useRef<Autosuggest>(null);
 
@@ -78,6 +79,19 @@ export const FilterInput = (props: {
     const suggestions = React.useMemo(() =>
         getSuggestions(props.availableFilters, props.value)
     , [props.availableFilters, props.value]);
+
+    // Whenever a suggestion is highlighted, we fire an event with the filters that would be active if
+    // the suggestion is accepted, so that the list of events can preview the result.
+    const considerSuggestion = (data: { suggestion: FilterSuggestion | null }) => {
+        // If the listbox is hidden, we should never be considering filters from it.
+        const listbox = autosuggestRef.current!.input!.parentElement!.querySelector("[role='listbox']");
+        const listboxShown = listbox!.children.length > 0;
+
+        props.onFiltersConsidered(data.suggestion && listboxShown
+            ? applySuggestionToFilters(props.currentFilters, data.suggestion)
+            : undefined
+        );
+    };
 
     // Ephemerally track the updated suggestions, so we can detect a selection in clearSuggestions()
     // and update to show ongoing suggestions instead of hiding suggestions.
@@ -97,16 +111,20 @@ export const FilterInput = (props: {
     };
 
     const clearSuggestions = () => {
+        const autosuggest = autosuggestRef.current as any;
+
         if (updatedFilters && updatedFilters.length === props.currentFilters.length) {
             // If this is due to a filter update, but a new filter hasn't been created (i.e. we
             // had a partial match, for a single part) then force the suggestions to stay visible:
-            const autosuggest = autosuggestRef.current as any;
             autosuggest.justSelectedSuggestion = false;
             autosuggest.revealSuggestions();
             updatedFilters = undefined;
         }
+
         // We ignore actual requests to clear the suggestions, because we show the
-        // suggestions in almost all cases anyway.
+        // suggestions in almost all cases anyway - we just clear selection highlighting
+        autosuggest.resetHighlightedSuggestion();
+        considerSuggestion({ suggestion: null });
     };
 
     const shouldRenderSuggestions = (value: string, reason: string) =>
@@ -124,6 +142,7 @@ export const FilterInput = (props: {
         shouldRenderSuggestions={shouldRenderSuggestions}
         onSuggestionsFetchRequested={_.noop} // No-op: we useMemo to keep suggestion up to date manually
         onSuggestionsClearRequested={clearSuggestions}
+        onSuggestionHighlighted={considerSuggestion}
         onSuggestionSelected={selectSuggestion}
         getSuggestionValue={getSuggestionTextValue}
         renderSuggestion={FilterSuggestionRow}

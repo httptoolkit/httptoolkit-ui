@@ -68,6 +68,7 @@ const deleteFilterIndex = (filters: FilterSet, index: number): FilterSet => {
 
 export const SearchFilter = (props: {
     searchFilters: FilterSet,
+    onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
     onSearchFiltersChanged: (filters: FilterSet) => void,
     availableFilters: FilterClass[]
     placeholder?: string
@@ -171,8 +172,10 @@ export const SearchFilter = (props: {
             value={textInputValue}
             onChange={onInputChanged}
             onKeyDown={onInputKeyDown}
-            onFiltersChanged={props.onSearchFiltersChanged}
             placeholder={props.placeholder}
+
+            onFiltersConsidered={props.onSearchFiltersConsidered}
+            onFiltersChanged={props.onSearchFiltersChanged}
             currentFilters={props.searchFilters}
             availableFilters={props.availableFilters}
         />
@@ -184,4 +187,4 @@ export const SearchFilter = (props: {
             />
         }
     </SearchFilterBox>;
-}
+};

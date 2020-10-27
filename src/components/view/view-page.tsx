@@ -86,15 +86,23 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private listRef = React.createRef<ViewEventList>();
 
-    @observable searchFilters: FilterSet = [];
+    @observable
+    private searchFiltersUnderConsideration: FilterSet | undefined;
+
+    get confirmedSearchFilters() {
+        return this.props.uiStore.activeFilterSet;
+    }
 
     @computed
     get filteredEvents() {
         const { events } = this.props.eventsStore;
 
-        if (this.searchFilters.length === 0) return events;
+        // While we're considering some search filters, show the result in the view list.
+        const searchFilters = this.searchFiltersUnderConsideration ?? this.confirmedSearchFilters;
+
+        if (searchFilters.length === 0) return events;
         else return events.filter((event) =>
-            this.searchFilters.every((f) => f.matches(event))
+            searchFilters.every((f) => f.matches(event))
         );
     }
 
@@ -159,6 +167,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             isPaused
         } = this.props.eventsStore;
         const { certPath } = this.props.proxyStore;
+        const { confirmedSearchFilters } = this;
 
         let rightPane: JSX.Element;
         if (!this.selectedEvent) {
@@ -200,7 +209,8 @@ class ViewPage extends React.Component<ViewPageProps> {
                     <ViewEventListFooter // Footer above the list to ensure correct tab order
                         allEvents={events}
                         filteredEvents={this.filteredEvents}
-                        searchFilters={this.searchFilters}
+                        searchFilters={confirmedSearchFilters}
+                        onSearchFiltersConsidered={this.onSearchFiltersConsidered}
                         onSearchFiltersChanged={this.onSearchFiltersChanged}
                         onClear={this.onClear}
                     />
@@ -230,8 +240,13 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
+    onSearchFiltersConsidered(filters: FilterSet | undefined) {
+        this.searchFiltersUnderConsideration = filters;
+    }
+
+    @action.bound
     onSearchFiltersChanged(filters: FilterSet) {
-        this.searchFilters = filters;
+        this.props.uiStore.activeFilterSet = filters;
     }
 
     @action.bound
@@ -304,7 +319,10 @@ class ViewPage extends React.Component<ViewPageProps> {
             confirm("Delete pinned exchanges?");
 
         this.props.eventsStore.clearInterceptedData(clearPinned);
-        this.searchFilters = [];
+
+        // Reset filter state too:
+        this.searchFiltersUnderConsideration = undefined;
+        this.props.uiStore.activeFilterSet = [];
     }
 
     @action.bound
