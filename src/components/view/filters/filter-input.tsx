@@ -65,11 +65,16 @@ const renderSuggestionsBox = (props: { containerProps: any, children: any }) =>
     </FilterSuggestionsBox>;
 
 export const FilterInput = (props: {
+    value: string,
+    placeholder: string,
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
+    onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void,
+
     currentFilters: FilterSet,
     availableFilters: FilterClass[],
     onFiltersChanged: (filters: FilterSet) => void,
     onFiltersConsidered: (filters: FilterSet | undefined) => void
-} & Autosuggest.InputProps<any>) => {
+}) => {
     const autosuggestRef = React.useRef<Autosuggest>(null);
 
     // React-autosuggest wants us to track state, and only update it when requested. We're going
@@ -82,7 +87,7 @@ export const FilterInput = (props: {
 
     // Whenever a suggestion is highlighted, we fire an event with the filters that would be active if
     // the suggestion is accepted, so that the list of events can preview the result.
-    const considerSuggestion = (data: { suggestion: FilterSuggestion | null }) => {
+    const considerSuggestion = React.useCallback((data: { suggestion: FilterSuggestion | null }) => {
         // If the listbox is hidden, we should never be considering filters from it.
         const listbox = autosuggestRef.current!.input!.parentElement!.querySelector("[role='listbox']");
         const listboxShown = listbox!.children.length > 0;
@@ -91,13 +96,13 @@ export const FilterInput = (props: {
             ? applySuggestionToFilters(props.currentFilters, data.suggestion)
             : undefined
         );
-    };
+    }, [props.onFiltersConsidered, props.currentFilters, autosuggestRef]);
 
     // Ephemerally track the updated suggestions, so we can detect a selection in clearSuggestions()
     // and update to show ongoing suggestions instead of hiding suggestions.
     let updatedFilters: FilterSet | undefined = undefined;
 
-    const selectSuggestion = (
+    const selectSuggestion = React.useCallback((
         event: React.FormEvent<any>,
         data: { suggestion: FilterSuggestion }
     ) => {
@@ -108,9 +113,9 @@ export const FilterInput = (props: {
             label: data.suggestion.filterClass.name // Track most used filters, *not* input or params
         });
         props.onFiltersChanged(updatedFilters);
-    };
+    }, [updatedFilters, props.currentFilters, props.onFiltersChanged]);
 
-    const clearSuggestions = () => {
+    const clearSuggestions = React.useCallback(() => {
         const autosuggest = autosuggestRef.current as any;
 
         if (updatedFilters && updatedFilters.length === props.currentFilters.length) {
@@ -125,14 +130,24 @@ export const FilterInput = (props: {
         // suggestions in almost all cases anyway - we just clear selection highlighting
         autosuggest.resetHighlightedSuggestion();
         considerSuggestion({ suggestion: null });
-    };
+    }, [updatedFilters, selectSuggestion, props.currentFilters.length, autosuggestRef]);
 
-    const shouldRenderSuggestions = (value: string, reason: string) =>
+    const shouldRenderSuggestions = React.useCallback((value: string, reason: string) =>
         value.trim().length > 0 ||
-        (reason !== 'input-focused' && reason !== 'input-changed');
+        !['input-focused', 'input-changed', 'escape-pressed'].includes(reason)
+    , []);
 
-    const getSuggestionTextValue = (suggestion: FilterSuggestion) =>
-        applySuggestionToText(props.value, suggestion);
+    const getSuggestionTextValue = React.useCallback((suggestion: FilterSuggestion) =>
+        applySuggestionToText(props.value, suggestion)
+    , [props.value]);
+
+    const inputProps = React.useMemo(() => ({
+        type: 'text',
+        value: props.value,
+        onChange: props.onChange,
+        onKeyDown: props.onKeyDown,
+        placeholder: props.placeholder,
+    }), [props.value, props.onChange, props.onKeyDown, props.placeholder]);
 
     return <Autosuggest
         ref={autosuggestRef}
@@ -148,6 +163,6 @@ export const FilterInput = (props: {
         renderSuggestion={FilterSuggestionRow}
         renderInputComponent={renderInputField}
         renderSuggestionsContainer={renderSuggestionsBox}
-        inputProps={_.omit(props, ['currentFilters', 'availableFilters', 'onFiltersChanged'])}
+        inputProps={inputProps}
     />;
 };

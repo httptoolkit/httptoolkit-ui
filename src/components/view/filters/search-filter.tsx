@@ -66,16 +66,16 @@ const deleteFilterIndex = (filters: FilterSet, index: number): FilterSet => {
     ];
 };
 
-export const SearchFilter = (props: {
+export const SearchFilter = React.memo((props: {
     searchFilters: FilterSet,
     onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
     onSearchFiltersChanged: (filters: FilterSet) => void,
     availableFilters: FilterClass[]
-    placeholder?: string
+    placeholder: string
 }) => {
     const boxRef = React.useRef<HTMLDivElement>(null);
 
-    const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const onInputKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
         const filters = props.searchFilters;
         if (filters.length <= 1) return;
 
@@ -96,9 +96,12 @@ export const SearchFilter = (props: {
                 (lastFilterTag as HTMLElement).focus();
             }
         }
-    };
+    }, [props.searchFilters, props.onSearchFiltersChanged, boxRef]);
 
-    const onFilterTagKeyDown = (filterIndex: number, event: React.KeyboardEvent<HTMLDivElement>) => {
+    const onFilterTagKeyDown = React.useCallback((
+        filterIndex: number,
+        event: React.KeyboardEvent<HTMLDivElement>
+    ) => {
         const filterTag = event.currentTarget;
         const filterBox = boxRef.current;
         if (!filterBox) return;
@@ -131,21 +134,21 @@ export const SearchFilter = (props: {
                 event.preventDefault();
             }
         }
-    };
+    }, [boxRef, props.onSearchFiltersChanged, props.searchFilters]);
 
-    const onInputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         props.onSearchFiltersChanged([
             new StringFilter(event.target.value),
             ...props.searchFilters.slice(1)
         ]);
-    };
+    }, [props.onSearchFiltersChanged, props.searchFilters]);
 
-    const onFiltersCleared = () => {
+    const onFiltersCleared = React.useCallback(() => {
         props.onSearchFiltersChanged([]);
 
         const textInput = (boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
         textInput?.focus();
-    }
+    }, [props.onSearchFiltersChanged, boxRef]);
 
     // Note that the model stores filters in the opposite order to how they're shown in the UI.
     // Mainly just because destructuring (of types & values) only works this way round.
@@ -168,7 +171,6 @@ export const SearchFilter = (props: {
             )
         }
         <FilterInput
-            type='text'
             value={textInputValue}
             onChange={onInputChanged}
             onKeyDown={onInputKeyDown}
@@ -187,4 +189,4 @@ export const SearchFilter = (props: {
             />
         }
     </SearchFilterBox>;
-};
+});
