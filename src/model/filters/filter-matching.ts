@@ -242,9 +242,8 @@ export function applySuggestionToFilters(filterSet: FilterSet, suggestion: Filte
     const text = filterSet.length > 0 ? filterSet[0]!.filter : '';
 
     const updatedText = applySuggestionToText(text, suggestion);
-    const filterMatch = matchFilter(suggestion.filterClass, updatedText);
 
-    if (filterMatch && filterMatch.type === 'full') {
+    if (suggestion.type === 'full') {
         return [
             new StringFilter(""),
             new suggestion.filterClass(updatedText.trim()),
