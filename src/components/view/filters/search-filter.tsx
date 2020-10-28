@@ -71,7 +71,8 @@ export const SearchFilter = React.memo((props: {
     onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
     onSearchFiltersChanged: (filters: FilterSet) => void,
     availableFilters: FilterClass[]
-    placeholder: string
+    placeholder: string,
+    searchInputRef?: React.Ref<HTMLInputElement>
 }) => {
     const boxRef = React.useRef<HTMLDivElement>(null);
 
@@ -175,6 +176,7 @@ export const SearchFilter = React.memo((props: {
             onChange={onInputChanged}
             onKeyDown={onInputKeyDown}
             placeholder={props.placeholder}
+            searchInputRef={props.searchInputRef}
 
             onFiltersConsidered={props.onSearchFiltersConsidered}
             onFiltersChanged={props.onSearchFiltersChanged}

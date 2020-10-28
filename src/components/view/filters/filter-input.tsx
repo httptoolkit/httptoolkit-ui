@@ -73,6 +73,7 @@ const areSuggestionsVisible = (autosuggestRef: React.RefObject<Autosuggest>) => 
 export const FilterInput = (props: {
     value: string,
     placeholder: string,
+    searchInputRef?: React.Ref<HTMLInputElement>,
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
     onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void,
 
@@ -167,7 +168,8 @@ export const FilterInput = (props: {
         onChange: props.onChange,
         onKeyDown: props.onKeyDown,
         placeholder: props.placeholder,
-    }), [props.value, props.onChange, props.onKeyDown, props.placeholder]);
+        ref: props.searchInputRef
+    }), [props.value, props.onChange, props.onKeyDown, props.placeholder, props.searchInputRef]);
 
     return <Autosuggest
         ref={autosuggestRef}

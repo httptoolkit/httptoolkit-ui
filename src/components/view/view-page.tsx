@@ -12,7 +12,7 @@ import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore, CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
-import { Filter, FilterSet } from '../../model/filters/search-filters';
+import { FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -37,7 +37,8 @@ const ViewPageKeyboardShortcuts = (props: {
     moveSelection: (distance: number) => void,
     onPin: (event: HttpExchange) => void,
     onDelete: (event: CollectedEvent) => void,
-    onClear: () => void
+    onClear: () => void,
+    onStartSearch: () => void
 }) => {
     useHotkeys('j', (event) => {
         if (isEditable(event.target)) return;
@@ -69,6 +70,11 @@ const ViewPageKeyboardShortcuts = (props: {
         event.preventDefault();
     }, [props.onClear]);
 
+    useHotkeys('Ctrl+f, Cmd+f', (event) => {
+        props.onStartSearch();
+        event.preventDefault();
+    }, [props.onStartSearch]);
+
     return null;
 };
 
@@ -83,6 +89,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     requestEditorRef = React.createRef<SelfSizedBaseEditor>();
     responseEditorRef = React.createRef<SelfSizedBaseEditor>();
+
+    searchInputRef = React.createRef<HTMLInputElement>();
 
     private listRef = React.createRef<ViewEventList>();
 
@@ -197,6 +205,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onPin={this.onPin}
                 onDelete={this.onDelete}
                 onClear={this.onClear}
+                onStartSearch={this.onStartSearch}
             />
             <SplitPane
                 split='vertical'
@@ -207,6 +216,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             >
                 <LeftPane>
                     <ViewEventListFooter // Footer above the list to ensure correct tab order
+                        searchInputRef={this.searchInputRef}
                         allEvents={events}
                         filteredEvents={this.filteredEvents}
                         searchFilters={confirmedSearchFilters}
@@ -323,6 +333,11 @@ class ViewPage extends React.Component<ViewPageProps> {
         // Reset filter state too:
         this.searchFiltersUnderConsideration = undefined;
         this.props.uiStore.activeFilterSet = [];
+    }
+
+    @action.bound
+    onStartSearch() {
+        this.searchInputRef.current?.focus();
     }
 
     @action.bound
