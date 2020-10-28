@@ -64,6 +64,12 @@ const renderSuggestionsBox = (props: { containerProps: any, children: any }) =>
         { props.children }
     </FilterSuggestionsBox>;
 
+const areSuggestionsVisible = (autosuggestRef: React.RefObject<Autosuggest>) => {
+    const autosuggestRoot = autosuggestRef.current?.input?.parentElement;
+    const listbox = autosuggestRoot?.querySelector("[role='listbox']");
+    return (listbox?.children.length || 0) > 0;
+};
+
 export const FilterInput = (props: {
     value: string,
     placeholder: string,
@@ -88,12 +94,9 @@ export const FilterInput = (props: {
     // Whenever a suggestion is highlighted, we fire an event with the filters that would be active if
     // the suggestion is accepted, so that the list of events can preview the result.
     const considerSuggestion = React.useCallback((data: { suggestion: FilterSuggestion | null }) => {
-        // If the listbox is hidden, we should never be considering filters from it.
-        const listbox = autosuggestRef.current!.input!.parentElement!.querySelector("[role='listbox']");
-        const listboxShown = listbox!.children.length > 0;
         const isFullMatch = data.suggestion?.type === 'full';
 
-        if (data.suggestion && listboxShown) {
+        if (data.suggestion && areSuggestionsVisible(autosuggestRef)) {
             if (isFullMatch) {
                 props.onFiltersConsidered(applySuggestionToFilters(props.currentFilters, data.suggestion));
             } else {
@@ -119,6 +122,10 @@ export const FilterInput = (props: {
         event: React.FormEvent<any>,
         data: { suggestion: FilterSuggestion }
     ) => {
+        // Due to some race conditions, it's possible that react-autocsuggest can think we have a
+        // suggestion selected even when none is shown. Guard against that.
+        if (!areSuggestionsVisible(autosuggestRef)) return;
+
         updatedFilters = applySuggestionToFilters(props.currentFilters, data.suggestion);
         trackEvent({
             category: 'Filters',
