@@ -113,6 +113,7 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
 export interface FilterSuggestion extends Suggestion {
     index: number;
     filterClass: FilterClass;
+    type: 'full' | 'partial';
 };
 
 /**
@@ -136,6 +137,8 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
     );
 
     if (fullMatches.length) {
+        // If we have full matches (what you've typed fully matches an existing suggestion)
+        // then we should only show that/those suggestion(s).
         return _.flatMap(fullMatches, ({ filterClass, match }) => {
             const stringIndex = match!.lastPartStringIndex;
             const syntaxIndex = filterClass.filterSyntax.length - 1;
@@ -145,7 +148,8 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
                 .map((suggestion) => ({
                     ...suggestion,
                     filterClass,
-                    index: stringIndex
+                    index: stringIndex,
+                    type: 'full'
                 }));
         })
     }
@@ -164,13 +168,18 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
         // For partially matched filters, partsMatched is always the index+1
         // of partially matched part (the part we're waiting to complete)
         const nextPartToMatch = filterClass.filterSyntax[syntaxPartIndex];
+        const isLastPart = syntaxPartIndex === filterClass.filterSyntax.length - 1;
 
         return nextPartToMatch.getSuggestions(value, stringIndex)
             .map((suggestion) => ({
                 suggestion: {
                     ...suggestion,
                     filterClass,
-                    index: stringIndex
+                    index: stringIndex,
+                    type: ((!suggestion.template && isLastPart)
+                        ? 'full'
+                        : 'partial'
+                    ) as 'full' | 'partial'
                 },
                 filterClass,
                 match
@@ -192,6 +201,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
         if (singleSuggestion.template) break;
 
         const updatedText = applySuggestionToText(value, singleSuggestion);
+        const isLastPart = syntaxPartIndex === filterClass.filterSyntax.length - 1;
 
         suggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
             updatedText,
@@ -201,7 +211,11 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
             showAs: singleSuggestion.showAs + nextSuggestion.showAs,
             filterClass,
             index: singleSuggestion.index,
-            ...(nextSuggestion.template ? { template: true } : {})
+            ...(nextSuggestion.template ? { template: true } : {}),
+            // For a non-template suggestion, a last part suggestion will complete the match
+            type: (!nextSuggestion.template && isLastPart)
+                ? 'full'
+                : 'partial'
         }));
 
         // If any suggestion is a template, then don't keep trying to extend any further.

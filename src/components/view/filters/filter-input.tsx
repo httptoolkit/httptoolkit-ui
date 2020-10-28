@@ -4,7 +4,7 @@ import * as Autosuggest from 'react-autosuggest';
 import { styled } from '../../../styles';
 import { trackEvent } from '../../../tracking';
 
-import { FilterClass, FilterSet } from '../../../model/filters/search-filters';
+import { FilterClass, FilterSet, StringFilter } from '../../../model/filters/search-filters';
 import {
     getSuggestions,
     FilterSuggestion,
@@ -91,11 +91,24 @@ export const FilterInput = (props: {
         // If the listbox is hidden, we should never be considering filters from it.
         const listbox = autosuggestRef.current!.input!.parentElement!.querySelector("[role='listbox']");
         const listboxShown = listbox!.children.length > 0;
+        const isFullMatch = data.suggestion?.type === 'full';
 
-        props.onFiltersConsidered(data.suggestion && listboxShown
-            ? applySuggestionToFilters(props.currentFilters, data.suggestion)
-            : undefined
-        );
+        if (data.suggestion && listboxShown) {
+            if (isFullMatch) {
+                props.onFiltersConsidered(applySuggestionToFilters(props.currentFilters, data.suggestion));
+            } else {
+                // If you highlight a partial match, we show the filtered events as if you haven't
+                // entered any text, so you can still conveniently see the data until you either type
+                // something that's not a filter (filtering just by text), or closely match a filter
+                // directly (and we filter by that instead).
+                props.onFiltersConsidered([
+                    new StringFilter(''),
+                    ...props.currentFilters.slice(1)
+                ]);
+            }
+        } else {
+            props.onFiltersConsidered(undefined);
+        }
     }, [props.onFiltersConsidered, props.currentFilters, autosuggestRef]);
 
     // Ephemerally track the updated suggestions, so we can detect a selection in clearSuggestions()

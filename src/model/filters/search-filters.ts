@@ -58,6 +58,7 @@ export class StringFilter implements Filter {
     ) {}
 
     matches(event: CollectedEvent): boolean {
+        if (this.filter === '') return true;
         const filter = this.filter.toLocaleLowerCase();
         return event.searchIndex.includes(filter);
     }
