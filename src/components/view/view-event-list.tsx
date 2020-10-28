@@ -26,7 +26,7 @@ const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll 
 const EmptyStateOverlay = styled(EmptyState)`
     position: absolute;
     top: ${HEADER_FOOTER_HEIGHT}px;
-    bottom: 4px; /* Matches -4px in view page LeftPane */
+    bottom: 0;
     height: auto;
 `;
 
@@ -42,9 +42,9 @@ interface ViewEventListProps {
 }
 
 const ListContainer = styled.div`
+    flex-grow: 1;
     position: relative;
     width: 100%;
-    height: 100%;
     box-sizing: border-box;
 
     font-size: ${p => p.theme.textSize};
@@ -53,7 +53,7 @@ const ListContainer = styled.div`
         content: '';
         position: absolute;
         top: ${HEADER_FOOTER_HEIGHT}px;
-        bottom: 4px; /* Matches -4px in view page LeftPane */
+        bottom: 0;
         left: 0;
         right: 0;
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
@@ -425,7 +425,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                             outerElementType={this.KeyBoundListWindow}
                             ref={this.listRef}
 
-                            height={height - 42} // Leave space for the footer
+                            height={height - HEADER_FOOTER_HEIGHT}
                             width={width}
                             itemCount={filteredEvents.length}
                             itemSize={32}

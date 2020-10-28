@@ -14,7 +14,9 @@ import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
 
-const SearchFilterBox = styled.div`
+const CLEAR_BUTTON_WIDTH = '30px';
+
+const SearchFilterBox = styled.div<{ hasContents: boolean }>`
     position: relative;
 
     &:focus-within {
@@ -22,8 +24,8 @@ const SearchFilterBox = styled.div`
     }
 
     flex-grow: 1;
-    padding: 2px;
-    box-sizing: border-box;
+    min-width: 0; /* Don't let flexbox force this to expand given long tags */
+    padding: 2px ${p => p.hasContents ? CLEAR_BUTTON_WIDTH : '2px'} 2px 2px;
 
     border-radius: 4px;
 
@@ -35,10 +37,11 @@ const SearchFilterBox = styled.div`
     font-size: ${p => p.theme.textSize};
 
     display: flex;
+    flex-wrap: wrap;
 
     .react-autosuggest__container {
         flex-grow: 1;
-        margin: 3px;
+        margin: 3px 0 3px 3px;
 
         &:not(:first-child) {
             margin-left: 0;
@@ -47,7 +50,14 @@ const SearchFilterBox = styled.div`
 `;
 
 const ClearSearchButton = styled(IconButton)`
+    width: ${CLEAR_BUTTON_WIDTH};
     padding: 4px 10px;
+    box-sizing: border-box;
+
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
 `;
 
 const deleteFilter = (filters: FilterSet, filter: Filter): FilterSet => {
@@ -158,7 +168,9 @@ export const SearchFilter = React.memo((props: {
     // The text input always edits the first (last, in the UI) filter directly as a string
     const textInputValue = stringFilter?.filter ?? '';
 
-    return <SearchFilterBox ref={boxRef}>
+    const hasContents = !!textInputValue || !!otherFilters.length;
+
+    return <SearchFilterBox ref={boxRef} hasContents={hasContents}>
         {
             otherFilters.reverse().map((f, i) =>
                 <FilterTag
@@ -183,7 +195,7 @@ export const SearchFilter = React.memo((props: {
             currentFilters={props.searchFilters}
             availableFilters={props.availableFilters}
         />
-        { (!!textInputValue || !!otherFilters.length) &&
+        { hasContents &&
             <ClearSearchButton
                 title="Clear all search filters"
                 icon={['fas', 'times']}

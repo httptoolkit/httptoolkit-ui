@@ -24,6 +24,9 @@ const FilterTagDelete = styled(Icon).attrs(() => ({
 `;
 
 const FilterTagName = styled.span`
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `
 
 const FilterTagContainer = styled.div`
@@ -34,6 +37,10 @@ const FilterTagContainer = styled.div`
 
     position: relative;
     overflow: hidden;
+
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 
     margin-right: 5px;
     padding: 4px 4px;

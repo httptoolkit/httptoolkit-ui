@@ -18,7 +18,7 @@ import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
 
 import { ViewEventList } from './view-event-list';
-import { HEADER_FOOTER_HEIGHT, ViewEventListFooter } from './view-event-list-footer';
+import { ViewEventListFooter } from './view-event-list-footer';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
@@ -357,8 +357,8 @@ const LeftPane = styled.div`
     height: 100%;
     box-sizing: border-box;
 
-    /* For unclear reasons, we need -4 to make the table autosizer handle this correctly: */
-    padding-bottom: ${HEADER_FOOTER_HEIGHT - 4}px;
+    display: flex;
+    flex-direction: column;
 `;
 
 const StyledViewPage = styled(

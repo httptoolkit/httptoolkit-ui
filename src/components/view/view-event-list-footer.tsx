@@ -96,10 +96,9 @@ export const ViewEventListFooter = styled(observer((props: {
         />
     </ButtonsContainer>
 </div>))`
-    position: absolute;
-    bottom: 0;
+    order: 1;
 
-    height: ${HEADER_FOOTER_HEIGHT}px;
+    min-height: ${HEADER_FOOTER_HEIGHT}px;
     width: 100%;
     padding-left: 2px;
     box-sizing: border-box;

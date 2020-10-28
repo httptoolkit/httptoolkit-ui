@@ -35,6 +35,10 @@ const SuggestionRowPart = styled.p`
 `;
 
 const SuggestionDetails = styled(SuggestionRowPart)`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     ${(p: { isHighlighted: boolean }) => p.isHighlighted && css`
         box-shadow: 0px -8px 10px -10px rgba(0,0,0,0.3);
     `}
