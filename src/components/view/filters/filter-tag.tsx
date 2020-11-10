@@ -21,6 +21,10 @@ const FilterTagDelete = styled(Icon).attrs(() => ({
         ${p => polished.rgba(p.theme.mainBackground, 0.9)} 50%,
         transparent 100%
     );
+
+    &:hover {
+        color: ${p => p.theme.popColor};
+    }
 `;
 
 const FilterTagName = styled.span`
