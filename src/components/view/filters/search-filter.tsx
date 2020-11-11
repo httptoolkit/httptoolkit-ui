@@ -77,6 +77,20 @@ const deleteFilterIndex = (filters: FilterSet, index: number): FilterSet => {
     ];
 };
 
+const getSelectedFilterElements = (filterBox: HTMLDivElement) => {
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed) {
+        return [];
+    }
+
+    return [
+        ...Array.from(filterBox.querySelectorAll('.filter-tag')) as HTMLElement[],
+        filterBox.querySelector('input') as HTMLElement
+    ].filter((element) =>
+        selection.containsNode(element, true) // True => include partial selection
+    );
+}
+
 export const SearchFilter = React.memo((props: {
     searchFilters: FilterSet,
     onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
@@ -166,7 +180,29 @@ export const SearchFilter = React.memo((props: {
         const focusedElementIndex = filterElements.indexOf(focusedElement as HTMLElement);
         if (focusedElementIndex === -1) return; // These key bindings apply only to the input & tags:
 
-        if (filterInput.selectionStart === filterInput.selectionEnd) {
+        const selectedFilterElements = getSelectedFilterElements(filterBox);
+
+        if (selectedFilterElements.length > 0) {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                const indexToSelect = event.key === 'ArrowLeft'
+                    ? 0
+                    : selectedFilterElements.length - 1;
+
+                const elementToSelect = selectedFilterElements[indexToSelect];
+
+                document.getSelection()!.removeAllRanges();
+                elementToSelect.focus();
+
+                if (elementToSelect === filterInput) {
+                    const cursorPosition = event.key === 'ArrowLeft'
+                        ? 0
+                        : filterInput.value.length;
+                    filterInput.setSelectionRange(cursorPosition, cursorPosition);
+                }
+
+                event.preventDefault();
+            }
+        } else if (filterInput.selectionStart === filterInput.selectionEnd) {
             // Otherwise, as long as nothing is selected in the input, we're just handling a cursor:
             const inputCursorIndex = filterInput.selectionStart ?? -1;
             const isInputSelected = focusedElement === filterInput;
