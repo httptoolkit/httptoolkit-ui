@@ -75,7 +75,6 @@ export const FilterInput = (props: {
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>,
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
-    onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void,
 
     currentFilters: FilterSet,
     availableFilters: FilterClass[],
@@ -166,10 +165,9 @@ export const FilterInput = (props: {
         type: 'text',
         value: props.value,
         onChange: props.onChange,
-        onKeyDown: props.onKeyDown,
         placeholder: props.placeholder,
         ref: props.searchInputRef
-    }), [props.value, props.onChange, props.onKeyDown, props.placeholder, props.searchInputRef]);
+    }), [props.value, props.onChange, props.placeholder, props.searchInputRef]);
 
     return <Autosuggest
         ref={autosuggestRef}
