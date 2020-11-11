@@ -25,6 +25,14 @@ const FilterInputField = styled.input`
     background-color: ${p => p.theme.highlightBackground};
     color: ${p => p.theme.highlightColor};
     font-size: ${p => p.theme.textSize};
+
+    ::placeholder {
+        /*
+        For some reason, I think related to react-split-pane setting 'user-select: text',
+        the placeholder gets selected by selection.selectAllChildren. This stops that:
+        */
+        user-select: none;
+    }
 `;
 
 const FilterSuggestionsBox = styled.div`

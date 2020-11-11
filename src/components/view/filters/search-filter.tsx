@@ -13,6 +13,7 @@ import {
 import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
+import { isCmdCtrlPressed } from '../../../util/ui';
 
 const CLEAR_BUTTON_WIDTH = '30px';
 
@@ -86,9 +87,76 @@ export const SearchFilter = React.memo((props: {
 }) => {
     const boxRef = React.useRef<HTMLDivElement>(null);
 
+    // Map HTML elements back to their corresponding filters, for selection tracking later
+    const tagRefs = React.useMemo(() => new Map<HTMLElement, Filter>(), []);
+
+    const [selectedFilters, setSelectedFilters] = React.useState<Filter[]>([]);
+
+    const getSelectedFilters = React.useCallback(() => {
+        const selection = document.getSelection();
+        if (!selection || selection.isCollapsed) {
+            return [];
+        }
+
+        const filterBox = boxRef.current;
+        if (filterBox && props.searchFilters.length > 0) {
+            // Manually map the input element to the string search filter. We could probably do this
+            // with a ref, but it's messy, updating on demand here is easier.
+            tagRefs.set(filterBox.querySelector('input')!, props.searchFilters[0]!);
+        }
+
+        // Update selectedFilters to match the filters selected for real in the document:
+        const currentlySelectedFilters: Filter[] = [];
+        Array.from(tagRefs.entries()).forEach(([tagElement, filter]) => {
+            // Clean up any dangling filter element keys:
+            if (!document.contains(tagElement)) {
+                tagRefs.delete(tagElement);
+                return;
+            }
+
+            if (selection.containsNode(tagElement, true)) { // True => include partial selection
+                currentlySelectedFilters.push(filter);
+            }
+        });
+        return currentlySelectedFilters;
+    }, [boxRef, props.searchFilters, tagRefs]);
+
+    const updateSelectedTags = React.useCallback(() => {
+        setSelectedFilters(getSelectedFilters());
+    }, [setSelectedFilters, getSelectedFilters]);
+
+    // Run the above, to match our internal selection state to the DOM, every time the
+    // DOM's selection state updates whilst we're mounted:
+    React.useEffect(() => {
+        updateSelectedTags();
+        document.addEventListener('selectionchange', updateSelectedTags);
+        return () => {
+            updateSelectedTags();
+            document.removeEventListener('selectionchange', updateSelectedTags);
+        }
+    }, [updateSelectedTags]);
+
+    const selectAllFilterTags = React.useCallback(() => {
+        const filterBox = boxRef.current;
+        if (!filterBox) return;
+
+        window.getSelection()!.setBaseAndExtent(
+            filterBox, 0, // From the start (all tags)
+            filterBox.querySelector('[role=listbox]')!, 0 // Up to but excluding the suggestions box
+        );
+        // ^ This will trigger selectionchange and then updateSelectedTags
+    }, [boxRef]);
+
     const onKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLElement>) => {
         const filterBox = boxRef.current;
         if (!filterBox) return;
+
+        if (event.key === 'a' && isCmdCtrlPressed(event)) {
+            // If you select-all, select both the filters and the input
+            selectAllFilterTags();
+            event.preventDefault();
+            return;
+        }
 
         const filterTagElements = Array.from(filterBox.querySelectorAll('.filter-tag'));
         const filterInput = filterBox.querySelector('input')!;
@@ -132,7 +200,7 @@ export const SearchFilter = React.memo((props: {
                 event.preventDefault();
             }
         }
-    }, [boxRef, props.onSearchFiltersChanged, props.searchFilters]);
+    }, [boxRef, props.onSearchFiltersChanged, props.searchFilters, selectAllFilterTags]);
 
     const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         props.onSearchFiltersChanged([
@@ -167,9 +235,11 @@ export const SearchFilter = React.memo((props: {
                 <FilterTag
                     key={i}
                     filter={f}
+                    isSelected={selectedFilters.includes(f)}
                     onDelete={() => props.onSearchFiltersChanged(
                         deleteFilter(props.searchFilters, f)
                     )}
+                    ref={(ref) => { if (ref) tagRefs.set(ref, f); }}
                 />
             )
         }

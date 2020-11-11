@@ -13,6 +13,12 @@ export const Ctrl = navigator.platform.startsWith('Mac')
     ? '⌘'
     : 'Ctrl';
 
+export function isCmdCtrlPressed(event: React.KeyboardEvent<unknown>) {
+    return navigator.platform.startsWith('Mac')
+        ? event.metaKey
+        : event.ctrlKey;
+}
+
 // Is the element an editable field, for which we shouldn't add keyboard shortcuts?
 // We don't worry about readonly, because that might still be surprising.
 export const isEditable = (target: EventTarget | null) => {

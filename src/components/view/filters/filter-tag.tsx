@@ -68,20 +68,30 @@ const FilterTagContainer = styled.div`
         outline: none;
         border-color: ${p => p.theme.popColor};
     }
+
+    &.is-selected {
+        background-color: ${p => p.theme.mainLowlightBackground};
+        box-shadow: inset 0 0 12px -8px #000;
+    }
+
+    & ::selection {
+        background-color: transparent;
+    }
 `;
 
-export const FilterTag = (props: {
+export const FilterTag = React.forwardRef((props: {
     filter: Filter,
+    isSelected: boolean,
     onDelete: () => void
     onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void
-}) => {
-
+}, ref: React.Ref<HTMLDivElement>) => {
     return <FilterTagContainer
-        className='filter-tag'
+        ref={ref}
+        className={'filter-tag' + (props.isSelected ? ' is-selected' : '')}
         tabIndex={-1}
         onKeyDown={props.onKeyDown}
     >
         <FilterTagName>{ props.filter.toString() }</FilterTagName>
         <FilterTagDelete onClick={props.onDelete} />
     </FilterTagContainer>;
-}
+});
