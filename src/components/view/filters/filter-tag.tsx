@@ -79,6 +79,10 @@ const FilterTagContainer = styled.div`
     }
 `;
 
+function ignoreTripleClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.detail === 3) event.preventDefault();
+}
+
 export const FilterTag = React.forwardRef((props: {
     filter: Filter,
     isSelected: boolean,
@@ -90,6 +94,7 @@ export const FilterTag = React.forwardRef((props: {
         className={'filter-tag' + (props.isSelected ? ' is-selected' : '')}
         tabIndex={-1}
         onKeyDown={props.onKeyDown}
+        onMouseDown={ignoreTripleClick}
     >
         <FilterTagName>{ props.filter.toString() }</FilterTagName>
         <FilterTagDelete onClick={props.onDelete} />
