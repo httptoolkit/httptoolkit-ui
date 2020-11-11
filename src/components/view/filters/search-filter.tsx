@@ -161,6 +161,19 @@ export const SearchFilter = React.memo((props: {
         // ^ This will trigger selectionchange and then updateSelectedTags
     }, [boxRef]);
 
+    const deleteSelectedFilters = React.useCallback(() => {
+        const remainingInputText = props.searchFilters[0] && selectedFilters.includes(props.searchFilters[0])
+            ? ""
+            : props.searchFilters[0]?.filter || ''
+
+        props.onSearchFiltersChanged([
+            new StringFilter(remainingInputText),
+            ...props.searchFilters.filter((f, i) =>
+                i > 0 && !selectedFilters.includes(f)
+            )
+        ]);
+    }, [selectedFilters]);
+
     const onKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLElement>) => {
         const filterBox = boxRef.current;
         if (!filterBox) return;
@@ -199,6 +212,15 @@ export const SearchFilter = React.memo((props: {
                         : filterInput.value.length;
                     filterInput.setSelectionRange(cursorPosition, cursorPosition);
                 }
+                event.preventDefault();
+            } else if (event.key === 'Delete' || event.key === 'Backspace') {
+                const lastSelectedIndex = filterElements.indexOf(selectedFilterElements[selectedFilterElements.length - 1]);
+                deleteSelectedFilters();
+                document.getSelection()!.removeAllRanges();
+
+                // If we don't delete the last filter tag, React will magically shift focus correctly for us,
+                // because we index filter tags by key. If we delete the last though, we need to focus input manually:
+                if (filterElements.length - lastSelectedIndex < 3) filterInput.focus();
 
                 event.preventDefault();
             }
@@ -236,7 +258,7 @@ export const SearchFilter = React.memo((props: {
                 event.preventDefault();
             }
         }
-    }, [boxRef, props.onSearchFiltersChanged, props.searchFilters, selectAllFilterTags]);
+    }, [boxRef, props.onSearchFiltersChanged, props.searchFilters, selectAllFilterTags, deleteSelectedFilters]);
 
     const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         props.onSearchFiltersChanged([
