@@ -178,6 +178,18 @@ export const SearchFilter = React.memo((props: {
         const filterBox = boxRef.current;
         if (!filterBox) return;
 
+        const selectedFilterElements = getSelectedFilterElements(filterBox);
+
+        if (!filterBox.contains(document.activeElement)) {
+            // Somehow the focus & input is going elsewhere. Ignore this,
+            // and clear our selection entirely if we have one. Unlikely to
+            // happen in normal behaviour, this is here as a backstop.
+            if (selectedFilterElements) {
+                document.getSelection()!.removeAllRanges();
+            }
+            return;
+        }
+
         if (event.key === 'a' && isCmdCtrlPressed(event)) {
             // If you select-all, select both the filters and the input
             selectAllFilterTags();
@@ -192,8 +204,6 @@ export const SearchFilter = React.memo((props: {
         const focusedElement = document.activeElement;
         const focusedElementIndex = filterElements.indexOf(focusedElement as HTMLElement);
         if (focusedElementIndex === -1) return; // These key bindings apply only to the input & tags:
-
-        const selectedFilterElements = getSelectedFilterElements(filterBox);
 
         if (selectedFilterElements.length > 0) {
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -223,6 +233,21 @@ export const SearchFilter = React.memo((props: {
                 if (filterElements.length - lastSelectedIndex < 3) filterInput.focus();
 
                 event.preventDefault();
+            } else if (event.key === 'Escape') {
+                document.getSelection()!.removeAllRanges();
+
+                filterInput.focus();
+                const inputEndPosition = filterInput.value.length;
+                filterInput.setSelectionRange(inputEndPosition, inputEndPosition);
+                event.preventDefault();
+            } else if ([...event.key].length === 1) { // This *exactly* equivalent to 'printable character', AFAICT
+                const inputCursorPosition = filterInput.selectionStart || filterInput.value.length;
+                deleteSelectedFilters();
+                document.getSelection()!.removeAllRanges();
+
+                // Direct the input directly into the text field:
+                filterInput.setSelectionRange(inputCursorPosition, inputCursorPosition);
+                filterInput.focus();
             }
         } else if (filterInput.selectionStart === filterInput.selectionEnd) {
             // Otherwise, as long as nothing is selected in the input, we're just handling a cursor:
