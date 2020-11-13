@@ -240,7 +240,12 @@ export const SearchFilter = React.memo((props: {
                 const inputEndPosition = filterInput.value.length;
                 filterInput.setSelectionRange(inputEndPosition, inputEndPosition);
                 event.preventDefault();
-            } else if ([...event.key].length === 1) { // This *exactly* equivalent to 'printable character', AFAICT
+            } else if (
+                [...event.key].length === 1 && // Exactly equivalent to 'printable character', AFAICT
+                !event.ctrlKey &&
+                !event.altKey &&
+                !event.metaKey
+            ) {
                 const inputCursorPosition = filterInput.selectionStart || filterInput.value.length;
                 deleteSelectedFilters();
                 document.getSelection()!.removeAllRanges();
@@ -249,6 +254,7 @@ export const SearchFilter = React.memo((props: {
                 filterInput.setSelectionRange(inputCursorPosition, inputCursorPosition);
                 filterInput.focus();
             }
+            // -> else we just fire the key event as normal, come what may
         } else if (filterInput.selectionStart === filterInput.selectionEnd) {
             // Otherwise, as long as nothing is selected in the input, we're just handling a cursor:
             const inputCursorIndex = filterInput.selectionStart ?? -1;
