@@ -291,6 +291,24 @@ export const SearchFilter = React.memo((props: {
         }
     }, [boxRef, props.onSearchFiltersChanged, props.searchFilters, selectAllFilterTags, deleteSelectedFilters]);
 
+    const onCopy = React.useCallback((e: React.ClipboardEvent) => {
+        // Get the selected filters in reverse order (i.e. matching the UI order)
+        const filtersToCopy = _.orderBy(getSelectedFilters(), f =>
+            (props.searchFilters as Filter[]).indexOf(f),
+        ['desc']);
+
+        if (filtersToCopy.length > 0) {
+            const serialization = filtersToCopy.map(t => t.serialize()).join(' ');
+            navigator.clipboard.writeText(serialization);
+            e.preventDefault();
+        }
+    }, [getSelectedFilters, props.searchFilters]);
+
+    const onCut = React.useCallback((e: React.ClipboardEvent) => {
+        onCopy(e);
+        deleteSelectedFilters();
+    }, [onCopy, deleteSelectedFilters]);
+
     const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         props.onSearchFiltersChanged([
             new StringFilter(event.target.value),
@@ -317,6 +335,8 @@ export const SearchFilter = React.memo((props: {
     return <SearchFilterBox
         ref={boxRef}
         hasContents={hasContents}
+        onCopy={onCopy}
+        onCut={onCut}
         onKeyDown={onKeyDown}
     >
         {

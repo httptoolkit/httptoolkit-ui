@@ -15,9 +15,18 @@ import {
     SyntaxPartValue
 } from './syntax-parts';
 
-export interface Filter {
-    matches(event: CollectedEvent): boolean;
-    toString(): String;
+export abstract class Filter {
+
+    abstract matches(event: CollectedEvent): boolean;
+    abstract toString(): String;
+
+    constructor(
+        private readonly filterString: String
+    ) {}
+
+    serialize() {
+        return this.filterString;
+    }
 }
 
 export type FilterSet = [StringFilter, ...Filter[]] | [];
@@ -52,10 +61,12 @@ export type FilterClass = {
  * Always exactly one used, with the raw text input from the
  * filter field, never added as a filter tag.
  */
-export class StringFilter implements Filter {
+export class StringFilter extends Filter {
     constructor(
         public readonly filter: string
-    ) {}
+    ) {
+        super(filter);
+    }
 
     matches(event: CollectedEvent): boolean {
         if (this.filter === '') return true;
@@ -148,7 +159,7 @@ function tryParseFilter<F extends FilterClass>(filterClass: F, value: string): P
     return parts as unknown as Partial<SyntaxPartValues<F>>;
 }
 
-class StatusFilter implements Filter {
+class StatusFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("status"),
@@ -194,6 +205,7 @@ class StatusFilter implements Filter {
     private predicate: (status: number, expectedStatus: number) => boolean;
 
     constructor(filter: string) {
+        super(filter);
         [, this.op, this.status] = parseFilter(StatusFilter, filter);
         this.predicate = numberOperations[this.op];
     }
@@ -209,7 +221,7 @@ class StatusFilter implements Filter {
     }
 }
 
-class CompletedFilter implements Filter {
+class CompletedFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("completed")] as const;
 
@@ -227,7 +239,7 @@ class CompletedFilter implements Filter {
     }
 }
 
-class PendingFilter implements Filter {
+class PendingFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("pending")];
 
@@ -245,7 +257,7 @@ class PendingFilter implements Filter {
     }
 }
 
-class AbortedFilter implements Filter {
+class AbortedFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("aborted")] as const;
 
@@ -263,7 +275,7 @@ class AbortedFilter implements Filter {
     }
 }
 
-class ErrorFilter implements Filter {
+class ErrorFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("errored")] as const;
 
@@ -284,7 +296,7 @@ class ErrorFilter implements Filter {
     }
 }
 
-class MethodFilter implements Filter {
+class MethodFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("method"),
@@ -310,6 +322,7 @@ class MethodFilter implements Filter {
     private expectedMethod: string;
 
     constructor(filter: string) {
+        super(filter);
         const [,, method] = parseFilter(MethodFilter, filter);
         this.expectedMethod = method.toUpperCase();
     }
@@ -325,7 +338,7 @@ class MethodFilter implements Filter {
 
 }
 
-class HttpVersionFilter implements Filter {
+class HttpVersionFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("httpVersion"),
@@ -346,6 +359,7 @@ class HttpVersionFilter implements Filter {
     private expectedVersion: number;
 
     constructor(filter: string) {
+        super(filter);
         const [,, versionString] = parseFilter(HttpVersionFilter, filter);
         this.expectedVersion = parseInt(versionString, 10);
     }
@@ -360,7 +374,7 @@ class HttpVersionFilter implements Filter {
     }
 }
 
-class ProtocolFilter implements Filter {
+class ProtocolFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("protocol"),
@@ -384,6 +398,7 @@ class ProtocolFilter implements Filter {
     private expectedProtocol: string;
 
     constructor(filter: string) {
+        super(filter);
         const [,, protocol] = parseFilter(ProtocolFilter, filter);
         this.expectedProtocol = protocol.toLowerCase();
     }
@@ -401,7 +416,7 @@ class ProtocolFilter implements Filter {
     }
 }
 
-class HostnameFilter implements Filter {
+class HostnameFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("hostname"),
@@ -440,6 +455,7 @@ class HostnameFilter implements Filter {
     private predicate: (host: string, expectedHost: string) => boolean;
 
     constructor(filter: string) {
+        super(filter);
         const [, op, hostname] = parseFilter(HostnameFilter, filter);
         this.op = op;
         this.predicate = stringOperations[op];
@@ -464,7 +480,7 @@ const PROTOCOL_DEFAULT_PORTS = {
     'https:': 443
 } as const;
 
-class PortFilter implements Filter {
+class PortFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("port"),
@@ -496,6 +512,7 @@ class PortFilter implements Filter {
     private predicate: (port: number, expectedPort: number) => boolean;
 
     constructor(filter: string) {
+        super(filter);
         [, this.op, this.expectedPort] = parseFilter(PortFilter, filter);
         this.predicate = numberOperations[this.op];
     }
@@ -519,7 +536,7 @@ class PortFilter implements Filter {
     }
 }
 
-class PathFilter implements Filter {
+class PathFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("path"),
@@ -550,6 +567,7 @@ class PathFilter implements Filter {
     private predicate: (path: string, expectedPath: string) => boolean;
 
     constructor(filter: string) {
+        super(filter);
         [, this.op, this.expectedPath] = parseFilter(PathFilter, filter);
         this.predicate = stringOperations[this.op];
     }
@@ -564,7 +582,7 @@ class PathFilter implements Filter {
     }
 }
 
-class QueryFilter implements Filter {
+class QueryFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("query"),
@@ -597,6 +615,7 @@ class QueryFilter implements Filter {
     private predicate: (query: string, expectedQuery: string) => boolean;
 
     constructor(filter: string) {
+        super(filter);
         [, this.op, this.expectedQuery] = parseFilter(QueryFilter, filter);
         this.predicate = stringOperations[this.op];
     }
