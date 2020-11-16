@@ -285,7 +285,14 @@ export class SearchFilter extends React.Component<{
 
                 // If we don't delete the last filter tag, React will magically shift focus correctly for us,
                 // because we index filter tags by key. If we delete the last though, we need to focus input manually:
-                if (filterElements.length - lastSelectedIndex < 3) filterInput.focus();
+                if (filterElements.length - lastSelectedIndex < 3) {
+                    filterInput.focus();
+
+                    // This shouldn't be required, but it seems reasonable (we're either deleting filters left of the
+                    // input, or filters including all the input content). Without this, when ctrl-a selects the
+                    // input entirely, focusing the input again here doesn't put the cursor back automatically.
+                    filterInput.setSelectionRange(0, 0);
+                }
 
                 event.preventDefault();
             } else if (event.key === 'Escape') {
