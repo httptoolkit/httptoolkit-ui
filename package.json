@@ -86,6 +86,7 @@
     "mobx": "^5.15.0",
     "mobx-persist": "^0.4.1",
     "mobx-react": "^5.4.0",
+    "mobx-shallow-undo": "^1.0.0",
     "mobx-utils": "^5.1.0",
     "mockttp": "^1.0.2",
     "monaco-editor": "^0.19.3",

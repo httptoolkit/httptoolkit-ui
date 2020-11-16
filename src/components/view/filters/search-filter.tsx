@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import { action, computed, observable } from 'mobx';
+import { trackUndo } from 'mobx-shallow-undo';
 
 import { styled } from '../../../styles';
 import { isCmdCtrlPressed } from '../../../util/ui';
@@ -123,6 +124,11 @@ export class SearchFilter extends React.Component<{
         this.props.uiStore!.activeFilterSet = filters;
     }
 
+    private readonly undoer = trackUndo(
+        () => this.searchFilters,
+        (value) => this.onSearchFiltersChanged(value)
+    );
+
     getSelectedFilters() {
         const selection = document.getSelection();
         if (!selection || selection.isCollapsed) {
@@ -221,6 +227,16 @@ export class SearchFilter extends React.Component<{
         if (event.key === 'a' && isCmdCtrlPressed(event)) {
             // If you select-all, select both the filters and the input
             this.selectAllFilterTags();
+            event.preventDefault();
+            return;
+        }
+
+        if (event.key.toLowerCase() === 'z' && isCmdCtrlPressed(event)) {
+            if (event.shiftKey) {
+                this.undoer.redo();
+            } else {
+                this.undoer.undo();
+            }
             event.preventDefault();
             return;
         }
