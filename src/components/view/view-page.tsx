@@ -221,7 +221,6 @@ class ViewPage extends React.Component<ViewPageProps> {
                         filteredEvents={this.filteredEvents}
                         searchFilters={confirmedSearchFilters}
                         onSearchFiltersConsidered={this.onSearchFiltersConsidered}
-                        onSearchFiltersChanged={this.onSearchFiltersChanged}
                         onClear={this.onClear}
                     />
                     <ViewEventList
@@ -252,11 +251,6 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onSearchFiltersConsidered(filters: FilterSet | undefined) {
         this.searchFiltersUnderConsideration = filters;
-    }
-
-    @action.bound
-    onSearchFiltersChanged(filters: FilterSet) {
-        this.props.uiStore.activeFilterSet = filters;
     }
 
     @action.bound

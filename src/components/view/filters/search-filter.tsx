@@ -1,7 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { disposeOnUnmount, inject, observer } from 'mobx-react';
+import { action, computed, observable } from 'mobx';
 
 import { styled } from '../../../styles';
+import { isCmdCtrlPressed } from '../../../util/ui';
 
 import {
     Filter,
@@ -9,14 +12,12 @@ import {
     StringFilter,
     FilterClass
 } from '../../../model/filters/search-filters';
+import { matchFilters } from '../../../model/filters/filter-matching';
+import { UiStore } from '../../../model/ui-store';
 
 import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
-import { isCmdCtrlPressed } from '../../../util/ui';
-import { matchFilters } from '../../../model/filters/filter-matching';
-import { disposeOnUnmount, observer } from 'mobx-react';
-import { action, observable } from 'mobx';
 
 const CLEAR_BUTTON_WIDTH = '30px';
 
@@ -94,11 +95,12 @@ const getSelectedFilterElements = (filterBox: HTMLDivElement) => {
     );
 }
 
+@inject('uiStore')
 @observer
 export class SearchFilter extends React.Component<{
+    uiStore?: UiStore,
     searchFilters: FilterSet,
     onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
-    onSearchFiltersChanged: (filters: FilterSet) => void,
     availableFilters: FilterClass[]
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>
@@ -110,6 +112,16 @@ export class SearchFilter extends React.Component<{
 
     @observable.shallow
     private selectedFilters: Filter[] = [];
+
+    @computed
+    private get searchFilters() {
+        return this.props.uiStore!.activeFilterSet;
+    }
+
+    @action.bound
+    onSearchFiltersChanged(filters: FilterSet) {
+        this.props.uiStore!.activeFilterSet = filters;
+    }
 
     getSelectedFilters() {
         const selection = document.getSelection();
@@ -171,7 +183,7 @@ export class SearchFilter extends React.Component<{
     }
 
     private deleteSelectedFilters() {
-        const { selectedFilters, props: { searchFilters, onSearchFiltersChanged } } = this;
+        const { selectedFilters, onSearchFiltersChanged, props: { searchFilters } } = this;
 
         const remainingInputText = searchFilters[0] && selectedFilters.includes(searchFilters[0])
             ? ""
@@ -190,9 +202,9 @@ export class SearchFilter extends React.Component<{
         if (!filterBox) return;
 
         const {
-            searchFilters,
-            onSearchFiltersChanged
-        } = this.props;
+            onSearchFiltersChanged,
+            props: { searchFilters }
+        } = this;
 
         const selectedFilterElements = getSelectedFilterElements(filterBox);
 
@@ -346,10 +358,10 @@ export class SearchFilter extends React.Component<{
 
         const {
             selectedFilters,
+            onSearchFiltersChanged,
             props: {
                 availableFilters,
-                searchFilters,
-                onSearchFiltersChanged
+                searchFilters
             }
         } = this;
 
@@ -392,7 +404,7 @@ export class SearchFilter extends React.Component<{
     }
 
     private onInputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { props: { searchFilters, onSearchFiltersChanged } } = this;
+        const { onSearchFiltersChanged, props: { searchFilters } } = this;
 
         onSearchFiltersChanged([
             new StringFilter(event.target.value),
@@ -401,11 +413,9 @@ export class SearchFilter extends React.Component<{
     }
 
     private onFiltersCleared = () => {
-        const { boxRef, props: { onSearchFiltersChanged } } = this;
+        this.onSearchFiltersChanged([]);
 
-        onSearchFiltersChanged([]);
-
-        const textInput = (boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
+        const textInput = (this.boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
         textInput?.focus();
     };
 
@@ -418,6 +428,7 @@ export class SearchFilter extends React.Component<{
             onKeyDown,
             onInputChanged,
             onFiltersCleared,
+            onSearchFiltersChanged,
 
             tagRefs,
             selectedFilters,
@@ -426,7 +437,6 @@ export class SearchFilter extends React.Component<{
                 searchInputRef,
                 availableFilters,
                 searchFilters,
-                onSearchFiltersChanged,
                 onSearchFiltersConsidered
             }
         } = this;

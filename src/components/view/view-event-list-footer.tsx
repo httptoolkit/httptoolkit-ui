@@ -62,7 +62,6 @@ export const ViewEventListFooter = styled(observer((props: {
     onClear: () => void,
     searchFilters: FilterSet,
     onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
-    onSearchFiltersChanged: (filters: FilterSet) => void,
 
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[],
@@ -72,7 +71,6 @@ export const ViewEventListFooter = styled(observer((props: {
     <SearchFilter
         searchFilters={props.searchFilters}
         onSearchFiltersConsidered={props.onSearchFiltersConsidered}
-        onSearchFiltersChanged={props.onSearchFiltersChanged}
         availableFilters={SelectableSearchFilterClasses}
         placeholder='Filter by URL, headers, status...'
         searchInputRef={props.searchInputRef}
