@@ -15,6 +15,8 @@ import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
 import { isCmdCtrlPressed } from '../../../util/ui';
 import { matchFilters } from '../../../model/filters/filter-matching';
+import { disposeOnUnmount, observer } from 'mobx-react';
+import { action, observable } from 'mobx';
 
 const CLEAR_BUTTON_WIDTH = '30px';
 
@@ -92,32 +94,37 @@ const getSelectedFilterElements = (filterBox: HTMLDivElement) => {
     );
 }
 
-export const SearchFilter = React.memo((props: {
+@observer
+export class SearchFilter extends React.Component<{
     searchFilters: FilterSet,
     onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
     onSearchFiltersChanged: (filters: FilterSet) => void,
     availableFilters: FilterClass[]
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>
-}) => {
-    const boxRef = React.useRef<HTMLDivElement>(null);
+}> {
+    private boxRef = React.createRef<HTMLDivElement>();
 
     // Map HTML elements back to their corresponding filters, for selection tracking later
-    const tagRefs = React.useMemo(() => new Map<HTMLElement, Filter>(), []);
+    private tagRefs = new Map<HTMLElement, Filter>();
 
-    const [selectedFilters, setSelectedFilters] = React.useState<Filter[]>([]);
+    @observable.shallow
+    private selectedFilters: Filter[] = [];
 
-    const getSelectedFilters = React.useCallback(() => {
+    getSelectedFilters() {
         const selection = document.getSelection();
         if (!selection || selection.isCollapsed) {
             return [];
         }
 
+        const { boxRef, tagRefs } = this;
+        const { searchFilters } = this.props;
+
         const filterBox = boxRef.current;
-        if (filterBox && props.searchFilters.length > 0) {
+        if (filterBox && searchFilters.length > 0) {
             // Manually map the input element to the string search filter. We could probably do this
             // with a ref, but it's messy, updating on demand here is easier.
-            tagRefs.set(filterBox.querySelector('input')!, props.searchFilters[0]!);
+            tagRefs.set(filterBox.querySelector('input')!, searchFilters[0]!);
         }
 
         // Update selectedFilters to match the filters selected for real in the document:
@@ -133,26 +140,27 @@ export const SearchFilter = React.memo((props: {
                 currentlySelectedFilters.push(filter);
             }
         });
+
         return currentlySelectedFilters;
-    }, [boxRef, props.searchFilters, tagRefs]);
+    }
 
-    const updateSelectedTags = React.useCallback(() => {
-        setSelectedFilters(getSelectedFilters());
-    }, [setSelectedFilters, getSelectedFilters]);
+    updateSelectedTags = action(() => {
+        this.selectedFilters = this.getSelectedFilters();
+    })
 
-    // Run the above, to match our internal selection state to the DOM, every time the
-    // DOM's selection state updates whilst we're mounted:
-    React.useEffect(() => {
-        updateSelectedTags();
-        document.addEventListener('selectionchange', updateSelectedTags);
-        return () => {
-            updateSelectedTags();
-            document.removeEventListener('selectionchange', updateSelectedTags);
-        }
-    }, [updateSelectedTags]);
+    componentDidMount() {
+        // Run the above, to match our internal selection state to the DOM, now and
+        // every time the DOM's selection state updates whilst we're mounted:
+        this.updateSelectedTags();
 
-    const selectAllFilterTags = React.useCallback(() => {
-        const filterBox = boxRef.current;
+        document.addEventListener('selectionchange', this.updateSelectedTags);
+        disposeOnUnmount(this, () => {
+            document.removeEventListener('selectionchange', this.updateSelectedTags);
+        });
+    }
+
+    private selectAllFilterTags() {
+        const filterBox = this.boxRef.current;
         if (!filterBox) return;
 
         window.getSelection()!.setBaseAndExtent(
@@ -160,24 +168,31 @@ export const SearchFilter = React.memo((props: {
             filterBox.querySelector('[role=listbox]')!, 0 // Up to but excluding the suggestions box
         );
         // ^ This will trigger selectionchange and then updateSelectedTags
-    }, [boxRef]);
+    }
 
-    const deleteSelectedFilters = React.useCallback(() => {
-        const remainingInputText = props.searchFilters[0] && selectedFilters.includes(props.searchFilters[0])
+    private deleteSelectedFilters() {
+        const { selectedFilters, props: { searchFilters, onSearchFiltersChanged } } = this;
+
+        const remainingInputText = searchFilters[0] && selectedFilters.includes(searchFilters[0])
             ? ""
-            : props.searchFilters[0]?.filter || '';
+            : searchFilters[0]?.filter || '';
 
-        props.onSearchFiltersChanged([
+        onSearchFiltersChanged([
             new StringFilter(remainingInputText),
-            ...props.searchFilters.filter((f, i) =>
+            ...searchFilters.filter((f, i) =>
                 i > 0 && !selectedFilters.includes(f)
             )
         ]);
-    }, [selectedFilters]);
+    }
 
-    const onKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLElement>) => {
-        const filterBox = boxRef.current;
+    private onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+        const filterBox = this.boxRef.current;
         if (!filterBox) return;
+
+        const {
+            searchFilters,
+            onSearchFiltersChanged
+        } = this.props;
 
         const selectedFilterElements = getSelectedFilterElements(filterBox);
 
@@ -193,7 +208,7 @@ export const SearchFilter = React.memo((props: {
 
         if (event.key === 'a' && isCmdCtrlPressed(event)) {
             // If you select-all, select both the filters and the input
-            selectAllFilterTags();
+            this.selectAllFilterTags();
             event.preventDefault();
             return;
         }
@@ -237,7 +252,7 @@ export const SearchFilter = React.memo((props: {
                 event.preventDefault();
             } else if (event.key === 'Delete' || event.key === 'Backspace') {
                 const lastSelectedIndex = filterElements.indexOf(selectedFilterElements[selectedFilterElements.length - 1]);
-                deleteSelectedFilters();
+                this.deleteSelectedFilters();
                 document.getSelection()!.removeAllRanges();
 
                 // If we don't delete the last filter tag, React will magically shift focus correctly for us,
@@ -259,7 +274,7 @@ export const SearchFilter = React.memo((props: {
                 !event.metaKey
             ) {
                 const inputCursorPosition = filterInput.selectionStart || filterInput.value.length;
-                deleteSelectedFilters();
+                this.deleteSelectedFilters();
                 document.getSelection()!.removeAllRanges();
 
                 // Direct the input directly into the text field:
@@ -282,8 +297,8 @@ export const SearchFilter = React.memo((props: {
                 : null; // We're within text in the input, do nothing (i.e. delete a char as normal)
 
                 if (filterIndexToDelete) {
-                    props.onSearchFiltersChanged(
-                        deleteFilterIndex(props.searchFilters, filterIndexToDelete)
+                    onSearchFiltersChanged(
+                        deleteFilterIndex(searchFilters, filterIndexToDelete)
                     );
 
                     // If we're not the last filter tag, React will magically shift focus to the next for us,
@@ -301,12 +316,14 @@ export const SearchFilter = React.memo((props: {
                 event.preventDefault();
             }
         }
-    }, [boxRef, props.onSearchFiltersChanged, props.searchFilters, selectAllFilterTags, deleteSelectedFilters]);
+    }
 
-    const onCopy = React.useCallback((e: React.ClipboardEvent) => {
+    private onCopy = (e: React.ClipboardEvent) => {
+        const { props: { searchFilters } } = this;
+
         // Get the selected filters in reverse order (i.e. matching the UI order)
-        const filtersToCopy = _.orderBy(getSelectedFilters(), f =>
-            (props.searchFilters as Filter[]).indexOf(f),
+        const filtersToCopy = _.orderBy(this.getSelectedFilters(), f =>
+            (searchFilters as Filter[]).indexOf(f),
         ['desc']);
 
         if (filtersToCopy.length > 0) {
@@ -314,21 +331,30 @@ export const SearchFilter = React.memo((props: {
             navigator.clipboard.writeText(serialization);
             e.preventDefault();
         }
-    }, [getSelectedFilters, props.searchFilters]);
+    }
 
-    const onCut = React.useCallback((e: React.ClipboardEvent) => {
-        onCopy(e);
-        deleteSelectedFilters();
-    }, [onCopy, deleteSelectedFilters]);
+    private onCut = (e: React.ClipboardEvent) => {
+        this.onCopy(e);
+        this.deleteSelectedFilters();
+    }
 
-    const onPaste = React.useCallback((e: React.ClipboardEvent<HTMLElement>) => {
-        const filterBox = boxRef.current;
+    private onPaste = (e: React.ClipboardEvent<HTMLElement>) => {
+        const filterBox = this.boxRef.current;
         const input = filterBox?.querySelector('input');
         if (!filterBox || !input) return;
         e.preventDefault();
 
+        const {
+            selectedFilters,
+            props: {
+                availableFilters,
+                searchFilters,
+                onSearchFiltersChanged
+            }
+        } = this;
+
         const pastedText = e.clipboardData.getData("text");
-        const pastedFilters = matchFilters(props.availableFilters, pastedText);
+        const pastedFilters = matchFilters(availableFilters, pastedText);
         const pastedStringFilter = pastedFilters[0];
         if (!pastedStringFilter) return; // Nothing was pasted at all
 
@@ -336,9 +362,9 @@ export const SearchFilter = React.memo((props: {
         const selectionStart = input.selectionStart ?? 0;
         const selectionEnd = input.selectionEnd ?? 0;
 
-        const currentTextInput = props.searchFilters[0]?.filter || '';
+        const currentTextInput = searchFilters[0]?.filter || '';
 
-        const updatedTextInput = selectedFilters.includes(props.searchFilters[0]!)
+        const updatedTextInput = selectedFilters.includes(searchFilters[0]!)
             ? pastedStringInput // If whole stringfilter is selected, replace all text
             : ( // Otherwise, replace selected & paste at cursor position
                 currentTextInput.slice(0, selectionStart) +
@@ -349,11 +375,11 @@ export const SearchFilter = React.memo((props: {
         // We *always* place pasted filters in position 1 (between text input and filter tags) because
         // pasting into non-input fields doesn't work reliably, so we redirect it to the input anyway.
         // This is nice and consistent, and works well enough for now.
-        props.onSearchFiltersChanged([
+        onSearchFiltersChanged([
             new StringFilter(updatedTextInput),
             // Skip both StringFilters below, we've already combined them above:
             ...pastedFilters.slice(1),
-            ...props.searchFilters.slice(1)
+            ...searchFilters.slice(1)
                 .filter(f => !selectedFilters.includes(f)) // Paste deletes currently selected filters
         ]);
 
@@ -363,69 +389,96 @@ export const SearchFilter = React.memo((props: {
             input.setSelectionRange(endOfPastedContent, endOfPastedContent);
             input.focus();
         });
-    }, [boxRef, props.availableFilters, props.searchFilters, props.onSearchFiltersChanged, selectedFilters]);
+    }
 
-    const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        props.onSearchFiltersChanged([
+    private onInputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { props: { searchFilters, onSearchFiltersChanged } } = this;
+
+        onSearchFiltersChanged([
             new StringFilter(event.target.value),
-            ...props.searchFilters.slice(1)
+            ...searchFilters.slice(1)
         ]);
-    }, [props.onSearchFiltersChanged, props.searchFilters]);
+    }
 
-    const onFiltersCleared = React.useCallback(() => {
-        props.onSearchFiltersChanged([]);
+    private onFiltersCleared = () => {
+        const { boxRef, props: { onSearchFiltersChanged } } = this;
+
+        onSearchFiltersChanged([]);
 
         const textInput = (boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
         textInput?.focus();
-    }, [props.onSearchFiltersChanged, boxRef]);
+    };
 
-    // Note that the model stores filters in the opposite order to how they're shown in the UI.
-    // Mainly just because destructuring (of types & values) only works this way round.
-    const [stringFilter, ...otherFilters] = props.searchFilters;
+    render() {
+        const {
+            boxRef,
+            onCopy,
+            onCut,
+            onPaste,
+            onKeyDown,
+            onInputChanged,
+            onFiltersCleared,
 
-    // The text input always edits the first (last, in the UI) filter directly as a string
-    const textInputValue = stringFilter?.filter ?? '';
+            tagRefs,
+            selectedFilters,
+            props: {
+                placeholder,
+                searchInputRef,
+                availableFilters,
+                searchFilters,
+                onSearchFiltersChanged,
+                onSearchFiltersConsidered
+            }
+        } = this;
 
-    const hasContents = !!textInputValue || !!otherFilters.length;
+        // Note that the model stores filters in the opposite order to how they're shown in the UI.
+        // Mainly just because destructuring (of types & values) only works this way round.
+        const [stringFilter, ...otherFilters] = searchFilters;
 
-    return <SearchFilterBox
-        ref={boxRef}
-        hasContents={hasContents}
-        onCopy={onCopy}
-        onCut={onCut}
-        onPaste={onPaste}
-        onKeyDown={onKeyDown}
-    >
-        {
-            otherFilters.reverse().map((f, i) =>
-                <FilterTag
-                    key={i}
-                    filter={f}
-                    isSelected={selectedFilters.includes(f)}
-                    onDelete={() => props.onSearchFiltersChanged(
-                        deleteFilter(props.searchFilters, f)
-                    )}
-                    ref={(ref) => { if (ref) tagRefs.set(ref, f); }}
-                />
-            )
-        }
-        <FilterInput
-            value={textInputValue}
-            onChange={onInputChanged}
-            placeholder={props.placeholder}
-            searchInputRef={props.searchInputRef}
+        // The text input always edits the first (last, in the UI) filter directly as a string
+        const textInputValue = stringFilter?.filter ?? '';
 
-            onFiltersConsidered={props.onSearchFiltersConsidered}
-            onFiltersChanged={props.onSearchFiltersChanged}
-            currentFilters={props.searchFilters}
-            availableFilters={props.availableFilters}
-        />
-        { hasContents &&
-            <ClearSearchButton
-                title="Clear all search filters"
-                icon={['fas', 'times']}
-                onClick={onFiltersCleared}
+        const hasContents = !!textInputValue || !!otherFilters.length;
+
+        return <SearchFilterBox
+            ref={boxRef}
+            hasContents={hasContents}
+            onCopy={onCopy}
+            onCut={onCut}
+            onPaste={onPaste}
+            onKeyDown={onKeyDown}
+        >
+            {
+                otherFilters.reverse().map((f, i) =>
+                    <FilterTag
+                        key={i}
+                        filter={f}
+                        isSelected={selectedFilters.includes(f)}
+                        onDelete={() => onSearchFiltersChanged(
+                            deleteFilter(searchFilters, f)
+                        )}
+                        ref={(ref) => { if (ref) tagRefs.set(ref, f); }}
+                    />
+                )
+            }
+            <FilterInput
+                value={textInputValue}
+                onChange={onInputChanged}
+                placeholder={placeholder}
+                searchInputRef={searchInputRef}
+
+                onFiltersConsidered={onSearchFiltersConsidered}
+                onFiltersChanged={onSearchFiltersChanged}
+                currentFilters={searchFilters}
+                availableFilters={availableFilters}
             />
-        }
-    </SearchFilterBox>;
-});
+            { hasContents &&
+                <ClearSearchButton
+                    title="Clear all search filters"
+                    icon={['fas', 'times']}
+                    onClick={onFiltersCleared}
+                />
+            }
+        </SearchFilterBox>;
+    }
+}
