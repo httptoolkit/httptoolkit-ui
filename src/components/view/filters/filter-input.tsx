@@ -169,13 +169,20 @@ export const FilterInput = (props: {
         applySuggestionToText(props.value, suggestion)
     , [props.value]);
 
+    const onInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        // React-autosuggest tries to update the input content to match the highlighted value.
+        // We don't want that, so we ignore changes where the input itself hasn't changed:
+        if (e.target.value === props.value) return;
+        else props.onChange(e);
+    }, [props.onChange, props.value]);
+
     const inputProps = React.useMemo(() => ({
         type: 'text',
         value: props.value,
-        onChange: props.onChange,
+        onChange: onInputChange,
         placeholder: props.placeholder,
         ref: props.searchInputRef
-    }), [props.value, props.onChange, props.placeholder, props.searchInputRef]);
+    }), [props.value, onInputChange, props.placeholder, props.searchInputRef]);
 
     return <Autosuggest
         ref={autosuggestRef}
