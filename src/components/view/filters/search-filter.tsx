@@ -14,6 +14,7 @@ import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
 import { isCmdCtrlPressed } from '../../../util/ui';
+import { matchFilters } from '../../../model/filters/filter-matching';
 
 const CLEAR_BUTTON_WIDTH = '30px';
 
@@ -164,7 +165,7 @@ export const SearchFilter = React.memo((props: {
     const deleteSelectedFilters = React.useCallback(() => {
         const remainingInputText = props.searchFilters[0] && selectedFilters.includes(props.searchFilters[0])
             ? ""
-            : props.searchFilters[0]?.filter || ''
+            : props.searchFilters[0]?.filter || '';
 
         props.onSearchFiltersChanged([
             new StringFilter(remainingInputText),
@@ -203,6 +204,17 @@ export const SearchFilter = React.memo((props: {
 
         const focusedElement = document.activeElement;
         const focusedElementIndex = filterElements.indexOf(focusedElement as HTMLElement);
+
+        if (focusedElement !== filterInput && event.key === 'v' && isCmdCtrlPressed(event)) {
+            // Inconsistently, onPaste doesn't fire on non-editable manually focused elements, and manually
+            // simulating it is difficult (since we need clipboardData). Instead, we redirect all
+            // pastes to the input field, which should always receive them correctly:
+            filterInput.focus();
+            const lastCursorPosition = filterInput.value.length;
+            filterInput.setSelectionRange(lastCursorPosition, lastCursorPosition);
+            return;
+        }
+
         if (focusedElementIndex === -1) return; // These key bindings apply only to the input & tags:
 
         if (selectedFilterElements.length > 0) {
@@ -309,6 +321,50 @@ export const SearchFilter = React.memo((props: {
         deleteSelectedFilters();
     }, [onCopy, deleteSelectedFilters]);
 
+    const onPaste = React.useCallback((e: React.ClipboardEvent<HTMLElement>) => {
+        const filterBox = boxRef.current;
+        const input = filterBox?.querySelector('input');
+        if (!filterBox || !input) return;
+        e.preventDefault();
+
+        const pastedText = e.clipboardData.getData("text");
+        const pastedFilters = matchFilters(props.availableFilters, pastedText);
+        const pastedStringFilter = pastedFilters[0];
+        if (!pastedStringFilter) return; // Nothing was pasted at all
+
+        const pastedStringInput = pastedStringFilter.filter || '';
+        const selectionStart = input.selectionStart ?? 0;
+        const selectionEnd = input.selectionEnd ?? 0;
+
+        const currentTextInput = props.searchFilters[0]?.filter || '';
+
+        const updatedTextInput = selectedFilters.includes(props.searchFilters[0]!)
+            ? pastedStringInput // If whole stringfilter is selected, replace all text
+            : ( // Otherwise, replace selected & paste at cursor position
+                currentTextInput.slice(0, selectionStart) +
+                pastedStringInput +
+                currentTextInput.slice(selectionEnd)
+            );
+
+        // We *always* place pasted filters in position 1 (between text input and filter tags) because
+        // pasting into non-input fields doesn't work reliably, so we redirect it to the input anyway.
+        // This is nice and consistent, and works well enough for now.
+        props.onSearchFiltersChanged([
+            new StringFilter(updatedTextInput),
+            // Skip both StringFilters below, we've already combined them above:
+            ...pastedFilters.slice(1),
+            ...props.searchFilters.slice(1)
+                .filter(f => !selectedFilters.includes(f)) // Paste deletes currently selected filters
+        ]);
+
+        // Jump the cursor to the end of the newly pasted content after render:
+        requestAnimationFrame(() => {
+            const endOfPastedContent = selectionStart + pastedStringInput.length;
+            input.setSelectionRange(endOfPastedContent, endOfPastedContent);
+            input.focus();
+        });
+    }, [boxRef, props.availableFilters, props.searchFilters, props.onSearchFiltersChanged, selectedFilters]);
+
     const onInputChanged = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         props.onSearchFiltersChanged([
             new StringFilter(event.target.value),
@@ -337,6 +393,7 @@ export const SearchFilter = React.memo((props: {
         hasContents={hasContents}
         onCopy={onCopy}
         onCut={onCut}
+        onPaste={onPaste}
         onKeyDown={onKeyDown}
     >
         {
