@@ -72,7 +72,11 @@ export const ViewEventListFooter = styled(observer((props: {
         searchFilters={props.searchFilters}
         onSearchFiltersConsidered={props.onSearchFiltersConsidered}
         availableFilters={SelectableSearchFilterClasses}
-        placeholder='Filter by URL, headers, status...'
+        placeholder={
+            props.searchFilters.length <= 1
+            ? 'Filter by method, host, headers, status...'
+            : '...'
+        }
         searchInputRef={props.searchInputRef}
     />
     <RequestCounter

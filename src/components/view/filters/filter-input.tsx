@@ -17,8 +17,9 @@ import { FilterSuggestionRow } from './filter-suggestion-row';
 const FilterInputField = styled.input`
     box-sizing: border-box;
     width: 100%;
+    height: 100%;
 
-    padding: 1px 0;
+    padding: 3px 0 4px 1px;
     border: none;
     outline: none;
 

@@ -31,7 +31,7 @@ const SearchFilterBox = styled.div<{ hasContents: boolean }>`
 
     flex-grow: 1;
     min-width: 0; /* Don't let flexbox force this to expand given long tags */
-    padding: 2px ${p => p.hasContents ? CLEAR_BUTTON_WIDTH : '2px'} 2px 2px;
+    padding-right: ${p => p.hasContents ? CLEAR_BUTTON_WIDTH : '0'};
 
     border-radius: 4px;
 
@@ -47,11 +47,12 @@ const SearchFilterBox = styled.div<{ hasContents: boolean }>`
 
     .react-autosuggest__container {
         flex-grow: 1;
-        margin: 3px 0 3px 3px;
+        flex-basis: 100px; /* Shrink down to this, then wrap */
+    }
 
-        &:not(:first-child) {
-            margin-left: 0;
-        }
+    padding-bottom: 4px;
+    > div {
+        margin: 4px 0 0 4px;
     }
 `;
 
