@@ -85,8 +85,9 @@ export const FilterInput = (props: {
     searchInputRef?: React.Ref<HTMLInputElement>,
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
 
-    currentFilters: FilterSet,
+    activeFilters: FilterSet,
     availableFilters: FilterClass[],
+
     onFiltersChanged: (filters: FilterSet) => void,
     onFiltersConsidered: (filters: FilterSet | undefined) => void
 }) => {
@@ -107,7 +108,7 @@ export const FilterInput = (props: {
 
         if (data.suggestion && areSuggestionsVisible(autosuggestRef)) {
             if (isFullMatch) {
-                props.onFiltersConsidered(applySuggestionToFilters(props.currentFilters, data.suggestion));
+                props.onFiltersConsidered(applySuggestionToFilters(props.activeFilters, data.suggestion));
             } else {
                 // If you highlight a partial match, we show the filtered events as if you haven't
                 // entered any text, so you can still conveniently see the data until you either type
@@ -115,13 +116,13 @@ export const FilterInput = (props: {
                 // directly (and we filter by that instead).
                 props.onFiltersConsidered([
                     new StringFilter(''),
-                    ...props.currentFilters.slice(1)
+                    ...props.activeFilters.slice(1)
                 ]);
             }
         } else {
             props.onFiltersConsidered(undefined);
         }
-    }, [props.onFiltersConsidered, props.currentFilters, autosuggestRef]);
+    }, [props.onFiltersConsidered, props.activeFilters, autosuggestRef]);
 
     // Ephemerally track the updated suggestions, so we can detect a selection in clearSuggestions()
     // and update to show ongoing suggestions instead of hiding suggestions.
@@ -135,19 +136,19 @@ export const FilterInput = (props: {
         // suggestion selected even when none is shown. Guard against that.
         if (!areSuggestionsVisible(autosuggestRef)) return;
 
-        updatedFilters = applySuggestionToFilters(props.currentFilters, data.suggestion);
+        updatedFilters = applySuggestionToFilters(props.activeFilters, data.suggestion);
         trackEvent({
             category: 'Filters',
             action: 'Create',
             label: data.suggestion.filterClass.name // Track most used filters, *not* input or params
         });
         props.onFiltersChanged(updatedFilters);
-    }, [updatedFilters, props.currentFilters, props.onFiltersChanged]);
+    }, [updatedFilters, props.activeFilters, props.onFiltersChanged]);
 
     const clearSuggestions = React.useCallback(() => {
         const autosuggest = autosuggestRef.current as any;
 
-        if (updatedFilters && updatedFilters.length === props.currentFilters.length) {
+        if (updatedFilters && updatedFilters.length === props.activeFilters.length) {
             // If this is due to a filter update, but a new filter hasn't been created (i.e. we
             // had a partial match, for a single part) then force the suggestions to stay visible:
             autosuggest.justSelectedSuggestion = false;
@@ -159,7 +160,7 @@ export const FilterInput = (props: {
         // suggestions in almost all cases anyway - we just clear selection highlighting
         autosuggest.resetHighlightedSuggestion();
         considerSuggestion({ suggestion: null });
-    }, [updatedFilters, selectSuggestion, props.currentFilters.length, autosuggestRef]);
+    }, [updatedFilters, selectSuggestion, props.activeFilters.length, autosuggestRef]);
 
     const shouldRenderSuggestions = React.useCallback((value: string, reason: string) =>
         value.trim().length > 0 ||

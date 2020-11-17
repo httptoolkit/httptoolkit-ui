@@ -60,8 +60,7 @@ const ButtonsContainer = styled.div`
 export const ViewEventListFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
-    searchFilters: FilterSet,
-    onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
+    onFiltersConsidered: (filters: FilterSet | undefined) => void,
 
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[],
@@ -69,14 +68,9 @@ export const ViewEventListFooter = styled(observer((props: {
     searchInputRef?: React.Ref<HTMLInputElement>
 }) => <div className={props.className}>
     <SearchFilter
-        searchFilters={props.searchFilters}
-        onSearchFiltersConsidered={props.onSearchFiltersConsidered}
+        onFiltersConsidered={props.onFiltersConsidered}
         availableFilters={SelectableSearchFilterClasses}
-        placeholder={
-            props.searchFilters.length <= 1
-            ? 'Filter by method, host, headers, status...'
-            : '...'
-        }
+        placeholder={'Filter by method, host, headers, status...'}
         searchInputRef={props.searchInputRef}
     />
     <RequestCounter

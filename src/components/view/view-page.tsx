@@ -219,8 +219,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                         searchInputRef={this.searchInputRef}
                         allEvents={events}
                         filteredEvents={this.filteredEvents}
-                        searchFilters={confirmedSearchFilters}
-                        onSearchFiltersConsidered={this.onSearchFiltersConsidered}
+                        onFiltersConsidered={this.onSearchFiltersConsidered}
                         onClear={this.onClear}
                     />
                     <ViewEventList

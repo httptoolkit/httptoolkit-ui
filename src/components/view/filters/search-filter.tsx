@@ -101,8 +101,7 @@ const getSelectedFilterElements = (filterBox: HTMLDivElement) => {
 @observer
 export class SearchFilter extends React.Component<{
     uiStore?: UiStore,
-    searchFilters: FilterSet,
-    onSearchFiltersConsidered: (filters: FilterSet | undefined) => void,
+    onFiltersConsidered: (filters: FilterSet | undefined) => void,
     availableFilters: FilterClass[]
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>
@@ -116,18 +115,18 @@ export class SearchFilter extends React.Component<{
     private selectedFilters: Filter[] = [];
 
     @computed
-    private get searchFilters() {
+    private get activeFilters() {
         return this.props.uiStore!.activeFilterSet;
     }
 
     @action.bound
-    onSearchFiltersChanged(filters: FilterSet) {
+    onFiltersChanged(filters: FilterSet) {
         this.props.uiStore!.activeFilterSet = filters;
     }
 
     private readonly undoer = trackUndo(
-        () => this.searchFilters,
-        (value) => this.onSearchFiltersChanged(value)
+        () => this.activeFilters,
+        (value) => this.onFiltersChanged(value)
     );
 
     getSelectedFilters() {
@@ -136,14 +135,13 @@ export class SearchFilter extends React.Component<{
             return [];
         }
 
-        const { boxRef, tagRefs } = this;
-        const { searchFilters } = this.props;
+        const { boxRef, tagRefs, activeFilters } = this;
 
         const filterBox = boxRef.current;
-        if (filterBox && searchFilters.length > 0) {
+        if (filterBox && activeFilters.length > 0) {
             // Manually map the input element to the string search filter. We could probably do this
             // with a ref, but it's messy, updating on demand here is easier.
-            tagRefs.set(filterBox.querySelector('input')!, searchFilters[0]!);
+            tagRefs.set(filterBox.querySelector('input')!, activeFilters[0]!);
         }
 
         // Update selectedFilters to match the filters selected for real in the document:
@@ -190,15 +188,15 @@ export class SearchFilter extends React.Component<{
     }
 
     private deleteSelectedFilters() {
-        const { selectedFilters, onSearchFiltersChanged, props: { searchFilters } } = this;
+        const { selectedFilters, onFiltersChanged, activeFilters } = this;
 
-        const remainingInputText = searchFilters[0] && selectedFilters.includes(searchFilters[0])
+        const remainingInputText = activeFilters[0] && selectedFilters.includes(activeFilters[0])
             ? ""
-            : searchFilters[0]?.filter || '';
+            : activeFilters[0]?.filter || '';
 
-        onSearchFiltersChanged([
+        onFiltersChanged([
             new StringFilter(remainingInputText),
-            ...searchFilters.filter((f, i) =>
+            ...activeFilters.filter((f, i) =>
                 i > 0 && !selectedFilters.includes(f)
             )
         ]);
@@ -208,10 +206,7 @@ export class SearchFilter extends React.Component<{
         const filterBox = this.boxRef.current;
         if (!filterBox) return;
 
-        const {
-            onSearchFiltersChanged,
-            props: { searchFilters }
-        } = this;
+        const { onFiltersChanged, activeFilters } = this;
 
         const selectedFilterElements = getSelectedFilterElements(filterBox);
 
@@ -333,8 +328,8 @@ export class SearchFilter extends React.Component<{
                 : null; // We're within text in the input, do nothing (i.e. delete a char as normal)
 
                 if (filterIndexToDelete) {
-                    onSearchFiltersChanged(
-                        deleteFilterIndex(searchFilters, filterIndexToDelete)
+                    onFiltersChanged(
+                        deleteFilterIndex(activeFilters, filterIndexToDelete)
                     );
 
                     // If we're not the last filter tag, React will magically shift focus to the next for us,
@@ -355,11 +350,11 @@ export class SearchFilter extends React.Component<{
     }
 
     private onCopy = (e: React.ClipboardEvent) => {
-        const { props: { searchFilters } } = this;
+        const { activeFilters } = this;
 
         // Get the selected filters in reverse order (i.e. matching the UI order)
         const filtersToCopy = _.orderBy(this.getSelectedFilters(), f =>
-            (searchFilters as Filter[]).indexOf(f),
+            (activeFilters as Filter[]).indexOf(f),
         ['desc']);
 
         if (filtersToCopy.length > 0) {
@@ -382,11 +377,9 @@ export class SearchFilter extends React.Component<{
 
         const {
             selectedFilters,
-            onSearchFiltersChanged,
-            props: {
-                availableFilters,
-                searchFilters
-            }
+            activeFilters,
+            onFiltersChanged,
+            props: { availableFilters }
         } = this;
 
         const pastedText = e.clipboardData.getData("text");
@@ -398,9 +391,9 @@ export class SearchFilter extends React.Component<{
         const selectionStart = input.selectionStart ?? 0;
         const selectionEnd = input.selectionEnd ?? 0;
 
-        const currentTextInput = searchFilters[0]?.filter || '';
+        const currentTextInput = activeFilters[0]?.filter || '';
 
-        const updatedTextInput = selectedFilters.includes(searchFilters[0]!)
+        const updatedTextInput = selectedFilters.includes(activeFilters[0]!)
             ? pastedStringInput // If whole stringfilter is selected, replace all text
             : ( // Otherwise, replace selected & paste at cursor position
                 currentTextInput.slice(0, selectionStart) +
@@ -411,11 +404,11 @@ export class SearchFilter extends React.Component<{
         // We *always* place pasted filters in position 1 (between text input and filter tags) because
         // pasting into non-input fields doesn't work reliably, so we redirect it to the input anyway.
         // This is nice and consistent, and works well enough for now.
-        onSearchFiltersChanged([
+        onFiltersChanged([
             new StringFilter(updatedTextInput),
             // Skip both StringFilters below, we've already combined them above:
             ...pastedFilters.slice(1),
-            ...searchFilters.slice(1)
+            ...activeFilters.slice(1)
                 .filter(f => !selectedFilters.includes(f)) // Paste deletes currently selected filters
         ]);
 
@@ -428,16 +421,16 @@ export class SearchFilter extends React.Component<{
     }
 
     private onInputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { onSearchFiltersChanged, props: { searchFilters } } = this;
+        const { onFiltersChanged, activeFilters } = this;
 
-        onSearchFiltersChanged([
+        onFiltersChanged([
             new StringFilter(event.target.value),
-            ...searchFilters.slice(1)
+            ...activeFilters.slice(1)
         ]);
     }
 
     private onFiltersCleared = () => {
-        this.onSearchFiltersChanged([]);
+        this.onFiltersChanged([]);
 
         const textInput = (this.boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
         textInput?.focus();
@@ -452,22 +445,22 @@ export class SearchFilter extends React.Component<{
             onKeyDown,
             onInputChanged,
             onFiltersCleared,
-            onSearchFiltersChanged,
+            onFiltersChanged,
 
             tagRefs,
             selectedFilters,
+            activeFilters,
             props: {
                 placeholder,
                 searchInputRef,
                 availableFilters,
-                searchFilters,
-                onSearchFiltersConsidered
+                onFiltersConsidered
             }
         } = this;
 
         // Note that the model stores filters in the opposite order to how they're shown in the UI.
         // Mainly just because destructuring (of types & values) only works this way round.
-        const [stringFilter, ...otherFilters] = searchFilters;
+        const [stringFilter, ...otherFilters] = activeFilters;
 
         // The text input always edits the first (last, in the UI) filter directly as a string
         const textInputValue = stringFilter?.filter ?? '';
@@ -488,8 +481,8 @@ export class SearchFilter extends React.Component<{
                         key={i}
                         filter={f}
                         isSelected={selectedFilters.includes(f)}
-                        onDelete={() => onSearchFiltersChanged(
-                            deleteFilter(searchFilters, f)
+                        onDelete={() => onFiltersChanged(
+                            deleteFilter(activeFilters, f)
                         )}
                         ref={(ref) => { if (ref) tagRefs.set(ref, f); }}
                     />
@@ -498,12 +491,15 @@ export class SearchFilter extends React.Component<{
             <FilterInput
                 value={textInputValue}
                 onChange={onInputChanged}
-                placeholder={placeholder}
+                placeholder={otherFilters.length === 0
+                    ? placeholder
+                    : '...'
+                }
                 searchInputRef={searchInputRef}
 
-                onFiltersConsidered={onSearchFiltersConsidered}
-                onFiltersChanged={onSearchFiltersChanged}
-                currentFilters={searchFilters}
+                onFiltersConsidered={onFiltersConsidered}
+                onFiltersChanged={onFiltersChanged}
+                activeFilters={activeFilters}
                 availableFilters={availableFilters}
             />
             { hasContents &&
