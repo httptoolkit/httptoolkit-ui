@@ -137,6 +137,20 @@ function getParsedValue(part: SyntaxPart, value: string, index: number): string 
     return value.slice(index, index + match.consumed);
 }
 
+function filterContextualSuggestions<S>(
+    value: string,
+    index: number,
+    context: S | undefined,
+    suggestionGenerator: ((value: string, index: number, context: S) => string[]) | undefined,
+    filter: (suggestion: string) => boolean
+) {
+    if (!context || !suggestionGenerator) return [];
+    else return suggestionGenerator(value, index, context)
+        .filter(filter)
+        .slice(0, 10) // Max 10 results
+        .map(s => ({ showAs: s, value: s }));
+}
+
 export class FixedStringSyntax implements SyntaxPart<string> {
 
     constructor(
@@ -212,18 +226,16 @@ export class StringSyntax<S = never> implements SyntaxPart<string, S> {
     getSuggestions(value: string, index: number, context?: S): Suggestion[] {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
 
-        const suggestions = context && this.options.suggestionGenerator
-            ? this.options.suggestionGenerator(value, index, context)
-                .filter(suggestion =>
-                    // Suggestions must fit the existing value
-                    (!matchingString || suggestion.startsWith(matchingString)) &&
-                    // and every char must match at least one of the given char ranges
-                    ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
-                        !this.allowedCharRanges.some(r => matchesRange(c, r))
-                    )
+        const suggestions = filterContextualSuggestions(value, index, context,
+            this.options.suggestionGenerator,
+            (suggestion) =>
+                // Suggestions must fit the existing value
+                (!matchingString || suggestion.startsWith(matchingString)) &&
+                // and every char must match at least one of the given char ranges
+                ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
+                    !this.allowedCharRanges.some(r => matchesRange(c, r))
                 )
-                .map(s => ({ showAs: s, value: s }))
-            : [];
+        );
 
         if (!matchingString) {
             return [{
@@ -295,20 +307,18 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
     getSuggestions(value: string, index: number, context?: S): Suggestion[] {
         const matchingNumber = getNumberAt(value, index);
 
-        const suggestions = context && this.options.suggestionGenerator
-            ? this.options.suggestionGenerator(value, index, context)
-                .filter(suggestion =>
-                    // Suggestions must fit the existing value
-                    (!matchingNumber || suggestion.startsWith(matchingNumber)) &&
-                    // and have the right length
-                    suggestion.length === this.requiredLength &&
-                    // and be numbers
-                    ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
-                        !matchesRange(c, NUMBER_CHARS)
-                    )
+        const suggestions = filterContextualSuggestions(value, index, context,
+            this.options.suggestionGenerator,
+            (suggestion) =>
+                // Suggestions must fit the existing value
+                (!matchingNumber || suggestion.startsWith(matchingNumber)) &&
+                // and have the right length
+                suggestion.length === this.requiredLength &&
+                // and be numbers
+                ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
+                    !matchesRange(c, NUMBER_CHARS)
                 )
-                .map(s => ({ showAs: s, value: s }))
-            : [];
+        );
 
         if (!matchingNumber) {
             return [{
