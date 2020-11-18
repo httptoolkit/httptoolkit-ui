@@ -47,7 +47,7 @@ export interface Suggestion {
     template?: true;
 }
 
-export interface SyntaxPart<P extends string | number= string | number> {
+export interface SyntaxPart<P extends string | number = string | number, S extends any = never> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
      * some text were appended to the string.
@@ -67,7 +67,7 @@ export interface SyntaxPart<P extends string | number= string | number> {
      *
      * Don't call it without a match, as the behaviour is undefined.
      */
-    getSuggestions(value: string, index: number): Suggestion[];
+    getSuggestions(value: string, index: number, context?: S): Suggestion[];
 
     /**
      * For a part that fully matches, this will return the fully matched
@@ -95,6 +95,8 @@ function matchesRange(charCode: number, range: CharRange) {
     return charCode >= range[0] && charCode <= range[1];
 }
 
+// Note that our definition of 'number' is very simplistic: no decimal points,
+// no thousand separators, no negative numbers, just 0+ integers.
 const getNumberAt = (value: string, index: number) =>
     getStringAt(value, index, [NUMBER_CHARS]);
 
@@ -177,7 +179,7 @@ export class FixedStringSyntax implements SyntaxPart<string> {
 
 }
 
-export class StringSyntax implements SyntaxPart<string> {
+export class StringSyntax<S = never> implements SyntaxPart<string, S> {
 
     private allowedCharRanges: CharRange[];
 
@@ -185,7 +187,8 @@ export class StringSyntax implements SyntaxPart<string> {
         private templateText: string,
         private options: {
             allowEmpty?: boolean
-            allowedChars?: CharRange[]
+            allowedChars?: CharRange[],
+            suggestionGenerator?: (value: string, index: number, context: S) => string[]
         } = {}
     ) {
         this.allowedCharRanges = options.allowedChars || [[0, 255]];
@@ -206,20 +209,33 @@ export class StringSyntax implements SyntaxPart<string> {
         };
     }
 
-    getSuggestions(value: string, index: number): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: S): Suggestion[] {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
+
+        const suggestions = context && this.options.suggestionGenerator
+            ? this.options.suggestionGenerator(value, index, context)
+                .filter(suggestion =>
+                    // Suggestions must fit the existing value
+                    (!matchingString || suggestion.startsWith(matchingString)) &&
+                    // and every char must match at least one of the given char ranges
+                    ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
+                        !this.allowedCharRanges.some(r => matchesRange(c, r))
+                    )
+                )
+                .map(s => ({ showAs: s, value: s }))
+            : [];
 
         if (!matchingString) {
             return [{
                 showAs: `{${this.templateText}}`,
                 value: "",
                 template: true
-            }];
+            }, ...suggestions];
         } else {
             return [{
                 showAs: matchingString,
                 value: matchingString
-            }];
+            }, ...suggestions];
         }
     }
 
@@ -252,10 +268,13 @@ export class NumberSyntax implements SyntaxPart<number> {
 
 }
 
-export class FixedLengthNumberSyntax implements SyntaxPart<number> {
+export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
 
     constructor(
-        private requiredLength: number
+        private requiredLength: number,
+        private options: {
+            suggestionGenerator?: (value: string, index: number, context: S) => string[]
+        } = {}
     ) {}
 
     match(value: string, index: number): undefined | SyntaxMatch {
@@ -273,16 +292,37 @@ export class FixedLengthNumberSyntax implements SyntaxPart<number> {
         }
     }
 
-    getSuggestions(value: string, index: number): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: S): Suggestion[] {
         const matchingNumber = getNumberAt(value, index);
+
+        const suggestions = context && this.options.suggestionGenerator
+            ? this.options.suggestionGenerator(value, index, context)
+                .filter(suggestion =>
+                    // Suggestions must fit the existing value
+                    (!matchingNumber || suggestion.startsWith(matchingNumber)) &&
+                    // and have the right length
+                    suggestion.length === this.requiredLength &&
+                    // and be numbers
+                    ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
+                        !matchesRange(c, NUMBER_CHARS)
+                    )
+                )
+                .map(s => ({ showAs: s, value: s }))
+            : [];
 
         if (!matchingNumber) {
             return [{
                 showAs: `{${this.requiredLength}-digit number}`,
                 value: "",
                 template: true
-            }];
+            }, ...suggestions];
+        } else if (suggestions.length) {
+            // If we have any suggestions, they're valid suffixes of the entered
+            // value, and so they're better suggestions than just extending
+            // the number with 00s, so use them directly
+            return suggestions;
         } else {
+            // Otherwise, extend to the required length with 00s.
             const extendedNumber = matchingNumber +
                 _.repeat("0", this.requiredLength - matchingNumber.length);
 

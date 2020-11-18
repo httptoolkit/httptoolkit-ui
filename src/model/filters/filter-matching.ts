@@ -119,8 +119,11 @@ export interface FilterSuggestion extends Suggestion {
 /**
  * Takes a full string, and given a list of filters, returns an
  * appropriate list of suggestions to show the user.
+ *
+ * Optionally also takes context, which may be used by some syntax
+ * parts to provide more specific context-driven suggestions.
  */
-export function getSuggestions(filters: FilterClass[], value: string): FilterSuggestion[] {
+export function getSuggestions<T>(filters: FilterClass<T>[], value: string, context?: T): FilterSuggestion[] {
     const filterMatches = filters.map(f => ({
         filterClass: f,
         match: matchFilter(f, value)
@@ -144,7 +147,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
             const syntaxIndex = filterClass.filterSyntax.length - 1;
 
             return filterClass.filterSyntax[syntaxIndex]
-                .getSuggestions(value, stringIndex)
+                .getSuggestions(value, stringIndex, context)
                 .map((suggestion) => ({
                     ...suggestion,
                     filterClass,
@@ -170,7 +173,7 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
         const nextPartToMatch = filterClass.filterSyntax[syntaxPartIndex];
         const isLastPart = syntaxPartIndex === filterClass.filterSyntax.length - 1;
 
-        return nextPartToMatch.getSuggestions(value, stringIndex)
+        return nextPartToMatch.getSuggestions(value, stringIndex, context)
             .map((suggestion) => ({
                 suggestion: {
                     ...suggestion,
@@ -205,7 +208,8 @@ export function getSuggestions(filters: FilterClass[], value: string): FilterSug
 
         suggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
             updatedText,
-            updatedText.length
+            updatedText.length,
+            context
         ).map((nextSuggestion) => ({
             value: singleSuggestion.value + nextSuggestion.value,
             showAs: singleSuggestion.showAs + nextSuggestion.showAs,

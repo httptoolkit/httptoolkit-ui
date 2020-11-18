@@ -31,7 +31,7 @@ export abstract class Filter {
 
 export type FilterSet = [StringFilter, ...Filter[]] | [];
 
-export type FilterClass = {
+export type FilterClass<T extends unknown = never> = {
     /**
      * The constructor for the filter, which can take a string that fully matches
      * all syntax parts of this filter.
@@ -39,9 +39,11 @@ export type FilterClass = {
     new (input: string): Filter;
 
     /**
-     * A list of syntax parts that describe how to enter the filter as a string
+     * A list of syntax parts that describe how to enter the filter as a string.
+     *
+     * Filter syntax parts may accept hint context data, of type T.
      */
-    filterSyntax: readonly SyntaxPart[];
+    filterSyntax: readonly SyntaxPart<any, T>[];
 
     /**
      * A function which takes a string that fully or partially matches the
@@ -171,7 +173,19 @@ class StatusFilter extends Filter {
             "<=",
             "<"
         ]),
-        new FixedLengthNumberSyntax(3)
+        new FixedLengthNumberSyntax(3, {
+            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                _(events)
+                .map(e =>
+                    'response' in e &&
+                    e.isSuccessfulExchange() &&
+                    e.response.statusCode.toString()
+                )
+                .uniq()
+                .filter(Boolean)
+                .sort()
+                .valueOf() as string[]
+        })
     ] as const;
 
     static filterDescription(value: string) {
@@ -305,7 +319,13 @@ class MethodFilter extends Filter {
             allowedChars: [
                 charRange('a', 'z'),
                 charRange('A', 'Z')
-            ]
+            ],
+            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                _(events)
+                .map(e => 'request' in e && e.request.method)
+                .uniq()
+                .filter(Boolean)
+                .valueOf() as string[]
         })
     ] as const;
 
@@ -434,7 +454,13 @@ class HostnameFilter extends Filter {
                 charRange("0", "9"),
                 charRange("-"),
                 charRange(".")
-            ]
+            ],
+            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                _(events)
+                .map(e => 'request' in e && e.request.parsedUrl.hostname.toLowerCase())
+                .uniq()
+                .filter(Boolean)
+                .valueOf() as string[]
         })
     ] as const;
 
@@ -547,7 +573,14 @@ class PathFilter extends Filter {
             "^=",
             "$="
         ]),
-        new StringSyntax("path")
+        new StringSyntax("path", {
+            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                _(events)
+                .map(e => 'request' in e && e.request.parsedUrl.pathname)
+                .uniq()
+                .filter(Boolean)
+                .valueOf() as string[]
+        })
     ] as const;
 
     static filterDescription(value: string) {
@@ -594,7 +627,13 @@ class QueryFilter extends Filter {
             "$="
         ]),
         new StringSyntax("query", {
-            allowEmpty: true
+            allowEmpty: true,
+            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                _(events)
+                .map(e => 'request' in e && e.request.parsedUrl.search)
+                .uniq()
+                .filter(Boolean)
+                .valueOf() as string[]
         })
     ] as const;
 

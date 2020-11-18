@@ -298,6 +298,74 @@ describe("Fixed-length number syntax", () => {
         ]);
     });
 
+    it("should suggest inserting a correct-length number", () => {
+        const part = new FixedLengthNumberSyntax(3);
+
+        const suggestions = part.getSuggestions("value=418", 6)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: '418',
+                value: '418'
+            }
+        ]);
+    });
+
+    it("should include completions from a given context", () => {
+        const context = [
+            { value: "404" },
+            { value: "201" }
+        ];
+
+        const part = new FixedLengthNumberSyntax<typeof context>(3, {
+            suggestionGenerator: (_v, _i, context) => context.map(x => x.value)
+        });
+
+        const suggestions = part.getSuggestions("value=", 6, context)!;
+
+        expect(suggestions).to.deep.equal([
+            { showAs: '{3-digit number}', value: '', template: true },
+            { showAs: '404', value: '404' },
+            { showAs: '201', value: '201' }
+        ]);
+    });
+
+    it("should extend using just matching context completions, if available", () => {
+        const context = [
+            { value: "404" },
+            { value: "201" },
+            { value: "202" }
+        ];
+
+        const part = new FixedLengthNumberSyntax<typeof context>(3, {
+            suggestionGenerator: (_v, _i, context) => context.map(x => x.value)
+        });
+
+        const suggestions = part.getSuggestions("value=2", 6, context)!;
+
+        expect(suggestions).to.deep.equal([
+            { showAs: '201', value: '201' },
+            { showAs: '202', value: '202' }
+        ]);
+    });
+
+    it("should extend as normal if no context completions match", () => {
+        const context = [
+            { value: "404" },
+            { value: "201" }
+        ];
+
+        const part = new FixedLengthNumberSyntax<typeof context>(3, {
+            suggestionGenerator: (_v, _i, context) => context.map(x => x.value)
+        });
+
+        const suggestions = part.getSuggestions("value=3", 6, context)!;
+
+        expect(suggestions).to.deep.equal([
+            { showAs: '300', value: '300' }
+        ]);
+    });
+
     it("should be able to parse a completed value", () => {
         const part = new FixedLengthNumberSyntax(3);
         expect(part.parse("123", 0)).to.equal(123);
@@ -403,6 +471,25 @@ describe("String syntax", () => {
         ]);
     });
 
+    it("should include completions from a given context", () => {
+        const context = [
+            { value: "a value" },
+            { value: "a different value" }
+        ];
+
+        const part = new StringSyntax<typeof context>("a string", {
+            suggestionGenerator: (_v, _i, context) => context.map(x => x.value)
+        });
+
+        const suggestions = part.getSuggestions("value=", 6, context)!;
+
+        expect(suggestions).to.deep.equal([
+            { showAs: '{a string}', value: '', template: true },
+            { showAs: 'a value', value: 'a value' },
+            { showAs: 'a different value', value: 'a different value' }
+        ]);
+    });
+
     it("should suggest completing existing valid chars", () => {
         const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 
@@ -413,6 +500,26 @@ describe("String syntax", () => {
                 showAs: 'chars',
                 value: 'chars'
             }
+        ]);
+    });
+
+    it("should include only the matching completions from the context", () => {
+        const context = [
+            { value: "a value" },
+            { value: "non-matching value" },
+            { value: "a different value" }
+        ];
+
+        const part = new StringSyntax<typeof context>("a string", {
+            suggestionGenerator: (_v, _i, cs) => cs.map(x => x.value)
+        });
+
+        const suggestions = part.getSuggestions("a ", 0, context)!;
+
+        expect(suggestions).to.deep.equal([
+            { showAs: 'a ', value: 'a ' },
+            { showAs: 'a value', value: 'a value' },
+            { showAs: 'a different value', value: 'a different value' }
         ]);
     });
 

@@ -297,6 +297,24 @@ describe("Search filter model integration test:", () => {
             expect(matchedEvents.length).to.equal(1);
             expect((matchedEvents[0] as SuccessfulExchange).request.method).to.equal('POST');
         });
+
+        it("should suggest recently seen methods", () => {
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ method: 'POST', statusCode: 409 }),
+                getFailedTls()
+            ];
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, "method=", exampleEvents);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 7, showAs: '{method}' },
+                { index: 7, showAs: 'GET' },
+                { index: 7, showAs: 'POST' }
+            ]);
+        });
     });
 
     describe("HTTP version filters", () => {
