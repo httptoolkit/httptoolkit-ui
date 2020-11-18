@@ -1,4 +1,4 @@
-import { observable } from 'mobx';
+import { observable, createAtom, IAtom, computed, IComputedValueOptions, IComputedValue } from 'mobx';
 import { IPromiseBasedObservable, fromPromise, PromiseState } from 'mobx-utils';
 
 import { Omit } from '../types';
@@ -90,4 +90,59 @@ export function lazyObservablePromise<T>(p: () => PromiseLike<T>): ObservablePro
     });
 
     return lazyPromise;
+}
+
+function debounced<T>(fn: () => T, timeoutMs: number): () => T {
+    let cachedValue: { value: T, atom: IAtom } | undefined;
+
+    return function (this: any) {
+        if (cachedValue) {
+            cachedValue.atom.reportObserved();
+        } else {
+            // Calculate and cache the result:
+            cachedValue = {
+                value: fn.apply(this),
+                atom: createAtom("DebounceAtom")
+            };
+
+            // Batch subsequent runs for the next timeoutMs:
+            setTimeout(() => {
+                const { atom } = cachedValue!;
+                cachedValue = undefined;
+                atom.reportChanged(); // Ping subscribers to update
+            }, timeoutMs);
+        }
+        return cachedValue.value;
+    }
+}
+
+export function debounceComputed<T>(timeoutMs: number, computedOptions?: IComputedValueOptions<T>): MethodDecorator;
+export function debounceComputed<T>(callback: () => T, timeoutMs: number, computedOptions?: IComputedValueOptions<T>): IComputedValue<T>;
+export function debounceComputed<T>(
+    cbOrTimeout: number | (() => T),
+    optionsOrTimeout?: IComputedValueOptions<T> | number,
+    maybeOptions?: IComputedValueOptions<T>
+): MethodDecorator | IComputedValue<T> {
+    let fn: () => T;
+    let timeoutMs: number;
+    let computedOptions: IComputedValueOptions<T>;
+
+    if (typeof cbOrTimeout === 'number') {
+        timeoutMs = cbOrTimeout;
+        computedOptions = (optionsOrTimeout as IComputedValueOptions<T>) ?? {};
+
+        return <T>(target: any, key: string | symbol, descriptor: TypedPropertyDescriptor<T>): void => {
+            if (!descriptor.get) throw new Error('debounceComputed requires a getter');
+            return computed(computedOptions)(target, key, {
+                ...descriptor,
+                get: debounced(descriptor.get, timeoutMs)
+            });
+        };
+    } else {
+        fn = cbOrTimeout;
+        timeoutMs = optionsOrTimeout as number;
+        computedOptions = maybeOptions ?? {};
+
+        return computed(debounced(fn, timeoutMs), computedOptions);
+    }
 }

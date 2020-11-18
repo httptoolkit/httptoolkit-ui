@@ -1,12 +1,22 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { observable, autorun, action, computed, runInAction, when, reaction } from 'mobx';
+import {
+    observable,
+    autorun,
+    action,
+    computed,
+    runInAction,
+    when,
+    reaction,
+    comparer
+} from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 import { useHotkeys, isEditable } from '../../util/ui';
+import { debounceComputed } from '../../util/observable';
 
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
@@ -101,16 +111,19 @@ class ViewPage extends React.Component<ViewPageProps> {
         return this.props.uiStore.activeFilterSet;
     }
 
+    @debounceComputed(250, { equals: comparer.structural })
+    get currentSearchFilters() {
+        // While we're considering some search filters, show the result in the view list.
+        return this.searchFiltersUnderConsideration ?? this.confirmedSearchFilters;
+    }
+
     @computed
     get filteredEvents() {
         const { events } = this.props.eventsStore;
 
-        // While we're considering some search filters, show the result in the view list.
-        const searchFilters = this.searchFiltersUnderConsideration ?? this.confirmedSearchFilters;
-
-        if (searchFilters.length === 0) return events;
+        if (this.currentSearchFilters.length === 0) return events;
         else return events.filter((event) =>
-            searchFilters.every((f) => f.matches(event))
+            this.currentSearchFilters.every((f) => f.matches(event))
         );
     }
 
