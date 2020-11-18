@@ -31,6 +31,7 @@ const FilterTagName = styled.span`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding: 4px;
 `
 
 const FilterTagContainer = styled.div`
@@ -47,12 +48,13 @@ const FilterTagContainer = styled.div`
     box-sizing: border-box;
 
     margin-right: 5px;
-    padding: 4px 4px;
 
     background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerWatermark};
     box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
     border-radius: 3px;
+
+    cursor: pointer;
 
     &:hover, &:focus-within {
         box-shadow: 0 2px 4px 0 rgba(0,0,0,0.4);
