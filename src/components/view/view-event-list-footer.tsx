@@ -70,6 +70,7 @@ export const ViewEventListFooter = styled(observer((props: {
     <SearchFilter
         onFiltersConsidered={props.onFiltersConsidered}
         availableFilters={SelectableSearchFilterClasses}
+        filterSuggestionContext={props.allEvents}
         placeholder={'Filter by method, host, headers, status...'}
         searchInputRef={props.searchInputRef}
     />

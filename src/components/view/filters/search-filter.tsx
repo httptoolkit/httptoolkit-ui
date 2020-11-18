@@ -99,10 +99,11 @@ const getSelectedFilterElements = (filterBox: HTMLDivElement) => {
 
 @inject('uiStore')
 @observer
-export class SearchFilter extends React.Component<{
+export class SearchFilter<T> extends React.Component<{
     uiStore?: UiStore,
     onFiltersConsidered: (filters: FilterSet | undefined) => void,
-    availableFilters: FilterClass[]
+    availableFilters: FilterClass<T>[],
+    filterSuggestionContext?: T,
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>
 }> {
@@ -454,6 +455,7 @@ export class SearchFilter extends React.Component<{
                 placeholder,
                 searchInputRef,
                 availableFilters,
+                filterSuggestionContext,
                 onFiltersConsidered
             }
         } = this;
@@ -501,6 +503,7 @@ export class SearchFilter extends React.Component<{
                 onFiltersChanged={onFiltersChanged}
                 activeFilters={activeFilters}
                 availableFilters={availableFilters}
+                suggestionContext={filterSuggestionContext}
             />
             { hasContents &&
                 <ClearSearchButton

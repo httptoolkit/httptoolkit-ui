@@ -115,7 +115,4 @@ export class UiStore {
 
     @observable
     activeFilterSet: FilterSet = [];
-
-    @observable
-    filterSetUnderConsideration: FilterSet = [];
 }

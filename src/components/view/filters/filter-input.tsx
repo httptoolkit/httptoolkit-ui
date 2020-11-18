@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as Autosuggest from 'react-autosuggest';
+
 import { styled } from '../../../styles';
 import { trackEvent } from '../../../tracking';
 
@@ -79,14 +80,15 @@ const areSuggestionsVisible = (autosuggestRef: React.RefObject<Autosuggest>) => 
     return (listbox?.children.length || 0) > 0;
 };
 
-export const FilterInput = (props: {
+export const FilterInput = <T extends unknown>(props: {
     value: string,
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>,
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
 
     activeFilters: FilterSet,
-    availableFilters: FilterClass[],
+    availableFilters: FilterClass<T>[],
+    suggestionContext?: T,
 
     onFiltersChanged: (filters: FilterSet) => void,
     onFiltersConsidered: (filters: FilterSet | undefined) => void
@@ -98,8 +100,8 @@ export const FilterInput = (props: {
     // suggestions more aggressively than it expects. Instead of updating on request, we useMemo
     // to update the suggestions every time the value changes:
     const suggestions = React.useMemo(() =>
-        getSuggestions(props.availableFilters, props.value)
-    , [props.availableFilters, props.value]);
+        getSuggestions(props.availableFilters, props.value, props.suggestionContext)
+    , [props.availableFilters, props.value, props.suggestionContext]);
 
     // Whenever a suggestion is highlighted, we fire an event with the filters that would be active if
     // the suggestion is accepted, so that the list of events can preview the result.
