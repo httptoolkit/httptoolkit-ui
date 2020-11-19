@@ -298,6 +298,41 @@ describe("Search filter model integration test:", () => {
             expect((matchedEvents[0] as SuccessfulExchange).request.method).to.equal('POST');
         });
 
+        it("should correctly filter against a given method", () => {
+            const filter = createFilter("method!=POST");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ method: 'POST', statusCode: 409 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+            expect(
+                matchedEvents.map(e => (e as SuccessfulExchange).request.method)
+            ).to.deep.equal([
+                "GET", "GET", "GET"
+            ]);
+        });
+
+        it("should show descriptions for various suggestions", () => {
+            [
+                ["method", "Match requests with a given method"],
+                ["method=", "Match requests with a given method"],
+                ["method!=", "Match requests not sent with a given method"],
+                ["method=post", "Match POST requests"],
+                ["method!=GET", "Match non-GET requests"]
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
+                    .filterClass
+                    .filterDescription(input);
+
+                expect(description).to.equal(expectedOutput);
+            });
+        });
+
         it("should suggest recently seen methods", () => {
             const exampleEvents = [
                 getExchangeData({ responseState: 'aborted' }),

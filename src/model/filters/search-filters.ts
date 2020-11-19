@@ -103,6 +103,7 @@ const stringOperations = {
     "$=": (value: string, expected: string) => value.endsWith(expected)
 };
 
+type EqualityOperation = keyof typeof operations;
 type NumberOperation = keyof typeof numberOperations;
 type StringOperation = keyof typeof stringOperations;
 
@@ -314,7 +315,10 @@ class MethodFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("method"),
-        new FixedStringSyntax("="),
+        new StringOptionsSyntax<EqualityOperation>([
+            "=",
+            "!="
+        ]),
         new StringSyntax("method", {
             allowedChars: [
                 charRange('a', 'z'),
@@ -330,30 +334,44 @@ class MethodFilter extends Filter {
     ] as const;
 
     static filterDescription(value: string) {
-        const [, , method] = tryParseFilter(MethodFilter, value);
+        const [, op, method] = tryParseFilter(MethodFilter, value);
 
-        if (!method) {
+        if (!op) {
             return "Match requests with a given method";
+        } else if (op === '=') {
+            if (method) {
+                return `Match ${method.toUpperCase()} requests`;
+            } else {
+                return `Match requests with a given method`;
+            }
         } else {
-            return `Match ${method.toUpperCase()} requests`;
+            if (method) {
+                return `Match non-${method.toUpperCase()} requests`;
+            } else {
+                return 'Match requests not sent with a given method';
+            }
         }
     }
 
     private expectedMethod: string;
+    private op: EqualityOperation;
+    private predicate: (method: string, expectedMethod: string) => boolean;
 
     constructor(filter: string) {
         super(filter);
-        const [,, method] = parseFilter(MethodFilter, filter);
+        const [, op, method] = parseFilter(MethodFilter, filter);
+        this.op = op;
+        this.predicate = operations[this.op];
         this.expectedMethod = method.toUpperCase();
     }
 
     matches(event: CollectedEvent): boolean {
         return event instanceof HttpExchange &&
-            event.request.method.toUpperCase() === this.expectedMethod;
+            this.predicate(event.request.method.toUpperCase(), this.expectedMethod);
     }
 
     toString() {
-        return `Method = ${this.expectedMethod}`;
+        return `Method ${this.op} ${this.expectedMethod}`;
     }
 
 }
