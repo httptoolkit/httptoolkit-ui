@@ -141,12 +141,20 @@ function filterContextualSuggestions<S>(
     value: string,
     index: number,
     context: S | undefined,
+    existingInput: string | undefined,
     suggestionGenerator: ((value: string, index: number, context: S) => string[]) | undefined,
     filter: (suggestion: string) => boolean
 ) {
     if (!context || !suggestionGenerator) return [];
-    else return suggestionGenerator(value, index, context)
-        .filter(filter)
+
+    const lowercaseInput = (existingInput || '').toLowerCase();
+    return suggestionGenerator(value, index, context)
+        .filter((suggestion) =>
+            (
+                !lowercaseInput ||
+                suggestion.toLowerCase().startsWith(lowercaseInput)
+            ) && filter
+        )
         .slice(0, 10) // Max 10 results
         .map(s => ({ showAs: s, value: s }));
 }
@@ -227,11 +235,10 @@ export class StringSyntax<S = never> implements SyntaxPart<string, S> {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
 
         const suggestions = filterContextualSuggestions(value, index, context,
+            matchingString,
             this.options.suggestionGenerator,
             (suggestion) =>
-                // Suggestions must fit the existing value
-                (!matchingString || suggestion.startsWith(matchingString)) &&
-                // and every char must match at least one of the given char ranges
+                // Suggestion chars must match one of the given char ranges
                 ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
                     !this.allowedCharRanges.some(r => matchesRange(c, r))
                 )
@@ -308,11 +315,10 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
         const matchingNumber = getNumberAt(value, index);
 
         const suggestions = filterContextualSuggestions(value, index, context,
+            matchingNumber,
             this.options.suggestionGenerator,
             (suggestion) =>
-                // Suggestions must fit the existing value
-                (!matchingNumber || suggestion.startsWith(matchingNumber)) &&
-                // and have the right length
+                // Suggestions must have the right length
                 suggestion.length === this.requiredLength &&
                 // and be numbers
                 ![...suggestion].map(c => c.charCodeAt(0)).some(c =>
