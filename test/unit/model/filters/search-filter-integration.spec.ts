@@ -30,9 +30,9 @@ function createFilter(input: string): Filter {
     const updatedFilters = applySuggestionToFilters(initialFilters, suggestions[0]);
 
     expect(updatedFilters.length).to.equal(2);
-    expect(updatedFilters[0]!.filter).to.equal("");
+    expect(updatedFilters[0].filter).to.equal("");
 
-    return updatedFilters[1]!;
+    return updatedFilters[1];
 }
 
 describe("Search filter model integration test:", () => {
@@ -123,8 +123,8 @@ describe("Search filter model integration test:", () => {
             filters = applySuggestionToFilters(filters, suggestions[0])
 
             expect(filters.length).to.equal(2);
-            expect(filters[0]!.filter).to.equal("");
-            expect(filters[1]!.toString()).to.equal("Status >= 300");
+            expect(filters[0].filter).to.equal("");
+            expect(filters[1].toString()).to.equal("Status >= 300");
         });
 
         it("should correctly filter for exact statuses", () => {

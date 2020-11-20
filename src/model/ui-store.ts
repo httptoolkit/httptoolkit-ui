@@ -5,7 +5,7 @@ import { Theme, ThemeName, Themes } from '../styles';
 import { lazyObservablePromise } from '../util/observable';
 import { persist, hydrate } from '../util/mobx-persist/persist';
 import { AccountStore } from './account/account-store';
-import { FilterSet } from './filters/search-filters';
+import { emptyFilterSet, FilterSet } from './filters/search-filters';
 
 export class UiStore {
 
@@ -114,5 +114,5 @@ export class UiStore {
     previousElectronAppPaths: string[] = [];
 
     @observable
-    activeFilterSet: FilterSet = [];
+    activeFilterSet: FilterSet = emptyFilterSet();
 }

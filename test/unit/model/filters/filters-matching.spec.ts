@@ -462,7 +462,7 @@ describe("Applying suggestions", () => {
         );
 
         expect(result.length).to.equal(1);
-        const updatedText = result[0]!.filter;
+        const updatedText = result[0].filter;
         expect(updatedText).to.equal("status");
     });
 
@@ -479,7 +479,7 @@ describe("Applying suggestions", () => {
         );
 
         expect(result.length).to.equal(1);
-        const updatedText = result[0]!.filter;
+        const updatedText = result[0].filter;
         expect(updatedText).to.equal("status!=");
     });
 
@@ -495,7 +495,7 @@ describe("Applying suggestions", () => {
         );
 
         expect(result.length).to.equal(1);
-        const updatedText = result[0]!.filter;
+        const updatedText = result[0].filter;
         expect(updatedText).to.equal("status=");
     });
 
@@ -513,7 +513,7 @@ describe("Applying suggestions", () => {
 
         expect(result.length).to.equal(2);
 
-        const updatedText = result[0]!.filter;
+        const updatedText = result[0].filter;
         expect(updatedText).to.equal("");
 
         expect((result[1] as MockFilter).builtFrom).to.equal("status!=404");

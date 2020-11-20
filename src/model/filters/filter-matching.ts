@@ -243,7 +243,7 @@ export function applySuggestionToText(value: string, suggestion: FilterSuggestio
  * of a rule) or clears the string content and creates a new filter.
  */
 export function applySuggestionToFilters(filterSet: FilterSet, suggestion: FilterSuggestion): FilterSet {
-    const text = filterSet.length > 0 ? filterSet[0]!.filter : '';
+    const text = filterSet[0].filter;
 
     const updatedText = applySuggestionToText(text, suggestion);
 

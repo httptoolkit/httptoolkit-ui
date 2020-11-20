@@ -9,9 +9,11 @@ import { isCmdCtrlPressed } from '../../../util/ui';
 
 import {
     Filter,
+    Filters,
     FilterSet,
     StringFilter,
-    FilterClass
+    FilterClass,
+    emptyFilterSet
 } from '../../../model/filters/search-filters';
 import { matchFilters } from '../../../model/filters/filter-matching';
 import { UiStore } from '../../../model/ui-store';
@@ -68,10 +70,12 @@ const ClearSearchButton = styled(IconButton)`
 `;
 
 const deleteFilter = (filters: FilterSet, filter: Filter): FilterSet => {
-    return filters.filter((f, i) =>
-        f !== filter || // Keep all except our given filter
-        i === 0 // Never delete the 0th element - ensures it's always a valid FilterSet
-    ) as FilterSet;
+    return [
+        filters[0],
+        ...filters.slice(1).filter((f, i) =>
+            f !== filter // Keep all except our given filter
+        )
+    ] as const;
 };
 
 const deleteFilterIndex = (filters: FilterSet, index: number): FilterSet => {
@@ -139,10 +143,11 @@ export class SearchFilter<T> extends React.Component<{
         const { boxRef, tagRefs, activeFilters } = this;
 
         const filterBox = boxRef.current;
-        if (filterBox && activeFilters.length > 0) {
-            // Manually map the input element to the string search filter. We could probably do this
-            // with a ref, but it's messy, updating on demand here is easier.
-            tagRefs.set(filterBox.querySelector('input')!, activeFilters[0]!);
+        if (filterBox) {
+            // Manually map the input element to the string search filter. We
+            // could probably do this with a ref, but it's messy, updating on
+            // demand here is easier.
+            tagRefs.set(filterBox.querySelector('input')!, activeFilters[0]);
         }
 
         // Update selectedFilters to match the filters selected for real in the document:
@@ -191,9 +196,9 @@ export class SearchFilter<T> extends React.Component<{
     private deleteSelectedFilters() {
         const { selectedFilters, onFiltersChanged, activeFilters } = this;
 
-        const remainingInputText = activeFilters[0] && selectedFilters.includes(activeFilters[0])
+        const remainingInputText = selectedFilters.includes(activeFilters[0])
             ? ""
-            : activeFilters[0]?.filter || '';
+            : activeFilters[0].filter || '';
 
         onFiltersChanged([
             new StringFilter(remainingInputText),
@@ -355,7 +360,7 @@ export class SearchFilter<T> extends React.Component<{
 
         // Get the selected filters in reverse order (i.e. matching the UI order)
         const filtersToCopy = _.orderBy(this.getSelectedFilters(), f =>
-            (activeFilters as Filter[]).indexOf(f),
+            activeFilters.indexOf(f),
         ['desc']);
 
         if (filtersToCopy.length > 0) {
@@ -385,16 +390,14 @@ export class SearchFilter<T> extends React.Component<{
 
         const pastedText = e.clipboardData.getData("text");
         const pastedFilters = matchFilters(availableFilters, pastedText);
-        const pastedStringFilter = pastedFilters[0];
-        if (!pastedStringFilter) return; // Nothing was pasted at all
 
-        const pastedStringInput = pastedStringFilter.filter || '';
+        const pastedStringInput = pastedFilters[0].filter;
         const selectionStart = input.selectionStart ?? 0;
         const selectionEnd = input.selectionEnd ?? 0;
 
-        const currentTextInput = activeFilters[0]?.filter || '';
+        const currentTextInput = activeFilters[0].filter;
 
-        const updatedTextInput = selectedFilters.includes(activeFilters[0]!)
+        const updatedTextInput = selectedFilters.includes(activeFilters[0])
             ? pastedStringInput // If whole stringfilter is selected, replace all text
             : ( // Otherwise, replace selected & paste at cursor position
                 currentTextInput.slice(0, selectionStart) +
@@ -431,7 +434,7 @@ export class SearchFilter<T> extends React.Component<{
     }
 
     private onFiltersCleared = () => {
-        this.onFiltersChanged([]);
+        this.onFiltersChanged(emptyFilterSet());
 
         const textInput = (this.boxRef.current?.querySelector('input[type=text]') as HTMLElement | undefined);
         textInput?.focus();

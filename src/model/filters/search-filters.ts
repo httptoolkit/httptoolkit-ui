@@ -29,7 +29,11 @@ export abstract class Filter {
     }
 }
 
-export type FilterSet = [StringFilter, ...Filter[]] | [];
+// A full set of filters, in reverse-UI order
+export type FilterSet = readonly [StringFilter, ...Filter[]];
+// A subset of filters
+export type Filters = readonly Filter[];
+export const emptyFilterSet = () => [new StringFilter('')] as const;
 
 export type FilterClass<T extends unknown = never> = {
     /**
