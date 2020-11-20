@@ -116,7 +116,7 @@ export class SearchFilter<T> extends React.Component<{
     // Map HTML elements back to their corresponding filters, for selection tracking later
     private tagRefs = new Map<HTMLElement, Filter>();
 
-    @observable.shallow
+    @observable.struct
     private selectedFilters: Filter[] = [];
 
     @computed
