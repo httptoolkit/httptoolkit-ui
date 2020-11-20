@@ -29,6 +29,13 @@ const ParameterSeparator = styled(ContentLabel)`
 export const UrlBreakdown = (p: { url: URL }) => {
     const params = [...p.url.searchParams];
 
+    let decodedPathname: string;
+    try {
+        decodedPathname = decodeURIComponent(p.url.pathname);
+    } catch (e) {
+        decodedPathname = p.url.pathname;
+    }
+
     return <BreakdownContainer>
         <BreakdownKey>Protocol:</BreakdownKey> <BreakdownValue>{ p.url.protocol.slice(0, -1) }</BreakdownValue>
 
@@ -38,7 +45,7 @@ export const UrlBreakdown = (p: { url: URL }) => {
         </> }
 
         <BreakdownKey>Host:</BreakdownKey> <BreakdownValue>{ p.url.host }</BreakdownValue>
-        <BreakdownKey>Path:</BreakdownKey> <BreakdownValue>{ p.url.pathname }</BreakdownValue>
+        <BreakdownKey>Path:</BreakdownKey> <BreakdownValue>{ decodedPathname }</BreakdownValue>
 
         { params.length ? <ParameterSeparator>Parameters</ParameterSeparator> : null }
 
