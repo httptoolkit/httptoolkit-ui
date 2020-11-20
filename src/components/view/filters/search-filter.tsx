@@ -9,13 +9,16 @@ import { isCmdCtrlPressed } from '../../../util/ui';
 
 import {
     Filter,
-    Filters,
     FilterSet,
     StringFilter,
     FilterClass,
     emptyFilterSet
 } from '../../../model/filters/search-filters';
-import { matchFilters } from '../../../model/filters/filter-matching';
+import {
+    matchFilters,
+    buildCustomFilter,
+    CustomFilterClass
+} from '../../../model/filters/filter-matching';
 import { UiStore } from '../../../model/ui-store';
 
 import { IconButton } from '../../common/icon-button';
@@ -127,6 +130,17 @@ export class SearchFilter<T> extends React.Component<{
     @action.bound
     onFiltersChanged(filters: FilterSet) {
         this.props.uiStore!.activeFilterSet = filters;
+    }
+
+    @computed
+    private get availableFilters() {
+        const builtInFilters = this.props.availableFilters;
+        const customFilters = Object.entries(this.props.uiStore!.customFilters)
+            .map(([name, filterString]) =>
+                buildCustomFilter(name, filterString, builtInFilters)
+            );
+
+        return builtInFilters.concat(customFilters);
     }
 
     private readonly undoer = trackUndo(
@@ -440,6 +454,26 @@ export class SearchFilter<T> extends React.Component<{
         textInput?.focus();
     };
 
+    @action.bound
+    private onFiltersSaved(filters: Filter[], name: string) {
+        const uiStore = this.props.uiStore!;
+
+        // Save a custom filter using the provided input text
+        uiStore.customFilters[name] = filters.map(f => f.serialize()).reverse().join(' ');
+
+        // Clear the used input text
+        uiStore.activeFilterSet = [
+            new StringFilter(""),
+            ...uiStore.activeFilterSet.slice(1)
+        ];
+    }
+
+    @action.bound
+    private onCustomFilterDeleted(filter: CustomFilterClass) {
+        const uiStore = this.props.uiStore!;
+        delete uiStore.customFilters[filter.filterName];
+    }
+
     render() {
         const {
             boxRef,
@@ -450,14 +484,16 @@ export class SearchFilter<T> extends React.Component<{
             onInputChanged,
             onFiltersCleared,
             onFiltersChanged,
+            onFiltersSaved,
+            onCustomFilterDeleted,
 
             tagRefs,
             selectedFilters,
             activeFilters,
+            availableFilters,
             props: {
                 placeholder,
                 searchInputRef,
-                availableFilters,
                 filterSuggestionContext,
                 onFiltersConsidered
             }
@@ -504,6 +540,8 @@ export class SearchFilter<T> extends React.Component<{
 
                 onFiltersConsidered={onFiltersConsidered}
                 onFiltersChanged={onFiltersChanged}
+                onFiltersSaved={onFiltersSaved}
+                onCustomFilterDeleted={onCustomFilterDeleted}
                 activeFilters={activeFilters}
                 availableFilters={availableFilters}
                 suggestionContext={filterSuggestionContext}

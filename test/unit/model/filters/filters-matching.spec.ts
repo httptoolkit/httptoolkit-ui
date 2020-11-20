@@ -6,13 +6,15 @@ import {
     FixedStringSyntax,
     StringOptionsSyntax,
     FixedLengthNumberSyntax,
-    NumberSyntax
+    NumberSyntax,
+    StringSyntax
 } from '../../../../src/model/filters/syntax-parts';
 
 import {
     matchFilters,
     getSuggestions,
-    applySuggestionToFilters
+    applySuggestionToFilters,
+    buildCustomFilter
 } from "../../../../src/model/filters/filter-matching";
 
 const mockFilterClass = (syntaxParts: SyntaxPart[]) => (class MockFilterClass {
@@ -517,5 +519,31 @@ describe("Applying suggestions", () => {
         expect(updatedText).to.equal("");
 
         expect((result[1] as MockFilter).builtFrom).to.equal("status!=404");
+    });
+
+    it("can insert a custom filter", () => {
+        const filterClasses = [mockFilterClass([
+            new FixedStringSyntax('url'),
+            new StringOptionsSyntax(['=', '^=', '$=']),
+            new StringSyntax("a url")
+        ])];
+
+        const filterClass = buildCustomFilter(
+            "custom",
+            "url^=/api url$=/users",
+            filterClasses
+        );
+
+        const result = applySuggestionToFilters(
+            [new StringFilter("custom")],
+            { index: 0, value: "custom", showAs: "custom", filterClass, type: 'full' }
+        );
+
+        expect(result.length).to.equal(3);
+
+        const updatedText = result[0].filter;
+        expect(updatedText).to.equal("");
+        expect((result[1] as MockFilter).builtFrom).to.equal("url$=/users");
+        expect((result[2] as MockFilter).builtFrom).to.equal("url^=/api");
     });
 });

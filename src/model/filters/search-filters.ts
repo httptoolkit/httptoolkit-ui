@@ -40,7 +40,7 @@ export type FilterClass<T extends unknown = never> = {
      * The constructor for the filter, which can take a string that fully matches
      * all syntax parts of this filter.
      */
-    new (input: string): Filter;
+    new (input: string): Filter | Filters;
 
     /**
      * A list of syntax parts that describe how to enter the filter as a string.

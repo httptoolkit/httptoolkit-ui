@@ -5,15 +5,27 @@ import * as Autosuggest from 'react-autosuggest';
 import { styled } from '../../../styles';
 import { trackEvent } from '../../../tracking';
 
-import { FilterClass, FilterSet, StringFilter } from '../../../model/filters/search-filters';
+import {
+    Filter,
+    FilterClass,
+    FilterSet,
+    StringFilter
+} from '../../../model/filters/search-filters';
 import {
     getSuggestions,
     FilterSuggestion,
     applySuggestionToFilters,
-    applySuggestionToText
+    applySuggestionToText,
+    isCustomFilter,
+    CustomFilterClass
 } from '../../../model/filters/filter-matching';
 
 import { FilterSuggestionRow } from './filter-suggestion-row';
+import {
+    SaveFiltersSuggestion,
+    isSaveFiltersSuggestion,
+    SaveFiltersRow
+} from './save-filters-row';
 
 const FilterInputField = styled.input`
     box-sizing: border-box;
@@ -73,6 +85,28 @@ const renderSuggestionsBox = (props: { containerProps: any, children: any }) =>
     <FilterSuggestionsBox {...props.containerProps}>
         { props.children }
     </FilterSuggestionsBox>;
+const buildRowRenderer = (onDeleteCustomFilter: (filterClass: CustomFilterClass) => void) =>
+    (suggestion: SuggestionType, params: {
+        query: string,
+        isHighlighted: boolean
+    }) => {
+        if (isSaveFiltersSuggestion(suggestion)) {
+            return <SaveFiltersRow {...suggestion} {...params} />;
+        }
+
+        const { filterClass } = suggestion;
+        const onDelete = isCustomFilter(filterClass)
+            ? () => onDeleteCustomFilter(filterClass)
+            : undefined;
+
+        return <FilterSuggestionRow
+            suggestion={suggestion}
+            {...params}
+            onDelete={onDelete}
+        />;
+    };
+
+type SuggestionType = FilterSuggestion | SaveFiltersSuggestion;
 
 const areSuggestionsVisible = (autosuggestRef: React.RefObject<Autosuggest>) => {
     const autosuggestRoot = autosuggestRef.current?.input?.parentElement;
@@ -91,7 +125,9 @@ export const FilterInput = <T extends unknown>(props: {
     suggestionContext?: T,
 
     onFiltersChanged: (filters: FilterSet) => void,
-    onFiltersConsidered: (filters: FilterSet | undefined) => void
+    onFiltersConsidered: (filters: FilterSet | undefined) => void,
+    onFiltersSaved: (filters: Filter[], name: string) => void,
+    onCustomFilterDeleted: (filter: CustomFilterClass) => void
 }) => {
     const autosuggestRef = React.useRef<Autosuggest>(null);
 
@@ -105,11 +141,13 @@ export const FilterInput = <T extends unknown>(props: {
 
     // Whenever a suggestion is highlighted, we fire an event with the filters that would be active if
     // the suggestion is accepted, so that the list of events can preview the result.
-    const considerSuggestion = React.useCallback((data: { suggestion: FilterSuggestion | null }) => {
-        const isFullMatch = data.suggestion?.type === 'full';
-
-        if (data.suggestion && areSuggestionsVisible(autosuggestRef)) {
-            if (isFullMatch) {
+    const considerSuggestion = React.useCallback((data: { suggestion: SuggestionType | null }) => {
+        if (
+            data.suggestion &&
+            !isSaveFiltersSuggestion(data.suggestion) &&
+            areSuggestionsVisible(autosuggestRef)
+        ) {
+            if (data.suggestion.type === 'full') {
                 props.onFiltersConsidered(applySuggestionToFilters(props.activeFilters, data.suggestion));
             } else {
                 // If you highlight a partial match, we show the filtered events as if you haven't
@@ -132,11 +170,19 @@ export const FilterInput = <T extends unknown>(props: {
 
     const selectSuggestion = React.useCallback((
         event: React.FormEvent<any>,
-        data: { suggestion: FilterSuggestion }
+        data: { suggestion: SuggestionType }
     ) => {
-        // Due to some race conditions, it's possible that react-autocsuggest can think we have a
+        // Due to some race conditions, it's possible that react-autosuggest can think we have a
         // suggestion selected even when none is shown. Guard against that.
         if (!areSuggestionsVisible(autosuggestRef)) return;
+
+        // If you select the save suggestion, we save the given filters using the
+        // text in the input as their new custom name.
+        if (isSaveFiltersSuggestion(data.suggestion)) {
+            if (!props.value) return; // No dice - we just ignore empty names
+            props.onFiltersSaved(props.activeFilters.slice(1), props.value);
+            return;
+        }
 
         updatedFilters = applySuggestionToFilters(props.activeFilters, data.suggestion);
         trackEvent({
@@ -145,7 +191,7 @@ export const FilterInput = <T extends unknown>(props: {
             label: data.suggestion.filterClass.name // Track most used filters, *not* input or params
         });
         props.onFiltersChanged(updatedFilters);
-    }, [updatedFilters, props.activeFilters, props.onFiltersChanged]);
+    }, [updatedFilters, props.value, props.activeFilters, props.onFiltersChanged]);
 
     const clearSuggestions = React.useCallback(() => {
         const autosuggest = autosuggestRef.current as any;
@@ -169,9 +215,10 @@ export const FilterInput = <T extends unknown>(props: {
         !['input-focused', 'input-changed', 'escape-pressed'].includes(reason)
     , []);
 
-    const getSuggestionTextValue = React.useCallback((suggestion: FilterSuggestion) =>
-        applySuggestionToText(props.value, suggestion)
-    , [props.value]);
+    const getSuggestionTextValue = React.useCallback((suggestion: SuggestionType) => {
+        if (isSaveFiltersSuggestion(suggestion)) return '';
+        else return applySuggestionToText(props.value, suggestion)
+    }, [props.value]);
 
     const onInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         // React-autosuggest tries to update the input content to match the highlighted value.
@@ -188,10 +235,24 @@ export const FilterInput = <T extends unknown>(props: {
         ref: props.searchInputRef
     }), [props.value, onInputChange, props.placeholder, props.searchInputRef]);
 
+    const suggestionsWithSave = React.useMemo(() => {
+        const filters = props.activeFilters;
+        return filters.length > 1 && filters[0].filter.length > 1
+            ? (suggestions as Array<SuggestionType>).concat({
+                saveFilters: true,
+                filterCount: filters.length - 1
+            })
+            : suggestions
+    }, [props.value, props.activeFilters, suggestions]);
+
+    const rowRenderer = React.useMemo(() =>
+        buildRowRenderer(props.onCustomFilterDeleted)
+    , [props.onCustomFilterDeleted]);
+
     return <Autosuggest
         ref={autosuggestRef}
         multiSection={false}
-        suggestions={suggestions}
+        suggestions={suggestionsWithSave}
         highlightFirstSuggestion={true}
         shouldRenderSuggestions={shouldRenderSuggestions}
         onSuggestionsFetchRequested={_.noop} // No-op: we useMemo to keep suggestion up to date manually
@@ -199,7 +260,7 @@ export const FilterInput = <T extends unknown>(props: {
         onSuggestionHighlighted={considerSuggestion}
         onSuggestionSelected={selectSuggestion}
         getSuggestionValue={getSuggestionTextValue}
-        renderSuggestion={FilterSuggestionRow}
+        renderSuggestion={rowRenderer}
         renderInputComponent={renderInputField}
         renderSuggestionsContainer={renderSuggestionsBox}
         inputProps={inputProps}

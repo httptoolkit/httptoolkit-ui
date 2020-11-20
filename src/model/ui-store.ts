@@ -115,4 +115,7 @@ export class UiStore {
 
     @observable
     activeFilterSet: FilterSet = emptyFilterSet();
+
+    @persist('object') @observable
+    customFilters: { [name: string]: string } = {};
 }

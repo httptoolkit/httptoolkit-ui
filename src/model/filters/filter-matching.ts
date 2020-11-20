@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
-import { FilterClass, FilterSet, StringFilter } from './search-filters';
-import { Suggestion } from './syntax-parts';
+import { FilterClass, Filters, FilterSet, StringFilter } from './search-filters';
+import { FixedStringSyntax, Suggestion } from './syntax-parts';
 
 /**
  * Takes a full string, parses it completely for filters, and returns a
@@ -35,7 +35,7 @@ export function matchFilters(filterClasses: FilterClass[], value: string): Filte
     // Turn the leftovers into a StringFilter, and return the whole lot:
     return [
         new StringFilter(remainingString),
-        ...filters
+        ..._.flatten(filters)
     ];
 }
 
@@ -250,7 +250,11 @@ export function applySuggestionToFilters(filterSet: FilterSet, suggestion: Filte
     if (suggestion.type === 'full') {
         return [
             new StringFilter(""),
-            new suggestion.filterClass(updatedText.trim()),
+            ..._.flatten([
+                // Flattened because a filterClass can expand to multiple filter
+                // instances, e.g. for saved custom filters
+                new suggestion.filterClass(updatedText.trim())
+            ]),
             ...filterSet.slice(1)
         ];
     } else {
@@ -259,4 +263,39 @@ export function applySuggestionToFilters(filterSet: FilterSet, suggestion: Filte
             ...filterSet.slice(1)
         ];
     }
+}
+
+export interface CustomFilterClass extends FilterClass {
+    isCustomFilter: true;
+    filterName: string;
+}
+
+export function buildCustomFilter(
+    name: string, // A name for your custom filter
+    filterString: string, // The full filter string it expands to
+    availableFilters: FilterClass[] // Parsed in the context of this set of filter classes
+): CustomFilterClass {
+    const parsedFilters = matchFilters(availableFilters, filterString);
+
+    // Skip empty string filters
+    const filtersToInsert = parsedFilters[0].filter === ''
+        ? parsedFilters.slice(1)
+        : parsedFilters; // Only include the string filter if it's non-empty
+
+    // Build a fake constructor that produces the filters within, rather than
+    // building a filter by itself as normal.
+    const factory = (function () { return filtersToInsert; }) as unknown as (new () => Filters);
+    return Object.assign(factory, {
+        filterSyntax: [new FixedStringSyntax(name)],
+        filterDescription: () => filterString,
+
+        filterName: name,
+        isCustomFilter: true
+    } as const);
+};
+
+export function isCustomFilter(
+    f: FilterClass & { isCustomFilter?: boolean }
+): f is CustomFilterClass {
+    return !!f.isCustomFilter;
 }

@@ -2,7 +2,12 @@ import * as React from 'react';
 
 import { styled, css } from '../../../styles';
 
-import { FilterSuggestion, applySuggestionToText } from '../../../model/filters/filter-matching';
+import {
+    FilterSuggestion,
+    applySuggestionToText
+} from '../../../model/filters/filter-matching';
+
+import { IconButton } from '../../common/icon-button';
 
 const ExistingText = styled.span`
     font-weight: bold;
@@ -42,6 +47,18 @@ const SuggestionDetails = styled(SuggestionRowPart)`
     ${(p: { isHighlighted: boolean }) => p.isHighlighted && css`
         box-shadow: 0px -8px 10px -10px rgba(0,0,0,0.3);
     `}
+
+    svg {
+        margin-left: auto;
+    }
+`;
+
+const SuggestionDeleteButton = styled(IconButton).attrs(() => ({
+    icon: ['far', 'trash-alt']
+}))`
+    float: right;
+    padding: 4px;
+    margin: -4px -4px;
 `;
 
 const SuggestionDescription = styled(SuggestionRowPart)`
@@ -55,31 +72,48 @@ const SuggestionDescription = styled(SuggestionRowPart)`
     text-overflow: ellipsis;
 `;
 
-export const FilterSuggestionRow = (filterSuggestion: FilterSuggestion, params: {
+export const FilterSuggestionRow = (props: {
+    suggestion: FilterSuggestion,
     query: string,
-    isHighlighted: boolean
+    isHighlighted: boolean,
+    onDelete?: () => void
 }) => {
-    const { query } = params;
+    const { suggestion, query, isHighlighted, onDelete } = props;
 
     // Work out how many chars of the query are included in the showAs text
-    const partiallyMatchedChars = filterSuggestion.value === filterSuggestion.showAs
+    const partiallyMatchedChars = suggestion.value === suggestion.showAs
         ? Math.min(
-            params.query.length - filterSuggestion.index,
-            filterSuggestion.showAs.length // A filter may be shorter than the input!
+            query.length - suggestion.index,
+            suggestion.showAs.length // A filter may be shorter than the input!
         )
         : 0;
 
     // If there is overlap, treat the existing+suggested chars as just existing text
-    const existingText = query.slice(0, filterSuggestion.index + partiallyMatchedChars);
-    const suggestedAddition = filterSuggestion.showAs.slice(partiallyMatchedChars);
+    const existingText = query.slice(0, suggestion.index + partiallyMatchedChars);
+    const suggestedAddition = suggestion.showAs.slice(partiallyMatchedChars);
 
-    return <SuggestionRowContainer isHighlighted={params.isHighlighted}>
-        <SuggestionDetails isHighlighted={params.isHighlighted}>
+    return <SuggestionRowContainer isHighlighted={isHighlighted}>
+        <SuggestionDetails isHighlighted={isHighlighted}>
             <ExistingText>{ existingText }</ExistingText>
             <SuggestedText>{ suggestedAddition }</SuggestedText>
+            { onDelete &&
+                <SuggestionDeleteButton
+                    title="Delete this custom filter shortcut"
+                    onClick={(e) => {
+                        onDelete();
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                />
+            }
         </SuggestionDetails>
-        { params.isHighlighted && <SuggestionDescription>
-            { filterSuggestion.filterClass.filterDescription(applySuggestionToText(query, filterSuggestion)) }
-        </SuggestionDescription> }
+
+        { isHighlighted &&
+            <SuggestionDescription>
+                { suggestion.filterClass.filterDescription(
+                    applySuggestionToText(query, suggestion)
+                ) }
+            </SuggestionDescription>
+        }
     </SuggestionRowContainer>;
 }
