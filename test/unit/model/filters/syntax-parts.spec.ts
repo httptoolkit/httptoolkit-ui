@@ -511,6 +511,7 @@ describe("String syntax", () => {
         ];
 
         const part = new StringSyntax<typeof context>("a string", {
+            allowedChars: [[0, 255]],
             suggestionGenerator: (_v, _i, cs) => cs.map(x => x.value)
         });
 

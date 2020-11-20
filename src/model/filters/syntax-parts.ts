@@ -203,6 +203,8 @@ export class FixedStringSyntax implements SyntaxPart<string> {
 
 export class StringSyntax<S = never> implements SyntaxPart<string, S> {
 
+    static AnyAsciiExceptSpaces = [charRange('!', '~')];
+
     private allowedCharRanges: CharRange[];
 
     constructor(
@@ -213,7 +215,8 @@ export class StringSyntax<S = never> implements SyntaxPart<string, S> {
             suggestionGenerator?: (value: string, index: number, context: S) => string[]
         } = {}
     ) {
-        this.allowedCharRanges = options.allowedChars || [[0, 255]];
+        this.allowedCharRanges = options.allowedChars ||
+            StringSyntax.AnyAsciiExceptSpaces;
     }
 
     match(value: string, index: number): undefined | SyntaxMatch {
