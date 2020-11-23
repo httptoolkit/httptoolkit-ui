@@ -236,11 +236,16 @@ export const FilterInput = <T extends unknown>(props: {
     }), [props.value, onInputChange, props.placeholder, props.searchInputRef]);
 
     const suggestionsWithSave = React.useMemo(() => {
-        const filters = props.activeFilters;
-        return filters.length > 1 && filters[0].filter.length > 1
+        const existingFilters = props.activeFilters;
+        const inputText = existingFilters[0].filter;
+        const matchedFilters = _.uniq(suggestions.map(s => s.filterClass));
+
+        // Whilst you're typing, if you've entered a filter, and you're not typing, but you haven't
+        // typed something that exactly matches one type of filter, show a 'save' option.
+        return existingFilters.length > 1 && inputText.length >= 1 && matchedFilters.length !== 1
             ? (suggestions as Array<SuggestionType>).concat({
                 saveFilters: true,
-                filterCount: filters.length - 1
+                filterCount: existingFilters.length - 1 // -1 to exclude text filter
             })
             : suggestions
     }, [props.value, props.activeFilters, suggestions]);
