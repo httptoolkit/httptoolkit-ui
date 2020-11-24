@@ -46,6 +46,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "path" },
                 { index: 0, showAs: "query" },
                 { index: 0, showAs: "status" },
+                { index: 0, showAs: "header" },
                 { index: 0, showAs: "completed" },
                 { index: 0, showAs: "pending" },
                 { index: 0, showAs: "aborted" },
@@ -67,6 +68,7 @@ describe("Search filter model integration test:", () => {
                 "Match requests sent to a given path",
                 "Match requests with a given query string",
                 "Match responses with a given status code",
+                "Match requests or responses by header",
                 "Match requests that have received a response",
                 "Match requests that are still waiting for a response",
                 "Match requests that aborted before receiving a response",
@@ -109,6 +111,25 @@ describe("Search filter model integration test:", () => {
             expect(input).to.equal("status<")
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 7, showAs: "{3-digit number}" }
+            ]);
+        });
+
+        it("should suggest seen status numbers from context, if available", () => {
+            let input = "sta";
+
+            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            input = applySuggestionToText(input, _.last(suggestions)!);
+
+            suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ statusCode: 404 }),
+            ]);
+
+            expect(input).to.equal("status<")
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 7, showAs: "{3-digit number}" },
+                { index: 7, showAs: "200" },
+                { index: 7, showAs: "404" },
             ]);
         });
 
@@ -593,6 +614,77 @@ describe("Search filter model integration test:", () => {
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
             expect(matchedEvents.length).to.equal(1);
             expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(404);
+        });
+    });
+
+    describe("Header filters", () => {
+        it("should suggest header[...] in one step, once unambiguous", () => {
+            let input = "head";
+
+            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 0, showAs: "header[{header name}]" }
+            ]);
+        });
+
+        it("should suggest seen header names from context, if available", () => {
+            let input = "head";
+
+            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            input = applySuggestionToText(input, _.last(suggestions)!);
+            expect(input).to.equal("header[");
+
+            suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+                getExchangeData({ requestHeaders: {
+                    'accept': 'application/json'
+                } }),
+                getExchangeData({ responseHeaders: {
+                    'content-type': 'application/json'
+                } }),
+            ]);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 7, showAs: "{header name}" },
+                { index: 7, showAs: "accept" },
+                { index: 7, showAs: "content-type" },
+            ]);
+        });
+
+        it("should correctly filter for the presence of a header", () => {
+            const filter = createFilter("header[my-header]");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: { 'my-header': 'pending-req-with-header' }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'MY-HEADER': 'completed-req-with-header' }
+                }),
+                getExchangeData({
+                    responseHeaders: { 'my-header': 'completed-res-with-header' }
+                }),
+                getExchangeData({ requestHeaders: { 'another-header': 'more header' } }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+
+            // expect(matchedEvents.length).to.equal(3);
+            const matchedHeaders = (matchedEvents as HttpExchange[]).map((event) => ({
+                ...event.request.headers,
+                ...(event.isSuccessfulExchange()
+                    ? event.response.headers
+                    : []
+                )
+            }));
+
+            expect(matchedHeaders).to.deep.equal([
+                { 'my-header': 'pending-req-with-header' },
+                { 'MY-HEADER': 'completed-req-with-header' },
+                { 'my-header': 'completed-res-with-header' }
+            ]);
         });
     });
 });

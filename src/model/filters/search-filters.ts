@@ -691,12 +691,79 @@ class QueryFilter extends Filter {
     }
 }
 
+class HeaderFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("header"),
+        new FixedStringSyntax("["),
+        new StringSyntax("header name", {
+            // Match any chars, except ]
+            allowedChars: [
+                [0, "]".charCodeAt(0) - 1],
+                ["]".charCodeAt(0) + 1, 255],
+            ],
+            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                _(events)
+                .map(e => e instanceof HttpExchange
+                    ? [
+                        ...Object.keys(e.request.headers),
+                        ...(e.isSuccessfulExchange()
+                            ? Object.keys(e.response.headers)
+                            : []
+                        )
+                    ]
+                    : []
+                )
+                .flatten()
+                .uniq()
+                .valueOf() as string[]
+        }),
+        new FixedStringSyntax("]")
+    ] as const;
+
+    static filterDescription(value: string) {
+        const [, , headerName] = tryParseFilter(HeaderFilter, value);
+
+        if (!headerName) {
+            return "Match requests or responses by header";
+        } else {
+            return `Match requests or responses with a ${headerName} header`;
+        }
+    }
+
+    private expectedHeaderName: string;
+
+    constructor(filter: string) {
+        super(filter);
+        const [, , headerName] = parseFilter(HeaderFilter, filter);
+        this.expectedHeaderName = headerName.toLowerCase();
+    }
+
+    matches(event: CollectedEvent): boolean {
+        if (!(event instanceof HttpExchange)) return false;
+
+        const requestHeaders = _.mapKeys(event.request.headers, (v, k) => k.toLowerCase());
+
+        if (requestHeaders[this.expectedHeaderName] !== undefined) return true;
+
+        if (!event.isSuccessfulExchange()) return false;
+
+        const responseHeaders = _.mapKeys(event.response.headers, (v, k) => k.toLowerCase());
+        return responseHeaders[this.expectedHeaderName] !== undefined;
+    }
+
+    toString() {
+        return `Has ${this.expectedHeaderName} header`;
+    }
+}
+
 export const SelectableSearchFilterClasses: FilterClass[] = [
     MethodFilter,
     HostnameFilter,
     PathFilter,
     QueryFilter,
     StatusFilter,
+    HeaderFilter,
     CompletedFilter,
     PendingFilter,
     AbortedFilter,
