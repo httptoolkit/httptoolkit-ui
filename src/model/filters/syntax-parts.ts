@@ -448,9 +448,9 @@ export class OptionalSyntax<
     }
 
     getSuggestions(value: string, index: number): Suggestion[] {
+        const isEndOfValue = value.length === index;
         let currentIndex = index;
         let suggestions: Suggestion[] = [{ showAs: "", value: "" }];
-        let isFullMatch = true;
 
         for (const subPart of this.subParts) {
             const nextMatch = subPart.match(value, currentIndex);
@@ -461,7 +461,6 @@ export class OptionalSyntax<
             // part _does_ match this content correctly.
             if (!nextMatch) return [{ showAs: "", value: "" }];
 
-            isFullMatch = nextMatch.type === 'full' && isFullMatch;
 
             const nextSuggestions = subPart.getSuggestions(value, currentIndex);
             suggestions = _.flatMap(suggestions, (suggestion) =>
@@ -478,13 +477,13 @@ export class OptionalSyntax<
             currentIndex += nextMatch.consumed;
         }
 
-        if (isFullMatch) {
-            return suggestions;
-        } else {
+        if (isEndOfValue) {
             return [
                 { showAs: "", value: "" },
                 ...suggestions
             ];
+        } else {
+            return suggestions;
         }
     }
 

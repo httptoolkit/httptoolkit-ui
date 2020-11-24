@@ -757,7 +757,7 @@ describe("Optional syntax", () => {
         expect(match.consumed).to.equal(8);
     });
 
-    it("should suggest either completing or removing subpart partial matches", () => {
+    it("should suggest completing subpart partial matches", () => {
         const part = new OptionalSyntax(
             new FixedStringSyntax("hello "),
             new FixedStringSyntax("world"),
@@ -766,10 +766,6 @@ describe("Optional syntax", () => {
         const suggestions = part.getSuggestions("hello wo", 0)!;
 
         expect(suggestions).to.deep.equal([
-            {
-                showAs: "",
-                value: ""
-            },
             {
                 showAs: "hello world",
                 value: "hello world"
@@ -788,17 +784,13 @@ describe("Optional syntax", () => {
 
         expect(suggestions).to.deep.equal([
             {
-                showAs: "",
-                value: ""
-            },
-            {
                 showAs: "hello+world",
                 value: "hello+world"
             }
         ]);
     });
 
-    it("should suggest completing subpart full matches, and not removing", () => {
+    it("should suggest completing subpart full matches", () => {
         const part = new OptionalSyntax(
             new FixedStringSyntax("hello "),
             new FixedStringSyntax("world"),
@@ -810,6 +802,25 @@ describe("Optional syntax", () => {
             {
                 showAs: "hello world",
                 value: "hello world"
+            }
+        ]);
+    });
+
+    it("should suggest ignoring or completing empty partial matches", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("world")
+        );
+
+        const suggestions = part.getSuggestions("hello ", 6)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: "",
+                value: ""
+            },
+            {
+                showAs: "world",
+                value: "world"
             }
         ]);
     });
@@ -831,7 +842,7 @@ describe("Optional syntax", () => {
     });
 
     it("should suggest adding template values in subpart template matches", () => {
-        const part = new OptionalSyntax(
+        const part = new OptionalSyntax<string[]>(
             new FixedStringSyntax("string:"),
             new StringSyntax("string value", {
                 allowedChars: [charRange("a", "z")]
@@ -841,10 +852,6 @@ describe("Optional syntax", () => {
         const suggestions = part.getSuggestions("string:", 0)!;
 
         expect(suggestions).to.deep.equal([
-            {
-                showAs: "",
-                value: ""
-            },
             {
                 showAs: "string:{string value}",
                 value: "string:",
