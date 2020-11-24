@@ -195,22 +195,32 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
 
     const { filterClass, match, suggestion: originalSuggestion } = matchSuggestions[0];
 
-    // Iteratively expand the suggestion to include future parts, if possible, until we have >1 option:
+    // Iteratively expand the suggestion to include future parts, if possible, until we
+    // have either >1 option or a template option:
     let suggestions = [originalSuggestion];
-    let syntaxPartIndex = match!.partsMatched; // Without -1, i.e. this is the next part we would match
+    let syntaxPartIndex = match!.partsMatched; // Without -1, i.e. the next part we would match
+
+    // If we've reached a template suggestion, this is the template that we'll eventually
+    // return. We keep looping a little further just to nicely complete the showAs.
+    let sawTemplate: FilterSuggestion | undefined;
 
     while (suggestions.length === 1 && syntaxPartIndex < filterClass.filterSyntax.length) {
         const singleSuggestion = suggestions[0];
-        if (singleSuggestion.template) break;
+        sawTemplate ||= singleSuggestion.template ? singleSuggestion : undefined;
 
         const updatedText = applySuggestionToText(value, singleSuggestion);
         const isLastPart = syntaxPartIndex === filterClass.filterSyntax.length - 1;
 
-        suggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
+        const nextSuggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
             updatedText,
             updatedText.length,
             context
-        ).map((nextSuggestion) => ({
+        );
+
+        // After we hit a template we keep collecting suggestions until they're ambiguous
+        if (sawTemplate && nextSuggestions.length > 1) break;
+
+        suggestions = nextSuggestions.map((nextSuggestion) => ({
             value: singleSuggestion.value + nextSuggestion.value,
             showAs: singleSuggestion.showAs + nextSuggestion.showAs,
             filterClass,
@@ -222,13 +232,17 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
                 : 'partial'
         }));
 
-        // If any suggestion is a template, then don't keep trying to extend any further.
-        if (suggestions.some(s => s.template)) break;
-
         syntaxPartIndex += 1;
     }
 
-    return suggestions;
+    if (!sawTemplate) {
+        return suggestions;
+    } else {
+        return [{
+            ...sawTemplate,
+            showAs: suggestions[0].showAs
+        }];
+    }
 }
 
 export function applySuggestionToText(value: string, suggestion: FilterSuggestion) {

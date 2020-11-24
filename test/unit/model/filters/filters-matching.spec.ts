@@ -427,12 +427,15 @@ describe("Suggestion generation", () => {
         ]);
     });
 
-    it("should stop combining suggestions if a template value is found", () => {
+    it("should stop combining suggestions after a template given multiple options", () => {
         const availableFilters = [
             mockFilterClass([
                 new FixedStringSyntax('bodySize='),
                 new NumberSyntax(),
-                new FixedStringSyntax('bytes')
+                new StringOptionsSyntax([
+                    'bytes',
+                    'megabytes'
+                ])
             ])
         ];
 
@@ -443,6 +446,34 @@ describe("Suggestion generation", () => {
                 index: 0,
                 showAs: "bodySize={number}",
                 value: "bodySize=",
+                template: true,
+                filterClass: availableFilters[0],
+                type: 'partial'
+            }
+        ]);
+    });
+
+    it("should combine unambiguous suggestions after a template, just visually", () => {
+        const availableFilters = [
+            mockFilterClass([
+                new FixedStringSyntax('header[['),
+                new StringSyntax("header name"),
+                new FixedStringSyntax(']'),
+                new FixedStringSyntax(']'),
+                new StringOptionsSyntax([
+                    '=',
+                    '!='
+                ])
+            ])
+        ];
+
+        const suggestions = getSuggestions(availableFilters, "head");
+
+        expect(suggestions).to.deep.equal([
+            {
+                index: 0,
+                showAs: "header[[{header name}]]",
+                value: "header[[",
                 template: true,
                 filterClass: availableFilters[0],
                 type: 'partial'
