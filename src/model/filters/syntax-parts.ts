@@ -47,7 +47,7 @@ export interface Suggestion {
     template?: true;
 }
 
-export interface SyntaxPart<P extends string | number = string | number, S extends any = never> {
+export interface SyntaxPart<P = string | number, S extends any = never> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
      * some text were appended to the string.
@@ -399,4 +399,106 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
         return getParsedValue(this, value, index) as OptionsType;
     }
 
+}
+
+/**
+ * Matches a chunk of syntax, but also matches fully if that syntax does not
+ * appear. In effect, this always matches. Either it fully matches nothing
+ * if there's mismatch, it partially matches if it's a partial match at the
+ * end of the string (but only there), or it fully matches if some
+ * fully matching content for all parts within is present.
+ */
+export class OptionalSyntax<
+    Ps extends unknown[],
+    SPs extends { [i in keyof Ps]: SyntaxPart<Ps[i]> } = { [i in keyof Ps]: SyntaxPart<Ps[i]> }
+> implements SyntaxPart<Ps | []> {
+
+    private subParts: SPs;
+
+    constructor(...subParts: SPs) {
+        this.subParts = subParts; // Apparently ... isn't allowed in field params.
+    }
+
+    match(value: string, index: number): SyntaxMatch | undefined {
+        let currentIndex = index;
+
+        if (currentIndex >= value.length) {
+            return { type: 'full', consumed: 0 };
+        }
+
+        for (const subPart of this.subParts) {
+            const nextMatch = subPart.match(value, currentIndex);
+
+            if (!nextMatch) {
+                return { type: 'full', consumed: 0 };
+            }
+
+            currentIndex += nextMatch.consumed;
+
+            if (nextMatch.type === 'partial') {
+                if (currentIndex === value.length) {
+                    return { type: 'partial', consumed: currentIndex - index };
+                } else {
+                    return { type: 'full', consumed: 0 };
+                }
+            }
+        }
+
+        return { type: 'full', consumed: currentIndex - index };
+    }
+
+    getSuggestions(value: string, index: number): Suggestion[] {
+        let currentIndex = index;
+        let suggestions: Suggestion[] = [{ showAs: "", value: "" }];
+        let isFullMatch = true;
+
+        for (const subPart of this.subParts) {
+            const nextMatch = subPart.match(value, currentIndex);
+
+            // If there's any part that doesn't match at all, we suggest skipping
+            // this optional part entirely. This effectively allows backtracking for
+            // suggestions, so the suggestion is shown only if the next non-optional
+            // part _does_ match this content correctly.
+            if (!nextMatch) return [{ showAs: "", value: "" }];
+
+            isFullMatch = nextMatch.type === 'full' && isFullMatch;
+
+            const nextSuggestions = subPart.getSuggestions(value, currentIndex);
+            suggestions = _.flatMap(suggestions, (suggestion) =>
+                nextSuggestions.map((nextSuggestion) => ({
+                    showAs: suggestion.showAs + nextSuggestion.showAs,
+                    value: suggestion.value + nextSuggestion.value,
+                    ...(nextSuggestion.template ? { template: true } : {})
+                }))
+            );
+
+            if (suggestions.some(s => s.template)) break;
+
+            // Otherwise, just keep on appending suggestions
+            currentIndex += nextMatch.consumed;
+        }
+
+        if (isFullMatch) {
+            return suggestions;
+        } else {
+            return [
+                { showAs: "", value: "" },
+                ...suggestions
+            ];
+        }
+    }
+
+    parse(value: string, index: number): Ps | [] {
+        const match = this.match(value, index);
+        if (!match || match.consumed === 0) return [];
+
+        // Parse implies a full match, and now know it's not empty, so we must
+        // have a full match for every part. Loop through, return them as an array.
+        return _.reduce(this.subParts, (parsed: Ps[], part: SyntaxPart<any>) => {
+            const parsedValue = part.parse(value, index);
+            index += parsedValue.toString().length;
+            parsed.push(parsedValue as any);
+            return parsed;
+        }, []) as Ps;
+    }
 }

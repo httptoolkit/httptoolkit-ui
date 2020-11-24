@@ -6,7 +6,8 @@ import {
     StringSyntax,
     NumberSyntax,
     FixedLengthNumberSyntax,
-    StringOptionsSyntax
+    StringOptionsSyntax,
+    OptionalSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("Fixed string syntax", () => {
@@ -674,4 +675,194 @@ describe("String options syntax", () => {
         expect(parsedValue).to.equal("ab");
     });
 
+});
+
+describe("Optional syntax", () => {
+    it("should fully match nothing", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("completed")
+        );
+
+        const match = part.match("", 0)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(0);
+    });
+
+    it("should fully match a fulfilled optional value", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("completed")
+        );
+
+        const match = part.match("completed", 0)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(9);
+    });
+
+    it("should fully match multi-part optional values", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("hello "),
+            new FixedStringSyntax("world"),
+        );
+
+        const match = part.match("hello world", 0)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(11);
+    });
+
+    it("should fully match optional values at an offset", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("world"),
+        );
+
+        const match = part.match("hello world", 6)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(5);
+    });
+
+    it("should fully match nothing given a bad suffix", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("completed")
+        );
+
+        const match = part.match("pending", 0)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(0);
+    });
+
+    it("should partially match a partially matching subpart", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("completed")
+        );
+
+        const match = part.match("comp", 0)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(4);
+    });
+
+    it("should partially match, given a partially matching 2nd subpart", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("hello "),
+            new FixedStringSyntax("world"),
+        );
+
+        const match = part.match("hello wo", 0)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(8);
+    });
+
+    it("should suggest either completing or removing subpart partial matches", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("hello "),
+            new FixedStringSyntax("world"),
+        );
+
+        const suggestions = part.getSuggestions("hello wo", 0)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: "",
+                value: ""
+            },
+            {
+                showAs: "hello world",
+                value: "hello world"
+            }
+        ]);
+    });
+
+    it("should continue suggestions through partial subpart matches", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("hello"),
+            new FixedStringSyntax("+"),
+            new FixedStringSyntax("world"),
+        );
+
+        const suggestions = part.getSuggestions("he", 0)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: "",
+                value: ""
+            },
+            {
+                showAs: "hello+world",
+                value: "hello+world"
+            }
+        ]);
+    });
+
+    it("should suggest completing subpart full matches, and not removing", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("hello "),
+            new FixedStringSyntax("world"),
+        );
+
+        const suggestions = part.getSuggestions("hello world", 0)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: "hello world",
+                value: "hello world"
+            }
+        ]);
+    });
+
+    it("should suggest ignoring subpart non-matches", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("hello"),
+            new FixedStringSyntax("goodbye"),
+        );
+
+        const suggestions = part.getSuggestions("hello wo", 0)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: "",
+                value: ""
+            }
+        ]);
+    });
+
+    it("should suggest adding template values in subpart template matches", () => {
+        const part = new OptionalSyntax(
+            new FixedStringSyntax("string:"),
+            new StringSyntax("string value", {
+                allowedChars: [charRange("a", "z")]
+            }),
+        );
+
+        const suggestions = part.getSuggestions("string:", 0)!;
+
+        expect(suggestions).to.deep.equal([
+            {
+                showAs: "",
+                value: ""
+            },
+            {
+                showAs: "string:{string value}",
+                value: "string:",
+                template: true
+            }
+        ]);
+    });
+
+    it("should be able to parse a matching value", () => {
+        const part = new OptionalSyntax<[string, "+" | "-", number]>(
+            new FixedStringSyntax("value:"),
+            new StringOptionsSyntax(['+', '-']),
+            new NumberSyntax("value")
+        );
+
+         // Test type inference too:
+        const parsedValue: [string, "+" | "-", number] | [] = part.parse("value:-123", 0);
+
+        expect(parsedValue).to.deep.equal(["value:", "-", 123]);
+    });
 });
