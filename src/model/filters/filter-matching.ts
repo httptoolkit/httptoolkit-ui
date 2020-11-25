@@ -81,26 +81,26 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
     let stringIndex = 0;
     let fullyConsumed = 0;
     let syntaxIndex: number;
-    let wasPartialMatch = false;
+    let wasFullMatch = true;
     let lastPartStringIndex = 0;
 
     for (
         syntaxIndex = 0;
-        syntaxIndex < syntax.length && stringIndex <= value.length && !wasPartialMatch;
+        syntaxIndex < syntax.length && stringIndex <= value.length && wasFullMatch;
         syntaxIndex++
     ) {
         lastPartStringIndex = stringIndex;
         const partMatch = syntax[syntaxIndex].match(value, stringIndex);
         if (!partMatch) return;
 
-        wasPartialMatch = partMatch.type === 'partial';
+        wasFullMatch = partMatch.type === 'full';
 
         stringIndex += partMatch.consumed;
-        fullyConsumed += wasPartialMatch ? 0 : partMatch.consumed;
+        fullyConsumed += wasFullMatch ? partMatch.consumed : 0;
     }
 
     return {
-        type: syntaxIndex === syntax.length && !wasPartialMatch
+        type: syntaxIndex === syntax.length && wasFullMatch
             ? 'full'
             : 'partial',
         fullyConsumed,
@@ -113,7 +113,6 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
 export interface FilterSuggestion extends Suggestion {
     index: number;
     filterClass: FilterClass;
-    type: 'full' | 'partial';
 };
 
 /**
@@ -123,7 +122,11 @@ export interface FilterSuggestion extends Suggestion {
  * Optionally also takes context, which may be used by some syntax
  * parts to provide more specific context-driven suggestions.
  */
-export function getSuggestions<T>(filters: FilterClass<T>[], value: string, context?: T): FilterSuggestion[] {
+export function getSuggestions<T>(
+    filters: FilterClass<T>[],
+    value: string,
+    context?: T
+): FilterSuggestion[] {
     const filterMatches = filters.map(f => ({
         filterClass: f,
         match: matchFilter(f, value)
@@ -151,8 +154,7 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
                 .map((suggestion) => ({
                     ...suggestion,
                     filterClass,
-                    index: stringIndex,
-                    type: 'full'
+                    index: stringIndex
                 }));
         })
     }
@@ -165,7 +167,9 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
         m.match!.partsMatched === maxMatchedParts
     );
 
-    const matchSuggestions = _.flatMap(bestPartialMatches, ({ filterClass, match }) => {
+    // We have some filters that partially match. For each, get the next suggestions that
+    // should be offered to extend (and _maybe_ complete) the match.
+    const suggestionsWithMatches = _.flatMap(bestPartialMatches, ({ filterClass, match }) => {
         const syntaxPartIndex = match!.partsMatched - 1;
         const stringIndex = match!.fullyConsumed;
         // For partially matched filters, partsMatched is always the index+1
@@ -179,21 +183,21 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
                     ...suggestion,
                     filterClass,
                     index: stringIndex,
-                    type: ((!suggestion.template && isLastPart)
-                        ? 'full'
-                        : 'partial'
-                    ) as 'full' | 'partial'
+                    matchType: (suggestion.matchType === 'full'
+                        ? (isLastPart ? 'full' : 'partial')
+                        : suggestion.matchType
+                    ) as 'full' | 'template' | 'partial'
                 },
                 filterClass,
                 match
             }));
     });
 
-    if (matchSuggestions.length !== 1) {
-        return matchSuggestions.map(({ suggestion }) => suggestion);
+    if (suggestionsWithMatches.length !== 1) {
+        return suggestionsWithMatches.map(({ suggestion }) => suggestion);
     }
 
-    const { filterClass, match, suggestion: originalSuggestion } = matchSuggestions[0];
+    const { filterClass, match, suggestion: originalSuggestion } = suggestionsWithMatches[0];
 
     // Iteratively expand the suggestion to include future parts, if possible, until we
     // have either >1 option or a template option:
@@ -206,16 +210,14 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
 
     while (suggestions.length === 1 && syntaxPartIndex < filterClass.filterSyntax.length) {
         const singleSuggestion = suggestions[0];
-        sawTemplate ||= singleSuggestion.template ? singleSuggestion : undefined;
+        sawTemplate ||= singleSuggestion.matchType === 'template'
+            ? singleSuggestion
+            : undefined;
 
         const updatedText = applySuggestionToText(value, singleSuggestion);
-        const isLastPart = syntaxPartIndex === filterClass.filterSyntax.length - 1;
 
-        const nextSuggestions = filterClass.filterSyntax[syntaxPartIndex].getSuggestions(
-            updatedText,
-            updatedText.length,
-            context
-        );
+        const nextSuggestions = filterClass.filterSyntax[syntaxPartIndex]
+            .getSuggestions(updatedText, updatedText.length, context);
 
         // After we hit a template we keep collecting suggestions until they're ambiguous
         if (sawTemplate && nextSuggestions.length > 1) break;
@@ -225,18 +227,25 @@ export function getSuggestions<T>(filters: FilterClass<T>[], value: string, cont
             showAs: singleSuggestion.showAs + nextSuggestion.showAs,
             filterClass,
             index: singleSuggestion.index,
-            ...(nextSuggestion.template ? { template: true } : {}),
-            // For a non-template suggestion, a last part suggestion will complete the match
-            type: (!nextSuggestion.template && isLastPart)
-                ? 'full'
-                : 'partial'
+            matchType: nextSuggestion.matchType
         }));
+
+        // We never extend partial suggestions - partial means user input will be required
+        if (suggestions.some(s => s.matchType === 'partial')) break;
 
         syntaxPartIndex += 1;
     }
 
+    const matchedAllParts = syntaxPartIndex === filterClass.filterSyntax.length;
+
     if (!sawTemplate) {
-        return suggestions;
+        return suggestions.map((suggestion) => ({
+            ...suggestion,
+            matchType: suggestion.matchType === 'full' && !matchedAllParts
+                // Not a full *filter* match if all parts weren't matched
+                ? 'partial'
+                : suggestion.matchType
+        }));
     } else {
         return [{
             ...sawTemplate,
@@ -256,12 +265,15 @@ export function applySuggestionToText(value: string, suggestion: FilterSuggestio
  * This either updates the string content (given the suggestion for part
  * of a rule) or clears the string content and creates a new filter.
  */
-export function applySuggestionToFilters(filterSet: FilterSet, suggestion: FilterSuggestion): FilterSet {
+export function applySuggestionToFilters(
+    filterSet: FilterSet,
+    suggestion: FilterSuggestion
+): FilterSet {
     const text = filterSet[0].filter;
 
     const updatedText = applySuggestionToText(text, suggestion);
 
-    if (suggestion.type === 'full') {
+    if (suggestion.matchType === 'full') {
         return [
             new StringFilter(""),
             ..._.flatten([

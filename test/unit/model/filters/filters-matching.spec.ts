@@ -131,7 +131,7 @@ describe("Suggestion generation", () => {
             showAs: "qwe",
             value: "qwe",
             filterClass: availableFilters[0],
-            type: 'full'
+            matchType: 'full'
         });
     });
 
@@ -149,7 +149,7 @@ describe("Suggestion generation", () => {
                 showAs: "qwe",
                 value: "qwe",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             }
         ]);
     });
@@ -167,7 +167,7 @@ describe("Suggestion generation", () => {
                 showAs: "123",
                 value: "123",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             }
         ]);
     });
@@ -194,7 +194,7 @@ describe("Suggestion generation", () => {
             showAs: "asd",
             value: "asd",
             filterClass: availableFilters[0],
-            type: 'full'
+            matchType: 'full'
         });
     });
 
@@ -211,14 +211,14 @@ describe("Suggestion generation", () => {
                 showAs: "ab",
                 value: "ab",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 0,
                 showAs: "ac",
                 value: "ac",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
         ]);
     });
@@ -237,21 +237,21 @@ describe("Suggestion generation", () => {
                 showAs: "abcdef",
                 value: "abcdef",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 0,
                 showAs: "ab",
                 value: "ab",
                 filterClass: availableFilters[1],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 0,
                 showAs: "ac",
                 value: "ac",
                 filterClass: availableFilters[1],
-                type: 'full'
+                matchType: 'full'
             },
         ]);
     });
@@ -272,14 +272,14 @@ describe("Suggestion generation", () => {
                 showAs: "ab",
                 value: "ab",
                 filterClass: availableFilters[0],
-                type: 'partial'
+                matchType: 'partial'
             },
             {
                 index: 0,
                 showAs: "ac",
                 value: "ac",
                 filterClass: availableFilters[0],
-                type: 'partial'
+                matchType: 'partial'
             }
         ]);
     });
@@ -300,21 +300,21 @@ describe("Suggestion generation", () => {
                 showAs: "=",
                 value: "=",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 2,
                 showAs: ">=",
                 value: ">=",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 2,
                 showAs: "<=",
                 value: "<=",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             }
         ]);
     });
@@ -335,9 +335,8 @@ describe("Suggestion generation", () => {
                 index: 7,
                 showAs: "{3-digit number}",
                 value: "",
-                template: true,
                 filterClass: availableFilters[0],
-                type: 'partial'
+                matchType: 'template'
             }
             // I.e. it doesn't show == here, it shows the final suggestion instead, since
             // that's probably what you're looking for now.
@@ -347,8 +346,14 @@ describe("Suggestion generation", () => {
     it("should include suggestions for most full-matched option, given multiple options", () => {
         // Similar to the above test, but given competing filters, not competing string options
         const availableFilters = [
-            mockFilterClass([new FixedStringSyntax('bodySize'), new StringOptionsSyntax(['=', '>=', '<='])]),
-            mockFilterClass([new FixedStringSyntax('body'), new StringOptionsSyntax(['=', '=='])])
+            mockFilterClass([
+                new FixedStringSyntax('bodySize'),
+                new StringOptionsSyntax(['=', '>=', '<='])
+            ]),
+            mockFilterClass([
+                new FixedStringSyntax('body'),
+                new StringOptionsSyntax(['=', '=='])
+            ])
         ];
 
         const suggestions = getSuggestions(availableFilters, "body");
@@ -359,14 +364,14 @@ describe("Suggestion generation", () => {
                 showAs: "=",
                 value: "=",
                 filterClass: availableFilters[1],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 4,
                 showAs: "==",
                 value: "==",
                 filterClass: availableFilters[1],
-                type: 'full'
+                matchType: 'full'
             }
         ]);
     });
@@ -387,26 +392,26 @@ describe("Suggestion generation", () => {
                 showAs: "status=",
                 value: "status=",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 0,
                 showAs: "status>=",
                 value: "status>=",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             },
             {
                 index: 0,
                 showAs: "status<=",
                 value: "status<=",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             }
         ]);
     });
 
-    it("should successfully combine suggestions if all parts of a filter are single-option", () => {
+    it("should combine suggestions if all parts of a filter are single-option", () => {
         const availableFilters = [
             mockFilterClass([
                 new FixedStringSyntax('status'),
@@ -422,7 +427,7 @@ describe("Suggestion generation", () => {
                 showAs: "status=404",
                 value: "status=404",
                 filterClass: availableFilters[0],
-                type: 'full'
+                matchType: 'full'
             }
         ]);
     });
@@ -446,9 +451,8 @@ describe("Suggestion generation", () => {
                 index: 0,
                 showAs: "bodySize={number}",
                 value: "bodySize=",
-                template: true,
                 filterClass: availableFilters[0],
-                type: 'partial'
+                matchType: 'template'
             }
         ]);
     });
@@ -474,9 +478,8 @@ describe("Suggestion generation", () => {
                 index: 0,
                 showAs: "header[[{header name}]]",
                 value: "header[[",
-                template: true,
                 filterClass: availableFilters[0],
-                type: 'partial'
+                matchType: 'template'
             }
         ]);
     });
@@ -491,7 +494,13 @@ describe("Applying suggestions", () => {
 
         const result = applySuggestionToFilters(
             [new StringFilter("sta")],
-            { index: 0, value: "status", showAs: "STATUS", filterClass, type: 'partial' }
+            {
+                index: 0,
+                value: "status",
+                showAs: "STATUS",
+                filterClass,
+                matchType: 'partial'
+            }
         );
 
         expect(result.length).to.equal(1);
@@ -508,7 +517,13 @@ describe("Applying suggestions", () => {
 
         const result = applySuggestionToFilters(
             [new StringFilter("status!")],
-            { index: 6, value: "!=", showAs: "!=", filterClass, type: 'partial' }
+            {
+                index: 6,
+                value: "!=",
+                showAs: "!=",
+                filterClass,
+                matchType: 'partial'
+            }
         );
 
         expect(result.length).to.equal(1);
@@ -524,7 +539,13 @@ describe("Applying suggestions", () => {
 
         const result = applySuggestionToFilters(
             [new StringFilter("status=")],
-            { index: 7, value: "", showAs: "{number}", template: true, filterClass, type: 'partial' }
+            {
+                index: 7,
+                value: "",
+                showAs: "{number}",
+                filterClass,
+                matchType: 'template'
+            }
         );
 
         expect(result.length).to.equal(1);
@@ -541,7 +562,13 @@ describe("Applying suggestions", () => {
 
         const result = applySuggestionToFilters(
             [new StringFilter("status!=40")],
-            { index: 8, value: "404", showAs: "404", filterClass, type: 'full' }
+            {
+                index: 8,
+                value: "404",
+                showAs: "404",
+                filterClass,
+                matchType: 'full'
+            }
         );
 
         expect(result.length).to.equal(2);
@@ -567,7 +594,13 @@ describe("Applying suggestions", () => {
 
         const result = applySuggestionToFilters(
             [new StringFilter("custom")],
-            { index: 0, value: "custom", showAs: "custom", filterClass, type: 'full' }
+            {
+                index: 0,
+                value: "custom",
+                showAs: "custom",
+                filterClass,
+                matchType: 'full'
+            }
         );
 
         expect(result.length).to.equal(3);

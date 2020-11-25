@@ -199,7 +199,7 @@ describe("Number syntax", () => {
             {
                 showAs: '{number}',
                 value: '',
-                template: true
+                matchType: 'template'
             }
         ]);
     });
@@ -212,7 +212,8 @@ describe("Number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '123',
-                value: '123'
+                value: '123',
+                matchType: 'full'
             }
         ]);
     });
@@ -281,7 +282,7 @@ describe("Fixed-length number syntax", () => {
             {
                 showAs: '{3-digit number}',
                 value: '',
-                template: true
+                matchType: 'template'
             }
         ]);
     });
@@ -294,7 +295,8 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '500',
-                value: '500'
+                value: '500',
+                matchType: 'full'
             }
         ]);
     });
@@ -307,7 +309,8 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '418',
-                value: '418'
+                value: '418',
+                matchType: 'full'
             }
         ]);
     });
@@ -325,9 +328,9 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '{3-digit number}', value: '', template: true },
-            { showAs: '404', value: '404' },
-            { showAs: '201', value: '201' }
+            { showAs: '{3-digit number}', value: '', matchType: 'template' },
+            { showAs: '404', value: '404', matchType: 'full' },
+            { showAs: '201', value: '201', matchType: 'full' }
         ]);
     });
 
@@ -345,8 +348,8 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=2", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '201', value: '201' },
-            { showAs: '202', value: '202' }
+            { showAs: '201', value: '201', matchType: 'full' },
+            { showAs: '202', value: '202', matchType: 'full' }
         ]);
     });
 
@@ -363,7 +366,7 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=3", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '300', value: '300' }
+            { showAs: '300', value: '300', matchType: 'full' }
         ]);
     });
 
@@ -467,7 +470,7 @@ describe("String syntax", () => {
             {
                 showAs: '{a string}',
                 value: '',
-                template: true
+                matchType: 'template'
             }
         ]);
     });
@@ -485,9 +488,9 @@ describe("String syntax", () => {
         const suggestions = part.getSuggestions("value=", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '{a string}', value: '', template: true },
-            { showAs: 'a value', value: 'a value' },
-            { showAs: 'a different value', value: 'a different value' }
+            { showAs: '{a string}', value: '', matchType: 'template' },
+            { showAs: 'a value', value: 'a value', matchType: 'full' },
+            { showAs: 'a different value', value: 'a different value', matchType: 'full' }
         ]);
     });
 
@@ -499,7 +502,8 @@ describe("String syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'chars',
-                value: 'chars'
+                value: 'chars',
+                matchType: 'full'
             }
         ]);
     });
@@ -519,9 +523,9 @@ describe("String syntax", () => {
         const suggestions = part.getSuggestions("a ", 0, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: 'a ', value: 'a ' },
-            { showAs: 'a value', value: 'a value' },
-            { showAs: 'a different value', value: 'a different value' }
+            { showAs: 'a ', value: 'a ', matchType: 'full' },
+            { showAs: 'a value', value: 'a value', matchType: 'full' },
+            { showAs: 'a different value', value: 'a different value', matchType: 'full' }
         ]);
     });
 
@@ -612,7 +616,8 @@ describe("String options syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'ab',
-                value: 'ab'
+                value: 'ab',
+                matchType: 'full'
             }
         ]);
     });
@@ -624,9 +629,9 @@ describe("String options syntax", () => {
 
         expect(suggestions.length).to.equal(3);
         expect(suggestions).to.deep.equal([
-            { showAs: "ab", value: "ab" },
-            { showAs: "abc", value: "abc" },
-            { showAs: "ad", value: "ad" }
+            { showAs: "ab", value: "ab", matchType: 'full' },
+            { showAs: "abc", value: "abc", matchType: 'full' },
+            { showAs: "ad", value: "ad", matchType: 'full' }
         ]);
     });
 
@@ -638,7 +643,8 @@ describe("String options syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'ab',
-                value: 'ab'
+                value: 'ab',
+                matchType: 'full'
             }
         ]);
     });
@@ -651,7 +657,8 @@ describe("String options syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'ab',
-                value: 'ab'
+                value: 'ab',
+                matchType: 'full'
             }
         ]);
     });
@@ -663,8 +670,8 @@ describe("String options syntax", () => {
 
         expect(suggestions.length).to.equal(2);
         expect(suggestions).to.deep.equal([
-            { showAs: "ab", value: "ab" },
-            { showAs: "bc", value: "bc" }
+            { showAs: "ab", value: "ab", matchType: 'full' },
+            { showAs: "bc", value: "bc", matchType: 'full' }
         ]);
     });
 
@@ -768,7 +775,8 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "hello world",
-                value: "hello world"
+                value: "hello world",
+                matchType: 'full'
             }
         ]);
     });
@@ -785,7 +793,8 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "hello+world",
-                value: "hello+world"
+                value: "hello+world",
+                matchType: 'full'
             }
         ]);
     });
@@ -801,7 +810,8 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "hello world",
-                value: "hello world"
+                value: "hello world",
+                matchType: 'full'
             }
         ]);
     });
@@ -816,11 +826,13 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "",
-                value: ""
+                value: "",
+                matchType: 'full'
             },
             {
                 showAs: "world",
-                value: "world"
+                value: "world",
+                matchType: 'full'
             }
         ]);
     });
@@ -836,7 +848,8 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "",
-                value: ""
+                value: "",
+                matchType: 'full'
             }
         ]);
     });
@@ -855,7 +868,7 @@ describe("Optional syntax", () => {
             {
                 showAs: "string:{string value}",
                 value: "string:",
-                template: true
+                matchType: 'template'
             }
         ]);
     });

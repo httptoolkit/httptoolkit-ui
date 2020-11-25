@@ -147,8 +147,10 @@ export const FilterInput = <T extends unknown>(props: {
             !isSaveFiltersSuggestion(data.suggestion) &&
             areSuggestionsVisible(autosuggestRef)
         ) {
-            if (data.suggestion.type === 'full') {
-                props.onFiltersConsidered(applySuggestionToFilters(props.activeFilters, data.suggestion));
+            if (data.suggestion.matchType === 'full') {
+                props.onFiltersConsidered(
+                    applySuggestionToFilters(props.activeFilters, data.suggestion)
+                );
             } else {
                 // If you highlight a partial match, we show the filtered events as if you haven't
                 // entered any text, so you can still conveniently see the data until you either type

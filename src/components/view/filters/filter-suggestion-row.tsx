@@ -114,7 +114,7 @@ export const FilterSuggestionRow = (props: {
             <SuggestionDescription>
                 { suggestion.filterClass.filterDescription(
                     applySuggestionToText(query, suggestion),
-                    !!suggestion.template
+                    suggestion.matchType === 'template'
                 ) }
             </SuggestionDescription>
         }

@@ -40,11 +40,27 @@ export interface Suggestion {
     value: string;
 
     /**
-     * True for a template, undefined otherwise. Template suggestions are
-     * those that require user interaction, and act as visible prompts
-     * for input, rather than complete suggestions in and of themselves.
+     * The type of match that this suggestion would create.
+     *
+     * 'full' means that applying this suggestion to the given input will
+     * create a value that would fully match the input.
+     *
+     * 'template' and 'partial' both mean that this wouldn't fully match
+     * the input, in slightly different ways.
+     *
+     * 'template' means that this wouldn't fully match the input, but the showAs
+     * value will be a placeholder. User input would be required, but suggestion
+     * values could be appended to showAs to provide context.
+     *
+     * 'partial' means that this wouldn't fully match the input, and the
+     * showAs property would also be incomplete, so no further suggestions
+     * should be appended - we'd need to stop and prompt the user first.
+     *
+     * Either way, all suggestions are recommendations that the user could
+     * sensibly apply, it's just that template/partial suggestions require
+     * further input on this specific part before the syntax part is matched.
      */
-    template?: true;
+    matchType: 'full' | 'template' | 'partial';
 }
 
 export interface SyntaxPart<P = string | number, C extends any = never> {
@@ -144,7 +160,7 @@ function filterContextualSuggestions<S>(
     existingInput: string | undefined,
     suggestionGenerator: ((value: string, index: number, context: S) => string[]) | undefined,
     filter: (suggestion: string) => boolean
-) {
+): Suggestion[] {
     if (!context || !suggestionGenerator) return [];
 
     const lowercaseInput = (existingInput || '').toLowerCase();
@@ -156,7 +172,11 @@ function filterContextualSuggestions<S>(
             ) && filter
         )
         .slice(0, 10) // Max 10 results
-        .map(s => ({ showAs: s, value: s }));
+        .map(s => ({
+            showAs: s,
+            value: s,
+            matchType: 'full'
+        }));
 }
 
 export class FixedStringSyntax implements SyntaxPart<string> {
@@ -188,7 +208,8 @@ export class FixedStringSyntax implements SyntaxPart<string> {
     getSuggestions(value: string, index: number): Suggestion[] {
         return [{
             showAs: this.matcher,
-            value: this.matcher
+            value: this.matcher,
+            matchType: 'full'
         }];
     }
 
@@ -254,13 +275,14 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
                 {
                     showAs: `{${this.templateText}}`,
                     value: "",
-                    template: true
+                    matchType: 'template'
                 },
                 ...(this.allowEmpty(value, index) && matchingString === ""
                     ? [{
                         showAs: '',
-                        value: ''
-                    }]
+                        value: '',
+                        matchType: 'full'
+                    } as const]
                     : []
                 ),
                 ...suggestions
@@ -268,7 +290,8 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
         } else {
             return [{
                 showAs: matchingString,
-                value: matchingString
+                value: matchingString,
+                matchType: 'full'
             }, ...suggestions];
         }
     }
@@ -345,7 +368,7 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
             return [{
                 showAs: `{${this.requiredLength}-digit number}`,
                 value: "",
-                template: true
+                matchType: 'template'
             }, ...suggestions];
         } else if (suggestions.length) {
             // If we have any suggestions, they're valid suffixes of the entered
@@ -359,7 +382,8 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
 
             return [{
                 showAs: extendedNumber,
-                value: extendedNumber
+                value: extendedNumber,
+                matchType: 'full'
             }];
         }
     }
@@ -462,7 +486,12 @@ export class OptionalSyntax<
     getSuggestions(value: string, index: number): Suggestion[] {
         const isEndOfValue = value.length === index;
         let currentIndex = index;
-        let suggestions: Suggestion[] = [{ showAs: "", value: "" }];
+        let suggestions: Suggestion[] = [{
+            showAs: "",
+            value: "",
+            matchType: 'full'
+        }];
+        let matchedAllParts = false;
 
         for (const subPart of this.subParts) {
             const nextMatch = subPart.match(value, currentIndex);
@@ -471,27 +500,41 @@ export class OptionalSyntax<
             // this optional part entirely. This effectively allows backtracking for
             // suggestions, so the suggestion is shown only if the next non-optional
             // part _does_ match this content correctly.
-            if (!nextMatch) return [{ showAs: "", value: "" }];
-
+            if (!nextMatch) return [{ showAs: "", value: "", matchType: 'full' }];
+            matchedAllParts = subPart === this.subParts[this.subParts.length - 1];
 
             const nextSuggestions = subPart.getSuggestions(value, currentIndex);
+
             suggestions = _.flatMap(suggestions, (suggestion) =>
                 nextSuggestions.map((nextSuggestion) => ({
                     showAs: suggestion.showAs + nextSuggestion.showAs,
                     value: suggestion.value + nextSuggestion.value,
-                    ...(nextSuggestion.template ? { template: true } : {})
+                    matchType: nextSuggestion.matchType
                 }))
             );
 
-            if (suggestions.some(s => s.template)) break;
+            if (
+                suggestions.some(s => s.matchType !== 'full') ||
+                suggestions.length !== 1 // We only expand until the first >1 split
+            ) break;
 
             // Otherwise, just keep on appending suggestions
             currentIndex += nextMatch.consumed;
         }
 
+        if (!matchedAllParts) {
+            // Not a full match for the whole part if all sub-parts weren't matched
+            suggestions = suggestions.map((suggestion) => ({
+                ...suggestion,
+                matchType: suggestion.matchType === 'full'
+                    ? 'partial'
+                    : suggestion.matchType
+            }));
+        }
+
         if (isEndOfValue) {
             return [
-                { showAs: "", value: "" },
+                { showAs: "", value: "", matchType: 'full' },
                 ...suggestions
             ];
         } else {

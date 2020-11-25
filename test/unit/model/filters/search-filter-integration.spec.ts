@@ -23,7 +23,7 @@ function createFilter(input: string): Filter {
     const suggestions = getSuggestions(
         SelectableSearchFilterClasses,
         initialFilters[0].filter
-    ).filter(s => !s.template);
+    ).filter(s => s.matchType === 'full');
 
     expect(suggestions.length).to.equal(1);
 
@@ -39,7 +39,7 @@ function getSuggestionDescriptions(input: string) {
     return getSuggestions(SelectableSearchFilterClasses, input)
         .map(s => s
             .filterClass
-            .filterDescription(input, !!s.template)
+            .filterDescription(input, s.matchType === 'template')
         );
 }
 
@@ -562,16 +562,19 @@ describe("Search filter model integration test:", () => {
     });
 
     describe("Query filters", () => {
-        it("should suggest both template & empty queries for query=", () => {
-            const input = "query=";
+        it("should suggest operator options for 'quer'", () => {
+            const input = "quer";
 
             const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
 
             expect(suggestions.map(
-                s => _.pick(s, 'showAs', 'index', 'template'))
+                s => _.pick(s, 'showAs', 'index', 'matchType'))
             ).to.deep.equal([
-                { index: 6, showAs: '{query}', template: true },
-                { index: 6, showAs: '' },
+                { index: 0, showAs: 'query=', matchType: 'partial' },
+                { index: 0, showAs: 'query!=', matchType: 'partial' },
+                { index: 0, showAs: 'query*=', matchType: 'partial' },
+                { index: 0, showAs: 'query^=', matchType: 'partial' },
+                { index: 0, showAs: 'query$=', matchType: 'partial' }
             ]);
         });
 
@@ -581,10 +584,10 @@ describe("Search filter model integration test:", () => {
             const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
 
             expect(suggestions.map(
-                s => _.pick(s, 'showAs', 'index', 'template'))
+                s => _.pick(s, 'showAs', 'index', 'matchType'))
             ).to.deep.equal([
-                { index: 6, showAs: '{query}', template: true },
-                { index: 6, showAs: '' },
+                { index: 6, showAs: '{query}', matchType: 'template' },
+                { index: 6, showAs: '', matchType: 'full' },
             ]);
         });
 
@@ -595,15 +598,15 @@ describe("Search filter model integration test:", () => {
 
             const [
                 [templateSuggestion], [emptyQuerySuggestion]
-            ] = _.partition(suggestions, { template: true });
+            ] = _.partition(suggestions, { matchType: 'template' });
 
             const templateDescription = templateSuggestion
                 .filterClass
-                .filterDescription(input, !!templateSuggestion.template);
+                .filterDescription(input, templateSuggestion.matchType === 'template');
 
             const emptyQueryDescription = emptyQuerySuggestion
                 .filterClass
-                .filterDescription(input, !!emptyQuerySuggestion.template);
+                .filterDescription(input, emptyQuerySuggestion.matchType === 'template');
 
             expect(templateDescription).to.equal(
                 "Match requests with a given query string"
