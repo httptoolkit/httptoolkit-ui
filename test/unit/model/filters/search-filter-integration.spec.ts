@@ -23,7 +23,7 @@ function createFilter(input: string): Filter {
     const suggestions = getSuggestions(
         SelectableSearchFilterClasses,
         initialFilters[0].filter
-    );
+    ).filter(s => !s.template);
 
     expect(suggestions.length).to.equal(1);
 
@@ -33,6 +33,14 @@ function createFilter(input: string): Filter {
     expect(updatedFilters[0].filter).to.equal("");
 
     return updatedFilters[1];
+}
+
+function getSuggestionDescriptions(input: string) {
+    return getSuggestions(SelectableSearchFilterClasses, input)
+        .map(s => s
+            .filterClass
+            .filterDescription(input, !!s.template)
+        );
 }
 
 describe("Search filter model integration test:", () => {
@@ -59,7 +67,7 @@ describe("Search filter model integration test:", () => {
 
         it("can provide initial descriptions for all filters", () => {
             const descriptions = SelectableSearchFilterClasses.map((f) =>
-                f.filterDescription("")
+                f.filterDescription("", false)
             );
 
             expect(descriptions).to.deep.equal([
@@ -184,36 +192,28 @@ describe("Search filter model integration test:", () => {
 
         it("should show a more specific description given a partial operator", () => {
             const input = "status!";
-            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
-                .filterClass
-                .filterDescription(input);
+            const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal("Match responses with a given status code");
         });
 
         it("should show a more specific description given a complete operator", () => {
             const input = "status>=";
-            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
-                .filterClass
-                .filterDescription(input);
+            const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal("Match responses with a status greater than or equal to a given value");
         });
 
         it("should show a basic description given a partial value", () => {
             const input = "status>4";
-            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
-                .filterClass
-                .filterDescription(input);
+            const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal("Match responses with a status greater than a given value");
         });
 
         it("should show a fully specific description given a full input", () => {
             const input = "status<=201";
-            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
-                .filterClass
-                .filterDescription(input);
+            const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal(
                 "Match responses with a status less than or equal to 201"
@@ -222,9 +222,7 @@ describe("Search filter model integration test:", () => {
 
         it("should show a fully specific description given a full input and exact value", () => {
             const input = "status=201";
-            const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
-                .filterClass
-                .filterDescription(input);
+            const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal(
                 "Match responses with status 201 (Created)"
@@ -346,10 +344,7 @@ describe("Search filter model integration test:", () => {
                 ["method=post", "Match POST requests"],
                 ["method!=GET", "Match non-GET requests"]
             ].forEach(([input, expectedOutput]) => {
-                const description = getSuggestions(SelectableSearchFilterClasses, input)[0]
-                    .filterClass
-                    .filterDescription(input);
-
+                const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);
             });
         });
@@ -567,6 +562,67 @@ describe("Search filter model integration test:", () => {
     });
 
     describe("Query filters", () => {
+        it("should suggest both template & empty queries for query=", () => {
+            const input = "query=";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+
+            expect(suggestions.map(
+                s => _.pick(s, 'showAs', 'index', 'template'))
+            ).to.deep.equal([
+                { index: 6, showAs: '{query}', template: true },
+                { index: 6, showAs: '' },
+            ]);
+        });
+
+        it("should suggest both template & empty queries for query=", () => {
+            const input = "query=";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+
+            expect(suggestions.map(
+                s => _.pick(s, 'showAs', 'index', 'template'))
+            ).to.deep.equal([
+                { index: 6, showAs: '{query}', template: true },
+                { index: 6, showAs: '' },
+            ]);
+        });
+
+        it("should show a more specific description given a partial operator", () => {
+            const input = "query=";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+
+            const [
+                [templateSuggestion], [emptyQuerySuggestion]
+            ] = _.partition(suggestions, { template: true });
+
+            const templateDescription = templateSuggestion
+                .filterClass
+                .filterDescription(input, !!templateSuggestion.template);
+
+            const emptyQueryDescription = emptyQuerySuggestion
+                .filterClass
+                .filterDescription(input, !!emptyQuerySuggestion.template);
+
+            expect(templateDescription).to.equal(
+                "Match requests with a given query string"
+            );
+            expect(emptyQueryDescription).to.equal(
+                "Match requests with an empty query string"
+            );
+        });
+
+        it("should show a full description given a full filter input", () => {
+            const input = "query^=?abc";
+
+            const description = getSuggestionDescriptions(input)[0];
+
+            expect(description).to.equal(
+                "Match requests with a query string that starts with ?abc"
+            );
+        });
+
         it("should correctly filter for a given exact query", () => {
             const filter = createFilter("query=?a=b");
 

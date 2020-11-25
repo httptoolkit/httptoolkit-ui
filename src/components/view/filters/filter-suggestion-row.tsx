@@ -111,7 +111,8 @@ export const FilterSuggestionRow = (props: {
         { isHighlighted &&
             <SuggestionDescription>
                 { suggestion.filterClass.filterDescription(
-                    applySuggestionToText(query, suggestion)
+                    applySuggestionToText(query, suggestion),
+                    !!suggestion.template
                 ) }
             </SuggestionDescription>
         }

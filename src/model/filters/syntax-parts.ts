@@ -47,7 +47,7 @@ export interface Suggestion {
     template?: true;
 }
 
-export interface SyntaxPart<P = string | number, S extends any = never> {
+export interface SyntaxPart<P = string | number, C extends any = never> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
      * some text were appended to the string.
@@ -67,7 +67,7 @@ export interface SyntaxPart<P = string | number, S extends any = never> {
      *
      * Don't call it without a match, as the behaviour is undefined.
      */
-    getSuggestions(value: string, index: number, context?: S): Suggestion[];
+    getSuggestions(value: string, index: number, context?: C): Suggestion[];
 
     /**
      * For a part that fully matches, this will return the fully matched
@@ -201,22 +201,24 @@ export class FixedStringSyntax implements SyntaxPart<string> {
 
 }
 
-export class StringSyntax<S = never> implements SyntaxPart<string, S> {
+export class StringSyntax<C = never> implements SyntaxPart<string, C> {
 
     static AnyAsciiExceptSpaces = [charRange('!', '~')];
 
     private allowedCharRanges: CharRange[];
+    private allowEmpty: (value: string, index: number) => boolean;
 
     constructor(
         private templateText: string,
         private options: {
-            allowEmpty?: boolean
+            allowEmpty?: (value: string, index: number) => boolean,
             allowedChars?: CharRange[],
-            suggestionGenerator?: (value: string, index: number, context: S) => string[]
+            suggestionGenerator?: (value: string, index: number, context: C) => string[]
         } = {}
     ) {
         this.allowedCharRanges = options.allowedChars ||
             StringSyntax.AnyAsciiExceptSpaces;
+        this.allowEmpty = options.allowEmpty || (() => false);
     }
 
     match(value: string, index: number): undefined | SyntaxMatch {
@@ -227,14 +229,14 @@ export class StringSyntax<S = never> implements SyntaxPart<string, S> {
 
         // Any string is a full match, any empty space is a potential string
         return {
-            type: (consumedChars > 0 || this.options.allowEmpty)
+            type: (consumedChars > 0 || this.allowEmpty(value, index))
                 ? 'full'
                 : 'partial',
             consumed: consumedChars
         };
     }
 
-    getSuggestions(value: string, index: number, context?: S): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: C): Suggestion[] {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
 
         const suggestions = filterContextualSuggestions(value, index, context,
@@ -248,11 +250,21 @@ export class StringSyntax<S = never> implements SyntaxPart<string, S> {
         );
 
         if (!matchingString) {
-            return [{
-                showAs: `{${this.templateText}}`,
-                value: "",
-                template: true
-            }, ...suggestions];
+            return [
+                {
+                    showAs: `{${this.templateText}}`,
+                    value: "",
+                    template: true
+                },
+                ...(this.allowEmpty(value, index) && matchingString === ""
+                    ? [{
+                        showAs: '',
+                        value: ''
+                    }]
+                    : []
+                ),
+                ...suggestions
+            ];
         } else {
             return [{
                 showAs: matchingString,

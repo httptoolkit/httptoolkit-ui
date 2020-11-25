@@ -451,7 +451,7 @@ describe("String syntax", () => {
     });
 
     it("should allow empty strings if requested", () => {
-        const part = new StringSyntax("a string", { allowEmpty: true });
+        const part = new StringSyntax("a string", { allowEmpty: () => true });
 
         const match = part.match("", 0)!;
         expect(match.type).to.equal('full');

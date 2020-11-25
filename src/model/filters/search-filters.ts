@@ -54,12 +54,15 @@ export type FilterClass<T extends unknown = never> = {
      * syntax parts for this input, and returns a human readable descriptio
      * of what the filter will do.
      *
+     * If isTemplate is true, the description should assume that a template
+     * value (as yet unknown) will be appended to the input.
+     *
      * This function can safely assume it will never be called with strings
      * that do not match the syntax parts.
      *
      * Generally, this should get more precise as more input is entered.
      */
-    filterDescription: (input: string) => string;
+    filterDescription: (input: string, isTemplate: boolean) => string;
 };
 
 /**
@@ -649,7 +652,12 @@ class QueryFilter extends Filter {
             "$="
         ]),
         new StringSyntax("query", {
-            allowEmpty: true,
+            allowEmpty: (value): boolean => {
+                const op = QueryFilter.filterSyntax[1].parse(value, "query".length);
+
+                // You can pass an empty query only to = or !=
+                return op === "=" || op === "!=";
+            },
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
                 .map(e => 'request' in e && e.request.parsedUrl.search)
@@ -659,14 +667,31 @@ class QueryFilter extends Filter {
         })
     ] as const;
 
-    static filterDescription(value: string) {
+    static filterDescription(value: string, isTemplate: boolean) {
         const [, op, query] = tryParseFilter(QueryFilter, value);
 
         if (!op) {
             return "Match requests with a given query string";
+        } else if (query === undefined || isTemplate) {
+            if (op === '=') {
+                return `Match requests with a given query string`;
+            } else {
+                return `Match requests with a query string ${
+                    operationDescriptions[op]
+                } a given query string`;
+            }
+        } else if (query === '') {
+            // Op must be '=' or '!=' - we don't allow empty string otherwise
+            if (op === '=') {
+                return 'Match requests with an empty query string';
+            } else {
+                return 'Match requests with a non-empty query string';
+            }
         } else {
-            return `Match requests with a query string ${operationDescriptions[op]} ${
-                query || 'a given query string'
+            return `Match requests with a query string ${
+                operationDescriptions[op]
+            } ${
+                query
             }`;
         }
     }
