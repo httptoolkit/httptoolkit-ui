@@ -419,7 +419,7 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
     getSuggestions(value: string, index: number): Suggestion[] {
         let matchers = this.optionMatchers
             .map(m => ({ matcher: m, match: m.match(value, index) }))
-            .filter(({ match }) => !!match && (match.consumed + index === value.length));
+            .filter(({ match }) => !!match);
 
         // If there's an exact match (should only ever be one), suggest only that:
         if (matchers.some(({ match }) => match!.type === 'full')) {

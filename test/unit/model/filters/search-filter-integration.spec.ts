@@ -387,6 +387,30 @@ describe("Search filter model integration test:", () => {
     });
 
     describe("Protocol filters", () => {
+        it("should only suggest http for =http", () => {
+            const input = "protocol=http";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+
+            expect(suggestions.map(
+                s => _.pick(s, 'showAs', 'index', 'matchType'))
+            ).to.deep.equal([
+                { index: 9, showAs: 'http', matchType: 'full' }
+            ]);
+        });
+
+        it("should only suggest https for =https", () => {
+            const input = "protocol=https";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+
+            expect(suggestions.map(
+                s => _.pick(s, 'showAs', 'index', 'matchType'))
+            ).to.deep.equal([
+                { index: 9, showAs: 'https', matchType: 'full' }
+            ]);
+        });
+
         it("should correctly filter for the given protocol", () => {
             const filter = createFilter("protocol=http");
 

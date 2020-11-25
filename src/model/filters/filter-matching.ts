@@ -149,8 +149,15 @@ export function getSuggestions<T>(
             const stringIndex = match!.lastPartStringIndex;
             const syntaxIndex = filterClass.filterSyntax.length - 1;
 
+            // Filters may return full-matching prefix suggestions, but if we're
+            // fully matching a string, we only want exact right-to-the-end matches
+            const expectedSuggestionLength = value.length - stringIndex;
+
             return filterClass.filterSyntax[syntaxIndex]
                 .getSuggestions(value, stringIndex, context)
+                .filter((suggestion) =>
+                    suggestion.value.length === expectedSuggestionLength
+                )
                 .map((suggestion) => ({
                     ...suggestion,
                     filterClass,
