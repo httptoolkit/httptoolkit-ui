@@ -8,6 +8,7 @@ import {
 } from '../../../model/filters/filter-matching';
 
 import { IconButton } from '../../common/icon-button';
+import { longestPrefix } from '../../../util';
 
 const ExistingText = styled.span`
     font-weight: bold;
@@ -80,13 +81,14 @@ export const FilterSuggestionRow = (props: {
 }) => {
     const { suggestion, query, isHighlighted, onDelete } = props;
 
-    // Work out how many chars of the query are included in the showAs text
-    const partiallyMatchedChars = suggestion.value === suggestion.showAs
-        ? Math.min(
-            query.length - suggestion.index,
-            suggestion.showAs.length // A filter may be shorter than the input!
-        )
-        : 0;
+    // Work out how many chars of the query are included in the showAs/value text
+    // We want both - when they differ, it's a template value or similar.
+    const commonText = longestPrefix(
+        query.slice(suggestion.index),
+        suggestion.value,
+        suggestion.showAs
+    );
+    const partiallyMatchedChars = commonText.length;
 
     // If there is overlap, treat the existing+suggested chars as just existing text
     const existingText = query.slice(0, suggestion.index + partiallyMatchedChars);
