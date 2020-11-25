@@ -9,6 +9,7 @@ import {
     FixedLengthNumberSyntax,
     FixedStringSyntax,
     NumberSyntax,
+    OptionalSyntax,
     StringOptionsSyntax,
     StringSyntax,
     SyntaxPart,
@@ -122,14 +123,17 @@ const operationDescriptions: { [key in NumberOperation | StringOperation]: strin
     "<": "less than",
     "<=": "less than or equal to",
     "*=": "containing",
-    "^=": "that starts with",
-    "$=": "that ends with"
+    "^=": "starting with",
+    "$=": "ending with"
 } as const;
 
 type SyntaxPartValues<
-    F extends FilterClass,
-    S = F['filterSyntax']
-> = { [K in keyof S]: S[K] extends SyntaxPart ? SyntaxPartValue<S[K]> : never }
+    SPs extends readonly SyntaxPart<any, any>[]
+> = {
+    [K in keyof SPs]: SyntaxPartValue<SPs[K]>
+};
+
+type FilterPartValues<F extends FilterClass> = SyntaxPartValues<F['filterSyntax']>;
 
 /**
  * Given that there's a full match for the given filter against the given input,
@@ -138,7 +142,10 @@ type SyntaxPartValues<
  *
  * Throws an error if the value does not fully match the filter.
  */
-function parseFilter<F extends FilterClass>(filterClass: F, value: string): SyntaxPartValues<F> {
+function parseFilter<F extends FilterClass>(
+    filterClass: F,
+    value: string
+): FilterPartValues<F> {
     let index = 0;
     const parts = [];
 
@@ -147,26 +154,45 @@ function parseFilter<F extends FilterClass>(filterClass: F, value: string): Synt
         index += part.match(value, index)!.consumed;
     }
 
-    return parts as unknown as SyntaxPartValues<F>;
+    return parts as unknown as FilterPartValues<F>;
 }
 
 /**
- * Try to parse the filter, returning an array of all syntax parts that can be
+ * Try to parse the filter, returning an array of all syntax part values that can be
  * parsed successfully, but stopping as soon as a part does not match.
  */
-function tryParseFilter<F extends FilterClass>(filterClass: F, value: string): Partial<SyntaxPartValues<F>> {
-    let index = 0;
-    const parts = [];
+function tryParseFilter<F extends FilterClass>(
+    filterClass: F,
+    value: string
+): Partial<FilterPartValues<F>> {
+    return tryParseFilterParts<
+        F['filterSyntax']
+    >(value, ...filterClass.filterSyntax);
+}
 
-    for (let part of filterClass.filterSyntax) {
+/**
+ * Try to parse a specific list of filter parts, returning an array of all syntax
+ * parts values that can be parsed successfully, but stopping as soon as a part
+ * does not match.
+ */
+function tryParseFilterParts<
+    SPs extends readonly SyntaxPart<any, any>[]
+>(
+    value: string,
+    ...syntaxParts: SPs
+): Partial<SyntaxPartValues<SPs>> {
+    let index = 0;
+    const parsedParts = [];
+
+    for (let part of syntaxParts) {
         const match = part.match(value, index);
         if (!match || match.type !== 'full') break;
 
-        parts.push(part.parse(value, index));
+        parsedParts.push(part.parse(value, index));
         index += match.consumed;
     }
 
-    return parts as unknown as Partial<SyntaxPartValues<F>>;
+    return parsedParts as unknown as Partial<SyntaxPartValues<SPs>>;
 }
 
 class StatusFilter extends Filter {
@@ -729,6 +755,37 @@ const getAllHeaders = (e: CollectedEvent): [string, string | string[]][] => {
 
 class HeaderFilter extends Filter {
 
+    // Separated out so we can do subparsing here ourselves
+    private static valueMatchSyntax = [
+        new StringOptionsSyntax([
+            "=",
+            "!=",
+            "*=",
+            "^=",
+            "$="
+        ]),
+        new StringSyntax("header value", {
+            suggestionGenerator: (value, _i, events: CollectedEvent[]) => {
+                const headerNamePart = HeaderFilter.filterSyntax[2];
+                const expectedHeaderName = headerNamePart
+                    .parse(value, "header[".length)
+                    .toLowerCase();
+
+                return _(events)
+                    .map(e =>
+                        getAllHeaders(e)
+                        .filter(([headerName]): boolean =>
+                            headerName.toLowerCase() === expectedHeaderName
+                        )
+                        .map(([_hn, headerValue]) => headerValue)
+                    )
+                    .flatten()
+                    .uniq()
+                    .valueOf() as string[];
+            }
+        })
+    ] as const;
+
     static filterSyntax = [
         new FixedStringSyntax("header"),
         new FixedStringSyntax("["),
@@ -749,42 +806,71 @@ class HeaderFilter extends Filter {
                 .uniq()
                 .valueOf() as string[]
         }),
-        new FixedStringSyntax("]")
+        new FixedStringSyntax("]"),
+        new OptionalSyntax<[StringOperation, string]>(...HeaderFilter.valueMatchSyntax)
     ] as const;
 
-    static filterDescription(value: string) {
+    static filterDescription(value: string): string {
         const [, , headerName] = tryParseFilter(HeaderFilter, value);
+
+        // We have to manually parse optional parts unfortunately, since otherwise
+        // any half-optional matches are treated as non-matches and left undefined.
+        const [op, headerValue] = tryParseFilterParts(
+            value.slice("header[]".length + (headerName || '').length),
+            ...HeaderFilter.valueMatchSyntax
+        );
 
         if (!headerName) {
             return "Match requests or responses by header";
+        } else if (!op) {
+            return `Match requests or responses with a '${headerName}' header`;
         } else {
-            return `Match requests or responses with a ${headerName} header`;
+            return `Match requests or responses with '${headerName}' ${
+                operationDescriptions[op]
+            } ${headerValue ? `'${headerValue}'` : 'a given value'}`;
         }
     }
 
     private expectedHeaderName: string;
 
+    private expectedHeaderValue: string | undefined;
+
+    private op: StringOperation | undefined;
+    private predicate: ((headerValue: string, expectedValue: string) => boolean) | undefined;
+
     constructor(filter: string) {
         super(filter);
-        const [, , headerName] = parseFilter(HeaderFilter, filter);
+        HeaderFilter.filterSyntax[4].parse;
+        const [, , headerName, , [op, headerValue]] = parseFilter(HeaderFilter, filter);
+
         this.expectedHeaderName = headerName.toLowerCase();
+
+        if (op && headerValue) {
+            this.op = op;
+            this.predicate = stringOperations[op];
+            this.expectedHeaderValue = headerValue;
+        }
     }
 
     matches(event: CollectedEvent): boolean {
         if (!(event instanceof HttpExchange)) return false;
 
-        const requestHeaders = _.mapKeys(event.request.headers, (v, k) => k.toLowerCase());
+        const headers = getAllHeaders(event);
 
-        if (requestHeaders[this.expectedHeaderName] !== undefined) return true;
+        const { predicate, expectedHeaderValue } = this;
+        if (!predicate || !expectedHeaderValue) {
+            return headers.some(([key]) => key.toLowerCase() === this.expectedHeaderName);
+        }
 
-        if (!event.isSuccessfulExchange()) return false;
-
-        const responseHeaders = _.mapKeys(event.response.headers, (v, k) => k.toLowerCase());
-        return responseHeaders[this.expectedHeaderName] !== undefined;
+        return _(headers)
+            .filter(([key]) => key.toLowerCase() === this.expectedHeaderName)
+            .flatMap(([_k, value]) => value ?? []) // Flatten our array/undefined values
+            .some((value) => predicate(value.toLowerCase(), expectedHeaderValue));
     }
 
     toString() {
-        return `Has ${this.expectedHeaderName} header`;
+        if (!this.op) return `Has ${this.expectedHeaderName} header`;
+        return `${this.expectedHeaderName} ${this.op} ${this.expectedHeaderValue!}`;
     }
 }
 

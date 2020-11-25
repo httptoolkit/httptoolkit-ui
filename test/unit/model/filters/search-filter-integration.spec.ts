@@ -646,7 +646,7 @@ describe("Search filter model integration test:", () => {
             const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal(
-                "Match requests with a query string that starts with ?abc"
+                "Match requests with a query string starting with ?abc"
             );
         });
 
@@ -757,6 +757,45 @@ describe("Search filter model integration test:", () => {
             ]);
         });
 
+        it("should suggest seen header values from context, if available", () => {
+            let input = "header[content-type]=";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: {
+                        'another-header': 'other values',
+                        'Content-Type': 'application/xml'
+                    }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'content-type': 'application/json' },
+                    responseHeaders: { 'content-type': 'application/problem+json' },
+                }),
+            ]);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 20, showAs: "={header value}" },
+                { index: 20, showAs: "=application/xml" },
+                { index: 20, showAs: "=application/json" },
+                { index: 20, showAs: "=application/problem+json" },
+            ]);
+        });
+
+        it("should show descriptions for various suggestions", () => {
+            [
+                ["header", "Match requests or responses by header"],
+                ["header[date", "Match requests or responses with a 'date' header"],
+                ["header[date]=",
+                    "Match requests or responses with 'date' equal to a given value"],
+                ["header[date]*=json",
+                    "Match requests or responses with 'date' containing 'json'"]
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.equal(expectedOutput);
+            });
+        });
+
         it("should correctly filter for the presence of a header", () => {
             const filter = createFilter("header[my-header]");
 
@@ -790,6 +829,44 @@ describe("Search filter model integration test:", () => {
                 { 'my-header': 'pending-req-with-header' },
                 { 'MY-HEADER': 'completed-req-with-header' },
                 { 'my-header': 'completed-res-with-header' }
+            ]);
+        });
+
+        it("should correctly filter the value of a header", () => {
+            const filter = createFilter("header[my-header]=abc");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({
+                    requestHeaders: { 'my-header': 'wrong-value' }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'My-Header': ['abc', 'def'] }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'MY-HEADER': 'abc' }
+                }),
+                getExchangeData({
+                    responseHeaders: { 'my-header': 'abc' }
+                }),
+                getExchangeData({ requestHeaders: { 'another-header': 'more header' } }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+
+            const matchedHeaders = (matchedEvents as HttpExchange[]).map((event) => ({
+                ...event.request.headers,
+                ...(event.isSuccessfulExchange()
+                    ? event.response.headers
+                    : []
+                )
+            }));
+
+            expect(matchedHeaders).to.deep.equal([
+                { 'My-Header': ['abc', 'def'] },
+                { 'MY-HEADER': 'abc' },
+                { 'my-header': 'abc' }
             ]);
         });
     });

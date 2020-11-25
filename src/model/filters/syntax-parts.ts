@@ -95,7 +95,7 @@ export interface SyntaxPart<P = string | number, C extends any = never> {
     parse(value: string, index: number): P;
 };
 
-export type SyntaxPartValue<P extends SyntaxPart> = P extends SyntaxPart<infer V> ? V : never;
+export type SyntaxPartValue<P> = P extends SyntaxPart<infer V> ? V : never;
 
 type CharRange = readonly [number, number];
 
