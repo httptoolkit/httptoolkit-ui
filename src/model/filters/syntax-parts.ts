@@ -445,9 +445,11 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
  * fully matching content for all parts within is present.
  */
 export class OptionalSyntax<
-    Ps extends unknown[],
-    SPs extends { [i in keyof Ps]: SyntaxPart<Ps[i]> } = { [i in keyof Ps]: SyntaxPart<Ps[i]> }
-> implements SyntaxPart<Ps | []> {
+    Ps extends unknown[] = unknown[],
+    C = never,
+    SPs extends { [i in keyof Ps]: SyntaxPart<Ps[i], C> }
+        = { [i in keyof Ps]: SyntaxPart<Ps[i], C> }
+> implements SyntaxPart<Ps | [], C> {
 
     private subParts: SPs;
 
@@ -483,7 +485,7 @@ export class OptionalSyntax<
         return { type: 'full', consumed: currentIndex - index };
     }
 
-    getSuggestions(value: string, index: number): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: C): Suggestion[] {
         const isEndOfValue = value.length === index;
         let currentIndex = index;
         let suggestions: Suggestion[] = [{
@@ -503,7 +505,7 @@ export class OptionalSyntax<
             if (!nextMatch) return [{ showAs: "", value: "", matchType: 'full' }];
             matchedAllParts = subPart === this.subParts[this.subParts.length - 1];
 
-            const nextSuggestions = subPart.getSuggestions(value, currentIndex);
+            const nextSuggestions = subPart.getSuggestions(value, currentIndex, context);
 
             suggestions = _.flatMap(suggestions, (suggestion) =>
                 nextSuggestions.map((nextSuggestion) => ({

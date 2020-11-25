@@ -716,6 +716,17 @@ class QueryFilter extends Filter {
     }
 }
 
+const getAllHeaders = (e: CollectedEvent): [string, string | string[]][] => {
+    if (!(e instanceof HttpExchange)) return [];
+    return [
+        ...Object.entries(e.request.headers),
+        ...(e.isSuccessfulExchange()
+            ? Object.entries(e.response.headers)
+            : []
+        )
+    ] as [string, string | string[]][];
+}
+
 class HeaderFilter extends Filter {
 
     static filterSyntax = [
@@ -729,15 +740,10 @@ class HeaderFilter extends Filter {
             ],
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
-                .map(e => e instanceof HttpExchange
-                    ? [
-                        ...Object.keys(e.request.headers),
-                        ...(e.isSuccessfulExchange()
-                            ? Object.keys(e.response.headers)
-                            : []
-                        )
-                    ]
-                    : []
+                .map(e =>
+                    getAllHeaders(e).map(([headerName]) =>
+                        headerName.toLowerCase()
+                    )
                 )
                 .flatten()
                 .uniq()

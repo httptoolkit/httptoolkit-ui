@@ -733,6 +733,30 @@ describe("Search filter model integration test:", () => {
             ]);
         });
 
+        it("should suggest seen header names from context, if available", () => {
+            let input = "header[";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: {
+                        'another-header': 'other values',
+                        'Content-Type': 'application/xml'
+                    }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'content-type': 'application/json' },
+                    responseHeaders: { 'content-type': 'application/problem+json' },
+                }),
+            ]);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 7, showAs: "{header name}" },
+                { index: 7, showAs: "another-header" },
+                { index: 7, showAs: "content-type" }
+            ]);
+        });
+
         it("should correctly filter for the presence of a header", () => {
             const filter = createFilter("header[my-header]");
 
@@ -754,7 +778,6 @@ describe("Search filter model integration test:", () => {
 
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
 
-            // expect(matchedEvents.length).to.equal(3);
             const matchedHeaders = (matchedEvents as HttpExchange[]).map((event) => ({
                 ...event.request.headers,
                 ...(event.isSuccessfulExchange()
