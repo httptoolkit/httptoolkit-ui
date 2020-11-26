@@ -858,7 +858,7 @@ class HeaderFilter extends Filter {
         if (op && headerValue) {
             this.op = op;
             this.predicate = stringOperations[op];
-            this.expectedHeaderValue = headerValue;
+            this.expectedHeaderValue = headerValue.toLowerCase();
         }
     }
 
