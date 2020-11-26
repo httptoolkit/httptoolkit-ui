@@ -76,7 +76,7 @@ describe("Search filter model integration test:", () => {
                 "Match requests sent to a given path",
                 "Match requests with a given query string",
                 "Match responses with a given status code",
-                "Match requests or responses by header",
+                "Match exchanges by header",
                 "Match requests that have received a response",
                 "Match requests that are still waiting for a response",
                 "Match requests that aborted before receiving a response",
@@ -792,12 +792,12 @@ describe("Search filter model integration test:", () => {
 
         it("should show descriptions for various suggestions", () => {
             [
-                ["header", "Match requests or responses by header"],
-                ["header[date", "Match requests or responses with a 'date' header"],
+                ["header", "Match exchanges by header"],
+                ["header[date", "Match exchanges with a 'date' header"],
                 ["header[date]=",
-                    "Match requests or responses with 'date' equal to a given value"],
+                    "Match exchanges with a 'date' header equal to a given value"],
                 ["header[date]*=json",
-                    "Match requests or responses with 'date' containing 'json'"]
+                    "Match exchanges with a 'date' header containing 'json'"]
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);

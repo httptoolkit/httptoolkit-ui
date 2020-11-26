@@ -829,11 +829,11 @@ class HeaderFilter extends Filter {
         );
 
         if (!headerName) {
-            return "Match requests or responses by header";
+            return "Match exchanges by header";
         } else if (!op) {
-            return `Match requests or responses with a '${headerName}' header`;
+            return `Match exchanges with a '${headerName}' header`;
         } else {
-            return `Match requests or responses with '${headerName}' ${
+            return `Match exchanges with a '${headerName}' header ${
                 operationDescriptions[op]
             } ${headerValue ? `'${headerValue}'` : 'a given value'}`;
         }
