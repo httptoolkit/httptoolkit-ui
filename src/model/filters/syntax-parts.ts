@@ -424,9 +424,13 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
             .map(m => ({ matcher: m, match: m.match(value, index) }))
             .filter(({ match }) => !!match);
 
-        // If there's an exact match (should only ever be one), suggest only that:
+        // If there's an exact match, suggest only that.
+        // If there's two (https -> http + https) suggest the longest
         if (matchers.some(({ match }) => match!.type === 'full')) {
-            matchers = matchers.filter(({ match }) => match!.type === 'full');
+            matchers = [_.maxBy(
+                matchers.filter(({ match }) => match!.type === 'full'),
+                ({ match }) => match!.consumed
+            )!];
         }
 
         return _.flatMap(matchers, ({ matcher }) =>
