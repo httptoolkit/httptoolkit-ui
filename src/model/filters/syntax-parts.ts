@@ -305,6 +305,80 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
 
 }
 
+export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
+
+    constructor(
+        private wrapper: [start: string, end: string],
+        private wrappedSyntax: SyntaxPart<P>
+    ) {}
+
+    match(value: string, index: number): SyntaxMatch | undefined {
+        // Check for the wrapper start character first:
+        if (value[index] === undefined) return {
+            type: 'partial',
+            consumed: 0
+        };
+
+        if (value[index] !== this.wrapper[0]) return;
+        index += 1;
+
+        // Check the syntax within:
+        const submatch = this.wrappedSyntax.match(value, index);
+        if (!submatch) return;
+
+        if (submatch.type !== 'full') {
+            return {
+                type: 'partial',
+                consumed: submatch.consumed + 1
+            };
+        }
+
+        // Check for the wrapper close character:
+        index += submatch.consumed;
+
+        if (value[index] === undefined) {
+            return { type: 'partial', consumed: submatch.consumed + 1 };
+        }
+        if (value[index] !== this.wrapper[1]) return;
+
+        return {
+            type: 'full',
+            consumed: submatch.consumed + 2
+        };
+    }
+
+    getSuggestions(value: string, index: number, context?: never): Suggestion[] {
+        const suggestionsToWrap = this.wrappedSyntax.getSuggestions(
+            value,
+            index + 1,
+            context
+        );
+
+        return suggestionsToWrap.map(s => ({
+            matchType: s.matchType,
+            // We should show closing wrapper on templates (after template is shown)
+            // and full matches, e.g. [{temp}] or [value] or [partialSu
+            showAs: this.wrapper[0] + s.showAs + (
+                s.matchType === 'full' || s.matchType === 'template'
+                ? this.wrapper[1]
+                : ''
+            ),
+            // Value should only add the closing wrapper if it's a full match, e.g.
+            // [value] or [ for template/partial.
+            value: this.wrapper[0] + s.value + (
+                s.matchType === 'full'
+                ? this.wrapper[1]
+                : ''
+            )
+        }));
+    }
+
+    parse(value: string, index: number): P {
+        return this.wrappedSyntax.parse(value, index + 1);
+    }
+
+}
+
 export class NumberSyntax implements SyntaxPart<number> {
 
     private stringSyntax: StringSyntax;

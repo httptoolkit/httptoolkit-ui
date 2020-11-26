@@ -13,7 +13,8 @@ import {
     StringOptionsSyntax,
     StringSyntax,
     SyntaxPart,
-    SyntaxPartValue
+    SyntaxPartValue,
+    SyntaxWrapperSyntax
 } from './syntax-parts';
 
 export abstract class Filter {
@@ -774,9 +775,9 @@ class HeaderFilter extends Filter {
         ]),
         new StringSyntax("header value", {
             suggestionGenerator: (value, _i, events: CollectedEvent[]) => {
-                const headerNamePart = HeaderFilter.filterSyntax[2];
+                const headerNamePart = HeaderFilter.filterSyntax[1];
                 const expectedHeaderName = headerNamePart
-                    .parse(value, "header[".length)
+                    .parse(value, "header".length)
                     .toLowerCase();
 
                 return _(events)
@@ -796,30 +797,31 @@ class HeaderFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("header"),
-        new FixedStringSyntax("["),
-        new StringSyntax("header name", {
-            // Match any chars, except ]
-            allowedChars: [
-                [0, "]".charCodeAt(0) - 1],
-                ["]".charCodeAt(0) + 1, 255],
-            ],
-            suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
-                _(events)
-                .map(e =>
-                    getAllHeaders(e).map(([headerName]) =>
-                        headerName.toLowerCase()
+        new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("header name", {
+                // Match any chars, except ]
+                allowedChars: [
+                    [0, "]".charCodeAt(0) - 1],
+                    ["]".charCodeAt(0) + 1, 255],
+                ],
+                suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
+                    _(events)
+                    .map(e =>
+                        getAllHeaders(e).map(([headerName]) =>
+                            headerName.toLowerCase()
+                        )
                     )
-                )
-                .flatten()
-                .uniq()
-                .valueOf() as string[]
-        }),
-        new FixedStringSyntax("]"),
+                    .flatten()
+                    .uniq()
+                    .valueOf() as string[]
+            }),
+        ),
         new OptionalSyntax<[StringOperation, string]>(...HeaderFilter.valueMatchSyntax)
     ] as const;
 
     static filterDescription(value: string): string {
-        const [, , headerName] = tryParseFilter(HeaderFilter, value);
+        const [, headerName] = tryParseFilter(HeaderFilter, value);
 
         // We have to manually parse optional parts unfortunately, since otherwise
         // any half-optional matches are treated as non-matches and left undefined.
@@ -848,8 +850,7 @@ class HeaderFilter extends Filter {
 
     constructor(filter: string) {
         super(filter);
-        HeaderFilter.filterSyntax[4].parse;
-        const [, , headerName, , [op, headerValue]] = parseFilter(HeaderFilter, filter);
+        const [, headerName, [op, headerValue]] = parseFilter(HeaderFilter, filter);
 
         this.expectedHeaderName = headerName.toLowerCase();
 

@@ -755,9 +755,9 @@ describe("Search filter model integration test:", () => {
             ]);
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 6, showAs: "[{header name}" },
-                { index: 6, showAs: "[another-header" },
-                { index: 6, showAs: "[content-type" }
+                { index: 6, showAs: "[{header name}]" },
+                { index: 6, showAs: "[another-header]" },
+                { index: 6, showAs: "[content-type]" }
             ]);
         });
 
@@ -780,9 +780,22 @@ describe("Search filter model integration test:", () => {
             ]);
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 7, showAs: "cont" },
-                { index: 7, showAs: "content-type" }
+                { index: 6, showAs: "[cont]" },
+                { index: 6, showAs: "[content-type]" }
             ]);
+        });
+
+        it("should not create a filter immediately from header name completion", () => {
+            let input = "header[cont";
+
+            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+
+            const filters = applySuggestionToFilters([
+                new StringFilter(input),
+            ], suggestions[0]);
+
+            expect(filters.length).to.equal(1);
+            expect(filters[0].filter).to.equal("header[cont]");
         });
 
         it("should suggest seen header values from context, if available", () => {
@@ -813,7 +826,7 @@ describe("Search filter model integration test:", () => {
         it("should show descriptions for various suggestions", () => {
             [
                 ["header", "Match exchanges by header"],
-                ["header[date", "Match exchanges with a 'date' header"],
+                ["header[date]", "Match exchanges with a 'date' header"],
                 ["header[date]=",
                     "Match exchanges with a 'date' header equal to a given value"],
                 ["header[date]*=json",

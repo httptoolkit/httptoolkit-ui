@@ -7,7 +7,8 @@ import {
     NumberSyntax,
     FixedLengthNumberSyntax,
     StringOptionsSyntax,
-    OptionalSyntax
+    OptionalSyntax,
+    SyntaxWrapperSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("Fixed string syntax", () => {
@@ -533,6 +534,61 @@ describe("String syntax", () => {
     it("should be able to parse a completed value", () => {
         const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
         expect(part.parse("abcd", 0)).to.equal("abcd");
+    });
+
+});
+
+describe("Wrapper syntax", () => {
+
+    it("should matched a wrapped value", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+        );
+        expect(part.match("[x]", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 3
+        });
+    });
+
+    it("should not match unwrapped values", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+        );
+        expect(part.match("x", 0)).to.equal(undefined);
+    });
+
+    it("should add a wrapper to wrapped suggestion templates", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+        );
+        expect(part.getSuggestions("", 0)).to.deep.equal([{
+            showAs: "[{string}]",
+            value: "[",
+            matchType: 'template'
+        }]);
+    });
+
+    it("should add a wrapper to wrapped full suggestions", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+        );
+        expect(part.getSuggestions("[abc", 0)).to.deep.equal([{
+            showAs: "[abc]",
+            value: "[abc]",
+            matchType: 'full'
+        }]);
+    });
+
+    it("should parse valid wrapped input", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+        );
+        expect(part.parse("[abc]", 0)).to.equal("abc");
     });
 
 });
