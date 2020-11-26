@@ -829,8 +829,8 @@ describe("Search filter model integration test:", () => {
                 ["header[date]", "Match exchanges with a 'date' header"],
                 ["header[date]=",
                     "Match exchanges with a 'date' header equal to a given value"],
-                ["header[date]*=json",
-                    "Match exchanges with a 'date' header containing 'json'"]
+                ["header[date]*=[json; charset=utf-8]",
+                    "Match exchanges with a 'date' header containing 'json; charset=utf-8'"]
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);

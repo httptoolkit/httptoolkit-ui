@@ -773,26 +773,32 @@ class HeaderFilter extends Filter {
             "^=",
             "$="
         ]),
-        new StringSyntax("header value", {
-            suggestionGenerator: (value, _i, events: CollectedEvent[]) => {
-                const headerNamePart = HeaderFilter.filterSyntax[1];
-                const expectedHeaderName = headerNamePart
-                    .parse(value, "header".length)
-                    .toLowerCase();
+        new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("header value", {
+                allowedChars: [[0, 255]], // Anything! Wrapper guards against spaces for us.
+                suggestionGenerator: (value, _i, events: CollectedEvent[]) => {
+                    const headerNamePart = HeaderFilter.filterSyntax[1];
+                    const expectedHeaderName = headerNamePart
+                        .parse(value, "header".length)
+                        .toLowerCase();
 
-                return _(events)
-                    .map(e =>
-                        getAllHeaders(e)
-                        .filter(([headerName]): boolean =>
-                            headerName.toLowerCase() === expectedHeaderName
+                    return _(events)
+                        .map(e =>
+                            getAllHeaders(e)
+                            .filter(([headerName]): boolean =>
+                                headerName.toLowerCase() === expectedHeaderName
+                            )
+                            .map(([_hn, headerValue]) => headerValue)
                         )
-                        .map(([_hn, headerValue]) => headerValue)
-                    )
-                    .flatten()
-                    .uniq()
-                    .valueOf() as string[];
-            }
-        })
+                        .flatten()
+                        .uniq()
+                        .valueOf() as string[];
+                }
+            }),
+            // [] should be required/suggested only if value contains a space
+            { optional: true }
+        )
     ] as const;
 
     static filterSyntax = [
@@ -800,11 +806,6 @@ class HeaderFilter extends Filter {
         new SyntaxWrapperSyntax(
             ['[', ']'],
             new StringSyntax("header name", {
-                // Match any chars, except ]
-                allowedChars: [
-                    [0, "]".charCodeAt(0) - 1],
-                    ["]".charCodeAt(0) + 1, 255],
-                ],
                 suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                     _(events)
                     .map(e =>

@@ -307,74 +307,145 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
 
 export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
 
+    private optional: boolean;
+
     constructor(
         private wrapper: [start: string, end: string],
-        private wrappedSyntax: SyntaxPart<P>
-    ) {}
+        private wrappedSyntax: SyntaxPart<P>,
+        options: {
+            /**
+             * If set, the wrapper is optional, and should only be required & suggested
+             * if a input/suggestion contains a space.
+             */
+            optional?: boolean
+        } = {}
+    ) {
+        this.optional = !!options.optional;
+    }
 
-    match(value: string, index: number): SyntaxMatch | undefined {
+    match(value: string, startIndex: number): SyntaxMatch | undefined {
+        let isWrapped: boolean;
+        let index = startIndex;
+
         // Check for the wrapper start character first:
-        if (value[index] === undefined) return {
-            type: 'partial',
-            consumed: 0
-        };
-
-        if (value[index] !== this.wrapper[0]) return;
-        index += 1;
+        if (value[index] === undefined) {
+            return { type: 'partial', consumed: 0 };
+        } else if (value[index] === this.wrapper[0]) {
+            index += 1;
+            isWrapped = true;
+        } else if (this.optional) {
+            isWrapped = false;
+        } else {
+            return; // No wrapped, not optional - no match
+        }
 
         // Check the syntax within:
-        const submatch = this.wrappedSyntax.match(value, index);
+        const endChar = isWrapped ? this.wrapper[1] : ' ';
+        const nextEndCharIndex = value.slice(index).indexOf(endChar);
+        const valueToMatch = nextEndCharIndex !== -1
+            // Don't allow the wrapped syntax to read beyond the wrapper end
+            ? value.slice(0, index + nextEndCharIndex)
+            : value;
+
+        const submatch = this.wrappedSyntax.match(
+            valueToMatch,
+            index
+        );
         if (!submatch) return;
+
+        index += submatch.consumed;
 
         if (submatch.type !== 'full') {
             return {
                 type: 'partial',
-                consumed: submatch.consumed + 1
+                consumed: index - startIndex
             };
         }
 
         // Check for the wrapper close character:
-        index += submatch.consumed;
-
-        if (value[index] === undefined) {
-            return { type: 'partial', consumed: submatch.consumed + 1 };
+        if (isWrapped) {
+            if (value[index] === undefined) {
+                return { type: 'partial', consumed: index - startIndex };
+            } else if (value[index] !== this.wrapper[1]) {
+                // Missing closing wrapper after open wrapper - no match
+                return;
+            } else {
+                index += 1;
+            }
         }
-        if (value[index] !== this.wrapper[1]) return;
 
         return {
             type: 'full',
-            consumed: submatch.consumed + 2
+            consumed: index - startIndex
         };
     }
 
     getSuggestions(value: string, index: number, context?: never): Suggestion[] {
+        const hasStartWrapper = value[index] === this.wrapper[0];
+
+        const endChar = !this.optional || hasStartWrapper
+            ? this.wrapper[1]
+            : ' ';
+
+        // Don't allow the wrapped syntax to include the wrapper end in suggestions:
+        const nextEndCharIndex = value.slice(index).indexOf(endChar);
+        const valueToMatch = nextEndCharIndex !== -1
+            ? value.slice(0, index + nextEndCharIndex)
+            : value;
+
         const suggestionsToWrap = this.wrappedSyntax.getSuggestions(
-            value,
-            index + 1,
+            valueToMatch,
+            hasStartWrapper
+                ? index + 1
+                : index,
             context
         );
 
-        return suggestionsToWrap.map(s => ({
-            matchType: s.matchType,
-            // We should show closing wrapper on templates (after template is shown)
-            // and full matches, e.g. [{temp}] or [value] or [partialSu
-            showAs: this.wrapper[0] + s.showAs + (
-                s.matchType === 'full' || s.matchType === 'template'
-                ? this.wrapper[1]
-                : ''
-            ),
-            // Value should only add the closing wrapper if it's a full match, e.g.
-            // [value] or [ for template/partial.
-            value: this.wrapper[0] + s.value + (
-                s.matchType === 'full'
-                ? this.wrapper[1]
-                : ''
-            )
-        }));
+        return suggestionsToWrap.map(s => {
+            const shouldAddWrapper = !this.optional ||
+                s.value.includes(' ');
+
+            if (!shouldAddWrapper) return s;
+
+            return {
+                matchType: s.matchType,
+                // We should show closing wrapper on templates (after template is shown)
+                // and full matches, e.g. [{temp}] or [value] or [partialSu
+                showAs: this.wrapper[0] + s.showAs + (
+                    s.matchType === 'full' || s.matchType === 'template'
+                    ? this.wrapper[1]
+                    : ''
+                ),
+                // Value should only add the closing wrapper if it's a full match, e.g.
+                // [value] or [ for template/partial.
+                value: this.wrapper[0] + s.value + (
+                    s.matchType === 'full'
+                    ? this.wrapper[1]
+                    : ''
+                )
+            }
+        });
     }
 
     parse(value: string, index: number): P {
-        return this.wrappedSyntax.parse(value, index + 1);
+        const hasStartWrapper = value[index] === this.wrapper[0];
+        const hasEndWrapper = value.slice(index).indexOf(this.wrapper[1]) !== -1;
+        const isWrapped = !this.optional || (hasStartWrapper && hasEndWrapper);
+
+        const endChar = isWrapped
+            ? this.wrapper[1]
+            : ' ';
+
+        // Don't allow the wrapped syntax to read beyond the wrapper end:
+        const nextEndCharIndex = value.slice(index).indexOf(endChar);
+        const valueToMatch = nextEndCharIndex !== -1
+            ? value.slice(0, index + nextEndCharIndex)
+            : value;
+
+        return this.wrappedSyntax.parse(
+            valueToMatch,
+            isWrapped ? index + 1 : index
+        );
     }
 
 }

@@ -543,7 +543,7 @@ describe("Wrapper syntax", () => {
     it("should matched a wrapped value", () => {
         const part = new SyntaxWrapperSyntax(
             ['[', ']'],
-            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+            new StringSyntax("string")
         );
         expect(part.match("[x]", 0)).to.deep.equal({
             type: 'full',
@@ -554,15 +554,50 @@ describe("Wrapper syntax", () => {
     it("should not match unwrapped values", () => {
         const part = new SyntaxWrapperSyntax(
             ['[', ']'],
-            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+            new StringSyntax("string")
         );
         expect(part.match("x", 0)).to.equal(undefined);
+    });
+
+    it("should support optional wrapping", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string"),
+            { optional: true }
+        );
+
+        expect(part.match("x", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 1
+        });
+
+        expect(part.match("[x]", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 3
+        });
+    });
+
+    it("should allow wrapper chars within input when optional wrapping", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string"),
+            { optional: true }
+        );
+
+        expect(part.match("abc[def]qwe", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 11
+        });
+
+        expect(part.parse("abc[def]qwe", 0)).to.equal(
+            'abc[def]qwe'
+        );
     });
 
     it("should add a wrapper to wrapped suggestion templates", () => {
         const part = new SyntaxWrapperSyntax(
             ['[', ']'],
-            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+            new StringSyntax("string")
         );
         expect(part.getSuggestions("", 0)).to.deep.equal([{
             showAs: "[{string}]",
@@ -571,10 +606,40 @@ describe("Wrapper syntax", () => {
         }]);
     });
 
+    it("should add optional wrapper to suggestions only when necessary", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringOptionsSyntax([
+                "abc",
+                "def",
+                "qwe asd"
+            ]),
+            { optional: true }
+        );
+
+        expect(part.getSuggestions("", 0)).to.deep.equal([
+            {
+                showAs: "abc",
+                value: "abc",
+                matchType: 'full'
+            },
+            {
+                showAs: "def",
+                value: "def",
+                matchType: 'full'
+            },
+            {
+                showAs: "[qwe asd]",
+                value: "[qwe asd]",
+                matchType: 'full'
+            }
+        ]);
+    });
+
     it("should add a wrapper to wrapped full suggestions", () => {
         const part = new SyntaxWrapperSyntax(
             ['[', ']'],
-            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+            new StringSyntax("string")
         );
         expect(part.getSuggestions("[abc", 0)).to.deep.equal([{
             showAs: "[abc]",
@@ -586,9 +651,45 @@ describe("Wrapper syntax", () => {
     it("should parse valid wrapped input", () => {
         const part = new SyntaxWrapperSyntax(
             ['[', ']'],
-            new StringSyntax("string", { allowedChars: [charRange('a', 'z')] })
+            new StringSyntax("string")
         );
         expect(part.parse("[abc]", 0)).to.equal("abc");
+    });
+
+    it("should parse optional unwrapped input", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string"),
+            { optional: true }
+        );
+        expect(part.parse("abc", 0)).to.equal("abc");
+    });
+
+    it("should parse optional unwrapped input containing brackets", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string"),
+            { optional: true }
+        );
+        expect(part.parse("a[]", 0)).to.equal("a[]");
+    });
+
+    it("should parse optional wrapped input can parse open bracket", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string"),
+            { optional: true }
+        );
+        expect(part.parse("[", 0)).to.equal("[");
+    });
+
+    it("should parse optional wrapped input containing open-brackets", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("string"),
+            { optional: true }
+        );
+        expect(part.parse("[[]", 0)).to.equal("[");
     });
 
 });
