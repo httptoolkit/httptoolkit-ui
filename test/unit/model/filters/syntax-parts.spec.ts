@@ -510,6 +510,7 @@ describe("String syntax", () => {
 
     it("should include only the matching completions from the context", () => {
         const context = [
+            { value: "a " },
             { value: "a value" },
             { value: "non-matching value" },
             { value: "a different value" }

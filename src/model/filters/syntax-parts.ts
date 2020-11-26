@@ -288,11 +288,14 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
                 ...suggestions
             ];
         } else {
-            return [{
-                showAs: matchingString,
-                value: matchingString,
-                matchType: 'full'
-            }, ...suggestions];
+            return [
+                {
+                    showAs: matchingString,
+                    value: matchingString,
+                    matchType: 'full'
+                },
+                ...suggestions.filter(s => s.value !== matchingString)
+            ];
         }
     }
 
