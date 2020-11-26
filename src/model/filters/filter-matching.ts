@@ -68,11 +68,21 @@ type FilterMatch = {
     partsMatched: number;
 
     /**
-     * For full matches, the string index at the start of the last part.
-     * For partial matches, the string index at the start of the partially
-     * matching part (i.e. the last *matched* part, not the last part overall)
+     * The index of the last syntax part that consumed >0 characters. In effect,
+     * this is the work-in-progress part: it's the first part that should be
+     * allowed to make suggestions.
      */
-    lastPartStringIndex: number;
+    lastConsumingPartSyntaxIndex: number;
+
+    /**
+     * The string index to the latest work-in-progress part of the input.
+     *
+     * For full matches, the string index at the start of the last part.
+     * For partial matches, the string index at the start of the full or partially
+     * matching part (i.e. the last *matched* part, not the last part overall),
+     * iff it matched more than 0 chars.
+     */
+    lastConsumingPartStringIndex: number;
 };
 
 function matchFilter(filter: FilterClass, value: string): undefined | FilterMatch {
@@ -82,18 +92,24 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
     let fullyConsumed = 0;
     let syntaxIndex: number;
     let wasFullMatch = true;
-    let lastPartStringIndex = 0;
+
+    let lastConsumingPartSyntaxIndex = 0;
+    let lastConsumingPartStringIndex = 0;
 
     for (
         syntaxIndex = 0;
         syntaxIndex < syntax.length && stringIndex <= value.length && wasFullMatch;
         syntaxIndex++
     ) {
-        lastPartStringIndex = stringIndex;
         const partMatch = syntax[syntaxIndex].match(value, stringIndex);
         if (!partMatch) return;
 
         wasFullMatch = partMatch.type === 'full';
+
+        if (partMatch.consumed > 0) {
+            lastConsumingPartSyntaxIndex = syntaxIndex;
+            lastConsumingPartStringIndex = stringIndex;
+        }
 
         stringIndex += partMatch.consumed;
         fullyConsumed += wasFullMatch ? partMatch.consumed : 0;
@@ -106,7 +122,8 @@ function matchFilter(filter: FilterClass, value: string): undefined | FilterMatc
         fullyConsumed,
         partiallyConsumed: stringIndex,
         partsMatched: syntaxIndex,
-        lastPartStringIndex
+        lastConsumingPartSyntaxIndex,
+        lastConsumingPartStringIndex
     };
 }
 
@@ -143,11 +160,18 @@ export function getSuggestions<T>(
     );
 
     if (fullMatches.length) {
-        // If we have full matches (what you've typed fully matches an existing suggestion)
-        // then we should only show that/those suggestion(s).
+        // If we have full matches (what you've typed fully matches a filter) then
+        // we should rematch just the final part for a final completion suggestion.
         return _.flatMap(fullMatches, ({ filterClass, match }) => {
-            const stringIndex = match!.lastPartStringIndex;
             const syntaxIndex = filterClass.filterSyntax.length - 1;
+
+            // If last consuming part is the last part, then we just rerun that, easy.
+            // If last consuming part is not the last part, there must be full matching
+            // zero-consuming part(s). Rerun the last one of those, at the end of the string.
+            const lastPartConsumedChars = syntaxIndex === match!.lastConsumingPartSyntaxIndex;
+            const stringIndex = lastPartConsumedChars
+                ? match!.lastConsumingPartStringIndex
+                : value.length;
 
             return filterClass.filterSyntax[syntaxIndex]
                 .getSuggestions(value, stringIndex, context)
@@ -170,8 +194,13 @@ export function getSuggestions<T>(
     // We have some filters that partially match. For each, get the next suggestions that
     // should be offered to extend (and _maybe_ complete) the match.
     const suggestionsWithMatches = _.flatMap(bestPartialMatches, ({ filterClass, match }) => {
-        const syntaxPartIndex = match!.partsMatched - 1;
-        const stringIndex = match!.fullyConsumed;
+        // We want to get suggestions from the last part that consumed any input. That means
+        // for a last-part half-match, we want that partial last part, but for a last part
+        // 0-char-match, we want the preceeding full part, because there might still be
+        // useful suggestions there to extend that part.
+        const syntaxPartIndex = match!.lastConsumingPartSyntaxIndex;
+        const stringIndex = match!.lastConsumingPartStringIndex;
+
         // For partially matched filters, partsMatched is always the index+1
         // of partially matched part (the part we're waiting to complete)
         const nextPartToMatch = filterClass.filterSyntax[syntaxPartIndex];
@@ -189,7 +218,7 @@ export function getSuggestions<T>(
                     ) as 'full' | 'template' | 'partial'
                 },
                 filterClass,
-                match
+                syntaxPartIndex
             }));
     });
 
@@ -197,12 +226,12 @@ export function getSuggestions<T>(
         return suggestionsWithMatches.map(({ suggestion }) => suggestion);
     }
 
-    const { filterClass, match, suggestion: originalSuggestion } = suggestionsWithMatches[0];
+    const { filterClass, suggestion: originalSuggestion } = suggestionsWithMatches[0];
+    let syntaxPartIndex = suggestionsWithMatches[0].syntaxPartIndex + 1;
 
     // Iteratively expand the suggestion to include future parts, if possible, until we
     // have either >1 option or a template option:
     let suggestions = [originalSuggestion];
-    let syntaxPartIndex = match!.partsMatched; // Without -1, i.e. the next part we would match
 
     // If we've reached a template suggestion, this is the template that we'll eventually
     // return. We keep looping a little further just to nicely complete the showAs.

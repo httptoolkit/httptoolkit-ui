@@ -154,6 +154,22 @@ describe("Suggestion generation", () => {
         ]);
     });
 
+    it("should suggest mid-input completions", () => {
+        const availableFilters = [
+            mockFilterClass([new FixedStringSyntax('qwe'), new FixedStringSyntax('asd')]),
+        ];
+
+        const suggestions = getSuggestions(availableFilters, "qwea");
+
+        expect(suggestions[0]).to.deep.equal({
+            index: 3,
+            showAs: "asd",
+            value: "asd",
+            filterClass: availableFilters[0],
+            matchType: 'full'
+        });
+    });
+
     it("should suggest the final part, given a multi-step full match", () => {
         const availableFilters = [
             mockFilterClass([new FixedStringSyntax('qwe'), new NumberSyntax()])
@@ -180,22 +196,6 @@ describe("Suggestion generation", () => {
         const suggestions = getSuggestions(availableFilters, "statuses");
 
         expect(suggestions.length).to.equal(0);
-    });
-
-    it("should suggest completions at the end of the string", () => {
-        const availableFilters = [
-            mockFilterClass([new FixedStringSyntax('qwe'), new FixedStringSyntax('asd')]),
-        ];
-
-        const suggestions = getSuggestions(availableFilters, "qwe");
-
-        expect(suggestions[0]).to.deep.equal({
-            index: 3,
-            showAs: "asd",
-            value: "asd",
-            filterClass: availableFilters[0],
-            matchType: 'full'
-        });
     });
 
     it("should suggest the matching string options", () => {
@@ -296,23 +296,23 @@ describe("Suggestion generation", () => {
 
         expect(suggestions).to.deep.equal([
             {
-                index: 2,
-                showAs: "=",
-                value: "=",
+                index: 0,
+                showAs: "ab=",
+                value: "ab=",
                 filterClass: availableFilters[0],
                 matchType: 'full'
             },
             {
-                index: 2,
-                showAs: ">=",
-                value: ">=",
+                index: 0,
+                showAs: "ab>=",
+                value: "ab>=",
                 filterClass: availableFilters[0],
                 matchType: 'full'
             },
             {
-                index: 2,
-                showAs: "<=",
-                value: "<=",
+                index: 0,
+                showAs: "ab<=",
+                value: "ab<=",
                 filterClass: availableFilters[0],
                 matchType: 'full'
             }
@@ -332,9 +332,9 @@ describe("Suggestion generation", () => {
 
         expect(suggestions).to.deep.equal([
             {
-                index: 7,
-                showAs: "{3-digit number}",
-                value: "",
+                index: 6,
+                showAs: "={3-digit number}",
+                value: "=",
                 filterClass: availableFilters[0],
                 matchType: 'template'
             }
@@ -343,7 +343,7 @@ describe("Suggestion generation", () => {
         ]);
     });
 
-    it("should include suggestions for most full-matched option, given multiple options", () => {
+    it("should include suggestions for the most-matched option, given multiple full matches", () => {
         // Similar to the above test, but given competing filters, not competing string options
         const availableFilters = [
             mockFilterClass([
@@ -360,16 +360,16 @@ describe("Suggestion generation", () => {
 
         expect(suggestions).to.deep.equal([
             {
-                index: 4,
-                showAs: "=",
-                value: "=",
+                index: 0,
+                showAs: "body=",
+                value: "body=",
                 filterClass: availableFilters[1],
                 matchType: 'full'
             },
             {
-                index: 4,
-                showAs: "==",
-                value: "==",
+                index: 0,
+                showAs: "body==",
+                value: "body==",
                 filterClass: availableFilters[1],
                 matchType: 'full'
             }
