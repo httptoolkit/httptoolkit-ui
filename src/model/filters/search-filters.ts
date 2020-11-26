@@ -19,14 +19,22 @@ import {
 export abstract class Filter {
 
     abstract matches(event: CollectedEvent): boolean;
-    abstract toString(): String;
+    abstract toString(): string;
 
     constructor(
-        private readonly filterString: String
+        private readonly filterString: string
     ) {}
 
     serialize() {
         return this.filterString;
+    }
+
+    get filterDescription() {
+        const thisClass = (this.constructor as FilterClass<unknown>);
+        return thisClass.filterDescription(
+            this.filterString,
+            false
+        );
     }
 }
 

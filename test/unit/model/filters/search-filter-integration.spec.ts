@@ -228,6 +228,14 @@ describe("Search filter model integration test:", () => {
                 "Match responses with status 201 (Created)"
             );
         });
+
+        it("should show a full description given a created filter instance", () => {
+            const filter = createFilter("status=201");
+
+            expect(filter.filterDescription).to.equal(
+                "Match responses with status 201 (Created)"
+            );
+        });
     });
 
     describe("Completed filters", () => {
