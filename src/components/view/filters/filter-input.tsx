@@ -124,6 +124,9 @@ export const FilterInput = <T extends unknown>(props: {
     availableFilters: FilterClass<T>[],
     suggestionContext?: T,
 
+    isPaidUser: boolean,
+    getPro: (source: string) => void,
+
     onFiltersChanged: (filters: FilterSet) => void,
     onFiltersConsidered: (filters: FilterSet | undefined) => void,
     onFiltersSaved: (filters: Filter[], name: string) => void,
@@ -182,7 +185,12 @@ export const FilterInput = <T extends unknown>(props: {
         // text in the input as their new custom name.
         if (isSaveFiltersSuggestion(data.suggestion)) {
             if (!props.value) return; // No dice - we just ignore empty names
-            props.onFiltersSaved(props.activeFilters.slice(1), props.value);
+
+            if (props.isPaidUser) {
+                props.onFiltersSaved(props.activeFilters.slice(1), props.value);
+            } else {
+                props.getPro('save-filter');
+            }
             return;
         }
 
@@ -193,7 +201,7 @@ export const FilterInput = <T extends unknown>(props: {
             label: data.suggestion.filterClass.name // Track most used filters, *not* input or params
         });
         props.onFiltersChanged(updatedFilters);
-    }, [updatedFilters, props.value, props.activeFilters, props.onFiltersChanged]);
+    }, [updatedFilters, props.value, props.isPaidUser, props.getPro, props.activeFilters, props.onFiltersChanged]);
 
     const clearSuggestions = React.useCallback(() => {
         const autosuggest = autosuggestRef.current as any;
@@ -241,6 +249,7 @@ export const FilterInput = <T extends unknown>(props: {
     // typed something that exactly matches one type of filter, show a 'save' option.
     const shouldShowSave = props.activeFilters.length > 1 &&
         props.value.length >= 1 &&
+        !props.value.includes(' ') &&
         _.uniq(suggestions.map(s => s.filterClass)).length !== 1;
 
     // If we have no suggestions, but we're showing a save option, don't highlight the
@@ -251,10 +260,11 @@ export const FilterInput = <T extends unknown>(props: {
         return shouldShowSave
             ? (suggestions as Array<SuggestionType>).concat({
                 saveFilters: true,
+                isPaidUser: props.isPaidUser,
                 filterCount: props.activeFilters.length - 1 // -1 to exclude text filter
             })
             : suggestions
-    }, [shouldShowSave, suggestions, props.activeFilters]);
+    }, [shouldShowSave, props.isPaidUser, suggestions, props.activeFilters]);
 
     const rowRenderer = React.useMemo(() =>
         buildRowRenderer(props.onCustomFilterDeleted)

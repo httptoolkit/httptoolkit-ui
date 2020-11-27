@@ -20,6 +20,7 @@ import {
     CustomFilterClass
 } from '../../../model/filters/filter-matching';
 import { UiStore } from '../../../model/ui-store';
+import { AccountStore } from '../../../model/account/account-store';
 
 import { IconButton } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
@@ -105,9 +106,11 @@ const getSelectedFilterElements = (filterBox: HTMLDivElement) => {
 }
 
 @inject('uiStore')
+@inject('accountStore')
 @observer
 export class SearchFilter<T> extends React.Component<{
     uiStore?: UiStore,
+    accountStore?: AccountStore,
     onFiltersConsidered: (filters: FilterSet | undefined) => void,
     availableFilters: FilterClass<T>[],
     filterSuggestionContext?: T,
@@ -492,6 +495,7 @@ export class SearchFilter<T> extends React.Component<{
             activeFilters,
             availableFilters,
             props: {
+                accountStore,
                 placeholder,
                 searchInputRef,
                 filterSuggestionContext,
@@ -545,6 +549,9 @@ export class SearchFilter<T> extends React.Component<{
                 activeFilters={activeFilters}
                 availableFilters={availableFilters}
                 suggestionContext={filterSuggestionContext}
+
+                isPaidUser={accountStore!.isPaidUser}
+                getPro={accountStore!.getPro}
             />
             { hasContents &&
                 <ClearSearchButton

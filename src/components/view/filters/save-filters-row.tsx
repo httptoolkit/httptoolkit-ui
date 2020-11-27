@@ -3,7 +3,11 @@ import * as React from 'react';
 import { styled, css } from '../../../styles';
 import { Icon } from '../../../icons';
 
-export type SaveFiltersSuggestion = { saveFilters: true, filterCount: number };
+export type SaveFiltersSuggestion = {
+    saveFilters: true,
+    filterCount: number,
+    isPaidUser: boolean
+};
 
 export const isSaveFiltersSuggestion = (suggestion: any): suggestion is SaveFiltersSuggestion =>
         'saveFilters' in suggestion && suggestion.saveFilters === true;
@@ -42,14 +46,28 @@ const SaveFiltersContainer = styled.div<{ isHighlighted: boolean }>`
 export const SaveFiltersRow = (props: {
     filterCount: number,
     query: string,
-    isHighlighted: boolean
+    isHighlighted: boolean,
+    isPaidUser: boolean
 }) => {
     return <SaveFiltersContainer isHighlighted={props.isHighlighted}>
-        <Icon icon={['fas', 'save']} />
-        Save {
-            props.filterCount > 1
-            ? `these ${props.filterCount} filters`
-            : 'this filter'
-        } as { `'${props.query}'` || '...' }
+        {
+            props.isPaidUser
+            ? <>
+                <Icon icon={['fas', 'save']} />
+                Save {
+                    props.filterCount > 1
+                    ? `these ${props.filterCount} filters`
+                    : 'this filter'
+                } as { `'${props.query}'` || '...' }
+            </>
+            : <>
+                <Icon icon={['far', 'star']} />
+                Get Pro to save {
+                    props.filterCount > 1
+                    ? `these ${props.filterCount} filters`
+                    : 'this filter'
+                } as { `'${props.query}'` || '...' }
+            </>
+        }
     </SaveFiltersContainer>
 }
