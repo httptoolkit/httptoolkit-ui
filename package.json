@@ -96,7 +96,7 @@
     "qrcode.react": "^1.0.0",
     "randexp": "^0.5.3",
     "react": "^16.8.5",
-    "react-autosuggest": "^10.0.3",
+    "react-autosuggest": "^10.0.4",
     "react-beautiful-dnd": "^12.2.0",
     "react-dom": "^16.8.5",
     "react-ga": "^2.5.6",

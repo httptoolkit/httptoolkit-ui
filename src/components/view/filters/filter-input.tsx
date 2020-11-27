@@ -237,20 +237,24 @@ export const FilterInput = <T extends unknown>(props: {
         ref: props.searchInputRef
     }), [props.value, onInputChange, props.placeholder, props.searchInputRef]);
 
-    const suggestionsWithSave = React.useMemo(() => {
-        const existingFilters = props.activeFilters;
-        const inputText = existingFilters[0].filter;
-        const matchedFilters = _.uniq(suggestions.map(s => s.filterClass));
+    // Whilst you're typing, if you've entered a filter, and you're typing but you haven't
+    // typed something that exactly matches one type of filter, show a 'save' option.
+    const shouldShowSave = props.activeFilters.length > 1 &&
+        props.value.length >= 1 &&
+        _.uniq(suggestions.map(s => s.filterClass)).length !== 1;
 
-        // Whilst you're typing, if you've entered a filter, and you're not typing, but you haven't
-        // typed something that exactly matches one type of filter, show a 'save' option.
-        return existingFilters.length > 1 && inputText.length >= 1 && matchedFilters.length !== 1
+    // If we have no suggestions, but we're showing a save option, don't highlight the
+    // option because it shouldn't be your default 'enter' action
+    const shouldHighlightFirst = !(shouldShowSave && suggestions.length === 0);
+
+    const suggestionsWithSave = React.useMemo(() => {
+        return shouldShowSave
             ? (suggestions as Array<SuggestionType>).concat({
                 saveFilters: true,
-                filterCount: existingFilters.length - 1 // -1 to exclude text filter
+                filterCount: props.activeFilters.length - 1 // -1 to exclude text filter
             })
             : suggestions
-    }, [props.value, props.activeFilters, suggestions]);
+    }, [shouldShowSave, suggestions, props.activeFilters]);
 
     const rowRenderer = React.useMemo(() =>
         buildRowRenderer(props.onCustomFilterDeleted)
@@ -260,7 +264,7 @@ export const FilterInput = <T extends unknown>(props: {
         ref={autosuggestRef}
         multiSection={false}
         suggestions={suggestionsWithSave}
-        highlightFirstSuggestion={true}
+        highlightFirstSuggestion={shouldHighlightFirst}
         shouldRenderSuggestions={shouldRenderSuggestions}
         onSuggestionsFetchRequested={_.noop} // No-op: we useMemo to keep suggestion up to date manually
         onSuggestionsClearRequested={clearSuggestions}
