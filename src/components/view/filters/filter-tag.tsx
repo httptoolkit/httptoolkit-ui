@@ -28,7 +28,7 @@ const FilterTagDelete = styled(Icon).attrs(() => ({
 `;
 
 const FilterTagName = styled.span`
-    white-space: nowrap;
+    white-space: pre; /* Nowrap + show spaces accurately */
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 4px;

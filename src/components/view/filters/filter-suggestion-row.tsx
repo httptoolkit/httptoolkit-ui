@@ -43,7 +43,7 @@ const SuggestionRowPart = styled.p`
 const SuggestionDetails = styled(SuggestionRowPart)`
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: pre; /* Nowrap + show spaces accurately */
 
     ${(p: { isHighlighted: boolean }) => p.isHighlighted && css`
         box-shadow: 0px -8px 10px -10px rgba(0,0,0,0.3);
@@ -68,7 +68,7 @@ const SuggestionDescription = styled(SuggestionRowPart)`
         inset 0px 12px 8px -10px rgba(0,0,0,0.15),
         inset 0px -8px 8px -10px rgba(0,0,0,0.15);
 
-    white-space: nowrap;
+    white-space: pre; /* Nowrap + show spaces accurately */
     overflow: hidden;
     text-overflow: ellipsis;
 `;
