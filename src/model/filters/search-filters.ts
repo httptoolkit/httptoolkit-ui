@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import { CollectedEvent } from '../http/events-store';
 import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
+import { getReadableSize } from '../http/bodies';
 
 import {
     charRange,
@@ -134,6 +135,14 @@ const operationDescriptions: { [key in NumberOperation | StringOperation]: strin
     "*=": "containing",
     "^=": "starting with",
     "$=": "ending with"
+} as const;
+
+const sizeOperationDescriptions: { [key in NumberOperation]: string } = {
+    ...operationDescriptions,
+    ">": "larger than",
+    ">=": "larger than or equal to",
+    "<": "smaller than",
+    "<=": "smaller than or equal to"
 } as const;
 
 type SyntaxPartValues<
@@ -884,6 +893,66 @@ class HeaderFilter extends Filter {
     }
 }
 
+class BodySizeFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("bodySize"),
+        new StringOptionsSyntax<NumberOperation>([
+            "=",
+            "!=",
+            ">=",
+            ">",
+            "<=",
+            "<"
+        ]),
+        new NumberSyntax("size")
+    ] as const;
+
+    static filterDescription(value: string) {
+        const [, op, size] = tryParseFilter(BodySizeFilter, value);
+
+        if (!op) {
+            return "Match exchanges by body size";
+        } else {
+            return `Match exchanges with a body ${
+                sizeOperationDescriptions[op]
+            } ${
+                size !== undefined
+                ? getReadableSize(size)
+                : 'a given size'
+            }`;
+        }
+    }
+
+    private expectedSize: number;
+    private op: NumberOperation;
+    private predicate: (size: number, expectedSize: number) => boolean;
+
+    constructor(filter: string) {
+        super(filter);
+        [, this.op, this.expectedSize] = parseFilter(BodySizeFilter, filter);
+        this.predicate = numberOperations[this.op];
+    }
+
+    matches(event: CollectedEvent): boolean {
+        if (!(event instanceof HttpExchange)) return false;
+
+        const requestBody = event.request.body;
+        const responseBody = event.isSuccessfulExchange()
+            ? event.response.body
+            : undefined;
+        const totalSize = requestBody.encoded.byteLength +
+            (responseBody?.encoded.byteLength || 0);
+
+        return event instanceof HttpExchange &&
+            this.predicate(totalSize, this.expectedSize);
+    }
+
+    toString() {
+        return `Size ${this.op} ${this.expectedSize}`;
+    }
+}
+
 export const SelectableSearchFilterClasses: FilterClass[] = [
     MethodFilter,
     HostnameFilter,
@@ -891,6 +960,7 @@ export const SelectableSearchFilterClasses: FilterClass[] = [
     QueryFilter,
     StatusFilter,
     HeaderFilter,
+    BodySizeFilter,
     CompletedFilter,
     PendingFilter,
     AbortedFilter,

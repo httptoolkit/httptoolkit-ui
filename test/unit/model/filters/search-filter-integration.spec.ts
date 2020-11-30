@@ -55,6 +55,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "query" },
                 { index: 0, showAs: "status" },
                 { index: 0, showAs: "header" },
+                { index: 0, showAs: "bodySize" },
                 { index: 0, showAs: "completed" },
                 { index: 0, showAs: "pending" },
                 { index: 0, showAs: "aborted" },
@@ -77,6 +78,7 @@ describe("Search filter model integration test:", () => {
                 "Match requests with a given query string",
                 "Match responses with a given status code",
                 "Match exchanges by header",
+                "Match exchanges by body size",
                 "Match requests that have received a response",
                 "Match requests that are still waiting for a response",
                 "Match requests that aborted before receiving a response",
@@ -909,6 +911,59 @@ describe("Search filter model integration test:", () => {
                 { 'MY-HEADER': 'abc' },
                 { 'my-header': 'abc' }
             ]);
+        });
+    });
+
+    describe("Body size filters", () => {
+        it("should correctly filter for a given size", () => {
+            const filter = createFilter("bodySize>10");
+
+            const exampleEvents = [
+                getFailedTls(),
+                getExchangeData({ requestBody: 'small', responseBody: 'small' }), // === 10 bytes
+                getExchangeData({ requestBody: 'very-big', responseBody: 'very-big' }),
+                getExchangeData({
+                    responseState: 'aborted',
+                    requestBody: 'big-aborted-request'
+                }),
+                getExchangeData({
+                    responseState: 'pending',
+                    requestBody: 'big-pending-request'
+                }),
+                getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
+            ];
+
+            const matchedEvents = exampleEvents.filter(e =>
+                filter.matches(e)
+            ) as HttpExchange[];
+
+            expect(
+                matchedEvents.map((e) =>
+                    e.request.body.encoded.toString('utf8') +
+                    (e.isSuccessfulExchange()
+                        ? e.response.body.encoded.toString('utf8')
+                        : ''
+                    )
+                )
+            ).to.deep.equal([
+                "very-bigvery-big",
+                "big-aborted-request",
+                "big-pending-request",
+                "very-big-response"
+            ]);
+        });
+
+        it("should correctly format sizes for descriptions", () => {
+            [
+                ["bodySize", "Match exchanges by body size"],
+                ["bodySize=", "Match exchanges with a body equal to a given size"],
+                ["bodySize!=100", "Match exchanges with a body not equal to 100 bytes"],
+                ["bodySize>1200000", "Match exchanges with a body larger than 1.2 MB"],
+                ["bodySize<10000", "Match exchanges with a body smaller than 10 kB"],
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.equal(expectedOutput);
+            });
         });
     });
 });
