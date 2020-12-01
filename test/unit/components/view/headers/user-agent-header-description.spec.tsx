@@ -31,9 +31,9 @@ describe('User agent header description', () => {
         expect(
             description.find('p').at(0).text()
         ).to.equal(
-            'The User-Agent request header contains a characteristic string that ' +
-            'allows the network protocol peers to identify the application type, ' +
-            'operating system, software vendor or software version of the requesting ' + 'software user agent.'
+            'The User-Agent request header is a characteristic string that lets ' +
+            'servers and network peers identify the application, operating system, ' +
+            'vendor, and/or version of the requesting user agent.'
         );
     });
 });

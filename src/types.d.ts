@@ -74,7 +74,7 @@ export {
 
 export type FailedTlsRequest = InputTlsRequest & {
     id: string;
-    searchIndex: string[];
+    searchIndex: string;
     pinned: boolean;
 }
 

@@ -14,7 +14,6 @@ import {
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
-    Headers,
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
@@ -247,6 +246,7 @@ export class EventsStore {
                 pinned: false,
                 searchIndex: [request.hostname, request.remoteIpAddress]
                     .filter((x): x is string => !!x)
+                    .join('\n')
             }));
         } catch (e) {
             reportError(e);

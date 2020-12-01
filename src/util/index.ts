@@ -58,6 +58,22 @@ export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
     return val.slice(0, -1).join(initialSep) + finalSep + val[val.length - 1];
 }
 
+export function longestPrefix(baseString: string, ...strings: string[]) {
+    let prefix = "";
+    const shortestLength = Math.min(
+        baseString.length,
+        ...strings.map(s => s.length)
+    );
+
+    for (let i = 0; i < shortestLength; i++) {
+        const char = baseString[i];
+        if (!strings.every(s => s[i] === char)) break;
+        prefix += char;
+    }
+
+    return prefix;
+}
+
 // In some places, we need a Buffer in theory, but we know for sure that it'll never
 // be read, we just need to know its size (e.g. calculating compression stats).
 // For those cases, it can be useful to *carefully* provide this fake buffer instead.

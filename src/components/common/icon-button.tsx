@@ -11,7 +11,7 @@ export const IconButton = styled((p: {
     title: string,
     icon: IconProp,
     disabled?: boolean,
-    onClick: () => void
+    onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
 }) =>
     <UnstyledButton
         className={p.className}

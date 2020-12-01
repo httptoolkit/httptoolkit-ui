@@ -133,7 +133,10 @@ export class ApiStore {
             publicOpenApiCache[specId] = fetchApiMetadata(specId)
                 .then(buildApiMetadataAsync)
                 .catch((e) => {
-                    reportError(e);
+                    console.log(`Failed to build API ${specId}`);
+                    reportError(e, {
+                        apiSpecId: specId
+                    });
                     throw e;
                 });
         }

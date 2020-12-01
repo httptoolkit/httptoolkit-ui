@@ -1,23 +1,34 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { observable, autorun, action, computed, runInAction, when, reaction } from 'mobx';
+import {
+    observable,
+    autorun,
+    action,
+    computed,
+    runInAction,
+    when,
+    reaction,
+    comparer
+} from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 import { useHotkeys, isEditable } from '../../util/ui';
+import { debounceComputed } from '../../util/observable';
 
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore, CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
-import { Filter } from '../../model/filters/search-filters';
+import { emptyFilterSet, FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
 
 import { ViewEventList } from './view-event-list';
+import { ViewEventListFooter } from './view-event-list-footer';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
@@ -36,7 +47,8 @@ const ViewPageKeyboardShortcuts = (props: {
     moveSelection: (distance: number) => void,
     onPin: (event: HttpExchange) => void,
     onDelete: (event: CollectedEvent) => void,
-    onClear: () => void
+    onClear: () => void,
+    onStartSearch: () => void
 }) => {
     useHotkeys('j', (event) => {
         if (isEditable(event.target)) return;
@@ -68,6 +80,11 @@ const ViewPageKeyboardShortcuts = (props: {
         event.preventDefault();
     }, [props.onClear]);
 
+    useHotkeys('Ctrl+f, Cmd+f', (event) => {
+        props.onStartSearch();
+        event.preventDefault();
+    }, [props.onStartSearch]);
+
     return null;
 };
 
@@ -83,17 +100,30 @@ class ViewPage extends React.Component<ViewPageProps> {
     requestEditorRef = React.createRef<SelfSizedBaseEditor>();
     responseEditorRef = React.createRef<SelfSizedBaseEditor>();
 
+    searchInputRef = React.createRef<HTMLInputElement>();
+
     private listRef = React.createRef<ViewEventList>();
 
-    @observable searchFilters: Filter[] = [];
+    @observable
+    private searchFiltersUnderConsideration: FilterSet | undefined;
 
-    @computed
+    get confirmedSearchFilters() {
+        return this.props.uiStore.activeFilterSet;
+    }
+
+    @debounceComputed(250, { equals: comparer.structural })
+    get currentSearchFilters() {
+        // While we're considering some search filters, show the result in the view list.
+        return this.searchFiltersUnderConsideration ?? this.confirmedSearchFilters;
+    }
+
+    @debounceComputed(10) // Debounce slightly - most important for body filtering performance
     get filteredEvents() {
         const { events } = this.props.eventsStore;
 
-        if (this.searchFilters.length === 0) return events;
+        if (this.currentSearchFilters.length === 0) return events;
         else return events.filter((event) =>
-            this.searchFilters.every((f) => f.matches(event))
+            this.currentSearchFilters.every((f) => f.matches(event))
         );
     }
 
@@ -187,6 +217,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onPin={this.onPin}
                 onDelete={this.onDelete}
                 onClear={this.onClear}
+                onStartSearch={this.onStartSearch}
             />
             <SplitPane
                 split='vertical'
@@ -195,20 +226,26 @@ class ViewPage extends React.Component<ViewPageProps> {
                 minSize={300}
                 maxSize={-300}
             >
-                <ViewEventList
-                    events={events}
-                    filteredEvents={this.filteredEvents}
-                    selectedEvent={this.selectedEvent}
-                    isPaused={isPaused}
-                    searchFilters={this.searchFilters}
+                <LeftPane>
+                    <ViewEventListFooter // Footer above the list to ensure correct tab order
+                        searchInputRef={this.searchInputRef}
+                        allEvents={events}
+                        filteredEvents={this.filteredEvents}
+                        onFiltersConsidered={this.onSearchFiltersConsidered}
+                        onClear={this.onClear}
+                    />
+                    <ViewEventList
+                        events={events}
+                        filteredEvents={this.filteredEvents}
+                        selectedEvent={this.selectedEvent}
+                        isPaused={isPaused}
 
-                    moveSelection={this.moveSelection}
-                    onSelected={this.onSelected}
-                    onSearchFiltersChanged={this.onSearchFiltersChanged}
-                    onClear={this.onClear}
+                        moveSelection={this.moveSelection}
+                        onSelected={this.onSelected}
 
-                    ref={this.listRef}
-                />
+                        ref={this.listRef}
+                    />
+                </LeftPane>
                 { rightPane }
             </SplitPane>
 
@@ -223,8 +260,8 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onSearchFiltersChanged(filters: Filter[]) {
-        this.searchFilters = filters;
+    onSearchFiltersConsidered(filters: FilterSet | undefined) {
+        this.searchFiltersUnderConsideration = filters;
     }
 
     @action.bound
@@ -297,7 +334,15 @@ class ViewPage extends React.Component<ViewPageProps> {
             confirm("Delete pinned exchanges?");
 
         this.props.eventsStore.clearInterceptedData(clearPinned);
-        this.searchFilters = [];
+
+        // Reset filter state too:
+        this.searchFiltersUnderConsideration = undefined;
+        this.props.uiStore.activeFilterSet = emptyFilterSet();
+    }
+
+    @action.bound
+    onStartSearch() {
+        this.searchInputRef.current?.focus();
     }
 
     @action.bound
@@ -310,6 +355,16 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.listRef.current?.scrollToCenterEvent(event);
     }
 }
+
+const LeftPane = styled.div`
+    position: relative;
+
+    height: 100%;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+`;
 
 const StyledViewPage = styled(
     // Exclude stores etc from the external props, as they're injected

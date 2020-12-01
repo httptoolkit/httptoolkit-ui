@@ -116,6 +116,12 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: recoloured(SourceIcons.Edge, '#50e6ff'),
         tags: BROWSER_TAGS
     },
+    'fresh-edge-dev': {
+        name: 'Edge (dev)',
+        description: ["Open a preconfigured fresh Edge window"],
+        iconProps: recoloured(SourceIcons.Edge, '#74929f'),
+        tags: BROWSER_TAGS
+    },
     'fresh-edge-canary': {
         name: 'Edge (canary)',
         description: ["Open a preconfigured fresh Edge window"],

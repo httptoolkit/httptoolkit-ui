@@ -57,4 +57,8 @@ export const SplitPane = styled(ReactSplitPane)`
     .Resizer.disabled:hover {
         border-color: transparent;
     }
+
+    .Pane {
+        min-width: 0; /* Don't let flexbox force panes to expand */
+    }
 `;

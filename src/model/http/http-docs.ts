@@ -1,4 +1,4 @@
-interface DocsInfo {
+interface DocsData {
     mdnSlug: string;
     name: string;
     summary: string;
@@ -8,14 +8,14 @@ interface DocsInfo {
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status$children?expand&summary
  * Transformed with:
  *
- * const _ = require('lodash');
- * const statuses = require('./statuses.json');
+ * let _ = require('lodash');
+ * let statuses = require('./statuses.json');
  *
- * const output = (_(statuses.subpages)
+ * let output = (_(statuses.subpages)
  * .keyBy(p => p.label.split(' ')[0])
  * .mapValues((p, k) => ({
- *     mdnSlug: p.slug,
  *     name: p.title,
+ *     mdnSlug: p.slug,
  *     summary: p.summary
  *     .replace(/<(.|\n)*?>/g, '')
  *     .replace(/&lt;/g, '<')
@@ -23,9 +23,9 @@ interface DocsInfo {
  *     .replace('HyperText Transfer Protocol (HTTP)', 'HTTP')
  * }))
  * .value())
- * console.log(JSON.stringify(output, null, 2));
+ * console.log(JSON.stringify(output, null, 4));
  */
-const STATUSES: { [key: string]: DocsInfo | undefined } = {
+const STATUSES: { [key: string]: DocsData | undefined } = {
     "100": {
         "name": "100 Continue",
         "mdnSlug": "Web/HTTP/Status/100",
@@ -35,6 +35,11 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
         "name": "101 Switching Protocols",
         "mdnSlug": "Web/HTTP/Status/101",
         "summary": "The HTTP 101 Switching Protocols response code indicates the protocol the server is switching to as requested by a client which sent the message including the Upgrade request header."
+    },
+    "103": {
+        "name": "103 Early Hints",
+        "mdnSlug": "Web/HTTP/Status/103",
+        "summary": "The HTTP 103 Early Hints information response status code is primarily intended to be used with the Link header to allow the user agent to start preloading resources while the server is still preparing a response."
     },
     "200": {
         "name": "200 OK",
@@ -49,12 +54,12 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "202": {
         "name": "202 Accepted",
         "mdnSlug": "Web/HTTP/Status/202",
-        "summary": "The HTTP 202 Accepted response status code indicates that the request has been received but not yet acted upon. It is non-committal, meaning that there is no way for the HTTP to later send an asynchronous response indicating the outcome of processing the request. It is intended for cases where another process or server handles the request, or for batch processing."
+        "summary": "The HTTP 202 Accepted response status code indicates that the request has been accepted for processing, but the processing has not been completed; in fact, processing may not have started yet. The request might or might not eventually be acted upon, as it might be disallowed when processing actually takes place."
     },
     "203": {
         "name": "203 Non-Authoritative Information",
         "mdnSlug": "Web/HTTP/Status/203",
-        "summary": "The HTTP 203 Non-Authoritative Information response status indicates that the request was successful but the enclosed payload has been modified by a transforming proxy from that of the origin server's 200 (OK) response ."
+        "summary": "The HTTP 203 Non-Authoritative Information response status indicates that the request was successful but the enclosed payload has been modified by a transforming proxy from that of the origin server's 200 (OK) response ."
     },
     "204": {
         "name": "204 No Content",
@@ -89,7 +94,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "303": {
         "name": "303 See Other",
         "mdnSlug": "Web/HTTP/Status/303",
-        "summary": "The HTTP 303 See Other redirect status response code indicates that the redirects don't link to the newly uploaded resources but to another page, like a confirmation page or an upload progress page. This response code is usually sent back as a result of PUT or POST. The method used to display this redirected page is always GET."
+        "summary": "The HTTP 303 See Other redirect status response code indicates that the redirects don't link to the newly uploaded resources, but to another page (such as a confirmation page or an upload progress page). This response code is usually sent back as a result of PUT or POST. The method used to display this redirected page is always GET."
     },
     "304": {
         "name": "304 Not Modified",
@@ -116,6 +121,11 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
         "mdnSlug": "Web/HTTP/Status/401",
         "summary": "The HTTP 401 Unauthorized client error status response code indicates that the request has not been applied because it lacks valid authentication credentials for the target resource."
     },
+    "402": {
+        "name": "402 Payment Required",
+        "mdnSlug": "Web/HTTP/Status/402",
+        "summary": "The HTTP 402 Payment Required is a nonstandard client error status response code that is reserved for future use."
+    },
     "403": {
         "name": "403 Forbidden",
         "mdnSlug": "Web/HTTP/Status/403",
@@ -124,7 +134,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "404": {
         "name": "404 Not Found",
         "mdnSlug": "Web/HTTP/Status/404",
-        "summary": "The HTTP 404 Not Found client error response code indicates that the server can't find the requested resource. Links which lead to a 404 page are often called broken or dead links, and can be subject to link rot."
+        "summary": "The HTTP 404 Not Found client error response code indicates that the server can't find the requested resource. Links that lead to a 404 page are often called broken or dead links and can be subject to link rot."
     },
     "405": {
         "name": "405 Method Not Allowed",
@@ -149,7 +159,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "409": {
         "name": "409 Conflict",
         "mdnSlug": "Web/HTTP/Status/409",
-        "summary": "The HTTP 409 Conflict response status code indicates a request conflict with current state of the server."
+        "summary": "The HTTP 409 Conflict response status code indicates a request conflict with current state of the target resource."
     },
     "410": {
         "name": "410 Gone",
@@ -194,7 +204,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "418": {
         "name": "418 I'm a teapot",
         "mdnSlug": "Web/HTTP/Status/418",
-        "summary": "The HTTP 418 I'm a teapot client error response code indicates that the server refuses to brew coffee because it is a teapot. This error is a reference of Hyper Text Coffee Pot Control Protocol which was an April Fools' joke in 1998."
+        "summary": "The HTTP 418 I'm a teapot client error response code indicates that the server refuses to brew coffee because it is, permanently, a teapot. A combined coffee/tea pot that is temporarily out of coffee should instead return 503. This error is a reference to Hyper Text Coffee Pot Control Protocol defined in April Fools' jokes in 1998 and 2014."
     },
     "422": {
         "name": "422 Unprocessable Entity",
@@ -224,7 +234,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "431": {
         "name": "431 Request Header Fields Too Large",
         "mdnSlug": "Web/HTTP/Status/431",
-        "summary": "The HTTP 431 Request Header Fields Too Large response status code indicates that the server is unwilling to process the request because its header fields are too large. The request may be resubmitted after reducing the size of the request header fields."
+        "summary": "The HTTP 431 Request Header Fields Too Large response status code indicates that the server refuses to process the request because the request’s HTTP headers are too long."
     },
     "451": {
         "name": "451 Unavailable For Legal Reasons",
@@ -239,7 +249,7 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "501": {
         "name": "501 Not Implemented",
         "mdnSlug": "Web/HTTP/Status/501",
-        "summary": "The HTTP 501 Not Implemented server error response code indicates that the server does not support the functionality required to fulfill the request. This is the appropriate response when the server does not recognize the request method and is not capable of supporting it for any resource. The only request methods that servers are required to support (and therefore that must not return this code) are GET and HEAD."
+        "summary": "The HTTP 501 Not Implemented server error response code means that the server does not support the functionality required to fulfill the request."
     },
     "502": {
         "name": "502 Bad Gateway",
@@ -254,12 +264,32 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
     "504": {
         "name": "504 Gateway Timeout",
         "mdnSlug": "Web/HTTP/Status/504",
-        "summary": "The HTTP 504 Gateway Timeout server error response code indicates that the server, while acting as a gateway or proxy, cannot get a response in time."
+        "summary": "The HTTP 504 Gateway Timeout server error response code indicates that the server, while acting as a gateway or proxy, did not get a response in time from the upstream server that it needed in order to complete the request."
     },
     "505": {
         "name": "505 HTTP Version Not Supported",
         "mdnSlug": "Web/HTTP/Status/505",
         "summary": "The HTTP 505 HTTP Version Not Supported response status code indicates that the HTTP version used in the request is not supported by the server."
+    },
+    "506": {
+        "name": "506 Variant Also Negotiates",
+        "mdnSlug": "Web/HTTP/Status/506",
+        "summary": "The HTTP 506 Variant Also Negotiates response status code may be given in the context of Transparent Content Negotiation (see RFC 2295). This protocol enables a client to retrieve the best variant of a given resource, where the server supports multiple variants."
+    },
+    "507": {
+        "name": "507 Insufficient Storage",
+        "mdnSlug": "Web/HTTP/Status/507",
+        "summary": "The HTTP 507 Insufficient Storage response status code may be given in the context of the Web Distributed Authoring and Versioning (WebDAV) protocol (see RFC 4918)."
+    },
+    "508": {
+        "name": "508 Loop Detected",
+        "mdnSlug": "Web/HTTP/Status/508",
+        "summary": "The HTTP 508 Loop Detected response status code may be given in the context of the Web Distributed Authoring and Versioning (WebDAV) protocol."
+    },
+    "510": {
+        "name": "510 Not Extended",
+        "mdnSlug": "Web/HTTP/Status/510",
+        "summary": "The HTTP  510 Not Extended response status code is sent in the context of the HTTP Extension Framework, defined in RFC 2774."
     },
     "511": {
         "name": "511 Network Authentication Required",
@@ -272,33 +302,44 @@ const STATUSES: { [key: string]: DocsInfo | undefined } = {
  * Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers$children?expand
  * Transformed with:
  *
- * const _ = require('lodash');
- * const headers = require('./headers.json');
+ * let _ = require('lodash');
+ * let headers = require('./headers.json');
  *
- * const output = (_(headers.subpages)
+ * let output = (_(headers.subpages)
+ * .filter(p => p.title !== 'Index')
  * .keyBy(p => p.title.toLowerCase())
  * .mapValues((p, k) => ({
- *     mdnSlug: p.slug,
- *     name: p.title,
- *     summary: p.summary
- *     .replace(/<(.|\n)*?>/g, '')
- *     .replace(/&lt;/g, '<')
- *     .replace(/&gt;/g, '>')
- *     .split(/\.( |$)/)[0] + '.'
+ *   mdnSlug: p.slug,
+ *   name: p.title,
+ *   summary: p.summary
+ *   .replace(/<(.|\n)*?>/g, '')
+ *   .replace(/&lt;/g, '<')
+ *   .replace(/&gt;/g, '>')
+ *   .split(/\.( |$)/)[0] + '.'
  * }))
  * .value())
- * console.log(JSON.stringify(output, null, 2));
+ * console.log(JSON.stringify(output, null, 4));
  */
-const HEADERS: { [key: string]: DocsInfo | undefined } = {
+const HEADERS: { [key: string]: DocsData | undefined } = {
     "accept": {
         "mdnSlug": "Web/HTTP/Headers/Accept",
         "name": "Accept",
         "summary": "The Accept request HTTP header advertises which content types, expressed as MIME types, the client is able to understand."
     },
+    "accept-ch": {
+        "mdnSlug": "Web/HTTP/Headers/Accept-CH",
+        "name": "Accept-CH",
+        "summary": "The Accept-CH header is set by the server to specify which Client Hints headers a client should include in subsequent requests."
+    },
+    "accept-ch-lifetime": {
+        "mdnSlug": "Web/HTTP/Headers/Accept-CH-Lifetime",
+        "name": "Accept-CH-Lifetime",
+        "summary": "The Accept-CH-Lifetime header is set by the server to specify the persistence of Accept-CH header value that specifies for which Client Hints headers client should include in subsequent requests."
+    },
     "accept-charset": {
         "mdnSlug": "Web/HTTP/Headers/Accept-Charset",
         "name": "Accept-Charset",
-        "summary": "The Accept-Charset request HTTP header advertises which character set the client is able to understand."
+        "summary": "The Accept-Charset request HTTP header advertises which character encodings the client understands."
     },
     "accept-encoding": {
         "mdnSlug": "Web/HTTP/Headers/Accept-Encoding",
@@ -310,6 +351,11 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
         "name": "Accept-Language",
         "summary": "The Accept-Language request HTTP header advertises which languages the client is able to understand, and which locale variant is preferred."
     },
+    "accept-patch": {
+        "mdnSlug": "Web/HTTP/Headers/Accept-Patch",
+        "name": "Accept-Patch",
+        "summary": "The Accept-Patch response HTTP header advertises which media-type the server is able to understand."
+    },
     "accept-ranges": {
         "mdnSlug": "Web/HTTP/Headers/Accept-Ranges",
         "name": "Accept-Ranges",
@@ -318,7 +364,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "access-control-allow-credentials": {
         "mdnSlug": "Web/HTTP/Headers/Access-Control-Allow-Credentials",
         "name": "Access-Control-Allow-Credentials",
-        "summary": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to frontend JavaScript code when the request's credentials mode (Request.credentials) is \"include\"."
+        "summary": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to frontend JavaScript code when the request's credentials mode (Request.credentials) is include."
     },
     "access-control-allow-headers": {
         "mdnSlug": "Web/HTTP/Headers/Access-Control-Allow-Headers",
@@ -348,12 +394,12 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "access-control-request-headers": {
         "mdnSlug": "Web/HTTP/Headers/Access-Control-Request-Headers",
         "name": "Access-Control-Request-Headers",
-        "summary": "The Access-Control-Request-Headers request header is used when issuing a preflight request to let the server know which HTTP headers will be used when the actual request is made."
+        "summary": "The Access-Control-Request-Headers request header is used by browsers when issuing a preflight request, to let the server know which HTTP headers the client might send when the actual request is made."
     },
     "access-control-request-method": {
         "mdnSlug": "Web/HTTP/Headers/Access-Control-Request-Method",
         "name": "Access-Control-Request-Method",
-        "summary": "The Access-Control-Request-Method request header is used when issuing a preflight request to let the server know which HTTP method will be used when the actual request is made."
+        "summary": "The Access-Control-Request-Method request header is used by browsers when issuing a preflight request, to let the server know which HTTP method will be used when the actual request is made."
     },
     "age": {
         "mdnSlug": "Web/HTTP/Headers/Age",
@@ -363,22 +409,22 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "allow": {
         "mdnSlug": "Web/HTTP/Headers/Allow",
         "name": "Allow",
-        "summary": "The Allow header lists the set of methods support by a resource."
+        "summary": "The Allow header lists the set of methods supported by a resource."
     },
     "alt-svc": {
         "mdnSlug": "Web/HTTP/Headers/Alt-Svc",
         "name": "Alt-Svc",
-        "summary": "The Alt-Svc header is used to list alternate ways to reach this website."
+        "summary": "The Alt-Svc HTTP response header is used to advertise alternative services through which the same resource can be reached."
     },
     "authorization": {
         "mdnSlug": "Web/HTTP/Headers/Authorization",
         "name": "Authorization",
-        "summary": "The HTTP Authorization request header contains the credentials to authenticate a user agent with a server, usually after the server has responded with a 401 Unauthorized status and the WWW-Authenticate header."
+        "summary": "The HTTP Authorization request header contains the credentials to authenticate a user agent with a server, usually, but not necessarily, after the server has responded with a 401 Unauthorized status and the WWW-Authenticate header."
     },
     "cache-control": {
         "mdnSlug": "Web/HTTP/Headers/Cache-Control",
         "name": "Cache-Control",
-        "summary": "The Cache-Control general-header field is used to specify directives for caching mechanisms in both requests and responses."
+        "summary": "The Cache-Control HTTP header holds directives (instructions) for caching in both requests and responses."
     },
     "clear-site-data": {
         "mdnSlug": "Web/HTTP/Headers/Clear-Site-Data",
@@ -393,7 +439,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "content-disposition": {
         "mdnSlug": "Web/HTTP/Headers/Content-Disposition",
         "name": "Content-Disposition",
-        "summary": "In a multipart/form-data body, the HTTP Content-Disposition general header is a header that can be used on the subpart of a multipart body to give information about the field it applies to."
+        "summary": "In a regular HTTP response, the Content-Disposition response header is a header indicating if the content is expected to be displayed inline in the browser, that is, as a Web page or as part of a Web page, or as an attachment, that is downloaded and saved locally."
     },
     "content-encoding": {
         "mdnSlug": "Web/HTTP/Headers/Content-Encoding",
@@ -445,15 +491,45 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
         "name": "Cookie2",
         "summary": "The obsolete Cookie2 HTTP request header used to advise the server that the user agent understands \"new-style\" cookies, but nowadays user agents will use the Cookie header instead, not this one."
     },
+    "cross-origin-embedder-policy": {
+        "mdnSlug": "Web/HTTP/Headers/Cross-Origin-Embedder-Policy",
+        "name": "Cross-Origin-Embedder-Policy",
+        "summary": "The HTTP Cross-Origin-Embedder-Policy (COEP) response header prevents a document from loading any cross-origin resources that don't explicitly grant the document permission (using CORP or CORS)."
+    },
+    "cross-origin-opener-policy": {
+        "mdnSlug": "Web/HTTP/Headers/Cross-Origin-Opener-Policy",
+        "name": "Cross-Origin-Opener-Policy",
+        "summary": "The HTTP Cross-Origin-Opener-Policy (COOP) response header allows you to ensure a top-level document does not share a browsing context group with cross-origin documents."
+    },
+    "cross-origin-resource-policy": {
+        "mdnSlug": "Web/HTTP/Headers/Cross-Origin-Resource-Policy",
+        "name": "Cross-Origin-Resource-Policy",
+        "summary": "The HTTP Cross-Origin-Resource-Policy response header conveys a desire that the browser blocks no-cors cross-origin/cross-site requests to the given resource."
+    },
     "dnt": {
         "mdnSlug": "Web/HTTP/Headers/DNT",
         "name": "DNT",
         "summary": "The DNT (Do Not Track) request header indicates the user's tracking preference."
     },
+    "dpr": {
+        "mdnSlug": "Web/HTTP/Headers/DPR",
+        "name": "DPR",
+        "summary": "The DPR header is a Client Hints headers which represents the client device pixel ratio (DPR), which is the the number of physical device pixels corresponding to every CSS pixel."
+    },
     "date": {
         "mdnSlug": "Web/HTTP/Headers/Date",
         "name": "Date",
         "summary": "The Date general HTTP header contains the date and time at which the message was originated."
+    },
+    "device-memory": {
+        "mdnSlug": "Web/HTTP/Headers/Device-Memory",
+        "name": "Device-Memory",
+        "summary": "The Device-Memory header is a Device Memory API header that works like Client Hints header which represents the approximate amount of RAM client device has."
+    },
+    "digest": {
+        "mdnSlug": "Web/HTTP/Headers/Digest",
+        "name": "Digest",
+        "summary": "The Digest response HTTP header provides a digest of the requested resource."
     },
     "etag": {
         "mdnSlug": "Web/HTTP/Headers/ETag",
@@ -463,7 +539,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "early-data": {
         "mdnSlug": "Web/HTTP/Headers/Early-Data",
         "name": "Early-Data",
-        "summary": "The Early-Data header is set by an intermediate to indicates that the request has been conveyed in TLS early data, and additionally indicates that an intermediary understands the 425 (Too Early) status code.  The Early-Data header is not set by the originator of the request (i.e., a browser)."
+        "summary": "The Early-Data header is set by an intermediary to indicate that the request has been conveyed in TLS early data, and also indicates that the intermediary understands the 425 (Too Early) status code."
     },
     "expect": {
         "mdnSlug": "Web/HTTP/Headers/Expect",
@@ -473,7 +549,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "expect-ct": {
         "mdnSlug": "Web/HTTP/Headers/Expect-CT",
         "name": "Expect-CT",
-        "summary": "The Expect-CT header allows sites to opt in to reporting and/or enforcement of Certificate Transparency requirements, which prevents the use of misissued certificates for that site from going unnoticed."
+        "summary": "The Expect-CT header lets sites opt in to reporting and/or enforcement of Certificate Transparency requirements, to prevent the use of misissued certificates for that site from going unnoticed."
     },
     "expires": {
         "mdnSlug": "Web/HTTP/Headers/Expires",
@@ -483,12 +559,12 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "feature-policy": {
         "mdnSlug": "Web/HTTP/Headers/Feature-Policy",
         "name": "Feature-Policy",
-        "summary": "The HTTP Feature-Policy header provides a mechanism to allow and deny the use of browser features in its own frame, and in iframes that it embeds."
+        "summary": "The HTTP Feature-Policy header provides a mechanism to allow and deny the use of browser features in its own frame, and in content within any <iframe> elements in the document."
     },
     "forwarded": {
         "mdnSlug": "Web/HTTP/Headers/Forwarded",
         "name": "Forwarded",
-        "summary": "The Forwarded header contains information from the client-facing side of proxy servers that is altered or lost when a proxy is involved in the path of the request."
+        "summary": "The Forwarded header contains information from the reverse proxy servers that is altered or lost when a proxy is involved in the path of the request."
     },
     "from": {
         "mdnSlug": "Web/HTTP/Headers/From",
@@ -498,7 +574,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "host": {
         "mdnSlug": "Web/HTTP/Headers/Host",
         "name": "Host",
-        "summary": "The Host request header specifies the domain name of the server (for virtual hosting), and (optionally) the TCP port number on which the server is listening."
+        "summary": "The Host request header specifies the host and port number of the server to which the request is being sent."
     },
     "if-match": {
         "mdnSlug": "Web/HTTP/Headers/If-Match",
@@ -525,11 +601,6 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
         "name": "If-Unmodified-Since",
         "summary": "The If-Unmodified-Since request HTTP header makes the request conditional: the server will send back the requested resource, or accept it in the case of a POST or another non-safe method, only if it has not been last modified after the given date."
     },
-    "index": {
-        "mdnSlug": "Web/HTTP/Headers/Index",
-        "name": "Index",
-        "summary": "Found 115 pages:."
-    },
     "keep-alive": {
         "mdnSlug": "Web/HTTP/Headers/Keep-Alive",
         "name": "Keep-Alive",
@@ -545,10 +616,20 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
         "name": "Last-Modified",
         "summary": "The Last-Modified response HTTP header contains the date and time at which the origin server believes the resource was last modified."
     },
+    "link": {
+        "mdnSlug": "Web/HTTP/Headers/Link",
+        "name": "Link",
+        "summary": "The HTTP Link entity-header field provides a means for serialising one or more links in HTTP headers."
+    },
     "location": {
         "mdnSlug": "Web/HTTP/Headers/Location",
         "name": "Location",
         "summary": "The Location response header indicates the URL to redirect a page to."
+    },
+    "nel": {
+        "mdnSlug": "Web/HTTP/Headers/NEL",
+        "name": "NEL",
+        "summary": "The HTTP NEL response header is used to configure network request logging."
     },
     "origin": {
         "mdnSlug": "Web/HTTP/Headers/Origin",
@@ -573,12 +654,12 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "public-key-pins": {
         "mdnSlug": "Web/HTTP/Headers/Public-Key-Pins",
         "name": "Public-Key-Pins",
-        "summary": "The HTTP Public-Key-Pins response header associates a specific cryptographic public key with a certain web server to decrease the risk of MITM attacks with forged certificates."
+        "summary": "The HTTP Public-Key-Pins response header used to associate a specific cryptographic public key with a certain web server to decrease the risk of MITM attacks with forged certificates, however, it has been removed from modern browsers and is no longer supported."
     },
     "public-key-pins-report-only": {
         "mdnSlug": "Web/HTTP/Headers/Public-Key-Pins-Report-Only",
         "name": "Public-Key-Pins-Report-Only",
-        "summary": "The HTTP Public-Key-Pins-Report-Only response header sends reports of pinning violation to the report-uri specified in the header but, unlike Public-Key-Pins still allows browsers to connect to the server if the pinning is violated."
+        "summary": "The HTTP Public-Key-Pins-Report-Only response header was used to send reports of pinning violation to the report-uri specified in the header but, unlike Public-Key-Pins still allows browsers to connect to the server if the pinning is violated."
     },
     "range": {
         "mdnSlug": "Web/HTTP/Headers/Range",
@@ -588,17 +669,42 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "referer": {
         "mdnSlug": "Web/HTTP/Headers/Referer",
         "name": "Referer",
-        "summary": "The Referer request header contains the address of the previous web page from which a link to the currently requested page was followed."
+        "summary": "The Referer request header contains the address of the page making the request."
     },
     "referrer-policy": {
         "mdnSlug": "Web/HTTP/Headers/Referrer-Policy",
         "name": "Referrer-Policy",
-        "summary": "The Referrer-Policy HTTP header governs which referrer information, sent in the Referer header, should be included with requests made."
+        "summary": "The Referrer-Policy HTTP header controls how much referrer information (sent via the Referer header) should be included with requests."
     },
     "retry-after": {
         "mdnSlug": "Web/HTTP/Headers/Retry-After",
         "name": "Retry-After",
         "summary": "The Retry-After response HTTP header indicates how long the user agent should wait before making a follow-up request."
+    },
+    "save-data": {
+        "mdnSlug": "Web/HTTP/Headers/Save-Data",
+        "name": "Save-Data",
+        "summary": "The Save-Data header field is a boolean which, in requests, indicates the client's preference for reduced data usage."
+    },
+    "sec-fetch-dest": {
+        "mdnSlug": "Web/HTTP/Headers/Sec-Fetch-Dest",
+        "name": "Sec-Fetch-Dest",
+        "summary": "The Sec-Fetch-Dest fetch metadata header indicates the request's destination, that is how the fetched data will be used."
+    },
+    "sec-fetch-mode": {
+        "mdnSlug": "Web/HTTP/Headers/Sec-Fetch-Mode",
+        "name": "Sec-Fetch-Mode",
+        "summary": "The Sec-Fetch-Mode fetch metadata header indicates the request's mode."
+    },
+    "sec-fetch-site": {
+        "mdnSlug": "Web/HTTP/Headers/Sec-Fetch-Site",
+        "name": "Sec-Fetch-Site",
+        "summary": "The Sec-Fetch-Site fetch metadata header indicates the relationship between a request initiator's origin and the origin of the resource."
+    },
+    "sec-fetch-user": {
+        "mdnSlug": "Web/HTTP/Headers/Sec-Fetch-User",
+        "name": "Sec-Fetch-User",
+        "summary": "The Sec-Fetch-User fetch metadata header indicates whether or not a navigation request was triggered by a user activation."
     },
     "sec-websocket-accept": {
         "mdnSlug": "Web/HTTP/Headers/Sec-WebSocket-Accept",
@@ -608,7 +714,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "server": {
         "mdnSlug": "Web/HTTP/Headers/Server",
         "name": "Server",
-        "summary": "The Server header contains information about the software used by the origin server to handle the request."
+        "summary": "The Server header describes the software used by the origin server that handled the request — that is, the server that generated the response."
     },
     "server-timing": {
         "mdnSlug": "Web/HTTP/Headers/Server-Timing",
@@ -618,7 +724,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "set-cookie": {
         "mdnSlug": "Web/HTTP/Headers/Set-Cookie",
         "name": "Set-Cookie",
-        "summary": "The Set-Cookie HTTP response header is used to send cookies from the server to the user agent."
+        "summary": "The Set-Cookie HTTP response header is used to send a cookie from the server to the user agent, so the user agent can send it back to the server later."
     },
     "set-cookie2": {
         "mdnSlug": "Web/HTTP/Headers/Set-Cookie2",
@@ -658,7 +764,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "transfer-encoding": {
         "mdnSlug": "Web/HTTP/Headers/Transfer-Encoding",
         "name": "Transfer-Encoding",
-        "summary": "The Transfer-Encoding header specifies the form of encoding used to safely transfer the entity to the user."
+        "summary": "The Transfer-Encoding header specifies the form of encoding used to safely transfer the payload body to the user."
     },
     "upgrade-insecure-requests": {
         "mdnSlug": "Web/HTTP/Headers/Upgrade-Insecure-Requests",
@@ -668,7 +774,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "user-agent": {
         "mdnSlug": "Web/HTTP/Headers/User-Agent",
         "name": "User-Agent",
-        "summary": "The User-Agent request header contains a characteristic string that allows the network protocol peers to identify the application type, operating system, software vendor or software version of the requesting software user agent."
+        "summary": "The User-Agent request header is a characteristic string that lets servers and network peers identify the application, operating system, vendor, and/or version of the requesting user agent."
     },
     "vary": {
         "mdnSlug": "Web/HTTP/Headers/Vary",
@@ -684,6 +790,11 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
         "mdnSlug": "Web/HTTP/Headers/WWW-Authenticate",
         "name": "WWW-Authenticate",
         "summary": "The HTTP WWW-Authenticate response header defines the authentication method that should be used to gain access to a resource."
+    },
+    "want-digest": {
+        "mdnSlug": "Web/HTTP/Headers/Want-Digest",
+        "name": "Want-Digest",
+        "summary": "The Want-Digest HTTP header is primarily used in a HTTP request, to ask the responder to provide a digest of the requested resource using the Digest response header."
     },
     "warning": {
         "mdnSlug": "Web/HTTP/Headers/Warning",
@@ -718,7 +829,7 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
     "x-frame-options": {
         "mdnSlug": "Web/HTTP/Headers/X-Frame-Options",
         "name": "X-Frame-Options",
-        "summary": "The X-Frame-Options HTTP response header can be used to indicate whether or not a browser should be allowed to render a page in a <frame>, <iframe>, <embed> or <object>."
+        "summary": "The X-Frame-Options HTTP response header can be used to indicate whether or not a browser should be allowed to render a page in a <frame>, <iframe>, <embed> or <object>."
     },
     "x-xss-protection": {
         "mdnSlug": "Web/HTTP/Headers/X-XSS-Protection",
@@ -731,9 +842,9 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
  * Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods$children?expand
  * Transformed with:
  *
- * const _ = require('lodash');
- * const methods = require('./methods.json');
- * const output = (_(methods.subpages)
+ * let _ = require('lodash');
+ * let methods = require('./methods.json');
+ * let output = (_(methods.subpages)
  * .keyBy(p => p.title.toLowerCase())
  * .mapValues((p, k) => ({
  *     mdnSlug: p.slug,
@@ -745,9 +856,9 @@ const HEADERS: { [key: string]: DocsInfo | undefined } = {
  *     .split(/\.( |$)/)[0] + '.'
  * }))
  * .value())
- * console.log(JSON.stringify(output, null, 2));
+ * console.log(JSON.stringify(output, null, 4));
  */
-const METHODS: { [key: string]: DocsInfo | undefined } = {
+const METHODS: { [key: string]: DocsData | undefined } = {
     "connect": {
         "mdnSlug": "Web/HTTP/Methods/CONNECT",
         "name": "CONNECT",
@@ -766,12 +877,12 @@ const METHODS: { [key: string]: DocsInfo | undefined } = {
     "head": {
         "mdnSlug": "Web/HTTP/Methods/HEAD",
         "name": "HEAD",
-        "summary": "The HTTP HEAD method requests the headers that are returned if the specified resource would be requested with an HTTP GET method."
+        "summary": "The HTTP HEAD method requests the headers that would be returned if the HEAD request's URL was instead requested with the HTTP GET method."
     },
     "options": {
         "mdnSlug": "Web/HTTP/Methods/OPTIONS",
         "name": "OPTIONS",
-        "summary": "The HTTP OPTIONS method is used to describe the communication options for the target resource."
+        "summary": "The HTTP OPTIONS method requests permitted communication options for a given URL or server."
     },
     "patch": {
         "mdnSlug": "Web/HTTP/Methods/PATCH",
@@ -799,12 +910,22 @@ const METHODS: { [key: string]: DocsInfo | undefined } = {
 export const HEADER_NAME_PATTERN = '^[!#$%&\'*+\\-.^_`|~A-Za-z0-9]+$';
 export const HEADER_NAME_REGEX = new RegExp(HEADER_NAME_PATTERN);
 
-function getDocs(data: { [key: string]: DocsInfo | undefined }, key: string) {
+type DocsInfo = {
+    url: string,
+    name: string;
+    summary: string;
+};
+
+function getDocs(
+    data: { [key: string]: DocsData | undefined },
+    key: string
+): DocsInfo | undefined {
     const docsInfo = data[key];
 
     if (!docsInfo) return undefined;
     return {
         url: `https://developer.mozilla.org/en-US/docs/${docsInfo.mdnSlug}`,
+        name: docsInfo.name,
         summary: docsInfo.summary
     };
 }
@@ -813,8 +934,14 @@ export function getHeaderDocs(headerName: string) {
     return getDocs(HEADERS, headerName.toLowerCase());
 }
 
+type StatusDocsInfo = DocsInfo & { message: string };
+
 export function getStatusDocs(statusCode: string | number) {
-    return getDocs(STATUSES, statusCode.toString());
+    const statusDocs = getDocs(STATUSES, statusCode.toString()) as Partial<StatusDocsInfo>;
+    if (!statusDocs) return;
+
+    statusDocs.message = statusDocs.name!.split(' ').slice(1).join(' ');
+    return statusDocs as StatusDocsInfo;
 }
 
 export function getMethodDocs(methodName: string) {

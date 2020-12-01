@@ -6,7 +6,10 @@ import { styled } from '../../styles';
 
 import { HttpExchange } from '../../model/http/exchange';
 import { CollectedEvent } from '../../model/http/events-store';
-import { Filter } from '../../model/filters/search-filters';
+import {
+    FilterSet,
+    SelectableSearchFilterClasses
+} from '../../model/filters/search-filters';
 
 import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
 import { SearchFilter } from './filters/search-filter';
@@ -54,19 +57,22 @@ const ButtonsContainer = styled.div`
     display: flex;
 `;
 
-export const TableFooter = styled(observer((props: {
+export const ViewEventListFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
-    searchFilters: Filter[],
-    onSearchFiltersChanged: (filters: Filter[]) => void,
+    onFiltersConsidered: (filters: FilterSet | undefined) => void,
 
     allEvents: CollectedEvent[],
-    filteredEvents: CollectedEvent[]
+    filteredEvents: CollectedEvent[],
+
+    searchInputRef?: React.Ref<HTMLInputElement>
 }) => <div className={props.className}>
     <SearchFilter
-        searchFilters={props.searchFilters}
-        onSearchFiltersChanged={props.onSearchFiltersChanged}
-        placeholder='Filter by URL, headers, status...'
+        onFiltersConsidered={props.onFiltersConsidered}
+        availableFilters={SelectableSearchFilterClasses}
+        filterSuggestionContext={props.allEvents}
+        placeholder={'Filter by method, host, headers, status...'}
+        searchInputRef={props.searchInputRef}
     />
     <RequestCounter
         eventCount={props.allEvents.length}
@@ -87,12 +93,11 @@ export const TableFooter = styled(observer((props: {
         />
     </ButtonsContainer>
 </div>))`
-    position: absolute;
-    bottom: 0;
+    order: 1;
 
-    height: ${HEADER_FOOTER_HEIGHT}px;
+    min-height: ${HEADER_FOOTER_HEIGHT}px;
     width: 100%;
-    padding-left: 5px;
+    padding-left: 2px;
     box-sizing: border-box;
 
     background-color: ${p => p.theme.mainBackground};
