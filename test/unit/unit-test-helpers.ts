@@ -10,17 +10,18 @@ export const getExchangeData = ({
     method = 'GET',
     path = '/',
     query = '',
-    requestBody = '',
+    requestBody = '' as string | Buffer,
     requestHeaders = {},
     requestTags = [] as string[],
     statusCode = 200,
     statusMessage = '',
-    responseBody = '',
+    responseBody = '' as string | Buffer,
     responseHeaders = {},
     responseState = 'completed',
     responseTags = [] as string[],
 } = {}) => Object.assign(Object.create(HttpExchange.prototype), {
     id: '',
+    matchedRuleId: '?',
     request: {
         id: '',
         httpVersion: httpVersion,
@@ -34,8 +35,13 @@ export const getExchangeData = ({
         hostname,
         path,
         headers: requestHeaders as { host: string },
-        body: new ExchangeBody(
-            { body: { buffer: Buffer.from(requestBody) } } as any,
+        body: new ExchangeBody({
+                body: {
+                    buffer: Buffer.isBuffer(requestBody)
+                        ? requestBody
+                        : Buffer.from(requestBody)
+                }
+            } as any,
             requestHeaders
         ),
         contentType: 'text',
@@ -53,8 +59,13 @@ export const getExchangeData = ({
         statusCode,
         statusMessage,
         headers: responseHeaders,
-        body: new ExchangeBody(
-            { body: { buffer: Buffer.from(responseBody) } } as any,
+        body: new ExchangeBody({
+                body: {
+                    buffer: Buffer.isBuffer(responseBody)
+                        ? responseBody
+                        : Buffer.from(responseBody)
+                }
+            } as any,
             responseHeaders
         ),
         contentType: 'text',

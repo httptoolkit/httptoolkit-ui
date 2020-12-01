@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as zlib from 'zlib';
 
 import { expect } from '../../../test-setup';
 
@@ -15,6 +16,9 @@ import {
 import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
 import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
 import { FailedTlsRequest } from '../../../../src/types';
+import { delay } from '../../../../src/util/promise';
+import { CollectedEvent } from '../../../../src/model/http/events-store';
+import { decodeBody } from '../../../../src/services/ui-worker-api';
 
 // Given an exact input for a filter, creates the filter and returns it
 function createFilter(input: string): Filter {
@@ -55,6 +59,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "query" },
                 { index: 0, showAs: "status" },
                 { index: 0, showAs: "header" },
+                { index: 0, showAs: "body" },
                 { index: 0, showAs: "bodySize" },
                 { index: 0, showAs: "completed" },
                 { index: 0, showAs: "pending" },
@@ -78,6 +83,7 @@ describe("Search filter model integration test:", () => {
                 "Match requests with a given query string",
                 "Match responses with a given status code",
                 "Match exchanges by header",
+                "Match exchanges by body content",
                 "Match exchanges by body size",
                 "Match requests that have received a response",
                 "Match requests that are still waiting for a response",
@@ -911,6 +917,119 @@ describe("Search filter model integration test:", () => {
                 { 'MY-HEADER': 'abc' },
                 { 'my-header': 'abc' }
             ]);
+        });
+    });
+
+    describe("Body filters", () => {
+
+        before(async function () {
+            this.timeout(10000);
+            // First worker request can be slow seemingly (~2s), not sure why, might be a
+            // karma issue? Not noticeable in real use, and subsequent calls seem to be very
+            // quick (~1ms) so it's not an issue in practice.
+            await decodeBody(Buffer.from(zlib.gzipSync('Warmup content')), ['gzip']);
+
+            // ^ Take from worker-decoding tests
+        });
+
+        const decodeBodies = async (events: CollectedEvent[]) => {
+            events.forEach(e => {
+                if (e instanceof HttpExchange) {
+                    e.request.body.decoded;
+                    if (e.isSuccessfulExchange()) e.response.body.decoded;
+                }
+            });
+            await delay(1);
+        };
+
+        it("should correctly filter for a given substring", async () => {
+            const filter = createFilter("body*=big");
+
+            const exampleEvents = [
+                getFailedTls(),
+                getExchangeData({ requestBody: 'small', responseBody: 'small' }),
+                getExchangeData({ requestBody: 'very-big', responseBody: 'very-big' }),
+                getExchangeData({
+                    responseState: 'aborted',
+                    requestBody: 'big-aborted-request'
+                }),
+                getExchangeData({
+                    responseState: 'pending',
+                    requestBody: 'big-pending-request'
+                }),
+                getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
+            ];
+
+            await decodeBodies(exampleEvents);
+
+            const matchedEvents = exampleEvents.filter(e =>
+                filter.matches(e)
+            ) as HttpExchange[];
+
+            expect(
+                matchedEvents.map((e) =>
+                    e.request.body.encoded.toString('utf8') +
+                    (e.isSuccessfulExchange()
+                        ? e.response.body.encoded.toString('utf8')
+                        : ''
+                    )
+                )
+            ).to.deep.equal([
+                "very-bigvery-big",
+                "big-aborted-request",
+                "big-pending-request",
+                "very-big-response"
+            ]);
+        });
+
+        it("should wait for and use decoded bodies", async () => {
+            const filter = createFilter("body^=hello");
+
+            const exampleEvents = [
+                getExchangeData({ // gzipped correct match
+                    responseHeaders: { 'content-encoding': 'gzip' },
+                    responseBody: zlib.gzipSync("hello world")
+                }),
+                getExchangeData({ // This decodes but won't match
+                    responseHeaders: { 'content-encoding': 'gzip' },
+                    responseBody: zlib.gzipSync("another body")
+                }),
+                getExchangeData({ // This will not decode
+                    responseHeaders: { 'content-encoding': 'gibberish-encoding' },
+                    responseBody: "gibberish"
+                })
+            ];
+
+            let matchedEvents = exampleEvents.filter(e =>
+                filter.matches(e)
+            ) as HttpExchange[];
+
+            expect(matchedEvents).to.deep.equal([]);
+
+            await delay(100); // Wait for decode that filter will have triggered
+
+            matchedEvents = exampleEvents.filter(e =>
+                filter.matches(e)
+            ) as HttpExchange[];
+
+            expect(matchedEvents.map((e: any) =>
+                e.response.body.decoded.toString()
+            )).to.deep.equal([
+                "hello world"
+            ]);
+        });
+
+        it("should correctly format descriptions", () => {
+            [
+                ["body", "Match exchanges by body content"],
+                ["body=", "Match exchanges with a body equal to a given value"],
+                ["body!=abc", "Match exchanges with a body not equal to abc"],
+                ["body*=qwe", "Match exchanges with a body containing qwe"],
+                ["body$=x", "Match exchanges with a body ending with x"],
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.equal(expectedOutput);
+            });
         });
     });
 

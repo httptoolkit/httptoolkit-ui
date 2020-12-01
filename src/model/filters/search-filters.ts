@@ -110,7 +110,7 @@ const numberOperations = {
     ">=": (value: number, expected: number) => value >= expected,
     "<": (value: number, expected: number) => value < expected,
     "<=": (value: number, expected: number) => value <= expected
-}
+};
 
 // Note that all operations here are implicitly case-sensitive, but it's expected
 // that each matcher will lower/uppercase values for matching as part of parsing.
@@ -119,6 +119,14 @@ const stringOperations = {
     "*=": (value: string, expected: string) => value.includes(expected),
     "^=": (value: string, expected: string) => value.startsWith(expected),
     "$=": (value: string, expected: string) => value.endsWith(expected)
+};
+
+const bufferOperations = {
+    "=": (value: Buffer, expected: Buffer) => value.equals(expected),
+    "!=": (value: Buffer, expected: Buffer) => !value.equals(expected),
+    "*=": (value: Buffer, expected: Buffer) => value.includes(expected),
+    "^=": (value: Buffer, expected: Buffer) => value.slice(0, expected.length).equals(expected),
+    "$=": (value: Buffer, expected: Buffer) => value.slice(-expected.length).equals(expected)
 };
 
 type EqualityOperation = keyof typeof operations;
@@ -953,6 +961,74 @@ class BodySizeFilter extends Filter {
     }
 }
 
+class BodyFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("body"),
+        new StringOptionsSyntax<StringOperation>([
+            "=",
+            "!=",
+            "*=",
+            "^=",
+            "$="
+        ]),
+        new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("body content", {
+                allowedChars: [[0, 255]]
+            }),
+            // [] should be required/suggested only if value contains a space
+            { optional: true }
+        )
+    ] as const;
+
+    static filterDescription(value: string) {
+        const [, op, bodyContent] = tryParseFilter(BodyFilter, value);
+
+        if (!op) {
+            return "Match exchanges by body content";
+        } else {
+            return `Match exchanges with a body ${operationDescriptions[op]} ${bodyContent || 'a given value'}`;
+        }
+    }
+
+    private expectedBody: Buffer;
+
+    private op: StringOperation;
+    private predicate: (body: Buffer, expectedBody: Buffer) => boolean;
+
+    constructor(filter: string) {
+        super(filter);
+        const [, op, expectedBody] = parseFilter(BodyFilter, filter);
+        this.op = op;
+
+        this.expectedBody = Buffer.from(expectedBody);
+        this.predicate = bufferOperations[this.op];
+    }
+
+    matches(event: CollectedEvent): boolean {
+        if (!(event instanceof HttpExchange)) return false;
+        if (!event.isCompletedRequest()) return false; // No body yet, no match
+
+        const requestBody = event.request.body.decoded;
+        const responseBody = event.isSuccessfulExchange()
+            ? event.response.body.decoded
+            : undefined;
+
+        const matchesRequestBody = !!requestBody && requestBody.byteLength > 0 &&
+            this.predicate(requestBody, this.expectedBody);
+
+        const matchesResponseBody = !!responseBody && responseBody.byteLength > 0 &&
+            this.predicate(responseBody, this.expectedBody);
+
+        return matchesRequestBody || matchesResponseBody;
+    }
+
+    toString() {
+        return `Body ${this.op} ${this.expectedBody}`;
+    }
+}
+
 export const SelectableSearchFilterClasses: FilterClass[] = [
     MethodFilter,
     HostnameFilter,
@@ -960,6 +1036,7 @@ export const SelectableSearchFilterClasses: FilterClass[] = [
     QueryFilter,
     StatusFilter,
     HeaderFilter,
+    BodyFilter,
     BodySizeFilter,
     CompletedFilter,
     PendingFilter,

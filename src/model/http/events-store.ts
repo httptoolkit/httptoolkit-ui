@@ -14,7 +14,6 @@ import {
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
-    Headers,
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';

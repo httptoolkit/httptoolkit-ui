@@ -117,7 +117,7 @@ class ViewPage extends React.Component<ViewPageProps> {
         return this.searchFiltersUnderConsideration ?? this.confirmedSearchFilters;
     }
 
-    @computed
+    @debounceComputed(10) // Debounce slightly - most important for body filtering performance
     get filteredEvents() {
         const { events } = this.props.eventsStore;
 
@@ -188,7 +188,6 @@ class ViewPage extends React.Component<ViewPageProps> {
             isPaused
         } = this.props.eventsStore;
         const { certPath } = this.props.proxyStore;
-        const { confirmedSearchFilters } = this;
 
         let rightPane: JSX.Element;
         if (!this.selectedEvent) {

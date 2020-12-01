@@ -208,7 +208,7 @@ export class HttpExchange {
     public readonly id: string;
 
     @observable
-    public matchedRuleId: string | undefined; // Undefined initially, defined for completed requests
+    public matchedRuleId: string | '?' | undefined; // Undefined initially, defined for completed requests
 
     @observable
     public tags: string[];
