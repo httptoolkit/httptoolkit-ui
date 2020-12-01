@@ -195,11 +195,14 @@ export const FilterInput = <T extends unknown>(props: {
         }
 
         updatedFilters = applySuggestionToFilters(props.activeFilters, data.suggestion);
-        trackEvent({
-            category: 'Filters',
-            action: 'Create',
-            label: data.suggestion.filterClass.name // Track most used filters, *not* input or params
-        });
+        if (updatedFilters.length !== props.activeFilters.length) {
+            trackEvent({
+                category: 'Filters',
+                action: 'Create',
+                // Track most used filter types, *not* input or params
+                label: data.suggestion.filterClass.filterName
+            });
+        }
         props.onFiltersChanged(updatedFilters);
     }, [updatedFilters, props.value, props.isPaidUser, props.getPro, props.activeFilters, props.onFiltersChanged]);
 

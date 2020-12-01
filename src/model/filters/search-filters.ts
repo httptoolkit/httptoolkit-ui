@@ -74,6 +74,12 @@ export type FilterClass<T extends unknown = never> = {
      * Generally, this should get more precise as more input is entered.
      */
     filterDescription: (input: string, isTemplate: boolean) => string;
+
+    /**
+     * A very short string, just naming the type of filter, without any of
+     * the input parameters etc.
+     */
+    filterName: string;
 };
 
 /**
@@ -248,6 +254,8 @@ class StatusFilter extends Filter {
         })
     ] as const;
 
+    static filterName = "status";
+
     static filterDescription(value: string) {
         const [, op, status] = tryParseFilter(StatusFilter, value);
 
@@ -299,6 +307,8 @@ class CompletedFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("completed")] as const;
 
+    static filterName = "completed";
+
     static filterDescription(value: string) {
         return "Match requests that have received a response";
     }
@@ -316,6 +326,8 @@ class CompletedFilter extends Filter {
 class PendingFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("pending")];
+
+    static filterName = "pending";
 
     static filterDescription(value: string) {
         return "Match requests that are still waiting for a response";
@@ -335,6 +347,8 @@ class AbortedFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("aborted")] as const;
 
+    static filterName = "aborted";
+
     static filterDescription(value: string) {
         return "Match requests that aborted before receiving a response";
     }
@@ -352,6 +366,8 @@ class AbortedFilter extends Filter {
 class ErrorFilter extends Filter {
 
     static filterSyntax = [new FixedStringSyntax("errored")] as const;
+
+    static filterName = "error";
 
     static filterDescription(value: string) {
         return "Match requests that weren't transmitted successfully";
@@ -391,6 +407,8 @@ class MethodFilter extends Filter {
                 .valueOf() as string[]
         })
     ] as const;
+
+    static filterName = "method";
 
     static filterDescription(value: string) {
         const [, op, method] = tryParseFilter(MethodFilter, value);
@@ -443,6 +461,8 @@ class HttpVersionFilter extends Filter {
         new StringOptionsSyntax(["1", "2"])
     ] as const;
 
+    static filterName = "httpVersion";
+
     static filterDescription(value: string) {
         const [, , version] = tryParseFilter(HttpVersionFilter, value);
 
@@ -481,6 +501,8 @@ class ProtocolFilter extends Filter {
             "https"
         ])
     ] as const;
+
+    static filterName = "protocol";
 
     static filterDescription(value: string) {
         const [, , protocol] = tryParseFilter(ProtocolFilter, value);
@@ -541,6 +563,8 @@ class HostnameFilter extends Filter {
         })
     ] as const;
 
+    static filterName = "hostname";
+
     static filterDescription(value: string) {
         const [, op, hostname] = tryParseFilter(HostnameFilter, value);
 
@@ -597,6 +621,8 @@ class PortFilter extends Filter {
         ]),
         new NumberSyntax("port")
     ] as const;
+
+    static filterName = "port";
 
     static filterDescription(value: string) {
         const [, op, port] = tryParseFilter(PortFilter, value);
@@ -660,6 +686,8 @@ class PathFilter extends Filter {
         })
     ] as const;
 
+    static filterName = "path";
+
     static filterDescription(value: string) {
         const [, op, path] = tryParseFilter(PathFilter, value);
 
@@ -718,6 +746,8 @@ class QueryFilter extends Filter {
                 .valueOf() as string[]
         })
     ] as const;
+
+    static filterName = "query";
 
     static filterDescription(value: string, isTemplate: boolean) {
         const [, op, query] = tryParseFilter(QueryFilter, value);
@@ -838,6 +868,8 @@ class HeaderFilter extends Filter {
         new OptionalSyntax<[StringOperation, string]>(...HeaderFilter.valueMatchSyntax)
     ] as const;
 
+    static filterName = "header";
+
     static filterDescription(value: string): string {
         const [, headerName] = tryParseFilter(HeaderFilter, value);
 
@@ -916,6 +948,8 @@ class BodySizeFilter extends Filter {
         new NumberSyntax("size")
     ] as const;
 
+    static filterName = "bodySize";
+
     static filterDescription(value: string) {
         const [, op, size] = tryParseFilter(BodySizeFilter, value);
 
@@ -981,6 +1015,8 @@ class BodyFilter extends Filter {
             { optional: true }
         )
     ] as const;
+
+    static filterName = "body";
 
     static filterDescription(value: string) {
         const [, op, bodyContent] = tryParseFilter(BodyFilter, value);
