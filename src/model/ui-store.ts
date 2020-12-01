@@ -117,5 +117,14 @@ export class UiStore {
     activeFilterSet: FilterSet = emptyFilterSet();
 
     @persist('object') @observable
-    customFilters: { [name: string]: string } = {};
+    _customFilters: { [name: string]: string } = {};
+
+    @computed
+    get customFilters() {
+        if (this.accountStore.isPaidUser) {
+            return this._customFilters;
+        } else {
+            return {};
+        }
+    }
 }
