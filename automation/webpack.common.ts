@@ -106,9 +106,9 @@ export default <Webpack.Configuration>{
             'COMMIT_REF': null
         }),
         new InjectManifest({
-            swSrc: 'update-worker.js',
-            importWorkboxFrom: 'local',
-            exclude: ['google-fonts']
+            swSrc: path.join(SRC_DIR, 'services', 'update-worker.ts'),
+            exclude: ['google-fonts', /^api\//],
+            maximumFileSizeToCacheInBytes: 100 * 1024 * 1024
         })
     ],
 };

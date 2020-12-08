@@ -4,7 +4,12 @@ import * as localForage from 'localforage';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
-import { serverVersion, versionSatisfies, DETAILED_CONFIG_RANGE, INTERCEPTOR_METADATA } from './service-versions';
+import {
+    serverVersion,
+    versionSatisfies,
+    DETAILED_CONFIG_RANGE,
+    INTERCEPTOR_METADATA
+} from './service-versions';
 
 const authTokenPromise = !RUNNING_IN_WORKER
     // Main UI gets given the auth token directly in its URL:
@@ -15,7 +20,9 @@ const authTokenPromise = !RUNNING_IN_WORKER
             if (authToken) return authToken;
 
             // Old UI (Jan-March 2020) shares auth token via SW query param:
-            const workerParams = new URLSearchParams((self as WorkerGlobalScope).location.search);
+            const workerParams = new URLSearchParams(
+                (self as unknown as WorkerGlobalScope).location.search
+            );
             return workerParams.get('authToken');
 
             // Pre-Jan 2020 UI doesn't share auth token - ok with old desktop, fails with 0.1.18+.

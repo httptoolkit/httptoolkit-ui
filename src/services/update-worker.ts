@@ -1,9 +1,13 @@
 import { initSentry, reportError, Sentry } from '../errors';
 initSentry(process.env.SENTRY_DSN);
 
-import WorkboxNamespace from 'workbox-sw';
 import * as kv from 'idb-keyval';
 import * as localForage from 'localforage';
+
+import { registerRoute, NavigationRoute } from 'workbox-routing';
+import { PrecacheController } from 'workbox-precaching'
+import { ExpirationPlugin } from 'workbox-expiration';
+import { StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies';
 
 import * as appPackage from '../../package.json';
 import { getServerVersion } from './server-api';
@@ -80,27 +84,20 @@ type PrecacheEntry = {
 } | string;
 
 // Webpack has injected these for us automatically
-declare const self: ServiceWorkerGlobalScope;
-declare const workbox: typeof WorkboxNamespace;
-declare const __precacheManifest: Array<PrecacheEntry>;
+declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: Array<PrecacheEntry> };
 
-const precacheName = workbox.core.cacheNames.precache;
+const __precacheManifest = self.__WB_MANIFEST; // This is injected by webpack's InjectManifest
 
 function getPrecacheController() {
-    const controller = new workbox.precaching.PrecacheController();
-
-    const precacheList = __precacheManifest.filter((precacheEntry) => {
-        const entryUrl = typeof precacheEntry === 'object' ? precacheEntry.url : precacheEntry;
-        return !entryUrl.startsWith('api/');
-    });
-
-    controller.addToCacheList(precacheList);
+    const controller = new PrecacheController();
+    controller.addToCacheList(__precacheManifest);
     return controller;
 }
 
 const precacheController = getPrecacheController();
+const precacheName = precacheController.strategy.cacheName;
 
-async function precacheNewVersionIfSupported() {
+async function precacheNewVersionIfSupported(event: ExtendableEvent) {
     if (await forceUpdateRequired) {
         // Don't bother precaching: we want to take over & then force kill/refresh everything ASAP
         self.skipWaiting();
@@ -111,7 +108,7 @@ async function precacheNewVersionIfSupported() {
     await checkServerVersion();
 
     // Any required as the install return types haven't been updated for v4, so still use 'updatedEntries'
-    const result: any = await precacheController.install();
+    const result: any = await precacheController.install(event);
     console.log(`New precache installed, ${result.updatedURLs.length} files updated.`);
 }
 
@@ -173,11 +170,11 @@ function deleteOldWorkboxCaches() {
 self.addEventListener('install', (event: ExtendableEvent) => {
     writeToLog({ type: 'install' });
     console.log(`SW installing for version ${appVersion}`);
-    event.waitUntil(precacheNewVersionIfSupported());
+    event.waitUntil(precacheNewVersionIfSupported(event));
 });
 
 self.addEventListener('activate', async (event) => {
-    event.waitUntil((async () => {
+    event.waitUntil(async () => {
         writeToLog({ type: 'activate' });
         console.log(`SW activating for version ${appVersion}`);
 
@@ -210,21 +207,21 @@ self.addEventListener('activate', async (event) => {
             // This can be removed only once we know that _nobody_ is using SWs from before 2019-05-09
             deleteOldWorkboxCaches();
 
-            await precacheController.activate();
+            await precacheController.activate(event);
             writeToLog({ type: 'activated' });
         }
-    })());
+    });
 });
 
 // Webpack Dev Server goes straight to the network:
-workbox.routing.registerRoute(/\/sockjs-node\/.*/, new workbox.strategies.NetworkOnly());
+registerRoute(/\/sockjs-node\/.*/, new NetworkOnly());
 
 // API routes aren't preloaded (there's thousands, it'd kill everything), but we
 // try to keep your recently used ones around for offline use.
-workbox.routing.registerRoute(/api\/.*/, new workbox.strategies.StaleWhileRevalidate({
+registerRoute(/api\/.*/, new StaleWhileRevalidate({
     cacheName: 'api-cache',
     plugins: [
-        new workbox.expiration.Plugin({
+        new ExpirationPlugin({
             maxEntries: 20,
         }),
     ],
@@ -232,36 +229,24 @@ workbox.routing.registerRoute(/api\/.*/, new workbox.strategies.StaleWhileRevali
 
 // Map all page loads to the root HTML. This is necessary to allow SPA routing,
 // as otherwise a refreshes miss the cache & fail.
-workbox.routing.registerNavigationRoute(
-    precacheController.getCacheKeyForURL('/index.html')
-);
+registerRoute(new NavigationRoute(
+    precacheController.createHandlerBoundToURL('/index.html')
+));
 
 // All other app code _must_ be precached - no random updates from elsewhere please.
 // The below is broadly based on the precaching.addRoute, but resetting the cache
 // 100% if any requests ever fail to match.
 let resettingSw = false;
-workbox.routing.registerRoute(/\/.*/, async ({ event }) => {
-    if (resettingSw) return fetch(event.request);
+registerRoute(/\/.*/, async ({ event }) => {
+    const fetchEvent = event as FetchEvent;
 
-    const urlsToCacheKeys = precacheController.getURLsToCacheKeys();
-    const requestUrl = new URL(event.request.url, self.location.toString());
-    requestUrl.hash = '';
+    if (resettingSw) return fetch(fetchEvent.request);
 
-    const precachedUrl = (
-        ([
-            requestUrl.href,
-            // Load /index.html for /:
-            requestUrl.href.endsWith('/')
-                ? requestUrl.href + 'index.html'
-                : false
-        ] as Array<string | false>)
-        .map((cacheUrl) => cacheUrl && urlsToCacheKeys.get(cacheUrl))
-        .filter((x): x is string => !!x)
-    )[0]; // Use the first matching URL
+    const cachedResponse = await precacheController.matchPrecache(fetchEvent.request);
 
     // We have a /<something> URL that isn't in the cache at all - something is very wrong
-    if (!precachedUrl) {
-        if (event.request.cache === 'only-if-cached') {
+    if (!cachedResponse) {
+        if (fetchEvent.request.cache === 'only-if-cached') {
             // Triggered by dev tools looking for sources. We know it's indeed not cached, so we reject
             return new Response(null, { status: 504 }) // 504 is standard failure code for these
 
@@ -269,16 +254,13 @@ workbox.routing.registerRoute(/\/.*/, async ({ event }) => {
             // TODO: This can likely be removed once all Electrons are updated to include that
         }
 
-        console.log(`${requestUrl.href} did not match any of ${[...urlsToCacheKeys.keys()]}`);
-        return brokenCacheResponse(event);
+        console.log(`${fetchEvent.request.url} did not match any of ${
+            precacheController.getCachedURLs()
+        }`);
+        return brokenCacheResponse(fetchEvent);
     }
 
-    const cache = await caches.open(precacheName);
-    const cachedResponse = await cache.match(precachedUrl);
-
-    // If the cache is all good, use it. If not, reset everything.
-    if (cachedResponse) return cachedResponse;
-    else return brokenCacheResponse(event);
+    return cachedResponse;
 });
 
 // The precache has failed: kill it, report that, and start falling back to the network
