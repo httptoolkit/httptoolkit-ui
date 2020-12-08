@@ -1,5 +1,7 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import * as Webpack from 'webpack';
+import * as ssri from 'ssri';
 
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import GoogleFontsPlugin from 'google-fonts-plugin';
@@ -107,8 +109,32 @@ export default <Webpack.Configuration>{
         }),
         new InjectManifest({
             swSrc: path.join(SRC_DIR, 'services', 'update-worker.ts'),
-            exclude: ['google-fonts', /^api\//],
-            maximumFileSizeToCacheInBytes: 100 * 1024 * 1024
+            exclude: ['google-fonts', /^api\//, 'update-worker.js'],
+            maximumFileSizeToCacheInBytes: 100 * 1024 * 1024,
+            manifestTransforms: [(originalManifest) => {
+                // Add integrity info to every file, to ensure the cache can't be
+                // corrupted. We have seen this in practice, I think due to AWS outage
+                // issues? This protects against lots of corruption possibilities:
+                const manifest = originalManifest.map((entry) => {
+                    const entryPath = path.join(
+                        OUTPUT_DIR,
+                        entry.url
+                    );
+
+                    // Callback must be sync, so we read sync:
+                    try {
+                        const fileContents = fs.readFileSync(entryPath);
+                        (entry as any).integrity = ssri.fromData(fileContents);
+                    } catch (e) {
+                        // This seems to fail for some files during local dev, which is
+                        // fine, so we just do this optimistically where we can.
+                        console.warn("No integrity available for " + entry.url);
+                    }
+                    return entry;
+                });
+
+                return { manifest };
+            }]
         })
     ],
 };
