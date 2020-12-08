@@ -170,7 +170,15 @@ function deleteOldWorkboxCaches() {
 self.addEventListener('install', (event: ExtendableEvent) => {
     writeToLog({ type: 'install' });
     console.log(`SW installing for version ${appVersion}`);
-    event.waitUntil(precacheNewVersionIfSupported(event));
+    event.waitUntil(
+        precacheNewVersionIfSupported(event)
+        .catch((rawError) => {
+            console.log(rawError);
+            const error = new Error("SW precache failed: " + rawError.message);
+            reportError(error);
+            throw error;
+        })
+    );
 });
 
 self.addEventListener('activate', async (event) => {
