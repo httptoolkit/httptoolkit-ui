@@ -1,12 +1,12 @@
 import * as path from 'path';
-import * as fs from 'fs';
 import * as Webpack from 'webpack';
-import * as ssri from 'ssri';
 
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import GoogleFontsPlugin from 'google-fonts-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
+
 import { InjectManifest } from 'workbox-webpack-plugin';
+import * as ssri from "ssri";
 
 // Webpack (but not tsc) gets upset about this, so let's opt out
 // of proper typing entirely.
@@ -109,32 +109,25 @@ export default <Webpack.Configuration>{
         }),
         new InjectManifest({
             swSrc: path.join(SRC_DIR, 'services', 'update-worker.ts'),
-            exclude: ['google-fonts', /^api\//, 'update-worker.js'],
+            exclude: ['google-fonts', /^api\//, 'update-worker.js', /.map$/],
             maximumFileSizeToCacheInBytes: 100 * 1024 * 1024,
-            manifestTransforms: [(originalManifest) => {
-                // Add integrity info to every file, to ensure the cache can't be
-                // corrupted. We have seen this in practice, I think due to AWS outage
-                // issues? This protects against lots of corruption possibilities:
-                const manifest = originalManifest.map((entry) => {
-                    const entryPath = path.join(
-                        OUTPUT_DIR,
-                        entry.url
-                    );
+            manifestTransforms: [
+                (originalManifest: any, compilation: any) => {
+                    // Add integrity info to every file, to ensure the cache can't be
+                    // corrupted. We have seen this in practice, I think due to AWS outage
+                    // issues? This helps protect against possible corruptions:
+                    const manifest = originalManifest.map((entry: any) => {
+                        const asset = compilation.getAsset(entry.url);
+                        entry.integrity = ssri.fromData(asset.source.source()).toString();
+                        return entry;
+                    });
 
-                    // Callback must be sync, so we read sync:
-                    try {
-                        const fileContents = fs.readFileSync(entryPath);
-                        (entry as any).integrity = ssri.fromData(fileContents);
-                    } catch (e) {
-                        // This seems to fail for some files during local dev, which is
-                        // fine, so we just do this optimistically where we can.
-                        console.warn("No integrity available for " + entry.url);
-                    }
-                    return entry;
-                });
+                    // If any integrity checks fail during startup, precaching stops will
+                    // stop there, and the SW won't be updated.
 
-                return { manifest };
-            }]
-        })
+                    return { manifest };
+                },
+            ] as any
+        }),
     ],
 };
