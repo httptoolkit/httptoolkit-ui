@@ -4,7 +4,7 @@ import common from "./webpack.common";
 export default merge(common, {
     mode: "production",
 
-    devtool: "source-map",
+    devtool: "cheap-module-source-map",
 
     // Automatically split into source/vendor bundle chunks.
     // Here because this breaks TS-node in the tests, not clear why.
