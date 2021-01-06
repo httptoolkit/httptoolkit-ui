@@ -6,7 +6,7 @@ import common from './webpack.common';
 export default merge(common, {
     mode: 'development',
 
-    devtool: 'inline-cheap-module-source-map',
+    devtool: 'eval-cheap-module-source-map' as any,
 
     devServer: {
         contentBase: common.output!.path!,
