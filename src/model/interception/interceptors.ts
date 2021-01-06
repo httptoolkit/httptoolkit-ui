@@ -11,6 +11,7 @@ import { ExistingTerminalCustomUi } from "../../components/intercept/config/exis
 import { ElectronCustomUi } from '../../components/intercept/config/electron-config';
 import { AndroidDeviceCustomUi } from "../../components/intercept/config/android-device-config";
 import { AndroidAdbCustomUi } from "../../components/intercept/config/android-adb-config";
+import { ExistingBrowserCustomUi } from "../../components/intercept/config/existing-browser-config";
 
 interface InterceptorConfig {
     name: string;
@@ -49,49 +50,59 @@ export const MANUAL_INTERCEPT_ID = 'manual-setup';
 const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'fresh-chrome': {
         name: 'Chrome',
-        description: ["Open a preconfigured fresh Chrome window"],
+        description: ["Intercept a fresh independent Chrome window"],
+        iconProps: SourceIcons.Chrome,
+        tags: BROWSER_TAGS
+    },
+    'existing-chrome': {
+        name: 'Existing Chrome',
+        description: [
+            "Intercept your main Chrome profile globally.",
+            "This captures all default Chrome traffic, so may interfere with normal usage."
+        ],
+        uiConfig: ExistingBrowserCustomUi,
         iconProps: SourceIcons.Chrome,
         tags: BROWSER_TAGS
     },
     'fresh-chrome-beta': {
         name: 'Chrome (beta)',
-        description: ["Open a preconfigured fresh Chrome window"],
+        description: ["Intercept a fresh independent Chrome window"],
         iconProps: recoloured(SourceIcons.Chrome, '#DB4437'),
         tags: BROWSER_TAGS
     },
     'fresh-chrome-dev': {
         name: 'Chrome (dev)',
-        description: ["Open a preconfigured fresh Chrome window"],
+        description: ["Intercept a fresh independent Chrome window"],
         iconProps: recoloured(SourceIcons.Chrome, '#74929f'),
         tags: BROWSER_TAGS
     },
     'fresh-chrome-canary': {
         name: 'Chrome (canary)',
-        description: ["Open a preconfigured fresh Chrome window"],
+        description: ["Intercept a fresh independent Chrome window"],
         iconProps: recoloured(SourceIcons.Chrome, '#e8ab01'),
         tags: BROWSER_TAGS
     },
     'fresh-chromium': {
         name: 'Chromium',
-        description: ["Open a preconfigured fresh Chromium window"],
+        description: ["Intercept a fresh independent Chromium window"],
         iconProps: SourceIcons.Chromium,
         tags: BROWSER_TAGS
     },
     'fresh-chromium-dev': {
         name: 'Chromium (dev)',
-        description: ["Open a preconfigured fresh Chromium window"],
+        description: ["Intercept a fresh independent Chromium window"],
         iconProps: recoloured(SourceIcons.Chromium, '#74929f'),
         tags: BROWSER_TAGS
     },
     'fresh-brave': {
         name: 'Brave',
-        description: ["Open a preconfigured fresh Brave window"],
+        description: ["Intercept a fresh independent Brave window"],
         iconProps: SourceIcons.Brave,
         tags: BROWSER_TAGS
     },
     'fresh-firefox': {
         name: 'Firefox',
-        description: ["Open a preconfigured fresh Firefox window"],
+        description: ["Intercept a fresh independent Firefox window"],
         iconProps: SourceIcons.Firefox,
         tags: BROWSER_TAGS,
         checkRequirements: ({ interceptorVersion }) => {
@@ -100,37 +111,37 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     },
     'fresh-safari': {
         name: 'Safari',
-        description: ["Open a preconfigured fresh Safari window"],
+        description: ["Intercept a fresh independent Safari window"],
         iconProps: SourceIcons.Safari,
         tags: BROWSER_TAGS
     },
     'fresh-edge': {
         name: 'Edge',
-        description: ["Open a preconfigured fresh Edge window"],
+        description: ["Intercept a fresh independent Edge window"],
         iconProps: SourceIcons.Edge,
         tags: BROWSER_TAGS
     },
     'fresh-edge-beta': {
         name: 'Edge (beta)',
-        description: ["Open a preconfigured fresh Edge window"],
+        description: ["Intercept a fresh independent Edge window"],
         iconProps: recoloured(SourceIcons.Edge, '#50e6ff'),
         tags: BROWSER_TAGS
     },
     'fresh-edge-dev': {
         name: 'Edge (dev)',
-        description: ["Open a preconfigured fresh Edge window"],
+        description: ["Intercept a fresh independent Edge window"],
         iconProps: recoloured(SourceIcons.Edge, '#74929f'),
         tags: BROWSER_TAGS
     },
     'fresh-edge-canary': {
         name: 'Edge (canary)',
-        description: ["Open a preconfigured fresh Edge window"],
+        description: ["Intercept a fresh independent Edge window"],
         iconProps: recoloured(SourceIcons.Edge, '#ffc225'),
         tags: BROWSER_TAGS
     },
     'fresh-opera': {
         name: 'Opera',
-        description: ["Open a preconfigured fresh Opera window"],
+        description: ["Intercept a fresh independent Opera window"],
         iconProps: SourceIcons.Opera,
         tags: BROWSER_TAGS,
         checkRequirements: ({ interceptorVersion }) => {

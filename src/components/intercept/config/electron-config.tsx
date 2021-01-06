@@ -148,9 +148,7 @@ class ElectronConfig extends React.Component<{
 
         const { activateInterceptor, showRequests } = this.props;
 
-        activateInterceptor({ pathToApplication }).then(action((success) => {
-            if (!success) return;
-
+        activateInterceptor({ pathToApplication }).then(action(() => {
             // Activated successfully! Add it to the list & jump to /view
             this.props.uiStore!.rememberElectronPath(pathToApplication);
             showRequests();
@@ -165,12 +163,10 @@ class ElectronConfig extends React.Component<{
 
     async rerunApplication(pathToApplication: string) {
         const { activateInterceptor, showRequests } = this.props;
-        activateInterceptor({ pathToApplication }).then((success) => {
-            if (success) {
-                showRequests();
-            } else {
-                this.props.uiStore!.forgetElectronPath(pathToApplication);
-            }
+        activateInterceptor({ pathToApplication }).then(() => {
+            showRequests();
+        }).catch(() => {
+            this.props.uiStore!.forgetElectronPath(pathToApplication);
         });
     }
 

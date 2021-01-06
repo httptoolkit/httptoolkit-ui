@@ -203,7 +203,15 @@ export async function activateInterceptor(id: string, proxyPort: number, options
     } else {
         // Some kind of falsey failure:
         console.log('Activation result', JSON.stringify(result));
-        throw new Error(`Failed to activate interceptor ${id}`);
+
+        const error = Object.assign(
+            new Error(`Failed to activate interceptor ${id}`),
+            result.activateInterceptor && result.activateInterceptor.metadata
+                ? { metadata: result.activateInterceptor.metadata }
+                : {}
+        );
+
+        throw error;
     }
 }
 

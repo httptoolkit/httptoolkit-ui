@@ -124,7 +124,7 @@ class AndroidConfig extends React.Component<{
     eventsStore?: EventsStore,
 
     interceptor: Interceptor,
-    activateInterceptor: () => Promise<void>,
+    activateInterceptor: () => Promise<void>, // Not used, but required for types
     showRequests: () => void,
     closeSelf: () => void
 }> {

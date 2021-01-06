@@ -6,6 +6,7 @@ import { observer, inject } from 'mobx-react';
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
 import { trackEvent } from '../../tracking';
+import { reportError } from '../../errors';
 import { Interceptor } from '../../model/interception/interceptors';
 import { InterceptorStore } from '../../model/interception/interceptor-store';
 
@@ -212,7 +213,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
     @action.bound
     onClick() {
-        const { interceptor, interceptorStore, showRequests } = this.props;
+        const { interceptor, showRequests } = this.props;
 
         trackEvent({
             category: 'Interceptors',
@@ -231,7 +232,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                 });
             });
         } else {
-            interceptorStore!.activateInterceptor(interceptor.id)
+            this.activateInterceptor()
                 .then((successful) => {
                     if (successful) {
                         trackEvent({
@@ -242,7 +243,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
                         showRequests();
                     }
-                });
+                })
+                .catch((e) => reportError(e));
         }
     }
 

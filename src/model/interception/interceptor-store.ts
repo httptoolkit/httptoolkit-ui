@@ -1,4 +1,4 @@
-import { observable, runInAction, flow } from "mobx";
+import { observable, runInAction, flow, action } from "mobx";
 
 import { reportError } from "../../errors";
 import { lazyObservablePromise } from "../../util/observable";
@@ -49,26 +49,19 @@ export class InterceptorStore {
         });
     }
 
-    activateInterceptor = flow(function * (
-        this: InterceptorStore,
-        interceptorId: string,
-        options?: any
-    ) {
+    @action.bound
+    activateInterceptor = (interceptorId: string, options?: any): Promise<unknown | true> => {
         this.interceptors[interceptorId].inProgress = true;
-        const result: unknown = yield activateInterceptor(
+
+        return activateInterceptor(
             interceptorId,
             this.proxyStore.serverPort,
             options
         ).then(
             (metadata) => metadata || true
-        ).catch((e) => {
-            reportError(e);
-            return false;
-        });
-
-        this.interceptors[interceptorId].inProgress = false;
-        this.refreshInterceptors();
-
-        return result;
-    });
+        ).finally(action(() => {
+            this.interceptors[interceptorId].inProgress = false;
+            this.refreshInterceptors();
+        }));
+    };
 }
