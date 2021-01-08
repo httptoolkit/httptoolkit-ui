@@ -40,7 +40,7 @@ const IOS_TAGS = ['apple', 'ios', 'iphone', 'ipad'];
 const DOCKER_TAGS = ['bridge', 'services', 'images'];
 
 const androidInterceptIconProps = _.assign({
-    style: { bottom: '-32px' }
+    style: { transform: 'translateY(32px)' }
 }, SourceIcons.Android);
 
 const recoloured = (icon: IconProps, color: string) => ({ ...icon, color });
