@@ -27,9 +27,9 @@ class ExistingBrowserConfig extends React.Component<{
             if (error.metadata?.closeConfirmRequired === true) {
                 // If the browser is open, confirm that we can kill & restart it first:
                 const confirmed = confirm(dedent`
-                    Your browser is currently open, and needs to be restarted to
-                    enable interception. Restart it now?
-                `);
+                    Your browser is currently open, and needs to be
+                    restarted to enable interception. Restart it now?
+                `.replace('\n', ' '));
                 if (confirmed) {
                     await this.props.activateInterceptor({ closeConfirmed: true });
                 } else {
