@@ -75,6 +75,7 @@ import { faNodeJs } from '@fortawesome/free-brands-svg-icons/faNodeJs';
 import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
 import { faPython } from '@fortawesome/free-brands-svg-icons/faPython';
 import { faAtom } from '@fortawesome/free-solid-svg-icons/faAtom';
+import { faGlobe } from '@fortawesome/free-solid-svg-icons/faGlobe';
 
 import { customSpinnerArc } from './images/custom-spinner';
 import { braveBrowser } from './images/brave-browser';
@@ -144,12 +145,14 @@ library.add(
     faNodeJs,
     faPhp,
     faPython,
-    faAtom
+    faAtom,
+    faGlobe
 );
 
 export interface IconProps {
     icon: ExtendedIconProp;
     color: string;
+    size?: SizeProp;
 }
 
 export type SourceIconName = keyof typeof SourceIcons;

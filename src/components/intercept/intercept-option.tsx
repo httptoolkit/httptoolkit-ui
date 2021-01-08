@@ -38,6 +38,25 @@ export interface InterceptorCustomUiConfig {
     customPill?: React.ComponentType<{}>;
 }
 
+const BackgroundIcons = styled.div`
+    z-index: 0;
+
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    z-index: 0;
+    opacity: 0.2;
+
+    > svg {
+        &:not(:first-child) {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+`;
+
 const InterceptOptionCard = styled(LittleCard)<{
     disabled: boolean,
     expanded: boolean,
@@ -69,15 +88,7 @@ const InterceptOptionCard = styled(LittleCard)<{
 
     user-select: none;
 
-    > svg:first-child {
-        position: absolute;
-        bottom: -10px;
-        right: -10px;
-        z-index: 0;
-        opacity: 0.2;
-    }
-
-    > :not(svg) {
+    > :not(${BackgroundIcons}) {
         z-index: 1;
     }
 
@@ -156,6 +167,10 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         const { uiConfig } = interceptor;
         const ConfigComponent = uiConfig?.configComponent;
 
+        const icons = _.isArray(interceptor.iconProps)
+            ? interceptor.iconProps
+            : [interceptor.iconProps];
+
         return <InterceptOptionCard
             ref={this.cardRef}
 
@@ -168,10 +183,12 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             onClick={this.expanded ? undefined : this.onClick}
             tabIndex={!isDisabled && !this.expanded ? 0 : undefined}
         >
-            <Icon
-                {...interceptor.iconProps}
-                size='8x'
-            />
+            <BackgroundIcons>
+                { icons.map((iconProps) => <Icon
+                    size='8x'
+                    {...iconProps}
+                />) }
+            </BackgroundIcons>
 
             <h1>{ interceptor.name }</h1>
 

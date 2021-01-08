@@ -16,7 +16,7 @@ import { ExistingBrowserCustomUi } from "../../components/intercept/config/exist
 interface InterceptorConfig {
     name: string;
     description: string[];
-    iconProps: IconProps;
+    iconProps: IconProps | Array<IconProps>;
     tags: string[];
     inProgress?: boolean;
     clientOnly?: true;
@@ -55,13 +55,16 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         tags: BROWSER_TAGS
     },
     'existing-chrome': {
-        name: 'Existing Chrome',
+        name: 'Global Chrome',
         description: [
             "Intercept your main Chrome profile globally.",
             "This captures all default Chrome traffic, so may interfere with normal usage."
         ],
         uiConfig: ExistingBrowserCustomUi,
-        iconProps: SourceIcons.Chrome,
+        iconProps: [
+            SourceIcons.Chrome,
+            { icon: ['fas', 'globe'], color: '#fafafa', size: '2x' }
+        ],
         tags: BROWSER_TAGS
     },
     'fresh-chrome-beta': {
