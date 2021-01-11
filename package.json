@@ -35,6 +35,7 @@
     "@httptoolkit/auth0-lock": "^11.26.3",
     "@reach/router": "^1.2.1",
     "@sentry/browser": "^4.2.4",
+    "@sentry/webpack-plugin": "^1.14.0",
     "@types/auth0-js": "^8.11.8",
     "@types/auth0-lock": "^11.4.10",
     "@types/base64-arraybuffer": "^0.1.0",
