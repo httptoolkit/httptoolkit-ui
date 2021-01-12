@@ -15,4 +15,53 @@ jobs:
 
       # Install & build & test:
       - run: npm ci
-      - run: npm test
+
+      - run: npm run test:unit
+
+      # Build & run normal integration tests:
+      - run: npm run test:integration
+        if: github.ref != 'ref/head/master'
+
+      # Build with secrets & run integrations tests, on master only:
+      - run: npm run test:integration
+        if: github.ref == 'ref/head/master'
+        env:
+          GA_ID: ${{ secrets.GA_ID }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.GA_ID }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Deploy
+    runs-on: ubuntu-latest
+    container: httptoolkit/act-build-base
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v1.1
+        with:
+          publish-dir: './dist'
+          production-branch: master # Master goes to prod, others do deploy previews
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: GHA Deploy - ${{ github.event.head_commit.message }}
+          enable-commit-status: true
+          enable-pull-request-comment: false
+          enable-commit-comment: false
+          netlify-config-path: ./netlify.toml
+          alias: ${{ github.sha }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 1
