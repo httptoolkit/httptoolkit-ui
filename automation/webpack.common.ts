@@ -105,7 +105,7 @@ export default <Webpack.Configuration>{
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null,
             'GA_ID': null,
-            'COMMIT_REF': null
+            'UI_VERSION': null
         }),
         new InjectManifest({
             swSrc: path.join(SRC_DIR, 'services', 'update-worker.ts'),

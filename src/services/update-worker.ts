@@ -14,7 +14,7 @@ import { getServerVersion } from './server-api';
 import { lastServerVersion, versionSatisfies } from './service-versions';
 import { delay } from '../util/promise';
 
-const appVersion = process.env.COMMIT_REF || "Unknown";
+const appVersion = process.env.UI_VERSION || "Unknown";
 const SW_LOG = 'sw-log';
 localForage.config({ name: "httptoolkit", version: 1 });
 

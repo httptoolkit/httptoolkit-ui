@@ -6,7 +6,7 @@ import { lazyObservablePromise } from "../util/observable";
 import { getServerVersion, waitUntilServerReady } from "./server-api";
 import { getDesktopInjectedValue } from "./desktop-api";
 
-export const UI_VERSION = process.env.COMMIT_REF || "Unknown";
+export const UI_VERSION = process.env.UI_VERSION || "Unknown";
 
 export const desktopVersion = lazyObservablePromise(async () => {
     return getDesktopInjectedValue('httpToolkitDesktopVersion');
