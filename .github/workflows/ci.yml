@@ -23,15 +23,15 @@ jobs:
       # Build & run normal integration tests:
       - name: Build & test for draft release
         run: npm run test:integration
-        if: github.ref != 'ref/head/master'
+        if: github.ref != 'refs/heads/master'
 
       # Build with secrets & run integrations tests, on master only:
       - name: Build & test for production release
         run: npm run test:integration
-        if: github.ref == 'ref/head/master'
+        if: github.ref == 'refs/heads/master'
         env:
           GA_ID: ${{ secrets.GA_ID }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.GA_ID }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
       - uses: actions/upload-artifact@v2
@@ -41,7 +41,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Deploy ${{ (github.ref == 'ref/head/master' && 'to production') || 'preview' }}
+    name: Deploy ${{ (github.ref == 'refs/heads/master' && 'to production') || 'preview' }}
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: build
