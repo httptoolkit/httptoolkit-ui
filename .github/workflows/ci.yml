@@ -31,8 +31,10 @@ jobs:
         if: github.ref == 'refs/heads/master'
         env:
           GA_ID: ${{ secrets.GA_ID }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_ORG: http-toolkit
+          SENTRY_PROJECT: httptoolkit-ui
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - uses: actions/upload-artifact@v2
         with:
