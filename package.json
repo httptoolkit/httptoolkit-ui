@@ -11,6 +11,9 @@
   "scripts": {
     "prebuild": "rimraf dist/*",
     "build": "env-cmd -f ./automation/ts-node.env node --max_old_space_size=4096 node_modules/.bin/webpack --config ./automation/webpack.prod.ts",
+    "bundle-stats": "npm run bundle-stats:build && npm run bundle-stats:show",
+    "bundle-stats:build": "npm run build -- --no-devtool --profile --json | tail -n +14 > stats.json",
+    "bundle-stats:show": "webpack-bundle-analyzer ./stats.json",
     "start": "node-dev ./node_modules/.bin/httptoolkit-server start & npm run start:web",
     "start:web": "env-cmd -f ./automation/ts-node.env webpack-dev-server --config ./automation/webpack.dev.ts",
     "start:prod": "npm run build && static-server ./dist -o",
@@ -184,6 +187,7 @@
     "typescript-styled-plugin": "^0.15.0",
     "umd-compat-loader": "^2.1.1",
     "webpack": "^4.44.2",
+    "webpack-bundle-analyzer": "^4.3.0",
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.9.0",
     "webpack-merge": "^4.1.4",
