@@ -21,11 +21,13 @@ jobs:
       - run: npm run test:unit
 
       # Build & run normal integration tests:
-      - run: npm run test:integration
+      - name: Build & test for draft release
+        run: npm run test:integration
         if: github.ref != 'ref/head/master'
 
       # Build with secrets & run integrations tests, on master only:
-      - run: npm run test:integration
+      - name: Build & test for production release
+        run: npm run test:integration
         if: github.ref == 'ref/head/master'
         env:
           GA_ID: ${{ secrets.GA_ID }}
@@ -39,7 +41,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Deploy
+    name: Deploy ${{ (github.ref == 'ref/head/master' && 'to production') || 'preview' }}
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: build
