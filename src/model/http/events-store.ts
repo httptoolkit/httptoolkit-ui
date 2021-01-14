@@ -9,11 +9,11 @@ import { HarParseError } from 'har-validator';
 
 import {
     InputResponse,
-    FailedTlsRequest,
     InputTlsRequest,
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
+    CollectedEvent
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
@@ -53,8 +53,6 @@ type QueuedEvent = ({
 type OrphanableQueuedEvent =
     | { type: 'response', event: InputResponse }
     | { type: 'abort', event: InputInitiatedRequest };
-
-export type CollectedEvent = HttpExchange | FailedTlsRequest
 
 export class EventsStore {
 

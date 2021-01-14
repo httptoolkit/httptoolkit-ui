@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, HtkRequest, Html } from '../../types';
+import { Omit, HttpExchange, HtkRequest, Html } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 import { joinAnd } from '../../util';
 
-import { HttpExchange } from '../../model/http/exchange';
 import { TrafficSource } from '../../model/http/sources';
 import { getExchangeSummaryColour } from '../../model/http/exchange-colors';
 import { ApiExchange, Parameter } from '../../model/api/openapi';

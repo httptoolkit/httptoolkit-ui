@@ -4,13 +4,18 @@ import { observable } from 'mobx';
 import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
 
-import { HtkResponse, Headers, HtkRequest, MockttpSerializedBuffer } from '../../types';
+import {
+    HttpExchange,
+    HtkRequest,
+    HtkResponse,
+    Headers,
+    MockttpSerializedBuffer
+} from '../../types';
 import { byteLength } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';
 import { versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
-import { HttpExchange } from '../http/exchange';
 import { getStatusMessage } from '../http/http-docs';
 
 import { serializeAsTag } from '../serialization';

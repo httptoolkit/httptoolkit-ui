@@ -13,10 +13,13 @@ import * as uuid from 'uuid/v4';
 import * as serializr from 'serializr';
 import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuffer';
 
-import { MockttpBreakpointedRequest, MockttpBreakpointedResponse } from '../../types';
+import {
+    HttpExchange,
+    MockttpBreakpointedRequest,
+    MockttpBreakpointedResponse
+} from '../../types';
 import { lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
-import { HttpExchange } from '../http/exchange';
 
 import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';

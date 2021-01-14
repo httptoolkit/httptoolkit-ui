@@ -3,11 +3,10 @@ import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { Omit, BreakpointRequestResult, Headers } from '../../types';
+import { Omit, BreakpointRequestResult, HttpExchange } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
-import { HttpExchange } from '../../model/http/exchange';
 import { TrafficSource } from '../../model/http/sources';
 import { getExchangeSummaryColour } from '../../model/http/exchange-colors';
 

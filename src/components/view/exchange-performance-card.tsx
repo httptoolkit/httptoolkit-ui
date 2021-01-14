@@ -4,11 +4,15 @@ import { observer, inject } from 'mobx-react';
 import { get } from 'typesafe-get';
 
 import { styled } from '../../styles';
-import { Omit, ExchangeMessage } from '../../types';
+import {
+    Omit,
+    HttpExchange,
+    TimingEvents,
+    ExchangeMessage
+} from '../../types';
 import { asHeaderArray, joinAnd } from '../../util';
 import { Icon, WarningIcon, SuggestionIcon } from '../../icons';
 
-import { HttpExchange, TimingEvents } from '../../model/http/exchange';
 import { AccountStore } from '../../model/account/account-store';
 import { getReadableSize, testEncodings } from '../../model/http/bodies';
 import {

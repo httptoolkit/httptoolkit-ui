@@ -4,15 +4,13 @@ import { action, computed, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { HtkResponse } from '../../types';
+import { CollectedEvent, HtkResponse, HttpExchange } from '../../types';
 import { styled } from '../../styles';
 import { reportError } from '../../errors';
 
 import { getStatusColor } from '../../model/http/exchange-colors';
-import { HttpExchange } from '../../model/http/exchange';
 import { ApiExchange } from '../../model/api/openapi';
 import { UiStore } from '../../model/ui-store';
-import { CollectedEvent } from '../../model/http/events-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { buildRuleFromRequest } from '../../model/rules/rule-definitions';
 

@@ -6,8 +6,15 @@ import * as HarValidator from 'har-validator';
 
 import { lastHeader } from '../../util';
 import { ObservablePromise } from '../../util/observable';
-import { Headers, HtkRequest, HarRequest, HarResponse } from '../../types';
-import { HttpExchange, TimingEvents } from "./exchange";
+import {
+    Headers,
+    HtkRequest,
+    HarRequest,
+    HarResponse,
+    HttpExchange,
+    TimingEvents
+} from '../../types';
+
 import { UI_VERSION } from '../../services/service-versions';
 
 export type Har = HarFormat.Har;

@@ -9,10 +9,8 @@ import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
 import { Icon, WarningIcon } from '../../icons';
-import { FailedTlsRequest } from '../../types';
+import { CollectedEvent, HttpExchange, FailedTlsRequest } from '../../types';
 
-import { CollectedEvent } from '../../model/http/events-store';
-import { HttpExchange } from '../../model/http/exchange';
 import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
 
 import { filterProps } from '../component-utils';

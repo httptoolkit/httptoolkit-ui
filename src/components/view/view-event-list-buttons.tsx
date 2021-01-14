@@ -4,11 +4,11 @@ import * as dateFns from 'date-fns';
 import * as dedent from 'dedent';
 import * as Ajv from 'ajv';
 
+import { HttpExchange } from '../../types';
 import { saveFile, uploadFile, Ctrl } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
 import { EventsStore } from '../../model/http/events-store';
-import { HttpExchange } from '../../model/http/exchange';
 import { generateHar } from '../../model/http/har';
 import { reportError } from '../../errors';
 import { formatAjvError } from '../../util/json-schema';

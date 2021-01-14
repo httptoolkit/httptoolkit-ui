@@ -3,9 +3,9 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import { styled } from '../../styles';
+import { CollectedEvent } from '../../types';
 
-import { HttpExchange } from '../../model/http/exchange';
-import { CollectedEvent } from '../../model/http/events-store';
+import { isHttpExchange } from '../../model/http/exchange';
 import {
     FilterSet,
     SelectableSearchFilterClasses
@@ -81,10 +81,8 @@ export const ViewEventListFooter = styled(observer((props: {
     <ButtonsContainer>
         <PlayPauseButton />
         <ExportAsHarButton exchanges={
-            props.filteredEvents.filter(
-                // Drop TLS errors from HAR exports
-                (event): event is HttpExchange => 'request' in event
-            )
+            // Drop TLS errors from HAR exports
+            props.filteredEvents.filter(isHttpExchange)
         } />
         <ImportHarButton />
         <ClearAllButton

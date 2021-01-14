@@ -13,14 +13,14 @@ import {
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { WithInjected } from '../../types';
+import { WithInjected, CollectedEvent } from '../../types';
 import { styled } from '../../styles';
 import { useHotkeys, isEditable } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
-import { EventsStore, CollectedEvent } from '../../model/http/events-store';
+import { EventsStore } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { emptyFilterSet, FilterSet } from '../../model/filters/search-filters';
 

@@ -15,9 +15,8 @@ import {
 } from "../../../../src/model/filters/filter-matching";
 import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
 import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
-import { FailedTlsRequest } from '../../../../src/types';
+import { CollectedEvent, FailedTlsRequest } from '../../../../src/types';
 import { delay } from '../../../../src/util/promise';
-import { CollectedEvent } from '../../../../src/model/http/events-store';
 import { decodeBody } from '../../../../src/services/ui-worker-api';
 
 // Given an exact input for a filter, creates the filter and returns it

@@ -5,14 +5,13 @@ import { inject, observer } from "mobx-react";
 import * as HTTPSnippet from "httpsnippet";
 import dedent from 'dedent';
 
-import { Omit } from "../../types";
+import { Omit, HttpExchange } from "../../types";
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
 import { saveFile } from '../../util/ui';
 import { reportError } from '../../errors';
 
 import { AccountStore } from "../../model/account/account-store";
-import { HttpExchange } from "../../model/http/exchange";
 import { generateHarRequest, generateHar } from "../../model/http/har";
 
 import { ProHeaderPill, CardSalesPitch } from "../account/pro-placeholders";

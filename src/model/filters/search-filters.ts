@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { CollectedEvent } from '../http/events-store';
+import { CollectedEvent } from '../../types';
 import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../http/bodies';

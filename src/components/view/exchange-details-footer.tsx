@@ -2,10 +2,10 @@ import * as React from 'react';
 import { action, runInAction } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
+import { CollectedEvent } from '../../types';
 import { styled, css } from '../../styles';
 import { Ctrl } from '../../util/ui';
 
-import { CollectedEvent } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { RulesStore } from '../../model/rules/rules-store';
 import { buildRuleFromExchange } from '../../model/rules/rule-definitions';

@@ -1,5 +1,4 @@
 import type { ComponentClass } from 'react';
-import type { ObservableMap } from 'mobx';
 
 import type {
     InitiatedRequest as MockttpInitiatedRequest,
@@ -20,9 +19,10 @@ import type {
     SerializedBuffer as MockttpSerializedBuffer
 } from 'mockttp/dist/rules/handlers';
 
+import type { ObservablePromise } from './util/observable';
+import type { HttpExchange } from './model/http/exchange';
 import type { TrafficSource } from './model/http/sources';
 import type { ViewableContentType } from './model/http/content-types';
-import type { ObservablePromise } from './util/observable';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &
@@ -99,6 +99,10 @@ export type MessageBody = {
     cleanup(): void
 };
 
+export type { HttpExchange };
+export type CollectedEvent =
+    | HttpExchange
+    | FailedTlsRequest;
 export type ExchangeMessage = HtkRequest | HtkResponse;
 
 export {

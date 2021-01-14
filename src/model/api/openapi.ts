@@ -13,12 +13,17 @@ import type {
 } from 'openapi-directory';
 import * as Ajv from 'ajv';
 
-import { HtkResponse, HtkRequest, Html, ExchangeMessage } from "../../types";
+import {
+    HttpExchange,
+    ExchangeMessage,
+    HtkRequest,
+    HtkResponse,
+    Html
+} from "../../types";
 import { firstMatch, empty, lastHeader } from '../../util';
 import { formatAjvError } from '../../util/json-schema';
 import { reportError } from '../../errors';
 
-import { HttpExchange } from '../http/exchange';
 import { ApiMetadata } from './build-openapi';
 import { fromMarkdown } from '../markdown';
 

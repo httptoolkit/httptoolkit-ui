@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import { observable, computed, action, runInAction } from 'mobx';
 
 import {
+    CollectedEvent,
     HtkRequest,
     HtkResponse,
     Headers,
@@ -41,7 +42,9 @@ import {
 } from './exchange-breakpoint';
 import { reportError } from '../../errors';
 
-export { TimingEvents };
+export function isHttpExchange(event: CollectedEvent): event is HttpExchange {
+    return 'request' in event;
+}
 
 function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undefined  {
     try {
