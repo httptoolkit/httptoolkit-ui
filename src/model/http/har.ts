@@ -76,6 +76,7 @@ function asHarHeaders(headers: Headers) {
 function asHtkHeaders(headers: HarFormat.Header[]) {
     return _(headers)
         .keyBy((header) => header.name)
+        .mapKeys((_, headerName) => headerName.toLowerCase())
         .mapValues((header) => header.value)
         .value() as Headers;
 }
