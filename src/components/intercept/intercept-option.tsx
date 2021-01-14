@@ -184,10 +184,13 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             tabIndex={!isDisabled && !this.expanded ? 0 : undefined}
         >
             <BackgroundIcons>
-                { icons.map((iconProps) => <Icon
-                    size='8x'
-                    {...iconProps}
-                />) }
+                { icons.map((iconProps, i) =>
+                    <Icon
+                        key={i}
+                        size='8x'
+                        {...iconProps}
+                    />)
+                }
             </BackgroundIcons>
 
             <h1>{ interceptor.name }</h1>
