@@ -80,10 +80,7 @@ export const ViewEventListFooter = styled(observer((props: {
     />
     <ButtonsContainer>
         <PlayPauseButton />
-        <ExportAsHarButton exchanges={
-            // Drop TLS errors from HAR exports
-            props.filteredEvents.filter(isHttpExchange)
-        } />
+        <ExportAsHarButton events={props.filteredEvents} />
         <ImportHarButton />
         <ClearAllButton
             disabled={props.allEvents.length === 0}

@@ -12,17 +12,43 @@ import {
     HarRequest,
     HarResponse,
     HttpExchange,
-    TimingEvents
+    CollectedEvent,
+    TimingEvents,
+    InputTlsRequest,
+    FailedTlsRequest
 } from '../../types';
 
 import { UI_VERSION } from '../../services/service-versions';
+import { isHttpExchange } from './exchange';
 
-export type Har = HarFormat.Har;
+export interface Har extends HarFormat.Har {
+    log: HarLog;
+}
+
+interface HarLog extends HarFormat.Log {
+    // Custom field to expose failed TLS connections
+    _tlsErrors: HarTlsErrorEntry[];
+}
+
 export type HarEntry = HarFormat.Entry;
+export type HarTlsErrorEntry = {
+    startedDateTime: string;
+    time: number; // Floating-point high-resolution duration, in ms
+    hostname?: string; // Undefined if connection fails before hostname received
+    cause: FailedTlsRequest['failureCause'];
 
-export async function generateHar(exchanges: HttpExchange[]): Promise<Har> {
+    clientIPAddress: string;
+    clientPort: number;
+}
+
+export async function generateHar(events: CollectedEvent[]): Promise<Har> {
+    const [exchanges, errors] = _.partition(events, isHttpExchange) as [
+        HttpExchange[], FailedTlsRequest[]
+    ];
+
     const sourcePages = getSourcesAsHarPages(exchanges);
     const entries = await Promise.all(exchanges.map(generateHarEntry));
+    const errorEntries = errors.map(generateHarTlsError);
 
     return {
         log: {
@@ -32,7 +58,8 @@ export async function generateHar(exchanges: HttpExchange[]): Promise<Har> {
                 version: UI_VERSION
             },
             pages: sourcePages,
-            entries: entries
+            entries,
+            _tlsErrors: errorEntries
         }
     };
 }
@@ -236,10 +263,32 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
     };
 }
 
+function generateHarTlsError(event: FailedTlsRequest): HarTlsErrorEntry {
+    const timingEvents = event.timingEvents ?? {};
+
+    const startTime = 'startTime' in timingEvents
+        ? timingEvents.startTime
+        : new Date();
+
+    const failureDuration = 'failureTimestamp' in timingEvents
+        ? timingEvents.failureTimestamp - timingEvents.connectTimestamp
+        : 0;
+
+    return {
+        startedDateTime: dateFns.format(startTime),
+        time: failureDuration,
+        cause: event.failureCause,
+        hostname: event.hostname,
+        clientIPAddress: event.remoteIpAddress,
+        clientPort: event.remotePort
+    };
+}
+
 export type ParsedHar = {
     requests: HarRequest[],
     responses: HarResponse[],
-    aborts: HarRequest[]
+    aborts: HarRequest[],
+    tlsErrors: InputTlsRequest[]
 };
 
 const sumTimings = (
@@ -253,13 +302,14 @@ const sumTimings = (
     });
 
 export async function parseHar(harContents: unknown): Promise<ParsedHar> {
-    const har = await HarValidator.har(cleanRawHarData(harContents));
+    const har = await HarValidator.har(cleanRawHarData(harContents)) as Har;
 
     const baseId = _.random(1_000_000) + '-';
 
     const requests: HarRequest[] = [];
     const responses: HarResponse[] = [];
     const aborts: HarRequest[] = [];
+    const tlsErrors: InputTlsRequest[] = [];
 
     har.log.entries.forEach((entry, i) => {
         const id = baseId + i;
@@ -295,7 +345,24 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
         }
     });
 
-    return { requests, responses, aborts };
+    if (har.log._tlsErrors) {
+        har.log._tlsErrors.forEach((entry, i) => {
+            tlsErrors.push({
+                failureCause: entry.cause,
+                hostname: entry.hostname,
+                remoteIpAddress: entry.clientIPAddress,
+                remotePort: entry.clientPort,
+                tags: [],
+                timingEvents: {
+                    startTime: dateFns.parse(entry.startedDateTime).getTime(),
+                    connectTimestamp: 0,
+                    failureTimestamp: entry.time
+                }
+            });
+        });
+    }
+
+    return { requests, responses, aborts, tlsErrors };
 }
 
 // Mutatively cleans & returns the HAR, to tidy up irrelevant but potentially

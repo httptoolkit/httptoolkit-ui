@@ -312,22 +312,36 @@ export class EventsStore {
     }
 
     async loadFromHar(harContents: {}) {
-        const { requests, responses, aborts } = await parseHar(harContents)
-            .catch((harParseError: HarParseError) => {
-                // Log all suberrors, for easier reporting & debugging.
-                // This does not include HAR data - only schema errors like
-                // 'bodySize is missing' at 'entries[1].request'
-                harParseError.errors.forEach((error) => {
-                    console.log(error);
-                });
-                throw harParseError;
+        const {
+            requests,
+            responses,
+            aborts,
+            tlsErrors
+        } = await parseHar(harContents).catch((harParseError: HarParseError) => {
+            // Log all suberrors, for easier reporting & debugging.
+            // This does not include HAR data - only schema errors like
+            // 'bodySize is missing' at 'entries[1].request'
+            harParseError.errors.forEach((error) => {
+                console.log(error);
             });
+            throw harParseError;
+        });
 
-        // Arguably we could call addRequest/setResponse directly, but this is a little
-        // nicer just in case the UI thread is already under strain.
-        requests.forEach(r => this.eventQueue.push({ type: 'request', event: r }));
-        responses.forEach(r => this.eventQueue.push({ type: 'response', event: r }));
-        aborts.forEach(r => this.eventQueue.push({ type: 'abort', event: r }));
+        // We now take each of these input items, and put them on the queue to be added
+        // to the UI like any other seen request data. Arguably we could call addRequest &
+        // setResponse etc directly, but this is nicer if the UI thread is already under strain.
+
+        // First, we put the request & TLS error events together in order:
+        this.eventQueue.push(..._.sortBy([
+            ...requests.map(r => ({ type: 'request' as const, event: r })),
+            ...tlsErrors.map(r => ({ type: 'tls-client-error' as const, event: r }))
+        ], e => e.event.timingEvents.startTime));
+
+        // Then we add responses & aborts. They just update requests, so order doesn't matter:
+        this.eventQueue.push(
+            ...responses.map(r => ({ type: 'response' as const, event: r })),
+            ...aborts.map(r => ({ type: 'abort' as const, event: r }))
+        );
 
         this.queueEventFlush();
     }

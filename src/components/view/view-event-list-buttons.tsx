@@ -4,7 +4,7 @@ import * as dateFns from 'date-fns';
 import * as dedent from 'dedent';
 import * as Ajv from 'ajv';
 
-import { HttpExchange } from '../../types';
+import { CollectedEvent } from '../../types';
 import { saveFile, uploadFile, Ctrl } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
@@ -29,7 +29,7 @@ export const ClearAllButton = observer((props: {
 export const ExportAsHarButton = inject('accountStore')(observer((props: {
     className?: string,
     accountStore?: AccountStore,
-    exchanges: HttpExchange[]
+    events: CollectedEvent[]
 }) => {
     const { isPaidUser } = props.accountStore!;
 
@@ -43,10 +43,10 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
                     'to save for later or share with others'
                 )
         }
-        disabled={!isPaidUser || props.exchanges.length === 0}
+        disabled={!isPaidUser || props.events.length === 0}
         onClick={async () => {
             const harContent = JSON.stringify(
-                await generateHar(props.exchanges)
+                await generateHar(props.events)
             );
             const filename = `HTTPToolkit_${
                 dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')

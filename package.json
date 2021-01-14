@@ -92,7 +92,7 @@
     "mobx-react": "^5.4.0",
     "mobx-shallow-undo": "^1.0.0",
     "mobx-utils": "^5.1.0",
-    "mockttp": "^1.0.2",
+    "mockttp": "^1.0.5",
     "monaco-editor": "^0.19.3",
     "node-forge": "^0.10.0",
     "openapi-directory": "^1.1.3",
