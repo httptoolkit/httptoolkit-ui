@@ -231,7 +231,7 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
     const sendDuration = 'bodyReceivedTimestamp' in timingEvents
         ? timingEvents.bodyReceivedTimestamp! - timingEvents.startTimestamp
         : 0;
-    const waitDuration = 'headersSentTimestamp' in timingEvents
+    const waitDuration = 'bodyReceivedTimestamp' in timingEvents && 'headersSentTimestamp' in timingEvents
         ? timingEvents.headersSentTimestamp! - timingEvents.bodyReceivedTimestamp!
         : 0;
     const receiveDuration = 'responseSentTimestamp' in timingEvents
