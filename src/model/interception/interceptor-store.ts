@@ -45,7 +45,22 @@ export class InterceptorStore {
         const serverVersion = await serverVersionPromise;
 
         runInAction(() => {
-            this.interceptors = getInterceptOptions(serverInterceptors, this.accountStore, serverVersion);
+            const supportedInterceptors = getInterceptOptions(
+                serverInterceptors,
+                this.accountStore,
+                serverVersion
+            );
+
+            // Quick patch for a bug in existing-chrome for server <= 1.1.2 which incorrectly
+            // always reports existing Chrome as activable:
+            if (
+                !supportedInterceptors['fresh-chrome'].isActivable &&
+                supportedInterceptors['existing-chrome'].isActivable
+            ) {
+                supportedInterceptors['existing-chrome'].isActivable = false;
+            }
+
+            this.interceptors = supportedInterceptors;
         });
     }
 
