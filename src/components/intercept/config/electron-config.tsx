@@ -71,6 +71,7 @@ const InterceptButton = styled(SecondaryButton)`
     padding: 10px 24px;
 
     width: 100%;
+    word-break: break-word;
 `;
 
 const ForgetPathButton = styled(UnstyledButton)`
