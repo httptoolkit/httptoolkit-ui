@@ -15,7 +15,6 @@ import { setUpAndroidCertificateRule } from './android-device-config';
 
 import { Button } from '../../common/inputs';
 import { Icon } from '../../../icons';
-import { trackEvent } from '../../../tracking';
 
 const ConfigContainer = styled.div`
     user-select: text;
@@ -84,7 +83,8 @@ class AndroidAdbConfig extends React.Component<{
 
     interceptor: Interceptor,
     activateInterceptor: (options: { deviceId: string }) => Promise<void>,
-    showRequests: () => void,
+    reportStarted: () => void,
+    reportSuccess: (options?: { showRequests?: boolean }) => void,
     closeSelf: () => void
 }> {
 
@@ -95,24 +95,10 @@ class AndroidAdbConfig extends React.Component<{
     @observable private inProgressIds: string[] = [];
 
     async componentDidMount() {
-        const rulesStore = this.props.rulesStore!;
-        const eventsStore = this.props.eventsStore!;
-
-        setUpAndroidCertificateRule(
-            this.props.interceptor.id,
-            this.props.proxyStore!.certContent!,
-            rulesStore,
-            eventsStore,
-            this.props.showRequests
-        );
-
         // If there's only one device, just connect immediately and silently
         if (this.deviceIds.length === 1) {
-            this.props.activateInterceptor({
-                deviceId: this.deviceIds[0]
-            });
+            this.interceptDevice(this.deviceIds[0]);
             this.props.closeSelf();
-            return;
         }
     }
 
@@ -153,16 +139,42 @@ class AndroidAdbConfig extends React.Component<{
 
     @action.bound
     interceptDevice(deviceId: string) {
-        const activationPromise = this.props.activateInterceptor({
-            deviceId: deviceId
-        });
+        const {
+            inProgressIds,
+            onSuccess,
+            props: {
+                proxyStore,
+                rulesStore,
+                eventsStore,
+                reportStarted,
+                activateInterceptor
+            }
+        } = this;
 
-        this.inProgressIds.push(deviceId);
+        // Ensure the config rule is in place before we start any activation. This listens for the
+        // next config request, and uses that to track succesful setup (by calling onSuccess).
+        setUpAndroidCertificateRule(
+            proxyStore!.certContent!,
+            rulesStore!,
+            eventsStore!,
+            onSuccess
+        );
+
+        reportStarted();
+        const activationPromise = activateInterceptor({ deviceId: deviceId });
+
+        inProgressIds.push(deviceId);
 
         activationPromise.finally(action(() => {
-            _.pull(this.inProgressIds, deviceId);
+            _.pull(inProgressIds, deviceId);
         }));
     }
+
+    onSuccess = () => {
+        this.props.reportSuccess({
+            showRequests: this.deviceIds.length <= 1
+        });
+    };
 
 }
 

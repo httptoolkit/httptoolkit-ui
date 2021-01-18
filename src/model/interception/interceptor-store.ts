@@ -1,6 +1,5 @@
 import { observable, runInAction, flow, action } from "mobx";
 
-import { reportError } from "../../errors";
 import { lazyObservablePromise } from "../../util/observable";
 
 import { ProxyStore } from "../proxy-store";

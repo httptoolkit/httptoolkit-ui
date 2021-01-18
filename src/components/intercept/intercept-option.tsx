@@ -25,8 +25,18 @@ interface InterceptOptionProps {
 
 type InterceptorConfigComponent = React.ComponentType<{
     interceptor: Interceptor,
-    activateInterceptor: (options?: any) => Promise<any>,
-    showRequests: () => void,
+    // Custom config UIs should call this to activate the interceptor. This just sends the request,
+    // with no side effects except check for updated interceptor state afterwards.
+    activateInterceptor: (activationOptions?: any) => Promise<any>,
+    // This should be called when each activation is considered started (i.e. after any required
+    // user input or confirmation).
+    reportStarted: () => void,
+    // This should be called when each activation is considered successfully completed. If
+    // showRequests is not explicitly set to false, it will jump to the View page.
+    reportSuccess: (options?: { showRequests?: boolean }) => void,
+    // This should be called to hide the custom UI again. Mainly useful if interception is cancelled,
+    // or the UI deems itself unnecessary. The UI is never closed automatically, but reportSuccess
+    // without showRequests false will jump to the View page, giving similar results.
     closeSelf: () => void
 }>
 
@@ -160,8 +170,13 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
     }
 
     render() {
-        const { expanded } = this;
-        const { interceptor, index, showRequests } = this.props;
+        const {
+            expanded,
+            onActivationStarted,
+            activateInterceptor,
+            onActivationSuccessful
+        } = this;
+        const { interceptor, index } = this.props;
 
         const isDisabled = !interceptor.isActivable;
         const { uiConfig } = interceptor;
@@ -200,8 +215,9 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                     <CloseButton onClose={this.onClose} />
                     <ConfigComponent
                         interceptor={interceptor}
-                        activateInterceptor={this.activateInterceptor}
-                        showRequests={showRequests}
+                        activateInterceptor={activateInterceptor}
+                        reportStarted={onActivationStarted}
+                        reportSuccess={onActivationSuccessful}
                         closeSelf={this.onClose}
                     />
                 </>
@@ -226,22 +242,51 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         </InterceptOptionCard>;
     }
 
-    activateInterceptor = (options?: any) => {
-        const { interceptor, interceptorStore } = this.props;
-        return interceptorStore!.activateInterceptor(interceptor.id, options);
-    }
-
-    @action.bound
-    onClick() {
-        const { interceptor, showRequests } = this.props;
-
+    onActivationStarted = () => {
         trackEvent({
             category: 'Interceptors',
             action: 'Activated',
-            label: interceptor.id
+            label: this.props.interceptor.id
+        });
+    };
+
+    activateInterceptor = (activationOptions = {}) => {
+        const { interceptor, interceptorStore } = this.props;
+        return interceptorStore!.activateInterceptor(interceptor.id, activationOptions);
+    };
+
+    onActivationSuccessful = (options: {
+        showRequests?: boolean
+    } = {}) => {
+        trackEvent({
+            category: 'Interceptors',
+            action: 'Successfully Activated',
+            label: this.props.interceptor.id
         });
 
-        if (!interceptor.isActivable) return;
+        // Some interceptors don't switch to show the requests, e.g. if the UI shows a list
+        // of options to intercept, in case the user wants to select multiple options.
+        if (options.showRequests !== false) {
+            this.props.showRequests();
+        }
+    };
+
+    @action.bound
+    onClick() {
+        const {
+            onActivationStarted,
+            activateInterceptor,
+            onActivationSuccessful
+        } = this;
+        const { interceptor } = this.props;
+
+        if (interceptor.inProgress) return;
+
+        if (!interceptor.isActivable) {
+            // Track that somebody *tried* to activate it
+            onActivationStarted();
+            return;
+        }
 
         if (interceptor.uiConfig) {
             this.expanded = true;
@@ -252,19 +297,10 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                 });
             });
         } else {
-            this.activateInterceptor()
-                .then((successful) => {
-                    if (successful) {
-                        trackEvent({
-                            category: 'Interceptors',
-                            action: 'Successfully Activated',
-                            label: interceptor.id
-                        });
-
-                        showRequests();
-                    }
-                })
-                .catch((e) => reportError(e));
+            onActivationStarted();
+            activateInterceptor()
+            .then(() => onActivationSuccessful())
+            .catch((e) => reportError(e));
         }
     }
 

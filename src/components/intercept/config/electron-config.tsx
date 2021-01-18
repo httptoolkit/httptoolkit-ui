@@ -125,8 +125,9 @@ function getReadablePath(path: string) {
 @observer
 class ElectronConfig extends React.Component<{
     interceptor: Interceptor,
-    activateInterceptor: (options: { pathToApplication: string }) => Promise<{ port: number }>,
-    showRequests: () => void,
+    activateInterceptor: (options: { pathToApplication: string }) => Promise<void>,
+    reportStarted: () => void,
+    reportSuccess: (options?: { showRequests?: boolean }) => void,
     closeSelf: () => void,
     uiStore?: UiStore
 }> {
@@ -147,25 +148,20 @@ class ElectronConfig extends React.Component<{
             return;
         }
 
-        const { activateInterceptor, showRequests } = this.props;
-
-        activateInterceptor({ pathToApplication }).then(action(() => {
+        this.runApplication(pathToApplication)
+        .then(() => {
             // Activated successfully! Add it to the list & jump to /view
             this.props.uiStore!.rememberElectronPath(pathToApplication);
-            showRequests();
-
-            trackEvent({
-                category: 'Interceptors',
-                action: 'Successfully Activated',
-                label: this.props.interceptor.id
-            });
-        }));
+        });
     }
 
-    async rerunApplication(pathToApplication: string) {
-        const { activateInterceptor, showRequests } = this.props;
-        activateInterceptor({ pathToApplication }).then(() => {
-            showRequests();
+    async runApplication(pathToApplication: string) {
+        const { activateInterceptor, reportStarted, reportSuccess } = this.props;
+
+        reportStarted(); // 'Started' when you pick an app, not when we ask you to pick one.
+        activateInterceptor({ pathToApplication })
+        .then(() => {
+            reportSuccess();
         }).catch(() => {
             this.props.uiStore!.forgetElectronPath(pathToApplication);
         });
@@ -206,7 +202,7 @@ class ElectronConfig extends React.Component<{
             { previousElectronAppPaths.length > 0 && <Hr /> }
 
             { previousElectronAppPaths.map((path) => <RememberedOption key={path}>
-                <InterceptButton title={path} onClick={() => this.rerunApplication(path)}>
+                <InterceptButton title={path} onClick={() => this.runApplication(path)}>
                     Start { getReadablePath(path) }
                 </InterceptButton>
                 <ForgetPathButton onClick={() => forgetElectronPath(path)}>

@@ -10,43 +10,49 @@ import { Interceptor } from '../../../model/interception/interceptors';
 @observer
 class ExistingBrowserConfig extends React.Component<{
     interceptor: Interceptor,
-    activateInterceptor: (options?: { closeConfirmed: true }) => Promise<void>,
-    showRequests: () => void,
+    activateInterceptor: (
+        options: { closeConfirmed?: true },
+        shouldTrackEvent?: false
+    ) => Promise<void>,
+    reportStarted: () => void,
+    reportSuccess: (options?: { showRequests?: boolean }) => void,
     closeSelf: () => void
 }> {
 
     @observable serverPort?: number;
 
     async componentDidMount() {
-        this.props.closeSelf(); // We immediately unmount, but continue activating:
+        const { activateInterceptor, reportStarted, reportSuccess, closeSelf } = this.props;
+        closeSelf(); // We immediately unmount, but continue activating:
 
         try {
             // Try to activate, assuming the browser isn't currently open:
-            await this.props.activateInterceptor();
+            await activateInterceptor({}, false);
+
+            // Only it runs without confirmation does this count as an activation
+            reportStarted();
         } catch (error) {
-            if (error.metadata?.closeConfirmRequired === true) {
-                // If the browser is open, confirm that we can kill & restart it first:
-                const confirmed = confirm(dedent`
-                    Your browser is currently open, and needs to be
-                    restarted to enable interception. Restart it now?
-                `.replace('\n', ' '));
-                if (confirmed) {
-                    await this.props.activateInterceptor({ closeConfirmed: true });
-                } else {
-                    // If cancelled, we silently do nothing
-                    return;
-                }
-            } else {
+            if (!error.metadata || error.metadata.closeConfirmRequired !== true) {
+                // This is a real error, not a confirmation requirement.
+
+                reportStarted(); // Track that this started, before it fails
                 throw error;
             }
+
+            // If the browser is open, confirm that we can kill & restart it first:
+            const confirmed = confirm(dedent`
+                Your browser is currently open, and needs to be
+                restarted to enable interception. Restart it now?
+            `.replace('\n', ' '));
+
+            // If cancelled, we silently do nothing
+            if (!confirmed) return;
+
+            reportStarted();
+            await activateInterceptor({ closeConfirmed: true });
         }
 
-        this.props.showRequests();
-        trackEvent({
-            category: 'Interceptors',
-            action: 'Successfully Activated',
-            label: this.props.interceptor.id
-        });
+        reportSuccess();
     }
 
     render() {

@@ -25,14 +25,18 @@ const CopyIconButton = styled(IconButton)`
 
 export const CopyButtonIcon = (p: {
     className?: string,
-    content: string
+    content: string,
+    onClick?: () => void
 }) => clipboardSupported
     ? <CopyIconButton
-            title="Copy this to your clipboard"
-            className={p.className}
-            icon={['far', 'copy']}
-            onClick={() => copyToClipboard(p.content)}
-        />
+        title="Copy this to your clipboard"
+        className={p.className}
+        icon={['far', 'copy']}
+        onClick={() => {
+            copyToClipboard(p.content);
+            if (p.onClick) p.onClick();
+        }}
+    />
     : null;
 
 export const CopyButtonPill = (p: { content: string, children?: React.ReactNode }) =>

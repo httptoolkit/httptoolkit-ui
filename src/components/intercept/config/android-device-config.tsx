@@ -9,7 +9,6 @@ import {
 } from 'mockttp';
 
 import { styled } from '../../../styles';
-import { trackEvent } from '../../../tracking';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
@@ -67,18 +66,17 @@ function urlSafeBase64(content: string) {
         .replace('/', '_');
 }
 
-function hasSeenConfigRequests(eventsStore: EventsStore) {
-    return _.some(eventsStore.exchanges, (exchange) =>
+function getConfigRequestIds(eventsStore: EventsStore) {
+    return eventsStore.exchanges.filter((exchange) =>
         exchange.request.url === 'http://android.httptoolkit.tech/config'
-    );
+    ).map(e => e.id);
 }
 
 export function setUpAndroidCertificateRule(
-    interceptorId: string,
     certContent: string,
     rulesStore: RulesStore,
     eventsStore: EventsStore,
-    showRequests: () => void
+    onNextConfigRequest: () => void
 ) {
     rulesStore.ensureRuleExists({
         id: 'default-android-certificate',
@@ -97,20 +95,18 @@ export function setUpAndroidCertificateRule(
         })
     });
 
-    // If there are no /config requests collected, wait until one appears, and
-    // then jump to the requests. The goal is that first setup is intuitive, but
-    // connecting more devices later if you want multiple devices isn't too annoying.
-    const neverSeenConfigRequest = !hasSeenConfigRequests(eventsStore);
+    // When the next Android config request comes in:
+    const previousConfigRequestIds = getConfigRequestIds(eventsStore);
     when(() =>
-        hasSeenConfigRequests(eventsStore)
+        _.difference(
+            getConfigRequestIds(eventsStore),
+            previousConfigRequestIds
+        ).length > 0
     ).then(() => {
-        if (neverSeenConfigRequest) showRequests();
-
-        trackEvent({
-            category: 'Interceptors',
-            action: 'Successfully Activated',
-            label: interceptorId
-        });
+        // In effect, we treat this as 'success' for Android. That's not quite
+        // true: we just know the device is running the app and can connect to
+        // us, but cert setup or VPN activation could still fail in-app anyway!
+        onNextConfigRequest();
     });
 }
 
@@ -123,10 +119,13 @@ class AndroidConfig extends React.Component<{
     rulesStore?: RulesStore,
     eventsStore?: EventsStore,
 
-    interceptor: Interceptor,
-    activateInterceptor: () => Promise<void>, // Not used, but required for types
-    showRequests: () => void,
+    reportStarted: () => void,
+    reportSuccess: (options?: { showRequests?: boolean }) => void,
     closeSelf: () => void
+
+    // Not used, but required for types:
+    interceptor: Interceptor,
+    activateInterceptor: () => Promise<void>
 }> {
 
     async componentDidMount() {
@@ -134,16 +133,24 @@ class AndroidConfig extends React.Component<{
         const eventsStore = this.props.eventsStore!;
         const proxyStore = this.props.proxyStore!;
 
+        const { reportStarted, reportSuccess } = this.props;
+
         setUpAndroidCertificateRule(
-            this.props.interceptor.id,
-            this.props.proxyStore!.certContent!,
+            proxyStore!.certContent!,
             rulesStore,
             eventsStore,
-            this.props.showRequests
+            // Jump to requests only the first time, so it's not too inconvenient
+            // if you want to connect many devices at the same time:
+            getConfigRequestIds(eventsStore).length === 0
+                ? reportSuccess
+                : () => reportSuccess({ showRequests: false })
         );
 
         // Just in case the network addresses have changed:
         proxyStore.refreshNetworkAddresses();
+
+        // We consider activate attempted once you show the QR code
+        reportStarted();
     }
 
     render() {

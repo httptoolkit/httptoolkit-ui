@@ -1,24 +1,27 @@
 import * as React from 'react';
-import { observer } from 'mobx-react';
-import { observable, runInAction, computed, when } from 'mobx';
+import { disposeOnUnmount, inject, observer } from 'mobx-react';
+import { observable, runInAction, computed, when, action } from 'mobx';
 
 import { styled, css } from '../../../styles';
-import { trackEvent } from '../../../tracking';
 
+import { InterceptorStore } from '../../../model/interception/interceptor-store';
 import { Interceptor } from '../../../model/interception/interceptors';
 
 import { CopyButtonIcon } from '../../common/copy-button';
 
-const CopyableCommand = styled((p) =>
+const CopyableCommand = styled((p: {
+    className?: string;
+    onCopy: () => void;
+    children: string;
+    disabled: boolean;
+}) =>
     <div className={p.className}>
-        <code>{ p.children }</code>
-        <CopyButtonIcon content={ p.children } />
+        <code onCopy={p.onCopy}>
+            { p.children }
+        </code>
+        <CopyButtonIcon onClick={p.onCopy} content={p.children} />
     </div>
-)<{
-    className?: string,
-    disabled: boolean,
-    children: string
-}>`
+)`
     display: inline-block;
     margin: 20px auto;
 
@@ -66,19 +69,32 @@ const ConfigContainer = styled.div`
     user-select: text;
 `;
 
+@inject('interceptorStore')
 @observer
 class ExistingTerminalConfig extends React.Component<{
     interceptor: Interceptor,
     activateInterceptor: () => Promise<{ port: number }>,
-    showRequests: () => void,
-    closeSelf: () => void
+    reportStarted: () => void,
+    reportSuccess: (options?: { showRequests?: boolean }) => void,
+    closeSelf: () => void,
+    interceptorStore?: InterceptorStore
 }> {
+
+    @observable reportedActivated = false;
 
     @observable serverPort?: number;
 
     @computed
     get interceptCommand() {
         return `. <(curl -sS localhost:${this.serverPort || '....'}/setup)`;
+    }
+
+    @action.bound
+    reportActivated() {
+        if (this.reportedActivated) return;
+
+        this.reportedActivated = true;
+        this.props.reportStarted();
     }
 
     async componentDidMount() {
@@ -89,16 +105,19 @@ class ExistingTerminalConfig extends React.Component<{
         });
 
         if (!this.props.interceptor.isActive) {
-            // When a terminal is first activated for real, jump to the requests
-            when(() => this.props.interceptor.isActive, () => {
-                this.props.showRequests();
+            // While we wait for activation, increase the interval refresh frequency
+            const intervalId = setInterval(() => {
+                this.props.interceptorStore!.refreshInterceptors()
+            }, 2000);
+            disposeOnUnmount(this, () => clearInterval(intervalId));
 
-                trackEvent({
-                    category: 'Interceptors',
-                    action: 'Successfully Activated',
-                    label: this.props.interceptor.id
-                });
+            when(() => this.props.interceptor.isActive, () => {
+                this.reportActivated(); // Mark as activated, if it wasn't already
+                this.props.reportSuccess();
+                clearInterval(intervalId);
             });
+        } else {
+            this.reportedActivated = true;
         }
     }
 
@@ -108,7 +127,10 @@ class ExistingTerminalConfig extends React.Component<{
                 Run the command below in any terminal on this machine, to immediately
                 enable interception for all new processes started there.
             </p>
-            <CopyableCommand disabled={this.serverPort === undefined}>
+            <CopyableCommand
+                onCopy={this.reportActivated}
+                disabled={this.serverPort === undefined}
+            >
                 { this.interceptCommand }
             </CopyableCommand>
         </ConfigContainer>;
