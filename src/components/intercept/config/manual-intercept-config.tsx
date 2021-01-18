@@ -46,6 +46,14 @@ const InstructionsStep = styled.div`
     strong {
         font-weight: bold;
     }
+
+    a[href] {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
+    }
 `;
 
 const Nowrap = styled.span`
