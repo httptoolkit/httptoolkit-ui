@@ -5,7 +5,6 @@ import { observer } from 'mobx-react';
 import { styled } from '../../styles';
 import { CollectedEvent } from '../../types';
 
-import { isHttpExchange } from '../../model/http/exchange';
 import {
     FilterSet,
     SelectableSearchFilterClasses
@@ -65,6 +64,12 @@ export const ViewEventListFooter = styled(observer((props: {
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[],
 
+    // We track this separately because it's not 100% accurate to show it
+    // live from the events above, because filteredEvents is debounced. If
+    // we're not careful, we show 9/10 at times just because filtering
+    // hasn't been run against the latest events quite yet.
+    filteredCount: [filtered: number, fromTotal: number],
+
     searchInputRef?: React.Ref<HTMLInputElement>
 }) => <div className={props.className}>
     <SearchFilter
@@ -75,8 +80,8 @@ export const ViewEventListFooter = styled(observer((props: {
         searchInputRef={props.searchInputRef}
     />
     <RequestCounter
-        eventCount={props.allEvents.length}
-        filteredEventCount={props.filteredEvents.length}
+        filteredEventCount={props.filteredCount[0]}
+        eventCount={props.filteredCount[1]}
     />
     <ButtonsContainer>
         <PlayPauseButton />

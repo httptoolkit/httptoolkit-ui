@@ -118,13 +118,22 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @debounceComputed(10) // Debounce slightly - most important for body filtering performance
-    get filteredEvents() {
+    get filteredEventState(): {
+        filteredEvents: CollectedEvent[],
+        filteredEventCount: [filtered: number, fromTotal: number]
+    } {
         const { events } = this.props.eventsStore;
 
-        if (this.currentSearchFilters.length === 0) return events;
-        else return events.filter((event) =>
-            this.currentSearchFilters.every((f) => f.matches(event))
-        );
+        const filteredEvents = (this.currentSearchFilters.length === 0)
+            ? events
+            : events.filter((event) =>
+                this.currentSearchFilters.every((f) => f.matches(event))
+            );
+
+        return {
+            filteredEvents,
+            filteredEventCount: [filteredEvents.length, events.length]
+        };
     }
 
     @computed
@@ -183,11 +192,10 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     render(): JSX.Element {
-        const {
-            events,
-            isPaused
-        } = this.props.eventsStore;
+        const { isPaused, events } = this.props.eventsStore;
         const { certPath } = this.props.proxyStore;
+
+        const { filteredEvents, filteredEventCount } = this.filteredEventState;
 
         let rightPane: JSX.Element;
         if (!this.selectedEvent) {
@@ -230,13 +238,14 @@ class ViewPage extends React.Component<ViewPageProps> {
                     <ViewEventListFooter // Footer above the list to ensure correct tab order
                         searchInputRef={this.searchInputRef}
                         allEvents={events}
-                        filteredEvents={this.filteredEvents}
+                        filteredEvents={filteredEvents}
+                        filteredCount={filteredEventCount}
                         onFiltersConsidered={this.onSearchFiltersConsidered}
                         onClear={this.onClear}
                     />
                     <ViewEventList
                         events={events}
-                        filteredEvents={this.filteredEvents}
+                        filteredEvents={filteredEvents}
                         selectedEvent={this.selectedEvent}
                         isPaused={isPaused}
 
@@ -274,21 +283,23 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     moveSelection(distance: number) {
-        if (this.filteredEvents.length === 0) return;
+        const { filteredEvents } = this.filteredEventState;
+
+        if (filteredEvents.length === 0) return;
 
         const currentIndex = this.selectedEvent
-            ? _.findIndex(this.filteredEvents, { id: this.selectedEvent.id })
+            ? _.findIndex(filteredEvents, { id: this.selectedEvent.id })
             : -1;
 
         const targetIndex = (currentIndex === -1)
-            ? (distance >= 0 ? 0 : this.filteredEvents.length - 1) // Jump to the start or end
+            ? (distance >= 0 ? 0 : filteredEvents.length - 1) // Jump to the start or end
             : _.clamp(  // Move, but clamped to valid values
                 currentIndex + distance,
                 0,
-                this.filteredEvents.length - 1
+                filteredEvents.length - 1
             );
 
-        const targetEvent = this.filteredEvents[targetIndex];
+        const targetEvent = filteredEvents[targetIndex];
         this.onSelected(targetEvent);
         this.onScrollToEvent(targetEvent);
     }
@@ -300,18 +311,20 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onDelete(event: CollectedEvent) {
+        const { filteredEvents } = this.filteredEventState;
+
         // Prompt before deleting pinned events:
         if (event.pinned && !confirm("Delete this pinned exchange?")) return;
 
-        const rowIndex = this.filteredEvents.indexOf(event);
+        const rowIndex = filteredEvents.indexOf(event);
         const wasSelected = event === this.selectedEvent;
 
         // If you delete the selected event, select the next event in the list
-        if (rowIndex !== -1 && wasSelected && this.filteredEvents.length > 0) {
+        if (rowIndex !== -1 && wasSelected && filteredEvents.length > 0) {
             // Because navigate is async, we can't delete & change selection together.
             // Instead, we update the selection now, and delete the event later.
-            const nextEvent = this.filteredEvents[
-                Math.min(rowIndex + 1, this.filteredEvents.length - 1)
+            const nextEvent = filteredEvents[
+                Math.min(rowIndex + 1, filteredEvents.length - 1)
             ];
 
             this.onSelected(nextEvent);
