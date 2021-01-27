@@ -32,6 +32,7 @@ type ErrorType =
     | 'wrong-host'
     | 'tls-error'
     | 'host-not-found'
+    | 'host-unreachable'
     | 'dns-error'
     | 'connection-refused'
     | 'connection-reset'
@@ -70,6 +71,10 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     }
 
     if (tags.includes("passthrough-error:ENOTFOUND")) return 'host-not-found';
+    if (
+        tags.includes("passthrough-error:EHOSTUNREACH") || // No known route to this host
+        tags.includes("passthrough-error:ENETUNREACH") // Whole network is unreachable
+    ) return 'host-unreachable';
     if (tags.includes("passthrough-error:EAI_AGAIN")) return 'dns-error';
     if (tags.includes("passthrough-error:ECONNREFUSED")) return 'connection-refused';
     if (tags.includes("passthrough-error:ECONNRESET")) return 'connection-reset';
@@ -81,12 +86,17 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
 
     if (tags.includes("client-error:HPE_INVALID_METHOD")) return 'invalid-method'; // QWE / HTTP/1.1
     if (tags.includes("client-error:HPE_INVALID_URL")) return 'unparseable-url'; // http://<unicode>
-    if (tags.includes("client-error:HPE_INVALID_CONSTANT")) return 'unparseable'; // ABC/1.1
+    if (
+        tags.includes("client-error:HPE_INVALID_CONSTANT") || // GET / HTTQ <- incorrect constant char
+        tags.includes("client-error:HPE_INVALID_EOF_STATE") // Unexpected 0-length packet in parser
+    ) return 'unparseable'; // ABC/1.1
     if (tags.includes("client-error:HPE_HEADER_OVERFLOW")) return 'header-overflow'; // More than ~80KB of headers
     if (
         tags.includes("client-error:HPE_INVALID_CONTENT_LENGTH") ||
         tags.includes("client-error:HPE_INVALID_TRANSFER_ENCODING") ||
-        tags.includes("client-error:HPE_INVALID_HEADER_TOKEN")
+        tags.includes("client-error:HPE_INVALID_HEADER_TOKEN") || // Invalid received (req or res) headers
+        tags.includes("client-error:HPE_UNEXPECTED_CONTENT_LENGTH") || // T-E with C-L
+        tags.includes("passthrough-error:HPE_INVALID_HEADER_TOKEN") // Invalid headers upstream, e.g. after breakpoint
     ) return 'invalid-headers';
 
     if (
@@ -123,6 +133,7 @@ const wasNotForwarded = typeCheck([
     'wrong-host',
     'tls-error',
     'host-not-found',
+    'host-unreachable',
     'dns-error',
     'connection-refused'
 ]);
@@ -136,6 +147,7 @@ const isWhitelistable = typeCheck([
 
 const isMockable = typeCheck([
     'host-not-found',
+    'host-unreachable',
     'dns-error',
     'connection-refused',
     'connection-reset',
@@ -176,7 +188,7 @@ export const ExchangeErrorHeader = (p: {
                         : p.type === 'invalid-http-version'
                             ? 'used an unsupported HTTP version'
                         : p.type === 'invalid-headers'
-                            ? 'included an unparseable header'
+                            ? 'included an invalid or unparseable header'
                         : p.type === 'unparseable-url'
                             ? 'included an unparseable URL'
                         : p.type === 'header-overflow'
@@ -196,6 +208,8 @@ export const ExchangeErrorHeader = (p: {
                             ? 'has an untrusted HTTPS certificate'
                         : p.type === 'tls-error'
                             ? 'failed to complete a TLS handshake'
+                        : p.type === 'host-unreachable'
+                            ? 'was not reachable on your network connection'
                         : p.type === 'host-not-found' || p.type === 'dns-error'
                             ? 'hostname could be not found'
                         : // connection-refused
@@ -248,6 +262,18 @@ export const ExchangeErrorHeader = (p: {
                     You can define mock responses for requests like this from the
                     Mock page, to return fake data even for servers and hostnames
                     that don't exist.
+                </HeaderExplanation>
+            </>
+        : p.type === 'host-unreachable'
+            ? <>
+                <HeaderExplanation>
+                    This is typically an issue with your network connection or the
+                    host's DNS records.
+                </HeaderExplanation>
+                <HeaderExplanation>
+                    You can define mock responses for requests like this from the
+                    Mock page, to return fake data even for servers and hostnames
+                    that aren't accessible.
                 </HeaderExplanation>
             </>
         : p.type === 'dns-error'
