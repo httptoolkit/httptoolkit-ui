@@ -9,7 +9,8 @@ type Ref = { $ref: string };
 function isRef(node: any): node is Ref {
     return typeof node === 'object' &&
         node !== null &&
-        '$ref' in node;
+        // $ref can be { type: ... } if it's a real $ref-named field, as in the github API
+        typeof node['$ref'] === 'string';
 }
 
 function derefRef(root: any, node: Ref) {
