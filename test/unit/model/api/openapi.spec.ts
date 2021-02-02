@@ -24,7 +24,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match({
                 service: {
-                    name: 'Stripe',
+                    name: 'Stripe API',
                     logoUrl: 'https://twitter.com/stripe/profile_image?size=original',
                     description: {
                         __html:
