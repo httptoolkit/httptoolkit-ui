@@ -78,7 +78,7 @@ export type FailedTlsRequest = InputTlsRequest & {
     pinned: boolean;
 }
 
-export type HtkRequest = Omit<InputRequest, 'body'> & {
+export type HtkRequest = Omit<InputRequest, 'body' | 'path'> & {
     parsedUrl: URL & { parseable: boolean },
     source: TrafficSource,
     contentType: ViewableContentType,

@@ -149,7 +149,7 @@ export function getParameters(
                         'i' // Match paths ignoring case (matters in theory, never in practice)
                     );
 
-                    const match = paramMatcher.exec(request.path);
+                    const match = paramMatcher.exec(request.parsedUrl.pathname);
                     return {
                         ...commonFields,
                         value: match ? match[1] : undefined
