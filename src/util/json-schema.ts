@@ -47,10 +47,16 @@ function derefRef(root: any, node: Ref) {
  */
 export function dereference<T extends object>(root: T): T {
     traverse.forEach(root, function (this: traverse.TraverseContext, node) {
+        let wasRef = false;
+
         while (isRef(node)) {
+            wasRef = true;
             node = derefRef(root, node);
         }
-        this.update(node);
+
+        // No need to traverse into refs:
+        const stopHere = wasRef;
+        this.update(node, stopHere);
     });
     return root;
 }
