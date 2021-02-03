@@ -118,16 +118,7 @@ export class SelfSizedBaseEditor extends React.Component<
     componentDidUpdate() {
         // Relayout after update, to ensure the editor is always using the full available
         // size even as the editor content changes
-        if (this.editor.current) {
-            try {
-                this.editor.current.relayout();
-            } catch (e) {
-                // 'Not Supported' is an irrelevant internal error from Monaco, which
-                // usually means a race, where mid-layout Monaco is removed from the DOM.
-                if (e.message === 'Not supported') return;
-                else throw e;
-            }
-        }
+        if (this.editor.current) this.editor.current.relayout();
     }
 
     resizeObserver = new ResizeObserver(this.onResize);
@@ -223,9 +214,16 @@ export class BaseEditor extends React.Component<EditorProps> {
 
     public relayout() {
         if (this.editor) {
-            this.editor.layout();
-            // If the layout has changed, the line count may have too (due to wrapping)
-            this.announceLineCount(this.editor);
+            try {
+                this.editor.layout();
+                // If the layout has changed, the line count may have too (due to wrapping)
+                this.announceLineCount(this.editor);
+            } catch (e) {
+                // 'Not Supported' is an irrelevant internal error from Monaco, which
+                // usually means a race, where mid-layout Monaco is removed from the DOM.
+                if (e.message === 'Not supported') return;
+                else throw e;
+            }
         }
     }
 
