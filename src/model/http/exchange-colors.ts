@@ -91,6 +91,24 @@ export function getExchangeCategory(exchange: HttpExchange) {
 
 export type ExchangeCategory = ReturnType<typeof getExchangeCategory>;
 
+export function describeExchangeCategory(category: ExchangeCategory) {
+    const categoryColour = getExchangeSummaryColour(category);
+    const colourName = _.startCase(_.findKey(highlights, (c) => c === categoryColour)!);
+
+    return `${colourName}: ${({
+        "mutative": "a request that might affect the server state (unlike a GET request)",
+        "incomplete": "an incomplete request",
+        "aborted": "an aborted request",
+        "image": "a request for an image",
+        "js": "a request for JavaScript",
+        "css": "a request for CSS",
+        "html": "a request for HTML",
+        "font": "a request for a font file",
+        "data": "an API request",
+        "unknown": "an unknown type of request"
+    } as const)[category]}`;
+}
+
 const isExchange = (maybeExchange: any): maybeExchange is HttpExchange =>
     maybeExchange.request && maybeExchange.category;
 

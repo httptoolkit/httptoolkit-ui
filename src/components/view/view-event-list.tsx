@@ -11,7 +11,11 @@ import { styled } from '../../styles'
 import { Icon, WarningIcon } from '../../icons';
 import { CollectedEvent, HttpExchange, FailedTlsRequest } from '../../types';
 
-import { getExchangeSummaryColour, ExchangeCategory } from '../../model/http/exchange-colors';
+import {
+    getExchangeSummaryColour,
+    ExchangeCategory,
+    describeExchangeCategory
+} from '../../model/http/exchange-colors';
 
 import { filterProps } from '../component-utils';
 import { EmptyState } from '../common/empty-state';
@@ -292,7 +296,7 @@ const ExchangeRow = observer(({
         style={style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker category={category} />
+        <RowMarker category={category} title={describeExchangeCategory(category)} />
         <Method pinned={pinned}>{ request.method }</Method>
         <Status>
             {
