@@ -17,7 +17,7 @@ import type {
     CallbackRequestResult as MockttpBreakpointRequestResult,
     CallbackResponseResult as MockttpBreakpointResponseResult,
     SerializedBuffer as MockttpSerializedBuffer
-} from 'mockttp/dist/rules/handlers';
+} from 'mockttp/dist/rules/requests/request-handlers';
 
 import type { ObservablePromise } from './util/observable';
 import type { HttpExchange } from './model/http/exchange';
