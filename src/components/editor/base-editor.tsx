@@ -36,6 +36,7 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
         defineMonacoThemes(monacoEditorModule);
         MonacoEditor = rmeModule.default;
     } catch (err) {
+        console.log('Monaco load failed', err.message);
         if (retries <= 0) {
             console.warn('Repeatedly failed to load monaco editor, giving up');
             throw err;
