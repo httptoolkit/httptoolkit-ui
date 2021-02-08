@@ -65,7 +65,8 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
 
     if (
         tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
-        tags.includes("passthrough-error:EPROTO")
+        tags.includes("passthrough-error:EPROTO") ||
+        tags.includes("client-error:ERR_SSL_WRONG_VERSION_NUMBER")
     ) {
         return 'tls-error';
     }
@@ -234,8 +235,8 @@ export const ExchangeErrorHeader = (p: {
             ? <>
                 <HeaderExplanation>
                     This could be caused by the server not supporting modern cipher
-                    standards, requiring a client certificate that hasn't been
-                    provided, or other TLS configuration issues.
+                    standards or TLS versions, requiring a client certificate that hasn't
+                    been provided, or other TLS configuration issues.
                 </HeaderExplanation>
                 <HeaderExplanation>
                     { p.isPaidUser
