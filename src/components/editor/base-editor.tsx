@@ -220,10 +220,12 @@ export class BaseEditor extends React.Component<EditorProps> {
                 // If the layout has changed, the line count may have too (due to wrapping)
                 this.announceLineCount(this.editor);
             } catch (e) {
-                // 'Not Supported' is an irrelevant internal error from Monaco, which
-                // usually means a race, where mid-layout Monaco is removed from the DOM.
-                if (e.message === 'Not supported') return;
-                else throw e;
+                // Monaco can throw some irrelevant errors here, due to race conditions with
+                // layout and model updates etc. It's OK if the layout very occasionally goes
+                // funky whilst things are going on, and there's nothing we can do about it,
+                // and it'll resolve itself on the next layout, so we just ignore it.
+                console.log('Monaco layout error:', e);
+                return;
             }
         }
     }
