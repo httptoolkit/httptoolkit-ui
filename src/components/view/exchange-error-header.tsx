@@ -15,6 +15,14 @@ const HeaderExplanation = styled.p`
     width: 100%;
     margin-bottom: 10px;
     line-height: 1.2;
+
+    a[href] {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
+    }
 `;
 
 const HeaderButton = styled(Button)`
