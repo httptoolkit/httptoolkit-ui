@@ -328,7 +328,7 @@ class ApiService {
         const { info: service } = spec;
 
         this.name = service.title;
-        this.logoUrl = service['x-logo'].url
+        this.logoUrl = service['x-logo']?.url
         this.description = fromMarkdown(service.description);
         this.docsUrl = get(spec, 'externalDocs', 'url');
     }
