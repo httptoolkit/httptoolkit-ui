@@ -321,6 +321,10 @@ export class ApiExchange {
         if (response === 'aborted' || response === undefined) return;
         this.response = new ApiResponse(this._spec, this._opSpec, response);
     }
+
+    matchedOperation() {
+        return this._opSpec.matched;
+    }
 }
 
 class ApiService {
@@ -387,7 +391,7 @@ class ApiOperation {
             op.pathSpec.description
         ));
 
-        if (_.isEmpty(op.spec)) this.warnings.push(
+        if (!op.matched) this.warnings.push(
             `Unknown operation '${this.name}'.`
         );
 

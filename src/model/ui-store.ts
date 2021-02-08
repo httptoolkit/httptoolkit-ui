@@ -75,6 +75,8 @@ export class UiStore {
     // when moving away from the page or deselecting all exchanges.
     @observable
     readonly viewExchangeCardStates = {
+        'api': { collapsed: true },
+
         'request': { collapsed: false },
         'requestBody': { collapsed: false },
         'response': { collapsed: false },

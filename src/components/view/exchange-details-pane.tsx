@@ -18,6 +18,7 @@ import { Pill } from '../common/pill';
 import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard } from './exchange-card';
 import { ExchangeBodyCard } from './exchange-body-card';
+import { ExchangeApiCard, ExchangeApiPlaceholderCard } from './exchange-api-card';
 import { ExchangeRequestCard } from './exchange-request-card';
 import { ExchangeResponseCard } from './exchange-response-card';
 import { AccountStore } from '../../model/account/account-store';
@@ -85,7 +86,20 @@ const CardDivider = styled.div`
     margin-top: auto;
 `;
 
+const makeFriendlyApiName = (rawName: string) => {
+    // Some API names are camelCase: make *only* those more readable
+    const cleanedName = !rawName.includes(' ') && rawName.length > 6
+        ? _.startCase(rawName)
+        : rawName;
+
+    // Trim down any REALLY long names ("U.S. EPA Enforcement and ...")
+    return cleanedName.length > 75
+        ? cleanedName.slice(0, 72).trimRight() + '\u2026' // ...
+        : cleanedName;
+}
+
 const cardKeys = [
+    'api',
     'request',
     'requestBody',
     'response',
@@ -144,7 +158,17 @@ export class ExchangeDetailsPane extends React.Component<{
         const { expandCompleted } = this;
 
         const { requestBreakpoint, responseBreakpoint } = exchange;
+
+        // The full API details - only available for paid usage, so we drop this
+        // for non-paid users at this stage.
         const apiExchange = isPaidUser ? exchange.api : undefined;
+
+        // We do still want the API name though, if there is one - we use this to
+        // show non-paid users when API data might be available, iff this request
+        // does actually match a documented operation.
+        const apiName = exchange.api?.matchedOperation()
+            ? makeFriendlyApiName(exchange.api.service.name)
+            : undefined;
 
         const headerCard = this.renderHeaderCard(exchange);
 
@@ -156,8 +180,8 @@ export class ExchangeDetailsPane extends React.Component<{
         }
 
         const cards = (requestBreakpoint || responseBreakpoint)
-            ? this.renderBreakpointCards(exchange, apiExchange)
-            : this.renderNormalCards(exchange, apiExchange);
+            ? this.renderBreakpointCards(exchange, apiName, apiExchange)
+            : this.renderNormalCards(exchange, apiName, apiExchange);
 
         return <OuterContainer>
             <ScrollContainer>
@@ -219,6 +243,29 @@ export class ExchangeDetailsPane extends React.Component<{
         }
     }
 
+    private renderApiCard(
+        apiName: string | undefined,
+        apiExchange: ApiExchange | undefined
+    ) {
+        if (!apiName) return null;
+
+        if (!this.props.accountStore!.isPaidUser) {
+            // If you're not paid, but we do recognize this as a specific API
+            // operation, we show a placeholder:
+            return <ExchangeApiPlaceholderCard
+                {...this.cardProps.api}
+                apiName={apiName}
+            />;
+        }
+
+        // If paid & we have a name, we must have full API details, show them:
+        return <ExchangeApiCard
+            {...this.cardProps.api}
+            apiName={apiName}
+            apiExchange={apiExchange!}
+        />;
+    }
+
     private renderExpandedCard(
         expandedCard: 'requestBody' | 'responseBody',
         exchange: HttpExchange,
@@ -238,11 +285,15 @@ export class ExchangeDetailsPane extends React.Component<{
         }
     }
 
-    private renderBreakpointCards(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
+    private renderBreakpointCards(
+        exchange: HttpExchange,
+        apiName: string | undefined,
+        apiExchange: ApiExchange | undefined
+    ) {
         const { uiStore } = this.props;
         const { requestBreakpoint } = exchange;
 
-        const cards: JSX.Element[] = [];
+        const cards: Array<JSX.Element | null> = [];
 
         if (requestBreakpoint) {
             cards.push(<ExchangeBreakpointRequestCard
@@ -255,10 +306,10 @@ export class ExchangeDetailsPane extends React.Component<{
         } else {
             const responseBreakpoint = exchange.responseBreakpoint!;
 
+            cards.push(this.renderApiCard(apiName, apiExchange));
             cards.push(<ExchangeRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
-                apiExchange={apiExchange}
             />);
 
             if (exchange.hasRequestBody()) {
@@ -278,16 +329,21 @@ export class ExchangeDetailsPane extends React.Component<{
         return cards;
     }
 
-    private renderNormalCards(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
+    private renderNormalCards(
+        exchange: HttpExchange,
+        apiName: string | undefined,
+        apiExchange: ApiExchange | undefined
+    ) {
         const { uiStore } = this.props;
         const { response } = exchange;
 
-        const cards: JSX.Element[] = [];
+        const cards: Array<JSX.Element | null> = [];
+
+        cards.push(this.renderApiCard(apiName, apiExchange));
 
         cards.push(<ExchangeRequestCard
             {...this.cardProps.request}
             exchange={exchange}
-            apiExchange={apiExchange}
         />);
 
         if (exchange.hasRequestBody()) {
