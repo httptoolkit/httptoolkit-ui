@@ -235,6 +235,14 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     });
 }
 
+export function cloneRule(rule: HtkMockRule) {
+    return observable({
+        ...rule, // All handler/matcher/checker state is immutable
+        matchers: [...rule.matchers], // Except the matcher array itself
+        id: uuid()
+    });
+};
+
 function buildRequestMatchers(request: HtkRequest) {
     return [
         new (MethodMatchers[request.method as MethodName] || WildcardMatcher)(),

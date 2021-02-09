@@ -438,6 +438,20 @@ export class RulesStore {
     }
 
     @action.bound
+    addDraftRule(draftRule: HtkMockRule, draftRulePath?: ItemPath) {
+        if (!draftRulePath) {
+            // By default, we just append them at the top level
+            this.draftRules.items.unshift(draftRule);
+            return;
+        }
+
+        // Alternatively, we want to insert them at a specific position.
+        const parent = getItemParentByPath(this.draftRules, draftRulePath);
+        const childPosition = _.last(draftRulePath)!;
+        parent.items.splice(childPosition, 0, draftRule);
+    }
+
+    @action.bound
     deleteDraftRule(draftRulePath: ItemPath) {
         deleteItemAtPath(this.draftRules, draftRulePath);
     }

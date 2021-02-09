@@ -12,8 +12,13 @@ import { uploadFile, saveFile } from '../../util/ui';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getNewRule } from '../../model/rules/rule-definitions';
-import { ItemPath, mapRules } from '../../model/rules/rules-structure';
+import { cloneRule, getNewRule } from '../../model/rules/rule-definitions';
+import {
+    getItemAtPath,
+    HtkMockRule,
+    ItemPath,
+    mapRules
+} from '../../model/rules/rules-structure';
 import { serializeRules } from '../../model/rules/rule-serialization';
 
 import { clickOnEnter } from '../component-utils';
@@ -210,6 +215,7 @@ class MockPage extends React.Component<MockPageProps> {
                     addRule={this.addRule}
                     saveRule={this.saveRule}
                     resetRule={this.resetRule}
+                    cloneRule={this.cloneRule}
                     deleteRule={deleteDraftRule}
                     toggleRuleCollapsed={this.toggleRuleCollapsed}
                     moveRule={moveDraftRule}
@@ -239,6 +245,22 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
+    cloneRule(path: ItemPath) {
+        const rules = this.props.rulesStore.draftRules;
+
+        const clonedRule = cloneRule(getItemAtPath(rules, path) as HtkMockRule);
+        this.collapsedRulesMap[clonedRule.id] = true; // Cloned rules start collapsed
+
+        const existingChildIndex = _.last(path)!;
+
+        this.props.rulesStore.addDraftRule(
+            clonedRule,
+            // Place the cloned rule directly after the existing rule
+            [...path.slice(0, -1), existingChildIndex + 1]
+        );
+    }
+
+    @action.bound
     saveAll() {
         this.props.rulesStore.saveRules();
         this.collapseAll();
@@ -258,11 +280,10 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     addRule() {
-        const rules = this.props.rulesStore.draftRules;
         const newRule = getNewRule(this.props.rulesStore);
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
-        rules.items.unshift(newRule);
+        this.props.rulesStore.addDraftRule(newRule);
 
         // Wait briefly for the new rule to appear, then focus its first dropdown
         setTimeout(() => {

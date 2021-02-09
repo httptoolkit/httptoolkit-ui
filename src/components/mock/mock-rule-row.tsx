@@ -215,11 +215,13 @@ const RuleMenu = (p: {
     onToggleCollapse: (event: React.MouseEvent) => void,
     onSave: (event: React.MouseEvent) => void,
     onReset: (event: React.MouseEvent) => void,
+    onClone: (event: React.MouseEvent) => void,
     toggleState: boolean,
     onToggleActivation: (event: React.MouseEvent) => void,
     onDelete: (event: React.MouseEvent) => void,
 }) => <MenuContainer>
     <IconButton title='Delete this rule' icon={['far', 'trash-alt']} onClick={p.onDelete} />
+    <IconButton title='Clone this rule' icon={['far', 'clone']} onClick={p.onClone} />
     <IconButton
         title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
         icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
@@ -294,6 +296,7 @@ export class RuleRow extends React.Component<{
     saveRule: (path: ItemPath) => void;
     resetRule: (path: ItemPath) => void;
     deleteRule: (path: ItemPath) => void;
+    cloneRule: (path: ItemPath) => void;
 }> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
@@ -377,6 +380,7 @@ export class RuleRow extends React.Component<{
                     onReset={this.resetRule}
                     toggleState={rule.activated}
                     onToggleActivation={this.toggleActivation}
+                    onClone={this.cloneRule}
                     onDelete={this.deleteRule}
                 />
                 <DragHandle {...provided.dragHandleProps} />
@@ -457,6 +461,7 @@ export class RuleRow extends React.Component<{
     saveRule = stopPropagation(() => this.props.saveRule(this.props.path));
     resetRule = stopPropagation(() => this.props.resetRule(this.props.path));
     deleteRule = stopPropagation(() => this.props.deleteRule(this.props.path));
+    cloneRule = stopPropagation(() => this.props.cloneRule(this.props.path));
 
     @action.bound
     toggleActivation(event: React.MouseEvent) {

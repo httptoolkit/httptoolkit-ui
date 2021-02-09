@@ -109,6 +109,7 @@ export class MockRuleList extends React.Component<{
     addRule: () => void,
     saveRule: (path: ItemPath) => void,
     resetRule: (path: ItemPath) => void,
+    cloneRule: (path: ItemPath) => void,
     deleteRule: (path: ItemPath) => void,
     toggleRuleCollapsed: (id: string) => void,
     moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
@@ -201,6 +202,7 @@ export class MockRuleList extends React.Component<{
             saveRule,
             resetRule,
             deleteRule,
+            cloneRule,
             toggleRuleCollapsed,
             updateGroupTitle,
 
@@ -222,7 +224,8 @@ export class MockRuleList extends React.Component<{
                 toggleRuleCollapsed,
                 saveRule,
                 resetRule,
-                deleteRule
+                deleteRule,
+                cloneRule
             },
             updateGroupTitle
         );
@@ -262,7 +265,7 @@ function buildRuleRows(
     currentlyDraggingRuleId: string | undefined,
     rowEventHandlers: Pick<
         React.ComponentProps<typeof RuleRow>,
-        'toggleRuleCollapsed' | 'saveRule' | 'resetRule' | 'deleteRule'
+        'toggleRuleCollapsed' | 'saveRule' | 'resetRule' | 'deleteRule' | 'cloneRule'
     >,
     updateGroupTitle: (groupId: string, title: string) => void,
 
