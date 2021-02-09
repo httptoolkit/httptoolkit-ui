@@ -28,7 +28,8 @@ import { IconMenu, IconMenuButton } from './mock-item-menu';
 
 const CollapsedItemPlaceholder = styled.div<{
     index: number,
-    borderColor: string
+    borderColor: string,
+    activated: boolean
 }>`
     position: absolute;
     top: calc(50% - ${p => p.index * 3}px);
@@ -42,7 +43,7 @@ const CollapsedItemPlaceholder = styled.div<{
     border-radius: 4px;
     box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
 
-    opacity: ${p => 1 - p.index * 0.2};
+    opacity: ${p => (p.activated ? 1 : 0.6) - p.index * 0.2};
     z-index: ${p => 9 - p.index};
 
     border-left: 5px solid ${(p) => p.borderColor};
@@ -185,6 +186,9 @@ const extendGroupDraggableStyles = (
     };
 };
 
+const isFullyActiveGroup = (group: HtkMockRuleGroup) =>
+    flattenRules(group).every(r => r.activated);
+
 export const GroupHeader = observer((p: {
     group: HtkMockRuleGroup,
     path: ItemPath,
@@ -215,7 +219,7 @@ export const GroupHeader = observer((p: {
         p.updateGroupTitle(p.group.id, unsavedTitle);
     };
 
-    const allRulesActivated = flattenRules(p.group).every(r => r.activated);
+    const allRulesActivated = isFullyActiveGroup(p.group);
     const toggleActivation = noPropagation(action(() => {
         mapRules(p.group, (rule) => {
             rule.activated = !allRulesActivated;
@@ -303,10 +307,15 @@ export const GroupHeader = observer((p: {
                     ? 'transparent'
                     : getMethodColor(method);
 
+                const activated = isRuleGroup(item)
+                    ? isFullyActiveGroup(item)
+                    : item.activated;
+
                 return <CollapsedItemPlaceholder
                     key={index}
                     index={index}
                     borderColor={borderColor}
+                    activated={activated}
                 />
             }) }
         </GroupHeaderContainer>
