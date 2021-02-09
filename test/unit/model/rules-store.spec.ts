@@ -318,7 +318,7 @@ describe("Rules store", () => {
         it("abc -> ac", () => {
             store.draftRules.items = [a, b, c];
 
-            store.deleteDraftRule([1]);
+            store.deleteDraftItem([1]);
 
             expect(store.draftRules.items).to.deep.equal([a, c]);
         });

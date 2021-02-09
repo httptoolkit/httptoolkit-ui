@@ -20,7 +20,12 @@ import { getStatusMessage } from '../http/http-docs';
 
 import { serializeAsTag } from '../serialization';
 import { RulesStore } from './rules-store';
-import { HtkMockItem, HtkMockRuleGroup, HtkMockRuleRoot, HtkMockRule } from './rules-structure';
+import {
+    HtkMockItem,
+    HtkMockRuleGroup,
+    HtkMockRuleRoot,
+    HtkMockRule
+} from './rules-structure';
 
 type MethodName = keyof typeof Method;
 const MethodNames = Object.values(Method)
@@ -234,14 +239,6 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
         handler: new PassThroughHandler(rulesStore)
     });
 }
-
-export function cloneRule(rule: HtkMockRule) {
-    return observable({
-        ...rule, // All handler/matcher/checker state is immutable
-        matchers: [...rule.matchers], // Except the matcher array itself
-        id: uuid()
-    });
-};
 
 function buildRequestMatchers(request: HtkRequest) {
     return [

@@ -90,6 +90,7 @@
     "mobx": "^5.15.0",
     "mobx-persist": "^0.4.1",
     "mobx-react": "^5.4.0",
+    "mobx-react-lite": "^2.2.2",
     "mobx-shallow-undo": "^1.0.0",
     "mobx-utils": "^5.1.0",
     "mockttp": "^1.1.0",

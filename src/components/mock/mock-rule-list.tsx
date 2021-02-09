@@ -109,8 +109,8 @@ export class MockRuleList extends React.Component<{
     addRule: () => void,
     saveRule: (path: ItemPath) => void,
     resetRule: (path: ItemPath) => void,
-    cloneRule: (path: ItemPath) => void,
-    deleteRule: (path: ItemPath) => void,
+    cloneItem: (path: ItemPath) => void,
+    deleteItem: (path: ItemPath) => void,
     toggleRuleCollapsed: (id: string) => void,
     moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
@@ -201,8 +201,8 @@ export class MockRuleList extends React.Component<{
             addRule,
             saveRule,
             resetRule,
-            deleteRule,
-            cloneRule,
+            deleteItem,
+            cloneItem,
             toggleRuleCollapsed,
             updateGroupTitle,
 
@@ -220,13 +220,11 @@ export class MockRuleList extends React.Component<{
             activeRules,
             collapsedRulesMap,
             currentlyDraggingRuleId,
-            {
-                toggleRuleCollapsed,
-                saveRule,
-                resetRule,
-                deleteRule,
-                cloneRule
-            },
+            toggleRuleCollapsed,
+            saveRule,
+            resetRule,
+            cloneItem,
+            deleteItem,
             updateGroupTitle
         );
 
@@ -263,16 +261,26 @@ function buildRuleRows(
     allActiveRules: HtkMockRuleRoot,
     collapsedRulesMap: { [id: string]: boolean },
     currentlyDraggingRuleId: string | undefined,
-    rowEventHandlers: Pick<
-        React.ComponentProps<typeof RuleRow>,
-        'toggleRuleCollapsed' | 'saveRule' | 'resetRule' | 'deleteRule' | 'cloneRule'
-    >,
+
+    toggleRuleCollapsed: (ruleId: string) => void,
+    saveRule: (path: ItemPath) => void,
+    resetRule: (path: ItemPath) => void,
+    cloneItem: (path: ItemPath) => void,
+    deleteItem: (path: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
 
     ruleGroup: HtkMockRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
     overallStartIndex = 0,
 ): RuleRowsData {
+    const rowEventHandlers = {
+        toggleRuleCollapsed,
+        saveRule,
+        resetRule,
+        cloneRule: cloneItem,
+        deleteRule: deleteItem
+    };
+
     return ruleGroup.items.reduce<RuleRowsData>((result, item, index) => {
         const itemPath = ruleGroupPath.concat(index);
 
@@ -285,6 +293,8 @@ function buildRuleRows(
                     index={overallStartIndex + result.indexMapping.length}
                     collapsed={!!item.collapsed}
                     updateGroupTitle={updateGroupTitle}
+                    cloneGroup={cloneItem}
+                    deleteGroup={deleteItem}
                 />
             );
             result.indexMapping.push(itemPath);
@@ -297,8 +307,14 @@ function buildRuleRows(
                 allActiveRules,
                 collapsedRulesMap,
                 currentlyDraggingRuleId,
-                rowEventHandlers,
+
+                toggleRuleCollapsed,
+                saveRule,
+                resetRule,
+                cloneItem,
+                deleteItem,
                 updateGroupTitle,
+
                 item,
                 itemPath,
                 overallStartIndex + result.indexMapping.length

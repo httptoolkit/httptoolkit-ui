@@ -12,10 +12,11 @@ import { uploadFile, saveFile } from '../../util/ui';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
-import { cloneRule, getNewRule } from '../../model/rules/rule-definitions';
+import { getNewRule } from '../../model/rules/rule-definitions';
 import {
+    cloneItem,
     getItemAtPath,
-    HtkMockRule,
+    isRuleGroup,
     ItemPath,
     mapRules
 } from '../../model/rules/rules-structure';
@@ -142,7 +143,7 @@ class MockPage extends React.Component<MockPageProps> {
             draftRules,
             areSomeRulesUnsaved,
             areSomeRulesNonDefault,
-            deleteDraftRule,
+            deleteDraftItem,
             moveDraftRule,
             updateGroupTitle,
             combineDraftRulesAsGroup
@@ -215,8 +216,8 @@ class MockPage extends React.Component<MockPageProps> {
                     addRule={this.addRule}
                     saveRule={this.saveRule}
                     resetRule={this.resetRule}
-                    cloneRule={this.cloneRule}
-                    deleteRule={deleteDraftRule}
+                    cloneItem={this.cloneItem}
+                    deleteItem={deleteDraftItem}
                     toggleRuleCollapsed={this.toggleRuleCollapsed}
                     moveRule={moveDraftRule}
                     combineRulesAsGroup={combineDraftRulesAsGroup}
@@ -245,16 +246,21 @@ class MockPage extends React.Component<MockPageProps> {
     }
 
     @action.bound
-    cloneRule(path: ItemPath) {
+    cloneItem(path: ItemPath) {
         const rules = this.props.rulesStore.draftRules;
 
-        const clonedRule = cloneRule(getItemAtPath(rules, path) as HtkMockRule);
-        this.collapsedRulesMap[clonedRule.id] = true; // Cloned rules start collapsed
+        const clonedItem = cloneItem(getItemAtPath(rules, path));
+
+        if (isRuleGroup(clonedItem)) {
+            clonedItem.collapsed = true;
+        } else {
+            this.collapsedRulesMap[clonedItem.id] = true;
+        }
 
         const existingChildIndex = _.last(path)!;
 
-        this.props.rulesStore.addDraftRule(
-            clonedRule,
+        this.props.rulesStore.addDraftItem(
+            clonedItem,
             // Place the cloned rule directly after the existing rule
             [...path.slice(0, -1), existingChildIndex + 1]
         );
@@ -283,7 +289,7 @@ class MockPage extends React.Component<MockPageProps> {
         const newRule = getNewRule(this.props.rulesStore);
         // When you explicitly add a new rule, start it off expanded.
         this.collapsedRulesMap[newRule.id] = false;
-        this.props.rulesStore.addDraftRule(newRule);
+        this.props.rulesStore.addDraftItem(newRule);
 
         // Wait briefly for the new rule to appear, then focus its first dropdown
         setTimeout(() => {

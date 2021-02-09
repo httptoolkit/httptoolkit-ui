@@ -1,8 +1,13 @@
 import * as React from 'react';
 import { action } from 'mobx';
-import { Observer } from 'mobx-react'
+import { observer, Observer } from 'mobx-react-lite'
 import { Method, matchers } from 'mockttp';
-import { Draggable, DraggingStyle, NotDraggingStyle, DraggableStateSnapshot } from 'react-beautiful-dnd';
+import {
+    Draggable,
+    DraggingStyle,
+    NotDraggingStyle,
+    DraggableStateSnapshot
+} from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
@@ -10,13 +15,16 @@ import { Icon } from '../../icons';
 import {
     isRuleGroup,
     ItemPath,
-    HtkMockRuleGroup
+    HtkMockRuleGroup,
+    mapRules,
+    flattenRules
 } from '../../model/rules/rules-structure';
 import { getMethodColor } from '../../model/http/exchange-colors';
 
-import { clickOnEnter } from '../component-utils';
+import { clickOnEnter, noPropagation } from '../component-utils';
 import { TextInput } from '../common/inputs';
 import { DragHandle } from './mock-drag-handle';
+import { IconMenu, IconMenuButton } from './mock-item-menu';
 
 const CollapsedItemPlaceholder = styled.div<{
     index: number,
@@ -40,24 +48,40 @@ const CollapsedItemPlaceholder = styled.div<{
     border-left: 5px solid ${(p) => p.borderColor};
 `;
 
-const TitleButtons = styled.div`
+const TitleButtonContainer = styled.div`
     display: none; /* Made flex by container, on hover/expand */
     flex-direction: row;
     align-items: center;
-
-    z-index: 10;
-
     margin-left: 5px;
-
-    > svg {
-        margin: 0 5px;
-        color: ${p => p.theme.primaryInputBackground};
-
-        &:hover {
-            color: ${p => p.theme.popColor};
-        }
-    }
 `;
+
+const TitleButton = styled(IconMenuButton)`
+    font-size: 1em;
+    padding: 0;
+`;
+
+const RuleGroupMenu = (p: {
+    toggleState: boolean,
+    onToggleActivation: (event: React.MouseEvent) => void,
+    onClone: (event: React.MouseEvent) => void,
+    onDelete: (event: React.MouseEvent) => void,
+}) => <IconMenu topOffset={-2}>
+    <IconMenuButton
+        title='Delete these rules'
+        icon={['far', 'trash-alt']}
+        onClick={p.onDelete}
+    />
+    <IconMenuButton
+        title='Clone this rule'
+        icon={['far', 'clone']}
+        onClick={p.onClone}
+    />
+    <IconMenuButton
+        title={p.toggleState ? 'Deactivate these rules' : 'Activate these rules'}
+        icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
+        onClick={p.onToggleActivation}
+    />
+</IconMenu>;
 
 const GroupHeaderContainer = styled.header<{
     depth: number,
@@ -100,7 +124,7 @@ const GroupHeaderContainer = styled.header<{
             opacity: 0.5;
         }
 
-        ${TitleButtons} {
+        ${TitleButtonContainer}, ${IconMenu} {
             display: flex;
         }
 
@@ -115,7 +139,7 @@ const GroupHeaderContainer = styled.header<{
     }
 
     ${p => p.editingTitle && css`
-        ${TitleButtons} {
+        ${TitleButtonContainer} {
             display: flex;
         }
     `}
@@ -161,34 +185,45 @@ const extendGroupDraggableStyles = (
     };
 };
 
-export const GroupHeader = (p: {
+export const GroupHeader = observer((p: {
     group: HtkMockRuleGroup,
     path: ItemPath,
     index: number,
     collapsed: boolean,
-    updateGroupTitle: (groupId: string, title: string) => void
+
+    updateGroupTitle: (groupId: string, title: string) => void,
+    cloneGroup: (path: ItemPath) => void
+    deleteGroup: (path: ItemPath) => void
 }) => {
     const [isEditing, setEditing] = React.useState(false);
     const [unsavedTitle, setUnsavedTitle] = React.useState(p.group.title);
 
     const toggleCollapsed = action(() => { p.group.collapsed = !p.group.collapsed });
-    const startEditing = (e: React.MouseEvent) => {
-        e.stopPropagation();
+
+    const startEditing = () => {
         setEditing(true);
         setUnsavedTitle(p.group.title);
     };
     const editTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
         setUnsavedTitle(e.target.value)
     }
-    const resetTitle = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const resetTitle = () => {
         setEditing(false);
     };
-    const saveTitle = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const saveTitle = () => {
         setEditing(false);
         p.updateGroupTitle(p.group.id, unsavedTitle);
     };
+
+    const allRulesActivated = flattenRules(p.group).every(r => r.activated);
+    const toggleActivation = noPropagation(action(() => {
+        mapRules(p.group, (rule) => {
+            rule.activated = !allRulesActivated;
+        });
+    }));
+
+    const deleteGroup = noPropagation(() => p.deleteGroup(p.path));
+    const cloneGroup = noPropagation(() => p.cloneGroup(p.path));
 
     return <Draggable
         draggableId={p.group.id}
@@ -219,35 +254,42 @@ export const GroupHeader = (p: {
                         value={unsavedTitle}
                         onChange={editTitle}
                         onClick={(e) => e.stopPropagation()}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') saveTitle();
+                        }}
                     />
                     : p.group.title
                 }
             </h2>
 
-            <TitleButtons>
+            <TitleButtonContainer>
                 { isEditing
                     ? <>
-                        <Icon
-                            tabIndex={0}
+                        <TitleButton
+                            title="Save group name"
                             icon={['fas', 'save']}
-                            onClick={saveTitle}
-                            onKeyPress={clickOnEnter}
+                            onClick={noPropagation(saveTitle)}
                         />
-                        <Icon
-                            tabIndex={0}
+                        <TitleButton
+                            title="Reset group name"
                             icon={['fas', 'undo']}
-                            onClick={resetTitle}
-                            onKeyPress={clickOnEnter}
+                            onClick={noPropagation(resetTitle)}
                         />
                     </>
-                    : <Icon
-                        tabIndex={0}
+                    : <TitleButton
+                        title="Edit group name"
                         icon={['fas', 'edit']}
-                        onClick={startEditing}
-                        onKeyPress={clickOnEnter}
+                        onClick={noPropagation(startEditing)}
                     />
                 }
-            </TitleButtons>
+            </TitleButtonContainer>
+
+            <RuleGroupMenu
+                toggleState={allRulesActivated}
+                onToggleActivation={toggleActivation}
+                onClone={cloneGroup}
+                onDelete={deleteGroup}
+            />
 
             { p.collapsed && p.group.items.slice(0, 5).map((item, index) => {
                 const initialMatcher = isRuleGroup(item) ? undefined : item.matchers[0];
@@ -269,7 +311,7 @@ export const GroupHeader = (p: {
             }) }
         </GroupHeaderContainer>
     }</Observer>}</Draggable>;
-}
+});
 
 const GroupTailPlaceholder = styled.div`
     width: 100%;

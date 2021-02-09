@@ -15,3 +15,10 @@ export function clickOnEnter<T extends Element>(e: React.KeyboardEvent<T>) {
         e.currentTarget.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }
 }
+
+export const noPropagation = <E extends React.BaseSyntheticEvent>(
+    callback: (event: E) => void
+) => (event: E) => {
+    event.stopPropagation();
+    callback(event);
+}

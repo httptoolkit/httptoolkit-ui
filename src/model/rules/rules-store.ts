@@ -311,7 +311,7 @@ export class RulesStore {
             _.remove(currentDraftParent.items, { id: resetRule.id });
             targetDraftParent.items.splice(0, 0, resetRule); // Put it at the start: we'll rearrange below
             if (currentDraftParent.items.length === 0 && !isRuleRoot(currentDraftParent)) {
-                this.deleteDraftRule(findItemPath(this.draftRules, { id: currentDraftParent.id })!);
+                this.deleteDraftItem(findItemPath(this.draftRules, { id: currentDraftParent.id })!);
             }
         }
 
@@ -438,22 +438,22 @@ export class RulesStore {
     }
 
     @action.bound
-    addDraftRule(draftRule: HtkMockRule, draftRulePath?: ItemPath) {
-        if (!draftRulePath) {
+    addDraftItem(draftItem: HtkMockItem, targetPath?: ItemPath) {
+        if (!targetPath) {
             // By default, we just append them at the top level
-            this.draftRules.items.unshift(draftRule);
+            this.draftRules.items.unshift(draftItem);
             return;
         }
 
         // Alternatively, we want to insert them at a specific position.
-        const parent = getItemParentByPath(this.draftRules, draftRulePath);
-        const childPosition = _.last(draftRulePath)!;
-        parent.items.splice(childPosition, 0, draftRule);
+        const parent = getItemParentByPath(this.draftRules, targetPath);
+        const childPosition = _.last(targetPath)!;
+        parent.items.splice(childPosition, 0, draftItem);
     }
 
     @action.bound
-    deleteDraftRule(draftRulePath: ItemPath) {
-        deleteItemAtPath(this.draftRules, draftRulePath);
+    deleteDraftItem(draftItemPath: ItemPath) {
+        deleteItemAtPath(this.draftRules, draftItemPath);
     }
 
     @action.bound
@@ -469,7 +469,7 @@ export class RulesStore {
 
         // If the source parent is empty, delete them completely
         if (currentParent.items.length === 0 && !isRuleRoot(currentParent)) {
-            this.deleteDraftRule(findItemPath(this.draftRules, { id: currentParent.id })!);
+            this.deleteDraftItem(findItemPath(this.draftRules, { id: currentParent.id })!);
         }
     }
 
@@ -489,7 +489,7 @@ export class RulesStore {
                 sourceItem
             ]
         };
-        this.deleteDraftRule(sourcePath);
+        this.deleteDraftItem(sourcePath);
     }
 
     @action.bound

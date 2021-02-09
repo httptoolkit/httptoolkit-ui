@@ -7,7 +7,7 @@ import { Method, matchers } from 'mockttp';
 import { Draggable, DraggingStyle, NotDraggingStyle, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
-import { Icon, IconProp } from '../../icons';
+import { Icon } from '../../icons';
 
 import { getMethodColor } from '../../model/http/exchange-colors';
 import { Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
@@ -18,7 +18,7 @@ import {
 } from '../../model/rules/rule-descriptions';
 import { AccountStore } from '../../model/account/account-store';
 
-import { clickOnEnter } from '../component-utils';
+import { clickOnEnter, noPropagation } from '../component-utils';
 import { GetProOverlay } from '../account/pro-placeholders';
 import { LittleCard } from '../common/card';
 import {
@@ -29,6 +29,7 @@ import {
 import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
 import { DragHandle } from './mock-drag-handle';
+import { IconMenu, IconMenuButton } from './mock-item-menu';
 
 const RowContainer = styled(LittleCard)<{
     deactivated?: boolean,
@@ -60,7 +61,7 @@ const RowContainer = styled(LittleCard)<{
             user-select: none;
 
             &:hover {
-                ${MenuContainer} {
+                ${IconMenu} {
                     display: flex;
                 }
 
@@ -73,7 +74,7 @@ const RowContainer = styled(LittleCard)<{
         `
         : !p.collapsed
             ? css`
-                ${MenuContainer} {
+                ${IconMenu} {
                     display: flex;
                 }
             `
@@ -158,54 +159,11 @@ const MatchersList = styled.ul`
     margin-top: 20px;
 `;
 
-const MenuContainer = styled.div`
-    position: absolute;
-    top: 7px;
-    right: 10px;
-    z-index: 1;
-
-    display: none; /* Made flex by container, on hover/expand */
-    flex-direction: row-reverse;
-    align-items: center;
-
+const RuleMenuContainer = styled(IconMenu)`
     background-image: radial-gradient(
         ${p => polished.rgba(p.theme.mainBackground, 0.9)} 50%,
         transparent 100%
     );
-`;
-
-const IconButton = styled(React.memo((p: {
-    className?: string,
-    icon: IconProp,
-    title: string,
-    onClick: (event: React.MouseEvent) => void,
-    disabled?: boolean
-}) => <Icon
-    className={p.className}
-    icon={p.icon}
-    title={p.title}
-    tabIndex={p.disabled ? -1 : 0}
-    onKeyPress={clickOnEnter}
-    onClick={p.disabled ? _.noop : p.onClick}
-/>))`
-    padding: 5px;
-
-    font-size: 1.2em;
-
-    ${p => p.disabled
-        ? css`
-            color: ${p => p.theme.containerWatermark};
-        `
-        : css`
-            cursor: pointer;
-            color: ${p => p.theme.primaryInputBackground};
-
-            &:hover, &:focus {
-                outline: none;
-                color: ${p => p.theme.popColor};
-            }
-        `
-    }
 `;
 
 const RuleMenu = (p: {
@@ -219,41 +177,44 @@ const RuleMenu = (p: {
     toggleState: boolean,
     onToggleActivation: (event: React.MouseEvent) => void,
     onDelete: (event: React.MouseEvent) => void,
-}) => <MenuContainer>
-    <IconButton title='Delete this rule' icon={['far', 'trash-alt']} onClick={p.onDelete} />
-    <IconButton title='Clone this rule' icon={['far', 'clone']} onClick={p.onClone} />
-    <IconButton
-        title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
-        icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
-        onClick={p.onToggleActivation}
-    />
-    <IconButton
-        title='Revert this rule to the last saved version'
-        icon={['fas', 'undo']}
-        disabled={!p.hasUnsavedChanges || p.isNewRule}
-        onClick={p.onReset}
-    />
-    <IconButton
-        icon={['fas',
-            p.hasUnsavedChanges
-                ? 'save'
-            : p.isCollapsed
-                ? 'chevron-down'
-            : 'chevron-up']}
-        title={
-            p.hasUnsavedChanges
-                ? 'Save changes to this rule'
-            : p.isCollapsed
-                ? 'Show rule details'
-            : 'Hide rule details'}
-        onClick={p.hasUnsavedChanges ? p.onSave : p.onToggleCollapse}
-    />
-</MenuContainer>;
-
-const stopPropagation = (callback: () => void) => (event: React.MouseEvent) => {
-    event.stopPropagation();
-    callback();
-}
+}) => <RuleMenuContainer topOffset={7}>
+        <IconMenuButton
+            title='Delete this rule'
+            icon={['far', 'trash-alt']}
+            onClick={p.onDelete}
+        />
+        <IconMenuButton
+            title='Clone this rule'
+            icon={['far', 'clone']}
+            onClick={p.onClone}
+        />
+        <IconMenuButton
+            title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
+            icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
+            onClick={p.onToggleActivation}
+        />
+        <IconMenuButton
+            title='Revert this rule to the last saved version'
+            icon={['fas', 'undo']}
+            disabled={!p.hasUnsavedChanges || p.isNewRule}
+            onClick={p.onReset}
+        />
+        <IconMenuButton
+            icon={['fas',
+                p.hasUnsavedChanges
+                    ? 'save'
+                : p.isCollapsed
+                    ? 'chevron-down'
+                : 'chevron-up']}
+            title={
+                p.hasUnsavedChanges
+                    ? 'Save changes to this rule'
+                : p.isCollapsed
+                    ? 'Show rule details'
+                : 'Hide rule details'}
+            onClick={p.hasUnsavedChanges ? p.onSave : p.onToggleCollapse}
+        />
+    </RuleMenuContainer>;
 
 const extendRowDraggableStyles = (
     style: DraggingStyle | NotDraggingStyle | undefined,
@@ -458,10 +419,10 @@ export class RuleRow extends React.Component<{
         }</Observer>}</Draggable>;
     }
 
-    saveRule = stopPropagation(() => this.props.saveRule(this.props.path));
-    resetRule = stopPropagation(() => this.props.resetRule(this.props.path));
-    deleteRule = stopPropagation(() => this.props.deleteRule(this.props.path));
-    cloneRule = stopPropagation(() => this.props.cloneRule(this.props.path));
+    saveRule = noPropagation(() => this.props.saveRule(this.props.path));
+    resetRule = noPropagation(() => this.props.resetRule(this.props.path));
+    deleteRule = noPropagation(() => this.props.deleteRule(this.props.path));
+    cloneRule = noPropagation(() => this.props.cloneRule(this.props.path));
 
     @action.bound
     toggleActivation(event: React.MouseEvent) {
@@ -470,7 +431,7 @@ export class RuleRow extends React.Component<{
         event.stopPropagation();
     }
 
-    toggleCollapse = stopPropagation(() => {
+    toggleCollapse = noPropagation(() => {
         // Scroll the row into view, after giving it a moment to rerender
         requestAnimationFrame(() => {
             if (this.containerRef) {

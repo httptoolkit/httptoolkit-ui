@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
 import { MockRuleData } from 'mockttp';
+import * as uuid from 'uuid/v4'
+import { observable } from 'mobx';
 
 import {
     Matcher,
@@ -161,6 +163,31 @@ export function mapRules<R>(
         }
     }, []);
 };
+
+export function cloneItem(item: HtkMockItem) {
+    if (isRuleGroup(item)) {
+        return cloneRuleGroup(item);
+    } else {
+        return cloneRule(item);
+    }
+}
+
+export function cloneRule(rule: HtkMockRule) {
+    return observable({
+        ...rule, // All handler/matcher/checker state is immutable
+        matchers: [...rule.matchers], // Except the matcher array itself
+        id: uuid() // And we need a different rule id
+    });
+};
+
+export function cloneRuleGroup(group: HtkMockRuleGroup): HtkMockRuleGroup {
+    return {
+        ...group,
+        items: group.items.map(i => cloneItem(i)),
+        collapsed: true,
+        id: uuid()
+    };
+}
 
 export const areItemsEqual = (a: HtkMockItem | undefined, b: HtkMockItem | undefined) => {
     if (isRuleGroup(a)) {
