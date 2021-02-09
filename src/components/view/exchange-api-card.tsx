@@ -261,9 +261,10 @@ export const ExchangeApiPlaceholderCard = observer((props: ExchangeApiPlaceholde
                 endpoint, parameters, and responses.
             </p>
             <p>
-                See all the parameters that you're <em>not</em> sending and their default values, get automatic validation that request parameters &amp; bodies
-                match the API schema, and find out about deprecated or invalid parameters
-                in your requests.
+                Automatically validate that this request &amp; its body match the API
+                schema. See all the parameters that you're <em>not</em> sending too,
+                and their default values, and get warned about deprecated or invalid
+                endpoints and parameters.
             </p>
         </CardSalesPitch>
     </ExchangeCard>;
