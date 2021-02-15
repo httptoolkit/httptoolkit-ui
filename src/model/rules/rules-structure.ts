@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { MockRuleData } from 'mockttp';
+import { MockRuleData, completionCheckers } from 'mockttp';
 import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 
@@ -11,11 +11,12 @@ import {
 
 export type HtkMockItem = HtkMockRule | HtkMockRuleGroup | HtkMockRuleRoot;
 
-export type HtkMockRule = Omit<MockRuleData, 'matchers'> & {
+export interface HtkMockRule extends Omit<MockRuleData, 'matchers'> {
     id: string;
     activated: boolean;
     matchers: Array<Matcher> & { 0?: InitialMatcher };
     handler: Handler;
+    completionChecker: completionCheckers.Always; // HTK rules all *always* match
 };
 
 export type HtkMockRuleGroup = {
@@ -25,7 +26,7 @@ export type HtkMockRuleGroup = {
     collapsed?: boolean;
 };
 
-export type HtkMockRuleRoot = HtkMockRuleGroup & {
+export interface HtkMockRuleRoot extends HtkMockRuleGroup {
     id: 'root';
     title: 'HTTP Toolkit Rules';
     isRoot: true;

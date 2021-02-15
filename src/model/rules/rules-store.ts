@@ -369,7 +369,7 @@ export class RulesStore {
         const id = draftItem.id;
         const activeItemPath = findItemPath(activeRules, { id });
 
-        const updatedItem = observable(_.cloneDeep(_.omit(draftItem, 'items')));
+        const updatedItem = observable(_.cloneDeep(_.omit(draftItem, 'items')) as HtkMockItem);
 
         // When saving a single group, save the group itself, don't change the contents
         if (isRuleGroup(draftItem)) {
