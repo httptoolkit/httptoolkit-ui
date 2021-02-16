@@ -14,6 +14,8 @@ const fontSizes = {
     loudHeadingSize: '38px',
 };
 
+export const warningColor = '#f1971f';
+
 export const lightTheme = {
     fontFamily: 'Lato, Arial, sans-serif',
     monoFontFamily: "'Fira Mono', monospace",
@@ -38,6 +40,9 @@ export const lightTheme = {
     highlightColor: '#222',
 
     popColor: '#e1421f',
+
+    warningColor,
+    warningBackground: '#f1971f40',
 
     containerBackground: '#d8e2e6',
     containerWatermark: '#a0afaf',
@@ -80,6 +85,9 @@ export const darkTheme = {
     highlightColor: '#efefef',
 
     popColor: '#e1421f',
+
+    warningColor,
+    warningBackground: '#f1971f40',
 
     containerBackground: '#3c3c41',
     containerWatermark: '#757580',
@@ -133,6 +141,9 @@ export const highContrastTheme = {
     highlightColor: '#000',
 
     popColor: '#e1421f',
+
+    warningColor,
+    warningBackground: '#f1971f40',
 
     containerBackground: '#404045',
     containerWatermark: '#a0a0b0',

@@ -107,8 +107,8 @@ export const SecondaryButton = styled.button.attrs(() => ({
 `;
 
 const invalidTextCss = css`
-    border-color: #f1971f;
-    background-color: #f1971f40;
+    border-color: ${p => p.theme.warningColor};
+    background-color: ${p => p.theme.warningBackground};
     color: ${p => p.theme.mainColor};
 `;
 

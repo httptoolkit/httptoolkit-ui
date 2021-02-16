@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { styled } from './styles';
+import { styled, warningColor } from './styles';
 
 // Import required FA icons:
 import {
@@ -235,7 +235,7 @@ export const WarningIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'exclamation-triangle']
 }))`
     margin: 0 6px;
-    color: #f1971f;
+    color: ${p => p.theme.warningColor};
 `;
 
 export const warningIconHtml = iconHtml(
@@ -243,7 +243,7 @@ export const warningIconHtml = iconHtml(
     {
         styles: {
             margin: '0 6px',
-            color: '#f1971f'
+            color: warningColor
         }
     }
 );

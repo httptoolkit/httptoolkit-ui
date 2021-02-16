@@ -4,7 +4,7 @@ import { observable, action, computed, flow } from 'mobx';
 import { observer, inject } from "mobx-react";
 import { get } from 'typesafe-get';
 
-import { styled, css } from '../../styles';
+import { styled, css, warningColor } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
 
 import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
@@ -44,7 +44,7 @@ const UnsavedIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'save'],
 }))`
     margin-left: 10px;
-    color: #f1971f;
+    color: ${p => p.theme.warningColor};
 `;
 
 const CertificateWhitelistList = styled.div`
@@ -151,8 +151,8 @@ const ProxyPortsContainer = styled.div`
         }
 
         &:invalid {
-            border-color: #f1971f;
-            background-color: #f1971f40;
+            border-color: ${p => p.theme.warningColor};
+            background-color: ${p => p.theme.warningBackground};
             color: ${p => p.theme.mainColor};
 
             & + ${WarningIcon} {
@@ -585,7 +585,7 @@ export class ProxySettingsCard extends React.Component<
                 <Http2SettingsContainer>
                     <div>
                         <ContentLabel>HTTP/2 Support</ContentLabel>
-                        <Pill color="#f1971f">Experimental</Pill>
+                        <Pill color={warningColor}>Experimental</Pill>
                     </div>
 
                     <Select

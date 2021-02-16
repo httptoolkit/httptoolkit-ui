@@ -95,7 +95,7 @@ const ParamMetadata = styled((p: {
 const WarningIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'exclamation-triangle']
 }))`
-    color: #f1971f;
+    color: ${p => p.theme.warningColor};
     line-height: 1.2;
 
     &:not(:first-child) {
