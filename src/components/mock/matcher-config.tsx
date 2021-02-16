@@ -6,7 +6,7 @@ import * as Randexp from 'randexp';
 
 import { matchers } from "mockttp";
 
-import { styled } from '../../styles';
+import { css, styled } from '../../styles';
 
 import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
 
@@ -26,7 +26,8 @@ type MatcherConfigProps<M extends Matcher> = {
     onInvalidState: () => void;
 };
 
-abstract class MatcherConfig<M extends Matcher> extends React.Component<MatcherConfigProps<M>> { }
+abstract class MatcherConfig<M extends Matcher, P = {}> extends
+    React.Component<MatcherConfigProps<M> & P> { }
 
 export function MatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
@@ -39,7 +40,7 @@ export function MatcherConfiguration(props:
 
     const matcherClass = 'matcher' in props
         ? MatcherLookup[props.matcher.type as MatcherClassKey]
-        : props.matcherClass;
+        : props.matcherClass!;
 
     const configProps = {
         matcher: matcher as any,
@@ -63,6 +64,10 @@ export function MatcherConfiguration(props:
             return <RawBodyExactMatcherConfig {...configProps} />;
         case matchers.RawBodyIncludesMatcher:
             return <RawBodyIncludesMatcherConfig {...configProps} />;
+        case matchers.JsonBodyMatcher:
+            return <JsonBodyExactMatcherConfig {...configProps} />;
+        case matchers.JsonBodyFlexibleMatcher:
+            return <JsonBodyIncludingMatcherConfig {...configProps} />;
         default:
             return null;
     }
@@ -491,58 +496,49 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
     }
 }
 
-const BodyContainer = styled.div`
-    margin-top: 5px;
-
+const BodyContainer = styled.div<{ error?: boolean }>`
     > div {
         border-radius: 4px;
         border: solid 1px ${p => p.theme.containerBorder};
         padding: 1px;
+
+        ${p => p.error && css`
+            border-color: ${p => p.theme.warningColor};
+        `}
     }
 `;
 
-@observer
 class RawBodyExactMatcherConfig extends MatcherConfig<matchers.RawBodyMatcher> {
 
-    @observable
-    private content: string = '';
-
-    componentDidMount() {
-        disposeOnUnmount(this, autorun(() => {
-            const content = this.props.matcher ? this.props.matcher.content : '';
-            runInAction(() => { this.content = content });
-        }));
+    render() {
+        return <RawBodyMatcherConfig
+            {...this.props}
+            matcherClass={matchers.RawBodyMatcher}
+            description='with a decoded body exactly matching'
+        />;
     }
+
+}
+
+class RawBodyIncludesMatcherConfig extends MatcherConfig<matchers.RawBodyIncludesMatcher> {
 
     render() {
-        const { content } = this;
-        const { matcherIndex } = this.props;
-
-        return <MatcherConfigContainer>
-            { matcherIndex !== undefined &&
-                <ConfigLabel>
-                    { matcherIndex !== 0 && 'and ' } with a decoded body exactly matching
-                </ConfigLabel>
-            }
-            <BodyContainer>
-                <ThemedSelfSizedEditor
-                    value={content}
-                    onChange={this.onBodyChange}
-                    language='text'
-                />
-            </BodyContainer>
-        </MatcherConfigContainer>;
+        return <RawBodyMatcherConfig
+            {...this.props}
+            matcherClass={matchers.RawBodyIncludesMatcher}
+            description='with a decoded body including'
+        />;
     }
 
-    @action.bound
-    onBodyChange(content: string) {
-        this.content = content;
-        this.props.onChange(new matchers.RawBodyMatcher(content));
-    }
 }
 
 @observer
-class RawBodyIncludesMatcherConfig extends MatcherConfig<matchers.RawBodyIncludesMatcher> {
+class RawBodyMatcherConfig<
+    M extends (typeof matchers.RawBodyMatcher | typeof matchers.RawBodyIncludesMatcher)
+> extends MatcherConfig<InstanceType<M>, {
+    matcherClass: M,
+    description: string
+}> {
 
     @observable
     private content: string = '';
@@ -561,7 +557,7 @@ class RawBodyIncludesMatcherConfig extends MatcherConfig<matchers.RawBodyInclude
         return <MatcherConfigContainer>
             { matcherIndex !== undefined &&
                 <ConfigLabel>
-                    { matcherIndex !== 0 && 'and ' } with a decoded body including
+                    { matcherIndex !== 0 && 'and ' } { this.props.description }
                 </ConfigLabel>
             }
             <BodyContainer>
@@ -577,6 +573,104 @@ class RawBodyIncludesMatcherConfig extends MatcherConfig<matchers.RawBodyInclude
     @action.bound
     onBodyChange(content: string) {
         this.content = content;
-        this.props.onChange(new matchers.RawBodyIncludesMatcher(content));
+        this.props.onChange(new this.props.matcherClass(content) as InstanceType<M>);
+    }
+}
+
+class JsonBodyExactMatcherConfig extends MatcherConfig<matchers.JsonBodyMatcher> {
+
+    render() {
+        return <JsonMatcherConfig
+            {...this.props}
+            matcherClass={matchers.JsonBodyMatcher}
+            description='with a JSON body equivalent to'
+        />;
+    }
+
+}
+
+class JsonBodyIncludingMatcherConfig extends MatcherConfig<matchers.JsonBodyFlexibleMatcher> {
+
+    render() {
+        return <JsonMatcherConfig
+            {...this.props}
+            matcherClass={matchers.JsonBodyFlexibleMatcher}
+            description='with a JSON body including'
+        />;
+    }
+
+}
+
+@observer
+class JsonMatcherConfig<
+    M extends (typeof matchers.JsonBodyMatcher | typeof matchers.JsonBodyFlexibleMatcher)
+> extends MatcherConfig<InstanceType<M>, {
+    matcherClass: M,
+    description: string
+}> {
+
+    @observable
+    private content: string = JSON.stringify(this.props.matcher?.body ?? {}, null, 2);
+
+    @observable
+    private error: Error | undefined;
+
+    componentDidMount() {
+        // When the matcher state changes (only that one direction) so that it's out of
+        // sync with the shown content, update the content here to match.
+        disposeOnUnmount(this, reaction(
+            () => this.props.matcher?.body ?? {},
+            (matcherContent) => {
+                let parsedContent: any;
+                try {
+                    parsedContent = JSON.parse(this.content);
+                } catch (e) {
+                    parsedContent = undefined; // JSON can't parse to undefined
+                }
+
+                // If the matcher has changed and the content here either doesn't parse or
+                // doesn't match the matcher, we override the shown content:
+                if (parsedContent === undefined || !_.isEqual(parsedContent, matcherContent)) {
+                    runInAction(() => {
+                        this.content = JSON.stringify(matcherContent, null, 2);
+                    });
+                }
+            }
+        ));
+    }
+
+    render() {
+        const { content, error } = this;
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } { this.props.description }
+                </ConfigLabel>
+            }
+            <BodyContainer error={!!error}>
+                <ThemedSelfSizedEditor
+                    value={content}
+                    onChange={this.onBodyChange}
+                    language='json'
+                />
+            </BodyContainer>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onBodyChange(content: string) {
+        this.content = content;
+
+        try {
+            const parsedContent = JSON.parse(content);
+            this.props.onChange(new this.props.matcherClass(parsedContent) as InstanceType<M>);
+            this.error = undefined;
+        } catch (e) {
+            console.log(e);
+            this.error = e;
+            this.props.onInvalidState();
+        }
     }
 }

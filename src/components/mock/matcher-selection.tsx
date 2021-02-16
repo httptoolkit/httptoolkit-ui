@@ -220,7 +220,9 @@ export class NewMatcherRow extends React.Component<{
             matchers.HeaderMatcher,
             ...(versionSatisfies(serverVersion, BODY_MATCHING_RANGE) ? [
                 matchers.RawBodyMatcher,
-                matchers.RawBodyIncludesMatcher
+                matchers.RawBodyIncludesMatcher,
+                matchers.JsonBodyMatcher,
+                matchers.JsonBodyFlexibleMatcher
             ] : [])
         ];
 

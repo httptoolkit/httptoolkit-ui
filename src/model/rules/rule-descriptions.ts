@@ -53,7 +53,7 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
         case matchers.JsonBodyMatcher:
             return "With JSON body";
         case matchers.JsonBodyFlexibleMatcher:
-            return "With JSON body matching";
+            return "With JSON body including";
     }
 
     // One case to catch the various specific method matchers

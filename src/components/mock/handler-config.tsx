@@ -255,7 +255,6 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             : 'binary';
     }
 
-
     render() {
         const { statusCode, statusMessage, headers, body } = this;
 
