@@ -10,7 +10,8 @@ import { Icon } from '../../icons';
 import {
     serverVersion as serverVersionObservable,
     versionSatisfies,
-    HOST_MATCHER_SERVER_RANGE
+    HOST_MATCHER_SERVER_RANGE,
+    BODY_MATCHING_RANGE
 } from '../../services/service-versions';
 import { Button, Select } from '../common/inputs';
 
@@ -210,30 +211,17 @@ export class NewMatcherRow extends React.Component<{
             : undefined;
 
         const availableMatchers = [
-            serverVersion && versionSatisfies(serverVersion, HOST_MATCHER_SERVER_RANGE) && matchers.HostMatcher,
+            ...(versionSatisfies(serverVersion, HOST_MATCHER_SERVER_RANGE) ? [
+                matchers.HostMatcher
+            ] : []),
             matchers.SimplePathMatcher,
             matchers.RegexPathMatcher,
             matchers.ExactQueryMatcher,
-            matchers.HeaderMatcher
-        ].filter((matcherClass) => {
-            if (!matcherClass) return false;
-
-            if (
-                matcherClass === matchers.SimplePathMatcher ||
-                matcherClass === matchers.RegexPathMatcher
-            ) {
-                // You're allowed max 1 path matcher, across both types
-                return !_.some(this.props.existingMatchers, (m) =>
-                    m instanceof matchers.SimplePathMatcher ||
-                    m instanceof matchers.RegexPathMatcher
-                );
-            } else {
-                // For other matchers, there can just only be one of each type
-                return !_.some(this.props.existingMatchers, (m) => m instanceof matcherClass)
-            }
-        }) as MatcherClass[];
-
-        if (availableMatchers.length === 0) return null;
+            matchers.HeaderMatcher,
+            ...(versionSatisfies(serverVersion, BODY_MATCHING_RANGE) ? [
+                matchers.RawBodyMatcher
+            ] : [])
+        ];
 
         return <MatcherRow>
             <MatcherInputsContainer>

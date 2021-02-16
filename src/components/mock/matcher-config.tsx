@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, autorun, runInAction, reaction } from 'mobx';
+import { observable, action, autorun, runInAction, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as Randexp from 'randexp';
 
@@ -17,6 +17,7 @@ import {
     headersArrayToHeaders,
     headersToHeadersArray
 } from '../common/editable-headers';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -58,6 +59,8 @@ export function MatcherConfiguration(props:
             return <ExactQueryMatcherConfig {...configProps} />;
         case matchers.HeaderMatcher:
             return <HeaderMatcherConfig {...configProps} />;
+        case matchers.RawBodyMatcher:
+            return <RawBodyExactMatcherConfig {...configProps} />;
         default:
             return null;
     }
@@ -483,5 +486,55 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
             console.log(e);
             this.props.onInvalidState();
         }
+    }
+}
+
+const BodyContainer = styled.div`
+    margin-top: 5px;
+
+    > div {
+        margin-top: 5px;
+        border-radius: 4px;
+        border: solid 1px ${p => p.theme.containerBorder};
+        padding: 1px;
+    }
+`;
+
+@observer
+class RawBodyExactMatcherConfig extends MatcherConfig<matchers.RawBodyMatcher> {
+
+    @observable
+    private content: string = '';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const content = this.props.matcher ? this.props.matcher.content : '';
+            runInAction(() => { this.content = content });
+        }));
+    }
+
+    render() {
+        const { content } = this;
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } with a decoded body exactly matching
+                </ConfigLabel>
+            }
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    value={content}
+                    onChange={this.onBodyChange}
+                />
+            </BodyContainer>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onBodyChange(content: string) {
+        this.content = content;
+        this.props.onChange(new matchers.RawBodyMatcher(content));
     }
 }

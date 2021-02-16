@@ -40,8 +40,9 @@ export const lastServerVersion =
         else return version;
     });
 
-export function versionSatisfies(version: string, range: string) {
-    return semver.satisfies(version, range, { includePrerelease: true });
+export function versionSatisfies(version: string | undefined, range: string) {
+    return version !== undefined &&
+        semver.satisfies(version, range, { includePrerelease: true });
 }
 
 // Notable server versions:
@@ -53,3 +54,4 @@ export const FROM_FILE_HANDLER_SERVER_RANGE = '^0.1.28 || ^1.0.0';
 export const DETAILED_CONFIG_RANGE = '^0.1.30 || ^1.0.0';
 export const INTERCEPTOR_METADATA = '^0.1.31 || ^1.0.0';
 export const INITIAL_HTTP2_RANGE = '^0.1.44 || ^1.0.0';
+export const BODY_MATCHING_RANGE = '^1.2.0';
