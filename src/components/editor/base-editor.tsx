@@ -128,6 +128,7 @@ export class SelfSizedBaseEditor extends React.Component<
         if (this.container.current) {
             this.resizeObserver.observe(this.container.current);
         }
+        this.resetUIState();
     }
 
     componentWillUnmount() {
@@ -233,8 +234,16 @@ export class BaseEditor extends React.Component<EditorProps> {
     public async resetUIState() {
         if (this.editor && this.monaco) {
             this.editor.setSelection(
-                new this.monaco.Selection(1, 1, 1, 1)
+                new this.monaco.Selection(0, 0, 0, 0)
             );
+            requestAnimationFrame(() => {
+                // Sometimes, if the value updates immediately, the above results in us
+                // selecting *all* content. We reset again after a frame to avoid that.
+                if (this.editor && this.monaco) {
+                    this.editor.setSelection(new this.monaco.Selection(0, 0, 0, 0));
+                }
+            });
+
             this.relayout();
         }
     }
