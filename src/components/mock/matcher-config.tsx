@@ -61,6 +61,8 @@ export function MatcherConfiguration(props:
             return <HeaderMatcherConfig {...configProps} />;
         case matchers.RawBodyMatcher:
             return <RawBodyExactMatcherConfig {...configProps} />;
+        case matchers.RawBodyIncludesMatcher:
+            return <RawBodyIncludesMatcherConfig {...configProps} />;
         default:
             return null;
     }
@@ -493,7 +495,6 @@ const BodyContainer = styled.div`
     margin-top: 5px;
 
     > div {
-        margin-top: 5px;
         border-radius: 4px;
         border: solid 1px ${p => p.theme.containerBorder};
         padding: 1px;
@@ -527,6 +528,7 @@ class RawBodyExactMatcherConfig extends MatcherConfig<matchers.RawBodyMatcher> {
                 <ThemedSelfSizedEditor
                     value={content}
                     onChange={this.onBodyChange}
+                    language='text'
                 />
             </BodyContainer>
         </MatcherConfigContainer>;
@@ -536,5 +538,45 @@ class RawBodyExactMatcherConfig extends MatcherConfig<matchers.RawBodyMatcher> {
     onBodyChange(content: string) {
         this.content = content;
         this.props.onChange(new matchers.RawBodyMatcher(content));
+    }
+}
+
+@observer
+class RawBodyIncludesMatcherConfig extends MatcherConfig<matchers.RawBodyIncludesMatcher> {
+
+    @observable
+    private content: string = '';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const content = this.props.matcher ? this.props.matcher.content : '';
+            runInAction(() => { this.content = content });
+        }));
+    }
+
+    render() {
+        const { content } = this;
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } with a decoded body including
+                </ConfigLabel>
+            }
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    value={content}
+                    onChange={this.onBodyChange}
+                    language='text'
+                />
+            </BodyContainer>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onBodyChange(content: string) {
+        this.content = content;
+        this.props.onChange(new matchers.RawBodyIncludesMatcher(content));
     }
 }

@@ -219,7 +219,8 @@ export class NewMatcherRow extends React.Component<{
             matchers.ExactQueryMatcher,
             matchers.HeaderMatcher,
             ...(versionSatisfies(serverVersion, BODY_MATCHING_RANGE) ? [
-                matchers.RawBodyMatcher
+                matchers.RawBodyMatcher,
+                matchers.RawBodyIncludesMatcher
             ] : [])
         ];
 

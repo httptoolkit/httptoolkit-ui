@@ -45,7 +45,9 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
         case matchers.CookieMatcher:
             return "With cookie";
         case matchers.RawBodyMatcher:
-            return "With body";
+            return "With exact body";
+        case matchers.RawBodyIncludesMatcher:
+            return "With body including";
         case matchers.FormDataMatcher:
             return "With form data";
         case matchers.JsonBodyMatcher:
