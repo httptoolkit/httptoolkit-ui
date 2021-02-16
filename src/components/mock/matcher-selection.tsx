@@ -52,7 +52,9 @@ const MatcherRow = styled.li`
 `;
 
 const MatcherInputsContainer = styled.div`
-    flex: 1 1 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 0; /* Required to keep body editors resizing properly */
 `;
 
 const MatcherButton = styled(Button)`
@@ -60,6 +62,9 @@ const MatcherButton = styled(Button)`
     padding: 6px 10px;
     display: inline-block;
     margin-left: 5px;
+
+    flex-grow: 0;
+    flex-shrink: 0;
 `;
 
 export const InitialMatcherRow = React.forwardRef((p: {
