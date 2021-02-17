@@ -164,6 +164,7 @@ const RuleMenuContainer = styled(IconMenu)`
         ${p => polished.rgba(p.theme.mainBackground, 0.9)} 50%,
         transparent 100%
     );
+    z-index: 1;
 `;
 
 const RuleMenu = (p: {
