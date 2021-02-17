@@ -11,7 +11,7 @@ import {
     Headers,
     MockttpSerializedBuffer
 } from '../../types';
-import { byteLength } from '../../util';
+import { byteLength, tryParseJson } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';
@@ -241,9 +241,24 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
 }
 
 function buildRequestMatchers(request: HtkRequest) {
+    const hasBody = !!request.body.decoded &&
+        request.body.decoded.length < 10_000;
+    const hasJsonBody = hasBody &&
+        request.contentType === 'json' &&
+        !!tryParseJson(request.body.decoded!.toString());
+
+    const bodyMatcher = hasJsonBody
+        ? [new matchers.JsonBodyMatcher(
+            tryParseJson(request.body.decoded!.toString())!
+        )]
+    : hasBody
+        ? [new matchers.RawBodyMatcher(request.body.decoded!.toString())]
+    : [];
+
     return [
         new (MethodMatchers[request.method as MethodName] || WildcardMatcher)(),
-        new matchers.SimplePathMatcher(request.parsedUrl.toString().split('?')[0])
+        new matchers.SimplePathMatcher(request.parsedUrl.toString().split('?')[0]),
+        ...bodyMatcher
     ];
 }
 

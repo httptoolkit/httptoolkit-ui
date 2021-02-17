@@ -7,6 +7,7 @@ import * as Randexp from 'randexp';
 import { matchers } from "mockttp";
 
 import { css, styled } from '../../styles';
+import { tryParseJson } from '../../util';
 
 import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
 
@@ -627,12 +628,7 @@ class JsonMatcherConfig<
         disposeOnUnmount(this, reaction(
             () => this.props.matcher?.body ?? {},
             (matcherContent) => {
-                let parsedContent: any;
-                try {
-                    parsedContent = JSON.parse(this.content);
-                } catch (e) {
-                    parsedContent = undefined; // JSON can't parse to undefined
-                }
+                const parsedContent = tryParseJson(this.content);
 
                 // If the matcher has changed and the content here either doesn't parse or
                 // doesn't match the matcher, we override the shown content:

@@ -132,3 +132,11 @@ export function byteLength(input: string | Buffer | MockttpSerializedBuffer | un
         return input.length;
     }
 }
+
+export function tryParseJson(input: string): object | undefined {
+    try {
+        return JSON.parse(input);
+    } catch (e) {
+        return undefined;
+    }
+}
