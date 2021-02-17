@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, autorun, runInAction, reaction, computed } from 'mobx';
+import { observable, action, autorun, runInAction, reaction } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as Randexp from 'randexp';
 
@@ -548,6 +548,10 @@ class RawBodyMatcherConfig<
             const content = this.props.matcher ? this.props.matcher.content : '';
             runInAction(() => { this.content = content });
         }));
+
+        // Create the matcher immediately, so that this is already valid & addable,
+        // if that's what you want to do.
+        this.onBodyChange(this.content);
     }
 
     render() {
@@ -610,7 +614,9 @@ class JsonMatcherConfig<
 }> {
 
     @observable
-    private content: string = JSON.stringify(this.props.matcher?.body ?? {}, null, 2);
+    private content: string = this.props.matcher?.body
+        ? JSON.stringify(this.props.matcher?.body, null, 2)
+        : '{\n    \n}'; // Set up with a convenient open body initially
 
     @observable
     private error: Error | undefined;
@@ -637,6 +643,10 @@ class JsonMatcherConfig<
                 }
             }
         ));
+
+        // Create the matcher immediately, so that this is already valid & addable,
+        // if that's what you want to do.
+        this.onBodyChange(this.content);
     }
 
     render() {
