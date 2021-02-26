@@ -53,7 +53,7 @@ const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents
     return <Pill className={p.className}>{
         durationMs < 100 ? sigFig(durationMs, 2) + 'ms' : // 22.34ms
         durationMs < 1000 ? sigFig(durationMs, 1) + 'ms' : // 999.5ms
-        durationMs < 10000 ? sigFig(durationMs / 1000, 2) + ' seconds' : // 3.04 seconds
+        durationMs < 10000 ? sigFig(durationMs / 1000, 3) + ' seconds' : // 3.045 seconds
         sigFig(durationMs / 1000, 1) + ' seconds' // 11.2 seconds
     }</Pill>;
 });
