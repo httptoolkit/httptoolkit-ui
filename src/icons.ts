@@ -60,6 +60,7 @@ import { faEye } from '@fortawesome/free-solid-svg-icons/faEye';
 import { faCaretDown } from '@fortawesome/free-solid-svg-icons/faCaretDown';
 import { faAlignLeft } from '@fortawesome/free-solid-svg-icons/faAlignLeft';
 import { faClone } from '@fortawesome/free-regular-svg-icons/faClone';
+import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -77,6 +78,7 @@ import { faPhp } from '@fortawesome/free-brands-svg-icons/faPhp';
 import { faPython } from '@fortawesome/free-brands-svg-icons/faPython';
 import { faAtom } from '@fortawesome/free-solid-svg-icons/faAtom';
 import { faGlobe } from '@fortawesome/free-solid-svg-icons/faGlobe';
+import { faJava } from '@fortawesome/free-brands-svg-icons/faJava';
 
 import { customSpinnerArc } from './images/custom-spinner';
 import { braveBrowser } from './images/brave-browser';
@@ -131,6 +133,7 @@ library.add(
     faCaretDown,
     faAlignLeft,
     faClone,
+    faCheck,
 
     faChrome,
     faFirefox,
@@ -148,7 +151,8 @@ library.add(
     faPhp,
     faPython,
     faAtom,
-    faGlobe
+    faGlobe,
+    faJava
 );
 
 export interface IconProps {
@@ -188,6 +192,8 @@ export const SourceIcons = {
     Urlfetch: { icon: ['fab', 'python'], color: '#4584b6' }, // Popular Python HTTP lib
     Pycurl: { icon: ['fab', 'python'], color: '#4584b6' }, // Popular Python HTTP lib
     Pythonbindings: { icon: ['fab', 'python'], color: '#4584b6' }, // Stripe's Python HTTP lib
+
+    Java: { icon: ['fab', 'java'], color: '#007396' },
 
     Android: { icon: ['fab', 'android'], color: '#78C257' },
     Okhttp: { icon: ['fab', 'android'], color: '#78C257' }, // Popular Android HTTP lib
