@@ -94,7 +94,7 @@ describe('HTTP source parsing', () => {
                 const source = parseSource(JAVA_APACHE);
 
                 expect(source.summary).to.equal('Apache-HttpClient/4.5.2');
-                expect(source.icon).to.equal(SourceIcons.Unknown);
+                expect(source.icon).to.equal(SourceIcons.Java);
             });
 
             it('should parse wget UAs', () => {

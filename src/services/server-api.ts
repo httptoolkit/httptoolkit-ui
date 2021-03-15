@@ -8,7 +8,8 @@ import {
     serverVersion,
     versionSatisfies,
     DETAILED_CONFIG_RANGE,
-    INTERCEPTOR_METADATA
+    INTERCEPTOR_METADATA, 
+    DETAILED_METADATA
 } from './service-versions';
 
 const authTokenPromise = !RUNNING_IN_WORKER
@@ -183,6 +184,22 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
     `, { proxyPort });
 
     return response.interceptors;
+}
+
+export async function getDetailedInterceptorMetadata<M extends unknown>(id: string): Promise<M | undefined> {
+    if (!versionSatisfies(await serverVersion, DETAILED_METADATA)) return undefined;
+
+    const response = await graphql<{
+        interceptor: { metadata: M }
+    }>('getDetailedInterceptorMetadata', `
+        query getDetailedInterceptorMetadata($id: ID!) {
+            interceptor(id: $id) {
+                metadata(type: DETAILED)
+            }
+        }
+    `, { id });
+
+    return response.interceptor.metadata;
 }
 
 export async function activateInterceptor(id: string, proxyPort: number, options?: any): Promise<unknown> {

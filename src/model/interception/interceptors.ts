@@ -12,6 +12,7 @@ import { ElectronCustomUi } from '../../components/intercept/config/electron-con
 import { AndroidDeviceCustomUi } from "../../components/intercept/config/android-device-config";
 import { AndroidAdbCustomUi } from "../../components/intercept/config/android-adb-config";
 import { ExistingBrowserCustomUi } from "../../components/intercept/config/existing-browser-config";
+import { JvmCustomUi } from "../../components/intercept/config/jvm-config";
 
 interface InterceptorConfig {
     name: string;
@@ -33,11 +34,13 @@ export type Interceptor =
     InterceptorConfig &
     { version?: string, isSupported: boolean };
 
-const BROWSER_TAGS = ['browsers', 'web page', 'web app', 'javascript'];
+const BROWSER_TAGS = ['browsers', 'web', 'pwa'];
+const JVM_TAGS = ['jvm', 'java', 'scala', 'kotlin', 'clojure', 'groovy'];
 const MOBILE_TAGS = ['mobile', 'phone', 'app'];
-const ANDROID_TAGS = ['samsung', 'galaxy', 'nokia', 'lg', 'android', 'google', 'motorola'];
+const ANDROID_TAGS = ['samsung', 'galaxy', 'nokia', 'lg', 'android', 'google', 'motorola', ...JVM_TAGS];
 const IOS_TAGS = ['apple', 'ios', 'iphone', 'ipad'];
 const DOCKER_TAGS = ['bridge', 'services', 'images'];
+const TERMINAL_TAGS = ['command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js', ...JVM_TAGS];
 
 const androidInterceptIconProps = _.assign({
     style: { transform: 'translateY(32px)' }
@@ -57,8 +60,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'existing-chrome': {
         name: 'Global Chrome',
         description: [
-            "Intercept your main Chrome profile globally.",
-            "This captures all default Chrome traffic, so may interfere with normal usage."
+            "Intercept your main Chrome profile globally",
+            "This captures all default Chrome traffic, so may interfere with normal usage"
         ],
         uiConfig: ExistingBrowserCustomUi,
         iconProps: [
@@ -163,18 +166,27 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: SourceIcons.Docker,
         tags: DOCKER_TAGS
     },
+    'attach-jvm': {
+        name: 'Attach to JVM',
+        description: [
+            'Attach to any local running JVM process, including Java, Kotlin & Clojure'
+        ],
+        iconProps: SourceIcons.Java,
+        uiConfig: JvmCustomUi,
+        tags: JVM_TAGS
+    },
     'fresh-terminal': {
         name: 'Fresh Terminal',
         description: ["Open a new terminal preconfigured to intercept all launched processes"],
         iconProps: SourceIcons.Terminal,
-        tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
+        tags: TERMINAL_TAGS
     },
     'existing-terminal': {
         name: 'Existing Terminal',
         description: ["Intercept all launched processes from one of your existing terminal windows"],
         iconProps: recoloured(SourceIcons.Terminal, '#dd44dd'),
         uiConfig: ExistingTerminalCustomUi,
-        tags: ['terminal', 'command line', 'cli', 'bash', 'cmd', 'shell', 'php', 'ruby', 'node', 'js']
+        tags: TERMINAL_TAGS
     },
     'android-adb': {
         name: 'Android device connected via ADB',
