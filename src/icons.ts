@@ -194,6 +194,13 @@ export const SourceIcons = {
     Pythonbindings: { icon: ['fab', 'python'], color: '#4584b6' }, // Stripe's Python HTTP lib
 
     Java: { icon: ['fab', 'java'], color: '#007396' },
+    Reactornetty: { icon: ['fab', 'java'], color: '#007396' }, // Popular Java lib
+    Jetty: { icon: ['fab', 'java'], color: '#007396' }, // Popular Java lib
+    Jakarta: { icon: ['fab', 'java'], color: '#007396' }, // Old name for Apache HttpClient, popular lib
+    Akka: { icon: ['fab', 'java'], color: '#007396' }, // Popular Scala lib
+    Intellij: { icon: ['fab', 'java'], color: '#007396' }, // Java IDE, common target
+    Ktor: { icon: ['fab', 'java'], color: '#007396' }, // Kotlin lib
+    Ahc: { icon: ['fab', 'java'], color: '#007396' }, // AsyncHttpClient, popular Java lib
 
     Android: { icon: ['fab', 'android'], color: '#78C257' },
     Okhttp: { icon: ['fab', 'android'], color: '#78C257' }, // Popular Android HTTP lib
