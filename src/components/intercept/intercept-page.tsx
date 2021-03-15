@@ -105,7 +105,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         Intercept HTTP
                     </h1>
                     <p>
-                        To collect & view HTTP traffic, you need to connect
+                        To collect &amp; view HTTP traffic, you need to connect
                         a source of traffic, like a browser, mobile device, or
                         docker container.
                     </p>
@@ -123,9 +123,16 @@ class InterceptPage extends React.Component<InterceptPageProps> {
 
                 { _(visibleInterceptOptions)
                     .sortBy((option) => {
-                        if (option.isActive || option.isActivable) return -50;
-                        else if (option.isSupported) return -25;
-                        else return 0;
+                        const exactFilterMatch = filter && (
+                            option.tags.includes(filter) ||
+                            option.name.toLocaleLowerCase().split(' ').includes(filter)
+                        );
+
+                        return -1 * (0 +
+                            (exactFilterMatch ? 100 : 0) +
+                            (option.isActive || option.isActivable ? 50 : 0) +
+                            (option.isSupported ? 25 : 0)
+                        );
                     })
                     .map((option, index) =>
                         <InterceptOption
