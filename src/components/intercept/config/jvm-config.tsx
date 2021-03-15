@@ -115,16 +115,28 @@ class JvmConfig extends React.Component<{
     interceptTarget(pid: string) {
         const {
             inProgressPids,
-            onSuccess,
             props: {
                 reportStarted,
-                activateInterceptor
+                activateInterceptor,
+                proxyStore
             }
         } = this;
 
         reportStarted();
         const activationPromise = activateInterceptor({ targetPid: pid });
-        activationPromise.then(onSuccess);
+        activationPromise.then(() => {
+            // Optimistically update the UI's success state
+            const target = this.jvmTargets[pid];
+            if (target) {
+                target.interceptedByProxy = proxyStore!.serverPort;
+            }
+
+            this.props.reportSuccess({
+                // Don't jump to view, because there's often not immediately visible traffic
+                // anyway, and you may well want to intercept multiple targets.
+                showRequests: false
+            });
+        });
 
         inProgressPids.push(pid);
 
@@ -132,14 +144,6 @@ class JvmConfig extends React.Component<{
             _.pull(inProgressPids, pid);
         }));
     }
-
-    onSuccess = () => {
-        this.props.reportSuccess({
-            // Don't jump to view, because there's often not immediately visible traffic
-            // anyway, and you may well want to intercept multiple targets.
-            showRequests: false
-        });
-    };
 
 }
 
