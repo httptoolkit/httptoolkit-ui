@@ -28,7 +28,8 @@ describe('OpenAPI support', () => {
                     logoUrl: 'https://twitter.com/stripe/profile_image?size=original',
                     description: {
                         __html:
-                            '<p>The Stripe REST API. Please see <a href="https://stripe.com/docs/api">' +
+                            '<p>The Stripe REST API. Please see ' +
+                            '<a href="https://stripe.com/docs/api" target="_blank" rel="noreferrer">' +
                             'https://stripe.com/docs/api</a> for more details.</p>'
                     },
                     docsUrl: undefined,

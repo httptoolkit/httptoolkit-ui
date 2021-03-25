@@ -61,7 +61,7 @@
     "@types/react-fontawesome": "^1.6.4",
     "@types/react-ga": "^2.3.0",
     "@types/react-window": "^1.8.1",
-    "@types/remarkable": "^1.7.2",
+    "@types/remarkable": "^1.7.3",
     "@types/semver": "^7.3.1",
     "@types/serialize-error": "^2.1.0",
     "@types/set-cookie-parser": "0.0.3",
