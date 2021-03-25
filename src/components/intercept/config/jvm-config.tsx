@@ -66,11 +66,11 @@ class JvmConfig extends React.Component<{
 
     updateTargets = flow(function * (this: JvmConfig) {
         const result: {
-            jvmTargets: _.Dictionary<JvmTarget>
-        } = (
+            jvmTargets?: _.Dictionary<JvmTarget>
+        } | undefined = (
             yield getDetailedInterceptorMetadata("attach-jvm")
         );
-        this.jvmTargets = result.jvmTargets;
+        this.jvmTargets = result?.jvmTargets ?? {};
     }.bind(this));
 
     @observable
