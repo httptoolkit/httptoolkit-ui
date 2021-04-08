@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { get } from 'typesafe-get';
 import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
@@ -190,7 +189,7 @@ async function generateHarResponse(exchange: HttpExchange): Promise<HarFormat.Re
             {
                 mimeType: lastHeader(response.headers['content-type']) ||
                     'application/octet-stream',
-                size: get(response.body.decoded, 'byteLength') || 0
+                size: response.body.decoded?.byteLength || 0
             },
             responseContent
         ),
@@ -369,8 +368,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 // Mutatively cleans & returns the HAR, to tidy up irrelevant but potentially
 // problematic details & ensure we can parse it, if at all possible.
 function cleanRawHarData(harContents: any) {
-    const entries = get(harContents, 'log', 'entries');
-    if (!entries) return;
+    const entries = harContents?.log?.entries ?? [];
 
     // Some HAR exports include invalid serverIPAddresses, which fail validation.
     // Somebody is wrong here, but we don't really care - just drop it entirely.
@@ -394,7 +392,7 @@ function cleanRawHarData(harContents: any) {
         }
     });
 
-    const pages = get(harContents, 'log', 'pages');
+    const pages = harContents?.log?.pages ?? [];
     pages.forEach((page: any) => {
         // FF doesn't give pages their (required) titles:
         if (page.title === undefined) page.title = page.id;
