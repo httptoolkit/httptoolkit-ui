@@ -78,33 +78,30 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
             onClick={async () => {
                 const uploadedFile = await uploadFile('text', ['.har', 'application/har', 'application/har+json']);
                 if (uploadedFile) {
+                    let data: {};
                     try {
-                        const data = JSON.parse(uploadedFile);
-
-                        await props.eventsStore!.loadFromHar(data)
-                        .catch((error) => {
-                            if (error.name === 'HARError' && error.errors) {
-                                reportError(error);
-
-                                alert(dedent`
-                                    HAR file is not valid.
-
-                                    ${
-                                        error.errors
-                                        .map((e: Ajv.ErrorObject) => formatAjvError(data, e))
-                                        .join('\n')
-                                    }
-                                `);
-                            } else {
-                                throw error;
-                            }
-                        })
+                        data = JSON.parse(uploadedFile);
+                        await props.eventsStore!.loadFromHar(data);
                     } catch (error) {
-                        alert(dedent`
-                            Could not parse HAR file.
+                        reportError(error);
 
-                            ${error.message}
-                        `);
+                        if (error.name === 'HARError' && error.errors) {
+                            alert(dedent`
+                                HAR file is not valid.
+
+                                ${
+                                    error.errors
+                                    .map((e: Ajv.ErrorObject) => formatAjvError(data, e))
+                                    .join('\n')
+                                }
+                            `);
+                        } else {
+                            alert(dedent`
+                                Could not parse HAR file.
+
+                                ${error.message}
+                            `);
+                        }
                     }
                 }
             }}
