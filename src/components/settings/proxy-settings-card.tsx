@@ -398,7 +398,7 @@ export class ProxySettingsCard extends React.Component<
                 }
             />
             <ContentLabel>
-                Host Certificate Whitelist
+                Host HTTPS Whitelist
             </ContentLabel>
 
             <CertificateWhitelistList>
@@ -420,7 +420,7 @@ export class ProxySettingsCard extends React.Component<
 
                 <input
                     type="text"
-                    placeholder='Hostname to whitelist for certificate checks'
+                    placeholder='Hostname to exclude from strict HTTPS checks'
                     value={this.whitelistHostInput}
                     onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
                         this.whitelistHostInput = e.target.value;
@@ -438,8 +438,9 @@ export class ProxySettingsCard extends React.Component<
                 </SettingsButton>
             </CertificateWhitelistList>
             <SettingsExplanation>
-                All requests to these hosts will skip certificate validation, and so will
-                appear successful despite self-signed, expired or invalid HTTPS certificates.
+                Requests to these hosts will skip certificate validation and/or may use older TLS
+                versions, back to TLSv1. These requests will be successful regardless of any
+                self-signed, expired or invalid HTTPS configurations.
             </SettingsExplanation>
 
             {
