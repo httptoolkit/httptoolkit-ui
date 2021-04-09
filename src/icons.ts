@@ -206,10 +206,15 @@ export const SourceIcons = {
     Okhttp: { icon: ['fab', 'android'], color: '#78C257' }, // Popular Android HTTP lib
     Fbandroidsdk: { icon: ['fab', 'android'], color: '#78C257' }, // FB Android SDK
 
+    Iphone: { icon: ['fab', 'apple'], color: '#000' },
+    iOS: { icon: ['fab', 'apple'], color: '#000' },
+    Ios: { icon: ['fab', 'apple'], color: '#000' },
+    Ipad: { icon: ['fab', 'apple'], color: '#000' },
+    Darwin: { icon: ['fab', 'apple'], color: '#000' },
+
     Docker: { icon: ['fab', 'docker'], color: '#0db7ed' },
     Terminal: { icon: ['fas', 'terminal'], color: '#20c20e' },
     Network: { icon: ['fas', 'network-wired'], color: '#888' },
-    iOS: { icon: ['fab', 'apple'], color: '#000' },
     Electron: { icon: ['fas', 'atom'], color: '#9FEAF9' },
 
     Desktop: { icon: ['fas', 'desktop'], color: '#888' },
