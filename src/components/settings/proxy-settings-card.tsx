@@ -37,6 +37,10 @@ const RestartApp = styled(SettingsButton).attrs(() => ({
     left: 20px;
     font-weight: bold;
 
+    &:not(:disabled) {
+        background-color: ${p => p.theme.popColor};
+    }
+
     ${(p: { visible: boolean }) => !p.visible && 'display: none;'}
 `;
 
