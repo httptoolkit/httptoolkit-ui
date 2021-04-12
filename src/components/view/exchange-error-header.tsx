@@ -249,14 +249,14 @@ export const ExchangeErrorHeader = (p: {
                 <HeaderExplanation>
                     { p.isPaidUser
                         ? <>
-                            You can configure client certificates or whitelist this
-                            host's certificates, which may resolve some TLS issues,
-                            from the Settings page.
+                            From the Settings page you can configure client certificates, or
+                            whitelist this host to relax HTTPS requirements and allow
+                            self-signed certificates, which may resolve some TLS issues.
                         </>
                         : <>
-                            Pro users can whitelist certificates for custom hosts, which
-                            may resolve some TLS issues, and configure per-host client
-                            certificates.
+                            Pro users can relax HTTPS requirements for configured hosts to
+                            accept older TLS versions and self-signed/invalid certificates, and
+                            configure per-host client certificates for authentication.
                         </>
                     }
                 </HeaderExplanation>
