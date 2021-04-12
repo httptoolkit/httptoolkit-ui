@@ -89,7 +89,7 @@ export type FilterClass<T extends unknown = never> = {
  */
 export class StringFilter extends Filter {
     constructor(
-        public readonly filter: string
+        public readonly filter: string = ''
     ) {
         super(filter);
     }
