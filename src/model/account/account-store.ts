@@ -129,6 +129,10 @@ export class AccountStore {
             this.isStatusUnexpired;
     }
 
+    @computed get userHasSubscription() {
+        return this.isPaidUser || this.isPastDueUser;
+    }
+
     @computed get mightBePaidUser() {
         // Like isPaidUser, but returns true for users who have subscription data
         // locally that's expired, until we successfully make a first check.
@@ -147,7 +151,7 @@ export class AccountStore {
             if (!this.isLoggedIn) yield this.logIn();
 
             // If we cancelled login, or we've already got a plan, we're done.
-            if (!this.isLoggedIn || this.isPaidUser) return;
+            if (!this.isLoggedIn || this.userHasSubscription) return;
 
             // Otherwise, it's checkout time, and the rest is in the hands of Paddle
             yield this.purchasePlan(this.user.email!, selectedPlan);
@@ -167,7 +171,7 @@ export class AccountStore {
 
         if (loggedIn) {
             trackEvent({ category: 'Account', action: 'Login success' });
-            if (this.isPaidUser) {
+            if (this.userHasSubscription) {
                 trackEvent({ category: 'Account', action: 'Paid user login' });
                 this.modal = undefined;
             } else {
