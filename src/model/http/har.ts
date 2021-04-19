@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as dateFns from 'date-fns';
 import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
+import * as querystring from 'querystring';
 
 import { lastHeader } from '../../util';
 import { ObservablePromise } from '../../util/observable';
@@ -128,17 +129,72 @@ export function generateHarRequest(
                 value: paramValue
             })
         ),
-        postData: bodyText
-            ? {
-                mimeType: lastHeader(request.headers['content-type']) ||
-                    'application/octet-stream',
-                text: bodyText,
-                params: []
-            }
-            : undefined,
+        postData: generateHarPostBody(
+            bodyText,
+            lastHeader(request.headers['content-type']) ||
+                'application/octet-stream',
+        ),
         headersSize: -1,
         bodySize: request.body.encoded.byteLength
     };
+}
+
+type TextBody = {
+    mimeType: string,
+    text: string
+};
+
+type ParamBody = {
+    mimeType: string,
+    params: HarFormat.Param[]
+}
+
+function generateHarPostBody(body: string | false, mimeType: string): TextBody | ParamBody | undefined {
+    if (!body) return;
+
+    if (mimeType === 'application/x-www-form-urlencoded') {
+        let parsedBody: querystring.ParsedUrlQuery | undefined;
+
+        try {
+            parsedBody = querystring.parse(body);
+        } catch (e) {
+            console.log('Failed to parse url encoded body', body);
+        }
+
+        if (parsedBody) {
+            // URL encoded data - expose this explicitly
+            return {
+                mimeType,
+                params: generateHarParamsFromParsedQuery(parsedBody)
+            };
+        } else {
+            // URL encoded but not parseable so just use the raw data
+            return {
+                mimeType,
+                text: body
+            };
+        }
+    } else {
+        // Not URL encoded, so just use the raw data
+        return {
+            mimeType,
+            text: body
+        };
+    }
+}
+
+function generateHarParamsFromParsedQuery(query: querystring.ParsedUrlQuery): HarFormat.Param[] {
+    const queryEntries = _.flatMap(Object.entries(query), ([key, value]): Array<[string, string]> => {
+        if (_.isString(value)) return [[key, value]];
+        else return value.map((innerValue) => [
+            key, innerValue
+        ]);
+    });
+
+    return queryEntries.map(([key, value]) => ({
+        name: key,
+        value
+    }));
 }
 
 const harResponseDecoder = new TextDecoder('utf8', { fatal: true });
@@ -422,13 +478,23 @@ function parseHarRequest(
         // legal for an HTTP request):
         headers: asHtkHeaders(request.headers) as Headers & { host: string },
         body: {
-            decoded: Buffer.from(
-                request.postData ? request.postData.text : '',
-                'utf8'
-            ),
+            decoded: parseHarPostData(request.postData),
             encodedLength: request.bodySize
         }
     }
+}
+
+function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
+    if (!data) return Buffer.from('');
+    else if (data.params) return Buffer.from(
+        // Go from array of key-value objects to object of key -> value array:
+        querystring.stringify(_(data.params)
+            .groupBy(({ name }) => name)
+            .mapValues((params) => params.map(p => p.value || ''))
+            .valueOf()
+        )
+    );
+    else return Buffer.from(data.text, 'utf8');
 }
 
 function parseHarResponse(
