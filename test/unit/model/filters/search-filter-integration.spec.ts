@@ -6,13 +6,17 @@ import { expect } from '../../../test-setup';
 import {
     Filter,
     FilterSet,
-    SelectableSearchFilterClasses, StringFilter
+    SelectableSearchFilterClasses,
+    StringFilter
 } from "../../../../src/model/filters/search-filters";
 import {
     applySuggestionToFilters,
-    applySuggestionToText,
-    getSuggestions
+    getFilterSuggestions
 } from "../../../../src/model/filters/filter-matching";
+import {
+    applySuggestionToText
+} from '../../../../src/model/filters/syntax-matching';
+
 import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
 import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
 import { CollectedEvent, FailedTlsRequest } from '../../../../src/types';
@@ -23,7 +27,7 @@ import { decodeBody } from '../../../../src/services/ui-worker-api';
 function createFilter(input: string): Filter {
     const initialFilters: FilterSet = [new StringFilter(input)];
 
-    const suggestions = getSuggestions(
+    const suggestions = getFilterSuggestions(
         SelectableSearchFilterClasses,
         initialFilters[0].filter
     ).filter(s => s.matchType === 'full');
@@ -39,7 +43,7 @@ function createFilter(input: string): Filter {
 }
 
 function getSuggestionDescriptions(input: string) {
-    return getSuggestions(SelectableSearchFilterClasses, input)
+    return getFilterSuggestions(SelectableSearchFilterClasses, input)
         .map(s => s
             .filterClass
             .filterDescription(input, s.matchType === 'template')
@@ -49,7 +53,7 @@ function getSuggestionDescriptions(input: string) {
 describe("Search filter model integration test:", () => {
     describe("Simple filter usage", () => {
         it("should suggest all filter names given no input", () => {
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, "");
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, "");
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 0, showAs: "method" },
@@ -95,7 +99,7 @@ describe("Search filter model integration test:", () => {
         });
 
         it("should suggest nothing given free text input", () => {
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, "free text");
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, "free text");
 
             expect(suggestions).to.deep.equal([]);
         });
@@ -103,7 +107,7 @@ describe("Search filter model integration test:", () => {
 
     describe("Status filters", () => {
         it("should suggest status operators once it's clear you want status", () => {
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, "sta");
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, "sta");
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 0, showAs: "status=" },
@@ -118,7 +122,7 @@ describe("Search filter model integration test:", () => {
         it("should disambiguate status operators as they're entered", () => {
             let input = "status>";
 
-            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            let suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
             expect(suggestions.map(s =>
                 _.pick(s, 'showAs', 'index'))
             ).to.deep.equal([
@@ -128,7 +132,7 @@ describe("Search filter model integration test:", () => {
             // Append an equals, should jump to >= suggestions:
             input = "status>=";
 
-            suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 6, showAs: ">={3-digit number}" }
             ]);
@@ -137,12 +141,12 @@ describe("Search filter model integration test:", () => {
         it("should suggest a status number once you pick an operator", () => {
             let input = "sta";
 
-            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            let suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
             input = applySuggestionToText(input, _.last(suggestions)!);
 
             expect(input).to.equal("status<")
 
-            suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 6, showAs: "<{3-digit number}" }
             ]);
@@ -151,10 +155,10 @@ describe("Search filter model integration test:", () => {
         it("should suggest seen status numbers from context, if available", () => {
             let input = "sta";
 
-            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            let suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
             input = applySuggestionToText(input, _.last(suggestions)!);
 
-            suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+            suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input, [
                 getExchangeData({ statusCode: 200 }),
                 getExchangeData({ statusCode: 404 }),
             ]);
@@ -172,7 +176,7 @@ describe("Search filter model integration test:", () => {
                 new StringFilter("status>=300")
             ];
 
-            let suggestions = getSuggestions(SelectableSearchFilterClasses, filters[0].filter);
+            let suggestions = getFilterSuggestions(SelectableSearchFilterClasses, filters[0].filter);
 
             expect(suggestions.length).to.equal(1);
             filters = applySuggestionToFilters(filters, suggestions[0])
@@ -392,7 +396,7 @@ describe("Search filter model integration test:", () => {
                 getFailedTls()
             ];
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, "method=", exampleEvents);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, "method=", exampleEvents);
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 6, showAs: '={method}' },
@@ -424,7 +428,7 @@ describe("Search filter model integration test:", () => {
         it("should only suggest http for =http", () => {
             const input = "protocol=http";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
 
             expect(suggestions.map(
                 s => _.pick(s, 'showAs', 'index', 'matchType'))
@@ -436,7 +440,7 @@ describe("Search filter model integration test:", () => {
         it("should only suggest https for =https", () => {
             const input = "protocol=https";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
 
             expect(suggestions.map(
                 s => _.pick(s, 'showAs', 'index', 'matchType'))
@@ -623,7 +627,7 @@ describe("Search filter model integration test:", () => {
         it("should suggest operator options for 'quer'", () => {
             const input = "quer";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
 
             expect(suggestions.map(
                 s => _.pick(s, 'showAs', 'index', 'matchType'))
@@ -639,7 +643,7 @@ describe("Search filter model integration test:", () => {
         it("should suggest both template & empty queries for query=", () => {
             const input = "query=";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
 
             expect(suggestions.map(
                 s => _.pick(s, 'showAs', 'index', 'matchType'))
@@ -652,7 +656,7 @@ describe("Search filter model integration test:", () => {
         it("should show a more specific description given a partial operator", () => {
             const input = "query=";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
 
             const [
                 [templateSuggestion], [emptyQuerySuggestion]
@@ -738,7 +742,7 @@ describe("Search filter model integration test:", () => {
         it("should suggest header[...] in one step, once unambiguous", () => {
             let input = "head";
 
-            let suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            let suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
                 { index: 0, showAs: "header[{header name}]" }
             ]);
@@ -747,7 +751,7 @@ describe("Search filter model integration test:", () => {
         it("should suggest seen header names using context", () => {
             let input = "header[";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input, [
                 getExchangeData({
                     responseState: 'pending',
                     requestHeaders: {
@@ -771,7 +775,7 @@ describe("Search filter model integration test:", () => {
         it("should suggest seen input-matching header names from context", () => {
             let input = "header[cont";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input, [
                 getExchangeData({
                     responseState: 'pending',
                     requestHeaders: {
@@ -795,7 +799,7 @@ describe("Search filter model integration test:", () => {
         it("should not create a filter immediately from header name completion", () => {
             let input = "header[cont";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input);
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input);
 
             const filters = applySuggestionToFilters([
                 new StringFilter(input),
@@ -808,7 +812,7 @@ describe("Search filter model integration test:", () => {
         it("should suggest seen header values from context, if available", () => {
             let input = "header[content-type]=";
 
-            const suggestions = getSuggestions(SelectableSearchFilterClasses, input, [
+            const suggestions = getFilterSuggestions(SelectableSearchFilterClasses, input, [
                 getExchangeData({
                     responseState: 'pending',
                     requestHeaders: {

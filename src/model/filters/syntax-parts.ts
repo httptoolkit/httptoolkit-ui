@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import {
     SyntaxPart,
     SyntaxPartMatch,
-    Suggestion
+    SyntaxSuggestion
 } from './syntax-matching';
 
 type CharRange = readonly [number, number];
@@ -69,7 +69,7 @@ function filterContextualSuggestions<S>(
     existingInput: string | undefined,
     suggestionGenerator: ((value: string, index: number, context: S) => string[]) | undefined,
     filter: (suggestion: string) => boolean
-): Suggestion[] {
+): SyntaxSuggestion[] {
     if (!context || !suggestionGenerator) return [];
 
     const lowercaseInput = (existingInput || '').toLowerCase();
@@ -83,6 +83,7 @@ function filterContextualSuggestions<S>(
         .slice(0, 10) // Max 10 results
         .map(s => ({
             showAs: s,
+            index,
             value: s,
             matchType: 'full'
         }));
@@ -114,9 +115,10 @@ export class FixedStringSyntax implements SyntaxPart<string> {
         };
     }
 
-    getSuggestions(value: string, index: number): Suggestion[] {
+    getSuggestions(value: string, index: number): SyntaxSuggestion[] {
         return [{
             showAs: this.matcher,
+            index,
             value: this.matcher,
             matchType: 'full'
         }];
@@ -166,7 +168,7 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
         };
     }
 
-    getSuggestions(value: string, index: number, context?: C): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
 
         const suggestions = filterContextualSuggestions(value, index, context,
@@ -183,12 +185,14 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
             return [
                 {
                     showAs: `{${this.templateText}}`,
+                    index,
                     value: "",
                     matchType: 'template'
                 },
                 ...(this.allowEmpty(value, index) && matchingString === ""
                     ? [{
                         showAs: '',
+                        index,
                         value: '',
                         matchType: 'full'
                     } as const]
@@ -200,6 +204,7 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
             return [
                 {
                     showAs: matchingString,
+                    index,
                     value: matchingString,
                     matchType: 'full'
                 },
@@ -289,7 +294,7 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
         };
     }
 
-    getSuggestions(value: string, index: number, context?: never): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: never): SyntaxSuggestion[] {
         const hasStartWrapper = value[index] === this.wrapper[0];
 
         const endChar = !this.optional || hasStartWrapper
@@ -325,6 +330,7 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
                     ? this.wrapper[1]
                     : ''
                 ),
+                index,
                 // Value should only add the closing wrapper if it's a full match, e.g.
                 // [value] or [ for template/partial.
                 value: this.wrapper[0] + s.value + (
@@ -371,7 +377,7 @@ export class NumberSyntax implements SyntaxPart<number> {
         return this.stringSyntax.match(value, index);
     }
 
-    getSuggestions(value: string, index: number): Suggestion[] {
+    getSuggestions(value: string, index: number): SyntaxSuggestion[] {
         return this.stringSyntax.getSuggestions(value, index);
     }
 
@@ -406,7 +412,7 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
         }
     }
 
-    getSuggestions(value: string, index: number, context?: S): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: S): SyntaxSuggestion[] {
         const matchingNumber = getNumberAt(value, index);
 
         const suggestions = filterContextualSuggestions(value, index, context,
@@ -424,6 +430,7 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
         if (!matchingNumber) {
             return [{
                 showAs: `{${this.requiredLength}-digit number}`,
+                index,
                 value: "",
                 matchType: 'template'
             }, ...suggestions];
@@ -439,6 +446,7 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
 
             return [{
                 showAs: extendedNumber,
+                index,
                 value: extendedNumber,
                 matchType: 'full'
             }];
@@ -473,7 +481,7 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
         return _.maxBy(bestMatches, (m) => m?.consumed); // The longest best matching option
     }
 
-    getSuggestions(value: string, index: number): Suggestion[] {
+    getSuggestions(value: string, index: number): SyntaxSuggestion[] {
         let matchers = this.optionMatchers
             .map(m => ({ matcher: m, match: m.match(value, index) }))
             .filter(({ match }) => !!match);
@@ -546,11 +554,12 @@ export class OptionalSyntax<
         return { type: 'full', consumed: currentIndex - index };
     }
 
-    getSuggestions(value: string, index: number, context?: C): Suggestion[] {
+    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
         const isEndOfValue = value.length === index;
         let currentIndex = index;
-        let suggestions: Suggestion[] = [{
+        let suggestions: SyntaxSuggestion[] = [{
             showAs: "",
+            index,
             value: "",
             matchType: 'full'
         }];
@@ -563,7 +572,13 @@ export class OptionalSyntax<
             // this optional part entirely. This effectively allows backtracking for
             // suggestions, so the suggestion is shown only if the next non-optional
             // part _does_ match this content correctly.
-            if (!nextMatch) return [{ showAs: "", value: "", matchType: 'full' }];
+            if (!nextMatch) return [{
+                showAs: "",
+                index,
+                value: "",
+                matchType: 'full'
+            }];
+
             matchedAllParts = subPart === this.subParts[this.subParts.length - 1];
 
             const nextSuggestions = subPart.getSuggestions(value, currentIndex, context);
@@ -571,6 +586,7 @@ export class OptionalSyntax<
             suggestions = _.flatMap(suggestions, (suggestion) =>
                 nextSuggestions.map((nextSuggestion) => ({
                     showAs: suggestion.showAs + nextSuggestion.showAs,
+                    index: suggestion.index,
                     value: suggestion.value + nextSuggestion.value,
                     matchType: nextSuggestion.matchType
                 }))
@@ -597,7 +613,7 @@ export class OptionalSyntax<
 
         if (isEndOfValue) {
             return [
-                { showAs: "", value: "", matchType: 'full' },
+                { showAs: "", index, value: "", matchType: 'full' },
                 ...suggestions
             ];
         } else {

@@ -12,13 +12,13 @@ import {
     StringFilter
 } from '../../../model/filters/search-filters';
 import {
-    getSuggestions,
     FilterSuggestion,
+    getFilterSuggestions,
     applySuggestionToFilters,
-    applySuggestionToText,
     isCustomFilter,
     CustomFilterClass
 } from '../../../model/filters/filter-matching';
+import { applySuggestionToText } from '../../../model/filters/syntax-matching';
 
 import { FilterSuggestionRow } from './filter-suggestion-row';
 import {
@@ -139,7 +139,7 @@ export const FilterInput = <T extends unknown>(props: {
     // suggestions more aggressively than it expects. Instead of updating on request, we useMemo
     // to update the suggestions every time the value changes:
     const suggestions = React.useMemo(() =>
-        getSuggestions(props.availableFilters, props.value, props.suggestionContext)
+        getFilterSuggestions(props.availableFilters, props.value, props.suggestionContext)
     , [props.availableFilters, props.value, props.suggestionContext]);
 
     // Whenever a suggestion is highlighted, we fire an event with the filters that would be active if

@@ -199,6 +199,7 @@ describe("Number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '{number}',
+                index: 6,
                 value: '',
                 matchType: 'template'
             }
@@ -213,6 +214,7 @@ describe("Number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '123',
+                index: 6,
                 value: '123',
                 matchType: 'full'
             }
@@ -282,6 +284,7 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '{3-digit number}',
+                index: 6,
                 value: '',
                 matchType: 'template'
             }
@@ -296,6 +299,7 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '500',
+                index: 6,
                 value: '500',
                 matchType: 'full'
             }
@@ -310,6 +314,7 @@ describe("Fixed-length number syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '418',
+                index: 6,
                 value: '418',
                 matchType: 'full'
             }
@@ -329,9 +334,9 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '{3-digit number}', value: '', matchType: 'template' },
-            { showAs: '404', value: '404', matchType: 'full' },
-            { showAs: '201', value: '201', matchType: 'full' }
+            { showAs: '{3-digit number}', index: 6, value: '', matchType: 'template' },
+            { showAs: '404', index: 6, value: '404', matchType: 'full' },
+            { showAs: '201', index: 6, value: '201', matchType: 'full' }
         ]);
     });
 
@@ -349,8 +354,8 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=2", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '201', value: '201', matchType: 'full' },
-            { showAs: '202', value: '202', matchType: 'full' }
+            { showAs: '201', index: 6, value: '201', matchType: 'full' },
+            { showAs: '202', index: 6, value: '202', matchType: 'full' }
         ]);
     });
 
@@ -367,7 +372,7 @@ describe("Fixed-length number syntax", () => {
         const suggestions = part.getSuggestions("value=3", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '300', value: '300', matchType: 'full' }
+            { showAs: '300', index: 6, value: '300', matchType: 'full' }
         ]);
     });
 
@@ -470,6 +475,7 @@ describe("String syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: '{a string}',
+                index: 6,
                 value: '',
                 matchType: 'template'
             }
@@ -479,7 +485,7 @@ describe("String syntax", () => {
     it("should include completions from a given context", () => {
         const context = [
             { value: "a value" },
-            { value: "a different value" }
+            { value: "other value" }
         ];
 
         const part = new StringSyntax<typeof context>("a string", {
@@ -489,9 +495,9 @@ describe("String syntax", () => {
         const suggestions = part.getSuggestions("value=", 6, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: '{a string}', value: '', matchType: 'template' },
-            { showAs: 'a value', value: 'a value', matchType: 'full' },
-            { showAs: 'a different value', value: 'a different value', matchType: 'full' }
+            { showAs: '{a string}', index: 6, value: '', matchType: 'template' },
+            { showAs: 'a value', index: 6, value: 'a value', matchType: 'full' },
+            { showAs: 'other value', index: 6, value: 'other value', matchType: 'full' }
         ]);
     });
 
@@ -503,6 +509,7 @@ describe("String syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'chars',
+                index: 6,
                 value: 'chars',
                 matchType: 'full'
             }
@@ -525,9 +532,9 @@ describe("String syntax", () => {
         const suggestions = part.getSuggestions("a ", 0, context)!;
 
         expect(suggestions).to.deep.equal([
-            { showAs: 'a ', value: 'a ', matchType: 'full' },
-            { showAs: 'a value', value: 'a value', matchType: 'full' },
-            { showAs: 'a different value', value: 'a different value', matchType: 'full' }
+            { showAs: 'a ', index: 0, value: 'a ', matchType: 'full' },
+            { showAs: 'a value', index: 0, value: 'a value', matchType: 'full' },
+            { showAs: 'a different value', index: 0, value: 'a different value', matchType: 'full' }
         ]);
     });
 
@@ -601,6 +608,7 @@ describe("Wrapper syntax", () => {
         );
         expect(part.getSuggestions("", 0)).to.deep.equal([{
             showAs: "[{string}]",
+            index: 0,
             value: "[",
             matchType: 'template'
         }]);
@@ -620,16 +628,19 @@ describe("Wrapper syntax", () => {
         expect(part.getSuggestions("", 0)).to.deep.equal([
             {
                 showAs: "abc",
+                index: 0,
                 value: "abc",
                 matchType: 'full'
             },
             {
                 showAs: "def",
+                index: 0,
                 value: "def",
                 matchType: 'full'
             },
             {
                 showAs: "[qwe asd]",
+                index: 0,
                 value: "[qwe asd]",
                 matchType: 'full'
             }
@@ -643,6 +654,7 @@ describe("Wrapper syntax", () => {
         );
         expect(part.getSuggestions("[abc", 0)).to.deep.equal([{
             showAs: "[abc]",
+            index: 0,
             value: "[abc]",
             matchType: 'full'
         }]);
@@ -774,6 +786,7 @@ describe("String options syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'ab',
+                index: 0,
                 value: 'ab',
                 matchType: 'full'
             }
@@ -787,9 +800,9 @@ describe("String options syntax", () => {
 
         expect(suggestions.length).to.equal(3);
         expect(suggestions).to.deep.equal([
-            { showAs: "ab", value: "ab", matchType: 'full' },
-            { showAs: "abc", value: "abc", matchType: 'full' },
-            { showAs: "ad", value: "ad", matchType: 'full' }
+            { showAs: "ab", index: 0, value: "ab", matchType: 'full' },
+            { showAs: "abc", index: 0, value: "abc", matchType: 'full' },
+            { showAs: "ad", index: 0, value: "ad", matchType: 'full' }
         ]);
     });
 
@@ -801,6 +814,7 @@ describe("String options syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'ab',
+                index: 0,
                 value: 'ab',
                 matchType: 'full'
             }
@@ -815,6 +829,7 @@ describe("String options syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: 'ab',
+                index: 10,
                 value: 'ab',
                 matchType: 'full'
             }
@@ -828,8 +843,8 @@ describe("String options syntax", () => {
 
         expect(suggestions.length).to.equal(2);
         expect(suggestions).to.deep.equal([
-            { showAs: "ab", value: "ab", matchType: 'full' },
-            { showAs: "bc", value: "bc", matchType: 'full' }
+            { showAs: "ab", index: 6, value: "ab", matchType: 'full' },
+            { showAs: "bc", index: 6, value: "bc", matchType: 'full' }
         ]);
     });
 
@@ -933,6 +948,7 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "hello world",
+                index: 0,
                 value: "hello world",
                 matchType: 'full'
             }
@@ -951,6 +967,7 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "hello+world",
+                index: 0,
                 value: "hello+world",
                 matchType: 'full'
             }
@@ -968,6 +985,7 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "hello world",
+                index: 0,
                 value: "hello world",
                 matchType: 'full'
             }
@@ -984,11 +1002,13 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "",
+                index: 6,
                 value: "",
                 matchType: 'full'
             },
             {
                 showAs: "world",
+                index: 6,
                 value: "world",
                 matchType: 'full'
             }
@@ -1006,6 +1026,7 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "",
+                index: 0,
                 value: "",
                 matchType: 'full'
             }
@@ -1025,6 +1046,7 @@ describe("Optional syntax", () => {
         expect(suggestions).to.deep.equal([
             {
                 showAs: "string:{string value}",
+                index: 0,
                 value: "string:",
                 matchType: 'template'
             }

@@ -2,10 +2,8 @@ import * as React from 'react';
 
 import { styled, css } from '../../../styles';
 
-import {
-    FilterSuggestion,
-    applySuggestionToText
-} from '../../../model/filters/filter-matching';
+import { FilterSuggestion } from '../../../model/filters/filter-matching';
+import { applySuggestionToText } from '../../../model/filters/syntax-matching';
 
 import { IconButton } from '../../common/icon-button';
 import { longestPrefix } from '../../../util';

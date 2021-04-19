@@ -1,8 +1,11 @@
 import { expect } from '../../../test-setup';
 
 import { FilterClass, StringFilter } from '../../../../src/model/filters/search-filters';
+
 import {
-    SyntaxPart,
+    SyntaxPart
+} from '../../../../src/model/filters/syntax-matching';
+import {
     FixedStringSyntax,
     StringOptionsSyntax,
     FixedLengthNumberSyntax,
@@ -12,7 +15,7 @@ import {
 
 import {
     matchFilters,
-    getSuggestions,
+    getFilterSuggestions,
     applySuggestionToFilters,
     buildCustomFilter
 } from "../../../../src/model/filters/filter-matching";
@@ -124,7 +127,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new FixedStringSyntax('qwe')])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "qw");
+        const suggestions = getFilterSuggestions(availableFilters, "qw");
 
         expect(suggestions[0]).to.deep.equal({
             index: 0,
@@ -141,7 +144,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new FixedStringSyntax('qweasd')])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "qwe");
+        const suggestions = getFilterSuggestions(availableFilters, "qwe");
 
         expect(suggestions).to.deep.equal([
             {
@@ -159,7 +162,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new FixedStringSyntax('qwe'), new FixedStringSyntax('asd')]),
         ];
 
-        const suggestions = getSuggestions(availableFilters, "qwea");
+        const suggestions = getFilterSuggestions(availableFilters, "qwea");
 
         expect(suggestions[0]).to.deep.equal({
             index: 3,
@@ -175,7 +178,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new FixedStringSyntax('qwe'), new NumberSyntax()])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "qwe123");
+        const suggestions = getFilterSuggestions(availableFilters, "qwe123");
 
         expect(suggestions).to.deep.equal([
             {
@@ -193,7 +196,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new FixedStringSyntax('status')])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "statuses");
+        const suggestions = getFilterSuggestions(availableFilters, "statuses");
 
         expect(suggestions.length).to.equal(0);
     });
@@ -203,7 +206,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new StringOptionsSyntax(['ab', 'ac', 'def'])])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "a");
+        const suggestions = getFilterSuggestions(availableFilters, "a");
 
         expect(suggestions).to.deep.equal([
             {
@@ -229,7 +232,7 @@ describe("Suggestion generation", () => {
             mockFilterClass([new StringOptionsSyntax(['ab', 'ac'])])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "a");
+        const suggestions = getFilterSuggestions(availableFilters, "a");
 
         expect(suggestions).to.deep.equal([
             {
@@ -264,7 +267,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "a");
+        const suggestions = getFilterSuggestions(availableFilters, "a");
 
         expect(suggestions).to.deep.equal([
             {
@@ -292,7 +295,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "ab");
+        const suggestions = getFilterSuggestions(availableFilters, "ab");
 
         expect(suggestions).to.deep.equal([
             {
@@ -328,7 +331,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "status=");
+        const suggestions = getFilterSuggestions(availableFilters, "status=");
 
         expect(suggestions).to.deep.equal([
             {
@@ -356,7 +359,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "body");
+        const suggestions = getFilterSuggestions(availableFilters, "body");
 
         expect(suggestions).to.deep.equal([
             {
@@ -384,7 +387,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "sta");
+        const suggestions = getFilterSuggestions(availableFilters, "sta");
 
         expect(suggestions).to.deep.equal([
             {
@@ -419,7 +422,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "sta");
+        const suggestions = getFilterSuggestions(availableFilters, "sta");
 
         expect(suggestions).to.deep.equal([
             {
@@ -444,7 +447,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "bodySize");
+        const suggestions = getFilterSuggestions(availableFilters, "bodySize");
 
         expect(suggestions).to.deep.equal([
             {
@@ -471,7 +474,7 @@ describe("Suggestion generation", () => {
             ])
         ];
 
-        const suggestions = getSuggestions(availableFilters, "head");
+        const suggestions = getFilterSuggestions(availableFilters, "head");
 
         expect(suggestions).to.deep.equal([
             {
