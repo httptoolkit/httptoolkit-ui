@@ -7,7 +7,11 @@ import { Theme } from '../../styles';
 import { getBaseContentType } from './content-types';
 import { HttpExchange, SuccessfulExchange } from './exchange';
 
-export const getRequestBaseContentType = (message: ExchangeMessage) =>
+export const getMessageBaseAcceptTypes = (message: ExchangeMessage) =>
+    (lastHeader(message.headers['accept'])?.split(',') || [])
+        .map((acceptType) => getBaseContentType(acceptType));
+
+export const getMessageBaseContentType = (message: ExchangeMessage) =>
     getBaseContentType(lastHeader(message.headers['content-type']));
 
 const isMutatativeExchange = (exchange: HttpExchange) => _.includes([
@@ -18,19 +22,23 @@ const isMutatativeExchange = (exchange: HttpExchange) => _.includes([
 ], exchange.request.method);
 
 const isImageExchange = (exchange: SuccessfulExchange) =>
-    getRequestBaseContentType(exchange.response).startsWith('image/');
+    getMessageBaseAcceptTypes(exchange.request).every(type => type.startsWith('image/')) ||
+    getMessageBaseContentType(exchange.response).startsWith('image/');
+
+const DATA_CONTENT_TYPES = [
+    'application/json',
+    'application/xml',
+    'application/rss',
+    'text/xml',
+    'text/json',
+    'multipart/form-data',
+    'application/x-www-form-urlencoded',
+    'application/x-protobuf'
+];
 
 const isDataExchange = (exchange: SuccessfulExchange) =>
-    _.includes([
-        'application/json',
-        'application/xml',
-        'application/rss',
-        'text/xml',
-        'text/json',
-        'multipart/form-data',
-        'application/x-www-form-urlencoded',
-        'application/x-protobuf'
-    ], getRequestBaseContentType(exchange.response));
+    getMessageBaseAcceptTypes(exchange.request).every(type => DATA_CONTENT_TYPES.includes(type)) ||
+    _.includes(DATA_CONTENT_TYPES, getMessageBaseContentType(exchange.response));
 
 const isJSExchange = (exchange: SuccessfulExchange) =>
     _.includes([
@@ -38,18 +46,18 @@ const isJSExchange = (exchange: SuccessfulExchange) =>
         'application/javascript',
         'application/x-javascript',
         'application/ecmascript'
-    ], getRequestBaseContentType(exchange.response));
+    ], getMessageBaseContentType(exchange.response));
 
 const isCSSExchange = (exchange: SuccessfulExchange) =>
     _.includes([
         'text/css'
-    ], getRequestBaseContentType(exchange.response));
+    ], getMessageBaseContentType(exchange.response));
 
 const isHTMLExchange = (exchange: SuccessfulExchange) =>
-    getRequestBaseContentType(exchange.response) === 'text/html';
+    getMessageBaseContentType(exchange.response) === 'text/html';
 
 const isFontExchange = (exchange: SuccessfulExchange) =>
-    getRequestBaseContentType(exchange.response).startsWith('font/') ||
+    getMessageBaseContentType(exchange.response).startsWith('font/') ||
     _.includes([
         'application/font-woff',
         'application/x-font-woff',
@@ -59,7 +67,7 @@ const isFontExchange = (exchange: SuccessfulExchange) =>
         'application/x-font-ttf',
         'application/x-font-typetype',
         'application/x-font-opentype',
-    ], getRequestBaseContentType(exchange.response));
+    ], getMessageBaseContentType(exchange.response));
 
 export function getExchangeCategory(exchange: HttpExchange) {
     if (!exchange.isCompletedExchange()) {
