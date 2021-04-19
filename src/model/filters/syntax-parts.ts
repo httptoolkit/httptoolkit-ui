@@ -1,101 +1,10 @@
 import * as _ from 'lodash';
 
-export type SyntaxMatch = {
-    /**
-     * If full, this part was completely matched and would be valid as-is
-     * If partial, this part could become valid, iff more content was appended
-     *
-     * Note that the exact end of the string should be a partial match for all
-     * syntax parts, since you should always be able to append content to match
-     * that part.
-     */
-    type: 'partial' | 'full';
-
-    /**
-     * How many characters were matched successfully.
-     */
-    consumed: number;
-};
-
-/**
- * A suggestion for some content to insert. This is fleshed out further by
- * getSuggestions in filter-matching, once a filter & full string are
- * being applied.
- *
- * Suggestions may be concatenated, by simply concatenating their showAs
- * and value strings directly.
- */
-export interface Suggestion {
-    /**
-     * The text that should show as the autocompleted example
-     */
-    showAs: string;
-
-    /**
-     * The text that should actually insert if you select the example.
-     *
-     * If this is not a template suggestion, then inserting the suggestion
-     * must result in a string that fully matches this syntax part.
-     */
-    value: string;
-
-    /**
-     * The type of match that this suggestion would create.
-     *
-     * 'full' means that applying this suggestion to the given input will
-     * create a value that would fully match the input.
-     *
-     * 'template' and 'partial' both mean that this wouldn't fully match
-     * the input, in slightly different ways.
-     *
-     * 'template' means that this wouldn't fully match the input, but the showAs
-     * value will be a placeholder. User input would be required, but suggestion
-     * values could be appended to showAs to provide context.
-     *
-     * 'partial' means that this wouldn't fully match the input, and the
-     * showAs property would also be incomplete, so no further suggestions
-     * should be appended - we'd need to stop and prompt the user first.
-     *
-     * Either way, all suggestions are recommendations that the user could
-     * sensibly apply, it's just that template/partial suggestions require
-     * further input on this specific part before the syntax part is matched.
-     */
-    matchType: 'full' | 'template' | 'partial';
-}
-
-export interface SyntaxPart<P = string | number, C extends any = never> {
-    /**
-     * Checks whether the syntax part matches, or _could_ match if
-     * some text were appended to the string.
-     *
-     * This will return undefined if the value could not match, e.g.
-     * a number is required and there's a non-number entered already.
-     * If will return a full match if the part is completely present,
-     * and will consume everything it can, and it will return a partial
-     * match if the end of the string was reached without breaking any
-     * rules, but without successfully completing the matcher.
-     */
-    match(value: string, index: number): undefined | SyntaxMatch;
-
-    /**
-     * Given that there was a full or partial match, this returns a list of
-     * possible values that would make this syntax part match fully.
-     *
-     * Don't call it without a match, as the behaviour is undefined.
-     */
-    getSuggestions(value: string, index: number, context?: C): Suggestion[];
-
-    /**
-     * For a part that fully matches, this will return the fully matched
-     * content in a content-appropriate type, e.g. strings for strings,
-     * numbers for numbers.
-     *
-     * If the part does not fully match, this throws an error.
-     */
-    parse(value: string, index: number): P;
-};
-
-export type SyntaxPartValue<P> = P extends SyntaxPart<infer V> ? V : never;
+import {
+    SyntaxPart,
+    SyntaxPartMatch,
+    Suggestion
+} from './syntax-matching';
 
 type CharRange = readonly [number, number];
 
@@ -185,7 +94,7 @@ export class FixedStringSyntax implements SyntaxPart<string> {
         private matcher: string
     ) {}
 
-    match(value: string, index: number): undefined | SyntaxMatch {
+    match(value: string, index: number): undefined | SyntaxPartMatch {
         const expected = this.matcher.toLowerCase();
         let i: number;
 
@@ -242,7 +151,7 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
         this.allowEmpty = options.allowEmpty || (() => false);
     }
 
-    match(value: string, index: number): undefined | SyntaxMatch {
+    match(value: string, index: number): undefined | SyntaxPartMatch {
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
         if (matchingString === undefined) return;
 
@@ -323,7 +232,7 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
         this.optional = !!options.optional;
     }
 
-    match(value: string, startIndex: number): SyntaxMatch | undefined {
+    match(value: string, startIndex: number): SyntaxPartMatch | undefined {
         let isWrapped: boolean;
         let index = startIndex;
 
@@ -458,7 +367,7 @@ export class NumberSyntax implements SyntaxPart<number> {
         this.stringSyntax = new StringSyntax(name, { allowedChars: [NUMBER_CHARS] });
     }
 
-    match(value: string, index: number): SyntaxMatch | undefined {
+    match(value: string, index: number): SyntaxPartMatch | undefined {
         return this.stringSyntax.match(value, index);
     }
 
@@ -482,7 +391,7 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
         } = {}
     ) {}
 
-    match(value: string, index: number): undefined | SyntaxMatch {
+    match(value: string, index: number): undefined | SyntaxPartMatch {
         const matchingNumber = getNumberAt(value, index);
         if (matchingNumber === undefined) return;
 
@@ -553,7 +462,7 @@ export class StringOptionsSyntax<OptionsType extends string = string> implements
         this.optionMatchers = options.map(s => new FixedStringSyntax(s));
     }
 
-    match(value: string, index: number): SyntaxMatch | undefined {
+    match(value: string, index: number): SyntaxPartMatch | undefined {
         const matches = this.optionMatchers
             .map(m => m.match(value, index))
             .filter(m => !!m);
@@ -609,7 +518,7 @@ export class OptionalSyntax<
         this.subParts = subParts; // Apparently ... isn't allowed in field params.
     }
 
-    match(value: string, index: number): SyntaxMatch | undefined {
+    match(value: string, index: number): SyntaxPartMatch | undefined {
         let currentIndex = index;
 
         if (currentIndex >= value.length) {

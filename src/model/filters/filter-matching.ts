@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 
 import { FilterClass, Filters, FilterSet, StringFilter } from './search-filters';
-import { FixedStringSyntax, Suggestion } from './syntax-parts';
+import { Suggestion, matchSyntax } from './syntax-matching';
+import { FixedStringSyntax } from './syntax-parts';
 
 /**
  * Takes a full string, parses it completely for filters, and returns a
@@ -17,7 +18,7 @@ export function matchFilters(filterClasses: FilterClass[], value: string): Filte
         const firstFullMatch = filterClasses
             .map(filterClass => ({
                 filterClass,
-                match: matchFilter(filterClass, remainingString)
+                match: matchSyntax(filterClass.filterSyntax, remainingString)
             }))
             .filter((fm) => !!fm.match && fm.match.type === 'full')[0];
 
@@ -39,94 +40,6 @@ export function matchFilters(filterClasses: FilterClass[], value: string): Filte
     ];
 }
 
-type FilterMatch = {
-    /**
-     * If full, this filter completely matches the text shown.
-     * If partial, this filter could match, iff more content was appended.
-     *
-     * Note that the exact end of the string should be a partial match for all
-     * filtesr, since you should always be able to append content to match there.
-     */
-    type: 'partial' | 'full';
-
-    /**
-     * The number of characters fully matched by completed parts of the
-     * filter's syntax.
-     */
-    fullyConsumed: number;
-
-    /**
-     * The number of characters fully or partially matched by parts of the
-     * filter's syntax.
-     */
-    partiallyConsumed: number;
-
-    /**
-     * For full matches, this = the total number of parts available.
-     * For partial matches, this-1 is the index of the partially matched part.
-     */
-    partsMatched: number;
-
-    /**
-     * The index of the last syntax part that consumed >0 characters. In effect,
-     * this is the work-in-progress part: it's the first part that should be
-     * allowed to make suggestions.
-     */
-    lastConsumingPartSyntaxIndex: number;
-
-    /**
-     * The string index to the latest work-in-progress part of the input.
-     *
-     * For full matches, the string index at the start of the last part.
-     * For partial matches, the string index at the start of the full or partially
-     * matching part (i.e. the last *matched* part, not the last part overall),
-     * iff it matched more than 0 chars.
-     */
-    lastConsumingPartStringIndex: number;
-};
-
-function matchFilter(filter: FilterClass, value: string): undefined | FilterMatch {
-    const syntax = filter.filterSyntax;
-
-    let stringIndex = 0;
-    let fullyConsumed = 0;
-    let syntaxIndex: number;
-    let wasFullMatch = true;
-
-    let lastConsumingPartSyntaxIndex = 0;
-    let lastConsumingPartStringIndex = 0;
-
-    for (
-        syntaxIndex = 0;
-        syntaxIndex < syntax.length && stringIndex <= value.length && wasFullMatch;
-        syntaxIndex++
-    ) {
-        const partMatch = syntax[syntaxIndex].match(value, stringIndex);
-        if (!partMatch) return;
-
-        wasFullMatch = partMatch.type === 'full';
-
-        if (partMatch.consumed > 0) {
-            lastConsumingPartSyntaxIndex = syntaxIndex;
-            lastConsumingPartStringIndex = stringIndex;
-        }
-
-        stringIndex += partMatch.consumed;
-        fullyConsumed += wasFullMatch ? partMatch.consumed : 0;
-    }
-
-    return {
-        type: syntaxIndex === syntax.length && wasFullMatch
-            ? 'full'
-            : 'partial',
-        fullyConsumed,
-        partiallyConsumed: stringIndex,
-        partsMatched: syntaxIndex,
-        lastConsumingPartSyntaxIndex,
-        lastConsumingPartStringIndex
-    };
-}
-
 export interface FilterSuggestion extends Suggestion {
     index: number;
     filterClass: FilterClass;
@@ -146,7 +59,7 @@ export function getSuggestions<T>(
 ): FilterSuggestion[] {
     const filterMatches = filters.map(f => ({
         filterClass: f,
-        match: matchFilter(f, value)
+        match: matchSyntax(f.filterSyntax, value)
     })).filter(fm => {
         // We only show suggestions for filters that do/might match, and which fully
         // match - so "status=40" suggests 404, but "status=hello" shows nothing.

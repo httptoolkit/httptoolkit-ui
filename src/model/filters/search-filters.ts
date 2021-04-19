@@ -6,6 +6,10 @@ import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../http/bodies';
 
 import {
+    SyntaxPart,
+    SyntaxPartValue
+} from './syntax-matching';
+import {
     charRange,
     FixedLengthNumberSyntax,
     FixedStringSyntax,
@@ -13,8 +17,6 @@ import {
     OptionalSyntax,
     StringOptionsSyntax,
     StringSyntax,
-    SyntaxPart,
-    SyntaxPartValue,
     SyntaxWrapperSyntax
 } from './syntax-parts';
 
