@@ -66,7 +66,9 @@ delay(5000).then(() => {
     throw e;
 });
 
-const accountStore = new AccountStore();
+const accountStore = new AccountStore(
+    () => appHistory.navigate('/settings')
+);
 const apiStore = new ApiStore(accountStore);
 const uiStore = new UiStore(accountStore);
 const proxyStore = new ProxyStore(accountStore);

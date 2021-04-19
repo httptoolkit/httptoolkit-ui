@@ -10,6 +10,7 @@ import { get } from 'typesafe-get';
 
 import { WithInjected } from '../../types';
 import { styled, Theme, ThemeName } from '../../styles';
+import { WarningIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui-store';
@@ -186,7 +187,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                             Your subscription payment failed, and will be reattempted.
                                             If retried payments fail your subscription will be cancelled.
                                         `}
-                                    >Past due</strong>,
+                                    >Past due <WarningIcon /></strong>,
                                     'deleted': 'Cancelled'
                                 }[sub.status]) || 'Unknown'
                             }
@@ -236,6 +237,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 href={ sub.updateBillingDetailsUrl }
                                 target='_blank'
                                 rel='noreferrer noopener'
+                                highlight={sub.status === 'past_due'}
                             >
                                 Update billing details
                             </SettingsButtonLink>

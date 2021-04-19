@@ -4,10 +4,18 @@ import { Button, ButtonLink } from '../common/inputs';
 const SettingsButtonCss = css`
     font-size: ${p => p.theme.textSize};
     padding: 6px 16px;
+
+    ${(p: { highlight?: boolean }) => p.highlight && css`
+        &:not(:disabled) {
+            background-color: ${p => p.theme.popColor};
+        }
+    `}
 `;
 
 export const SettingsButton = styled(Button)`${SettingsButtonCss}`;
-export const SettingsButtonLink = styled(ButtonLink)`
+export const SettingsButtonLink = styled(ButtonLink)<{
+    highlight?: boolean
+}>`
     ${SettingsButtonCss}
     margin-right: 10px;
 `;

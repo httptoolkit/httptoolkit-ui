@@ -23,6 +23,10 @@ import {
 
 export class AccountStore {
 
+    constructor(
+        private goToSettings: () => void
+    ) {}
+
     readonly initialized = lazyObservablePromise(async () => {
         // Update account data automatically on login, logout & every 10 mins
         loginEvents.on('authenticated', async () => {
@@ -151,7 +155,10 @@ export class AccountStore {
             if (!this.isLoggedIn) yield this.logIn();
 
             // If we cancelled login, or we've already got a plan, we're done.
-            if (!this.isLoggedIn || this.userHasSubscription) return;
+            if (!this.isLoggedIn || this.userHasSubscription) {
+                if (this.isPastDueUser) this.goToSettings();
+                return;
+            }
 
             // Otherwise, it's checkout time, and the rest is in the hands of Paddle
             yield this.purchasePlan(this.user.email!, selectedPlan);
@@ -174,6 +181,8 @@ export class AccountStore {
             if (this.userHasSubscription) {
                 trackEvent({ category: 'Account', action: 'Paid user login' });
                 this.modal = undefined;
+
+                if (this.isPastDueUser) this.goToSettings();
             } else {
                 this.modal = initialModal;
             }
