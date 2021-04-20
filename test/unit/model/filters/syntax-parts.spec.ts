@@ -8,7 +8,8 @@ import {
     FixedLengthNumberSyntax,
     StringOptionsSyntax,
     OptionalSyntax,
-    SyntaxWrapperSyntax
+    SyntaxWrapperSyntax,
+    CombinedSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("Fixed string syntax", () => {
@@ -1065,4 +1066,180 @@ describe("Optional syntax", () => {
 
         expect(parsedValue).to.deep.equal(["value:", "-", 123]);
     });
+});
+
+
+describe("Combined syntax", () => {
+
+    it("should not match completely different strings", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+        expect(part.match("other-string", 0)).to.equal(undefined);
+    });
+
+    it("should partially match string prefixes", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const match = part.match("a-st", 0)!;
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(4);
+    });
+
+    it("should fully match string matches", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const match = part.match("a-string", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(8);
+    });
+
+    it("should match strings with suffixes", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const match = part.match("a-string-with-suffix", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(8);
+    });
+
+    it("should not match strings with prefixes", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        expect(part.match("prefix-on-a-string", 0)).to.equal(undefined);
+    });
+
+    it("should partially match strings with prefixes before the index", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const match = part.match("prefix-on-a-str", 10)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(5);
+    });
+
+    it("should fully match strings with prefixes before the index", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const match = part.match("prefix-on-a-string", 10)!;
+
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(8);
+    });
+
+    it("should partially match at the end of a string", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const match = part.match("prefix", 6)!;
+
+        expect(match.type).to.equal('partial');
+        expect(match.consumed).to.equal(0);
+    });
+
+    it("should suggest completing the string", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const suggestions = part.getSuggestions("a-str", 0)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].index).to.equal(2);
+        expect(suggestions[0].showAs).to.equal('string');
+        expect(suggestions[0].value).to.equal('string');
+    });
+
+    it("should suggest completing a completed string", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const suggestions = part.getSuggestions("a-string", 0)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].index).to.equal(2);
+        expect(suggestions[0].showAs).to.equal('string');
+        expect(suggestions[0].value).to.equal('string');
+    });
+
+    it("should suggest completing the string at a given index", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const suggestions = part.getSuggestions("prefix-on-a-str", 10)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].index).to.equal(12);
+        expect(suggestions[0].showAs).to.equal('string');
+        expect(suggestions[0].value).to.equal('string');
+    });
+
+    it("should suggest completion at the end of a string", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+
+        const suggestions = part.getSuggestions("prefix", 6)!;
+
+        expect(suggestions.length).to.equal(1);
+        expect(suggestions[0].showAs).to.equal('a-string');
+        expect(suggestions[0].value).to.equal('a-string');
+    });
+
+    it("should be able to parse a completed value", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+        expect(part.parse("a-string", 0)).to.deep.equal(["a", "-", "string"]);
+    });
+
+    it("should be able to parse a completed value ignoring case", () => {
+        const part = new CombinedSyntax(
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("-"),
+            new FixedStringSyntax("string")
+        );
+        expect(part.parse("A-STRING", 0)).to.deep.equal(["a", "-", "string"]);
+    });
+
 });

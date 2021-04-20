@@ -605,3 +605,49 @@ export class OptionalSyntax<
         }, []) as Ps;
     }
 }
+
+/**
+ * Matches a series of pieces of syntax as a single syntax wrapper. This is useful to
+ * compose with other nested syntax, allowing them to treat a chunk of syntax as a
+ * single unit.
+ */
+export class CombinedSyntax<
+    Ps extends unknown[] = unknown[],
+    C = never,
+    SPs extends { [i in keyof Ps]: SyntaxPart<Ps[i], C> }
+        = { [i in keyof Ps]: SyntaxPart<Ps[i], C> }
+> implements SyntaxPart<Ps, C> {
+
+    private subParts: SPs;
+
+    constructor(...subParts: SPs) {
+        this.subParts = subParts; // Apparently ... isn't allowed in field params.
+    }
+
+    match(value: string, index: number): SyntaxPartMatch | undefined {
+        const subMatch = matchSyntax(this.subParts, value, index);
+        return subMatch
+            ? { type: subMatch?.type, consumed: subMatch?.partiallyConsumed }
+            : undefined;
+    }
+
+    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
+        return getSuggestions(
+            [{ key: null, syntax: this.subParts }],
+            value,
+            index,
+            context
+        ).map(({ suggestion }) => suggestion);
+    }
+
+    parse(value: string, index: number): Ps {
+        // Parse implies a full match, so we must have a full match for every part.
+        // Loop through, return the parsed parts as an array.
+        return _.reduce(this.subParts, (parsed: Ps[], part: SyntaxPart<any>) => {
+            const parsedValue = part.parse(value, index);
+            index += parsedValue.toString().length;
+            parsed.push(parsedValue as any);
+            return parsed;
+        }, []) as Ps;
+    }
+}
