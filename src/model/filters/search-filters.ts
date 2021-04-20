@@ -7,7 +7,7 @@ import { getReadableSize } from '../http/bodies';
 
 import {
     SyntaxPart,
-    SyntaxPartValue
+    SyntaxPartValues
 } from './syntax-matching';
 import {
     charRange,
@@ -160,12 +160,6 @@ const sizeOperationDescriptions: { [key in NumberOperation]: string } = {
     "<": "smaller than",
     "<=": "smaller than or equal to"
 } as const;
-
-type SyntaxPartValues<
-    SPs extends readonly SyntaxPart<any, any>[]
-> = {
-    [K in keyof SPs]: SyntaxPartValue<SPs[K]>
-};
 
 type FilterPartValues<F extends FilterClass> = SyntaxPartValues<F['filterSyntax']>;
 

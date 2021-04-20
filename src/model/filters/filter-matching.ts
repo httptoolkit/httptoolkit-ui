@@ -1,7 +1,17 @@
 import * as _ from 'lodash';
 
-import { FilterClass, Filters, FilterSet, StringFilter } from './search-filters';
-import { SyntaxSuggestion, matchSyntax, applySuggestionToText, getSuggestions } from './syntax-matching';
+import {
+    FilterClass,
+    Filters,
+    FilterSet,
+    StringFilter
+} from './search-filters';
+import {
+    SyntaxSuggestion,
+    matchSyntax,
+    applySuggestionToText,
+    getSuggestions
+} from './syntax-matching';
 import { FixedStringSyntax } from './syntax-parts';
 
 /**

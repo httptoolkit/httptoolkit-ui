@@ -91,10 +91,10 @@ function filterContextualSuggestions<S>(
         }));
 }
 
-export class FixedStringSyntax implements SyntaxPart<string> {
+export class FixedStringSyntax<OptionsType extends string = string> implements SyntaxPart<OptionsType> {
 
     constructor(
-        private matcher: string
+        private matcher: OptionsType
     ) {}
 
     match(value: string, index: number): undefined | SyntaxPartMatch {
@@ -126,7 +126,7 @@ export class FixedStringSyntax implements SyntaxPart<string> {
         }];
     }
 
-    parse(value: string, index: number): string {
+    parse(value: string, index: number): OptionsType {
         // Ensure the parsing matches correctly
         getParsedValue(this, value, index);
         // Return the expected string (ignoring input case) not the matched text:
@@ -462,48 +462,86 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
 
 }
 
-export class StringOptionsSyntax<OptionsType extends string = string> implements SyntaxPart<OptionsType> {
+/**
+ * Matches one syntax from a list of possible options.
+ */
+export class OptionsSyntax<
+    Options extends Array<SyntaxPart<any, any>>,
+    V extends (Options extends Array<SyntaxPart<infer V, any>> ? V : never),
+    C extends (Options extends Array<SyntaxPart<any, infer C>> ? C : never),
+> implements SyntaxPart<V, C> {
 
-    private optionMatchers: FixedStringSyntax[];
+    private options: Options;
 
-    constructor(
-        options: Array<OptionsType>
-    ) {
-        this.optionMatchers = options.map(s => new FixedStringSyntax(s));
+    constructor(options: Options) {
+        this.options = options;
     }
 
     match(value: string, index: number): SyntaxPartMatch | undefined {
-        const matches = this.optionMatchers
-            .map(m => m.match(value, index))
-            .filter(m => !!m);
+        const matches = this.options.map((option) =>
+            option.match(value, index)
+        ).filter(m => !!m) as SyntaxPartMatch[];
 
         const [fullMatches, partialMatches] = _.partition(matches, { type: 'full' });
 
+        // Use full matches by preference, if there is one available:
         const bestMatches = fullMatches.length ? fullMatches : partialMatches;
-        return _.maxBy(bestMatches, (m) => m?.consumed); // The longest best matching option
+
+        // Return the longest match within that list:
+        return _.maxBy(bestMatches, m => m.consumed);
     }
 
-    getSuggestions(value: string, index: number): SyntaxSuggestion[] {
-        let matchers = this.optionMatchers
-            .map(m => ({ matcher: m, match: m.match(value, index) }))
+    getSuggestions(
+        value: string,
+        index: number,
+        context?: C
+    ): SyntaxSuggestion[] {
+        const matchingOptions = this.options
+            .map((option) => ({ option, match: option.match(value, index) }))
             .filter(({ match }) => !!match);
 
         // If there's an exact match, suggest only that.
         // If there's two (https -> http + https) suggest the longest
-        if (matchers.some(({ match }) => match!.type === 'full')) {
-            matchers = [_.maxBy(
-                matchers.filter(({ match }) => match!.type === 'full'),
-                ({ match }) => match!.consumed
-            )!];
-        }
+        if (matchingOptions.some(({ match }) => match!.type === 'full')) {
+            const fullyMatchingOptions = matchingOptions
+                .filter(({ match }) => match!.type === 'full');
 
-        return _.flatMap(matchers, ({ matcher }) =>
-            matcher.getSuggestions(value, index)
-        );
+            const longestFullMatch = _.maxBy(fullyMatchingOptions, ({ match }) =>
+                match!.consumed
+            )!;
+
+            return longestFullMatch.option.getSuggestions(value, index, context);
+        } else {
+            // Otherwise, combine all the options together
+            return _.flatMap(matchingOptions, ({ option }) =>
+                option.getSuggestions(value, index, context)
+            );
+        }
     }
 
-    parse(value: string, index: number): OptionsType {
-        return getParsedValue(this, value, index) as OptionsType;
+    parse(value: string, index: number): V {
+        const fullMatches = this.options.map((option) => ({
+            option,
+            match: option.match(value, index)
+        })).filter(({ match }) => match?.type === 'full');
+
+        const bestMatch = _.maxBy(fullMatches, ({ match }) => match!.consumed);
+
+        return bestMatch!.option.parse(value, index);
+    }
+}
+
+/**
+ * A convenient helper, when the options are all just fixed strings.
+ */
+export class StringOptionsSyntax<
+    V extends string
+> extends OptionsSyntax<Array<FixedStringSyntax<V>>, V, never> {
+
+    constructor(
+        values: V[]
+    ) {
+        super(values.map(v => new FixedStringSyntax(v)));
     }
 
 }

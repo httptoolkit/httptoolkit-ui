@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-export interface SyntaxPart<P = string | number, C extends any = never> {
+export interface SyntaxPart<PartValue = string | number, Context extends any = never> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
      * some text were appended to the string.
@@ -20,7 +20,7 @@ export interface SyntaxPart<P = string | number, C extends any = never> {
      *
      * Don't call it without a match, as the behaviour is undefined.
      */
-    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[];
+    getSuggestions(value: string, index: number, context?: Context): SyntaxSuggestion[];
 
     /**
      * For a part that fully matches, this will return the fully matched
@@ -29,10 +29,15 @@ export interface SyntaxPart<P = string | number, C extends any = never> {
      *
      * If the part does not fully match, this throws an error.
      */
-    parse(value: string, index: number): P;
+    parse(value: string, index: number): PartValue;
 };
 
-export type SyntaxPartValue<P> = P extends SyntaxPart<infer V> ? V : never;
+// The value a syntax part will return when parsed
+export type SyntaxPartValue<SP> = SP extends SyntaxPart<infer V> ? V : never;
+// The values that an array of syntax parts will return
+export type SyntaxPartValues<SPs extends readonly SyntaxPart<any, any>[]> = {
+    [i in keyof SPs]: SyntaxPartValue<SPs[i]>
+};
 
 /**
  * A suggestion for some content to insert to complete a single part

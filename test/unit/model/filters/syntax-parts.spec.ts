@@ -6,10 +6,10 @@ import {
     StringSyntax,
     NumberSyntax,
     FixedLengthNumberSyntax,
-    StringOptionsSyntax,
     OptionalSyntax,
     SyntaxWrapperSyntax,
-    CombinedSyntax
+    CombinedSyntax,
+    OptionsSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("Fixed string syntax", () => {
@@ -618,10 +618,10 @@ describe("Wrapper syntax", () => {
     it("should add optional wrapper to suggestions only when necessary", () => {
         const part = new SyntaxWrapperSyntax(
             ['[', ']'],
-            new StringOptionsSyntax([
-                "abc",
-                "def",
-                "qwe asd"
+            new OptionsSyntax([
+                new FixedStringSyntax("abc"),
+                new FixedStringSyntax("def"),
+                new FixedStringSyntax("qwe asd")
             ]),
             { optional: true }
         );
@@ -707,15 +707,21 @@ describe("Wrapper syntax", () => {
 
 });
 
-describe("String options syntax", () => {
+describe("Options syntax", () => {
 
     it("should not match completely different strings", () => {
-        const part = new StringOptionsSyntax(["a", "b"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("b")
+        ]);
         expect(part.match("c", 0)).to.equal(undefined);
     });
 
     it("should partially match string prefixes", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const match = part.match("a", 0)!;
         expect(match.type).to.equal('partial');
@@ -723,7 +729,10 @@ describe("String options syntax", () => {
     });
 
     it("should fully match string matches", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const match = part.match("bc", 0)!;
         expect(match.type).to.equal('full');
@@ -731,7 +740,11 @@ describe("String options syntax", () => {
     });
 
     it("should prefer the longest full match", () => {
-        const part = new StringOptionsSyntax(["a", "ab", "abc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("a"),
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("abc")
+        ]);
 
         const match = part.match("ab", 0)!;
         expect(match.type).to.equal('full');
@@ -739,7 +752,10 @@ describe("String options syntax", () => {
     });
 
     it("should match strings with suffixes", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const match = part.match("abcd", 0)!;
         expect(match.type).to.equal('full');
@@ -747,13 +763,19 @@ describe("String options syntax", () => {
     });
 
     it("should not match strings with prefixes", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         expect(part.match("prefix-on-ab", 0)).to.equal(undefined);
     });
 
     it("should partially match strings with prefixes before the index", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const match = part.match("prefix-on-a", 10)!;
 
@@ -762,7 +784,10 @@ describe("String options syntax", () => {
     });
 
     it("should fully match strings with prefixes before the index", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const match = part.match("prefix-on-ab", 10)!;
 
@@ -771,7 +796,10 @@ describe("String options syntax", () => {
     });
 
     it("should partially match at the end of a string", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const match = part.match("prefix", 6)!;
 
@@ -780,7 +808,10 @@ describe("String options syntax", () => {
     });
 
     it("should suggest completing the string", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const suggestions = part.getSuggestions("a", 0)!;
 
@@ -795,7 +826,12 @@ describe("String options syntax", () => {
     });
 
     it("should suggest all valid completions of the string", () => {
-        const part = new StringOptionsSyntax(["ab", "abc", "ad", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("abc"),
+            new FixedStringSyntax("ad"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const suggestions = part.getSuggestions("a", 0)!;
 
@@ -808,7 +844,10 @@ describe("String options syntax", () => {
     });
 
     it("should suggest completing a completed string", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const suggestions = part.getSuggestions("ab", 0)!;
 
@@ -823,7 +862,10 @@ describe("String options syntax", () => {
     });
 
     it("should suggest completing the string at a given index", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const suggestions = part.getSuggestions("prefix-on-a", 10)!;
 
@@ -838,7 +880,10 @@ describe("String options syntax", () => {
     });
 
     it("should suggest completion at the end of a string", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const suggestions = part.getSuggestions("prefix", 6)!;
 
@@ -850,7 +895,10 @@ describe("String options syntax", () => {
     });
 
     it("should be able to parse a completed value", () => {
-        const part = new StringOptionsSyntax(["ab", "bc"]);
+        const part = new OptionsSyntax([
+            new FixedStringSyntax("ab"),
+            new FixedStringSyntax("bc")
+        ]);
 
         const parsedValue: "ab" | "bc" = part.parse("ab", 0); // Test type inference too
         expect(parsedValue).to.equal("ab");
@@ -1057,7 +1105,10 @@ describe("Optional syntax", () => {
     it("should be able to parse a matching value", () => {
         const part = new OptionalSyntax<[string, "+" | "-", number]>(
             new FixedStringSyntax("value:"),
-            new StringOptionsSyntax(['+', '-']),
+            new OptionsSyntax([
+                new FixedStringSyntax("+"),
+                new FixedStringSyntax("-")
+            ]),
             new NumberSyntax("value")
         );
 
