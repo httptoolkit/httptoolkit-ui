@@ -171,7 +171,7 @@ export type SyntaxPartMatch = {
  * the final match, with details of how much of the string & syntax was matched en route.
  */
  export function matchSyntax(
-    syntax: readonly SyntaxPart[],
+    syntax: readonly SyntaxPart<unknown, unknown>[],
     value: string,
     initialIndex: number
 ): SyntaxMatch | undefined {
@@ -181,7 +181,7 @@ export type SyntaxPartMatch = {
     let wasFullMatch = true;
 
     let lastConsumingPartSyntaxIndex = 0;
-    let lastConsumingPartStringIndex = 0;
+    let lastConsumingPartStringIndex = initialIndex;
 
     for (
         syntaxIndex = 0;

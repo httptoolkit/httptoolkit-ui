@@ -1,6 +1,8 @@
 import * as _ from 'lodash';
 
 import {
+    getSuggestions,
+    matchSyntax,
     SyntaxPart,
     SyntaxPartMatch,
     SyntaxSuggestion
@@ -529,95 +531,63 @@ export class OptionalSyntax<
     match(value: string, index: number): SyntaxPartMatch | undefined {
         let currentIndex = index;
 
+        // Optional syntax matches and disappears if there's no content available
         if (currentIndex >= value.length) {
             return { type: 'full', consumed: 0 };
         }
 
-        for (const subPart of this.subParts) {
-            const nextMatch = subPart.match(value, currentIndex);
+        const subMatch = matchSyntax(this.subParts, value, index);
 
-            if (!nextMatch) {
-                return { type: 'full', consumed: 0 };
-            }
-
-            currentIndex += nextMatch.consumed;
-
-            if (nextMatch.type === 'partial') {
-                if (currentIndex === value.length) {
-                    return { type: 'partial', consumed: currentIndex - index };
-                } else {
-                    return { type: 'full', consumed: 0 };
-                }
-            }
+        // Optional syntax matches and disappears if the sub-syntax doesn't match at all
+        if (!subMatch) {
+            return { type: 'full', consumed: 0 };
         }
 
-        return { type: 'full', consumed: currentIndex - index };
+        // Optional syntax matches full like normal syntax if the contained syntax matches
+        if (subMatch.type === 'full') {
+            return { type: 'full', consumed: subMatch.fullyConsumed };
+        }
+
+        // If the contained syntax partially matches, it's only a partial match if we're
+        // at the end of the string. If we're not, then we match 0 & disappear, and the
+        // filter's matching continues to the next part (if any)
+        if (index + subMatch.partiallyConsumed === value.length) {
+            return { type: 'partial', consumed: subMatch.partiallyConsumed };
+        } else {
+            return { type: 'full', consumed: 0 };
+        }
     }
 
     getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
-        const isEndOfValue = value.length === index;
-        let currentIndex = index;
-        let suggestions: SyntaxSuggestion[] = [{
-            showAs: "",
+        const subPartMatch = this.match(value, index);
+        const subPartSuggestions = getSuggestions(
+            [{ key: null, syntax: this.subParts }],
+            value,
             index,
-            value: "",
-            matchType: 'full'
-        }];
-        let matchedAllParts = false;
+            context
+        ).map(({ suggestion }) => suggestion);
 
-        for (const subPart of this.subParts) {
-            const nextMatch = subPart.match(value, currentIndex);
+        const isEndOfValue = value.length === index;
 
-            // If there's any part that doesn't match at all, we suggest skipping
-            // this optional part entirely. This effectively allows backtracking for
-            // suggestions, so the suggestion is shown only if the next non-optional
-            // part _does_ match this content correctly.
-            if (!nextMatch) return [{
+        if (isEndOfValue) {
+            // If we're at the end of the string, we offer all suggestions and no suggestion
+            return [
+                { showAs: "", index, value: "", matchType: 'full' },
+                ...subPartSuggestions
+            ];
+        } else if (subPartMatch?.type === 'full' && subPartMatch?.consumed === 0) {
+            // If the matcher doesn't match at all, we suggest skipping this optional
+            // part entirely. This effectively allows backtracking for suggestions
+            // so the suggestion is shown only if the next non-optional part _does_
+            // match this content correctly.
+            return [{
                 showAs: "",
                 index,
                 value: "",
                 matchType: 'full'
             }];
-
-            matchedAllParts = subPart === this.subParts[this.subParts.length - 1];
-
-            const nextSuggestions = subPart.getSuggestions(value, currentIndex, context);
-
-            suggestions = _.flatMap(suggestions, (suggestion) =>
-                nextSuggestions.map((nextSuggestion) => ({
-                    showAs: suggestion.showAs + nextSuggestion.showAs,
-                    index: suggestion.index,
-                    value: suggestion.value + nextSuggestion.value,
-                    matchType: nextSuggestion.matchType
-                }))
-            );
-
-            if (
-                suggestions.some(s => s.matchType !== 'full') ||
-                suggestions.length !== 1 // We only expand until the first >1 split
-            ) break;
-
-            // Otherwise, just keep on appending suggestions
-            currentIndex += nextMatch.consumed;
-        }
-
-        if (!matchedAllParts) {
-            // Not a full match for the whole part if all sub-parts weren't matched
-            suggestions = suggestions.map((suggestion) => ({
-                ...suggestion,
-                matchType: suggestion.matchType === 'full'
-                    ? 'partial'
-                    : suggestion.matchType
-            }));
-        }
-
-        if (isEndOfValue) {
-            return [
-                { showAs: "", index, value: "", matchType: 'full' },
-                ...suggestions
-            ];
         } else {
-            return suggestions;
+            return subPartSuggestions;
         }
     }
 

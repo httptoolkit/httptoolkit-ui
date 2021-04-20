@@ -947,9 +947,9 @@ describe("Optional syntax", () => {
 
         expect(suggestions).to.deep.equal([
             {
-                showAs: "hello world",
-                index: 0,
-                value: "hello world",
+                showAs: "world",
+                index: 6,
+                value: "world",
                 matchType: 'full'
             }
         ]);
@@ -984,9 +984,9 @@ describe("Optional syntax", () => {
 
         expect(suggestions).to.deep.equal([
             {
-                showAs: "hello world",
-                index: 0,
-                value: "hello world",
+                showAs: "world",
+                index: 6,
+                value: "world",
                 matchType: 'full'
             }
         ]);
