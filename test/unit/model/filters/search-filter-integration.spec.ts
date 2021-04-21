@@ -766,9 +766,9 @@ describe("Search filter model integration test:", () => {
             ]);
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 6, showAs: "[{header name}]" },
-                { index: 6, showAs: "[another-header]" },
-                { index: 6, showAs: "[content-type]" }
+                { index: 7, showAs: "{header name}]" },
+                { index: 7, showAs: "another-header]" },
+                { index: 7, showAs: "content-type]" }
             ]);
         });
 
@@ -791,8 +791,8 @@ describe("Search filter model integration test:", () => {
             ]);
 
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 6, showAs: "[cont]" },
-                { index: 6, showAs: "[content-type]" }
+                { index: 7, showAs: "cont]" },
+                { index: 7, showAs: "content-type]" }
             ]);
         });
 

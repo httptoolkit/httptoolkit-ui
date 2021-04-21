@@ -311,37 +311,62 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
             ? value.slice(0, index + nextEndCharIndex)
             : value;
 
+        const wrappedSyntaxStartPosition = hasStartWrapper
+            ? index + 1
+            : index;
+
         const suggestionsToWrap = this.wrappedSyntax.getSuggestions(
             valueToMatch,
-            hasStartWrapper
-                ? index + 1
-                : index,
+            wrappedSyntaxStartPosition,
             context
         );
 
-        return suggestionsToWrap.map(s => {
-            const shouldAddWrapper = !this.optional ||
-                s.value.includes(' ');
+        return suggestionsToWrap.map(suggestion => {
+            // Suggestions need a wrapper when it's required or when it's optional but
+            // the value would be invalid unwrapped (because it has space)
+            const needsWrapper = !this.optional ||
+                suggestion.value.includes(' ');
 
-            if (!shouldAddWrapper) return s;
+            const shouldAddStartWrapper = needsWrapper && !hasStartWrapper;
 
-            return {
-                matchType: s.matchType,
-                // We should show closing wrapper on templates (after template is shown)
-                // and full matches, e.g. [{temp}] or [value] or [partialSu
-                showAs: this.wrapper[0] + s.showAs + (
-                    s.matchType === 'full' || s.matchType === 'template'
-                    ? this.wrapper[1]
-                    : ''
-                ),
-                index,
-                // Value should only add the closing wrapper if it's a full match, e.g.
-                // [value] or [ for template/partial.
-                value: this.wrapper[0] + s.value + (
-                    s.matchType === 'full'
-                    ? this.wrapper[1]
-                    : ''
-                )
+            const shouldAddEndWrapper = (needsWrapper || hasStartWrapper) &&
+                // We only actually append the end wrapper when the child is totally done
+                suggestion.matchType === 'full';
+            const valueSuffix = shouldAddEndWrapper ? this.wrapper[1] : '';
+
+            const shouldShowEndWrapper = (needsWrapper || hasStartWrapper) &&
+                // We do show the end wrapper for templates though, since it looks nicer
+                (suggestion.matchType === 'full' || suggestion.matchType === 'template');
+            const shownSuffix = shouldShowEndWrapper ? this.wrapper[1] : '';
+
+            if (!shouldAddStartWrapper) {
+                // If the start wrapper is already sorted, we just return the suggestion,
+                // maybe with an end wrapper if appropriate
+                return {
+                    ...suggestion,
+                    showAs: suggestion.showAs + shownSuffix,
+                    value: suggestion.value + valueSuffix
+                };
+            } else {
+                // If we want a start wrapper, things get more complicated, because we need
+                // to backtrack the suggestion, as it might be a suggestion later in the
+                // value ('abc', suggest appending ' def' at index 3)
+                const extendedValue = this.wrapper[0] + value.slice(
+                    wrappedSyntaxStartPosition,
+                    suggestion.index
+                ) + suggestion.value + valueSuffix;
+
+                const extendedShowAs = this.wrapper[0] + value.slice(
+                    wrappedSyntaxStartPosition,
+                    suggestion.index
+                ) + suggestion.showAs + shownSuffix;
+
+                return {
+                    ...suggestion,
+                    showAs: extendedShowAs,
+                    value: extendedValue,
+                    index: wrappedSyntaxStartPosition
+                };
             }
         });
     }

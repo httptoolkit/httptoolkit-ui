@@ -655,10 +655,44 @@ describe("Wrapper syntax", () => {
             new StringSyntax("string")
         );
         expect(part.getSuggestions("[abc", 0)).to.deep.equal([{
-            showAs: "[abc]",
-            index: 0,
-            value: "[abc]",
+            showAs: "abc]",
+            index: 1,
+            value: "abc]",
             matchType: 'full'
+        }]);
+    });
+
+    it("should add wrappers to multi-part suggestions", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new CombinedSyntax(
+                new FixedStringSyntax("a"),
+                new FixedStringSyntax("-"),
+                new FixedStringSyntax("value with spaces"),
+            )
+        );
+        expect(part.getSuggestions("a-", 0)).to.deep.equal([{
+            showAs: "[a-value with spaces]",
+            index: 0,
+            value: "[a-value with spaces]",
+            matchType: 'full'
+        }]);
+    });
+
+    it("should add a trailing wrapper to multi-part suggestions", () => {
+        const part = new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new CombinedSyntax(
+                new FixedStringSyntax("a"),
+                new FixedStringSyntax("-"),
+                new StringSyntax("string"),
+            )
+        );
+        expect(part.getSuggestions("[a-", 0)).to.deep.equal([{
+            showAs: "-{string}]",
+            index: 2,
+            value: "-",
+            matchType: 'template'
         }]);
     });
 
