@@ -540,7 +540,15 @@ export class SyntaxRepeaterSyntax<
         let matchCount = 0;
 
         while (true) {
-            const wrappedMatch = wrappedSyntax.match(value, index);
+            const nextDelimiterIndex = value.slice(index).indexOf(delimiterString);
+            const valueToMatch = value.slice(0,
+                // Don't allow the wrapped syntax to read beyond the next delimiter
+                nextDelimiterIndex !== -1
+                    ? index + nextDelimiterIndex
+                    : undefined
+            );
+
+            const wrappedMatch = wrappedSyntax.match(valueToMatch, index);
             if (!wrappedMatch) {
                 // Must be a full match on the parsed content up to the last delimiter
                 // (if any) because otherwise this is no match at all, and getSuggestions
