@@ -481,7 +481,11 @@ export class SyntaxRepeaterSyntax<
                 return { matchCount, type: 'full', consumed: index - startIndex };
             } else if (delimiterMatch.type === 'partial') {
                 // If we have part of a delimiter, we partially match it
-                return { matchCount, type: 'partial', consumed: value.length - index };
+                return {
+                    matchCount,
+                    type: 'partial',
+                    consumed: delimiterMatch.consumed + (index - startIndex)
+                };
             }
 
             // Otherwise we must have a whole delimiter, so we go around again

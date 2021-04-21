@@ -827,6 +827,18 @@ describe("Repeater syntax", () => {
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
+        expect(part.match("string,", 0)).to.deep.equal({
+            type: 'partial',
+            consumed: 7
+        });
+    });
+
+    it("should partially match trailing delimiters", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
         expect(part.match("string, ", 0)).to.deep.equal({
             type: 'partial',
             consumed: 8
