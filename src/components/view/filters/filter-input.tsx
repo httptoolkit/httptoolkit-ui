@@ -85,13 +85,12 @@ const renderSuggestionsBox = (props: { containerProps: any, children: any }) =>
     <FilterSuggestionsBox {...props.containerProps}>
         { props.children }
     </FilterSuggestionsBox>;
-const buildRowRenderer = (onDeleteCustomFilter: (filterClass: CustomFilterClass) => void) =>
-    (suggestion: SuggestionType, params: {
-        query: string,
-        isHighlighted: boolean
-    }) => {
+const buildRowRenderer = (
+    onDeleteCustomFilter: (filterClass: CustomFilterClass) => void,
+    query: string // We can't use this from props, because it's unavoidably trimmed()
+) => (suggestion: SuggestionType, params: { isHighlighted: boolean }) => {
         if (isSaveFiltersSuggestion(suggestion)) {
-            return <SaveFiltersRow {...suggestion} {...params} />;
+            return <SaveFiltersRow {...suggestion} {...params} query={query} />;
         }
 
         const { filterClass } = suggestion;
@@ -102,6 +101,7 @@ const buildRowRenderer = (onDeleteCustomFilter: (filterClass: CustomFilterClass)
         return <FilterSuggestionRow
             suggestion={suggestion}
             {...params}
+            query={query}
             onDelete={onDelete}
         />;
     };
@@ -270,8 +270,8 @@ export const FilterInput = <T extends unknown>(props: {
     }, [shouldShowSave, props.isPaidUser, suggestions, props.activeFilters]);
 
     const rowRenderer = React.useMemo(() =>
-        buildRowRenderer(props.onCustomFilterDeleted)
-    , [props.onCustomFilterDeleted]);
+        buildRowRenderer(props.onCustomFilterDeleted, props.value)
+    , [props.onCustomFilterDeleted, props.value]);
 
     return <Autosuggest
         ref={autosuggestRef}
