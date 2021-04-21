@@ -728,8 +728,12 @@ class QueryFilter extends Filter {
             "$="
         ]),
         new StringSyntax("query", {
-            allowEmpty: (value): boolean => {
-                const op = QueryFilter.filterSyntax[1].parse(value, "query".length);
+            // We allow an empty query only with = and !=, which means we need to get the op:
+            allowEmpty: (value, index): boolean => {
+                // Slightly messy logic to roll backwards and find the index of the start
+                // of the string operation just before this.
+                const opIndex = value.slice(0, index).lastIndexOf("query") + "query".length;
+                const op = QueryFilter.filterSyntax[1].parse(value, opIndex);
 
                 // You can pass an empty query only to = or !=
                 return op === "=" || op === "!=";
@@ -820,10 +824,13 @@ class HeaderFilter extends Filter {
             ['[', ']'],
             new StringSyntax("header value", {
                 allowedChars: [[0, 255]], // Anything! Wrapper guards against spaces for us.
-                suggestionGenerator: (value, _i, events: CollectedEvent[]) => {
+                suggestionGenerator: (value, index, events: CollectedEvent[]) => {
+                    // Find the start of the wrapped header name text that preceeds this
+                    const headerNameIndex = value.slice(0, index - 1).lastIndexOf('[');
+
                     const headerNamePart = HeaderFilter.filterSyntax[1];
                     const expectedHeaderName = headerNamePart
-                        .parse(value, "header".length)
+                        .parse(value, headerNameIndex)
                         .toLowerCase();
 
                     return _(events)
