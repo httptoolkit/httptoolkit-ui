@@ -236,7 +236,10 @@ export type SyntaxPartMatch = {
     syntaxOptions: Array<{ key: K, syntax: readonly SyntaxPart<any, C>[] }>,
     value: string,
     initialIndex: number,
-    context?: C
+    options: {
+        context: C,
+        canExtend?: boolean
+    }
 ): Array<{ key: K, suggestion: SyntaxSuggestion }> {
     const syntaxMatches = syntaxOptions.map(({ key: key, syntax }) => ({
         key,
@@ -272,7 +275,7 @@ export type SyntaxPartMatch = {
                 : value.length;
 
             return syntax[finalSyntaxIndex]
-                .getSuggestions(value, stringIndex, context)
+                .getSuggestions(value, stringIndex, options.context)
                 .map((suggestion) => ({
                     key,
                     suggestion
@@ -306,7 +309,7 @@ export type SyntaxPartMatch = {
         const nextPartToMatch = syntax[syntaxPartIndex];
         const isLastPart = syntaxPartIndex === syntax.length - 1;
 
-        return nextPartToMatch.getSuggestions(value, stringIndex, context)
+        return nextPartToMatch.getSuggestions(value, stringIndex, options.context)
             .map((suggestion) => ({
                 key,
                 syntax,
@@ -324,7 +327,7 @@ export type SyntaxPartMatch = {
 
     // If we have multiple suggestions at this stage, we're done. Return those
     // as the options to show the user.
-    if (suggestionsWithMatches.length !== 1) {
+    if (suggestionsWithMatches.length !== 1 || options.canExtend === false) {
         return suggestionsWithMatches.map(({ key, suggestion }) => ({
             key,
             suggestion
@@ -354,7 +357,7 @@ export type SyntaxPartMatch = {
         const updatedText = applySuggestionToText(value, singleSuggestion);
 
         const nextSuggestions = syntax[syntaxPartIndex]
-            .getSuggestions(updatedText, updatedText.length, context);
+            .getSuggestions(updatedText, updatedText.length, options.context);
 
         // After we hit a template we keep collecting suggestions until they're ambiguous
         if (sawTemplate && nextSuggestions.length > 1) break;

@@ -74,7 +74,7 @@ export function getFilterSuggestions<T>(
         })),
         value,
         0,
-        context
+        { context }
     )
 
     return suggestions.map(({ key: filterClass, suggestion }) => ({

@@ -768,9 +768,18 @@ export class OptionsSyntax<
             return longestFullMatch.option.getSuggestions(value, index, context);
         } else {
             // Otherwise, combine all the options together
-            return _.flatMap(matchingOptions, ({ option }) =>
-                option.getSuggestions(value, index, context)
-            );
+            return _.flatMap(matchingOptions, ({ option }) => {
+                if (matchingOptions.length > 1 && option instanceof CombinedSyntax) {
+                    // If we already have many options, don't allow combined syntax to generate its
+                    // own options, or everything gets rapidly out of hand
+                    return option.getSuggestions(value, index, Object.assign({},
+                        context,
+                        { canExtend: false }
+                    ));
+                } else {
+                    return option.getSuggestions(value, index, context)
+                }
+            });
         }
     }
 
@@ -857,7 +866,7 @@ export class OptionalSyntax<
             [{ key: null, syntax: this.subParts }],
             value,
             index,
-            context
+            { context }
         ).map(({ suggestion }) => suggestion);
 
         const isEndOfValue = value.length === index;
@@ -909,7 +918,7 @@ export class CombinedSyntax<
     C = never,
     SPs extends { [i in keyof Ps]: SyntaxPart<Ps[i], C> }
         = { [i in keyof Ps]: SyntaxPart<Ps[i], C> }
-> implements SyntaxPart<Ps, C> {
+> implements SyntaxPart<Ps, C & { canExtend?: boolean }> {
 
     private subParts: SPs;
 
@@ -924,12 +933,16 @@ export class CombinedSyntax<
             : undefined;
     }
 
-    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
+    getSuggestions(
+        value: string,
+        index: number,
+        context?: C & { canExtend?: boolean }
+    ): SyntaxSuggestion[] {
         return getSuggestions(
             [{ key: null, syntax: this.subParts }],
             value,
             index,
-            context
+            { context, canExtend: context?.canExtend }
         ).map(({ suggestion }) => suggestion);
     }
 
