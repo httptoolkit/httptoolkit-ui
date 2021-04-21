@@ -595,7 +595,7 @@ export class SyntaxRepeaterSyntax<
                 // If we could stop here, and there's no delimiter entered at all
                 // yet, suggest that too:
                 if (delimiterMatch.consumed === 0 && matchCount >= minimumRepetitions) {
-                    suggestions.push({
+                    suggestions.unshift({
                         showAs: "",
                         index,
                         value: "",

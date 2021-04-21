@@ -941,16 +941,16 @@ describe("Repeater syntax", () => {
         );
         expect(part.getSuggestions("string, string", 0)).to.deep.equal([
             {
-                showAs: ", {another word}",
-                index: 14,
-                value: ", ",
-                matchType: 'template'
-            },
-            {
                 showAs: "",
                 index: 14,
                 value: "",
                 matchType: 'full'
+            },
+            {
+                showAs: ", {another word}",
+                index: 14,
+                value: ", ",
+                matchType: 'template'
             }
         ]);
     });
