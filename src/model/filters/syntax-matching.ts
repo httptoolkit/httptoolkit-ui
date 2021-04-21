@@ -39,6 +39,9 @@ export type SyntaxPartValues<SPs extends readonly SyntaxPart<any, any>[]> = {
     [i in keyof SPs]: SyntaxPartValue<SPs[i]>
 };
 
+// The context a syntax part would like to generate suggestions
+export type SyntaxPartContext<SP> = SP extends SyntaxPart<any, infer C> ? C : never;
+
 /**
  * A suggestion for some content to insert to complete a single part
  * of syntax.

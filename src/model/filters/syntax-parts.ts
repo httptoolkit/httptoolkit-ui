@@ -4,7 +4,9 @@ import {
     getSuggestions,
     matchSyntax,
     SyntaxPart,
+    SyntaxPartContext,
     SyntaxPartMatch,
+    SyntaxPartValue,
     SyntaxSuggestion
 } from './syntax-matching';
 
@@ -363,6 +365,230 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
             valueToMatch,
             isWrapped ? index + 1 : index
         );
+    }
+
+}
+
+/**
+ * Vararg syntax, including a minimum repetitions. This allows you to create
+ * syntax like "any number of numbers, separated by a comma".
+ */
+export class SyntaxRepeaterSyntax<
+    Part extends SyntaxPart<any, any>,
+    V extends SyntaxPartValue<Part>,
+    C extends SyntaxPartContext<Part>
+> implements SyntaxPart<V[], C> {
+
+    private minimumRepetitions: number;
+    private placeholderName: string;
+
+    private delimiterSyntax: FixedStringSyntax;
+
+    constructor(
+        private delimiterString: string,
+        private wrappedSyntax: Part,
+        options: {
+            minimumRepetitions?: number,
+            placeholderName?: string
+        } = {}
+    ) {
+        this.minimumRepetitions = options.minimumRepetitions ?? 2;
+        this.placeholderName = options.placeholderName ?? 'value';
+
+        this.delimiterSyntax = new FixedStringSyntax(this.delimiterString);
+    }
+
+    // Handles the raw wrapper + delimiter matching, without worrying about
+    // minimum repetitions at all.
+    private matchSyntaxOnly(
+        value: string,
+        startIndex: number
+    ): (SyntaxPartMatch & { matchCount: number }) {
+        const { wrappedSyntax, delimiterString, delimiterSyntax } = this;
+
+        let index = startIndex;
+        let matchCount = 0;
+
+        while (true) {
+            // Check the syntax within:
+            const nextDelimiterIndex = value.slice(index).indexOf(delimiterString);
+            const valueToMatch = value.slice(0,
+                // Don't allow the wrapped syntax to read beyond the next delimiter
+                nextDelimiterIndex !== -1
+                    ? index + nextDelimiterIndex
+                    : undefined
+            );
+
+            const submatch = wrappedSyntax.match(
+                valueToMatch,
+                index
+            );
+
+            // If we run into non-matching values, we're done. Un-consume the last
+            // delimiter and return what we have so far.
+            if (!submatch) {
+                return {
+                    matchCount,
+                    type: 'full',
+                    consumed: index - startIndex - (
+                        matchCount > 0 ? delimiterString.length : 0
+                    )
+                };
+            }
+
+            index += submatch.consumed;
+
+            if (submatch.type === 'partial') {
+                // An incomplete match means we're done, we stop here and return
+                // what we have so far as a partially complete value
+                return {
+                    matchCount,
+                    type: 'partial',
+                    consumed: index - startIndex
+                };
+            }
+
+            matchCount += 1;
+
+            const delimiterMatch = delimiterSyntax.match(value, index);
+            if (!delimiterMatch || delimiterMatch.consumed === 0) {
+                // If we have a non-delimiter (or we're at the end of the string) stop.
+                return { matchCount, type: 'full', consumed: index - startIndex };
+            } else if (delimiterMatch.type === 'partial') {
+                // If we have part of a delimiter, we partially match it
+                return { matchCount, type: 'partial', consumed: value.length - index };
+            }
+
+            // Otherwise we must have a whole delimiter, so we go around again
+            index += delimiterMatch.consumed;
+        }
+    }
+
+    match(value: string, startIndex: number): SyntaxPartMatch | undefined {
+        const { minimumRepetitions } = this;
+
+        const {
+            matchCount,
+            type: matchType,
+            consumed
+        } = this.matchSyntaxOnly(value, startIndex);
+
+        if (consumed === 0) {
+            if (minimumRepetitions <= 0) {
+                return { type: 'full', consumed };
+            } else {
+                return { type: 'partial', consumed };
+            }
+        } else if (matchType === 'full') {
+            if (matchCount >= minimumRepetitions) {
+                return { type: 'full', consumed };
+            } else if (startIndex + consumed === value.length) {
+                // If you have a full match with too few parts, but up to the
+                // end of the string, then it's a partial match (we can append to complete)
+                return { type: 'partial', consumed: consumed };
+            } else {
+                // If you have a full match that's too short, with subequent content
+                // present, then it's just a complete mismatch.
+                return;
+            }
+        } else {
+            return { type: matchType, consumed };
+        }
+    }
+
+    getSuggestions(value: string, initialIndex: number, context?: C): SyntaxSuggestion[] {
+        // getSuggestions requires a match. That means we can find the right suggestion
+        // by looping through part matches until we find the first partial match or a
+        // mismatch, and then ask the last matching part for suggestions.
+        const {
+            wrappedSyntax,
+            delimiterSyntax,
+            delimiterString,
+            minimumRepetitions
+        } = this;
+
+        let index = initialIndex;
+        let matchCount = 0;
+
+        while (true) {
+            const wrappedMatch = wrappedSyntax.match(value, index);
+            if (!wrappedMatch) {
+                // Must be a full match on the parsed content up to the last delimiter
+                // (if any) because otherwise this is no match at all, and getSuggestions
+                // always requires a match first.
+                return [{
+                    matchType: 'full',
+                    index: matchCount > 0
+                        ? index - delimiterString.length
+                        : index,
+                    showAs: '',
+                    value: ''
+                }];
+            } else if (wrappedMatch.type === 'partial') {
+                // We have a partial match on our contents, so suggest continuining it
+                const suggestions = wrappedSyntax.getSuggestions(value, index, context);
+                if (matchCount + 1 < minimumRepetitions) {
+                    return suggestions.map(suggestion => ({
+                        ...suggestion,
+                        // Downgrade the match to partial if we still wouldn't have
+                        // enough repetitions yet
+                        matchType: suggestion.matchType === 'full'
+                            ? 'partial'
+                            : suggestion.matchType
+                    }));
+                } else {
+                    return suggestions;
+                }
+            }
+
+            // We have a full match, so we just keep going
+            index += wrappedMatch.consumed;
+            matchCount += 1;
+
+            const delimiterMatch = delimiterSyntax.match(value, index);
+            if (!delimiterMatch) {
+                // Non-delimiter after a valid value - we have to stop here.
+                return [{
+                    matchType: 'full',
+                    index: index,
+                    showAs: '',
+                    value: ''
+                }];
+            } else if (delimiterMatch.type === 'partial') {
+                // Partial/empty delimiter: suggest completing it (with a template value)
+                const suggestions: SyntaxSuggestion[] = [{
+                    showAs: `${delimiterString}{another ${this.placeholderName}}`,
+                    index,
+                    value: delimiterString,
+                    matchType: 'template'
+                }];
+
+                // If we could stop here, and there's no delimiter entered at all
+                // yet, suggest that too:
+                if (delimiterMatch.consumed === 0 && matchCount >= minimumRepetitions) {
+                    suggestions.push({
+                        showAs: "",
+                        index,
+                        value: "",
+                        matchType: 'full'
+                    });
+                }
+
+                return suggestions;
+            } else {
+                index += delimiterMatch.consumed;
+            }
+        }
+    }
+
+    parse(value: string, index: number): V[] {
+        const match = this.match(value, index)!;
+
+        if (match.type === 'full' && match.consumed === 0) return [];
+
+        const matchedValue = value.slice(index, index + match.consumed);
+        const matchedValueParts = matchedValue.split(this.delimiterString);
+        return matchedValueParts.map((part) => this.wrappedSyntax.parse(part, 0));
     }
 
 }

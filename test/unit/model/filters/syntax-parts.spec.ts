@@ -9,7 +9,8 @@ import {
     OptionalSyntax,
     SyntaxWrapperSyntax,
     CombinedSyntax,
-    OptionsSyntax
+    OptionsSyntax,
+    SyntaxRepeaterSyntax
 } from "../../../../src/model/filters/syntax-parts";
 
 describe("Fixed string syntax", () => {
@@ -707,6 +708,262 @@ describe("Wrapper syntax", () => {
 
 });
 
+describe("Repeater syntax", () => {
+
+    it("should match a single value", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string")
+        );
+        expect(part.match("string, string", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 14
+        });
+    });
+
+    it("should not match non-delimited values", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.match("stringstring", 0)).to.equal(undefined);
+    });
+
+    it("should only partially match given too few values", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 3 }
+        );
+        expect(part.match("string, string", 0)).to.deep.equal({
+            type: 'partial',
+            consumed: 14
+        });
+    });
+
+    it("should fully match given sufficient values and a suffix", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.match("string, stringBAD", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 14
+        });
+    });
+
+    it("should only partially match given too few values and a bad suffix", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 3 }
+        );
+        expect(part.match("string, stringBAD", 0)).to.equal(undefined);
+    });
+
+    it("should support matching 0 times", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 0 }
+        );
+        expect(part.match("unrelated text", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 0
+        });
+    });
+
+    it("should partially match incomplete repetitions", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.match("string, str", 0)).to.deep.equal({
+            type: 'partial',
+            consumed: 11
+        });
+    });
+
+    it("should partially match incomplete delimiters", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.match("string, ", 0)).to.deep.equal({
+            type: 'partial',
+            consumed: 8
+        });
+    });
+
+    it("should fully match repetitions with a suffix", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.match("string, string-thing", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 14
+        });
+    });
+
+    it("should fully match repetitions with a delimited suffix", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.match("string, string, another thing", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 14 // Doesn't consume the last comma
+        });
+    });
+
+    it("should suggest completing repetitions", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.getSuggestions("string, str", 0)).to.deep.equal([
+            {
+                showAs: "string",
+                index: 8,
+                value: "string",
+                matchType: 'full'
+            }
+        ]);
+    });
+
+    it("should suggest new values only until we have sufficient repetitions", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2, placeholderName: 'word' }
+        );
+        expect(part.getSuggestions("string", 0)).to.deep.equal([
+            {
+                showAs: ", {another word}",
+                index: 6,
+                value: ", ",
+                matchType: 'template'
+            }
+        ]);
+    });
+
+    it("should suggest completing partial delimiters", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.getSuggestions("string,", 0)).to.deep.equal([
+            {
+                showAs: ", {another value}",
+                index: 6,
+                value: ", ",
+                matchType: 'template'
+            }
+        ]);
+    });
+
+    it("should suggest new values without templates after delimiters", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2, placeholderName: 'word' }
+        );
+        expect(part.getSuggestions("string, ", 0)).to.deep.equal([
+            {
+                showAs: "string",
+                index: 8,
+                value: "string",
+                matchType: 'full'
+            }
+        ]);
+    });
+
+    it("should suggest values or nothing after sufficient repetitions", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2, placeholderName: 'word' }
+        );
+        expect(part.getSuggestions("string, string", 0)).to.deep.equal([
+            {
+                showAs: ", {another word}",
+                index: 14,
+                value: ", ",
+                matchType: 'template'
+            },
+            {
+                showAs: "",
+                index: 14,
+                value: "",
+                matchType: 'full'
+            }
+        ]);
+    });
+
+    it("should suggest the first repetition", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.getSuggestions("", 0)).to.deep.equal([
+            {
+                showAs: "string",
+                index: 0,
+                value: "string",
+                matchType: 'partial'
+            }
+        ]);
+    });
+
+    it("should suggest skipping valid empty repetitions", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 0 }
+        );
+        expect(part.getSuggestions("unrelated text", 0)).to.deep.equal([
+            {
+                showAs: "",
+                index: 0,
+                value: "",
+                matchType: 'full'
+            }
+        ]);
+    });
+
+    it("should parse valid repeated inputs", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2 }
+        );
+        expect(part.parse("string, string", 0)).to.deep.equal(
+            ["string", "string"]
+        );
+    });
+
+    it("should parse valid empty input", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ', ',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 0 }
+        );
+        expect(part.parse("", 0)).to.deep.equal(
+            []
+        );
+    });
+});
+
 describe("Options syntax", () => {
 
     it("should not match completely different strings", () => {
@@ -1118,7 +1375,6 @@ describe("Optional syntax", () => {
         expect(parsedValue).to.deep.equal(["value:", "-", 123]);
     });
 });
-
 
 describe("Combined syntax", () => {
 
