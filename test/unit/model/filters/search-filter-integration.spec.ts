@@ -71,6 +71,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "port" },
                 { index: 0, showAs: "protocol" },
                 { index: 0, showAs: "httpVersion" },
+                { index: 0, showAs: "or" },
             ]);
         });
 
@@ -94,7 +95,8 @@ describe("Search filter model integration test:", () => {
                 "requests that weren't transmitted successfully",
                 "requests sent to a given port",
                 "exchanges using either HTTP or HTTPS",
-                "exchanges using a given version of HTTP"
+                "exchanges using a given version of HTTP",
+                "exchanges that match any one of multiple conditions"
             ]);
         });
 
@@ -1086,6 +1088,165 @@ describe("Search filter model integration test:", () => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);
             });
+        });
+    });
+
+    describe("Or() filters", () => {
+        it("should list all filters initially", () => {
+            let input = "or(";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 3, showAs: "method" },
+                { index: 3, showAs: "hostname" },
+                { index: 3, showAs: "path" },
+                { index: 3, showAs: "query" },
+                { index: 3, showAs: "status" },
+                { index: 3, showAs: "header" },
+                { index: 3, showAs: "body" },
+                { index: 3, showAs: "bodySize" },
+                { index: 3, showAs: "completed" },
+                { index: 3, showAs: "pending" },
+                { index: 3, showAs: "aborted" },
+                { index: 3, showAs: "errored" },
+                { index: 3, showAs: "port" },
+                { index: 3, showAs: "protocol" },
+                { index: 3, showAs: "httpVersion" },
+            ]);
+        });
+
+        it("should suggest completing the first filter", () => {
+            let input = "or(comp";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 3, showAs: "completed", matchType: 'partial' }
+            ]);
+        });
+
+        it("should suggest a delimiter after the first filter", () => {
+            let input = "or(completed";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 12, showAs: ", {another condition})", matchType: 'template' }
+            ]);
+        });
+
+        it("should suggest finishing a partial delimiter", () => {
+            let input = "or(completed,";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 12, showAs: ", {another condition})", matchType: 'template' }
+            ]);
+        });
+
+        it("should suggest all filters again for the second condition", () => {
+            let input = "or(completed, ";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 14, showAs: "method" },
+                { index: 14, showAs: "hostname" },
+                { index: 14, showAs: "path" },
+                { index: 14, showAs: "query" },
+                { index: 14, showAs: "status" },
+                { index: 14, showAs: "header" },
+                { index: 14, showAs: "body" },
+                { index: 14, showAs: "bodySize" },
+                { index: 14, showAs: "completed)" },
+                { index: 14, showAs: "pending)" },
+                { index: 14, showAs: "aborted)" },
+                { index: 14, showAs: "errored)" },
+                { index: 14, showAs: "port" },
+                { index: 14, showAs: "protocol" },
+                { index: 14, showAs: "httpVersion" },
+            ]);
+        });
+
+        it("should suggest finishing or completing a pair of conditions", () => {
+            let input = "or(completed, err";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 14, showAs: "errored)", matchType: 'full' }
+            ]);
+        });
+
+        it("should use context in suggestions", () => {
+            let input = "or(header";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: {
+                        'another-header': 'other values',
+                        'Content-Type': 'application/xml'
+                    }
+                }),
+            ]);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 3, showAs: "header[{header name}])" },
+                { index: 3, showAs: "header[another-header]" },
+                { index: 3, showAs: "header[content-type]" }
+            ]);
+        });
+
+        it("should show descriptions for various suggestions", () => {
+            [
+                ["or(", "exchanges that match any one of multiple conditions"],
+                ["or(error", "requests that weren't transmitted successfully, or ..."],
+                ["or(errored,", "requests that weren't transmitted successfully, or ..."],
+                ["or(errored, ", "requests that weren't transmitted successfully, or ..."],
+                ["or(errored, method", "requests that weren't transmitted successfully, or requests with a given method"],
+                ["or(errored, method=POST", "requests that weren't transmitted successfully, or POST requests"],
+                ["or(errored, method=POST, ", "requests that weren't transmitted successfully, POST requests, or ..."],
+                ["or(errored, method=POST)", "requests that weren't transmitted successfully, or POST requests"],
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.equal(expectedOutput);
+            });
+        });
+
+        it("should correctly filter for multiple properties", () => {
+            const filter = createFilter("or(header[my-header], status=404)");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: { 'my-header': 'pending-req-with-header' }
+                }),
+                getExchangeData({
+                    responseHeaders: { 'MY-HEADER': 'completed-req-with-header' }
+                }),
+                getExchangeData({
+                    statusCode: 200,
+                    requestHeaders: { 'another-header': 'more header' }
+                }),
+                getExchangeData({
+                    statusCode: 404
+                }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+
+            const matchedValues = (matchedEvents as HttpExchange[]).map((event) => ({
+                status: (event as any).response?.statusCode,
+                ...event.request.headers,
+                ...(event.isSuccessfulExchange()
+                    ? event.response.headers
+                    : []
+                )
+            }));
+
+            expect(matchedValues).to.deep.equal([
+                { status: undefined, 'my-header': 'pending-req-with-header' },
+                { status: 200, 'MY-HEADER': 'completed-req-with-header' },
+                { status: 404 }
+            ]);
         });
     });
 });

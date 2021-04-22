@@ -729,7 +729,7 @@ export class FixedLengthNumberSyntax<S> implements SyntaxPart<number, S> {
  * Matches one syntax from a list of possible options.
  */
 export class OptionsSyntax<
-    Options extends Array<SyntaxPart<any, any>>,
+    Options extends readonly SyntaxPart<any, any>[],
     V extends (Options extends Array<SyntaxPart<infer V, any>> ? V : never),
     C extends (Options extends Array<SyntaxPart<any, infer C>> ? C : never),
 > implements SyntaxPart<V, C> {

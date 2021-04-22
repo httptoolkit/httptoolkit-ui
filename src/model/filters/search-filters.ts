@@ -1,22 +1,28 @@
 import * as _ from 'lodash';
 
 import { CollectedEvent } from '../../types';
+import { joinAnd } from '../../util';
+
 import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../http/bodies';
 
 import {
+    matchSyntax,
     SyntaxPart,
     SyntaxPartValues
 } from './syntax-matching';
 import {
     charRange,
+    CombinedSyntax,
     FixedLengthNumberSyntax,
     FixedStringSyntax,
     NumberSyntax,
     OptionalSyntax,
+    OptionsSyntax,
     StringOptionsSyntax,
     StringSyntax,
+    SyntaxRepeaterSyntax,
     SyntaxWrapperSyntax
 } from './syntax-parts';
 
@@ -1065,7 +1071,7 @@ class BodyFilter extends Filter {
     }
 }
 
-export const SelectableSearchFilterClasses: FilterClass[] = [
+const BaseSearchFilterClasses: FilterClass[] = [
     MethodFilter,
     HostnameFilter,
     PathFilter,
@@ -1080,5 +1086,85 @@ export const SelectableSearchFilterClasses: FilterClass[] = [
     ErrorFilter,
     PortFilter,
     ProtocolFilter,
-    HttpVersionFilter,
+    HttpVersionFilter
+];
+
+class OrFilter extends Filter {
+
+    private static innerFilterSyntax = new SyntaxRepeaterSyntax(
+        ', ',
+        new OptionsSyntax(
+            BaseSearchFilterClasses.map(f =>
+                new CombinedSyntax(...f.filterSyntax)
+            )
+        ),
+        { placeholderName: 'condition' }
+    );
+
+    static filterSyntax = [
+        new FixedStringSyntax('or'),
+        new SyntaxWrapperSyntax(
+            ['(', ')'],
+            OrFilter.innerFilterSyntax
+        )
+    ] as const;
+
+    static filterName = "or";
+
+    static filterDescription(value: string, isTemplate: boolean) {
+        const innerValues = value.slice(3).split(', ');
+
+        if (innerValues.length === 1 && innerValues[0].length === 0) {
+            return "exchanges that match any one of multiple conditions"
+        } else {
+            const innerDescriptions = innerValues.map((valuePart, index) => {
+                const isLastPart = index === innerValues.length - 1;
+                const partIsTemplate = isTemplate && isLastPart;
+
+                const matches = BaseSearchFilterClasses.map((filter) => ({
+                    filter,
+                    match: matchSyntax(filter.filterSyntax, valuePart, 0)
+                })).filter(({ match }) => (match?.partiallyConsumed || 0) > 0);
+
+                const bestMatch = _.maxBy(matches, m => m.match!.partiallyConsumed);
+                if (bestMatch) {
+                    return bestMatch.filter.filterDescription(valuePart, partIsTemplate);
+                } else {
+                    return '...';
+                }
+            });
+
+            if (innerDescriptions.length < 2) {
+                innerDescriptions.push('...');
+            }
+
+            return joinAnd(innerDescriptions, ', ', ', or ');
+        }
+    }
+
+    private innerFilters: Filter[];
+
+    constructor(private filterValue: string) {
+        super(filterValue);
+
+        this.innerFilters = _.flatMap(filterValue.slice(3).split(', '), (valuePart) => {
+            const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
+                matchSyntax(filter.filterSyntax, valuePart, 0)?.type === 'full'
+            )!;
+            return new matchingFilterClass(valuePart);
+        });
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return this.innerFilters.some(f => f.matches(event));
+    }
+
+    toString() {
+        return joinAnd(this.innerFilters.map(f => f.toString()), ', ', ' or ');
+    }
+}
+
+export const SelectableSearchFilterClasses: FilterClass[] = [
+    ...BaseSearchFilterClasses,
+    OrFilter
 ];
