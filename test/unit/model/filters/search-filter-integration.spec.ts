@@ -80,21 +80,21 @@ describe("Search filter model integration test:", () => {
             );
 
             expect(descriptions).to.deep.equal([
-                "Match requests with a given method",
-                "Match requests sent to a given hostname",
-                "Match requests sent to a given path",
-                "Match requests with a given query string",
-                "Match responses with a given status code",
-                "Match exchanges by header",
-                "Match exchanges by body content",
-                "Match exchanges by body size",
-                "Match requests that have received a response",
-                "Match requests that are still waiting for a response",
-                "Match requests that aborted before receiving a response",
-                "Match requests that weren't transmitted successfully",
-                "Match requests sent to a given port",
-                "Match exchanges using either HTTP or HTTPS",
-                "Match exchanges using a given version of HTTP"
+                "requests with a given method",
+                "requests sent to a given hostname",
+                "requests sent to a given path",
+                "requests with a given query string",
+                "responses with a given status code",
+                "exchanges by header",
+                "exchanges by body content",
+                "exchanges by body size",
+                "requests that have received a response",
+                "requests that are still waiting for a response",
+                "requests that aborted before receiving a response",
+                "requests that weren't transmitted successfully",
+                "requests sent to a given port",
+                "exchanges using either HTTP or HTTPS",
+                "exchanges using a given version of HTTP"
             ]);
         });
 
@@ -224,21 +224,21 @@ describe("Search filter model integration test:", () => {
             const input = "status!";
             const description = getSuggestionDescriptions(input)[0];
 
-            expect(description).to.equal("Match responses with a given status code");
+            expect(description).to.equal("responses with a given status code");
         });
 
         it("should show a more specific description given a complete operator", () => {
             const input = "status>=";
             const description = getSuggestionDescriptions(input)[0];
 
-            expect(description).to.equal("Match responses with a status greater than or equal to a given value");
+            expect(description).to.equal("responses with a status greater than or equal to a given value");
         });
 
         it("should show a basic description given a partial value", () => {
             const input = "status>4";
             const description = getSuggestionDescriptions(input)[0];
 
-            expect(description).to.equal("Match responses with a status greater than a given value");
+            expect(description).to.equal("responses with a status greater than a given value");
         });
 
         it("should show a fully specific description given a full input", () => {
@@ -246,7 +246,7 @@ describe("Search filter model integration test:", () => {
             const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal(
-                "Match responses with a status less than or equal to 201"
+                "responses with a status less than or equal to 201"
             );
         });
 
@@ -255,7 +255,7 @@ describe("Search filter model integration test:", () => {
             const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal(
-                "Match responses with status 201 (Created)"
+                "responses with status 201 (Created)"
             );
         });
 
@@ -263,7 +263,7 @@ describe("Search filter model integration test:", () => {
             const filter = createFilter("status=201");
 
             expect(filter.filterDescription).to.equal(
-                "Match responses with status 201 (Created)"
+                "responses with status 201 (Created)"
             );
         });
     });
@@ -376,11 +376,11 @@ describe("Search filter model integration test:", () => {
 
         it("should show descriptions for various suggestions", () => {
             [
-                ["method", "Match requests with a given method"],
-                ["method=", "Match requests with a given method"],
-                ["method!=", "Match requests not sent with a given method"],
-                ["method=post", "Match POST requests"],
-                ["method!=GET", "Match non-GET requests"]
+                ["method", "requests with a given method"],
+                ["method=", "requests with a given method"],
+                ["method!=", "requests not sent with a given method"],
+                ["method=post", "POST requests"],
+                ["method!=GET", "non-GET requests"]
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);
@@ -671,10 +671,10 @@ describe("Search filter model integration test:", () => {
                 .filterDescription(input, emptyQuerySuggestion.matchType === 'template');
 
             expect(templateDescription).to.equal(
-                "Match requests with a given query string"
+                "requests with a given query string"
             );
             expect(emptyQueryDescription).to.equal(
-                "Match requests with an empty query string"
+                "requests with an empty query string"
             );
         });
 
@@ -684,7 +684,7 @@ describe("Search filter model integration test:", () => {
             const description = getSuggestionDescriptions(input)[0];
 
             expect(description).to.equal(
-                "Match requests with a query string starting with ?abc"
+                "requests with a query string starting with ?abc"
             );
         });
 
@@ -836,12 +836,12 @@ describe("Search filter model integration test:", () => {
 
         it("should show descriptions for various suggestions", () => {
             [
-                ["header", "Match exchanges by header"],
-                ["header[date]", "Match exchanges with a 'date' header"],
+                ["header", "exchanges by header"],
+                ["header[date]", "exchanges with a 'date' header"],
                 ["header[date]=",
-                    "Match exchanges with a 'date' header equal to a given value"],
+                    "exchanges with a 'date' header equal to a given value"],
                 ["header[date]*=[json; charset=utf-8]",
-                    "Match exchanges with a 'date' header containing 'json; charset=utf-8'"]
+                    "exchanges with a 'date' header containing 'json; charset=utf-8'"]
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);
@@ -1024,11 +1024,11 @@ describe("Search filter model integration test:", () => {
 
         it("should correctly format descriptions", () => {
             [
-                ["body", "Match exchanges by body content"],
-                ["body=", "Match exchanges with a body equal to a given value"],
-                ["body!=abc", "Match exchanges with a body not equal to abc"],
-                ["body*=qwe", "Match exchanges with a body containing qwe"],
-                ["body$=x", "Match exchanges with a body ending with x"],
+                ["body", "exchanges by body content"],
+                ["body=", "exchanges with a body equal to a given value"],
+                ["body!=abc", "exchanges with a body not equal to abc"],
+                ["body*=qwe", "exchanges with a body containing qwe"],
+                ["body$=x", "exchanges with a body ending with x"],
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);
@@ -1077,11 +1077,11 @@ describe("Search filter model integration test:", () => {
 
         it("should correctly format sizes for descriptions", () => {
             [
-                ["bodySize", "Match exchanges by body size"],
-                ["bodySize=", "Match exchanges with a body equal to a given size"],
-                ["bodySize!=100", "Match exchanges with a body not equal to 100 bytes"],
-                ["bodySize>1200000", "Match exchanges with a body larger than 1.2 MB"],
-                ["bodySize<10000", "Match exchanges with a body smaller than 10 kB"],
+                ["bodySize", "exchanges by body size"],
+                ["bodySize=", "exchanges with a body equal to a given size"],
+                ["bodySize!=100", "exchanges with a body not equal to 100 bytes"],
+                ["bodySize>1200000", "exchanges with a body larger than 1.2 MB"],
+                ["bodySize<10000", "exchanges with a body smaller than 10 kB"],
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);

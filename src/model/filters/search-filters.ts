@@ -35,10 +35,7 @@ export abstract class Filter {
 
     get filterDescription() {
         const thisClass = (this.constructor as FilterClass<unknown>);
-        return thisClass.filterDescription(
-            this.filterString,
-            false
-        );
+        return thisClass.filterDescription(this.filterString, false);
     }
 }
 
@@ -256,9 +253,9 @@ class StatusFilter extends Filter {
         const [, op, status] = tryParseFilter(StatusFilter, value);
 
         if (!op || (op == '=' && !status)) {
-            return "Match responses with a given status code";
+            return "responses with a given status code";
         } else if (!status) {
-            return `Match responses with a status ${operationDescriptions[op]} a given value`
+            return `responses with a status ${operationDescriptions[op]} a given value`
         } else {
             const statusMessage = getStatusDocs(status)?.message;
 
@@ -269,9 +266,9 @@ class StatusFilter extends Filter {
 
             if (op === '=') {
                 // Simplify descriptions for the most common case
-                return `Match responses with status ${status}${describeStatus}`;
+                return `responses with status ${status}${describeStatus}`;
             } else {
-                return `Match responses with a status ${
+                return `responses with a status ${
                     operationDescriptions[op]
                 } ${status}${describeStatus}`
             }
@@ -306,7 +303,7 @@ class CompletedFilter extends Filter {
     static filterName = "completed";
 
     static filterDescription(value: string) {
-        return "Match requests that have received a response";
+        return "requests that have received a response";
     }
 
     matches(event: CollectedEvent): boolean {
@@ -326,7 +323,7 @@ class PendingFilter extends Filter {
     static filterName = "pending";
 
     static filterDescription(value: string) {
-        return "Match requests that are still waiting for a response";
+        return "requests that are still waiting for a response";
     }
 
     matches(event: CollectedEvent): boolean {
@@ -346,7 +343,7 @@ class AbortedFilter extends Filter {
     static filterName = "aborted";
 
     static filterDescription(value: string) {
-        return "Match requests that aborted before receiving a response";
+        return "requests that aborted before receiving a response";
     }
 
     matches(event: CollectedEvent): boolean {
@@ -366,7 +363,7 @@ class ErrorFilter extends Filter {
     static filterName = "error";
 
     static filterDescription(value: string) {
-        return "Match requests that weren't transmitted successfully";
+        return "requests that weren't transmitted successfully";
     }
 
     matches(event: CollectedEvent): boolean {
@@ -410,18 +407,18 @@ class MethodFilter extends Filter {
         const [, op, method] = tryParseFilter(MethodFilter, value);
 
         if (!op) {
-            return "Match requests with a given method";
+            return "requests with a given method";
         } else if (op === '=') {
             if (method) {
-                return `Match ${method.toUpperCase()} requests`;
+                return `${method.toUpperCase()} requests`;
             } else {
-                return `Match requests with a given method`;
+                return `requests with a given method`;
             }
         } else {
             if (method) {
-                return `Match non-${method.toUpperCase()} requests`;
+                return `non-${method.toUpperCase()} requests`;
             } else {
-                return 'Match requests not sent with a given method';
+                return 'requests not sent with a given method';
             }
         }
     }
@@ -463,9 +460,9 @@ class HttpVersionFilter extends Filter {
         const [, , version] = tryParseFilter(HttpVersionFilter, value);
 
         if (!version) {
-            return "Match exchanges using a given version of HTTP";
+            return "exchanges using a given version of HTTP";
         } else {
-            return `Match exchanges using HTTP/${version}`;
+            return `exchanges using HTTP/${version}`;
         }
     }
 
@@ -504,9 +501,9 @@ class ProtocolFilter extends Filter {
         const [, , protocol] = tryParseFilter(ProtocolFilter, value);
 
         if (!protocol) {
-            return "Match exchanges using either HTTP or HTTPS";
+            return "exchanges using either HTTP or HTTPS";
         } else {
-            return `Match exchanges using ${protocol.toUpperCase()}`;
+            return `exchanges using ${protocol.toUpperCase()}`;
         }
     }
 
@@ -565,11 +562,11 @@ class HostnameFilter extends Filter {
         const [, op, hostname] = tryParseFilter(HostnameFilter, value);
 
         if (!op || (!hostname && op === '=')) {
-            return "Match requests sent to a given hostname";
+            return "requests sent to a given hostname";
         } else if (op === '=') {
-            return `Match requests to ${hostname}`;
+            return `requests to ${hostname}`;
         } else {
-            return `Match requests to a hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
+            return `requests to a hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
         }
     }
 
@@ -624,11 +621,11 @@ class PortFilter extends Filter {
         const [, op, port] = tryParseFilter(PortFilter, value);
 
         if (!op || (!port && op === '=')) {
-            return "Match requests sent to a given port";
+            return "requests sent to a given port";
         } else if (op === '=') {
-            return `Match requests to port ${port}`;
+            return `requests to port ${port}`;
         } else {
-            return `Match requests to a port ${operationDescriptions[op]} ${port || 'a given port'}`;
+            return `requests to a port ${operationDescriptions[op]} ${port || 'a given port'}`;
         }
     }
 
@@ -688,11 +685,11 @@ class PathFilter extends Filter {
         const [, op, path] = tryParseFilter(PathFilter, value);
 
         if (!op || (!path && op === '=')) {
-            return "Match requests sent to a given path";
+            return "requests sent to a given path";
         } else if (op === '=') {
-            return `Match requests to ${path}`;
+            return `requests to ${path}`;
         } else {
-            return `Match requests to a path ${operationDescriptions[op]} ${path || 'a given path'}`;
+            return `requests to a path ${operationDescriptions[op]} ${path || 'a given path'}`;
         }
     }
 
@@ -753,24 +750,24 @@ class QueryFilter extends Filter {
         const [, op, query] = tryParseFilter(QueryFilter, value);
 
         if (!op) {
-            return "Match requests with a given query string";
+            return "requests with a given query string";
         } else if (query === undefined || isTemplate) {
             if (op === '=') {
-                return `Match requests with a given query string`;
+                return `requests with a given query string`;
             } else {
-                return `Match requests with a query string ${
+                return `requests with a query string ${
                     operationDescriptions[op]
                 } a given query string`;
             }
         } else if (query === '') {
             // Op must be '=' or '!=' - we don't allow empty string otherwise
             if (op === '=') {
-                return 'Match requests with an empty query string';
+                return 'requests with an empty query string';
             } else {
-                return 'Match requests with a non-empty query string';
+                return 'requests with a non-empty query string';
             }
         } else {
-            return `Match requests with a query string ${
+            return `requests with a query string ${
                 operationDescriptions[op]
             } ${
                 query
@@ -884,11 +881,11 @@ class HeaderFilter extends Filter {
         );
 
         if (!headerName) {
-            return "Match exchanges by header";
+            return "exchanges by header";
         } else if (!op) {
-            return `Match exchanges with a '${headerName}' header`;
+            return `exchanges with a '${headerName}' header`;
         } else {
-            return `Match exchanges with a '${headerName}' header ${
+            return `exchanges with a '${headerName}' header ${
                 operationDescriptions[op]
             } ${headerValue ? `'${headerValue}'` : 'a given value'}`;
         }
@@ -957,9 +954,9 @@ class BodySizeFilter extends Filter {
         const [, op, size] = tryParseFilter(BodySizeFilter, value);
 
         if (!op) {
-            return "Match exchanges by body size";
+            return "exchanges by body size";
         } else {
-            return `Match exchanges with a body ${
+            return `exchanges with a body ${
                 sizeOperationDescriptions[op]
             } ${
                 size !== undefined
@@ -1025,9 +1022,9 @@ class BodyFilter extends Filter {
         const [, op, bodyContent] = tryParseFilter(BodyFilter, value);
 
         if (!op) {
-            return "Match exchanges by body content";
+            return "exchanges by body content";
         } else {
-            return `Match exchanges with a body ${operationDescriptions[op]} ${bodyContent || 'a given value'}`;
+            return `exchanges with a body ${operationDescriptions[op]} ${bodyContent || 'a given value'}`;
         }
     }
 
