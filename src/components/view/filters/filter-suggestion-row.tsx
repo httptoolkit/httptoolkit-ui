@@ -92,7 +92,7 @@ export const FilterSuggestionRow = (props: {
     const existingText = query.slice(0, suggestion.index + partiallyMatchedChars);
     const suggestedAddition = suggestion.showAs.slice(partiallyMatchedChars);
 
-    const filterDescription = `Match ${ suggestion.filterClass.filterDescription(
+    const filterDescription = `Match ${suggestion.filterClass.filterDescription(
         applySuggestionToText(query, suggestion),
         suggestion.matchType === 'template'
     ) }`;

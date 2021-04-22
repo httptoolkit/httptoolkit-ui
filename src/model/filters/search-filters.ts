@@ -55,6 +55,9 @@ export type FilterClass<T extends unknown = never> = {
     /**
      * The constructor for the filter, which can take a string that fully matches
      * all syntax parts of this filter.
+     *
+     * May return multiple filters only for custom filter aliases, where a single
+     * keyword expands to create a whole set of filters when created.
      */
     new (input: string): Filter | Filters;
 
@@ -1089,6 +1092,68 @@ const BaseSearchFilterClasses: FilterClass[] = [
     HttpVersionFilter
 ];
 
+// Meta-filters, which can wrap the base filters above:
+
+class NotFilter extends Filter {
+
+    private static innerFilterSyntax = new OptionsSyntax(
+        BaseSearchFilterClasses.map(f =>
+            new CombinedSyntax(...f.filterSyntax)
+        )
+    );
+
+    static filterSyntax = [
+        new FixedStringSyntax('not'),
+        new SyntaxWrapperSyntax(
+            ['(', ')'],
+            NotFilter.innerFilterSyntax
+        )
+    ] as const;
+
+    static filterName = "not";
+
+    static filterDescription(value: string, isTemplate: boolean) {
+        const innerValue = value.slice(4, -1);
+
+        if (innerValue.length === 0) {
+            return "exchanges that do not match a given condition"
+        } else {
+            const matches = BaseSearchFilterClasses.map((filter) => ({
+                filter,
+                match: matchSyntax(filter.filterSyntax, innerValue, 0)
+            })).filter(({ match }) => (match?.partiallyConsumed || 0) > 0);
+
+            const bestMatch = _.maxBy(matches, m => m.match!.partiallyConsumed);
+            const innerDescription = bestMatch
+                ? bestMatch.filter.filterDescription(innerValue, isTemplate)
+                : '...';
+
+            return `excluding ${innerDescription}`;
+        }
+    }
+
+    private innerFilter: Filter;
+
+    constructor(private filterValue: string) {
+        super(filterValue);
+
+        const innerValue = filterValue.slice(4, -1);
+
+        const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
+            matchSyntax(filter.filterSyntax, innerValue, 0)?.type === 'full'
+        )!;
+        this.innerFilter = new matchingFilterClass(innerValue) as Filter; // Never Filters - we don't support filter aliases here
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return !this.innerFilter.matches(event);
+    }
+
+    toString() {
+        return `not(${this.innerFilter.toString()})`;
+    }
+}
+
 class OrFilter extends Filter {
 
     private static innerFilterSyntax = new SyntaxRepeaterSyntax(
@@ -1147,11 +1212,11 @@ class OrFilter extends Filter {
     constructor(private filterValue: string) {
         super(filterValue);
 
-        this.innerFilters = _.flatMap(filterValue.slice(3).split(', '), (valuePart) => {
+        this.innerFilters = filterValue.slice(3).split(', ').map((valuePart) => {
             const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
                 matchSyntax(filter.filterSyntax, valuePart, 0)?.type === 'full'
             )!;
-            return new matchingFilterClass(valuePart);
+            return new matchingFilterClass(valuePart) as Filter; // Never Filters - we don't support filter aliases here
         });
     }
 
@@ -1166,5 +1231,6 @@ class OrFilter extends Filter {
 
 export const SelectableSearchFilterClasses: FilterClass[] = [
     ...BaseSearchFilterClasses,
+    NotFilter,
     OrFilter
 ];

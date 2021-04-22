@@ -97,7 +97,7 @@ export const FilterTag = React.forwardRef((props: {
         tabIndex={-1}
         onKeyDown={props.onKeyDown}
         onMouseDown={ignoreTripleClick}
-        title={"Match " + props.filter.filterDescription}
+        title={`Match ${props.filter.filterDescription}`}
     >
         <FilterTagName>{ props.filter.toString() }</FilterTagName>
         <FilterTagDelete onClick={props.onDelete} />

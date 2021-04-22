@@ -71,7 +71,8 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "port" },
                 { index: 0, showAs: "protocol" },
                 { index: 0, showAs: "httpVersion" },
-                { index: 0, showAs: "or" },
+                { index: 0, showAs: "not" },
+                { index: 0, showAs: "or" }
             ]);
         });
 
@@ -96,6 +97,7 @@ describe("Search filter model integration test:", () => {
                 "requests sent to a given port",
                 "exchanges using either HTTP or HTTPS",
                 "exchanges using a given version of HTTP",
+                "exchanges that do not match a given condition",
                 "exchanges that match any one of multiple conditions"
             ]);
         });
@@ -1246,6 +1248,118 @@ describe("Search filter model integration test:", () => {
                 { status: undefined, 'my-header': 'pending-req-with-header' },
                 { status: 200, 'MY-HEADER': 'completed-req-with-header' },
                 { status: 404 }
+            ]);
+        });
+    });
+
+    describe("Not() filters", () => {
+        it("should list all filters initially", () => {
+            let input = "not(";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 4, showAs: "method" },
+                { index: 4, showAs: "hostname" },
+                { index: 4, showAs: "path" },
+                { index: 4, showAs: "query" },
+                { index: 4, showAs: "status" },
+                { index: 4, showAs: "header" },
+                { index: 4, showAs: "body" },
+                { index: 4, showAs: "bodySize" },
+                { index: 4, showAs: "completed)" },
+                { index: 4, showAs: "pending)" },
+                { index: 4, showAs: "aborted)" },
+                { index: 4, showAs: "errored)" },
+                { index: 4, showAs: "port" },
+                { index: 4, showAs: "protocol" },
+                { index: 4, showAs: "httpVersion" },
+            ]);
+        });
+
+        it("should suggest continuing a partial inner filter", () => {
+            let input = "not(method";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 4, showAs: "method=", matchType: 'partial' },
+                { index: 4, showAs: "method!=", matchType: 'partial' }
+            ]);
+        });
+
+        it("should suggest fully completing a completable inner filter", () => {
+            let input = "not(comp";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 4, showAs: "completed)", matchType: 'full' }
+            ]);
+        });
+
+        it("should suggest completing a fully typed filter", () => {
+            let input = "not(completed)";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 4, showAs: "completed)", matchType: 'full' }
+            ]);
+        });
+
+        it("should use context in suggestions", () => {
+            let input = "not(header";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: {
+                        'another-header': 'other values',
+                        'Content-Type': 'application/xml'
+                    }
+                }),
+            ]);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 4, showAs: "header[{header name}])" },
+                { index: 4, showAs: "header[another-header]" },
+                { index: 4, showAs: "header[content-type]" }
+            ]);
+        });
+
+        it("should show descriptions for various suggestions", () => {
+            [
+                ["not(", "exchanges that do not match a given condition"],
+                ["not(error", "excluding requests that weren't transmitted successfully"],
+                ["not(head", "excluding exchanges by header"],
+                ["not(query^=?abc)", "excluding requests with a query string starting with ?abc"],
+                ["not(method=POST)", "excluding POST requests"]
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.equal(expectedOutput);
+            });
+        });
+
+        it("should correctly filter for negated properties", () => {
+            const filter = createFilter("not(status=200)");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({ responseState: 'pending' }),
+                getExchangeData({ statusCode: 200 }),
+                getExchangeData({ statusCode: 201 }),
+                getExchangeData({ statusCode: 404 }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+
+            const matchedValues = (matchedEvents as HttpExchange[]).map((event) => ({
+                status: (event as any).response?.statusCode
+            }));
+
+            expect(matchedValues).to.deep.equal([
+                { status: undefined },
+                { status: undefined },
+                { status: 201 },
+                { status: 404 },
+                { status: undefined }
             ]);
         });
     });
