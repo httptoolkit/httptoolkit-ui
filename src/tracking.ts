@@ -3,6 +3,7 @@ import * as ReactGA from 'react-ga';
 import { serverVersion, desktopVersion, UI_VERSION } from './services/service-versions';
 
 const GA_ID = process.env.GA_ID;
+const enabled = !!GA_ID && navigator.doNotTrack !== "1";
 
 // Note that all tracking here is fully anonymous.
 // No user information is tracked, and no events are
@@ -12,8 +13,14 @@ const GA_ID = process.env.GA_ID;
 // and how much.
 
 export function initTracking() {
-    if (GA_ID) {
-        ReactGA.initialize(GA_ID, { gaOptions: { siteSpeedSampleRate: 100 } });
+    if (enabled) {
+        ReactGA.initialize(GA_ID!, {
+            gaOptions: {
+                siteSpeedSampleRate: 100
+            }
+        });
+
+        ReactGA.set({ anonymizeIp: true });
 
         // dimension1 is version:server (so we can work out how many users have updated to which server version)
         serverVersion.then((version) => ReactGA.set({ 'dimension1': version }));
@@ -60,7 +67,7 @@ export function initTracking() {
 
 let lastUrl: string | undefined;
 export function trackPage(location: Window['location']) {
-    if (!GA_ID) return;
+    if (!enabled) return;
 
     const currentUrl = location.href;
     if (currentUrl === lastUrl) return;
