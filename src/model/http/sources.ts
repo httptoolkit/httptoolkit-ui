@@ -62,7 +62,9 @@ const getDescription = (useragent: IUAParser.IResult): string | undefined => {
         useragent.browser.name + formatVersion(useragent.browser.version)
         + (useragent.engine.name ?
             `, which uses the ${useragent.engine.name}${
-                formatVersion(useragent.engine.version)
+                useragent.engine.name !== 'Blink' // Blink duplicates the Chrome version, noisy
+                    ? formatVersion(useragent.engine.version)
+                    : ''
              } engine` : '')
     : useragent.engine.name ?
         `a browser built on the ${useragent.engine.name}${
