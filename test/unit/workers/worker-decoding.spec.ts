@@ -36,6 +36,6 @@ describe('Worker decoding', function () {
     it('should fail to decode a response with the wrong encoding', () => {
         return expect(
             decodeBody(Buffer.from('hello world'), ['randomized'])
-        ).to.be.rejectedWith('Unknown encoding');
+        ).to.be.rejectedWith('Unsupported encoding');
     });
 });

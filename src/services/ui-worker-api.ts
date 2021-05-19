@@ -1,6 +1,7 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
 import type { OpenAPIObject } from 'openapi-directory';
+import type { SUPPORTED_ENCODING } from 'http-encoding';
 
 import type {
     BackgroundRequest,
@@ -100,7 +101,7 @@ export async function encodeBody(decodedBuffer: Buffer, encodings: string[]) {
     const result = await callApi<EncodeRequest, EncodeResponse>({
         type: 'encode',
         buffer: decodedBuffer.buffer as ArrayBuffer,
-        encodings
+        encodings: encodings as SUPPORTED_ENCODING[]
     });
 
     return Buffer.from(result.encodedBuffer);

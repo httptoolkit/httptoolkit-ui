@@ -2,36 +2,19 @@
 const ctx: Worker = self as any;
 
 import * as serializeError from 'serialize-error';
-import { handleContentEncoding } from 'mockttp/dist/util/request-utils';
 import { OpenAPIObject } from 'openapi3-ts';
-
-import { compress as brotliCompress } from 'wasm-brotli';
-import * as zlib from 'zlib';
+import {
+    encodeBuffer,
+    decodeBuffer,
+    brotliCompress,
+    gzip,
+    deflate,
+    SUPPORTED_ENCODING
+} from 'http-encoding';
 
 import { buildApiMetadata, ApiMetadata } from '../model/api/build-openapi';
 import { validatePKCS12, ValidationResult } from '../model/crypto';
 import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
-
-const gzipCompress = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
-    new Promise<Buffer>((resolve, reject) => {
-        zlib.gzip(buffer, options,
-            (error, result) => error ? reject(error) : resolve(result)
-        )
-    });
-
-const deflate = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
-    new Promise<Buffer>((resolve, reject) => {
-        zlib.deflate(buffer, options,
-            (error, result) => error ? reject(error) : resolve(result)
-        )
-    });
-
-const deflateRaw = (buffer: Buffer, options: zlib.ZlibOptions = {}) =>
-    new Promise<Buffer>((resolve, reject) => {
-        zlib.deflateRaw(buffer, options,
-            (error, result) => error ? reject(error) : resolve(result)
-        )
-    });
 
 interface Message {
     id: number;
@@ -52,7 +35,7 @@ export interface DecodeResponse extends Message {
 export interface EncodeRequest extends Message {
     type: 'encode';
     buffer: ArrayBuffer;
-    encodings: string[];
+    encodings: SUPPORTED_ENCODING[];
 }
 
 export interface EncodeResponse extends Message {
@@ -119,54 +102,33 @@ export type BackgroundResponse =
     | ValidatePKCSResponse
     | FormatResponse;
 
-function decodeRequest(request: DecodeRequest): DecodeResponse {
+const bufferToArrayBuffer = (buffer: Buffer): ArrayBuffer =>
+    // Have to remember to slice: this can be a view into part of a much larger buffer!
+    buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+
+async function decodeRequest(request: DecodeRequest): Promise<DecodeResponse> {
     const { id, buffer, encodings } = request;
 
-    const result = handleContentEncoding(Buffer.from(buffer), encodings);
+    const result = await decodeBuffer(buffer, encodings);
     return {
         id,
         inputBuffer: buffer,
-        decodedBuffer: result.buffer as ArrayBuffer
+        decodedBuffer: bufferToArrayBuffer(result)
     };
 }
-
-const encodeContent = async (body: Buffer, encoding: string) => {
-    // Encode the content. This is used everywhere that we need to translate to the right encoding.
-    // Since we only care about the format, not the compression itself, we *always* trade size for
-    // speed. This is all based on handleContentEncoding in Mockttp.
-    if (encoding === 'gzip' || encoding === 'x-gzip') {
-        return gzipCompress(body, { level: 1 });
-    } else if (encoding === 'deflate' || encoding === 'x-deflate') {
-        // Deflate is ambiguous, and may or may not have a zlib wrapper.
-        // This checks the buffer header directly, based on
-        // https://stackoverflow.com/a/37528114/68051
-        const lowNibble = body[0] & 0xF;
-        if (lowNibble === 8) {
-            return deflate(body, { level: 1 });
-        } else {
-            return deflateRaw(body, { level: 1 });
-        }
-    } else if (encoding === 'br') {
-        return Buffer.from(await brotliCompress(body));
-    } else if (!encoding || encoding === 'identity') {
-        return body;
-    } else {
-        throw new Error(`Unknown encoding: ${encoding}`);
-    }
-};
 
 async function encodeRequest(request: EncodeRequest): Promise<EncodeResponse> {
     const { id, buffer, encodings } = request;
 
     const result = await encodings.reduce((contentPromise, nextEncoding) => {
         return contentPromise.then((content) =>
-            encodeContent(content, nextEncoding)
+            encodeBuffer(content, nextEncoding)
         )
     }, Promise.resolve(Buffer.from(buffer)));
 
     return {
         id,
-        encodedBuffer: result.buffer
+        encodedBuffer: bufferToArrayBuffer(result)
     };
 }
 
@@ -178,7 +140,7 @@ async function testEncodings(request: TestEncodingsRequest) {
         id: request.id,
         encodingSizes: {
             'br': (await brotliCompress(decodedBuffer)).length,
-            'gzip': (await gzipCompress(decodedBuffer, { level: 9 })).length,
+            'gzip': (await gzip(decodedBuffer, { level: 9 })).length,
             'deflate': (await deflate(decodedBuffer, { level: 9 })).length
         }
     };
@@ -193,7 +155,7 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
     try {
         switch (event.data.type) {
             case 'decode':
-                const decodeResult = decodeRequest(event.data);
+                const decodeResult = await decodeRequest(event.data);
                 ctx.postMessage(decodeResult, [
                     decodeResult.inputBuffer,
                     decodeResult.decodedBuffer

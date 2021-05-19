@@ -186,7 +186,7 @@ function generateHarPostBody(body: string | false, mimeType: string): TextBody |
 function generateHarParamsFromParsedQuery(query: querystring.ParsedUrlQuery): HarFormat.Param[] {
     const queryEntries = _.flatMap(Object.entries(query), ([key, value]): Array<[string, string]> => {
         if (_.isString(value)) return [[key, value]];
-        else return value.map((innerValue) => [
+        else return value!.map((innerValue) => [
             key, innerValue
         ]);
     });
