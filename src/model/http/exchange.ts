@@ -141,7 +141,8 @@ export class ExchangeBody implements MessageBody {
             const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
             this._encoded = encoded;
             return decoded;
-        } catch {
+        } catch (e) {
+            reportError(e);
             return undefined;
         }
     });
