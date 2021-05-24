@@ -118,7 +118,12 @@ export default <Webpack.Configuration>{
                     // issues? This helps protect against possible corruptions:
                     const manifest = originalManifest.map((entry: any) => {
                         const asset = compilation.getAsset(entry.url);
-                        entry.integrity = ssri.fromData(asset.source.source()).toString();
+                        const assetSource = asset.source.source();
+                        entry.integrity = ssri.fromData(
+                            assetSource instanceof ArrayBuffer
+                                ? Buffer.from(assetSource) // Wasm!
+                                : assetSource
+                        ).toString();
                         return entry;
                     });
 

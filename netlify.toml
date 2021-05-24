@@ -8,3 +8,8 @@
     for = "/*"
     [headers.values]
         Content-Security-Policy = "frame-ancestors 'none'"
+
+[[headers]]
+    for = "/*.wasm"
+    [headers.values]
+        Content-Type = "application/wasm"
