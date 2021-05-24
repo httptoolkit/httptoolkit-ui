@@ -59,6 +59,11 @@ export default <Webpack.Configuration>{
     },
 
     plugins: [
+        new Webpack.IgnorePlugin(
+            // Fallback, only used in wasm isn't supported. We just don't support zstd
+            // if wasm isn't supported (i.e. if loaded custom in old old browsers).
+            /\/zstd-codec-binding.js$/, /zstd-codec/
+        ),
         new HtmlWebpackPlugin({
             template: path.join(SRC_DIR, 'index.html')
         }),

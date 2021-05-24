@@ -23,6 +23,12 @@ export default merge(common, {
                 // just creates an absurdly tiny extra bundle.
                 return chunk.name !== "react-monaco-editor";
             },
+            cacheGroups: {
+                zstd: {
+                    test: /[\\/]node_modules[\\/]zstd-codec[\\/]/,
+                    name: "zstd"
+                }
+            }
         }
     },
 
