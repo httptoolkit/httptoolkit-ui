@@ -10,6 +10,7 @@ import { getContentEditorName } from '../../model/http/content-types';
 import { IconButton } from './icon-button';
 
 export const FormatButton = (props: {
+    className?: string,
     format: keyof typeof Formatters,
     content: Buffer,
     onFormatted: (content: string) => void
@@ -28,6 +29,7 @@ export const FormatButton = (props: {
         ].includes(format);
 
     return <IconButton
+        className={props.className}
         title={canFormat
             ? `Format as ${getContentEditorName(props.format)}`
             : ""

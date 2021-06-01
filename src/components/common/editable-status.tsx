@@ -22,16 +22,16 @@ const StatusContainer = styled.div`
     }
 `;
 
-function isDefaultMessage(statusMessage: string, statusCode: number | string) {
+function isDefaultMessage(statusMessage: string, statusCode: number | undefined) {
     return statusMessage.toLowerCase() === getStatusMessage(statusCode).toLowerCase()
 }
 
 export const EditableStatus = (props: {
     className?: string,
     httpVersion: 1 | 2,
-    statusCode: number | '',
+    statusCode: number | undefined,
     statusMessage: string | undefined,
-    onChange: (statusCode: number | '', statusMessage: string | undefined) => void
+    onChange: (statusCode: number | undefined, statusMessage: string | undefined) => void
 }) => {
     const { statusCode } = props;
 
@@ -51,7 +51,7 @@ export const EditableStatus = (props: {
             onChange={(event) => {
                 let newStatusCode = (event.target.value !== '')
                     ? parseInt(event.target.value, 10)
-                    : '' as const;
+                    : undefined;
 
                 if (_.isNaN(newStatusCode)) return;
 

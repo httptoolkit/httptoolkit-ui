@@ -8,6 +8,7 @@ import {
     MethodMatchers,
     StaticResponseHandler,
     ForwardToHostHandler,
+    TransformingHandler,
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
@@ -76,6 +77,8 @@ export function summarizeHandlerClass(handler: HandlerClass): string | undefined
             return "Forward the request to a different host";
         case PassThroughHandler:
             return "Pass the request on to its destination";
+        case TransformingHandler:
+            return "Transform the real request or response automatically";
         case RequestBreakpointHandler:
             return "Pause the request to manually edit it";
         case ResponseBreakpointHandler:

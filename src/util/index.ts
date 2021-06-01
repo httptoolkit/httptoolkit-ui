@@ -106,22 +106,25 @@ function isSerializedBuffer(obj: any): obj is MockttpSerializedBuffer {
     return obj && obj.type === 'Buffer' && !!obj.data;
 }
 
-export function asBuffer(data: string | Buffer | MockttpSerializedBuffer | undefined) {
+export function asBuffer(data: string | Buffer | Uint8Array | MockttpSerializedBuffer | undefined): Buffer {
     if (!data) {
         return Buffer.from([]);
+    } else if (Buffer.isBuffer(data)) {
+        return data;
     } else if (typeof data === 'string') {
         return Buffer.from(data, 'utf8');
     } else if (isSerializedBuffer(data)) {
         return Buffer.from(data.data);
     } else {
-        return data;
+        // Extract internal data from uint8array (arrayview):
+        return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
     }
 }
 
 // Get the length of the given data in bytes, not characters.
 // If that's a buffer, the length is used raw, but if it's a string
 // it returns the length when encoded as UTF8.
-export function byteLength(input: string | Buffer | MockttpSerializedBuffer | undefined) {
+export function byteLength(input: string | Buffer | MockttpSerializedBuffer | Uint8Array | undefined) {
     if (!input) {
         return 0;
     } else if (typeof input === 'string') {
@@ -138,5 +141,19 @@ export function tryParseJson(input: string): object | undefined {
         return JSON.parse(input);
     } catch (e) {
         return undefined;
+    }
+}
+
+export function recursiveMapValues(
+    input: unknown,
+    fn: (value: unknown, key?: string) => unknown,
+    key: string | undefined = undefined
+): unknown {
+    if (_.isArray(input)) {
+        return input.map((innerObj) => recursiveMapValues(innerObj, fn));
+    } else if (_.isPlainObject(input)) {
+        return _.mapValues(input as {}, (val, key) => recursiveMapValues(val, fn, key));
+    } else {
+        return fn(input, key);
     }
 }

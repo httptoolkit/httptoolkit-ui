@@ -1,4 +1,5 @@
 import * as serializr from 'serializr';
+import { asBuffer, recursiveMapValues } from '../util';
 
 export const serializeAsTag = (getTag: (value: any) => any) =>
     serializr.custom(
@@ -9,6 +10,30 @@ export const serializeAsTag = (getTag: (value: any) => any) =>
 export const serializeRegex = serializr.custom(
     (value: RegExp) => ({ source: value.source, flags: value.flags }),
     (value: { source: string, flags: string }) => new RegExp(value.source, value.flags)
+);
+
+export const serializeBuffer = serializr.custom(
+    (buffer: string | Buffer | Uint8Array | undefined): string | undefined => buffer !== undefined
+        ? asBuffer(buffer).toString('base64')
+        : undefined,
+    (data: string | undefined): Buffer | undefined => data !== undefined
+        ? Buffer.from(data, 'base64')
+        : undefined
+);
+
+const undefinedPlaceholder = "__http_toolkit_undefined_placeholder__";
+export const serializeWithUndefineds = serializr.custom(
+    (value: {}): string | undefined => value
+        ? JSON.stringify(value, (k, v) =>
+            v === undefined ? undefinedPlaceholder : v
+        )
+        : undefined,
+    (data: string): unknown => !!data
+        ? recursiveMapValues(
+            JSON.parse(data),
+            (v) => v === undefinedPlaceholder ? undefined : v // Can't do this in parse - it drops undef values
+        )
+        : undefined
 );
 
 // Bit of a hack to let us call propSchema.deserializer easily in sync code,

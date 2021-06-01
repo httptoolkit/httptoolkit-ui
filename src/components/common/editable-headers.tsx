@@ -43,6 +43,10 @@ export const headersArrayToHeaders = (headers: HeadersArray): Headers =>
 interface EditableHeadersProps {
     headers: HeadersArray;
     onChange: (headers: HeadersArray) => void;
+
+    // It's unclear whether you're strictly allowed completely empty header values, but it's definitely
+    // not recommended and poorly supported. By default we disable it except for special use cases.
+    allowEmptyValues?: boolean;
 }
 
 const HeadersContainer = styled.div`
@@ -62,7 +66,7 @@ const HeaderDeleteButton = styled(Button)`
 `;
 
 export const EditableHeaders = observer((props: EditableHeadersProps) => {
-    const { headers, onChange } = props;
+    const { headers, onChange, allowEmptyValues } = props;
 
     return <HeadersContainer>
         { _.flatMap(headers, ([key, value], i) => [
@@ -88,7 +92,7 @@ export const EditableHeaders = observer((props: EditableHeadersProps) => {
             />,
             <TextInput
                 value={value}
-                required
+                required={!allowEmptyValues}
                 disabled={key.startsWith(':')}
                 spellCheck={false}
                 key={`${i}-val`}

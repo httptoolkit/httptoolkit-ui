@@ -212,9 +212,19 @@ const areGroupsEqual = (a: HtkMockRuleGroup, b: HtkMockRuleGroup) => {
         _.isEqualWith(a.items, b.items, areItemsEqual);
 };
 
+// Rules, or any components within them, can use this to override equality checks at
+// a certain point in the tree. Useful e.g. in transforms, where undefined values are
+// meaningful differences, so we need different logic.
+export const CUSTOM_RULE_EQUALS = Symbol('custom-rule-is-equals');
+
 // A more flexible _.isEqual check. Considers source-equal functions to be
 // equal, and treats undefined properties as missing.
 const areRulesEqual = (a: any, b: any): boolean | undefined => {
+    if (a[CUSTOM_RULE_EQUALS] && a[CUSTOM_RULE_EQUALS] === b[CUSTOM_RULE_EQUALS]) {
+        const isEqual = a[CUSTOM_RULE_EQUALS];
+        return isEqual(a, b);
+    }
+
     // Assume that all function props (e.g. beforeRequest, callbacks)
     // are equivalent if they're source-equivalent.
     // Not a 100% safe guarantee, but should usually be true.

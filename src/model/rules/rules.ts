@@ -19,7 +19,8 @@ import {
     RequestAndResponseBreakpointHandler,
     TimeoutHandler,
     CloseConnectionHandler,
-    FromFileResponseHandler
+    FromFileResponseHandler,
+    TransformingHandler
 } from './rule-definitions';
 
 // Define maps to/from matcher keys to matcher classes, and
@@ -61,6 +62,7 @@ export const HandlerLookup = Object.assign(
         'simple': StaticResponseHandler,
         'file': FromFileResponseHandler,
         'forward-to-host': ForwardToHostHandler,
+        'req-res-transformer': TransformingHandler,
         'request-breakpoint': RequestBreakpointHandler,
         'response-breakpoint': ResponseBreakpointHandler,
         'request-and-response-breakpoint': RequestAndResponseBreakpointHandler
@@ -71,6 +73,7 @@ const PaidHandlerClasses: HandlerClass[] = [
     StaticResponseHandler,
     FromFileResponseHandler,
     ForwardToHostHandler,
+    TransformingHandler,
     TimeoutHandler,
     CloseConnectionHandler
 ];

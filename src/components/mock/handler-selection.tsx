@@ -18,6 +18,7 @@ import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
     StaticResponseHandler,
     ForwardToHostHandler,
+    TransformingHandler,
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
@@ -28,7 +29,12 @@ import {
 } from '../../model/rules/rule-definitions';
 
 import { Select } from '../common/inputs';
-import { serverVersion, versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
+import {
+    serverVersion,
+    versionSatisfies,
+    FROM_FILE_HANDLER_SERVER_RANGE,
+    PASSTHROUGH_TRANSFORMS_RANGE
+} from '../../services/service-versions';
 
 const getHandlerKey = (h: HandlerClass | Handler) =>
     HandlerKeys.get(h as any) || HandlerKeys.get(h.constructor as any);
@@ -64,6 +70,8 @@ const instantiateHandler = (
             return new PassThroughHandler(rulesStore);
         case ForwardToHostHandler:
             return new ForwardToHostHandler('', true, rulesStore);
+        case TransformingHandler:
+            return new TransformingHandler(rulesStore, {}, {});
         case RequestBreakpointHandler:
             return new RequestBreakpointHandler(rulesStore);
         case ResponseBreakpointHandler:
@@ -81,6 +89,10 @@ const supportsFileHandlers = () =>
     _.isString(serverVersion.value) &&
     versionSatisfies(serverVersion.value, FROM_FILE_HANDLER_SERVER_RANGE);
 
+const supportsTransforms = () =>
+    _.isString(serverVersion.value) &&
+    versionSatisfies(serverVersion.value, PASSTHROUGH_TRANSFORMS_RANGE);
+
 export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p: {
     rulesStore?: RulesStore,
     accountStore?: AccountStore,
@@ -88,10 +100,11 @@ export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p:
     onChange: (handler: Handler) => void
 }) => {
     const allHandlers = [
-        PassThroughHandler,
-        ForwardToHostHandler,
         StaticResponseHandler,
         supportsFileHandlers() && FromFileResponseHandler,
+        PassThroughHandler,
+        ForwardToHostHandler,
+        supportsTransforms() && TransformingHandler,
         RequestBreakpointHandler,
         ResponseBreakpointHandler,
         RequestAndResponseBreakpointHandler,
@@ -100,7 +113,7 @@ export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p:
     ].filter(Boolean);
 
     // Do some type tricks to make TS understand that we've filtered 'false' out of the handlers.
-    type DefinedHandler = Exclude<typeof allHandlers[0], false>;
+    type DefinedHandler = Exclude<typeof allHandlers[number], false>;
 
     const [ availableHandlers, needProHandlers ] = _.partition<DefinedHandler>(
         allHandlers as DefinedHandler[],

@@ -948,7 +948,9 @@ export function getMethodDocs(methodName: string) {
     return getDocs(METHODS, methodName.toLowerCase());
 }
 
-export function getStatusMessage(statusCode: string | number) {
+export function getStatusMessage(statusCode: number | undefined) {
+    if (!statusCode) return '';
+
     const statusData = STATUSES[statusCode.toString()];
 
     if (!statusData) return '';

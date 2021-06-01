@@ -16,22 +16,18 @@ import * as amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';
 import { versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';
+import { MethodName, MethodNames } from '../http/methods';
 import { getStatusMessage } from '../http/http-docs';
 
-import { serializeAsTag } from '../serialization';
+import { serializeAsTag, serializeBuffer, serializeWithUndefineds } from '../serialization';
 import { RulesStore } from './rules-store';
 import {
     HtkMockItem,
     HtkMockRuleGroup,
     HtkMockRuleRoot,
-    HtkMockRule
+    HtkMockRule,
+    CUSTOM_RULE_EQUALS
 } from './rules-structure';
-
-type MethodName = keyof typeof Method;
-const MethodNames = Object.values(Method)
-    .filter(
-        value => typeof value === 'string'
-    ) as Array<MethodName>;
 
 // Create per-method classes (that all serialize to the same MethodMatcher class + param)
 // for each supported HTTP method, as a methodName -> methodClass lookup object.
@@ -163,6 +159,74 @@ serializr.createModelSchema(ForwardToHostHandler, {
         data.forwarding.targetHost,
         data.forwarding.updateHostHeader,
         context.args.rulesStore
+    );
+});
+
+export type RequestTransform = handlers.RequestTransform;
+export type ResponseTransform = handlers.ResponseTransform;
+
+export class TransformingHandler extends handlers.PassThroughHandler {
+
+    constructor(
+        rulesStore: RulesStore,
+        transformRequest: RequestTransform,
+        transformResponse: ResponseTransform
+    ) {
+        super({
+            ...rulesStore.activePassthroughOptions,
+            transformRequest,
+            transformResponse
+        });
+    }
+
+    explain() {
+        const activeRequestTransforms = _.pickBy(this.transformRequest || {}, (v) => v !== undefined);
+        const activeResponseTransforms = _.pickBy(this.transformResponse || {}, (v) => v !== undefined);
+
+        if (_.isEmpty(activeRequestTransforms) && _.isEmpty(activeResponseTransforms)) {
+            return super.explain();
+        } else if (!_.isEmpty(activeRequestTransforms) && !_.isEmpty(activeResponseTransforms)) {
+            return "automatically transform the request and response";
+        } else if (!_.isEmpty(activeRequestTransforms)) {
+            return "automatically transform the request then pass it through to the target host";
+        } else { // Must be response only
+            return "automatically transform the response from the target host";
+        }
+    }
+
+    // We override rule equality checks, to simplify them to treat undefined and missing
+    // properties as different, because that matters for various transform properties.
+    [CUSTOM_RULE_EQUALS](handlerA: TransformingHandler, handlerB: TransformingHandler): boolean {
+        return _.isEqual(handlerA.transformRequest, handlerB.transformRequest) &&
+            _.isEqual(handlerA.transformResponse, handlerB.transformResponse);
+    }
+
+}
+
+serializr.createModelSchema(TransformingHandler, {
+    uiType: serializeAsTag(() => 'req-res-transformer'),
+    transformRequest: serializr.object(
+        serializr.createSimpleSchema({
+            updateHeaders: serializeWithUndefineds,
+            updateJsonBody: serializeWithUndefineds,
+            replaceBody: serializeBuffer,
+            '*': Object.assign(serializr.raw(), { pattern: { test: () => true } })
+        })
+    ),
+    transformResponse: serializr.object(
+        serializr.createSimpleSchema({
+            updateHeaders: serializeWithUndefineds,
+            updateJsonBody: serializeWithUndefineds,
+            replaceBody: serializeBuffer,
+            '*': Object.assign(serializr.raw(), { pattern: { test: () => true } })
+        })
+    )
+}, (context) => {
+    const data = context.json;
+    return new TransformingHandler(
+        context.args.rulesStore,
+        data.transformRequest,
+        data.transformResponse
     );
 });
 

@@ -8,7 +8,7 @@ import { Theme } from '../../styles';
 
 import { ApiExchange } from '../../model/api/openapi';
 import { getStatusColor } from '../../model/http/exchange-colors';
-import { getStatusDocs } from '../../model/http/http-docs';
+import { getStatusDocs, getStatusMessage } from '../../model/http/http-docs';
 
 import { CollapsibleCardHeading } from '../common/card';
 import { Pill } from '../common/pill';
@@ -69,7 +69,7 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
             <CollapsibleSection>
                 <ExchangeCollapsibleSummary>
                     <ContentLabel>Status:</ContentLabel>{' '}
-                    {response.statusCode} {response.statusMessage}
+                    {response.statusCode} {response.statusMessage || getStatusMessage(response.statusCode)}
                 </ExchangeCollapsibleSummary>
 
                 {

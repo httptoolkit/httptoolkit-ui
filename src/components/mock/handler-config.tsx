@@ -4,7 +4,7 @@ import { action, observable, reaction, autorun, observe, runInAction, computed }
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as dedent from 'dedent';
 
-import { styled } from '../../styles';
+import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
 
@@ -15,6 +15,9 @@ import {
     StaticResponseHandler,
     ForwardToHostHandler,
     PassThroughHandler,
+    TransformingHandler,
+    RequestTransform,
+    ResponseTransform,
     RequestBreakpointHandler,
     ResponseBreakpointHandler,
     RequestAndResponseBreakpointHandler,
@@ -23,6 +26,7 @@ import {
     FromFileResponseHandler
 } from '../../model/rules/rule-definitions';
 import { HEADER_NAME_REGEX } from '../../model/http/http-docs';
+import { MethodName, MethodNames } from '../../model/http/methods';
 import {
     getDefaultMimeType,
     EditableContentType,
@@ -65,11 +69,10 @@ const ConfigExplanation = styled.p`
 `;
 
 export function HandlerConfiguration(props: {
-        handler: Handler,
-        onChange: (handler: Handler) => void,
-        onInvalidState?: () => void
-    }
-) {
+    handler: Handler,
+    onChange: (handler: Handler) => void,
+    onInvalidState?: () => void // Currently unused - intended to improve invalid entry UX later on
+}) {
     const { handler, onChange, onInvalidState } = props;
 
     const configProps = {
@@ -86,6 +89,8 @@ export function HandlerConfiguration(props: {
         return <ForwardToHostHandlerConfig {...configProps} />;
     } else if (handler instanceof PassThroughHandler) {
         return <PassThroughHandlerConfig {...configProps} />;
+    } else if (handler instanceof TransformingHandler) {
+        return <TransformingHandlerConfig {...configProps} />;
     } else if (handler instanceof RequestBreakpointHandler) {
         return <RequestBreakpointHandlerConfig {...configProps} />;
     } else if (handler instanceof ResponseBreakpointHandler) {
@@ -111,21 +116,21 @@ const SectionLabel = styled.h2`
 
 const ConfigSelect = styled(Select)`
     font-size: ${p => p.theme.textSize};
-    margin-top: 5px;
     width: auto;
 `;
 
 const BodyHeader = styled.div`
     display: flex;
     flex-direction: row;
-    align-items: baseline;
+    align-items: center;
 
-    margin-bottom: 5px;
+    margin: 5px 0;
 
     > ${SectionLabel} {
         align-self: flex-end;
         flex-grow: 1;
         margin-bottom: 0;
+        margin: 0;
     }
 
     > button {
@@ -160,7 +165,7 @@ function getContentTypeFromHeader(contentTypeHeader: string | undefined | [strin
 class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<StaticResponseHandler>> {
 
     @observable
-    statusCode: number | '' = this.props.handler.status;
+    statusCode: number | undefined = this.props.handler.status;
 
     @observable
     statusMessage = this.props.handler.statusMessage;
@@ -302,7 +307,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     }
 
     @action.bound
-    setStatus(statusCode: number | '', statusMessage: string | undefined) {
+    setStatus(statusCode: number | undefined, statusMessage: string | undefined) {
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
     }
@@ -369,7 +374,7 @@ const BodyFilePath = styled.div`
 class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<FromFileResponseHandler>> {
 
     @observable
-    statusCode: number | '' = this.props.handler.status;
+    statusCode: number | undefined = this.props.handler.status;
 
     @observable
     statusMessage = this.props.handler.statusMessage;
@@ -444,7 +449,7 @@ class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<F
     }
 
     @action.bound
-    setStatus(statusCode: number | '', statusMessage: string | undefined) {
+    setStatus(statusCode: number | undefined, statusMessage: string | undefined) {
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
     }
@@ -612,6 +617,466 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
         }
     }
 }
+
+const TransformSectionLabel = styled(SectionLabel)`
+    margin-top: 20px;
+`;
+
+const TransformSectionSeparator = styled.hr`
+    width: 100%;
+    box-sizing: border-box;
+    margin: 20px 0;
+    border: solid 1px ${p => p.theme.containerWatermark};
+`;
+
+const TransformConfig = styled.div`
+    margin: 0 0 5px;
+
+    ${(p: { active: boolean }) => p.active && css`
+        border-left: solid 5px ${p => p.theme.containerWatermark};
+
+        &:focus-within {
+            border-left: solid 5px ${p => p.theme.primaryInputBackground};
+        }
+
+        padding-left: 5px;
+        margin: 10px 0 15px;
+    `}
+`;
+
+const TransformDetails = styled.div`
+    > :first-child {
+        margin-top: 0;
+    }
+
+    padding-top: 5px;
+`;
+
+const SelectTransform = styled(Select)`
+    margin: 0;
+
+    ${p => p.value === 'none' && css`
+        color: ${p => p.theme.mainColor};
+        background-color: ${p => p.theme.mainBackground};
+    `}
+`
+
+@inject('rulesStore')
+@observer
+class TransformingHandlerConfig extends React.Component<HandlerConfigProps<TransformingHandler> & {
+    rulesStore?: RulesStore
+}> {
+
+    @observable
+    transformRequest = this.props.handler.transformRequest || {};
+
+    @observable
+    transformResponse = this.props.handler.transformResponse || {};
+
+    render() {
+        return <ConfigContainer>
+            <TransformSectionLabel>Request Transforms:</TransformSectionLabel>
+            <MethodTransformConfig
+                replacementMethod={this.transformRequest?.replaceMethod}
+                onChange={this.transformField('transformRequest')('replaceMethod')}
+            />
+            <HeadersTransformConfig
+                type='request'
+                transform={this.transformRequest}
+                onChange={this.transformField('transformRequest')}
+            />
+            <BodyTransformConfig
+                type='request'
+                transform={this.transformRequest}
+                onChange={this.transformField('transformRequest')}
+            />
+
+            <TransformSectionSeparator />
+
+            <TransformSectionLabel>Response Transforms:</TransformSectionLabel>
+            <StatusTransformConfig
+                replacementStatus={this.transformResponse?.replaceStatus}
+                onChange={this.transformField('transformResponse')('replaceStatus')}
+            />
+            <HeadersTransformConfig
+                type='response'
+                transform={this.transformResponse}
+                onChange={this.transformField('transformResponse')}
+            />
+            <BodyTransformConfig
+                type='response'
+                transform={this.transformResponse}
+                onChange={this.transformField('transformResponse')}
+            />
+        </ConfigContainer>;
+    }
+
+    transformField = <T extends keyof this>(
+        objName: T
+    ) => <K extends keyof this[T]>(
+        key: K
+    ) => action(
+        (value: this[T][K]) => {
+            this[objName] = {
+                ...this[objName],
+                [key]: value
+            };
+
+            this.updateHandler();
+        }
+    );
+
+    updateHandler() {
+        this.props.onChange(new TransformingHandler(
+            this.props.rulesStore!,
+            this.transformRequest,
+            this.transformResponse
+        ));
+    }
+}
+
+const MethodTransformConfig = (props: {
+    replacementMethod: string | undefined,
+    onChange: (method: MethodName | undefined) => void
+}) => {
+    return <TransformConfig active={!!props.replacementMethod}>
+        <SelectTransform
+            value={props.replacementMethod ?? 'none'}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                const value = event.target.value as 'none' | MethodName;
+
+                if (value === 'none') {
+                    props.onChange(undefined);
+                } else {
+                    props.onChange(value);
+                }
+            }
+        }>
+            <option value='none'>Pass through the real request method</option>
+            {
+                MethodNames.map((name) =>
+                    <option key={name} value={name}>
+                        Replace the request method with { name }
+                    </option>
+                )
+            }
+        </SelectTransform>
+    </TransformConfig>;
+};
+
+const StatusTransformConfig = (props: {
+    replacementStatus: number | undefined,
+    onChange: (status: number | undefined) => void
+}) => {
+    const selected = props.replacementStatus !== undefined
+        ? 'replace'
+        : 'none';
+
+    return <TransformConfig active={selected !== 'none'}>
+        <SelectTransform
+            value={selected ?? 'none'}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                const value = event.target.value as 'none' | 'replace';
+
+                if (value === 'none') {
+                    props.onChange(undefined);
+                } else {
+                    props.onChange(200);
+                }
+            }
+        }>
+            <option value='none'>Pass through the real response status</option>
+            <option value='replace'>Replace the response status</option>
+        </SelectTransform>
+        {
+            selected === 'replace' && <TransformDetails>
+                <EditableStatus
+                    statusCode={props.replacementStatus}
+                    onChange={props.onChange}
+                    // We don't bother supporting status message transforms:
+                    httpVersion={2}
+                    statusMessage={undefined}
+                />
+            </TransformDetails>
+        }
+    </TransformConfig>
+};
+
+@observer
+class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> extends React.Component<{
+    type: 'request' | 'response',
+    transform: T,
+    onChange: <K extends typeof HeadersTransformConfig.FIELDS[number]>(updatedField: K) => (updatedValue: T[K]) => void
+}> {
+
+    private static readonly FIELDS = [
+        'replaceHeaders',
+        'updateHeaders'
+    ] as const;
+
+    @computed
+    get selected() {
+        return _.find(HeadersTransformConfig.FIELDS, (field) =>
+            this.props.transform[field] !== undefined
+        ) ?? 'none';
+    }
+
+    render() {
+        const { type, transform } = this.props;
+        const {
+            selected,
+            onTransformTypeChange,
+            setHeadersValue
+        } = this;
+
+        return <TransformConfig active={selected !== 'none'}>
+            <SelectTransform
+                value={selected}
+                onChange={onTransformTypeChange}
+            >
+                <option value='none'>Pass through the real { type } headers</option>
+                <option value='updateHeaders'>Update the { type } headers</option>
+                <option value='replaceHeaders'>Replace the { type } headers</option>
+            </SelectTransform>
+            {
+                selected !== 'none' && <TransformDetails>
+                    <EditableHeaders
+                        headers={headersToHeadersArray(transform[selected]!)}
+                        onChange={setHeadersValue}
+                        allowEmptyValues={selected === 'updateHeaders'}
+                    />
+                </TransformDetails>
+            }
+        </TransformConfig>;
+    }
+
+    @action.bound
+    onTransformTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = event.currentTarget.value as 'none' | typeof HeadersTransformConfig.FIELDS[number];
+
+        this.clearValues();
+        if (value !== 'none') this.props.onChange(value)({});
+    };
+
+    @action.bound
+    clearValues() {
+        HeadersTransformConfig.FIELDS.forEach((field) =>
+            this.props.onChange(field)(undefined)
+        );
+    }
+
+    @action.bound
+    setHeadersValue(value: HeadersArray) {
+        this.clearValues();
+        if (this.selected === 'updateHeaders') {
+            this.props.onChange('updateHeaders')(_.mapValues(
+                headersArrayToHeaders(value),
+                (value) => value === '' ? undefined : value
+            ));
+        } else if (this.selected === 'replaceHeaders') {
+            this.props.onChange(this.selected)(headersArrayToHeaders(value));
+        }
+    }
+};
+
+@observer
+class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extends React.Component<{
+    type: 'request' | 'response',
+    transform: T,
+    onChange: <K extends typeof BodyTransformConfig.FIELDS[number]>(updatedField: K) => (updatedValue: T[K]) => void
+}> {
+
+    private static readonly FIELDS = [
+        'replaceBody',
+        'replaceBodyFromFile',
+        'updateJsonBody'
+    ] as const;
+
+    @computed
+    get bodyReplacementBuffer() {
+        return asBuffer(this.props.transform.replaceBody);
+    }
+
+    render() {
+        const { type, transform } = this.props;
+        const {
+            bodyReplacementBuffer,
+            onTransformTypeChange,
+            setBodyReplacement,
+            selectBodyReplacementFile,
+            setJsonBodyUpdate
+        } = this;
+
+        const selected = _.find(BodyTransformConfig.FIELDS, (field) =>
+            transform[field] !== undefined
+        ) ?? 'none';
+
+        return <TransformConfig active={selected !== 'none'}>
+            <SelectTransform
+                value={selected}
+                onChange={onTransformTypeChange}>
+                <option value='none'>Pass through the real { type } body</option>
+                <option value='replaceBody'>Replace the { type } body with a fixed value</option>
+                <option value='replaceBodyFromFile'>Replace the { type } body with a file</option>
+                <option value='updateJsonBody'>Update values within a JSON { type } body</option>
+            </SelectTransform>
+            {
+                selected === 'replaceBody'
+                    ? <RawBodyTransfomConfig
+                        type={type}
+                        body={bodyReplacementBuffer}
+                        updateBody={setBodyReplacement}
+                    />
+                : selected === 'replaceBodyFromFile'
+                    ? <TransformDetails>
+                        <BodyFileContainer>
+                            <BodyFileButton onClick={selectBodyReplacementFile}>
+                                { transform.replaceBodyFromFile
+                                    ? 'Change file'
+                                    : <>
+                                        Select file <WarningIcon />
+                                    </>
+                                }
+                            </BodyFileButton>
+                            { transform.replaceBodyFromFile && <BodyFilePath>
+                                { transform.replaceBodyFromFile }
+                            </BodyFilePath> }
+                        </BodyFileContainer>
+                    </TransformDetails>
+                : selected === 'updateJsonBody'
+                    ? <JsonUpdateTransformConfig
+                        type={type}
+                        body={transform.updateJsonBody!}
+                        updateBody={setJsonBodyUpdate}
+                    />
+                : null
+            }
+        </TransformConfig>;
+    }
+
+    onTransformTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = event.currentTarget.value as 'none' | typeof BodyTransformConfig.FIELDS[number];
+
+        this.clearValues();
+        if (value === 'updateJsonBody') {
+            this.props.onChange('updateJsonBody')({});
+        } else if (value === 'replaceBody') {
+            this.props.onChange('replaceBody')('');
+        } else if (value === 'replaceBodyFromFile') {
+            this.props.onChange('replaceBodyFromFile')('');
+        }
+    };
+
+    @action.bound
+    clearValues() {
+        BodyTransformConfig.FIELDS.forEach((field) =>
+            this.props.onChange(field)(undefined)
+        );
+    };
+
+    @action.bound
+    setBodyReplacement(body: string) {
+        this.clearValues();
+        this.props.onChange('replaceBody')(body);
+    };
+
+    selectBodyReplacementFile = async () => {
+        const result = await uploadFile("path", []);
+        if (result) {
+            runInAction(() => {
+                this.clearValues();
+                this.props.onChange('replaceBodyFromFile')(result);
+            });
+        }
+    };
+
+    @action.bound
+    setJsonBodyUpdate(body: {}) {
+        this.clearValues();
+        this.props.onChange('updateJsonBody')(body);
+    };
+};
+
+const RawBodyTransfomConfig = (props: {
+    type: 'request' | 'response',
+    body: Buffer,
+    updateBody: (body: string) => void
+}) => {
+    const [contentType, setContentType] = React.useState<EditableContentType>('text');
+    const onContentTypeChanged = (e: React.ChangeEvent<HTMLSelectElement>) =>
+        setContentType(e.target.value as EditableContentType);
+
+    return <TransformDetails>
+        <BodyHeader>
+            <SectionLabel>Replacement { props.type } body</SectionLabel>
+            <FormatButton
+                format={contentType}
+                content={props.body}
+                onFormatted={props.updateBody}
+            />
+            <ConfigSelect value={contentType} onChange={onContentTypeChanged}>
+                <option value="text">Plain text</option>
+                <option value="json">JSON</option>
+                <option value="xml">XML</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="javascript">JavaScript</option>
+            </ConfigSelect>
+        </BodyHeader>
+        <BodyContainer>
+            <ThemedSelfSizedEditor
+                language={contentType}
+                value={props.body.toString('utf8')}
+                onChange={props.updateBody}
+            />
+        </BodyContainer>
+    </TransformDetails>;
+};
+
+const StandaloneFormatButton = styled(FormatButton)`
+    padding-right: 0;
+`;
+
+const JsonUpdateTransformConfig = (props: {
+    type: 'request' | 'response',
+    body: {},
+    updateBody: (body: {}) => void
+}) => {
+    const [error, setError] = React.useState<Error>();
+
+    const [bodyString, setBodyString] = React.useState<string>(
+        JSON.stringify(props.body, null, 2)
+    );
+
+    React.useEffect(() => {
+        try {
+            props.updateBody(JSON.parse(bodyString));
+            setError(undefined);
+        } catch (e) {
+            setError(e);
+        }
+    }, [bodyString]);
+
+    return <TransformDetails>
+        <BodyHeader>
+            <SectionLabel>JSON { props.type } body patch</SectionLabel>
+            { error && <WarningIcon title={error.message} /> }
+
+            <StandaloneFormatButton
+                format='json'
+                content={asBuffer(bodyString)}
+                onFormatted={setBodyString}
+            />
+        </BodyHeader>
+        <BodyContainer>
+            <ThemedSelfSizedEditor
+                language='json'
+                value={bodyString}
+                onChange={(content) => setBodyString(content)}
+            />
+        </BodyContainer>
+    </TransformDetails>;
+};
 
 @observer
 class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler> {
