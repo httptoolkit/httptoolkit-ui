@@ -380,7 +380,7 @@ export class SearchFilter<T> extends React.Component<{
             activeFilters.indexOf(f),
         ['desc']);
 
-        if (filtersToCopy.length > 0) {
+        if (filtersToCopy.length > 0 && !!navigator.clipboard) {
             const serialization = filtersToCopy.map(t => t.serialize()).join(' ');
             navigator.clipboard.writeText(serialization);
             e.preventDefault();
@@ -388,6 +388,8 @@ export class SearchFilter<T> extends React.Component<{
     }
 
     private onCut = (e: React.ClipboardEvent) => {
+        if (!navigator.clipboard) return;
+
         this.onCopy(e);
         this.deleteSelectedFilters();
     }
