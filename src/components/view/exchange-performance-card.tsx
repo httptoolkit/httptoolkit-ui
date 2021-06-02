@@ -94,6 +94,7 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
 
 function getEncodingName(key: string): string {
     if (key === 'br') return 'brotli';
+    if (key === 'zstd') return 'zstandard';
     if (key === 'gzip' || key === 'x-gzip') {
         return 'gzip';
     }

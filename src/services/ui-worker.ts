@@ -9,6 +9,7 @@ import {
     brotliCompress,
     gzip,
     deflate,
+    zstdCompress,
     SUPPORTED_ENCODING
 } from 'http-encoding';
 
@@ -140,6 +141,7 @@ async function testEncodings(request: TestEncodingsRequest) {
         id: request.id,
         encodingSizes: {
             'br': (await brotliCompress(decodedBuffer)).length,
+            'zstd': (await zstdCompress(decodedBuffer)).length,
             'gzip': (await gzip(decodedBuffer, { level: 9 })).length,
             'deflate': (await deflate(decodedBuffer, { level: 9 })).length
         }
