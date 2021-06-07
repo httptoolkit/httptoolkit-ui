@@ -220,7 +220,7 @@ export const CUSTOM_RULE_EQUALS = Symbol('custom-rule-is-equals');
 // A more flexible _.isEqual check. Considers source-equal functions to be
 // equal, and treats undefined properties as missing.
 const areRulesEqual = (a: any, b: any): boolean | undefined => {
-    if (a[CUSTOM_RULE_EQUALS] && a[CUSTOM_RULE_EQUALS] === b[CUSTOM_RULE_EQUALS]) {
+    if (a && b && a[CUSTOM_RULE_EQUALS] && a[CUSTOM_RULE_EQUALS] === b[CUSTOM_RULE_EQUALS]) {
         const isEqual = a[CUSTOM_RULE_EQUALS];
         return isEqual(a, b);
     }
