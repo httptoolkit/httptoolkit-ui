@@ -23,7 +23,9 @@ import { TabbedOptionsContainer, Tab, TabsContainer } from '../common/tabbed-opt
 import { BaseEditor } from '../editor/base-editor';
 
 import * as amIUsingHtml from '../../amiusing.html';
+
 import { ProxySettingsCard } from './proxy-settings-card';
+import { ConnectionSettingsCard } from './connection-settings-card';
 import { SettingsButton, SettingsButtonLink } from './settings-components';
 import { ApiSettingsCard } from './api-settings-card';
 
@@ -104,6 +106,7 @@ const EditorContainer = styled.div`
 const cardKeys = [
     'account',
     'proxy',
+    'connection',
     'themes',
     'api'
 ] as const;
@@ -272,8 +275,10 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                 { isPaidUser && <>
                     {
                         _.isString(serverVersion.value) &&
-                        versionSatisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) &&
-                        <ProxySettingsCard {...this.cardProps.proxy} />
+                        versionSatisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) && <>
+                            <ProxySettingsCard {...this.cardProps.proxy} />
+                            <ConnectionSettingsCard {...this.cardProps.connection} />
+                        </>
                     }
 
                     {

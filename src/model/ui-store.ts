@@ -93,6 +93,7 @@ export class UiStore {
     readonly settingsCardStates = {
         'account': { collapsed: false },
         'proxy': { collapsed: false },
+        'connection': { collapsed: false },
         'api': { collapsed: false },
         'themes': { collapsed: false }
     }
