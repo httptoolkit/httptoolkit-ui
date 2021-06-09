@@ -55,5 +55,6 @@ export const DETAILED_CONFIG_RANGE = '^0.1.30 || ^1.0.0';
 export const INTERCEPTOR_METADATA = '^0.1.31 || ^1.0.0';
 export const INITIAL_HTTP2_RANGE = '^0.1.44 || ^1.0.0';
 export const BODY_MATCHING_RANGE = '^1.1.4';
+export const WEBSOCKET_RULE_RANGE = '^1.1.0';
 export const DETAILED_METADATA = '^1.2.0';
 export const PASSTHROUGH_TRANSFORMS_RANGE = '^1.4.0';

@@ -1,5 +1,7 @@
 import * as _ from 'lodash';
 
+import { completionCheckers, webSocketHandlers } from 'mockttp';
+
 import {
     observable,
     action,
@@ -12,6 +14,7 @@ import {
 import * as uuid from 'uuid/v4';
 import * as serializr from 'serializr';
 import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuffer';
+import * as semver from 'semver';
 
 import {
     HttpExchange,
@@ -25,6 +28,7 @@ import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';
 import { EventsStore } from '../http/events-store';
 import { getDesktopInjectedValue } from '../../services/desktop-api';
+import { WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 
 import {
     HtkMockRuleGroup,
@@ -46,7 +50,8 @@ import {
 import {
     buildDefaultGroup,
     buildDefaultRules,
-    buildForwardingRuleIntegration
+    buildForwardingRuleIntegration,
+    DefaultWildcardMatcher
 } from './rule-definitions';
 import { deserializeRules, MockRulesetSchema, DeserializationArgs } from './rule-serialization';
 import { migrateRuleData } from './rule-migrations';
@@ -81,7 +86,11 @@ export class RulesStore {
 
         await this.loadSettings();
 
-        const { setServerRules } = this.proxyStore;
+        const {
+            setRequestRules,
+            setWebSocketRules,
+            serverVersion
+        } = this.proxyStore;
 
         // Set the server rules, and subscribe future rule changes to update them later.
         await new Promise((resolve) => {
@@ -92,7 +101,19 @@ export class RulesStore {
                     .filter(r => r.activated && r.matchers.length),
                 ),
                 (rules) => {
-                    resolve(setServerRules(...rules))
+                    resolve(Promise.all([
+                        setRequestRules(...rules),
+                        ...(semver.satisfies(serverVersion, WEBSOCKET_RULE_RANGE)
+                            ? [
+                                setWebSocketRules({
+                                    matchers: [new DefaultWildcardMatcher()],
+                                    completionChecker: new completionCheckers.Always(),
+                                    handler: new webSocketHandlers.PassThroughWebSocketHandler(
+                                        this.activePassthroughOptions
+                                    )
+                                })
+                            ] : []
+                        )))
                 },
                 { fireImmediately: true }
             )

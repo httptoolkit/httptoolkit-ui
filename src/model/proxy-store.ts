@@ -204,10 +204,17 @@ export class ProxyStore {
         return this._http2CurrentlyEnabled;
     }
 
-    @computed get setServerRules() {
-        return this.server.setRules.bind(this.server);
+    // Proxy request rules config through to the server instance:
+    @computed get setRequestRules() {
+        return this.server.setRequestRules.bind(this.server);
     }
 
+    // Proxy websocket rules config through to the server instance:
+    @computed get setWebSocketRules() {
+        return this.server.setWebSocketRules.bind(this.server);
+    }
+
+    // Proxy event subscriptions through to the server instance:
     @computed get onServerEvent() {
         return this.server.on.bind(this.server);
     }
