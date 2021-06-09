@@ -7,7 +7,7 @@ import {
     observe,
     runInAction,
 } from 'mobx';
-import { getLocal, Mockttp } from 'mockttp';
+import { getLocal, Mockttp, ProxyConfig } from 'mockttp';
 
 import {
     PortRange,
@@ -25,6 +25,7 @@ import { lazyObservablePromise } from '../util/observable';
 import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
 import { serverVersion } from '../services/service-versions';
+import { reportError } from '../errors';
 
 // Start the server, with slowly decreasing retry frequency (up to a limit).
 // Note that this never fails - any timeout to this process needs to happen elsewhere.
@@ -80,6 +81,9 @@ export class ProxyStore {
 
     @observable
     networkAddresses: string[] = [];
+
+    @observable
+    systemProxyConfig: ProxyConfig | undefined;
 
     @observable
     serverVersion!: string; // Definitely set *after* initialization
@@ -162,6 +166,7 @@ export class ProxyStore {
             this.certContent = config.certificateContent;
             this.certFingerprint = config.certificateFingerprint;
             this.setNetworkAddresses(config.networkInterfaces);
+            this.maybeUseSystemProxy(config.systemProxy);
             console.log('Config loaded');
         });
 
@@ -230,5 +235,22 @@ export class ProxyStore {
     public refreshNetworkAddresses = flow(function* (this: ProxyStore) {
         this.setNetworkAddresses(yield getNetworkInterfaces());
     });
+
+    private maybeUseSystemProxy(proxyConfig: ProxyConfig | undefined) {
+        if (proxyConfig) {
+            try {
+                const proxyUrl = new URL(proxyConfig.proxyUrl);
+                if (proxyUrl.hostname === 'localhost' || proxyUrl.hostname.startsWith('127.0.0')) {
+                    return; // Don't use local system proxies - it's probably us! That will completely break things
+                }
+            } catch (e) {
+                reportError(e);
+                return; // Don't use proxy config we can't parse
+            }
+        }
+
+        // In every other case, we're all good: use the system proxy
+        this.systemProxyConfig = proxyConfig;
+    }
 
 }

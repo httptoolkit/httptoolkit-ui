@@ -113,7 +113,8 @@ export class RulesStore {
                                     )
                                 })
                             ] : []
-                        )))
+                        )
+                    ]))
                 },
                 { fireImmediately: true }
             )
@@ -175,13 +176,15 @@ export class RulesStore {
         });
     }
 
+    @computed
     get activePassthroughOptions() {
         return {
             ignoreHostCertificateErrors: this.whitelistedCertificateHosts,
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
                 pfx: Buffer.from(cert.pfx),
                 passphrase: cert.passphrase
-            }))
+            })),
+            proxyConfig: this.proxyStore.systemProxyConfig
         }
     }
 

@@ -1,6 +1,7 @@
 import { NetworkInterfaceInfo } from 'os';
 import * as _ from 'lodash';
 import * as localForage from 'localforage';
+import { ProxyConfig } from 'mockttp';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
@@ -8,8 +9,9 @@ import {
     serverVersion,
     versionSatisfies,
     DETAILED_CONFIG_RANGE,
-    INTERCEPTOR_METADATA, 
-    DETAILED_METADATA
+    INTERCEPTOR_METADATA,
+    DETAILED_METADATA,
+    PROXY_CONFIG_RANGE
 } from './service-versions';
 
 const authTokenPromise = !RUNNING_IN_WORKER
@@ -108,6 +110,7 @@ export async function getConfig(): Promise<{
     certificateContent?: string;
     certificateFingerprint?: string;
     networkInterfaces: NetworkInterfaces;
+    systemProxy: ProxyConfig | undefined;
 }> {
     const response = await graphql<{
         config: {
@@ -116,37 +119,33 @@ export async function getConfig(): Promise<{
             certificateFingerprint?: string;
         }
         networkInterfaces?: NetworkInterfaces;
+        systemProxy?: ProxyConfig;
     }>('getConfig', `
         query getConfig {
+            config {
+                certificatePath
+                ${versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)
+                ?  `
+                    certificateContent
+                    certificateFingerprint
+                ` : ''}
+            }
 
             ${versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)
-                ?  `
-                    config {
-                        certificatePath
-                        certificateContent
-                        certificateFingerprint
-                    }
-                    networkInterfaces
-                `
-                : `
-                    config {
-                        certificatePath
-                    }
-                `
-            }
+            ? `networkInterfaces` : ''}
+
+            ${versionSatisfies(await serverVersion, PROXY_CONFIG_RANGE)
+            ? `systemProxy {
+                proxyUrl
+                noProxy
+            }` : ''}
         }
     `, {});
 
-    if (response.networkInterfaces) {
-        return {
-            ...response.config,
-            networkInterfaces: response.networkInterfaces
-        }
-    } else {
-        return {
-            ...response.config,
-            networkInterfaces: {}
-        }
+    return {
+        ...response.config,
+        networkInterfaces: response.networkInterfaces || {},
+        systemProxy: response.systemProxy
     }
 }
 
