@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, action, computed } from 'mobx';
 import { observer, inject } from "mobx-react";
-import { get } from 'typesafe-get';
 
 import { styled, css, warningColor } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
@@ -139,7 +138,7 @@ const ProxyPortsContainer = styled.div`
     align-items: baseline;
 
     grid-gap: 10px;
-    margin: 40px 0 10px 0;
+    margin-bottom: 10px;
 
     input {
         padding: 5px 10px;
@@ -193,10 +192,10 @@ export class ProxySettingsCard extends React.Component<
 > {
 
     @observable
-    minPortValue = (get(this.props.proxyStore!.portConfig, 'startPort') || 8000).toString();
+    minPortValue = (this.props.proxyStore!.portConfig?.startPort || 8000).toString();
 
     @observable
-    maxPortValue = (get(this.props.proxyStore!.portConfig, 'endPort') || 65535).toString();
+    maxPortValue = (this.props.proxyStore!.portConfig?.endPort || 65535).toString();
 
     @action.bound
     onMinPortChange({ target: { value } }: React.ChangeEvent<HTMLInputElement>) {
@@ -248,7 +247,7 @@ export class ProxySettingsCard extends React.Component<
                 <CollapsibleCardHeading onCollapseToggled={
                     cardProps.onCollapseToggled
                 }>
-                    Proxy settings
+                    Proxy Settings
                 </CollapsibleCardHeading>
             </header>
             <RestartApp

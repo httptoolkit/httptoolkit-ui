@@ -9,7 +9,8 @@ import {
     computed,
     observe,
     when,
-    reaction
+    reaction,
+    runInAction
 } from 'mobx';
 import * as uuid from 'uuid/v4';
 import * as serializr from 'serializr';
@@ -54,7 +55,12 @@ import {
     buildForwardingRuleIntegration,
     DefaultWildcardMatcher
 } from './rule-definitions';
-import { deserializeRules, MockRulesetSchema, DeserializationArgs } from './rule-serialization';
+import {
+    serializeRules,
+    deserializeRules,
+    MockRulesetSchema,
+    DeserializationArgs
+} from './rule-serialization';
 import { migrateRuleData } from './rule-migrations';
 
 export type ClientCertificate = {
@@ -68,6 +74,10 @@ const clientCertificateSchema = serializr.createSimpleSchema({
     filename: serializr.primitive(),
     pfx: serializr.custom(encodeBase64, decodeBase64)
 });
+
+const reloadRules = (ruleRoot: HtkMockRuleRoot, rulesStore: RulesStore) => {
+    return deserializeRules(serializeRules(ruleRoot), { rulesStore });
+};
 
 export class RulesStore {
 
@@ -92,6 +102,18 @@ export class RulesStore {
             setWebSocketRules,
             serverVersion
         } = this.proxyStore;
+
+        // When the general config options change, reload all rules to re-inject the config
+        // into all the rules that need it.
+        reaction(
+            () => {
+                return this.activePassthroughOptions;
+            },
+            () => {
+                this.rules = reloadRules(this.rules, this);
+                this.draftRules = reloadRules(this.draftRules, this);
+            }
+        );
 
         // Set the server rules, and subscribe future rule changes to update them later.
         await new Promise((resolve) => {
@@ -134,9 +156,20 @@ export class RulesStore {
             dataTransform: (data: {}) => _.omit(data, 'rules'),
         });
 
-        // Only on startup do draft host settings take effect, becoming the real settings:
-        this.whitelistedCertificateHosts = _.clone(this.draftWhitelistedCertificateHosts);
-        this.clientCertificateHostMap = _.clone(this.draftClientCertificateHostMap);
+        try {
+            // Backward compatibility for the previous 'draft' data fields.
+            const rawStoreData = JSON.parse(localStorage.getItem('rules-store') ?? '{}');
+            runInAction(() => {
+                if ('draftWhitelistedCertificateHosts' in rawStoreData) {
+                    this.whitelistedCertificateHosts = rawStoreData.draftWhitelistedCertificateHosts;
+                }
+                if ('draftClientCertificateHostMap' in rawStoreData) {
+                    this.clientCertificateHostMap = rawStoreData.draftClientCertificateHostMap;
+                }
+            });
+        } catch (e) {
+            reportError(e);
+        }
 
         if (accountStore.mightBePaidUser) {
             // Load the actual rules from storage (separately, so deserialization can use settings loaded above)
@@ -168,8 +201,8 @@ export class RulesStore {
         // closed), but don't get reset when the app starts with stale account data.
         observe(accountStore, 'accountDataLastUpdated', () => {
             if (!accountStore.isPaidUser) {
-                this.draftWhitelistedCertificateHosts = ['localhost'];
-                this.draftClientCertificateHostMap = {};
+                this.whitelistedCertificateHosts = ['localhost'];
+                this.clientCertificateHostMap = {};
 
                 // We don't reset the rules on expiry/log out, but they won't persist, so
                 // they're reset next time the app is started.
@@ -177,16 +210,18 @@ export class RulesStore {
         });
     }
 
-    @computed
+    // This is live updated as the corresponding fields change, and so the resulting rules are
+    // updated immediately as this changes too.
+    @computed.struct
     get activePassthroughOptions() {
-        return {
+        return _.cloneDeep({ // Clone to ensure we touch & subscribe to everything here
             ignoreHostCertificateErrors: this.whitelistedCertificateHosts,
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
                 pfx: Buffer.from(cert.pfx),
                 passphrase: cert.passphrase
             })),
             proxyConfig: this.proxyConfig
-        };
+        });
     }
 
     @computed
@@ -220,37 +255,13 @@ export class RulesStore {
         else return systemConfig;
     }
 
-    // The currently active list, set during startup
-    private whitelistedCertificateHosts: string[] = ['localhost'];
-
-    // The desired list - can be changed, takes effect on next app startup
+    // The currently active list
     @persist('list') @observable
-    draftWhitelistedCertificateHosts: string[] = ['localhost'];
-
-    readonly areWhitelistedCertificatesUpToDate = () => {
-        return _.isEqual(this.whitelistedCertificateHosts, this.draftWhitelistedCertificateHosts);
-    }
-
-    readonly isWhitelistedCertificateSaved = (host: string) => {
-        return this.whitelistedCertificateHosts.includes(host);
-    }
+    whitelistedCertificateHosts: string[] = ['localhost'];
 
     // The currently active client certificates
-    private clientCertificateHostMap: { [host: string]: ClientCertificate } = {};
-
-    // The desired set of client certificates - takes effect on next startup
     @persist('map', clientCertificateSchema) @observable
-    draftClientCertificateHostMap: { [host: string]: ClientCertificate } = _.clone(
-        this.clientCertificateHostMap
-    );
-
-    readonly areClientCertificatesUpToDate = () => {
-        return _.isEqual(this.clientCertificateHostMap, this.draftClientCertificateHostMap);
-    }
-
-    readonly isClientCertificateUpToDate = (host: string) => {
-        return _.isEqual(this.clientCertificateHostMap[host], this.draftClientCertificateHostMap[host]);
-    }
+    clientCertificateHostMap: { [host: string]: ClientCertificate } = {};
 
     @persist('object', MockRulesetSchema) @observable
     rules: HtkMockRuleRoot = buildDefaultRules(this, this.proxyStore);

@@ -1,8 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, computed, flow } from 'mobx';
+import { observable, action, flow } from 'mobx';
 import { observer, inject } from "mobx-react";
-import { get } from 'typesafe-get';
 
 import { styled, css, warningColor } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
@@ -14,7 +13,6 @@ import {
     serverVersion,
     versionSatisfies,
     CLIENT_CERT_SERVER_RANGE,
-    INITIAL_HTTP2_RANGE
 } from '../../services/service-versions';
 
 import {
@@ -24,31 +22,7 @@ import {
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
 import { Select } from '../common/inputs';
-import { Pill } from '../common/pill';
 import { SettingsButton, SettingsExplanation } from './settings-components';
-
-const RestartApp = styled(SettingsButton).attrs(() => ({
-    children: 'Restart app to activate',
-    onClick: () => window.location.reload()
-}))`
-    position: absolute;
-    top: 18px;
-    left: 20px;
-    font-weight: bold;
-
-    &:not(:disabled) {
-        background-color: ${p => p.theme.popColor};
-    }
-
-    ${(p: { visible: boolean }) => !p.visible && 'display: none;'}
-`;
-
-const UnsavedIcon = styled(Icon).attrs(() => ({
-    icon: ['fas', 'save'],
-}))`
-    margin-left: 10px;
-    color: ${p => p.theme.warningColor};
-`;
 
 const CertificateWhitelistList = styled.div`
     display: grid;
@@ -73,11 +47,6 @@ const CertificateWhitelistList = styled.div`
 const CertificateHost = styled.div`
     min-width: 300px;
     font-family: ${p => p.theme.monoFontFamily};
-
-    ${(p: { active: boolean }) => !p.active && css`
-        font-style: italic;
-        opacity: 0.6;
-    `}
 `;
 
 const ClientCertContentLabel = styled(ContentLabel)`
@@ -135,56 +104,6 @@ const DecryptionSpinner = styled(Icon).attrs(() => ({
     margin: 0 auto;
 `;
 
-const ProxyPortsContainer = styled.div`
-    display: grid;
-    grid-template-columns: fit-content(45%) fit-content(45%) fit-content(10%);
-    align-items: baseline;
-
-    grid-gap: 10px;
-    margin: 40px 0 10px 0;
-
-    input {
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
-
-        & + ${WarningIcon} {
-            visibility: hidden;
-            align-self: center;
-        }
-
-        &:invalid {
-            border-color: ${p => p.theme.warningColor};
-            background-color: ${p => p.theme.warningBackground};
-            color: ${p => p.theme.mainColor};
-
-            & + ${WarningIcon} {
-                visibility: visible;
-            }
-        }
-    }
-`;
-
-const ProxyPortStateExplanation = styled.p`
-    margin-bottom: 10px;
-`;
-
-const Http2SettingsContainer = styled.div`
-    margin-top: 40px;
-
-    ${Pill} {
-        display: inline-block;
-        margin-left: 5px;
-    }
-
-    ${Select} {
-        display: inline-block;
-        margin-top: 10px;
-        width: auto;
-        font-size: ${p => p.theme.textSize};
-        padding: 3px;
-    }
-`;
 
 const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 
@@ -201,16 +120,16 @@ export class ConnectionSettingsCard extends React.Component<
 
     @action.bound
     unwhitelistHost(host: string) {
-        const { draftWhitelistedCertificateHosts } = this.props.rulesStore!;
-        const hostIndex = draftWhitelistedCertificateHosts.indexOf(host);
+        const { whitelistedCertificateHosts } = this.props.rulesStore!;
+        const hostIndex = whitelistedCertificateHosts.indexOf(host);
         if (hostIndex > -1) {
-            draftWhitelistedCertificateHosts.splice(hostIndex, 1);
+            whitelistedCertificateHosts.splice(hostIndex, 1);
         }
     }
 
     @action.bound
     addHostToWhitelist() {
-        this.props.rulesStore!.draftWhitelistedCertificateHosts.push(this.whitelistHostInput);
+        this.props.rulesStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
         this.whitelistHostInput = '';
     }
 
@@ -233,14 +152,14 @@ export class ConnectionSettingsCard extends React.Component<
 
     @action.bound
     removeClientCertificate(host: string) {
-        const { draftClientCertificateHostMap: draftClientCertificatesHostMap } = this.props.rulesStore!;
-        delete draftClientCertificatesHostMap[host];
+        const { clientCertificateHostMap } = this.props.rulesStore!;
+        delete clientCertificateHostMap[host];
     }
 
     @action.bound
     addClientCertificate() {
-        const { draftClientCertificateHostMap: draftClientCertificatesHostMap } = this.props.rulesStore!;
-        draftClientCertificatesHostMap[this.clientCertHostInput] = this.clientCertData!;
+        const { clientCertificateHostMap } = this.props.rulesStore!;
+        clientCertificateHostMap[this.clientCertHostInput] = this.clientCertData!;
 
         this.clientCertHostInput = '';
         this.clientCertData = undefined;
@@ -326,12 +245,8 @@ export class ConnectionSettingsCard extends React.Component<
     render() {
         const { rulesStore, ...cardProps } = this.props;
         const {
-            draftWhitelistedCertificateHosts,
-            areWhitelistedCertificatesUpToDate,
-            isWhitelistedCertificateSaved,
-            draftClientCertificateHostMap,
-            areClientCertificatesUpToDate,
-            isClientCertificateUpToDate
+            whitelistedCertificateHosts,
+            clientCertificateHostMap
         } = rulesStore!;
 
         return <CollapsibleCard {...cardProps}>
@@ -339,31 +254,21 @@ export class ConnectionSettingsCard extends React.Component<
                 <CollapsibleCardHeading onCollapseToggled={
                     cardProps.onCollapseToggled
                 }>
-                    Connection settings
+                    Connection Settings
                 </CollapsibleCardHeading>
             </header>
-            <RestartApp
-                visible={
-                    !areWhitelistedCertificatesUpToDate() ||
-                    !areClientCertificatesUpToDate()
-                }
-            />
             <ContentLabel>
                 Host HTTPS Whitelist
             </ContentLabel>
 
             <CertificateWhitelistList>
-                { draftWhitelistedCertificateHosts.map((host) => [
-                    <CertificateHost
-                        active={isWhitelistedCertificateSaved(host)}
-                        key={`host-${host}`}
-                    >
+                { whitelistedCertificateHosts.map((host) => [
+                    <CertificateHost key={`host-${host}`}>
                         { host }
-                        { !isWhitelistedCertificateSaved(host) && <UnsavedIcon /> }
                     </CertificateHost>,
                     <SettingsButton
                         key={`delete-${host}`}
-                        // onClick={() => this.unwhitelistHost(host)}
+                        onClick={() => this.unwhitelistHost(host)}
                     >
                         <Icon icon={['far', 'trash-alt']} />
                     </SettingsButton>
@@ -381,7 +286,7 @@ export class ConnectionSettingsCard extends React.Component<
                 <SettingsButton
                     disabled={
                         !this.whitelistHostInput ||
-                        draftWhitelistedCertificateHosts.includes(this.whitelistHostInput)
+                        whitelistedCertificateHosts.includes(this.whitelistHostInput)
                     }
                     onClick={this.addHostToWhitelist}
                 >
@@ -401,13 +306,9 @@ export class ConnectionSettingsCard extends React.Component<
                     Client Certificates
                 </ClientCertContentLabel>
                 <ClientCertificatesList>
-                    { Object.entries(draftClientCertificateHostMap).map(([host, cert]) => [
-                        <CertificateHost
-                            active={isClientCertificateUpToDate(host)}
-                            key={`host-${host}`}
-                        >
+                    { Object.entries(clientCertificateHostMap).map(([host, cert]) => [
+                        <CertificateHost key={`host-${host}`}>
                             { host }
-                            { !isClientCertificateUpToDate(host) && <UnsavedIcon /> }
                         </CertificateHost>,
 
                         <CertificateFilename key={`filename-${host}`}>
@@ -480,7 +381,7 @@ export class ConnectionSettingsCard extends React.Component<
                         disabled={
                             !this.clientCertHostInput ||
                             this.clientCertState !== 'decrypted' || // Not decrypted yet, or
-                            !!draftClientCertificateHostMap[this.clientCertHostInput] // Duplicate host
+                            !!clientCertificateHostMap[this.clientCertHostInput] // Duplicate host
                         }
                         onClick={this.addClientCertificate}
                     >
