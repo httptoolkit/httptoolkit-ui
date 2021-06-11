@@ -88,8 +88,6 @@ export class ProxyStore {
     @observable
     serverVersion!: string; // Definitely set *after* initialization
 
-    private websocketWhitelistedHosts: string[] = [];
-
     readonly initialized = lazyObservablePromise(async () => {
         await this.accountStore.initialized;
 
@@ -108,7 +106,6 @@ export class ProxyStore {
         observe(accountStore, 'accountDataLastUpdated', () => {
             if (!accountStore.isPaidUser) {
                 this.setPortConfig(undefined);
-                this.websocketWhitelistedHosts = [];
                 this.http2Enabled = 'fallback';
             }
         });
@@ -136,13 +133,6 @@ export class ProxyStore {
             }
         }
 
-        // Very hacky fix to borrow whitelisted host info from the rules store here.
-        // We don't want to actually migrate those settings to live here though, as it
-        // really should be over there! Just doesn't work yet, until full WS support arrives.
-        const rulesData = JSON.parse(localStorage.getItem('rules-store') || "{}");
-        this.websocketWhitelistedHosts = rulesData.draftWhitelistedCertificateHosts ||
-            ["localhost"];
-
         console.log('Proxy settings loaded');
     }
 
@@ -152,8 +142,7 @@ export class ProxyStore {
             suggestChanges: false,
             standaloneServerUrl: 'http://127.0.0.1:45456',
             // User configurable settings:
-            http2: this.http2Enabled,
-            ignoreWebsocketHostCertificateErrors: this.websocketWhitelistedHosts
+            http2: this.http2Enabled
         });
         this._http2CurrentlyEnabled = this.http2Enabled;
 
