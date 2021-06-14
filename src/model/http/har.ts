@@ -437,14 +437,24 @@ function cleanRawHarData(harContents: any) {
             entry.serverIPAddress = "::1";
         }
 
-        // FF fails to write headersSize, for req/res that has no headers.
+        // FF fails to write headersSize or writes null for req/res that has no headers.
         // We don't use it anyway - set it to -1 if it's missing
-        if (entry.request && entry.request.headersSize === undefined) {
-            entry.request.headersSize = -1;
+        if (entry.request) entry.request.headersSize ??= -1;
+        if (entry.response) entry.response.headersSize ??= -1;
+
+        // Firefox fails to write timing data for some requests, e.g. requests blocked
+        // by adblocker extensions: https://bugzilla.mozilla.org/show_bug.cgi?id=1716335
+        if (entry.timings) {
+            entry.timings.send ??= -1;
+            entry.timings.wait ??= -1;
+            entry.timings.receive ??= -1;
         }
 
-        if (entry.response && entry.response.headersSize === undefined) {
-            entry.response.headersSize = -1;
+        if (entry.response?.content) {
+            // Similarly, when there's no response some fields can be missing. Note that
+            // 'content' is response only, but we don't use these fields anyway:
+            entry.response.content.size ??= -1;
+            entry.response.content.mimeType ??= 'application/octet-stream';
         }
     });
 
