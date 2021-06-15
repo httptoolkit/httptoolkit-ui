@@ -347,10 +347,6 @@ class ViewPage extends React.Component<ViewPageProps> {
             confirm("Delete pinned exchanges?");
 
         this.props.eventsStore.clearInterceptedData(clearPinned);
-
-        // Reset filter state too:
-        this.searchFiltersUnderConsideration = undefined;
-        this.props.uiStore.activeFilterSet = emptyFilterSet();
     }
 
     @action.bound
