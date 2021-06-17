@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { completionCheckers, webSocketHandlers } from 'mockttp';
+import { completionCheckers, webSocketHandlers, ProxyConfig } from 'mockttp';
 
 import {
     observable,
@@ -23,6 +23,7 @@ import {
 } from '../../types';
 import { lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
+import { reportError } from '../../errors';
 
 import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';
@@ -184,8 +185,39 @@ export class RulesStore {
                 pfx: Buffer.from(cert.pfx),
                 passphrase: cert.passphrase
             })),
-            proxyConfig: this.proxyStore.systemProxyConfig
+            proxyConfig: this.proxyConfig
+        };
+    }
+
+    @computed
+    get effectiveSystemProxyConfig(): ProxyConfig | 'ignored' | 'unparseable' | undefined {
+        const { systemProxyConfig } = this.proxyStore;
+
+        if (!systemProxyConfig) return undefined;
+
+        const { proxyUrl } = systemProxyConfig;
+        try {
+            const parsedProxyUrl = new URL(proxyUrl);
+            const { hostname } = parsedProxyUrl;
+            if (hostname === 'localhost' || hostname.startsWith('127.0.0')) {
+                // Localhost proxy config is ignored
+                return 'ignored';
+            } else {
+                return systemProxyConfig;
+            }
+        } catch (e) {
+            console.log("Could not parse proxy", proxyUrl);
+            reportError(e);
+            return 'unparseable';
         }
+    }
+
+    @computed
+    get proxyConfig(): ProxyConfig | undefined {
+        const systemConfig = this.effectiveSystemProxyConfig;
+
+        if (!systemConfig || _.isString(systemConfig)) return undefined;
+        else return systemConfig;
     }
 
     // The currently active list, set during startup
