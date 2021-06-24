@@ -79,6 +79,13 @@ const reloadRules = (ruleRoot: HtkMockRuleRoot, rulesStore: RulesStore) => {
     return deserializeRules(serializeRules(ruleRoot), { rulesStore });
 };
 
+export type UpstreamProxyType =
+    | 'system'
+    | 'direct'
+    | 'http'
+    | 'https'
+    | 'socks';
+
 export class RulesStore {
 
     constructor(
@@ -112,6 +119,16 @@ export class RulesStore {
             () => {
                 this.rules = reloadRules(this.rules, this);
                 this.draftRules = reloadRules(this.draftRules, this);
+            }
+        );
+
+        // Reset the proxy host if the type is changed to one where no host is required
+        reaction(
+            () => this.upstreamProxyType,
+            (type) => {
+                if (type === 'direct' || type === 'system') {
+                    this.upstreamProxyHost = undefined;
+                }
             }
         );
 
@@ -203,9 +220,11 @@ export class RulesStore {
             if (!accountStore.isPaidUser) {
                 this.whitelistedCertificateHosts = ['localhost'];
                 this.clientCertificateHostMap = {};
+                this.upstreamProxyType = 'system';
+                this.upstreamNoProxyHosts = [];
 
-                // We don't reset the rules on expiry/log out, but they won't persist, so
-                // they're reset next time the app is started.
+                // We don't reset the rules on expiry/log out, e.g. to remove paid rule types, but
+                // they won't persist, so they'll disappear next time the app is started up.
             }
         });
     }
@@ -223,6 +242,15 @@ export class RulesStore {
             proxyConfig: this.proxyConfig
         });
     }
+
+    @persist @observable
+    upstreamProxyType: UpstreamProxyType = 'system';
+
+    @persist @observable
+    upstreamProxyHost: string | undefined = undefined;
+
+    @persist('list') @observable
+    upstreamNoProxyHosts: string[] = [];
 
     @computed
     get effectiveSystemProxyConfig(): ProxyConfig | 'ignored' | 'unparseable' | undefined {
@@ -247,12 +275,21 @@ export class RulesStore {
         }
     }
 
-    @computed
+    @computed.struct
     get proxyConfig(): ProxyConfig | undefined {
-        const systemConfig = this.effectiveSystemProxyConfig;
+        if (this.upstreamProxyType === 'direct') {
+            return undefined;
+        } else if (this.upstreamProxyType === 'system') {
+            const systemConfig = this.effectiveSystemProxyConfig;
 
-        if (!systemConfig || _.isString(systemConfig)) return undefined;
-        else return systemConfig;
+            if (!systemConfig || _.isString(systemConfig)) return undefined;
+            else return systemConfig;
+        } else {
+            return {
+                proxyUrl: `${this.upstreamProxyType}://${this.upstreamProxyHost!}`,
+                noProxy: this.upstreamNoProxyHosts
+            };
+        }
     }
 
     // The currently active list

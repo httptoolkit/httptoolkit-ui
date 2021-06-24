@@ -155,7 +155,7 @@ export class ProxyStore {
             this.certContent = config.certificateContent;
             this.certFingerprint = config.certificateFingerprint;
             this.setNetworkAddresses(config.networkInterfaces);
-            this.maybeUseSystemProxy(config.systemProxy);
+            this.systemProxyConfig = config.systemProxy;
             console.log('Config loaded');
         });
 
@@ -224,22 +224,5 @@ export class ProxyStore {
     public refreshNetworkAddresses = flow(function* (this: ProxyStore) {
         this.setNetworkAddresses(yield getNetworkInterfaces());
     });
-
-    private maybeUseSystemProxy(proxyConfig: ProxyConfig | undefined) {
-        if (proxyConfig) {
-            try {
-                const proxyUrl = new URL(proxyConfig.proxyUrl);
-                if (proxyUrl.hostname === 'localhost' || proxyUrl.hostname.startsWith('127.0.0')) {
-                    return; // Don't use local system proxies - it's probably us! That will completely break things
-                }
-            } catch (e) {
-                reportError(e);
-                return; // Don't use proxy config we can't parse
-            }
-        }
-
-        // In every other case, we're all good: use the system proxy
-        this.systemProxyConfig = proxyConfig;
-    }
 
 }

@@ -3,14 +3,13 @@ import * as React from 'react';
 import { observable, action, computed } from 'mobx';
 import { observer, inject } from "mobx-react";
 
-import { styled, css, warningColor } from '../../styles';
+import { styled, warningColor } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
 
 import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
 import {
     serverVersion,
     versionSatisfies,
-    CLIENT_CERT_SERVER_RANGE,
     INITIAL_HTTP2_RANGE
 } from '../../services/service-versions';
 
@@ -45,91 +44,6 @@ const UnsavedIcon = styled(Icon).attrs(() => ({
 }))`
     margin-left: 10px;
     color: ${p => p.theme.warningColor};
-`;
-
-const CertificateWhitelistList = styled.div`
-    display: grid;
-    grid-template-columns: auto min-content;
-    grid-gap: 10px;
-    margin: 10px 0;
-
-    align-items: baseline;
-
-    input {
-        align-self: stretch;
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
-    }
-
-    input[type=text] {
-        font-size: ${p => p.theme.textInputFontSize};
-    }
-`;
-
-const CertificateHost = styled.div`
-    min-width: 300px;
-    font-family: ${p => p.theme.monoFontFamily};
-
-    ${(p: { active: boolean }) => !p.active && css`
-        font-style: italic;
-        opacity: 0.6;
-    `}
-`;
-
-const ClientCertContentLabel = styled(ContentLabel)`
-    margin-top: 40px;
-`;
-
-const ClientCertificatesList = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr min-content;
-    grid-gap: 10px;
-    margin: 10px 0;
-
-    align-items: baseline;
-
-    input[type=text] {
-        font-size: ${p => p.theme.textInputFontSize};
-        align-self: stretch;
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
-    }
-
-    input[type=file] {
-        display: none;
-    }
-`;
-
-const CertificateFilename = styled.div`
-    font-style: italic;
-`;
-
-const DecryptionInput = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-
-    > :first-child {
-        flex: 1 1;
-    }
-
-    > button {
-        margin-left: 10px;
-    }
-
-    > svg {
-        flex: 1 1 100%;
-        text-align: center;
-    }
-`;
-
-const DecryptionSpinner = styled(Icon).attrs(() => ({
-    icon: ['fas', 'spinner'],
-    spin: true
-}))`
-    margin: 0 auto;
 `;
 
 const ProxyPortsContainer = styled.div`

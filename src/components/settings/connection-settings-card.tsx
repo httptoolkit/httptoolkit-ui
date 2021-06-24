@@ -3,16 +3,18 @@ import * as React from 'react';
 import { observable, action, flow } from 'mobx';
 import { observer, inject } from "mobx-react";
 
-import { styled, css, warningColor } from '../../styles';
+import { styled } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
+import { trackEvent } from '../../tracking';
 
-import { RulesStore } from '../../model/rules/rules-store';
+import { UpstreamProxyType, RulesStore } from '../../model/rules/rules-store';
 import { ValidationResult } from '../../model/crypto';
 import { validatePKCS } from '../../services/ui-worker-api';
 import {
     serverVersion,
     versionSatisfies,
     CLIENT_CERT_SERVER_RANGE,
+    PROXY_CONFIG_RANGE
 } from '../../services/service-versions';
 
 import {
@@ -21,10 +23,48 @@ import {
     CollapsibleCardHeading
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
-import { Select } from '../common/inputs';
+import { Select, TextInput } from '../common/inputs';
 import { SettingsButton, SettingsExplanation } from './settings-components';
 
-const CertificateWhitelistList = styled.div`
+const SpacedContentLabel = styled(ContentLabel)`
+    margin-top: 40px;
+`;
+
+const UpstreamProxySettings = styled.div`
+    margin-top: 10px;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    > ${SpacedContentLabel}, > ${SettingsExplanation} {
+        flex-basis: 100%;
+    }
+
+    > ${WarningIcon} {
+        align-self: center;
+    }
+
+    > ${TextInput} {
+        flex-grow: 1;
+    }
+
+    > ${SettingsButton} {
+        margin-left: 10px;
+    }
+`;
+
+const UpstreamProxyDropdown = styled(Select)`
+    width: auto;
+    font-size: ${p => p.theme.textSize};
+    padding: 3px;
+
+    margin-right: 10px;
+`;
+
+const HostList = styled.div`
+    width: 100%;
+
     display: grid;
     grid-template-columns: auto min-content;
     grid-gap: 10px;
@@ -32,25 +72,14 @@ const CertificateWhitelistList = styled.div`
 
     align-items: baseline;
 
-    input {
+    ${TextInput} {
         align-self: stretch;
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
-    }
-
-    input[type=text] {
-        font-size: ${p => p.theme.textInputFontSize};
     }
 `;
 
-const CertificateHost = styled.div`
+const Host = styled.div`
     min-width: 300px;
     font-family: ${p => p.theme.monoFontFamily};
-`;
-
-const ClientCertContentLabel = styled(ContentLabel)`
-    margin-top: 40px;
 `;
 
 const ClientCertificatesList = styled.div`
@@ -61,12 +90,8 @@ const ClientCertificatesList = styled.div`
 
     align-items: baseline;
 
-    input[type=text] {
-        font-size: ${p => p.theme.textInputFontSize};
+    ${TextInput} {
         align-self: stretch;
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
     }
 
     input[type=file] {
@@ -104,8 +129,209 @@ const DecryptionSpinner = styled(Icon).attrs(() => ({
     margin: 0 auto;
 `;
 
+const isValidHost = (host: string | undefined): boolean =>
+    !!host?.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 
-const isValidHost = (host: string): boolean => !!host.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
+function validateHost(input: HTMLInputElement) {
+    const host = input.value;
+    if (!host || isValidHost(host)) {
+        input.setCustomValidity('');
+    } else {
+        input.setCustomValidity(
+            "Should be a plain hostname, optionally with a specific port"
+        );
+    }
+    input.reportValidity();
+    return input.validity.valid;
+}
+
+@observer
+class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
+
+    @observable
+    private proxyType: UpstreamProxyType = this.props.rulesStore.upstreamProxyType;
+
+    @action.bound
+    setProxyType(event: React.ChangeEvent<HTMLSelectElement>) {
+        const value = event.currentTarget.value;
+        this.proxyType = value as UpstreamProxyType;
+
+        trackEvent({ category: "Config", action: "Set Proxy", label: this.proxyType });
+
+        if (value === 'direct' || value === 'system') {
+            // Only update immediately when switching to a type that doesn't need a host input.
+            // For other types, we update when we set a host, in setUpstreamProxyHost
+            const rulesStore = this.props.rulesStore;
+            rulesStore.upstreamProxyType = this.proxyType;
+        }
+    }
+
+    @observable
+    private proxyHostInput = this.props.rulesStore.upstreamProxyHost || '';
+
+    @action.bound
+    setProxyHostInput(event: React.ChangeEvent<HTMLInputElement>) {
+        validateHost(event.target);
+        this.proxyHostInput = event.target.value;
+    }
+
+    @action.bound
+    saveProxyHost() {
+        if (this.proxyType === 'direct' || this.proxyType === 'system') {
+            throw new Error(`Can't save proxy host for ${this.proxyType} proxy`);
+        }
+
+        // We update the rules store proxy type only at the point where we save the host:
+        const rulesStore = this.props.rulesStore;
+        rulesStore.upstreamProxyType = this.proxyType;
+        rulesStore.upstreamProxyHost = this.proxyHostInput;
+    }
+
+    @observable
+    private noProxyInput = "";
+
+    @action.bound
+    setNoProxyInput(event: React.ChangeEvent<HTMLInputElement>) {
+        validateHost(event.target);
+        this.noProxyInput = event.target.value;
+    }
+
+    @action.bound
+    addNoProxyHost() {
+        const { rulesStore } = this.props;
+        rulesStore.upstreamNoProxyHosts = [...rulesStore.upstreamNoProxyHosts, this.noProxyInput];
+        this.noProxyInput = '';
+    }
+
+    @action.bound
+    removeNoProxyHost(noProxyHost: string) {
+        const { rulesStore } = this.props;
+        rulesStore.upstreamNoProxyHosts = _.without(rulesStore.upstreamNoProxyHosts, noProxyHost);
+    }
+
+    render() {
+        const {
+            effectiveSystemProxyConfig,
+            upstreamProxyType: savedProxyType,
+            upstreamProxyHost: savedProxyHost,
+            upstreamNoProxyHosts: noProxyHosts
+        } = this.props.rulesStore;
+
+        const {
+            proxyType,
+            proxyHostInput,
+            noProxyInput,
+
+            setProxyType,
+            setProxyHostInput,
+            saveProxyHost,
+            setNoProxyInput,
+            addNoProxyHost,
+            removeNoProxyHost
+        } = this;
+
+        return <>
+            <ContentLabel>Upstream Proxy</ContentLabel>
+
+            <UpstreamProxySettings>
+                <UpstreamProxyDropdown
+                    value={proxyType}
+                    onChange={setProxyType}
+                >
+                    <option value={'system'}>Use system settings</option>
+                    <option value={'direct'}>Connect directly</option>
+                    <option value={'http'}>Use an HTTP proxy</option>
+                    <option value={'https'}>Use an HTTPS proxy</option>
+                    <option value={'socks'}>Use a SOCKS proxy</option>
+                </UpstreamProxyDropdown>
+
+                { proxyType === 'system' && (
+                        effectiveSystemProxyConfig === 'ignored' ||
+                        effectiveSystemProxyConfig === 'unparseable'
+                    ) &&
+                    <WarningIcon />
+                }
+
+                { proxyType === 'system' && effectiveSystemProxyConfig &&
+                    <SettingsExplanation>{
+                        effectiveSystemProxyConfig === 'ignored'
+                            ? <>
+                                The system is configured with a localhost proxy.
+                                To avoid issues with recursive proxy loops, this will be ignored
+                                and requests will be sent directly. Localhost proxies must be
+                                manually configured.
+                            </>
+                        : effectiveSystemProxyConfig === 'unparseable'
+                            ? <>
+                                The system proxy settings could not be
+                                parsed, so requests will be sent directly.
+                            </>
+                        : <>
+                            The configured system proxy is {
+                                effectiveSystemProxyConfig.proxyUrl
+                            }.
+                        </>
+                    }</SettingsExplanation>
+                }
+
+                { proxyType !== 'direct' && proxyType !== 'system' && <>
+                    <TextInput
+                        placeholder={`The ${proxyType} proxy host`}
+                        value={proxyHostInput}
+                        onChange={setProxyHostInput}
+                    />
+                    <SettingsButton
+                        disabled={
+                            !isValidHost(proxyHostInput) ||
+                            (proxyHostInput === savedProxyHost && proxyType === savedProxyType)
+                        }
+                        onClick={saveProxyHost}
+                    >
+                        <Icon icon={['fas', 'save']} />
+                    </SettingsButton>
+                </> }
+            </UpstreamProxySettings>
+
+            { proxyType !== 'direct' && proxyType !== 'system' && <>
+                <SpacedContentLabel>
+                    Non-proxied hosts
+                </SpacedContentLabel>
+
+                <HostList>
+                    { noProxyHosts.map((host) => [
+                        <Host key={`host-${host}`}>
+                            { host }
+                        </Host>,
+                        <SettingsButton
+                            key={`delete-${host}`}
+                            onClick={() => removeNoProxyHost(host)}
+                        >
+                            <Icon icon={['far', 'trash-alt']} />
+                        </SettingsButton>
+                    ]) }
+
+                    <TextInput
+                        placeholder='A host whose traffic should not be sent via the proxy'
+                        value={noProxyInput}
+                        onChange={setNoProxyInput}
+                    />
+                    <SettingsButton
+                        disabled={
+                            !isValidHost(noProxyInput) ||
+                            noProxyHosts.includes(noProxyInput)
+                        }
+                        onClick={addNoProxyHost}
+                    >
+                        <Icon icon={['fas', 'plus']} />
+                    </SettingsButton>
+                </HostList>
+                <SettingsExplanation>
+                    Requests to these hosts will always be sent directly, not via the configured proxy.
+                </SettingsExplanation>
+            </> }
+        </>;
+    }
+};
 
 @inject('rulesStore')
 @observer
@@ -130,19 +356,8 @@ export class ConnectionSettingsCard extends React.Component<
     @action.bound
     addHostToWhitelist() {
         this.props.rulesStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
+        trackEvent({ category: "Config", action: "Whitelist Host" });
         this.whitelistHostInput = '';
-    }
-
-    validateHost(input: HTMLInputElement) {
-        const host = input.value;
-        if (!host || isValidHost(host)) {
-            input.setCustomValidity('');
-        } else {
-            input.setCustomValidity(
-                "Should be a plain hostname, optionally with a specific port"
-            );
-        }
-        input.reportValidity();
     }
 
     @observable
@@ -160,6 +375,8 @@ export class ConnectionSettingsCard extends React.Component<
     addClientCertificate() {
         const { clientCertificateHostMap } = this.props.rulesStore!;
         clientCertificateHostMap[this.clientCertHostInput] = this.clientCertData!;
+
+        trackEvent({ category: "Config", action: "Add Client Cert" });
 
         this.clientCertHostInput = '';
         this.clientCertData = undefined;
@@ -257,15 +474,24 @@ export class ConnectionSettingsCard extends React.Component<
                     Connection Settings
                 </CollapsibleCardHeading>
             </header>
-            <ContentLabel>
-                Host HTTPS Whitelist
-            </ContentLabel>
 
-            <CertificateWhitelistList>
+            {
+                _.isString(serverVersion.value) &&
+                versionSatisfies(serverVersion.value, PROXY_CONFIG_RANGE) &&
+                    <UpstreamProxyConfig
+                        rulesStore={rulesStore!}
+                    />
+            }
+
+            <SpacedContentLabel>
+                Host HTTPS Whitelist
+            </SpacedContentLabel>
+
+            <HostList>
                 { whitelistedCertificateHosts.map((host) => [
-                    <CertificateHost key={`host-${host}`}>
+                    <Host key={`host-${host}`}>
                         { host }
-                    </CertificateHost>,
+                    </Host>,
                     <SettingsButton
                         key={`delete-${host}`}
                         onClick={() => this.unwhitelistHost(host)}
@@ -274,25 +500,24 @@ export class ConnectionSettingsCard extends React.Component<
                     </SettingsButton>
                 ]) }
 
-                <input
-                    type="text"
-                    placeholder='Hostname to exclude from strict HTTPS checks'
+                <TextInput
+                    placeholder='A host to exclude from strict HTTPS checks'
                     value={this.whitelistHostInput}
                     onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
                         this.whitelistHostInput = e.target.value;
-                        this.validateHost(e.target);
+                        validateHost(e.target);
                     })}
                 />
                 <SettingsButton
                     disabled={
-                        !this.whitelistHostInput ||
+                        !isValidHost(this.whitelistHostInput) ||
                         whitelistedCertificateHosts.includes(this.whitelistHostInput)
                     }
                     onClick={this.addHostToWhitelist}
                 >
                     <Icon icon={['fas', 'plus']} />
                 </SettingsButton>
-            </CertificateWhitelistList>
+            </HostList>
             <SettingsExplanation>
                 Requests to these hosts will skip certificate validation and/or may use older TLS
                 versions, back to TLSv1. These requests will be successful regardless of any
@@ -302,14 +527,14 @@ export class ConnectionSettingsCard extends React.Component<
             {
                 _.isString(serverVersion.value) &&
                 versionSatisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) && <>
-                <ClientCertContentLabel>
+                <SpacedContentLabel>
                     Client Certificates
-                </ClientCertContentLabel>
+                </SpacedContentLabel>
                 <ClientCertificatesList>
                     { Object.entries(clientCertificateHostMap).map(([host, cert]) => [
-                        <CertificateHost key={`host-${host}`}>
+                        <Host key={`host-${host}`}>
                             { host }
-                        </CertificateHost>,
+                        </Host>,
 
                         <CertificateFilename key={`filename-${host}`}>
                             { cert.filename }
@@ -323,13 +548,12 @@ export class ConnectionSettingsCard extends React.Component<
                         </SettingsButton>
                     ]) }
 
-                    <input
-                        type="text"
-                        placeholder='Hostname where the certificate should be used'
+                    <TextInput
+                        placeholder='A host where the certificate should be used'
                         value={this.clientCertHostInput}
                         onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
                             this.clientCertHostInput = e.target.value;
-                            this.validateHost(e.target);
+                            validateHost(e.target);
                         })}
                     />
                     { this.clientCertState === undefined
@@ -355,8 +579,7 @@ export class ConnectionSettingsCard extends React.Component<
                             </DecryptionInput>
                         : this.clientCertState === 'encrypted'
                             ? <DecryptionInput>
-                                <input
-                                    type="text"
+                                <TextInput
                                     placeholder={`The passphrase for ${this.clientCertData!.filename}`}
                                     value={this.clientCertData!.passphrase || ''}
                                     onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -379,7 +602,7 @@ export class ConnectionSettingsCard extends React.Component<
                     }
                     <SettingsButton
                         disabled={
-                            !this.clientCertHostInput ||
+                            !isValidHost(this.clientCertHostInput) ||
                             this.clientCertState !== 'decrypted' || // Not decrypted yet, or
                             !!clientCertificateHostMap[this.clientCertHostInput] // Duplicate host
                         }
