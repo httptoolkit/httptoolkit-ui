@@ -55,7 +55,7 @@ const PlanCycleToggle = styled(UnstyledButton)`
 
     font-family: ${p => p.theme.fontFamily};
     font-size: ${p => p.theme.headingSize};
-    color: ${p => p.theme.mainBackground};
+    color: ${p => p.theme.mainColor};
 
     display: flex;
     align-items: center;
@@ -63,14 +63,32 @@ const PlanCycleToggle = styled(UnstyledButton)`
 
     > svg {
         margin: 0 10px;
+        z-index: 1;
     }
 `;
 
 const PlanCycle = styled.span<{selected: boolean}>`
+    padding: 10px 15px;
+    border-radius: 8px;
+
+    &:first-child {
+        padding-right: 40px;
+        margin-right: -40px;
+    }
+
+    &:last-child {
+        padding-left: 40px;
+        margin-left: -40px;
+    }
+
     ${p => p.selected && css`
-        text-decoration: underline;
+        background-color: ${p => p.theme.mainBackground};
+        border-bottom: 3px solid ${p => p.theme.containerBorder};
+        box-shadow: 0 4px 10px 0 rgba(0,0,0,0.1);
     `}
+
     ${p => !p.selected && css`
+        color: ${p => p.theme.mainBackground};
         opacity: 0.7;
     `}
 `;
