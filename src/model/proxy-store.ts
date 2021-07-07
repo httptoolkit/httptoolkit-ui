@@ -218,7 +218,8 @@ export class ProxyStore {
             return addresses
                 .filter(a =>
                     !a.internal && // Loopback interfaces
-                    iface !== 'docker0' && // Docker bridge interface
+                    iface !== 'docker0' && // Docker default bridge interface
+                    !iface.startsWith('br-') && // More docker bridge interfaces
                     !iface.startsWith('veth') // Virtual interfaces for each docker container
                 )
                 .map(a => a.address);
