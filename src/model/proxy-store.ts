@@ -80,7 +80,7 @@ export class ProxyStore {
     certFingerprint: string | undefined;
 
     @observable
-    networkAddresses: string[] = [];
+    externalNetworkAddresses: string[] = [];
 
     @observable
     systemProxyConfig: ProxyConfig | undefined;
@@ -214,9 +214,13 @@ export class ProxyStore {
     }
 
     private setNetworkAddresses(networkInterfaces: NetworkInterfaces) {
-        this.networkAddresses = _.flatMap(networkInterfaces, (addresses) => {
+        this.externalNetworkAddresses = _.flatMap(networkInterfaces, (addresses, iface) => {
             return addresses
-                .filter(a => !a.internal)
+                .filter(a =>
+                    !a.internal && // Loopback interfaces
+                    iface !== 'docker0' && // Docker bridge interface
+                    !iface.startsWith('veth') // Virtual interfaces for each docker container
+                )
                 .map(a => a.address);
         })
     }
