@@ -14,7 +14,7 @@
     "bundle-stats": "npm run bundle-stats:build && npm run bundle-stats:show",
     "bundle-stats:build": "npm run build -- --no-devtool --profile --json | tail -n +14 > stats.json",
     "bundle-stats:show": "webpack-bundle-analyzer ./stats.json",
-    "start": "node-dev ./node_modules/.bin/httptoolkit-server start & npm run start:web",
+    "start": "node-dev ./node_modules/httptoolkit-server/bin/run start & npm run start:web",
     "start:web": "env-cmd -f ./automation/ts-node.env webpack-dev-server --config ./automation/webpack.dev.ts",
     "start:prod": "npm run build && static-server ./dist -o",
     "test": "npm run test:unit && npm run test:integration",
