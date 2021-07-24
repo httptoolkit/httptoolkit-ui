@@ -154,8 +154,17 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             </SettingsPagePlaceholder>;
         }
 
-        // ! because we know this is set, as we have a paid user
-        const sub = userSubscription!;
+        // This can be undefined if isPaidUser is set to true by devs
+        let sub = userSubscription;
+
+        if(!sub){
+            sub = {
+                id: 0,
+                status: 'active',
+                plan: 'pro-monthly',
+                expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            }
+        }
 
         return <SettingsPageScrollContainer>
             <SettingPageContainer>
