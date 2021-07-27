@@ -74,7 +74,7 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     if (
         tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
         tags.includes("passthrough-error:EPROTO") ||
-        tags.includes("client-error:ERR_SSL_WRONG_VERSION_NUMBER")
+        tags.includes("passthrough-error:ERR_SSL_WRONG_VERSION_NUMBER")
     ) {
         return 'tls-error';
     }
