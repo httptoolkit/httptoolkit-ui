@@ -145,6 +145,22 @@ function validateHost(input: HTMLInputElement) {
     return input.validity.valid;
 }
 
+const isValidProxyHost = (host: string | undefined): boolean =>
+    !!host?.match(/^([^/@]*@)?[A-Za-z0-9\-.]+(:\d+)?$/);
+
+function validateProxyHost(input: HTMLInputElement) {
+    const host = input.value;
+    if (!host || isValidProxyHost(host)) {
+        input.setCustomValidity('');
+    } else {
+        input.setCustomValidity(
+            "Should be a plain hostname, optionally with a specific port and/or username:password"
+        );
+    }
+    input.reportValidity();
+    return input.validity.valid;
+}
+
 @observer
 class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
 
@@ -171,7 +187,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
 
     @action.bound
     setProxyHostInput(event: React.ChangeEvent<HTMLInputElement>) {
-        validateHost(event.target);
+        validateProxyHost(event.target);
         this.proxyHostInput = event.target.value;
     }
 
@@ -282,7 +298,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
                     />
                     <SettingsButton
                         disabled={
-                            !isValidHost(proxyHostInput) ||
+                            !isValidProxyHost(proxyHostInput) ||
                             (proxyHostInput === savedProxyHost && proxyType === savedProxyType)
                         }
                         onClick={saveProxyHost}
