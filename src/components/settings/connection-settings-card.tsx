@@ -146,7 +146,7 @@ function validateHost(input: HTMLInputElement) {
 }
 
 const isValidProxyHost = (host: string | undefined): boolean =>
-    !!host?.match(/^(.*\@)?[A-Za-z0-9\-.]+(:\d+)?$/);
+    !!host?.match(/^([^/@]*@)?[A-Za-z0-9\-.]+(:\d+)?$/);
 
 function validateProxyHost(input: HTMLInputElement) {
     const host = input.value;
@@ -154,7 +154,7 @@ function validateProxyHost(input: HTMLInputElement) {
         input.setCustomValidity('');
     } else {
         input.setCustomValidity(
-            "Format 1: host Format 2: host:port Format3: username:password@host:port"
+            "Should be a plain hostname, optionally with a specific port and/or username:password"
         );
     }
     input.reportValidity();
@@ -200,13 +200,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         // We update the rules store proxy type only at the point where we save the host:
         const rulesStore = this.props.rulesStore;
         rulesStore.upstreamProxyType = this.proxyType;
-
-        let proxyHostInput = this.proxyHostInput
-        proxyHostInput = proxyHostInput.replace("http://","")
-        proxyHostInput = proxyHostInput.replace("https://","")
-        proxyHostInput = proxyHostInput.replace("sock5://","")
-
-        rulesStore.upstreamProxyHost = proxyHostInput;
+        rulesStore.upstreamProxyHost = this.proxyHostInput;
     }
 
     @observable
