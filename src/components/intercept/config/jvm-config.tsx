@@ -77,6 +77,7 @@ class JvmConfig extends React.Component<{
     private inProgressPids: string[] = [];
 
     componentDidMount() {
+        this.updateTargets();
         const updateInterval = setInterval(this.updateTargets, 2000);
         disposeOnUnmount(this, () => clearInterval(updateInterval));
     }
