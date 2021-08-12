@@ -52,7 +52,7 @@ function addErrorTag(key: string, value: string) {
 }
 
 export function reportError(error: Error | string, metadata: object = {}) {
-    console.log('Reporting error:', error);
+    console.log('Reporting error:', error, metadata);
     if (!sentryInitialized) return;
 
     Sentry.withScope((scope) => {
