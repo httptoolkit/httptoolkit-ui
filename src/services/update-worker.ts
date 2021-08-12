@@ -255,13 +255,20 @@ registerRoute(/\/.*/, async ({ event }) => {
     // We have a /<something> URL that isn't in the cache at all - something is very wrong
     if (!cachedResponse) {
         if (fetchEvent.request.cache === 'only-if-cached') {
-            // Triggered by dev tools looking for sources. We know it's indeed not cached, so we reject
+            // Triggered by older dev tools looking for sources. We know it's indeed not cached, so we reject
             return new Response(null, { status: 504 }) // 504 is standard failure code for these
 
             // This is required due to https://bugs.chromium.org/p/chromium/issues/detail?id=823392
             // TODO: This can likely be removed once all Electrons are updated to include that
+        } else if (isDevToolsRequest(fetchEvent)) {
+            // New-ish devtools send real-looking requests, that do want to go through the cache, but
+            // they shouldn't invalidate it (we don't cache source). They're recognizable at least, as
+            // they're our-origin requests that inexplicably don't include a referrer or destination
+            // (because they come from devtools):
+            return fetch(fetchEvent.request);
         }
 
+        // A missing file, on our domain, that isn't a source lookup from the devtools. Something has gone wrong:
         console.log(`${fetchEvent.request.url} did not match any of ${
             precacheController.getCachedURLs()
         }`);
@@ -271,9 +278,17 @@ registerRoute(/\/.*/, async ({ event }) => {
     return cachedResponse;
 });
 
+// Given a same-origin request, is it a DevTools source request? This seems to work well right now (Chrome 91)
+// but could easily change in future, and it's getting increasingly hard to detect & handle these...
+function isDevToolsRequest(event: FetchEvent) {
+    return event.request.destination === '' &&
+        event.request.referrer === '' &&
+        !event.request.referrerPolicy.startsWith('no-referrer');
+}
+
 // The precache has failed: kill it, report that, and start falling back to the network
 function brokenCacheResponse(event: FetchEvent): Promise<Response> {
-    console.log('SW cache has failed', event);
+    console.log('SW cache has failed for resource request', event.request);
 
     writeToLog({ type: 'load-failed' })
     .then(readLog)
