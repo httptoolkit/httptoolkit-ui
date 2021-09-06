@@ -154,7 +154,7 @@ document.addEventListener('click', (e) => {
         const target = (e.target || e.srcElement) as Element;
         if (target && target.tagName === 'A') {
             const href = target.getAttribute('href');
-            if (href === '' || href === 'about:blank') {
+            if (!href || href === 'about:blank') {
                 reportError('Clicked blank link, path:', { path: getNodePath(target).join(' > '), page: window.location.pathname });
             }
         }
