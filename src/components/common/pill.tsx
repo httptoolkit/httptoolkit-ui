@@ -78,6 +78,7 @@ export const PillButton = styled(UnstyledButton)`
 `;
 
 const Select = styled(Pill.withComponent('select'))`
+    text-align: left;
     border: none;
 
     height: 24px;
