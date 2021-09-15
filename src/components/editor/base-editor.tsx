@@ -353,6 +353,7 @@ export class BaseEditor extends React.Component<EditorProps> {
             contextmenu: false,
             scrollBeyondLastLine: false,
             colorDecorators: false,
+            links: false,
 
             // TODO: Would like to set a fontFace here, but due to
             // https://github.com/Microsoft/monaco-editor/issues/392
