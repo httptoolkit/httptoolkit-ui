@@ -16,11 +16,11 @@ const HeaderExplanation = styled.p`
 `;
 
 const HeaderButtonStyles = css`
-    padding: 10px 20px;
+    padding: 10px 15px;
     font-weight: bold;
     font-size: ${p => p.theme.textSize};
 
-    margin: 10px 0 0 20px;
+    margin: 10px 0 0 10px;
     align-self: stretch;
 `;
 
