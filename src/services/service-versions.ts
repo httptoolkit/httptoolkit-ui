@@ -59,3 +59,4 @@ export const WEBSOCKET_RULE_RANGE = '^1.1.3';
 export const DETAILED_METADATA = '^1.2.0';
 export const PASSTHROUGH_TRANSFORMS_RANGE = '^1.4.0';
 export const PROXY_CONFIG_RANGE = '^1.4.1';
+export const CLOSE_IN_BREAKPOINT = '^1.4.2';

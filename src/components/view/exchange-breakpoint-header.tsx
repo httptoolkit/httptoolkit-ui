@@ -1,10 +1,12 @@
 import * as React from 'react';
 
-import { styled } from '../../styles';
+import { styled, css } from '../../styles';
 import { WarningIcon } from '../../icons';
 
+import { versionSatisfies, serverVersion, CLOSE_IN_BREAKPOINT } from '../../services/service-versions';
+
 import { clickOnEnter } from '../component-utils';
-import { Button } from '../common/inputs';
+import { Button, SecondaryButton } from '../common/inputs';
 import { ExchangeHeaderCard } from './exchange-card';
 
 const HeaderExplanation = styled.p`
@@ -13,7 +15,7 @@ const HeaderExplanation = styled.p`
     line-height: 1.2;
 `;
 
-const HeaderButton = styled(Button)`
+const HeaderButtonStyles = css`
     padding: 10px 20px;
     font-weight: bold;
     font-size: ${p => p.theme.textSize};
@@ -22,22 +24,42 @@ const HeaderButton = styled(Button)`
     align-self: stretch;
 `;
 
+const HeaderButton = styled(Button)`${HeaderButtonStyles}`;
+const SecondaryHeaderButton = styled(SecondaryButton)`${HeaderButtonStyles}`;
+
 export const ExchangeRequestBreakpointHeader = (p: {
     onResume: () => void,
-    onCreateResponse: () => void
+    onCreateResponse: () => void,
+    onClose: () => void
 }) =>
     <ExchangeHeaderCard>
         <HeaderExplanation>
             <WarningIcon /> <strong>This request is paused at a breakpoint</strong>
         </HeaderExplanation>
         <HeaderExplanation>
-            Respond directly to provide a response yourself, or edit the request as you'd like
-            and then resume to let your edited request continue to the target URL.
+            {
+                versionSatisfies(serverVersion.value as string, CLOSE_IN_BREAKPOINT)
+                ? <>
+                    Edit the request and then resume to let your edited request continue to the target URL,
+                    respond directly to provide a response yourself, or close to immediately end the connection.
+                </>
+                : <>
+                    Respond directly to provide a response yourself, or edit the request as you'd like
+                    and then resume to let your edited request continue to the target URL.
+                </>
+            }
         </HeaderExplanation>
 
-        <HeaderButton onClick={p.onCreateResponse} onKeyPress={clickOnEnter}>
+        <SecondaryHeaderButton onClick={p.onCreateResponse} onKeyPress={clickOnEnter}>
             Respond directly
-        </HeaderButton>
+        </SecondaryHeaderButton>
+
+        { versionSatisfies(serverVersion.value as string, CLOSE_IN_BREAKPOINT)
+            ? <SecondaryHeaderButton onClick={p.onClose} onKeyPress={clickOnEnter}>
+                Close
+            </SecondaryHeaderButton>
+            : null
+        }
 
         <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>
             Resume
@@ -45,15 +67,32 @@ export const ExchangeRequestBreakpointHeader = (p: {
     </ExchangeHeaderCard>;
 
 export const ExchangeResponseBreakpointHeader = (p: {
-    onResume: () => void
+    onResume: () => void,
+    onClose: () => void
 }) =>
     <ExchangeHeaderCard>
         <HeaderExplanation>
             <WarningIcon /> <strong>This response is paused at a breakpoint</strong>
         </HeaderExplanation>
         <HeaderExplanation>
-            Edit it as you'd like, then resume to let the edited response continue back to the client.
+            {
+                versionSatisfies(serverVersion.value as string, CLOSE_IN_BREAKPOINT)
+                ? <>
+                    Edit it as you'd like and resume to let the edited response continue back to the client,
+                    or close to immediately end the connection.
+                </>
+                : <>
+                    Edit it as you'd like, then resume to let the edited response continue back to the client.
+                </>
+            }
         </HeaderExplanation>
+
+        { versionSatisfies(serverVersion.value as string, CLOSE_IN_BREAKPOINT)
+            ? <SecondaryHeaderButton onClick={p.onClose} onKeyPress={clickOnEnter}>
+                Close
+            </SecondaryHeaderButton>
+            : null
+        }
 
         <HeaderButton onClick={p.onResume} onKeyPress={clickOnEnter}>
             Resume

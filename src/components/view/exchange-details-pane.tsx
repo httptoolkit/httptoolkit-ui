@@ -215,6 +215,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 key='breakpoint-header'
                 onCreateResponse={respondToBreakpointedRequest}
                 onResume={requestBreakpoint.resume}
+                onClose={requestBreakpoint.close}
             />;
         }
 
@@ -222,6 +223,7 @@ export class ExchangeDetailsPane extends React.Component<{
             return <ExchangeResponseBreakpointHeader
                 key='breakpoint-header'
                 onResume={responseBreakpoint.resume}
+                onClose={responseBreakpoint.close}
             />;
         }
 

@@ -57,7 +57,7 @@ export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) 
 }
 
 export function getDummyResponseBreakpoint(httpVersion: 1 | 2) {
-    const breakpoint = new Breakpoint<BreakpointResponseResult>(
+    const breakpoint = new ResponseBreakpoint(
         {
             statusCode: 200,
             statusMessage: undefined,
@@ -77,7 +77,7 @@ export async function getResponseBreakpoint(response: MockttpBreakpointedRespons
         : response.statusMessage;
     const { encoded, decoded } = await getBody(response);
 
-    return new Breakpoint<BreakpointResponseResult>(
+    return new ResponseBreakpoint(
         {
             statusCode: response.statusCode,
             statusMessage: statusMessage,
@@ -98,7 +98,7 @@ type BreakpointResumeType<T extends BreakpointInProgress> =
         : MockttpBreakpointResponseResult;
 
 
-export class Breakpoint<T extends BreakpointInProgress> {
+export abstract class Breakpoint<T extends BreakpointInProgress> {
 
     protected readonly deferred: Deferred<BreakpointResumeType<T>>;
 
@@ -187,6 +187,8 @@ export class Breakpoint<T extends BreakpointInProgress> {
         } as unknown as BreakpointResumeType<T>);
     }
 
+    abstract close(): void;
+
     reject(error: Error) {
         this.deferred.reject(error);
     }
@@ -196,9 +198,22 @@ class RequestBreakpoint extends Breakpoint<BreakpointRequestResult> {
     respondDirectly(result: MockttpBreakpointResponseResult) {
         this.deferred.resolve({ response: result });
     }
+
+    close = () => {
+        this.deferred.resolve({ response: 'close' });
+    }
+}
+
+class ResponseBreakpoint extends Breakpoint<BreakpointResponseResult> {
+    close = () => {
+        this.deferred.resolve('close');
+    }
 }
 
 type RequestBreakpointType = RequestBreakpoint;
+type ResponseBreakpointType = ResponseBreakpoint
 
-export { RequestBreakpointType as RequestBreakpoint };
-export type ResponseBreakpoint = Breakpoint<BreakpointResponseResult>;
+export {
+    RequestBreakpointType as RequestBreakpoint,
+    ResponseBreakpointType as ResponseBreakpoint
+};

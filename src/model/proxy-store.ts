@@ -7,7 +7,7 @@ import {
     observe,
     runInAction,
 } from 'mobx';
-import { getLocal, Mockttp, ProxyConfig } from 'mockttp';
+import { getRemote, Mockttp, ProxyConfig } from 'mockttp';
 
 import {
     PortRange,
@@ -25,7 +25,6 @@ import { lazyObservablePromise } from '../util/observable';
 import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
 import { serverVersion } from '../services/service-versions';
-import { reportError } from '../errors';
 
 // Start the server, with slowly decreasing retry frequency (up to a limit).
 // Note that this never fails - any timeout to this process needs to happen elsewhere.
@@ -137,7 +136,7 @@ export class ProxyStore {
     }
 
     private startIntercepting = flow(function* (this: ProxyStore) {
-        this.server = getLocal({
+        this.server = getRemote({
             cors: false,
             suggestChanges: false,
             standaloneServerUrl: 'http://127.0.0.1:45456',
