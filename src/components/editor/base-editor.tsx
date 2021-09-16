@@ -10,15 +10,10 @@ import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-e
 
 import { reportError } from '../../errors';
 import { delay } from '../../util/promise';
-import { WritableKeys, Omit } from '../../types';
+import { Omit } from '../../types';
 import { styled, Theme, defineMonacoThemes } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
 
-// EditorOptions.lineHeight in Monaco. Due to the bundling separation requirements, we can't
-// easily import this directly, but this is tidy enough for now. Future Monaco updates
-// may require this to be updated or every editor will explode into crazy sizes.
-// The types know the getOptions result numberically, so will catch obvious mistakes.
-const MONACO_LINE_HEIGHT_OPTION = 47;
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
@@ -46,30 +41,8 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
     }
 }
 
-// Work around for https://github.com/Microsoft/monaco-editor/issues/311
-// Forcibly override various methods to ensure we return line decorations
-// for validation errors etc even if the editor is readonly.
-function enableMarkers(model: monacoTypes.editor.ITextModel | null) {
-    if (!model) return;
-
-    const methodsToFix:  Array<[WritableKeys<typeof model>, number]> = [
-        ['getLineDecorations', 2],
-        ['getLinesDecorations', 3],
-        ['getDecorationsInRange', 2],
-        ['getOverviewRulerDecorations', 1],
-        ['getAllDecorations', 1],
-    ];
-
-    methodsToFix.forEach(([functionName, maxArgs]) => {
-        const originalMethod = model[functionName] as Function;
-        model[functionName] = function() {
-            return originalMethod.apply(this, Array.from(arguments).slice(0, maxArgs));
-        };
-    });
-}
-
 export interface EditorProps extends MonacoEditorProps {
-    onLinesUpdate?: (lineCount: number, lineHeight: number) => void;
+    onContentSizeChange?: (contentUpdate: monacoTypes.editor.IContentSizeChangedEvent) => void;
     schema?: SchemaObject;
 }
 
@@ -79,6 +52,8 @@ interface SchemaMapping {
     readonly fileMatch?: string[];
     readonly schema?: any;
 }
+
+const MAX_HEIGHT = 560;
 
 const EditorMaxHeightContainer = styled.div`
     ${(p: { expanded: boolean }) => p.expanded
@@ -91,14 +66,14 @@ const EditorMaxHeightContainer = styled.div`
             height: auto !important;
         `
         : `
-            max-height: 560px;
+            max-height: ${MAX_HEIGHT}px;
         `
     }
 `;
 
 @observer
 export class SelfSizedBaseEditor extends React.Component<
-    Omit<EditorProps, 'onLineCount'> & {
+    Omit<EditorProps, 'onContentSizeChange'> & {
         expanded?: boolean
     }
 > {
@@ -107,9 +82,8 @@ export class SelfSizedBaseEditor extends React.Component<
     editor = React.createRef<BaseEditor>();
 
     @action.bound
-    onLinesUpdate(newLineCount: number, newLineHeight: number) {
-        this.lineCount = newLineCount;
-        this.lineHeight = newLineHeight;
+    onContentSizeChange(contentUpdate: monacoTypes.editor.IContentSizeChangedEvent) {
+        this.contentHeight = Math.min(contentUpdate.contentHeight, MAX_HEIGHT);
     }
 
     onResize = _.throttle(() => {
@@ -139,19 +113,18 @@ export class SelfSizedBaseEditor extends React.Component<
         this.editor.current?.resetUIState();
     }
 
-    @observable lineCount: number = 0;
-    @observable lineHeight: number = 0;
+    @observable contentHeight: number = 0;
 
     render() {
         return <EditorMaxHeightContainer
             ref={this.container}
             expanded={!!this.props.expanded}
-            style={{ 'height': this.lineCount * this.lineHeight + 'px' }}
+            style={{ 'height': this.contentHeight + 'px' }}
         >
             <BaseEditor
                 {...this.props}
                 ref={this.editor}
-                onLinesUpdate={this.onLinesUpdate}
+                onContentSizeChange={this.onContentSizeChange}
             />
         </EditorMaxHeightContainer>
     }
@@ -163,7 +136,7 @@ export const ThemedSelfSizedEditor = withTheme(
             { theme, ...otherProps }: {
                 theme?: Theme,
                 expanded?: boolean
-            } & Omit<EditorProps, 'onLineCount' | 'theme'>,
+            } & Omit<EditorProps, 'onContentSizeChange' | 'theme'>,
             ref: React.Ref<SelfSizedBaseEditor>
         ) => <SelfSizedBaseEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
     )
@@ -203,23 +176,10 @@ export class BaseEditor extends React.Component<EditorProps> {
         }
     }
 
-    private announceLineCount(editor: monacoTypes.editor.IStandaloneCodeEditor) {
-        if (this.props.onLinesUpdate) {
-            // This is also available as model.getLineCount(), but the model
-            // itself doesn't take line wrapping into account.
-            const lineCount = (editor as any)._modelData.viewModel.getLineCount();
-            const lineHeight = editor.getOption(MONACO_LINE_HEIGHT_OPTION);
-
-            this.props.onLinesUpdate(lineCount, lineHeight);
-        }
-    }
-
     public relayout() {
         if (this.editor) {
             try {
                 this.editor.layout();
-                // If the layout has changed, the line count may have too (due to wrapping)
-                this.announceLineCount(this.editor);
             } catch (e) {
                 // Monaco can throw some irrelevant errors here, due to race conditions with
                 // layout and model updates etc. It's OK if the layout very occasionally goes
@@ -253,18 +213,16 @@ export class BaseEditor extends React.Component<EditorProps> {
         this.editor = editor;
         this.monaco = monaco;
 
-        this.announceLineCount(editor);
-
         const model = editor.getModel();
-        enableMarkers(model);
-
         this.modelUri = model && model.uri.toString();
 
-        this.editor.onDidChangeModelContent(() => this.announceLineCount(editor));
         this.editor.onDidChangeModel(action((e: monacoTypes.editor.IModelChangedEvent) => {
-            enableMarkers(editor.getModel());
             this.modelUri = e.newModelUrl && e.newModelUrl.toString()
         }));
+
+        if (this.props.onContentSizeChange) {
+            this.editor.onDidContentSizeChange(this.props.onContentSizeChange);
+        }
     }
 
     componentDidMount() {
@@ -343,25 +301,27 @@ export class BaseEditor extends React.Component<EditorProps> {
             return null;
         }
 
-        const options = _.defaults(this.props.options, {
+        const options: monacoTypes.editor.IEditorConstructionOptions = {
             showFoldingControls: 'always',
 
             quickSuggestions: false,
-            parameterHints: false,
+            parameterHints: { enabled: false },
             codeLens: false,
             minimap: { enabled: false },
             contextmenu: false,
             scrollBeyondLastLine: false,
             colorDecorators: false,
-            links: false,
+            renderValidationDecorations: 'on',
 
             // TODO: Would like to set a fontFace here, but due to
             // https://github.com/Microsoft/monaco-editor/issues/392
             // it breaks wordwrap
 
             fontSize: 16,
-            wordWrap: 'on'
-        });
+            wordWrap: 'on',
+
+            ...this.props.options
+        };
 
         if (!options.readOnly) {
             return <EditorFocusWrapper>
