@@ -146,30 +146,3 @@ Promise.race([
         });
     });
 });
-
-// We have some weird errors appearing due to about:blank windows being spawned. There must be some bad links
-// somewhere, this temporary logging attempts to hunt them down:
-document.addEventListener('click', (e) => {
-    try {
-        const target = (e.target || e.srcElement) as Element;
-        if (target && target.tagName === 'A') {
-            const href = target.getAttribute('href');
-            if (!href || href === 'about:blank') {
-                reportError('Clicked blank link, path:', { path: getNodePath(target).join(' > '), page: window.location.pathname });
-            }
-        }
-    } catch (err) {
-        reportError('Error logging broken click links', err);
-    }
-});
-
-function getNodePath(el: Element) {
-    const stack: string[] = [];
-
-    while (el.parentNode !== null) {
-        stack.unshift(`${el.nodeName}(${el.className})`);
-        el = el.parentNode as Element;
-    }
-
-    return stack;
-}
