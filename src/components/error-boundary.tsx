@@ -83,9 +83,7 @@ export class ErrorBoundary extends React.Component {
             });
             Sentry.captureException(error);
         });
-    }
 
-    componentDidMount() {
         trackEvent({
             category: 'Error',
             action: 'UI crashed'
