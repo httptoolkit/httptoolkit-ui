@@ -272,6 +272,7 @@ export class HttpExchange {
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);
+        this.category = getExchangeCategory(this);
 
         if (this.requestBreakpoint) {
             this.requestBreakpoint.reject(
