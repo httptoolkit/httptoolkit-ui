@@ -811,7 +811,7 @@ export class StringOptionsSyntax<
 > extends OptionsSyntax<Array<FixedStringSyntax<V>>, V, never> {
 
     constructor(
-        values: V[]
+        values: readonly V[]
     ) {
         super(values.map(v => new FixedStringSyntax(v)));
     }

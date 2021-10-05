@@ -6,6 +6,7 @@ import { joinAnd } from '../../util';
 import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../http/bodies';
+import { ExchangeCategories } from '../http/exchange-colors';
 
 import {
     matchSyntax,
@@ -385,6 +386,44 @@ class ErrorFilter extends Filter {
 
     toString() {
         return `Error`;
+    }
+}
+
+class CategoryFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("category"),
+        new FixedStringSyntax("="), // Separate, so initial suggestions are names only
+        new StringOptionsSyntax(ExchangeCategories)
+    ] as const;
+
+    static filterName = "category";
+
+    static filterDescription(value: string) {
+        const [, , category] = tryParseFilter(CategoryFilter, value);
+
+        if (!category) {
+            return "exchanges by their general category";
+        } else {
+            return `all ${category} exchanges`;
+        }
+    }
+
+    private expectedCategory: string;
+
+    constructor(filter: string) {
+        super(filter);
+        const [,, categoryString] = parseFilter(CategoryFilter, filter);
+        this.expectedCategory = categoryString;
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof HttpExchange &&
+            event.category === this.expectedCategory
+    }
+
+    toString() {
+        return _.startCase(this.expectedCategory);
     }
 }
 
@@ -1087,6 +1126,7 @@ const BaseSearchFilterClasses: FilterClass[] = [
     PendingFilter,
     AbortedFilter,
     ErrorFilter,
+    CategoryFilter,
     PortFilter,
     ProtocolFilter,
     HttpVersionFilter

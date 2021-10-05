@@ -69,10 +69,24 @@ const isFontExchange = (exchange: SuccessfulExchange) =>
         'application/x-font-opentype',
     ], getMessageBaseContentType(exchange.response));
 
-export function getExchangeCategory(exchange: HttpExchange) {
+export const ExchangeCategories = [
+    'image',
+    'js',
+    'css',
+    'html',
+    'font',
+    'data',
+    'mutative',
+    'incomplete',
+    'aborted',
+    'unknown'
+] as const;
+export type ExchangeCategory = typeof ExchangeCategories[number];
+
+export function getExchangeCategory(exchange: HttpExchange): ExchangeCategory {
     if (!exchange.isCompletedExchange()) {
         if (isMutatativeExchange(exchange)) {
-            return 'mutative'; // red
+            return 'mutative';
         } else {
             return 'incomplete';
         }
@@ -96,8 +110,6 @@ export function getExchangeCategory(exchange: HttpExchange) {
         return 'unknown';
     }
 };
-
-export type ExchangeCategory = ReturnType<typeof getExchangeCategory>;
 
 export function describeExchangeCategory(category: ExchangeCategory) {
     const categoryColour = getExchangeSummaryColour(category);
