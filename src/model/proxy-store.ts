@@ -217,6 +217,7 @@ export class ProxyStore {
             return addresses
                 .filter(a =>
                     !a.internal && // Loopback interfaces
+                    a.family === "IPv4" && // Android VPN app supports IPv4 only
                     iface !== 'docker0' && // Docker default bridge interface
                     !iface.startsWith('br-') && // More docker bridge interfaces
                     !iface.startsWith('veth') // Virtual interfaces for each docker container
