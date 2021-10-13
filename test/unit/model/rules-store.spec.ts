@@ -28,7 +28,11 @@ describe("Rules store", () => {
         .map((char) => ({ id: char }) as HtkMockRule);
 
     beforeEach(() => {
-        store = new RulesStore(null as any, { serverVersion: '1.0.0' } as any, null as any, null as any);
+        const proxyStore = {
+            serverVersion: '1.0.0',
+            dnsServers: []
+        };
+        store = new RulesStore(null as any, proxyStore as any, null as any, null as any);
         store.rules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
         store.draftRules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
     });

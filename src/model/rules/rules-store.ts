@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { completionCheckers, webSocketHandlers, ProxyConfig } from 'mockttp';
+import { completionCheckers, webSocketHandlers, ProxyConfig, requestHandlers } from 'mockttp';
 
 import {
     observable,
@@ -232,14 +232,17 @@ export class RulesStore {
     // This is live updated as the corresponding fields change, and so the resulting rules are
     // updated immediately as this changes too.
     @computed.struct
-    get activePassthroughOptions() {
+    get activePassthroughOptions(): requestHandlers.PassThroughHandlerOptions {
         return _.cloneDeep({ // Clone to ensure we touch & subscribe to everything here
             ignoreHostCertificateErrors: this.whitelistedCertificateHosts,
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
                 pfx: Buffer.from(cert.pfx),
                 passphrase: cert.passphrase
             })),
-            proxyConfig: this.proxyConfig
+            proxyConfig: this.proxyConfig,
+            lookupOptions: this.proxyStore.dnsServers.length
+                ? { servers: this.proxyStore.dnsServers }
+                : undefined
         });
     }
 

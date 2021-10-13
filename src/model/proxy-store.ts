@@ -85,6 +85,9 @@ export class ProxyStore {
     systemProxyConfig: ProxyConfig | undefined;
 
     @observable
+    dnsServers: string[] = [];
+
+    @observable
     serverVersion!: string; // Definitely set *after* initialization
 
     readonly initialized = lazyObservablePromise(async () => {
@@ -149,12 +152,13 @@ export class ProxyStore {
         announceServerReady();
         console.log('Server started');
 
-        yield getConfig().then((config) => {
+        yield getConfig(this.serverPort).then((config) => {
             this.certPath = config.certificatePath;
             this.certContent = config.certificateContent;
             this.certFingerprint = config.certificateFingerprint;
             this.setNetworkAddresses(config.networkInterfaces);
             this.systemProxyConfig = config.systemProxy;
+            this.dnsServers = config.dnsServers;
             console.log('Config loaded');
         });
 

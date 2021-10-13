@@ -11,7 +11,8 @@ import {
     DETAILED_CONFIG_RANGE,
     INTERCEPTOR_METADATA,
     DETAILED_METADATA,
-    PROXY_CONFIG_RANGE
+    PROXY_CONFIG_RANGE,
+    DNS_CONFIG_RANGE
 } from './service-versions';
 
 const authTokenPromise = !RUNNING_IN_WORKER
@@ -105,12 +106,13 @@ export async function getServerVersion(): Promise<string> {
 
 export type NetworkInterfaces = { [index: string]: NetworkInterfaceInfo[] };
 
-export async function getConfig(): Promise<{
+export async function getConfig(proxyPort: number): Promise<{
     certificatePath: string;
     certificateContent?: string;
     certificateFingerprint?: string;
     networkInterfaces: NetworkInterfaces;
     systemProxy: ProxyConfig | undefined;
+    dnsServers: string[];
 }> {
     const response = await graphql<{
         config: {
@@ -120,8 +122,11 @@ export async function getConfig(): Promise<{
         }
         networkInterfaces?: NetworkInterfaces;
         systemProxy?: ProxyConfig;
+        dnsServers?: string[];
     }>('getConfig', `
-        query getConfig {
+        ${versionSatisfies(await serverVersion, DNS_CONFIG_RANGE)
+            ? `query getConfig($proxyPort: Int!) {`
+            : 'query getConfig {'}
             config {
                 certificatePath
                 ${versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)
@@ -132,20 +137,26 @@ export async function getConfig(): Promise<{
             }
 
             ${versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)
-            ? `networkInterfaces` : ''}
+            ? `networkInterfaces`
+            : ''}
 
             ${versionSatisfies(await serverVersion, PROXY_CONFIG_RANGE)
             ? `systemProxy {
                 proxyUrl
                 noProxy
             }` : ''}
+
+            ${versionSatisfies(await serverVersion, DNS_CONFIG_RANGE)
+            ? `dnsServers(proxyPort: $proxyPort)`
+            : ''}
         }
-    `, {});
+    `, { proxyPort: proxyPort });
 
     return {
         ...response.config,
         networkInterfaces: response.networkInterfaces || {},
-        systemProxy: response.systemProxy
+        systemProxy: response.systemProxy,
+        dnsServers: response.dnsServers || []
     }
 }
 
