@@ -242,20 +242,6 @@ export async function activateInterceptor(id: string, proxyPort: number, options
     }
 }
 
-export async function deactivateInterceptor(id: string, proxyPort: number) {
-    const result = await graphql<{
-        deactivateInterceptor: boolean
-    }>('Deactivate', `
-        mutation Deactivate($id: ID!, $proxyPort: Int!) {
-            deactivateInterceptor(id: $id, proxyPort: $proxyPort)
-        }
-    `, { id, proxyPort });
-
-    if (!result.deactivateInterceptor) {
-        throw new Error('Failed to deactivate interceptor');
-    }
-}
-
 export async function triggerServerUpdate() {
     await graphql<{}>('TriggerUpdate', `
         mutation TriggerUpdate {
