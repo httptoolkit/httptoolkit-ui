@@ -8,44 +8,9 @@ import { styled } from '../../../styles';
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
 
-import { Button } from '../../common/inputs';
 import { Icon } from '../../../icons';
 import { getDetailedInterceptorMetadata } from '../../../services/server-api';
-
-const ConfigContainer = styled.div`
-    user-select: text;
-
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
-    > p {
-        line-height: 1.2;
-
-        &:not(:last-child) {
-            margin-bottom: 5px;
-        }
-
-        &:not(:first-child) {
-            margin-top: 5px;
-        }
-    }
-
-    a[href] {
-        color: ${p => p.theme.linkColor};
-
-        &:visited {
-            color: ${p => p.theme.visitedLinkColor};
-        }
-    }
-`;
-
-const Footer = styled.p`
-    font-size: 85%;
-    font-style: italic;
-`;
+import { InterceptionTargetList } from './intercept-target-list';
 
 type JvmTarget = { pid: string, name: string, interceptedByProxy: number | undefined };
 
@@ -97,11 +62,52 @@ class JvmConfig extends React.Component<{
 
             { interestingTargets.length === 0
                 ? <Spinner />
-                : <SelectTargetList
-                    targets={interestingTargets}
+                : <InterceptionTargetList<string>
                     interceptTarget={this.interceptTarget}
-                    inProgressPids={this.inProgressPids}
-                    ourProxyPort={proxyPort}
+                    ellipseDirection='left'
+                    targets={interestingTargets.map((target) => {
+                        const activating = this.inProgressPids.includes(target.pid);
+                        const alreadyIntercepted = target.interceptedByProxy !== undefined;
+                        const interceptedByUs = target.interceptedByProxy === proxyPort;
+
+                        const targetName = target.name.split(' ')[0];
+
+                        const isClassName = !targetName.includes('/') &&
+                            !targetName.includes('\\');
+
+                        let contextName: string;
+                        let mainName: string;
+
+                        if (isClassName) {
+                            const [className, ...packageParts] = targetName.split('.').reverse();
+                            const packageName = packageParts.reverse().join('.');
+
+                            contextName = packageName ? packageName + '.' : '';
+                            mainName = className;
+                        } else {
+                            const [filePath, ...dirParts] = targetName.split(/\/|\\/).reverse();
+                            const dirPath = dirParts.reverse().join('/');
+                            contextName = dirPath ? dirPath + '/' : '';
+                            mainName = filePath;
+                        }
+
+                        return {
+                            id: target.pid,
+                            title: target.name,
+                            status:
+                                activating
+                                    ? 'activating'
+                                : interceptedByUs
+                                    ? 'active'
+                                : alreadyIntercepted
+                                    ? 'unavailable'
+                                : 'available',
+                            content: <>
+                                <PackageName>{ contextName }</PackageName>
+                                <ClassName>{ mainName }</ClassName>
+                            </>,
+                        };
+                    })}
                 />
             }
 
@@ -148,6 +154,41 @@ class JvmConfig extends React.Component<{
 
 }
 
+const ConfigContainer = styled.div`
+    user-select: text;
+
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    > p {
+        line-height: 1.2;
+
+        &:not(:last-child) {
+            margin-bottom: 5px;
+        }
+
+        &:not(:first-child) {
+            margin-top: 5px;
+        }
+    }
+
+    a[href] {
+        color: ${p => p.theme.linkColor};
+
+        &:visited {
+            color: ${p => p.theme.visitedLinkColor};
+        }
+    }
+`;
+
+const Footer = styled.p`
+    font-size: 85%;
+    font-style: italic;
+`;
+
 const Spinner = styled(Icon).attrs(() => ({
     icon: ['fas', 'spinner'],
     spin: true,
@@ -156,48 +197,6 @@ const Spinner = styled(Icon).attrs(() => ({
     margin: 0 auto;
 `;
 
-const TargetList = styled.ul`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    height: 100%;
-`;
-
-const Target = styled.li`
-    margin: 0 -15px -10px;
-    padding: 10px;
-`;
-
-const TargetButton = styled(Button)<{
-    state: 'active' | 'available' | 'unavailable'
-}>`
-    font-size: ${p => p.theme.textSize};
-    padding: 10px;
-    width: 100%;
-
-    display: flex;
-    align-items: center;
-
-    ${p => p.state === 'active' &&
-        '&& { background-color: #4caf7d; }'
-    }
-`;
-
-const TargetIcon = styled(Icon)`
-    margin-right: 10px;
-`;
-
-const TargetText = styled.span`
-    flex-grow: 1;
-
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    direction: rtl;
-    text-align: center;
-`
-
 const PackageName = styled.span`
     opacity: 0.6;
 `;
@@ -205,83 +204,6 @@ const PackageName = styled.span`
 const ClassName = styled.span`
     font-weight: bold;
 `;
-
-@observer
-class SelectTargetList extends React.Component<{
-    ourProxyPort: number,
-    targets: JvmTarget[],
-    inProgressPids: string[],
-    interceptTarget: (pid: string) => void
-}> {
-
-    render() {
-        const {
-            targets,
-            interceptTarget,
-            inProgressPids,
-            ourProxyPort
-        } = this.props;
-
-        return <TargetList>
-            { _.map(targets, (target) => {
-                const id = target.pid;
-                const activating = inProgressPids.includes(id);
-                const targetName = target.name.split(' ')[0];
-
-                const isClassName = !targetName.includes('/') &&
-                    !targetName.includes('\\');
-
-                let contextName: string;
-                let mainName: string;
-
-                if (isClassName) {
-                    const [className, ...packageParts] = targetName.split('.').reverse();
-                    const packageName = packageParts.reverse().join('.');
-
-                    contextName = packageName ? packageName + '.' : '';
-                    mainName = className;
-                } else {
-                    const [filePath, ...dirParts] = targetName.split(/\/|\\/).reverse();
-                    const dirPath = dirParts.reverse().join('/');
-                    contextName = dirPath ? dirPath + '/' : '';
-                    mainName = filePath;
-                }
-
-                const alreadyIntercepted = target.interceptedByProxy !== undefined;
-                const interceptedByUs = target.interceptedByProxy === ourProxyPort;
-
-                return <Target key={id}>
-                    <TargetButton
-                        title={target.name}
-                        state={
-                            interceptedByUs
-                                ? 'active'
-                            : alreadyIntercepted
-                                ? 'unavailable'
-                            : 'available'
-                        }
-                        disabled={activating || alreadyIntercepted}
-                        onClick={activating ? _.noop : () => interceptTarget(id)}
-                    >
-                        {
-                            activating
-                                ? <TargetIcon icon={['fas', 'spinner']} spin />
-                            : interceptedByUs
-                                ? <TargetIcon icon={['fas', 'check']} />
-                            : null
-                        }
-                        <TargetText>
-                            &lrm; {/* This disables RTL rendering, but keeps the ellipsis */}
-                            <PackageName>{ contextName }</PackageName>
-                            <ClassName>{ mainName }</ClassName>
-                        </TargetText>
-                    </TargetButton>
-                </Target>
-            }) }
-        </TargetList>;
-    }
-}
-
 
 export const JvmCustomUi = {
     columnWidth: 1,

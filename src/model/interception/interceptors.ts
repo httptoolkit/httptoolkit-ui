@@ -17,6 +17,7 @@ import { AndroidDeviceCustomUi } from "../../components/intercept/config/android
 import { AndroidAdbCustomUi } from "../../components/intercept/config/android-adb-config";
 import { ExistingBrowserCustomUi } from "../../components/intercept/config/existing-browser-config";
 import { JvmCustomUi } from "../../components/intercept/config/jvm-config";
+import { DockerAttachCustomUi } from "../../components/intercept/config/docker-attach-config";
 
 interface InterceptorConfig {
     name: string;
@@ -56,6 +57,17 @@ const recoloured = (icon: IconProps, color: string) => ({ ...icon, color });
 export const MANUAL_INTERCEPT_ID = 'manual-setup';
 
 const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
+    'docker-attach': {
+        name: 'Attach to Docker Container',
+        description: ["Intercept all traffic from running Docker containers"],
+        uiConfig: DockerAttachCustomUi,
+        iconProps: SourceIcons.Docker,
+        checkRequirements: ({ accountStore, serverVersion }) => {
+            return accountStore.featureFlags.includes('docker') &&
+                versionSatisfies(serverVersion || '', DOCKER_INTERCEPTION_RANGE);
+        },
+        tags: DOCKER_TAGS
+    },
     'fresh-chrome': {
         name: 'Chrome',
         description: ["Intercept a fresh independent Chrome window"],
@@ -158,18 +170,6 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         checkRequirements: ({ interceptorVersion }) => {
             return versionSatisfies(interceptorVersion, "^1.0.3")
         },
-    },
-    'docker-all': {
-        name: 'All Docker Containers',
-        description: ["Intercept all local Docker traffic"],
-        iconProps: SourceIcons.Docker,
-        tags: DOCKER_TAGS
-    },
-    'docker-specific': {
-        name: 'Specific Docker Containers',
-        description: ["Intercept all traffic from specific Docker containers"],
-        iconProps: SourceIcons.Docker,
-        tags: DOCKER_TAGS
     },
     'attach-jvm': {
         name: 'Attach to JVM',
