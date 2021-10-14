@@ -8,6 +8,7 @@ import { InterceptorStore } from '../../../model/interception/interceptor-store'
 import { Interceptor } from '../../../model/interception/interceptors';
 
 import { CopyButtonIcon } from '../../common/copy-button';
+import { AccountStore } from '../../../model/account/account-store';
 
 const CopyableCommand = styled((p: {
     className?: string;
@@ -70,14 +71,16 @@ const ConfigContainer = styled.div`
 `;
 
 @inject('interceptorStore')
+@inject('accountStore')
 @observer
 class ExistingTerminalConfig extends React.Component<{
     interceptor: Interceptor,
-    activateInterceptor: () => Promise<{ port: number }>,
+    activateInterceptor: (options: { dockerEnabled: boolean }) => Promise<{ port: number }>,
     reportStarted: () => void,
     reportSuccess: (options?: { showRequests?: boolean }) => void,
     closeSelf: () => void,
-    interceptorStore?: InterceptorStore
+    interceptorStore?: InterceptorStore,
+    accountStore?: AccountStore
 }> {
 
     @observable reportedActivated = false;
@@ -98,7 +101,9 @@ class ExistingTerminalConfig extends React.Component<{
     }
 
     async componentDidMount() {
-        const { port } = await this.props.activateInterceptor();
+        const { port } = await this.props.activateInterceptor({
+            dockerEnabled: this.props.accountStore!.featureFlags.includes('docker')
+        });
 
         runInAction(() => {
             this.serverPort = port;

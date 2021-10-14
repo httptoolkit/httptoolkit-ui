@@ -250,7 +250,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         });
     };
 
-    activateInterceptor = (activationOptions = {}) => {
+    activateInterceptor = (activationOptions: unknown = {}) => {
         const { interceptor, interceptorStore } = this.props;
         return interceptorStore!.activateInterceptor(interceptor.id, activationOptions);
     };
@@ -298,7 +298,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             });
         } else {
             onActivationStarted();
-            activateInterceptor()
+            activateInterceptor(interceptor.activationOptions)
             .then(() => onActivationSuccessful())
             .catch((e) => reportError(e));
         }
