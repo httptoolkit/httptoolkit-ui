@@ -32,7 +32,7 @@ describe("Rules store", () => {
             serverVersion: '1.0.0',
             dnsServers: []
         };
-        store = new RulesStore(null as any, proxyStore as any, null as any, null as any);
+        store = new RulesStore({ featureFlags: [] } as any, proxyStore as any, null as any, null as any);
         store.rules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
         store.draftRules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
     });
