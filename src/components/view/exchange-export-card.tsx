@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import React from "react";
 import { observable, action } from "mobx";
 import { inject, observer } from "mobx-react";
+import * as HarFormat from 'har-format';
 import * as HTTPSnippet from "httpsnippet";
 import dedent from 'dedent';
 
@@ -78,16 +79,34 @@ const snippetEditorOptions = {
     hover: { enabled: false }
 };
 
+const simplifyHarForSnippetExport = (harRequest: HarFormat.Request) => {
+    // When exporting code snippets the primary goal is to generate convenient code to send the
+    // request that's *sematantically* equivalent to the original request, not to force every
+    // tool to produce byte-for-byte identical requests (that's effectively impossible). To do
+    // this, we drop headers that tools can produce automatically for themselves:
+    return {
+        ...harRequest,
+        headers: _.filter(harRequest.headers, (header) => {
+            // All clients should be able to automatically generate the correct content-length
+            // headers as required for a request where it's unspecified. If we override this,
+            // it can cause problems if tools change the body length (due to encoding/compression).
+            if (header.name.toLowerCase() === 'content-length') return false;
+            return true;
+        })
+    };
+};
+
 const ExportSnippetEditor = observer((p: {
     exchange: HttpExchange
     exportOption: SnippetOption
 }) => {
     const { target, client, link, description } = p.exportOption;
     const harRequest = generateHarRequest(p.exchange.request);
+    const harSnippetBase = simplifyHarForSnippetExport(harRequest);
 
     let snippet: string;
     try {
-        snippet = new HTTPSnippet(harRequest).convert(target, client);
+        snippet = new HTTPSnippet(harSnippetBase).convert(target, client);
     } catch (e) {
         console.log(`Failed to export request for ${target}--${client}`);
         reportError(e);
