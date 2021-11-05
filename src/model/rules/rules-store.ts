@@ -1,6 +1,13 @@
 import * as _ from 'lodash';
 
-import { completionCheckers, webSocketHandlers, ProxyConfig, requestHandlers } from 'mockttp';
+import {
+    completionCheckers,
+    requestHandlers,
+    webSocketHandlers,
+    MOCKTTP_PARAM_REF,
+    ProxyConfig,
+    ProxySetting
+} from 'mockttp';
 
 import {
     observable,
@@ -78,6 +85,9 @@ const clientCertificateSchema = serializr.createSimpleSchema({
 const reloadRules = (ruleRoot: HtkMockRuleRoot, rulesStore: RulesStore) => {
     return deserializeRules(serializeRules(ruleRoot), { rulesStore });
 };
+
+const dockerProxyRuleParamName = (port: number) =>
+    `docker-tunnel-proxy-${port}`;
 
 export type UpstreamProxyType =
     | 'system'
@@ -256,7 +266,7 @@ export class RulesStore {
     upstreamNoProxyHosts: string[] = [];
 
     @computed
-    get effectiveSystemProxyConfig(): ProxyConfig | 'ignored' | 'unparseable' | undefined {
+    get effectiveSystemProxyConfig(): ProxySetting | 'ignored' | 'unparseable' | undefined {
         const { systemProxyConfig } = this.proxyStore;
 
         if (!systemProxyConfig) return undefined;
@@ -279,7 +289,7 @@ export class RulesStore {
     }
 
     @computed.struct
-    get proxyConfig(): ProxyConfig | undefined {
+    get userProxyConfig(): ProxySetting | undefined {
         if (this.upstreamProxyType === 'direct') {
             return undefined;
         } else if (this.upstreamProxyType === 'system') {
@@ -295,6 +305,22 @@ export class RulesStore {
         }
     }
 
+    @computed.struct
+    get proxyConfig(): ProxyConfig {
+        const { userProxyConfig } = this;
+        const serverPort = this.proxyStore.serverPort;
+
+        if (this.proxyStore.ruleParameterKeys.includes(dockerProxyRuleParamName(serverPort))) {
+            const dockerProxyConfig = { [MOCKTTP_PARAM_REF]: dockerProxyRuleParamName(serverPort) };
+
+            return userProxyConfig
+                ? [dockerProxyConfig, userProxyConfig]
+                : dockerProxyConfig;
+        } else {
+            return userProxyConfig;
+        }
+    }
+
     // The currently active list
     @persist('list') @observable
     whitelistedCertificateHosts: string[] = ['localhost'];
@@ -304,10 +330,10 @@ export class RulesStore {
     clientCertificateHostMap: { [host: string]: ClientCertificate } = {};
 
     @persist('object', MockRulesetSchema) @observable
-    rules: HtkMockRuleRoot = buildDefaultRules(this, this.proxyStore);
+    rules!: HtkMockRuleRoot;
 
     @observable
-    draftRules: HtkMockRuleRoot = _.cloneDeep(this.rules);
+    draftRules!: HtkMockRuleRoot;
 
     @action.bound
     saveRules() {

@@ -1,7 +1,7 @@
 import { NetworkInterfaceInfo } from 'os';
 import * as _ from 'lodash';
 import * as localForage from 'localforage';
-import { ProxyConfig } from 'mockttp';
+import { ProxySetting } from 'mockttp';
 
 import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
@@ -12,7 +12,7 @@ import {
     INTERCEPTOR_METADATA,
     DETAILED_METADATA,
     PROXY_CONFIG_RANGE,
-    DNS_CONFIG_RANGE
+    DNS_AND_RULE_PARAM_CONFIG_RANGE
 } from './service-versions';
 
 const authTokenPromise = !RUNNING_IN_WORKER
@@ -111,8 +111,9 @@ export async function getConfig(proxyPort: number): Promise<{
     certificateContent?: string;
     certificateFingerprint?: string;
     networkInterfaces: NetworkInterfaces;
-    systemProxy: ProxyConfig | undefined;
+    systemProxy: ProxySetting | undefined;
     dnsServers: string[];
+    ruleParameterKeys: string[];
 }> {
     const response = await graphql<{
         config: {
@@ -121,12 +122,14 @@ export async function getConfig(proxyPort: number): Promise<{
             certificateFingerprint?: string;
         }
         networkInterfaces?: NetworkInterfaces;
-        systemProxy?: ProxyConfig;
+        systemProxy?: ProxySetting;
         dnsServers?: string[];
+        ruleParameterKeys?: string[];
     }>('getConfig', `
-        ${versionSatisfies(await serverVersion, DNS_CONFIG_RANGE)
+        ${versionSatisfies(await serverVersion, DNS_AND_RULE_PARAM_CONFIG_RANGE)
             ? `query getConfig($proxyPort: Int!) {`
-            : 'query getConfig {'}
+            : 'query getConfig {'
+        }
             config {
                 certificatePath
                 ${versionSatisfies(await serverVersion, DETAILED_CONFIG_RANGE)
@@ -146,8 +149,11 @@ export async function getConfig(proxyPort: number): Promise<{
                 noProxy
             }` : ''}
 
-            ${versionSatisfies(await serverVersion, DNS_CONFIG_RANGE)
-            ? `dnsServers(proxyPort: $proxyPort)`
+            ${versionSatisfies(await serverVersion, DNS_AND_RULE_PARAM_CONFIG_RANGE)
+            ? `
+                dnsServers(proxyPort: $proxyPort)
+                ruleParameterKeys
+            `
             : ''}
         }
     `, { proxyPort: proxyPort });
@@ -156,7 +162,8 @@ export async function getConfig(proxyPort: number): Promise<{
         ...response.config,
         networkInterfaces: response.networkInterfaces || {},
         systemProxy: response.systemProxy,
-        dnsServers: response.dnsServers || []
+        dnsServers: response.dnsServers || [],
+        ruleParameterKeys: response.ruleParameterKeys || []
     }
 }
 
