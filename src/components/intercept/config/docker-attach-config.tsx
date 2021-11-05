@@ -52,8 +52,7 @@ type ContainerTarget = {
     id: string,
     names: string[],
     labels: { [key: string]: string },
-    image: string,
-    imageId: string
+    image: string
 };
 
 const CONTAINER_PROXY_LABEL = "tech.httptoolkit.docker.proxy";
@@ -93,7 +92,10 @@ class DockerAttachConfig extends React.Component<{
 
     render() {
         const proxyPort = this.props.proxyStore!.serverPort;
-        const targets = Object.values(this.targets);
+        const targets = Object.values(this.targets)
+            .filter(target =>
+                !target.image.startsWith('httptoolkit/docker-socks-tunnel')
+            );
 
         return <ConfigContainer>
             <p>
