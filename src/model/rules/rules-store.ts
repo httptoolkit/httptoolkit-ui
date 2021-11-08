@@ -208,7 +208,14 @@ export class RulesStore {
                 }),
                 customArgs: { rulesStore: this } as DeserializationArgs
             });
-            this.resetRuleDrafts(); // Drafts aren't persisted, so need updating to match loaded data.
+
+            if (!this.rules) {
+                // If rules are somehow undefined (not sure, but seems it can happen, maybe odd data?) reset them:
+                this.resetRulesToDefault();
+            } else {
+                // Drafts are never persisted, so always need resetting to match the just-loaded data:
+                this.resetRuleDrafts();
+            }
         } else {
             // For free users, reset rules to default (separately, so defaults can use settings loaded above)
             this.resetRulesToDefault();
