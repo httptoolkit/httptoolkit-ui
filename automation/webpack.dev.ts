@@ -10,6 +10,7 @@ export default merge(common, {
 
     devServer: {
         contentBase: common.output!.path!,
+        host: '127.0.0.1',
         public: 'local.httptoolkit.tech:8080',
         historyApiFallback: true
     },
