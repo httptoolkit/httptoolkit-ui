@@ -30,6 +30,7 @@ const Target = styled.li`
 
     &:last-child {
         padding-bottom: 0;
+        margin-bottom: 0;
     }
 `;
 
