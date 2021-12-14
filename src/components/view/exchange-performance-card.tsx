@@ -204,7 +204,7 @@ const CompressionOptionsContainer = styled.div`
 
 const PerformanceExplanation = styled.p`
     margin-bottom: 10px;
-    line-height: 1.2;
+    line-height: 1.3;
 
     &:last-child {
         margin-bottom: 0;

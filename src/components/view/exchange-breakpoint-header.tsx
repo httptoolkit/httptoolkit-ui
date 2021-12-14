@@ -12,7 +12,7 @@ import { ExchangeHeaderCard } from './exchange-card';
 const HeaderExplanation = styled.p`
     width: 100%;
     margin-bottom: 10px;
-    line-height: 1.2;
+    line-height: 1.3;
 `;
 
 const HeaderButtonStyles = css`

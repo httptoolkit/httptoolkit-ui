@@ -36,7 +36,7 @@ const InstructionsStep = styled.div`
     }
 
     > p {
-        line-height: 1.2;
+        line-height: 1.3;
 
         &:not(:last-child) {
             margin-bottom: 10px;

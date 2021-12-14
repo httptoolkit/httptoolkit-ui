@@ -160,7 +160,7 @@ export class TlsFailureDetailsPane extends React.Component<{
                         >the HTTP Toolkit docs</a> for more details. Alternatively HTTP Toolkit
                         can inject the system certificate for you automatically, on devices that
                         support this, by connecting the device with ADB and using the "Android
-                        device connected via ADB" interception option.
+                        device via ADB" interception option.
                     </p>
                     <p>
                         Take a look at the <a href="https://httptoolkit.tech/docs/guides/android/">

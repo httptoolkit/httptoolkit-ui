@@ -259,5 +259,7 @@ export const CollapsibleSectionBody = styled.div`
     word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
 
+    line-height: 1.3;
+
     position: relative;
 `;

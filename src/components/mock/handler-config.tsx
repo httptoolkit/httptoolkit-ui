@@ -63,6 +63,7 @@ const ConfigContainer = styled.div`
 
 const ConfigExplanation = styled.p`
     font-size: ${p => p.theme.textSize};
+    line-height: 1.3;
     opacity: ${p => p.theme.lowlightTextOpacity};
     font-style: italic;
     margin-top: 10px;

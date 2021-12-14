@@ -61,6 +61,7 @@ const InterceptInstructions = styled.div`
 
         margin-bottom: 20px;
         text-align: left;
+        line-height: 1.2;
     }
 `;
 

@@ -30,6 +30,8 @@ const EmptyStateOverlay = styled(EmptyState)`
     top: ${HEADER_FOOTER_HEIGHT}px;
     bottom: 0;
     height: auto;
+
+    line-height: 1.3;
 `;
 
 interface ViewEventListProps {

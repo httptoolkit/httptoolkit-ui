@@ -88,7 +88,6 @@ const ParamMetadata = styled((p: {
                 : ''
         }.
 </div>)`
-    line-height: 1.2;
     font-style: italic;
 `;
 

@@ -36,7 +36,7 @@ const HeaderName = styled.span`
 `;
 
 const HeaderDescriptionContainer = styled(ExchangeCollapsibleBody)`
-    line-height: 1.2;
+    line-height: 1.3;
 `;
 
 const HeaderDocsLink = styled(DocsLink)`

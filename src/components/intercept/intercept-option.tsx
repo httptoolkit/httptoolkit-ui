@@ -102,8 +102,14 @@ const InterceptOptionCard = styled(LittleCard)<{
         z-index: 1;
     }
 
+    > h1:not(:last-child) {
+        margin-bottom: 10px;
+    }
+
     > p {
         color: ${p => p.theme.mainColor};
+        line-height: 1.2;
+
         &:not(:first-of-type) {
             margin-top: 10px;
         }

@@ -58,7 +58,7 @@ export const ExternalContent = (p:  React.HTMLAttributes<HTMLDivElement> & {
 
 // Format blocks of readable text/docs/etc.
 export const Content = styled.div`
-    line-height: 1.2;
+    line-height: 1.3;
 
     p, li, ul, ol, table, h1, h2, h3, h4, h5, h6, pre {
         margin-bottom: 10px;
