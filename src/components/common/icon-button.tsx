@@ -11,6 +11,7 @@ export const IconButton = styled((p: {
     title: string,
     icon: IconProp,
     disabled?: boolean,
+    fixedWidth?: boolean,
     onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
 }) =>
     <UnstyledButton
@@ -21,7 +22,10 @@ export const IconButton = styled((p: {
         onClick={p.onClick}
         onKeyPress={clickOnEnter}
     >
-        <Icon icon={p.icon} />
+        <Icon
+            icon={p.icon}
+            fixedWidth={p.fixedWidth ? true : false}
+        />
     </UnstyledButton>
 )`
     color: ${p => p.theme.mainColor};

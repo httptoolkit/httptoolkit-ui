@@ -23,33 +23,69 @@ const CopyIconButton = styled(IconButton)`
     }
 `;
 
+const useTemporaryFlag = () => {
+    const [flagResetTimer, setFlagResetTimer] = React.useState<number | undefined>();
+    const [flagged, setFlagged] = React.useState<true | undefined>();
+
+    const triggerFlag = () => {
+        setFlagged(true);
+
+        if (flagResetTimer) {
+            clearTimeout(flagResetTimer);
+            setFlagResetTimer(undefined);
+        }
+
+        setFlagResetTimer(setTimeout(() =>
+            setFlagged(undefined),
+            2000
+        ) as unknown as number);
+    }
+
+    return [flagged, triggerFlag] as const;
+}
+
 export const CopyButtonIcon = (p: {
     className?: string,
     content: string,
-    onClick?: () => void
-}) => clipboardSupported
-    ? <CopyIconButton
+    onClick: () => void
+}) => {
+    if (!clipboardSupported) return null;
+
+    const [success, showSuccess] = useTemporaryFlag();
+
+    return <CopyIconButton
         title="Copy this to your clipboard"
         className={p.className}
-        icon={['far', 'copy']}
+        icon={success ? ['fas', 'check'] : ['far', 'copy']}
+        fixedWidth={true}
         onClick={() => {
             copyToClipboard(p.content);
-            if (p.onClick) p.onClick();
+            showSuccess();
+            p.onClick();
         }}
-    />
-    : null;
+    />;
+}
 
-export const CopyButtonPill = (p: { content: string, children?: React.ReactNode }) =>
-    clipboardSupported
-        ? <PillButton
-            tabIndex={0}
-            onKeyDown={clickOnEnter}
-            onClick={() => copyToClipboard(p.content)}
-        >
-            <Icon icon={['far', 'copy']} />
-            { p.children }
-        </PillButton>
-    : null;
+export const CopyButtonPill = (p: { content: string, children?: React.ReactNode }) => {
+    if (!clipboardSupported) return null;
+
+    const [success, showSuccess] = useTemporaryFlag();
+
+    return <PillButton
+        tabIndex={0}
+        onKeyDown={clickOnEnter}
+        onClick={() => {
+            copyToClipboard(p.content);
+            showSuccess();
+        }}
+    >
+        <Icon
+            icon={success ? ['fas', 'check'] : ['far', 'copy']}
+            fixedWidth={true}
+        />
+        { p.children }
+    </PillButton>;
+}
 
 async function copyToClipboard(content: string) {
     try {
