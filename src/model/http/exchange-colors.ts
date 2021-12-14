@@ -21,10 +21,19 @@ const isMutatativeExchange = (exchange: HttpExchange) => _.includes([
     'DELETE'
 ], exchange.request.method);
 
-const isImageExchange = (exchange: SuccessfulExchange) =>
-    getMessageBaseAcceptTypes(exchange.request).every(type => type.startsWith('image/')) ||
-    exchange.request.headers['sec-fetch-dest'] === 'image' ||
-    getMessageBaseContentType(exchange.response).startsWith('image/');
+const isImageExchange = (exchange: SuccessfulExchange) => {
+    const requestAcceptTypes = getMessageBaseAcceptTypes(exchange.request);
+    if (
+        requestAcceptTypes.length > 0 &&
+        requestAcceptTypes.every(type => type.startsWith('image/'))
+    ) {
+        return true;
+    }
+
+    else if (exchange.request.headers['sec-fetch-dest'] === 'image') return true;
+
+    else return getMessageBaseContentType(exchange.response).startsWith('image/');
+}
 
 const DATA_CONTENT_TYPES = [
     'application/json',
@@ -37,9 +46,17 @@ const DATA_CONTENT_TYPES = [
     'application/x-protobuf'
 ];
 
-const isDataExchange = (exchange: SuccessfulExchange) =>
-    getMessageBaseAcceptTypes(exchange.request).every(type => DATA_CONTENT_TYPES.includes(type)) ||
-    _.includes(DATA_CONTENT_TYPES, getMessageBaseContentType(exchange.response));
+const isDataExchange = (exchange: SuccessfulExchange) => {
+    const requestAcceptTypes = getMessageBaseAcceptTypes(exchange.request)
+    if (
+        requestAcceptTypes.length > 0 &&
+        requestAcceptTypes.every(type => DATA_CONTENT_TYPES.includes(type))
+    ) {
+        return true;
+    }
+
+    return _.includes(DATA_CONTENT_TYPES, getMessageBaseContentType(exchange.response));
+}
 
 const isJSExchange = (exchange: SuccessfulExchange) =>
     exchange.request.headers['sec-fetch-dest'] === 'script' ||
