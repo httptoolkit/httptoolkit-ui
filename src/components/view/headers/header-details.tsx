@@ -29,6 +29,7 @@ const HeaderKeyValue = styled(ExchangeCollapsibleSummary)`
     word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
     font-family: ${p => p.theme.monoFontFamily};
+    line-height: 1.1;
 `;
 
 const HeaderName = styled.span`
