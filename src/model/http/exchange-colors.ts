@@ -39,6 +39,7 @@ const DATA_CONTENT_TYPES = [
     'application/json',
     'application/xml',
     'application/rss',
+    'text/plain', // Not formally 'data', but usually used as such in practice
     'text/xml',
     'text/json',
     'multipart/form-data',
