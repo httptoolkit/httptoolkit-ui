@@ -224,7 +224,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 moveSelection={this.moveSelection}
                 onPin={this.onPin}
                 onDelete={this.onDelete}
-                onClear={this.onClear}
+                onClear={this.onForceClear}
                 onStartSearch={this.onStartSearch}
             />
             <SplitPane
@@ -337,16 +337,33 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onClear() {
+    onForceClear() {
+        this.onClear(false);
+    }
+
+    @action.bound
+    onClear(confirmRequired = true) {
         const { events } = this.props.eventsStore;
+        const someEventsPinned = _.some(events, { pinned: true });
         const allEventsPinned = events.length > 0 &&
-            _.every(events, (evt) => evt.pinned);
+            _.every(events, { pinned: true });
 
-        // Either clear unpinned only, or confirm first:
-        const clearPinned = allEventsPinned &&
-            confirm("Delete pinned exchanges?");
+        if (allEventsPinned) {
+            // We always confirm deletion of pinned exchanges:
+            const confirmResult = confirm("Delete pinned traffic?");
+            if (!confirmResult) return;
+        } else if (confirmRequired && events.length > 0) {
+            // We confirm deletion of non-pinned exchanges when triggered from the
+            // button, but not from keyboard shortcuts (which set confirmRequired=false).
+            const confirmResult = confirm(
+                someEventsPinned
+                    ? "Delete all non-pinned traffic?"
+                    : "Delete all collected traffic?"
+            );
+            if (!confirmResult) return;
+        }
 
-        this.props.eventsStore.clearInterceptedData(clearPinned);
+        this.props.eventsStore.clearInterceptedData(allEventsPinned);
     }
 
     @action.bound
