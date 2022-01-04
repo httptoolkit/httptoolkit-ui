@@ -1,5 +1,5 @@
 name: CI
-on: push
+on: [push, pull_request]
 env:
   UI_VERSION: ${{ github.sha }}
 jobs:
@@ -23,14 +23,14 @@ jobs:
       - run: npm run test:unit
 
       # Build & run normal integration tests:
-      - name: Build & test for draft release
+      - name: Build & test
         run: npm run test:integration
         if: github.ref != 'refs/heads/master'
 
       # Build with secrets & run integrations tests, on master only:
       - name: Build & test for production release
         run: npm run test:integration
-        if: github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
           GA_ID: ${{ secrets.GA_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -46,6 +46,7 @@ jobs:
 
   publish:
     name: Deploy ${{ (github.ref == 'refs/heads/master' && 'to production') || 'preview' }}
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: build
