@@ -2,10 +2,14 @@ import * as React from 'react';
 import { observer, inject, Observer } from 'mobx-react';
 
 import { styled } from '../../../styles';
+import { Icon } from '../../../icons';
+
+import { ProxyStore } from '../../../model/proxy-store';
+import { saveFile } from '../../../util/ui';
 
 import { StatusPill } from '../intercept-option';
+import { PillButton } from '../../common/pill';
 import { CopyableMonoValue } from '../../common/text-content';
-import { ProxyStore } from '../../../model/proxy-store';
 
 const InstructionsContainer = styled.div`
     display: flex;
@@ -23,7 +27,7 @@ const InstructionsStep = styled.div`
 
     > h2 {
         font-size: ${p => p.theme.headingSize};
-        margin-bottom: 21px;
+        margin-bottom: 10px;
     }
 
     > ol {
@@ -70,6 +74,21 @@ const ManualInterceptPill = inject('proxyStore')(observer(
         </StatusPill>
 ));
 
+const ExportCertificateButton = styled((p: { certContent: string, className?: string }) =>
+    <PillButton
+        className={p.className}
+        onClick={() => saveFile(
+            'http-toolkit-ca-certificate.crt',
+            'application/x-x509-ca-cert',
+            p.certContent
+        )}
+    >
+        <Icon icon={['fas', 'download']} /> Export CA certificate
+    </PillButton>
+)`
+    margin: 0 0 10px 0;
+`;
+
 const ManualInterceptConfig = inject('proxyStore')(
     (p: {
         proxyStore?: ProxyStore,
@@ -79,7 +98,7 @@ const ManualInterceptConfig = inject('proxyStore')(
         // Report activation when first opened
         React.useEffect(() => p.reportStarted(), []);
 
-        const { serverPort, certPath } = p.proxyStore!;
+        const { serverPort, certPath, certContent } = p.proxyStore!;
 
         return <Observer>{() =>
             <InstructionsContainer>
@@ -125,17 +144,22 @@ const ManualInterceptConfig = inject('proxyStore')(
 
                 <InstructionsStep>
                     <h2>2. Trust the certificate authority</h2>
+                    <p><em>Only required to intercept traffic that uses HTTPS</em></p>
                     <p>
-                        Optional: only required to intercept traffic that uses HTTPS, not plain HTTP.
+                        HTTP Toolkit has generated a certificate authority (CA) on your machine. All
+                        intercepted HTTPS uses certificates from this CA.
                     </p>
-                    <p>
-                        HTTP Toolkit has generated a certificate authority (CA) on your machine,
-                        and stored the certificate at <CopyableMonoValue>{ certPath }</CopyableMonoValue>.
-                        All intercepted HTTPS exchanges use certificates from this CA.
-                    </p>
+                    { certContent // Not defined in some older server versions
+                        ? <ExportCertificateButton certContent={certContent} />
+                        : <p>
+                            The certificate is stored on your machine at <CopyableMonoValue>{
+                                certPath
+                            }</CopyableMonoValue>.
+                        </p>
+                    }
                     <p>
                         To intercept HTTPS traffic you need to configure your HTTP client to
-                        trust this certificate as a certificate authority, or temporarily
+                        trust this certificate as a certificate authority, or to temporarily
                         disable certificate checks entirely.
                     </p>
                 </InstructionsStep>
