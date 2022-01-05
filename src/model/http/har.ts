@@ -113,6 +113,10 @@ export function generateHarRequest(
         return request.body.decodedPromise.then(() => generateHarRequest(request));
     }
 
+    const bodyText = !!request.body.decoded &&
+        request.body.decoded.byteLength <= HAR_BODY_SIZE_LIMIT &&
+        request.body.decoded.toString('utf8');
+
     return {
         method: request.method,
         url: request.parsedUrl.toString(),
@@ -125,9 +129,8 @@ export function generateHarRequest(
                 value: paramValue
             })
         ),
-
         postData: generateHarPostBody(
-            request.body.decoded!,
+            bodyText,
             lastHeader(request.headers['content-type']) ||
                 'application/octet-stream',
         ),
@@ -138,8 +141,7 @@ export function generateHarRequest(
 
 type TextBody = {
     mimeType: string,
-    encoding?: string,
-    text: string,
+    text: string
 };
 
 type ParamBody = {
@@ -147,44 +149,36 @@ type ParamBody = {
     params: HarFormat.Param[]
 }
 
-const harRequestDecoder = new TextDecoder('utf8', { fatal: true });
-function generateHarPostBody(body: Buffer | undefined, mimeType: string): TextBody | ParamBody | undefined {
-    
-    if(!body)
-        return
+function generateHarPostBody(body: string | false, mimeType: string): TextBody | ParamBody | undefined {
+    if (!body) return;
 
-    if (body.byteLength > HAR_BODY_SIZE_LIMIT)
-        return { text: "", mimeType, }; //Future Warning: Empty body on (body.length > max_size_limit), needs to raise an alert instead of continuing silently but, it gets the job done for now
+    if (mimeType === 'application/x-www-form-urlencoded') {
+        let parsedBody: querystring.ParsedUrlQuery | undefined;
 
-    try {
-        const decodedBody = harRequestDecoder.decode(body)
-
-        if (mimeType === 'application/x-www-form-urlencoded') {
-            let parsedBody: querystring.ParsedUrlQuery | undefined;
-
-            try {
-
-                parsedBody = querystring.parse(decodedBody);
-                if (parsedBody) // URL encoded data - expose this explicitly
-                    return {
-                        mimeType,
-                        params: generateHarParamsFromParsedQuery(parsedBody),
-                    };
-            } 
-            catch (e) {
-                console.log('Failed to parse url encoded body', decodedBody);
-            }
+        try {
+            parsedBody = querystring.parse(body);
+        } catch (e) {
+            console.log('Failed to parse url encoded body', body);
         }
+
+        if (parsedBody) {
+            // URL encoded data - expose this explicitly
+            return {
+                mimeType,
+                params: generateHarParamsFromParsedQuery(parsedBody)
+            };
+        } else {
+            // URL encoded but not parseable so just use the raw data
+            return {
+                mimeType,
+                text: body
+            };
+        }
+    } else {
+        // Not URL encoded, so just use the raw data
         return {
             mimeType,
-            text: decodedBody,
-        }
-    } 
-    catch (e) {
-        return {
-            mimeType,
-            encoding: 'base64',
-            text: body.toString('base64'),
+            text: body
         };
     }
 }
