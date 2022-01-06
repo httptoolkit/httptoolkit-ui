@@ -4,7 +4,6 @@ import { styled } from '../../styles';
 import { TrafficSource } from '../../model/http/sources';
 
 import { BigCard } from "../common/card";
-import { EmptyState } from '../common/empty-state';
 import { Icon } from '../../icons';
 
 const ConnectedSource = styled.div`
@@ -30,15 +29,7 @@ export const ConnectedSources = styled((props: { activeSources: TrafficSource[],
                         { source.summary }
                     </ConnectedSource>
                 )
-            :
-                <EmptyState
-                    key='empty'
-                    icon={['fac', 'spinner-arc']}
-                    spin='slow'
-                />
+            : null
         }
-    </BigCard>)`
-        > ${EmptyState} {
-            height: auto;
-        }
-    `;
+    </BigCard>
+)``; // Styled here so that we can target this with selectors in SC styles elsewhere
