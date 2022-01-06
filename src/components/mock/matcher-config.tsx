@@ -6,20 +6,16 @@ import * as Randexp from 'randexp';
 
 import { matchers } from "mockttp";
 
+import { Headers } from '../../types';
 import { css, styled } from '../../styles';
 import { tryParseJson } from '../../util';
 
 import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
 
 import { TextInput } from '../common/inputs';
-import {
-    EditableHeaders,
-    HeadersArray,
-    headersArrayToHeaders,
-    headersToHeadersArray
-} from '../common/editable-headers';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
+import { EditableHeaders } from '../common/editable-headers';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -390,25 +386,10 @@ const pairsArrayToQueryObject = (queryPairs: PairsArray): QueryObject =>
 @observer
 class QueryMatcherConfig extends MatcherConfig<matchers.QueryMatcher> {
 
-    @observable
-    private queryParams: PairsArray = [];
-
-    componentDidMount() {
-        disposeOnUnmount(this, reaction(
-            () => this.props.matcher ? this.props.matcher.queryObject : {},
-            (queryObject) => {
-                if (!_.isEqual(queryObject, pairsArrayToQueryObject(this.queryParams))) {
-                    // Only update if the new value isn't equivalent. This avoids spurious
-                    // updates that order values during editing for duplicate keys.
-                    this.queryParams = queryObjectToPairsArray(queryObject);
-                }
-            },
-            { fireImmediately: true }
-        ));
-    }
-
     render() {
-        const { matcherIndex } = this.props;
+        const { matcherIndex, matcher } = this.props;
+
+        const queryParams = queryObjectToPairsArray(matcher?.queryObject || {});
 
         return <MatcherConfigContainer>
             { matcherIndex !== undefined &&
@@ -417,7 +398,8 @@ class QueryMatcherConfig extends MatcherConfig<matchers.QueryMatcher> {
                 </ConfigLabel>
             }
             <EditablePairs
-                pairs={this.queryParams}
+                pairs={queryParams}
+                convertResult={pairsArrayToQueryObject}
                 onChange={this.onChange}
                 keyPlaceholder='Query parameter name'
                 valuePlaceholder='Query parameter value'
@@ -427,20 +409,16 @@ class QueryMatcherConfig extends MatcherConfig<matchers.QueryMatcher> {
     }
 
     @action.bound
-    onChange(queryPairs: PairsArray) {
-        this.queryParams = queryPairs;
-
+    onChange(queryParams: QueryObject) {
         try {
-            if (_.some(this.queryParams, ({ key }) => !key)) {
+            if (Object.keys(queryParams).some(key => !key)) {
                 throw new Error("Invalid query parameter; query parameter names can't be empty");
             }
 
-            if (this.queryParams.length === 0) {
+            if (Object.keys(queryParams).length === 0) {
                 this.props.onChange();
             } else {
-                this.props.onChange(new matchers.QueryMatcher(
-                    pairsArrayToQueryObject(this.queryParams)
-                ));
+                this.props.onChange(new matchers.QueryMatcher(queryParams));
             }
         } catch (e) {
             console.log(e);
@@ -507,11 +485,11 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
     }
 }
 
-const headersArrayToFlatHeaders = (headers: HeadersArray) =>
+type FlatHeaders = { [key: string]: string };
+
+const headersToFlatHeaders = (headers: Headers): FlatHeaders =>
     _.mapValues(
-        headersArrayToHeaders(
-            headers.filter(({ key, value }) => key && value)
-        ),
+        _.pickBy(headers, (key, value) => key && value),
         (value) =>
             _.isArray(value)
                 ? value.join(', ')
@@ -523,14 +501,14 @@ const headersArrayToFlatHeaders = (headers: HeadersArray) =>
 class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
 
     @observable
-    private headers: HeadersArray = [];
+    private headers: Headers = {};
 
     componentDidMount() {
         disposeOnUnmount(this, reaction(
             () => this.props.matcher ? this.props.matcher.headers : {},
             (headers) => {
-                if (!_.isEqual(headers, headersArrayToFlatHeaders(this.headers))) {
-                    this.headers = headersToHeadersArray(headers);
+                if (!_.isEqual(headers, headersToFlatHeaders(this.headers))) {
+                    this.headers = headers;
                 }
             },
             { fireImmediately: true }
@@ -554,22 +532,25 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
     }
 
     @action.bound
-    onChange(headers: HeadersArray) {
+    onChange(headers: Headers) {
         this.headers = headers;
 
         try {
-            if (_.some(headers, ({ value }) => !value)) {
+            if (Object.values(headers).some(value => !value)) {
                 throw new Error("Invalid headers; header values can't be empty");
             }
-            if (_.some(headers, ({ key }) => !key)) {
+            if (Object.keys(headers).some(key => !key)) {
                 throw new Error("Invalid headers; header names can't be empty");
             }
 
-            if (headers.length === 0) {
+            if (Object.keys(headers).length === 0) {
                 this.props.onChange();
             } else {
                 this.props.onChange(new matchers.HeaderMatcher(
-                    headersArrayToFlatHeaders(this.headers)
+                    // We convert here rather than using convertResult on EditableHeaders to ensure we
+                    // preserve & nicely handle invalid input (like missing header values) that would
+                    // is lost during flatHeader conversion.
+                    headersToFlatHeaders(this.headers)
                 ));
             }
         } catch (e) {

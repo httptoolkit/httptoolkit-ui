@@ -3,7 +3,7 @@ import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { Omit, BreakpointRequestResult, HttpExchange } from '../../types';
+import { Omit, BreakpointRequestResult, HttpExchange, Headers } from '../../types';
 import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
@@ -17,12 +17,7 @@ import {
 } from './exchange-card';
 import { Pill } from '../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../common/text-content';
-import {
-    headersToHeadersArray,
-    headersArrayToHeaders,
-    HeadersArray,
-    EditableHeaders
-} from '../common/editable-headers';
+import { EditableHeaders } from '../common/editable-headers';
 import { TextInput, Select } from '../common/inputs';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
@@ -67,7 +62,7 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
         const { request } = exchange;
 
         const { inProgressResult } = this.props.exchange.requestBreakpoint!;
-        const headers = headersToHeadersArray(inProgressResult.headers!);
+        const headers = inProgressResult.headers || {};
         const { method, url } = inProgressResult;
 
         return <ExchangeCard {...cardProps} direction='right'>
@@ -160,8 +155,8 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
     }
 
     @action.bound
-    onHeadersChanged(headers: HeadersArray) {
-        this.props.onChange({ headers: headersArrayToHeaders(headers) });
+    onHeadersChanged(headers: Headers) {
+        this.props.onChange({ headers });
     }
 
 }

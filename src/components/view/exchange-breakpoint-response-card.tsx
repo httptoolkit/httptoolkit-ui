@@ -2,7 +2,7 @@ import * as React from 'react';
 import { action } from 'mobx';
 import { observer } from 'mobx-react';
 
-import { Omit, BreakpointResponseResult, HttpExchange } from '../../types';
+import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../types';
 import { styled, Theme } from '../../styles';
 
 import { getStatusColor } from '../../model/http/exchange-colors';
@@ -14,12 +14,7 @@ import {
 } from './exchange-card';
 import { Pill } from '../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../common/text-content';
-import {
-    headersToHeadersArray,
-    headersArrayToHeaders,
-    HeadersArray,
-    EditableHeaders
-} from '../common/editable-headers';
+import { EditableHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
 
 interface ResponseBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
@@ -47,7 +42,7 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
         const { exchange, onChange, theme, ...cardProps } = this.props;
 
         const { inProgressResult } = exchange.responseBreakpoint!;
-        const headers = headersToHeadersArray(inProgressResult.headers!);
+        const headers = inProgressResult.headers || {};
         const { statusCode, statusMessage } = inProgressResult;
 
         return <ExchangeCard {...cardProps} direction='left'>
@@ -77,8 +72,8 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
     }
 
     @action.bound
-    onHeadersChanged(headers: HeadersArray) {
-        this.props.onChange({ headers: headersArrayToHeaders(headers) });
+    onHeadersChanged(headers: Headers) {
+        this.props.onChange({ headers });
     }
 
     @action.bound
