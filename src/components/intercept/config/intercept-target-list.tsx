@@ -7,6 +7,19 @@ import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 import { Button } from '../../common/inputs';
 
+const SpinnerBlock = styled.div`
+    text-align: center;
+`;
+
+const Spinner = styled(Icon).attrs(() => ({
+    icon: ['fas', 'spinner'],
+    spin: true,
+    size: '2x'
+}))`
+    display: block;
+    margin: 0 auto 10px;
+`;
+
 const ListScrollContainer = styled.div`
     max-height: 279px;
     overflow-y: auto;
@@ -75,13 +88,21 @@ type TargetItem<Id> = {
 
 @observer
 export class InterceptionTargetList<Id extends string | number> extends React.Component<{
-    targets: TargetItem<Id>[]
+    targetName: string,
+    targets: TargetItem<Id>[],
     interceptTarget: (id: Id) => void,
     ellipseDirection: 'left' | 'right'
 }> {
 
     render() {
-        const { targets, interceptTarget, ellipseDirection } = this.props;
+        const { targetName, targets, interceptTarget, ellipseDirection } = this.props;
+
+        if (targets.length === 0) {
+            return <SpinnerBlock>
+                <Spinner />
+                Looking for running { targetName } to intercept...
+            </SpinnerBlock>
+        }
 
         return <ListScrollContainer>
             <TargetList>

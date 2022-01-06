@@ -8,7 +8,6 @@ import { styled } from '../../../styles';
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
 
-import { Icon } from '../../../icons';
 import { getDetailedInterceptorMetadata } from '../../../services/server-api';
 import { InterceptionTargetList } from './intercept-target-list';
 
@@ -60,56 +59,54 @@ class JvmConfig extends React.Component<{
                 Pick which JVM process you'd like to intercept:
             </p>
 
-            { interestingTargets.length === 0
-                ? <Spinner />
-                : <InterceptionTargetList<string>
-                    interceptTarget={this.interceptTarget}
-                    ellipseDirection='left'
-                    targets={interestingTargets.map((target) => {
-                        const activating = this.inProgressPids.includes(target.pid);
-                        const alreadyIntercepted = target.interceptedByProxy !== undefined;
-                        const interceptedByUs = target.interceptedByProxy === proxyPort;
+            <InterceptionTargetList<string>
+                targetName='JVM processes'
+                interceptTarget={this.interceptTarget}
+                ellipseDirection='left'
+                targets={interestingTargets.map((target) => {
+                    const activating = this.inProgressPids.includes(target.pid);
+                    const alreadyIntercepted = target.interceptedByProxy !== undefined;
+                    const interceptedByUs = target.interceptedByProxy === proxyPort;
 
-                        const targetName = target.name.split(' ')[0];
+                    const targetName = target.name.split(' ')[0];
 
-                        const isClassName = !targetName.includes('/') &&
-                            !targetName.includes('\\');
+                    const isClassName = !targetName.includes('/') &&
+                        !targetName.includes('\\');
 
-                        let contextName: string;
-                        let mainName: string;
+                    let contextName: string;
+                    let mainName: string;
 
-                        if (isClassName) {
-                            const [className, ...packageParts] = targetName.split('.').reverse();
-                            const packageName = packageParts.reverse().join('.');
+                    if (isClassName) {
+                        const [className, ...packageParts] = targetName.split('.').reverse();
+                        const packageName = packageParts.reverse().join('.');
 
-                            contextName = packageName ? packageName + '.' : '';
-                            mainName = className;
-                        } else {
-                            const [filePath, ...dirParts] = targetName.split(/\/|\\/).reverse();
-                            const dirPath = dirParts.reverse().join('/');
-                            contextName = dirPath ? dirPath + '/' : '';
-                            mainName = filePath;
-                        }
+                        contextName = packageName ? packageName + '.' : '';
+                        mainName = className;
+                    } else {
+                        const [filePath, ...dirParts] = targetName.split(/\/|\\/).reverse();
+                        const dirPath = dirParts.reverse().join('/');
+                        contextName = dirPath ? dirPath + '/' : '';
+                        mainName = filePath;
+                    }
 
-                        return {
-                            id: target.pid,
-                            title: target.name,
-                            status:
-                                activating
-                                    ? 'activating'
-                                : interceptedByUs
-                                    ? 'active'
-                                : alreadyIntercepted
-                                    ? 'unavailable'
-                                : 'available',
-                            content: <>
-                                <PackageName>{ contextName }</PackageName>
-                                <ClassName>{ mainName }</ClassName>
-                            </>,
-                        };
-                    })}
-                />
-            }
+                    return {
+                        id: target.pid,
+                        title: target.name,
+                        status:
+                            activating
+                                ? 'activating'
+                            : interceptedByUs
+                                ? 'active'
+                            : alreadyIntercepted
+                                ? 'unavailable'
+                            : 'available',
+                        content: <>
+                            <PackageName>{ contextName }</PackageName>
+                            <ClassName>{ mainName }</ClassName>
+                        </>,
+                    };
+                })}
+            />
 
             <Footer>
                 You can also launch JVM processes from an intercepted
@@ -187,14 +184,6 @@ const ConfigContainer = styled.div`
 const Footer = styled.p`
     font-size: 85%;
     font-style: italic;
-`;
-
-const Spinner = styled(Icon).attrs(() => ({
-    icon: ['fas', 'spinner'],
-    spin: true,
-    size: '2x'
-}))`
-    margin: 0 auto;
 `;
 
 const PackageName = styled.span`

@@ -8,7 +8,6 @@ import { styled } from '../../../styles';
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
 
-import { Icon } from '../../../icons';
 import { getDetailedInterceptorMetadata } from '../../../services/server-api';
 
 import { InterceptionTargetList } from './intercept-target-list';
@@ -102,40 +101,38 @@ class DockerAttachConfig extends React.Component<{
                 Pick a container to restart it with all traffic intercepted:
             </p>
 
-            { targets.length === 0
-                ? <Spinner />
-                : <InterceptionTargetList<string>
-                    interceptTarget={this.interceptTarget}
-                    ellipseDirection='right'
-                    targets={targets.map((target) => {
-                        const activating = this.inProgressIds.includes(target.id);
-                        const interceptedByUs = target.labels[CONTAINER_PROXY_LABEL] === proxyPort.toString();
+            <InterceptionTargetList<string>
+                targetName='Docker containers'
+                interceptTarget={this.interceptTarget}
+                ellipseDirection='right'
+                targets={targets.map((target) => {
+                    const activating = this.inProgressIds.includes(target.id);
+                    const interceptedByUs = target.labels[CONTAINER_PROXY_LABEL] === proxyPort.toString();
 
-                        // Container names are more or less alphanumeric, but internally have a normally
-                        // hidden slash: https://github.com/moby/moby/issues/6705. We hide that too.
-                        const containerName = target.names[0]?.replace(/^\//, '') || target.id.slice(0, 8);
+                    // Container names are more or less alphanumeric, but internally have a normally
+                    // hidden slash: https://github.com/moby/moby/issues/6705. We hide that too.
+                    const containerName = target.names[0]?.replace(/^\//, '') || target.id.slice(0, 8);
 
-                        const containerDescription = target.id.startsWith(containerName)
-                            ? `'${containerName}'`
-                            : `'${containerName}' (${target.id.slice(0, 8)})`
+                    const containerDescription = target.id.startsWith(containerName)
+                        ? `'${containerName}'`
+                        : `'${containerName}' (${target.id.slice(0, 8)})`
 
-                        return {
-                            id: target.id,
-                            title: `Container ${containerDescription}, from image '${target.image}'`,
-                            status:
-                                activating
-                                    ? 'activating'
-                                : interceptedByUs
-                                    ? 'active'
-                                : 'available', // <-- We allow intercepting containers already intercepted elsewhere
-                            content: <>
-                                <ContainerName>{ containerName }</ContainerName>
-                                <ImageName>{ target.image }</ImageName>
-                            </>,
-                        };
-                    })}
-                />
-            }
+                    return {
+                        id: target.id,
+                        title: `Container ${containerDescription}, from image '${target.image}'`,
+                        status:
+                            activating
+                                ? 'activating'
+                            : interceptedByUs
+                                ? 'active'
+                            : 'available', // <-- We allow intercepting containers already intercepted elsewhere
+                        content: <>
+                            <ContainerName>{ containerName }</ContainerName>
+                            <ImageName>{ target.image }</ImageName>
+                        </>,
+                    };
+                })}
+            />
 
             <Footer>
                 You can also create Docker containers from an intercepted
@@ -179,14 +176,6 @@ class DockerAttachConfig extends React.Component<{
     }
 
 }
-
-const Spinner = styled(Icon).attrs(() => ({
-    icon: ['fas', 'spinner'],
-    spin: true,
-    size: '2x'
-}))`
-    margin: 0 auto;
-`;
 
 const ContainerName = styled.div`
     font-weight: bold;
