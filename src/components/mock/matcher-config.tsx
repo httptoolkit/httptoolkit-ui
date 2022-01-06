@@ -380,7 +380,10 @@ const queryObjectToPairsArray = (query: QueryObject): PairsArray =>
 const pairsArrayToQueryObject = (queryPairs: PairsArray): QueryObject =>
     _.mapValues(
         _.groupBy(queryPairs, ({ key }) => key),
-        (pairs) => pairs.map(p => p.value)
+        (pairs) =>
+            pairs.length === 1
+            ? pairs[0].value // Work around a Mockttp bug: 1-element arrays don't match single values
+            : pairs.map(p => p.value)
     );
 
 @observer
