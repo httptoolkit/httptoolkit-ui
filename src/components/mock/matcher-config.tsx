@@ -428,13 +428,13 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
 const headersArrayToFlatHeaders = (headers: HeadersArray) =>
     _.mapValues(
         headersArrayToHeaders(
-            headers.filter(([k, v]) => k && v)
+            headers.filter(({ key, value }) => key && value)
         ),
         (value) =>
             _.isArray(value)
                 ? value.join(', ')
                 : value! // We know this is set because of filter above
-    )
+    );
 
 
 @observer
@@ -476,10 +476,10 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
         this.headers = headers;
 
         try {
-            if (_.some(headers, ([_name, value]) => !value)) {
+            if (_.some(headers, ({ value }) => !value)) {
                 throw new Error("Invalid headers; header values can't be empty");
             }
-            if (_.some(headers, ([name]) => !name)) {
+            if (_.some(headers, ({ key }) => !key)) {
                 throw new Error("Invalid headers; header names can't be empty");
             }
 

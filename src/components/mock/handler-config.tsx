@@ -151,15 +151,8 @@ const BodyContainer = styled.div`
     }
 `;
 
-function getHeader(headers: Array<[string, string]>, headerName: string): [string, string] | undefined {
-    return _.find(headers, ([key]) => key.toLowerCase() === headerName);
-}
-
-function getContentTypeFromHeader(contentTypeHeader: string | undefined | [string, string]): EditableContentType | undefined {
-    const contentTypeValue = _.isArray(contentTypeHeader)
-        ? contentTypeHeader[1]
-        : contentTypeHeader;
-    return getEditableContentType(contentTypeValue);
+function getHeader(headers: HeadersArray, headerName: string): { key: string, value: string} | undefined {
+    return _.find(headers, ({ key }) => key.toLowerCase() === headerName);
 }
 
 @observer
@@ -200,7 +193,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
         // If you enter a relevant content-type header, consider updating the editor content type:
         disposeOnUnmount(this, autorun(() => {
-            const detectedContentType = getContentTypeFromHeader(getHeader(this.headers, 'content-type'));
+            const detectedContentType = getEditableContentType(getHeader(this.headers, 'content-type')?.value);
             if (detectedContentType) runInAction(() => {
                 this.contentType = detectedContentType;
             });
@@ -217,15 +210,18 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             if (!contentTypeHeader) {
                 // If you pick a body content type with no header set, we add one
                 runInAction(() => {
-                    this.headers.push(['Content-Type', getDefaultMimeType(newContentType)]);
+                    this.headers.push({
+                        key: 'Content-Type',
+                        value: getDefaultMimeType(newContentType)
+                    });
                 });
             } else {
-                const headerContentType = getContentTypeFromHeader(contentTypeHeader);
+                const headerContentType = getEditableContentType(contentTypeHeader.value);
 
                 // If the body type changes, and the old header matched the old type, update the header
                 if (previousContentType === headerContentType) {
                     runInAction(() => {
-                        contentTypeHeader[1] = getDefaultMimeType(newContentType);
+                        contentTypeHeader.value = getDefaultMimeType(newContentType);
                     });
                 }
                 // If there is a header, but it didn't match the body, leave it as-is
@@ -237,16 +233,15 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             oldValue: previousBody,
             newValue: newBody
         }) => {
-            const lengthHeader = _.find(this.headers, (header) =>
-                header[0].toLowerCase() === 'content-length'
-            );
+            const lengthHeader = getHeader(this.headers, 'content-length');
+
             if (!lengthHeader) return;
-            const contentLength = lengthHeader[1];
+            const contentLength = lengthHeader.value;
 
             if (parseInt(contentLength || '', 10) === byteLength(previousBody)) {
                 runInAction(() => {
                     // If the content-length was previously correct, keep it correct:
-                    lengthHeader[1] = byteLength(newBody).toString();
+                    lengthHeader.value = byteLength(newBody).toString();
                 });
             }
         }));
@@ -334,7 +329,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             !this.statusCode ||
             this.statusCode < 100 ||
             this.statusCode >= 1000 ||
-            _.some(this.headers, ([key]) => !key.match(HEADER_NAME_REGEX))
+            _.some(this.headers, ({ key }) => !key.match(HEADER_NAME_REGEX))
         ) return this.props.onInvalidState();
 
         this.props.onChange(
@@ -380,7 +375,7 @@ class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<F
     @observable
     statusMessage = this.props.handler.statusMessage;
 
-    // Headers, as an array of [k, v], with multiple values flattened.
+    // Headers, as an array of { key, value }, with multiple values flattened.
     @observable
     headers = headersToHeadersArray(this.props.handler.headers || {});
 
@@ -474,7 +469,7 @@ class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<F
             !this.statusCode ||
             this.statusCode < 100 ||
             this.statusCode >= 1000 ||
-            _.some(this.headers, ([key]) => !key.match(HEADER_NAME_REGEX))
+            _.some(this.headers, ({ key }) => !key.match(HEADER_NAME_REGEX))
         ) return this.props.onInvalidState();
 
         this.props.onChange(
