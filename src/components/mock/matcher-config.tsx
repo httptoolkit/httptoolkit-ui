@@ -19,6 +19,7 @@ import {
     headersToHeadersArray
 } from '../common/editable-headers';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { EditablePairs, PairsArray } from '../common/editable-pairs';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -57,6 +58,8 @@ export function MatcherConfiguration(props:
             return <SimplePathMatcherConfig {...configProps} />;
         case matchers.RegexPathMatcher:
             return <RegexPathMatcherConfig {...configProps} />;
+        case matchers.QueryMatcher:
+            return <QueryMatcherConfig {...configProps} />;
         case matchers.ExactQueryMatcher:
             return <ExactQueryMatcherConfig {...configProps} />;
         case matchers.HeaderMatcher:
@@ -364,6 +367,85 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
             event.target.setCustomValidity(e.message);
         }
         event.target.reportValidity();
+    }
+}
+
+type QueryObject = { [key: string]: string | string[] };
+
+const queryObjectToPairsArray = (query: QueryObject): PairsArray =>
+    _.flatMap(Object.entries(query), ([key, value]) => {
+        if (_.isArray(value)) {
+            return value.map((v) => ({ key, value: v }));
+        } else {
+            return { key, value };
+        }
+    });
+
+const pairsArrayToQueryObject = (queryPairs: PairsArray): QueryObject =>
+    _.mapValues(
+        _.groupBy(queryPairs, ({ key }) => key),
+        (pairs) => pairs.map(p => p.value)
+    );
+
+@observer
+class QueryMatcherConfig extends MatcherConfig<matchers.QueryMatcher> {
+
+    @observable
+    private queryParams: PairsArray = [];
+
+    componentDidMount() {
+        disposeOnUnmount(this, reaction(
+            () => this.props.matcher ? this.props.matcher.queryObject : {},
+            (queryObject) => {
+                if (!_.isEqual(queryObject, pairsArrayToQueryObject(this.queryParams))) {
+                    // Only update if the new value isn't equivalent. This avoids spurious
+                    // updates that order values during editing for duplicate keys.
+                    this.queryParams = queryObjectToPairsArray(queryObject);
+                }
+            },
+            { fireImmediately: true }
+        ));
+    }
+
+    render() {
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } with query parameters including
+                </ConfigLabel>
+            }
+            <EditablePairs
+                pairs={this.queryParams}
+                onChange={this.onChange}
+                keyPlaceholder='Query parameter name'
+                valuePlaceholder='Query parameter value'
+                allowEmptyValues={true}
+            />
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(queryPairs: PairsArray) {
+        this.queryParams = queryPairs;
+
+        try {
+            if (_.some(this.queryParams, ({ key }) => !key)) {
+                throw new Error("Invalid query parameter; query parameter names can't be empty");
+            }
+
+            if (this.queryParams.length === 0) {
+                this.props.onChange();
+            } else {
+                this.props.onChange(new matchers.QueryMatcher(
+                    pairsArrayToQueryObject(this.queryParams)
+                ));
+            }
+        } catch (e) {
+            console.log(e);
+            this.props.onInvalidState();
+        }
     }
 }
 

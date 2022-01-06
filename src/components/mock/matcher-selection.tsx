@@ -221,6 +221,7 @@ export class NewMatcherRow extends React.Component<{
             ] : []),
             matchers.SimplePathMatcher,
             matchers.RegexPathMatcher,
+            matchers.QueryMatcher,
             matchers.ExactQueryMatcher,
             matchers.HeaderMatcher,
             ...(versionSatisfies(serverVersion, BODY_MATCHING_RANGE) ? [

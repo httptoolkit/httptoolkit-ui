@@ -3,6 +3,7 @@ import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 import { Method, matchers, handlers, completionCheckers } from 'mockttp';
 import * as serializr from 'serializr';
+import * as querystring from 'querystring';
 
 import {
     HttpExchange,
@@ -319,9 +320,16 @@ function buildRequestMatchers(request: HtkRequest) {
         ? [new matchers.RawBodyMatcher(request.body.decoded!.toString())]
     : [];
 
+    const urlParts = request.parsedUrl.toString().split('?');
+    const path = urlParts[0];
+    const query = urlParts.slice(1).join('?');
+
     return [
         new (MethodMatchers[request.method as MethodName] || WildcardMatcher)(),
-        new matchers.SimplePathMatcher(request.parsedUrl.toString().split('?')[0]),
+        new matchers.SimplePathMatcher(path),
+        new matchers.QueryMatcher(
+            querystring.parse(query) as ({ [key: string]: string | string[] })
+        ),
         ...bodyMatcher
     ];
 }

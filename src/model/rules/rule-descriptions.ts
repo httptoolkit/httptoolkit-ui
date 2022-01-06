@@ -38,7 +38,7 @@ export function summarizeMatcherClass(matcher: MatcherClass): string | undefined
         case matchers.RegexPathMatcher:
             return "For URLs matching";
         case matchers.QueryMatcher:
-            return "With query parameters matching";
+            return "With query parameters including";
         case matchers.ExactQueryMatcher:
             return "With exact query string";
         case matchers.HeaderMatcher:
