@@ -451,10 +451,26 @@ function cleanRawHarData(harContents: any) {
         }
 
         if (entry.response?.content) {
-            // Similarly, when there's no response some fields can be missing. Note that
+            // Similarly, when there's no actual response some fields can be missing. Note that
             // 'content' is response only, but we don't use these fields anyway:
             entry.response.content.size ??= -1;
             entry.response.content.mimeType ??= 'application/octet-stream';
+        }
+
+        if (entry.response && entry.response.bodySize === null) {
+            // Firefox sometimes sets bodySize to null, even when there is clearly a body being received.
+            // Fall back to content-length if available, or use -1 if not.
+            // We do want to use this where it's available so this is a bit annoying, but c'est la vie:
+            // it's not super important data (just used to compare compression perf) and there's no much
+            // we can do when the imported file contains invalid data like this.
+            const contentLengthHeader = _.find(entry.response.headers || [],
+                ({ name }) => name.toLowerCase() === 'content-length'
+            );
+            if (contentLengthHeader) {
+                entry.response.bodySize = parseInt(contentLengthHeader.value, 10);
+            } else {
+                entry.response.bodySize = -1;
+            }
         }
     });
 
@@ -524,7 +540,9 @@ function parseHarResponse(
                 response.content.text || '',
                 response.content.encoding as BufferEncoding || 'utf8'
             ),
-            encodedLength: response.bodySize
+            encodedLength: (!response.bodySize || response.bodySize === -1)
+                ? 0 // If bodySize is missing or inaccessible, just zero it
+                : response.bodySize
         }
     }
 }
