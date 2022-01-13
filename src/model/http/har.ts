@@ -37,12 +37,11 @@ interface HarLog extends HarFormat.Log {
 export type RequestContentData = {
     text: string;
     size: number;
-    encoding: string;
+    encoding?: 'base64';
     comment?: string;
 };
 
 interface ExtendedHarRequest extends HarFormat.Request {
-
     _postDataDiscarded?: boolean;
     _content?: RequestContentData;
 }
@@ -111,10 +110,18 @@ function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
     return entries;
 }
 
-export function generateHarRequest(request: HtkRequest, waitForDecoding?: false): ExtendedHarRequest;
-export function generateHarRequest(request: HtkRequest, waitForDecoding: true): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest>;
-export function generateHarRequest(request: HtkRequest, waitForDecoding = false): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest> 
-{
+export function generateHarRequest(
+    request: HtkRequest,
+    waitForDecoding?: false
+): ExtendedHarRequest;
+export function generateHarRequest(
+    request: HtkRequest,
+    waitForDecoding: true
+): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest>;
+export function generateHarRequest(
+    request: HtkRequest,
+    waitForDecoding = false
+): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest> {
     if (waitForDecoding && (
         !request.body.decodedPromise.state ||
         request.body.decodedPromise.state === 'pending'
@@ -122,7 +129,7 @@ export function generateHarRequest(request: HtkRequest, waitForDecoding = false)
         return request.body.decodedPromise.then(() => generateHarRequest(request));
     }
 
-    let requestEntry: ExtendedHarRequest = {
+    const requestEntry: ExtendedHarRequest = {
         method: request.method,
         url: request.parsedUrl.toString(),
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
@@ -138,32 +145,30 @@ export function generateHarRequest(request: HtkRequest, waitForDecoding = false)
         bodySize: request.body.encoded.byteLength
     };
 
-    if(request.body.decoded){
-        
-        if (request.body.decoded.byteLength > HAR_BODY_SIZE_LIMIT){
+    if (request.body.decoded) {
+        if (request.body.decoded.byteLength > HAR_BODY_SIZE_LIMIT) {
             requestEntry._postDataDiscarded = true;
-            requestEntry.comment = 'Assertion failure: body.decoded.byteLength > HAR_BODY_SIZE_LIMIT'; // Room for debate whether something of more use can be assigned to 'comment' field
-        } 
-        else {
-            try{
-                requestEntry.postData = generateHarPostBody(UTF8Decoder.decode(request.body.decoded), 
-                                                        lastHeader(request.headers['content-type']) || 
-                                                        'application/octet-stream');
-            }
-            catch(e){
-                if (e instanceof TypeError){
+            requestEntry.comment = `Body discarded during HAR generation: longer than limit of ${HAR_BODY_SIZE_LIMIT} bytes`;
+        } else {
+            try {
+                requestEntry.postData = generateHarPostBody(
+                    UTF8Decoder.decode(request.body.decoded),
+                    lastHeader(request.headers['content-type']) || 'application/octet-stream'
+                );
+            } catch (e) {
+                if (e instanceof TypeError) {
                     requestEntry._content = {
                         text: request.body.decoded.toString('base64'),
                         size: request.body.decoded.byteLength,
                         encoding: 'base64',
                     }
-                } 
-                else {
-                    throw e; // Rethrow this, avoid sleepless nights of debugging in the future if things break
+                } else {
+                    throw e;
                 }
             }
         }
     }
+
     return requestEntry;
 }
 
@@ -493,8 +498,11 @@ function cleanRawHarData(harContents: any) {
     return harContents;
 }
 
-function parseHarRequest(id: string, request: ExtendedHarRequest, timingEvents: TimingEvents): HarRequest 
-{
+function parseHarRequest(
+    id: string,
+    request: ExtendedHarRequest,
+    timingEvents: TimingEvents
+): HarRequest {
     const parsedUrl = new URL(request.url);
 
     return {
@@ -511,30 +519,37 @@ function parseHarRequest(id: string, request: ExtendedHarRequest, timingEvents: 
         // legal for an HTTP request):
         headers: asHtkHeaders(request.headers) as Headers & { host: string },
         body: {
-            decoded: request._content ? parseHarRequestContents(request._content) : parseHarPostData(request.postData),
+            decoded: request._content
+                ? parseHarRequestContents(request._content)
+                : parseHarPostData(request.postData),
             encodedLength: request.bodySize
         }
     }
 }
-function parseHarRequestContents(data: RequestContentData): Buffer{
 
-    if(data.encoding && Buffer.isEncoding(data.encoding))
+function parseHarRequestContents(data: RequestContentData): Buffer {
+    if (data.encoding && Buffer.isEncoding(data.encoding)) {
         return Buffer.from(data.text, data.encoding);
-    throw TypeError("Invalid encoding") // Might be extended to provide something more useful
+    }
+
+    throw TypeError("Invalid encoding");
 }
 
 function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
-    if (!data) return Buffer.from('');
-    
-    if (data.params) return Buffer.from(
-        // Go from array of key-value objects to object of key -> value array:
-        querystring.stringify(_(data.params)
-            .groupBy(({ name }) => name)
-            .mapValues((params) => params.map(p => p.value || ''))
-            .valueOf()
-        )
-    );
-    else return Buffer.from(data.text, 'utf8');
+    if (!data) {
+        return Buffer.from('');
+    } else if (data.params) {
+        return Buffer.from(
+            // Go from array of key-value objects to object of key -> value array:
+            querystring.stringify(_(data.params)
+                .groupBy(({ name }) => name)
+                .mapValues((params) => params.map(p => p.value || ''))
+                .valueOf()
+            )
+        );
+    } else {
+        return Buffer.from(data.text, 'utf8');
+    }
 }
 
 function parseHarResponse(

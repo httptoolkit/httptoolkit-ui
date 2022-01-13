@@ -26,10 +26,10 @@ import type { ViewableContentType } from './model/http/content-types';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &
-    { body: HarBody; timingEvents: TimingEvents, matchedRuleId?: string };
+    { body: HarBody; timingEvents: TimingEvents, matchedRuleId: "?" };
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
-    
+
 export type InputClientError = ClientError;
 export type InputTlsRequest = TlsRequest;
 export type InputInitiatedRequest = MockttpInitiatedRequest;
