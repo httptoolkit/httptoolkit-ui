@@ -14,6 +14,7 @@ import { clickOnEnter } from '../component-utils';
 import { LittleCard } from '../common/card';
 import { Pill } from '../common/pill';
 import { CloseButton } from '../common/close-button';
+import { DocsLink } from '../common/docs-link';
 
 interface InterceptOptionProps {
     className?: string;
@@ -151,7 +152,11 @@ function getStatusPill(interceptor: Interceptor) {
     } else if (!interceptor.isActivable) {
         if (interceptor.isSupported) {
             return <StatusPill>
-                Not available
+                Not available{
+                    interceptor.notAvailableHelpUrl
+                    ? <DocsLink href={interceptor.notAvailableHelpUrl} />
+                    : null
+                }
             </StatusPill>;
         } else {
             return <StatusPill color='#e1421f'>
