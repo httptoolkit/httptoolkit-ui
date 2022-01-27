@@ -173,7 +173,7 @@
     "karma-webpack": "^4.0.2",
     "mocha": "^7.0.1",
     "monaco-editor-webpack-plugin": "^4.1.2",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "puppeteer": "^1.18.1",
     "raw-loader": "^0.5.1",
     "rimraf": "^2.6.2",
