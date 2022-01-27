@@ -183,7 +183,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     },
     'fresh-terminal': {
         name: 'Fresh Terminal',
-        description: ["Open a new terminal that will intercept all launched processes"],
+        description: ["Open a new terminal that intercepts all processes & Docker containers"],
         iconProps: SourceIcons.Terminal,
         tags: TERMINAL_TAGS,
         getActivationOptions: ({ accountStore }) =>
@@ -193,7 +193,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     },
     'existing-terminal': {
         name: 'Existing Terminal',
-        description: ["Intercept all launched processes from an existing terminal window"],
+        description: ["Intercept all launched processes & Docker containers from an existing terminal window"],
         iconProps: recoloured(SourceIcons.Terminal, '#dd44dd'),
         uiConfig: ExistingTerminalCustomUi,
         tags: TERMINAL_TAGS
