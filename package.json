@@ -95,7 +95,7 @@
     "mobx-utils": "^5.1.0",
     "mockttp": "^2.4.0",
     "monaco-editor": "^0.27.0",
-    "node-forge": "^0.10.0",
+    "node-forge": "^1.0.0",
     "openapi-directory": "^1.1.4",
     "polished": "^3.2.0",
     "qrcode.react": "^1.0.0",
