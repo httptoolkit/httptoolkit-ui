@@ -1,4 +1,4 @@
-declare module 'httpsnippet' {
+declare module '@httptoolkit/httpsnippet' {
     import * as HARFormat from 'har-format';
 
     namespace HTTPSnippet {

@@ -3,7 +3,7 @@ import React from "react";
 import { observable, action } from "mobx";
 import { inject, observer } from "mobx-react";
 import * as HarFormat from 'har-format';
-import * as HTTPSnippet from "httpsnippet";
+import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 import dedent from 'dedent';
 
 import { Omit, HttpExchange } from "../../types";
