@@ -349,32 +349,8 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
     }
 };
 
-@inject('rulesStore')
 @observer
-export class ConnectionSettingsCard extends React.Component<
-    Omit<CollapsibleCardProps, 'children'> & {
-        rulesStore?: RulesStore
-    }
-> {
-
-    @observable
-    whitelistHostInput = '';
-
-    @action.bound
-    unwhitelistHost(host: string) {
-        const { whitelistedCertificateHosts } = this.props.rulesStore!;
-        const hostIndex = whitelistedCertificateHosts.indexOf(host);
-        if (hostIndex > -1) {
-            whitelistedCertificateHosts.splice(hostIndex, 1);
-        }
-    }
-
-    @action.bound
-    addHostToWhitelist() {
-        this.props.rulesStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
-        trackEvent({ category: "Config", action: "Whitelist Host" });
-        this.whitelistHostInput = '';
-    }
+class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }> {
 
     @observable
     clientCertHostInput = '';
@@ -457,7 +433,7 @@ export class ConnectionSettingsCard extends React.Component<
         });
     }
 
-    readonly decryptClientCertData = flow(function * (this: ConnectionSettingsCard) {
+    readonly decryptClientCertData = flow(function * (this: ClientCertificateConfig) {
         const { pfx, passphrase } = this.clientCertData!;
 
         let result: ValidationResult;
@@ -476,11 +452,131 @@ export class ConnectionSettingsCard extends React.Component<
     }
 
     render() {
+        const { clientCertificateHostMap } = this.props.rulesStore!;
+
+        return <>
+            <SpacedContentLabel>
+                Client Certificates
+            </SpacedContentLabel>
+            <ClientCertificatesList>
+                { Object.entries(clientCertificateHostMap).map(([host, cert]) => [
+                    <Host key={`host-${host}`}>
+                        { host }
+                    </Host>,
+
+                    <CertificateFilename key={`filename-${host}`}>
+                        { cert.filename }
+                    </CertificateFilename>,
+
+                    <SettingsButton
+                        key={`delete-${host}`}
+                        onClick={() => this.removeClientCertificate(host)}
+                    >
+                        <Icon icon={['far', 'trash-alt']} />
+                    </SettingsButton>
+                ]) }
+
+                <TextInput
+                    placeholder='A host where the certificate should be used'
+                    value={this.clientCertHostInput}
+                    onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
+                        this.clientCertHostInput = e.target.value;
+                        validateHost(e.target);
+                    })}
+                />
+                { this.clientCertState === undefined
+                    ? <>
+                        <SettingsButton onClick={() => this.certFileInputRef.current!.click()}>
+                            Load a certificate
+                        </SettingsButton>
+                        <input
+                            ref={this.certFileInputRef}
+                            type="file"
+                            accept='.pfx,.p12,application/x-pkcs12'
+                            onChange={this.onClientCertSelected}
+                        />
+                    </>
+                    : this.clientCertState === 'processing'
+                        ? <DecryptionSpinner />
+                    : this.clientCertState === 'decrypted'
+                        ? <DecryptionInput>
+                            <CertificateFilename>{ this.clientCertData!.filename }</CertificateFilename>
+                            <SettingsButton onClick={this.dropClientCertData}>
+                                <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
+                            </SettingsButton>
+                        </DecryptionInput>
+                    : this.clientCertState === 'encrypted'
+                        ? <DecryptionInput>
+                            <TextInput
+                                placeholder={`The passphrase for ${this.clientCertData!.filename}`}
+                                value={this.clientCertData!.passphrase || ''}
+                                onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
+                                    this.clientCertData!.passphrase = e.target.value;
+                                })}
+                            />
+                            <SettingsButton onClick={() => this.decryptClientCertData()}>
+                                <Icon icon={['fas', 'unlock']} title='Decrypt with this passphrase' />
+                            </SettingsButton>
+                            <SettingsButton onClick={this.dropClientCertData}>
+                                <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
+                            </SettingsButton>
+                        </DecryptionInput>
+                    : <DecryptionInput>
+                        <p><WarningIcon /> Invalid certificate</p>
+                        <SettingsButton onClick={this.dropClientCertData}>
+                            <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
+                        </SettingsButton>
+                    </DecryptionInput>
+                }
+                <SettingsButton
+                    disabled={
+                        !isValidHost(this.clientCertHostInput) ||
+                        this.clientCertState !== 'decrypted' || // Not decrypted yet, or
+                        !!clientCertificateHostMap[this.clientCertHostInput] // Duplicate host
+                    }
+                    onClick={this.addClientCertificate}
+                >
+                    <Icon icon={['fas', 'plus']} />
+                </SettingsButton>
+            </ClientCertificatesList>
+            <SettingsExplanation>
+                These certificates will be used for client TLS authentication, if requested by the server, when
+                connecting to their corresponding hostname.
+            </SettingsExplanation>
+        </>;
+    }
+}
+
+@inject('rulesStore')
+@observer
+export class ConnectionSettingsCard extends React.Component<
+    Omit<CollapsibleCardProps, 'children'> & {
+        rulesStore?: RulesStore
+    }
+> {
+
+    @observable
+    whitelistHostInput = '';
+
+    @action.bound
+    unwhitelistHost(host: string) {
+        const { whitelistedCertificateHosts } = this.props.rulesStore!;
+        const hostIndex = whitelistedCertificateHosts.indexOf(host);
+        if (hostIndex > -1) {
+            whitelistedCertificateHosts.splice(hostIndex, 1);
+        }
+    }
+
+    @action.bound
+    addHostToWhitelist() {
+        this.props.rulesStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
+        trackEvent({ category: "Config", action: "Whitelist Host" });
+        this.whitelistHostInput = '';
+    }
+
+    render() {
         const { rulesStore, ...cardProps } = this.props;
-        const {
-            whitelistedCertificateHosts,
-            clientCertificateHostMap
-        } = rulesStore!;
+        const { whitelistedCertificateHosts } = rulesStore!;
 
         return <CollapsibleCard {...cardProps}>
             <header>
@@ -498,6 +594,14 @@ export class ConnectionSettingsCard extends React.Component<
                         rulesStore={rulesStore!}
                     />
             }
+
+            {
+                _.isString(serverVersion.value) &&
+                versionSatisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) && <>
+                <ClientCertificateConfig
+                    rulesStore={rulesStore!}
+                />
+            </> }
 
             <SpacedContentLabel>
                 Host HTTPS Whitelist
@@ -539,95 +643,6 @@ export class ConnectionSettingsCard extends React.Component<
                 versions, back to TLSv1. These requests will be successful regardless of any
                 self-signed, expired or invalid HTTPS configurations.
             </SettingsExplanation>
-
-            {
-                _.isString(serverVersion.value) &&
-                versionSatisfies(serverVersion.value, CLIENT_CERT_SERVER_RANGE) && <>
-                <SpacedContentLabel>
-                    Client Certificates
-                </SpacedContentLabel>
-                <ClientCertificatesList>
-                    { Object.entries(clientCertificateHostMap).map(([host, cert]) => [
-                        <Host key={`host-${host}`}>
-                            { host }
-                        </Host>,
-
-                        <CertificateFilename key={`filename-${host}`}>
-                            { cert.filename }
-                        </CertificateFilename>,
-
-                        <SettingsButton
-                            key={`delete-${host}`}
-                            onClick={() => this.removeClientCertificate(host)}
-                        >
-                            <Icon icon={['far', 'trash-alt']} />
-                        </SettingsButton>
-                    ]) }
-
-                    <TextInput
-                        placeholder='A host where the certificate should be used'
-                        value={this.clientCertHostInput}
-                        onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
-                            this.clientCertHostInput = e.target.value;
-                            validateHost(e.target);
-                        })}
-                    />
-                    { this.clientCertState === undefined
-                        ? <>
-                            <SettingsButton onClick={() => this.certFileInputRef.current!.click()}>
-                                Load a certificate
-                            </SettingsButton>
-                            <input
-                                ref={this.certFileInputRef}
-                                type="file"
-                                accept='.pfx,.p12,application/x-pkcs12'
-                                onChange={this.onClientCertSelected}
-                            />
-                        </>
-                        : this.clientCertState === 'processing'
-                            ? <DecryptionSpinner />
-                        : this.clientCertState === 'decrypted'
-                            ? <DecryptionInput>
-                                <CertificateFilename>{ this.clientCertData!.filename }</CertificateFilename>
-                                <SettingsButton onClick={this.dropClientCertData}>
-                                    <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
-                                </SettingsButton>
-                            </DecryptionInput>
-                        : this.clientCertState === 'encrypted'
-                            ? <DecryptionInput>
-                                <TextInput
-                                    placeholder={`The passphrase for ${this.clientCertData!.filename}`}
-                                    value={this.clientCertData!.passphrase || ''}
-                                    onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
-                                        this.clientCertData!.passphrase = e.target.value;
-                                    })}
-                                />
-                                <SettingsButton onClick={() => this.decryptClientCertData()}>
-                                    <Icon icon={['fas', 'unlock']} title='Decrypt with this passphrase' />
-                                </SettingsButton>
-                                <SettingsButton onClick={this.dropClientCertData}>
-                                    <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
-                                </SettingsButton>
-                            </DecryptionInput>
-                        : <DecryptionInput>
-                            <p><WarningIcon /> Invalid certificate</p>
-                            <SettingsButton onClick={this.dropClientCertData}>
-                                <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
-                            </SettingsButton>
-                        </DecryptionInput>
-                    }
-                    <SettingsButton
-                        disabled={
-                            !isValidHost(this.clientCertHostInput) ||
-                            this.clientCertState !== 'decrypted' || // Not decrypted yet, or
-                            !!clientCertificateHostMap[this.clientCertHostInput] // Duplicate host
-                        }
-                        onClick={this.addClientCertificate}
-                    >
-                        <Icon icon={['fas', 'plus']} />
-                    </SettingsButton>
-                </ClientCertificatesList>
-            </> }
         </CollapsibleCard>
     }
 }
