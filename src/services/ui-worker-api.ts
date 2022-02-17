@@ -17,7 +17,9 @@ import type {
     ValidatePKCSRequest,
     ValidatePKCSResponse,
     FormatRequest,
-    FormatResponse
+    FormatResponse,
+    ParseCertRequest,
+    ParseCertResponse
 } from './ui-worker';
 import Worker from 'worker-loader!./ui-worker';
 
@@ -130,6 +132,13 @@ export async function validatePKCS(buffer: ArrayBuffer, passphrase: string | und
         type: 'validate-pkcs12',
         buffer,
         passphrase
+    })).result;
+}
+
+export async function parseCert(buffer: ArrayBuffer) {
+    return (await callApi<ParseCertRequest, ParseCertResponse>({
+        type: 'parse-cert',
+        buffer
     })).result;
 }
 

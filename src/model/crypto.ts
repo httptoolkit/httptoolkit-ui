@@ -2,6 +2,7 @@
 // precisely filter exactly the code in our bundle.
 require('node-forge/lib/util');
 require('node-forge/lib/asn1');
+require('node-forge/lib/pki');
 require('node-forge/lib/pkcs12');
 import * as forge from 'node-forge/lib/forge';
 
@@ -29,3 +30,42 @@ export function validatePKCS12(
         return 'invalid-passphrase';
     }
 }
+
+export type ParsedCertificate = {
+    rawPEM: string;
+    subject: {
+        org?: string;
+        name?: string;
+    };
+    serial: string;
+};
+
+export function parseCert(cert: ArrayBuffer): ParsedCertificate {
+    const magicNumbers = new Uint8Array(cert, 0, 2);
+    const isDER = (magicNumbers[0] === 0x30 && magicNumbers[1] === 0x82);
+
+    // We need PEM at the end of the day (we're passing this eventually into Node's
+    // TLS APIs, which want PEM CA certs) so we convert DER to PEM here.
+
+    const certBuffer = isDER
+        ? derToPem(cert) // Looks like it's DER encoded - transform to PEM
+        : forge.util.createBuffer(cert) // Otherwise it's probably PEM
+
+    const pemString = certBuffer.toString();
+    const certData = forge.pki.certificateFromPem(pemString);
+
+    return {
+        rawPEM: pemString,
+        subject: {
+            org: certData.subject.getField('O')?.value,
+            name: certData.subject.getField('CN')?.value
+        },
+        serial: certData.serialNumber
+    };
+}
+
+export function derToPem(der: ArrayBuffer) {
+    const asnObj = forge.asn1.fromDer(forge.util.createBuffer(der));
+    const asn1Cert = forge.pki.certificateFromAsn1(asnObj);
+    return forge.pki.certificateToPem(asn1Cert);
+};

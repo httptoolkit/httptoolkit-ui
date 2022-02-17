@@ -8,13 +8,14 @@ import { WarningIcon, Icon } from '../../icons';
 import { trackEvent } from '../../tracking';
 
 import { UpstreamProxyType, RulesStore } from '../../model/rules/rules-store';
-import { ValidationResult } from '../../model/crypto';
-import { validatePKCS } from '../../services/ui-worker-api';
+import { ParsedCertificate, ValidationResult } from '../../model/crypto';
+import { parseCert, validatePKCS } from '../../services/ui-worker-api';
 import {
     serverVersion,
     versionSatisfies,
     CLIENT_CERT_SERVER_RANGE,
-    PROXY_CONFIG_RANGE
+    PROXY_CONFIG_RANGE,
+    CUSTOM_CA_TRUST_RANGE
 } from '../../services/service-versions';
 
 import {
@@ -25,6 +26,7 @@ import {
 import { ContentLabel } from '../common/text-content';
 import { Select, TextInput } from '../common/inputs';
 import { SettingsButton, SettingsExplanation } from './settings-components';
+import { uploadFile } from '../../util/ui';
 
 const SpacedContentLabel = styled(ContentLabel)`
     margin-top: 40px;
@@ -487,7 +489,7 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
                 { this.clientCertState === undefined
                     ? <>
                         <SettingsButton onClick={() => this.certFileInputRef.current!.click()}>
-                            Load a certificate
+                            Load a client certificate
                         </SettingsButton>
                         <input
                             ref={this.certFileInputRef}
@@ -547,6 +549,122 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
     }
 }
 
+const AdditionalCertificateList = styled.div`
+    display: grid;
+    grid-template-columns: 1fr min-content;
+    grid-gap: 10px;
+    margin: 10px 0;
+
+    align-items: baseline;
+
+    input[type=file] {
+        display: none;
+    }
+`;
+
+const CertificateDescription = styled.div`
+    font-style: italic;
+`;
+
+const AddCertificateButton = styled(SettingsButton)`
+    grid-column: 1 / span 2;
+`;
+
+@observer
+class AdditionalCAConfig extends React.Component<{ rulesStore: RulesStore }> {
+
+    readonly certFileButtonRef = React.createRef<HTMLButtonElement>();
+
+    addCertificate = flow(function * (this: AdditionalCAConfig) {
+        const { rulesStore } = this.props;
+
+        const button = this.certFileButtonRef.current!;
+
+        try {
+            const rawData = yield uploadFile('arraybuffer', [
+                '.pem',
+                '.crt',
+                '.cert',
+                '.der',
+                'application/x-pem-file',
+                'application/x-x509-ca-cert'
+            ]);
+
+            const certificate = yield parseCert(rawData);
+
+            if (rulesStore.additionalCaCertificates.some(({ rawPEM }) => rawPEM === certificate.rawPEM)) {
+                button.setCustomValidity(`This CA is already trusted.`);
+                button.reportValidity();
+                return;
+            }
+
+            rulesStore.additionalCaCertificates.push(certificate);
+        } catch (error) {
+            console.warn(error);
+            button.setCustomValidity(`Could not load certificate: ${
+                error.message
+            }${
+                error.message.endsWith('.') ? '' : '.'
+            } File must be a PEM or DER-formatted CA certificate.`);
+            button.reportValidity();
+        }
+    }.bind(this));
+
+    @action.bound
+    removeCertificate(certificate: ParsedCertificate) {
+        const { rulesStore } = this.props;
+        _.pull(rulesStore.additionalCaCertificates, certificate);
+    }
+
+    render() {
+        const { additionalCaCertificates } = this.props.rulesStore;
+
+        return <>
+            <SpacedContentLabel>
+                Trusted CA Certificates
+            </SpacedContentLabel>
+            <AdditionalCertificateList>
+                { additionalCaCertificates.map((cert) => {
+                    const { subject: { org, name }, serial } = cert;
+
+                    return [
+                        <CertificateDescription key={serial}>{
+                            [
+                                org && (!name || name.length <= 5)
+                                    ? org
+                                    : undefined,
+                                name,
+                                serial
+                                    ? `(serial ${serial})`
+                                    : undefined
+                            ].filter(x => !!x).join(' ')
+                        }</CertificateDescription>,
+
+                        <SettingsButton
+                            key={`delete-${serial}`}
+                            onClick={() => this.removeCertificate(cert)}
+                        >
+                            <Icon icon={['far', 'trash-alt']} />
+                        </SettingsButton>
+                    ]
+                }) }
+                <AddCertificateButton
+                    onClick={this.addCertificate}
+                    type='submit' // Ensures we can show validation messages here
+                    ref={this.certFileButtonRef}
+                >
+                    Load a CA certificate
+                </AddCertificateButton>
+            </AdditionalCertificateList>
+            <SettingsExplanation>
+                These Certificate Authority (CA) certificates will be considered as trusted certificate
+                roots for all HTTPS requests, in addition to the existing set of built-in trusted CAs.
+            </SettingsExplanation>
+        </>;
+    }
+
+}
+
 @inject('rulesStore')
 @observer
 export class ConnectionSettingsCard extends React.Component<
@@ -593,6 +711,14 @@ export class ConnectionSettingsCard extends React.Component<
                     <UpstreamProxyConfig
                         rulesStore={rulesStore!}
                     />
+            }
+
+            {
+                _.isString(serverVersion.value) &&
+                versionSatisfies(serverVersion.value, CUSTOM_CA_TRUST_RANGE) &&
+                <AdditionalCAConfig
+                    rulesStore={rulesStore!}
+                />
             }
 
             {

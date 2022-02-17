@@ -69,6 +69,7 @@ import {
     DeserializationArgs
 } from './rule-serialization';
 import { migrateRuleData } from './rule-migrations';
+import { ParsedCertificate } from '../crypto';
 
 export type ClientCertificate = {
     readonly pfx: ArrayBuffer,
@@ -252,6 +253,7 @@ export class RulesStore {
     get activePassthroughOptions(): requestHandlers.PassThroughHandlerOptions {
         return _.cloneDeep({ // Clone to ensure we touch & subscribe to everything here
             ignoreHostCertificateErrors: this.whitelistedCertificateHosts,
+            trustAdditionalCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM })),
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
                 pfx: Buffer.from(cert.pfx),
                 passphrase: cert.passphrase
@@ -335,6 +337,10 @@ export class RulesStore {
     // The currently active client certificates
     @persist('map', clientCertificateSchema) @observable
     clientCertificateHostMap: { [host: string]: ClientCertificate } = {};
+
+    // The currently active additional CA certificates
+    @persist('list') @observable
+    additionalCaCertificates: Array<ParsedCertificate> = [];
 
     @persist('object', MockRulesetSchema) @observable
     rules!: HtkMockRuleRoot;

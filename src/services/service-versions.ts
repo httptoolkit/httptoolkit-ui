@@ -62,3 +62,4 @@ export const PROXY_CONFIG_RANGE = '^1.4.1';
 export const CLOSE_IN_BREAKPOINT = '^1.4.2';
 export const DNS_AND_RULE_PARAM_CONFIG_RANGE = '^1.5.0';
 export const DOCKER_INTERCEPTION_RANGE = '^1.5.0';
+export const CUSTOM_CA_TRUST_RANGE = '^1.7.0';

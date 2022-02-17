@@ -298,6 +298,14 @@ export const ExchangeErrorHeader = (p: {
                     that don't exist or aren't accessible.
                 </HeaderExplanation>
             </>
+        : p.type === 'untrusted'
+            ? <HeaderExplanation>
+                By default untrusted certificate authorities (CAs) are only allowed for localhost servers, but {
+                    p.isPaidUser
+                        ? 'additional CAs can be trusted from the Settings page.'
+                        : 'Pro users can trust additional CAs or disable HTTPS validation for a host entirely.'
+                }
+            </HeaderExplanation>
         : isWhitelistable(p.type)
             ? <HeaderExplanation>
                 By default this is only allowed for localhost servers, but {

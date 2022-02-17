@@ -14,7 +14,7 @@ import {
 } from 'http-encoding';
 
 import { buildApiMetadata, ApiMetadata } from '../model/api/build-openapi';
-import { validatePKCS12, ValidationResult } from '../model/crypto';
+import { parseCert, ParsedCertificate, validatePKCS12, ValidationResult } from '../model/crypto';
 import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 
 interface Message {
@@ -76,6 +76,16 @@ export interface ValidatePKCSResponse extends Message {
     result: ValidationResult;
 }
 
+export interface ParseCertRequest extends Message {
+    type: 'parse-cert';
+    buffer: ArrayBuffer;
+}
+
+export interface ParseCertResponse extends Message {
+    error?: Error;
+    result: ParsedCertificate;
+}
+
 export interface FormatRequest extends Message {
     type: 'format';
     buffer: ArrayBuffer;
@@ -93,6 +103,7 @@ export type BackgroundRequest =
     | TestEncodingsRequest
     | BuildApiRequest
     | ValidatePKCSRequest
+    | ParseCertRequest
     | FormatRequest;
 
 export type BackgroundResponse =
@@ -101,6 +112,7 @@ export type BackgroundResponse =
     | TestEncodingsResponse
     | BuildApiResponse
     | ValidatePKCSResponse
+    | ParseCertResponse
     | FormatResponse;
 
 const bufferToArrayBuffer = (buffer: Buffer): ArrayBuffer =>
@@ -181,6 +193,10 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
             case 'validate-pkcs12':
                 const result = validatePKCS12(event.data.buffer, event.data.passphrase);
                 ctx.postMessage({ id: event.data.id, result });
+                break;
+
+            case 'parse-cert':
+                ctx.postMessage({ id: event.data.id, result: parseCert(event.data.buffer) });
                 break;
 
             case 'format':
