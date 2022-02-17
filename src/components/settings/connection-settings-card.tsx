@@ -84,53 +84,6 @@ const Host = styled.div`
     font-family: ${p => p.theme.monoFontFamily};
 `;
 
-const ClientCertificatesList = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr min-content;
-    grid-gap: 10px;
-    margin: 10px 0;
-
-    align-items: baseline;
-
-    ${TextInput} {
-        align-self: stretch;
-    }
-
-    input[type=file] {
-        display: none;
-    }
-`;
-
-const CertificateFilename = styled.div`
-    font-style: italic;
-`;
-
-const DecryptionInput = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-
-    > :first-child {
-        flex: 1 1;
-    }
-
-    > button {
-        margin-left: 10px;
-    }
-
-    > svg {
-        flex: 1 1 100%;
-        text-align: center;
-    }
-`;
-
-const DecryptionSpinner = styled(Icon).attrs(() => ({
-    icon: ['fas', 'spinner'],
-    spin: true
-}))`
-    margin: 0 auto;
-`;
-
 const isValidHost = (host: string | undefined): boolean =>
     !!host?.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 
@@ -351,6 +304,53 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
     }
 };
 
+const ClientCertificatesList = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr min-content;
+    grid-gap: 10px;
+    margin: 10px 0;
+
+    align-items: baseline;
+
+    ${TextInput} {
+        align-self: stretch;
+    }
+
+    input[type=file] {
+        display: none;
+    }
+`;
+
+const CertificateFilename = styled.div`
+    font-style: italic;
+`;
+
+const DecryptionInput = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+
+    > :first-child {
+        flex: 1 1;
+    }
+
+    > button {
+        margin-left: 10px;
+    }
+
+    > svg {
+        flex: 1 1 100%;
+        text-align: center;
+    }
+`;
+
+const DecryptionSpinner = styled(Icon).attrs(() => ({
+    icon: ['fas', 'spinner'],
+    spin: true
+}))`
+    margin: 0 auto;
+`;
+
 @observer
 class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }> {
 
@@ -394,44 +394,44 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
 
         this.clientCertState = 'processing';
 
-        const thisCard = this; // fileReader events set 'this'
+        const thisConfig = this; // fileReader events set 'this'
         fileReader.addEventListener('load', flow(function * () {
-            thisCard.clientCertData = {
+            thisConfig.clientCertData = {
                 pfx: fileReader.result as ArrayBuffer,
                 filename: file.name
             };
 
             let result: ValidationResult;
 
-            result = yield validatePKCS(thisCard.clientCertData.pfx, undefined);
+            result = yield validatePKCS(thisConfig.clientCertData.pfx, undefined);
 
             if (result === 'valid') {
-                thisCard.clientCertState = 'decrypted';
-                thisCard.clientCertData.passphrase = undefined;
+                thisConfig.clientCertState = 'decrypted';
+                thisConfig.clientCertData.passphrase = undefined;
                 return;
             }
 
             if (result === 'invalid-format') {
-                thisCard.clientCertState = 'error';
+                thisConfig.clientCertState = 'error';
                 return;
             }
 
             // If it fails, try again with an empty key, since that is sometimes used for 'no passphrase'
-            result = yield validatePKCS(thisCard.clientCertData.pfx, '');
+            result = yield validatePKCS(thisConfig.clientCertData.pfx, '');
 
             if (result === 'valid') {
-                thisCard.clientCertState = 'decrypted';
-                thisCard.clientCertData.passphrase = '';
+                thisConfig.clientCertState = 'decrypted';
+                thisConfig.clientCertData.passphrase = '';
                 return;
             }
 
             // If that still hasn't worked, it's encrypted. Mark is as such, and wait for the user
             // to either cancel, or enter the correct passphrase.
-            thisCard.clientCertState = 'encrypted';
+            thisConfig.clientCertState = 'encrypted';
         }));
 
         fileReader.addEventListener('error', () => {
-            thisCard.clientCertState = 'error';
+            thisConfig.clientCertState = 'error';
         });
     }
 
