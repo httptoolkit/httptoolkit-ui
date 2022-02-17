@@ -300,7 +300,7 @@ export const ExchangeErrorHeader = (p: {
             </>
         : p.type === 'untrusted'
             ? <HeaderExplanation>
-                By default untrusted certificate authorities (CAs) are only allowed for localhost servers, but {
+                By default unrecognized certificate authorities (CAs) are only accepted for localhost servers, but {
                     p.isPaidUser
                         ? 'additional CAs can be trusted from the Settings page.'
                         : 'Pro users can trust additional CAs or disable HTTPS validation for a host entirely.'
