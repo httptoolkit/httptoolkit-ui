@@ -5,7 +5,9 @@ import { computed } from 'mobx';
 import { SchemaObject } from 'openapi3-ts';
 import * as portals from 'react-reverse-portal';
 
+import { css, styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
+
 import { ViewableContentType } from '../../model/http/content-types';
 import { Formatters, isEditorFormatter } from '../../model/http/body-formatting';
 
@@ -21,6 +23,15 @@ interface ContentViewerProps {
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
     cache: Map<Symbol, unknown>;
 }
+
+const ViewerContainer = styled.div<{ scrollable: boolean }>`
+    ${p => p.scrollable ?
+        css`
+            overflow-y: auto;
+            max-height: 100%;
+        ` : ''
+    }
+`;
 
 @observer
 export class ContentViewer extends React.Component<ContentViewerProps> {
@@ -95,12 +106,14 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                 </div>;
             }
         } else {
-            const Viewer = this.formatter;
-            return <Viewer
-                expanded={this.props.expanded}
-                content={this.contentBuffer}
-                rawContentType={this.props.rawContentType}
-            />;
+            const formatterConfig = this.formatter;
+            return <ViewerContainer scrollable={!!formatterConfig.scrollable}>
+                <formatterConfig.Component
+                    expanded={this.props.expanded}
+                    content={this.contentBuffer}
+                    rawContentType={this.props.rawContentType}
+                />
+            </ViewerContainer>;
         }
     }
 }

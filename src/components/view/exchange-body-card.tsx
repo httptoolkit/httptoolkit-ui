@@ -34,6 +34,12 @@ export const EditorCardContent = styled.div`
 
     position: relative;
     flex-grow: 1;
+
+    /*
+    Allows shrinking smaller than content, to allow scrolling overflow e.g. for
+    scrollable URL param content
+    */
+    min-height: 0;
 `;
 
 export const ExchangeBodyCardCard = styled(ExchangeCard)`
