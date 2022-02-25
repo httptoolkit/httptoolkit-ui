@@ -97,19 +97,6 @@ function asHtkHeaders(headers: HarFormat.Header[]) {
         .value() as Headers;
 }
 
-function paramsToEntries(params: URLSearchParams): Array<[string, string]> {
-    // In theory params.entries() should exist, but TS disagrees
-    if ('entries' in params) {
-        return Array.from((params as any).entries());
-    }
-
-    const entries: Array<[string, string]> = [];
-    params.forEach((value, key) => {
-        entries.push([key, value]);
-    });
-    return entries;
-}
-
 export function generateHarRequest(
     request: HtkRequest,
     waitForDecoding?: false
@@ -135,7 +122,7 @@ export function generateHarRequest(
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
         cookies: [],
         headers: asHarHeaders(request.headers),
-        queryString: paramsToEntries(request.parsedUrl.searchParams).map(
+        queryString: Array.from(request.parsedUrl.searchParams.entries()).map(
             ([paramKey, paramValue]) => ({
                 name: paramKey,
                 value: paramValue

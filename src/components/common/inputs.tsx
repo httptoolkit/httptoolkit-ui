@@ -137,6 +137,11 @@ export const TextInput = styled.input.attrs((p: { type?: string }) => ({
         ${invalidTextCss}
     }
 
+    &:read-only {
+        cursor: default;
+        outline: none;
+    }
+
     ${(p: TextInputProps) => p.invalid && invalidTextCss}
 ` as StyledComponent<'input', Theme, TextInputProps>;
 

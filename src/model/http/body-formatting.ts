@@ -1,9 +1,11 @@
 import { styled } from '../../styles';
+
 import { ViewableContentType } from './content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
+import { ReadOnlyParams } from '../../components/common/editable-params';
 
 export interface EditorFormatter {
     language: string;
@@ -83,6 +85,11 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         cacheKey: Symbol('css'),
         render: buildAsyncRenderer('css')
     },
+    'url-encoded': styled(ReadOnlyParams).attrs((p: FormatComponentProps) => ({
+        content: p.content.toString('utf8')
+    }))`
+        padding: 5px;
+    ` as FormatComponent, // Shouldn't be necessary, but somehow TS doesn't work this out
     image: styled.img.attrs((p: FormatComponentProps) => ({
         src: `data:${p.rawContentType || ''};base64,${p.content.toString('base64')}`
     }))`

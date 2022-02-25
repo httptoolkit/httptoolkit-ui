@@ -38,9 +38,13 @@ interface EditablePairsProps<R = PairsArray> {
     allowEmptyValues?: boolean;
 }
 
-const PairsContainer = styled.div`
+const ReadOnlyPairsContainer = styled.div`
     display: grid;
     grid-gap: 5px;
+    grid-template-columns: 1fr 2fr;
+`;
+
+const EditablePairsContainer = styled(ReadOnlyPairsContainer)`
     grid-template-columns: 1fr 2fr min-content;
 
     > :last-child {
@@ -52,6 +56,34 @@ const PairDeleteButton = styled(Button)`
     font-size: ${p => p.theme.textSize};
     padding: 3px 10px 5px;
 `;
+
+@observer
+export class ReadOnlyPairs extends React.Component<{
+    className?: string,
+    pairs: PairsArray
+}> {
+
+    render() {
+        const { pairs, className } = this.props;
+
+        return <ReadOnlyPairsContainer className={className}>
+            { _.flatMap(pairs, ({ key, value }, i) => [
+                <TextInput
+                    value={key}
+                    readOnly={true}
+                    spellCheck={false}
+                    key={`${i}-key`}
+                />,
+                <TextInput
+                    value={value}
+                    readOnly={true}
+                    spellCheck={false}
+                    key={`${i}-val`}
+                />
+            ]) }
+        </ReadOnlyPairsContainer>
+    }
+}
 
 @observer
 export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
@@ -105,7 +137,7 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
 
         const { values, onChangeValues } = this;
 
-        return <PairsContainer>
+        return <EditablePairsContainer>
             { _.flatMap(values, ({ key, value, disabled }, i) => [
                 <TextInput
                     value={key}
@@ -169,6 +201,6 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
                     })}
                 />
             ]) }
-        </PairsContainer>
+        </EditablePairsContainer>
     }
 }

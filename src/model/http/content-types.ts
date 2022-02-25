@@ -19,6 +19,7 @@ export const getBaseContentType = (mimeType: string | undefined) => {
 export type ViewableContentType =
     | 'raw'
     | 'text'
+    | 'url-encoded'
     | 'base64'
     | 'json'
     | 'xml'
@@ -57,7 +58,8 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
 
     'text/plain': 'text',
     'text/csv': 'text',
-    'application/x-www-form-urlencoded': 'text',
+
+    'application/x-www-form-urlencoded': 'url-encoded',
 
     'text/markdown': 'markdown',
     'text/x-markdown': 'markdown',
@@ -101,6 +103,7 @@ export function getEditableContentType(mimeType: string | undefined): EditableCo
 export function getContentEditorName(contentType: ViewableContentType): string {
     return contentType === 'raw' ? 'Hex'
         : contentType === 'json' ? 'JSON'
+        : contentType === 'url-encoded' ? 'URL-Encoded'
         : _.capitalize(contentType);
 }
 
