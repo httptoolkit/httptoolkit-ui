@@ -35,13 +35,28 @@ export default <Webpack.Configuration>{
     module: {
         rules: [{
             test: /\.tsx?$/,
-            use: [{
-                loader: 'ts-loader',
-                options: {
-                    // Types are checked separately by ForkTSChecker
-                    transpileOnly: true
+            use: [
+                { loader: 'cache-loader' },
+                {
+                    loader: 'thread-loader',
+                    options: {
+                        // Leave 1 cpu for the fork-ts-checker-webpack-plugin
+                        workers: require('os').cpus().length - 1,
+
+                        // Only use threads for the initial build. Most incremental
+                        // builds don't want threads (because they're compiling only one file)
+                        poolRespawn: false
+                    },
+                },
+                {
+                    loader: 'ts-loader',
+                    options: {
+                        // Note that this disables all checking - that's handled entirely by
+                        // ForkTsCheckerWebpackPlugin.
+                        happyPackMode: true
+                    }
                 }
-            }],
+            ],
             exclude: /node_modules/
         }, {
             test: /\.(woff2|ttf|png|svg)$/,
@@ -66,7 +81,16 @@ export default <Webpack.Configuration>{
     },
 
     plugins: [
-        new ForkTsCheckerWebpackPlugin(),
+        new ForkTsCheckerWebpackPlugin({
+            // We need to enable all checks, because happyPackMode for ts-loader (required to use
+            // threads) disables 100% of checking, even for syntax errors.
+            typescript: {
+                diagnosticOptions: {
+                    semantic: true,
+                    syntactic: true
+                }
+            }
+        }),
         new Webpack.IgnorePlugin(
             // Fallback, only used in wasm isn't supported. We just don't support zstd
             // if wasm isn't supported (i.e. if loaded custom in old old browsers).
