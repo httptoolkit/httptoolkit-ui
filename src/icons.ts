@@ -230,7 +230,7 @@ export const Icon = React.memo(
         onKeyPress?: (event: React.KeyboardEvent) => void
     }) => JSX.Element
 );
-export { ExtendedIconProp as IconProp, SizeProp };
+export type { ExtendedIconProp as IconProp, SizeProp };
 
 export const SuggestionIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'lightbulb']
