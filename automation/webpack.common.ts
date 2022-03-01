@@ -4,6 +4,7 @@ import * as Webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import GoogleFontsPlugin from 'google-fonts-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 import { InjectManifest } from 'workbox-webpack-plugin';
 import * as ssri from "ssri";
@@ -34,7 +35,13 @@ export default <Webpack.Configuration>{
     module: {
         rules: [{
             test: /\.tsx?$/,
-            use: [{ loader: 'awesome-typescript-loader' }],
+            use: [{
+                loader: 'ts-loader',
+                options: {
+                    // Types are checked separately by ForkTSChecker
+                    transpileOnly: true
+                }
+            }],
             exclude: /node_modules/
         }, {
             test: /\.(woff2|ttf|png|svg)$/,
@@ -59,6 +66,7 @@ export default <Webpack.Configuration>{
     },
 
     plugins: [
+        new ForkTsCheckerWebpackPlugin(),
         new Webpack.IgnorePlugin(
             // Fallback, only used in wasm isn't supported. We just don't support zstd
             // if wasm isn't supported (i.e. if loaded custom in old old browsers).
