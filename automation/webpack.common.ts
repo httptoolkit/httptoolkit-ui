@@ -7,9 +7,6 @@ import CopyPlugin from 'copy-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import ForkTsCheckerNotifierWebpackPlugin from 'fork-ts-checker-notifier-webpack-plugin';
 
-import { InjectManifest } from 'workbox-webpack-plugin';
-import * as ssri from "ssri";
-
 // Webpack (but not tsc) gets upset about this, so let's opt out
 // of proper typing entirely.
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
@@ -157,33 +154,6 @@ export default <Webpack.Configuration>{
             'SENTRY_DSN': null,
             'GA_ID': null,
             'UI_VERSION': null
-        }),
-        new InjectManifest({
-            swSrc: path.join(SRC_DIR, 'services', 'update-worker.ts'),
-            exclude: ['google-fonts', /^api\//, 'update-worker.js', /.map$/],
-            maximumFileSizeToCacheInBytes: 100 * 1024 * 1024,
-            manifestTransforms: [
-                (originalManifest: any, compilation: any) => {
-                    // Add integrity info to every file, to ensure the cache can't be
-                    // corrupted. We have seen this in practice, I think due to AWS outage
-                    // issues? This helps protect against possible corruptions:
-                    const manifest = originalManifest.map((entry: any) => {
-                        const asset = compilation.getAsset(entry.url);
-                        const assetSource = asset.source.source();
-                        entry.integrity = ssri.fromData(
-                            assetSource instanceof ArrayBuffer
-                                ? Buffer.from(assetSource) // Wasm!
-                                : assetSource
-                        ).toString();
-                        return entry;
-                    });
-
-                    // If any integrity checks fail during startup, precaching stops will
-                    // stop there, and the SW won't be updated.
-
-                    return { manifest };
-                },
-            ] as any
-        }),
+        })
     ],
 };
