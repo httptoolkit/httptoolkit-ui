@@ -5,6 +5,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import GoogleFontsPlugin from 'google-fonts-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import ForkTsCheckerNotifierWebpackPlugin from 'fork-ts-checker-notifier-webpack-plugin';
 
 import { InjectManifest } from 'workbox-webpack-plugin';
 import * as ssri from "ssri";
@@ -91,6 +92,7 @@ export default <Webpack.Configuration>{
                 }
             }
         }),
+        new ForkTsCheckerNotifierWebpackPlugin(),
         new Webpack.IgnorePlugin(
             // Fallback, only used in wasm isn't supported. We just don't support zstd
             // if wasm isn't supported (i.e. if loaded custom in old old browsers).
