@@ -130,4 +130,7 @@ export class UiStore {
             return {};
         }
     }
+
+    @persist @observable
+    exportSnippetFormat: string | undefined;
 }

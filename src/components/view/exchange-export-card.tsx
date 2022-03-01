@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import React from "react";
-import { observable, action } from "mobx";
+import { observable, action, computed } from "mobx";
 import { inject, observer } from "mobx-react";
 import * as HarFormat from 'har-format';
 import * as HTTPSnippet from "@httptoolkit/httpsnippet";
@@ -13,6 +13,7 @@ import { saveFile } from '../../util/ui';
 import { reportError } from '../../errors';
 
 import { AccountStore } from "../../model/account/account-store";
+import { UiStore } from '../../model/ui-store';
 import { generateHarRequest, generateHar } from "../../model/http/har";
 
 import { ProHeaderPill, CardSalesPitch } from "../account/pro-placeholders";
@@ -59,6 +60,7 @@ const getExportOptionName = (option: SnippetOption) => ({
 interface ExportCardProps extends Omit<ExchangeCardProps, 'children'>  {
     exchange: HttpExchange;
     accountStore?: AccountStore;
+    uiStore?: UiStore;
 }
 
 const SnippetDescriptionContainer = styled.div`
@@ -178,6 +180,7 @@ const ExportHarPill = styled(observer((p: {
 `;
 
 @inject('accountStore')
+@inject('uiStore')
 @observer
 export class ExchangeExportCard extends React.Component<ExportCardProps> {
 
@@ -229,18 +232,22 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
         </ExchangeCard>;
     }
 
-    @observable.ref
-    private snippetOption: SnippetOption =
-        _.find(snippetExportOptions['Shell'], { client: 'curl' }) as SnippetOption;
+    @computed
+    private get snippetOption(): SnippetOption {
+        let exportSnippetFormat = this.props.uiStore!.exportSnippetFormat ||
+            `shell${KEY_SEPARATOR}curl`;
 
-    @action.bound
-    setSnippetOption(optionKey: string) {
-        const [target, client] = optionKey.split(KEY_SEPARATOR) as
+        const [target, client] = exportSnippetFormat.split(KEY_SEPARATOR) as
             [HTTPSnippet.Target, HTTPSnippet.Client];
 
-        this.snippetOption = _(snippetExportOptions)
+        return _(snippetExportOptions)
             .values()
             .flatten()
             .find({ target, client }) as SnippetOption;
+    }
+
+    @action.bound
+    setSnippetOption(optionKey: string) {
+        this.props.uiStore!.exportSnippetFormat = optionKey;
     }
 };
