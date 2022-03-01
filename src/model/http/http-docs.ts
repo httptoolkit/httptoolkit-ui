@@ -1,3 +1,21 @@
+/**
+ * The docs included here come from MDN content, originally distributed under their
+ * CC-BY-SA 2.5 license: https://creativecommons.org/licenses/by-sa/2.5/
+ *
+ * This license permits usage and derivative works under later equivalent versions
+ * of the same license, and as such the original content used here is used under
+ * the terms of CC-BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/.
+ *
+ * CC-BY-SA 4.0 allows derivative works to be licensed under other BY-SA compatible
+ * licenses, and Creative Commons have approved GPLv3 as being an essentially
+ * equivalent compatible license. As such, this derivative work is published here
+ * under GPLv3 license: https://www.gnu.org/licenses/gpl-3.0.html
+ *
+ * This doesn't match the rest of this repository (licensed under AGPLv3), but
+ * the AGPLv3 license has a specific clause that makes it compatible with
+ * GPLv3 content, allowing us to combine both in a single project.
+ */
+
 interface DocsData {
     mdnSlug: string;
     name: string;
