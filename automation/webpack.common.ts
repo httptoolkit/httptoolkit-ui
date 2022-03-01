@@ -33,6 +33,18 @@ export default <Webpack.Configuration>{
         extensions: ['.js', '.ts', '.tsx']
     },
 
+    stats: {
+        assets: false,
+        children: false,
+        chunks: false,
+        entrypoints: false,
+        modules: false
+    },
+
+    performance: {
+        hints: false
+    },
+
     module: {
         rules: [{
             test: /\.tsx?$/,
