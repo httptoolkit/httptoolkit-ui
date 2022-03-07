@@ -34,7 +34,7 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
     const { isPaidUser } = props.accountStore!;
 
     return <IconButton
-        icon={['fas', 'download']}
+        icon={['fas', 'save']}
         title={
             isPaidUser
                 ? 'Export these exchanges as a HAR file'
@@ -65,7 +65,7 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
         const { isPaidUser } = props.accountStore!;
 
         return <IconButton
-            icon={['fas', 'upload']}
+            icon={['fas', 'folder-open']}
             title={
                 isPaidUser
                     ? 'Import exchanges from a HAR file'
@@ -122,3 +122,10 @@ export const PlayPauseButton = inject('eventsStore')(
         />
     })
 );
+
+export const ScrollToEndButton = (props: { onScrollToEnd: () => void }) =>
+    <IconButton
+        icon={['fas', 'level-down-alt']}
+        title="Scroll to the bottom of the list"
+        onClick={props.onScrollToEnd}
+    />

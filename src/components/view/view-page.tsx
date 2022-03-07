@@ -22,7 +22,7 @@ import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/http/events-store';
 import { HttpExchange } from '../../model/http/exchange';
-import { emptyFilterSet, FilterSet } from '../../model/filters/search-filters';
+import { FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -242,6 +242,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                         filteredCount={filteredEventCount}
                         onFiltersConsidered={this.onSearchFiltersConsidered}
                         onClear={this.onClear}
+                        onScrollToEnd={this.onScrollToEnd}
                     />
                     <ViewEventList
                         events={events}
@@ -379,6 +380,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onScrollToCenterEvent(event: CollectedEvent) {
         this.listRef.current?.scrollToCenterEvent(event);
+    }
+
+    @action.bound
+    onScrollToEnd() {
+        this.listRef.current?.scrollToEnd();
     }
 }
 

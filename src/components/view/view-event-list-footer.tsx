@@ -10,7 +10,7 @@ import {
     SelectableSearchFilterClasses
 } from '../../model/filters/search-filters';
 
-import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton } from './view-event-list-buttons';
+import { ClearAllButton, ExportAsHarButton, ImportHarButton, PlayPauseButton, ScrollToEndButton } from './view-event-list-buttons';
 import { SearchFilter } from './filters/search-filter';
 
 export const HEADER_FOOTER_HEIGHT = 38;
@@ -60,6 +60,7 @@ export const ViewEventListFooter = styled(observer((props: {
     className?: string,
     onClear: () => void,
     onFiltersConsidered: (filters: FilterSet | undefined) => void,
+    onScrollToEnd: () => void,
 
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[],
@@ -85,6 +86,7 @@ export const ViewEventListFooter = styled(observer((props: {
     />
     <ButtonsContainer>
         <PlayPauseButton />
+        <ScrollToEndButton onScrollToEnd={props.onScrollToEnd} />
         <ExportAsHarButton events={props.filteredEvents} />
         <ImportHarButton />
         <ClearAllButton

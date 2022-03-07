@@ -49,6 +49,7 @@ import { faTheaterMasks } from '@fortawesome/free-solid-svg-icons/faTheaterMasks
 import { faGripVertical } from '@fortawesome/free-solid-svg-icons/faGripVertical';
 import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
 import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
+import { faFolderOpen } from '@fortawesome/free-solid-svg-icons/faFolderOpen';
 import { faUnlock } from '@fortawesome/free-solid-svg-icons/faUnlock';
 import { faEdit } from '@fortawesome/free-solid-svg-icons/faEdit';
 import { faWindowMaximize } from '@fortawesome/free-regular-svg-icons/faWindowMaximize';
@@ -61,6 +62,7 @@ import { faCaretDown } from '@fortawesome/free-solid-svg-icons/faCaretDown';
 import { faAlignLeft } from '@fortawesome/free-solid-svg-icons/faAlignLeft';
 import { faClone } from '@fortawesome/free-regular-svg-icons/faClone';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
+import { faLevelDownAlt } from '@fortawesome/free-solid-svg-icons/faLevelDownAlt';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -122,6 +124,7 @@ library.add(
     faGripVertical,
     faUndo,
     faSave,
+    faFolderOpen,
     faUnlock,
     faEdit,
     faWindowMaximize,
@@ -134,6 +137,7 @@ library.add(
     faAlignLeft,
     faClone,
     faCheck,
+    faLevelDownAlt,
 
     faChrome,
     faFirefox,

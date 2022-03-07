@@ -537,6 +537,10 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         requestAnimationFrame(() => this.focusEvent(event));
     }
 
+    public scrollToEnd() {
+        this.listRef.current?.scrollToItem(this.props.filteredEvents.length, 'start');
+    }
+
     onListMouseDown = (mouseEvent: React.MouseEvent) => {
         if (mouseEvent.button !== 0) return; // Left clicks only
 

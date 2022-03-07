@@ -175,7 +175,7 @@ class MockPage extends React.Component<MockPageProps> {
                             )
                     }
                 >
-                    <Icon icon={['fas', 'upload']} />
+                    <Icon icon={['fas', 'folder-open']} />
                 </OtherButton>
                 <OtherButton
                     disabled={!isPaidUser || !areSomeRulesNonDefault || draftRules.items.length === 0}
