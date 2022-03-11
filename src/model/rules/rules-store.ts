@@ -95,7 +95,10 @@ export type UpstreamProxyType =
     | 'direct'
     | 'http'
     | 'https'
-    | 'socks';
+    | 'socks4'
+    | 'socks4a'
+    | 'socks5'
+    | 'socks5h';
 
 export class RulesStore {
 
@@ -229,6 +232,13 @@ export class RulesStore {
             const forwardingRule = buildForwardingRuleIntegration(sourceHost, targetHost, this);
             this.ensureRuleExists(forwardingRule);
         }));
+
+        if ((this.upstreamProxyType as string) === 'socks') {
+            runInAction(() => {
+                // Backward compat from when we only supported generic 'socks' proxies, not individual types.
+                this.upstreamProxyType = 'socks5h';
+            });
+        }
 
         // Every time the user account data is updated from the server, consider resetting
         // paid settings to the free defaults. This ensures that they're reset on

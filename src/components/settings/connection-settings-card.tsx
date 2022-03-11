@@ -213,7 +213,10 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
                     <option value={'direct'}>Connect directly</option>
                     <option value={'http'}>Use an HTTP proxy</option>
                     <option value={'https'}>Use an HTTPS proxy</option>
-                    <option value={'socks'}>Use a SOCKS proxy</option>
+                    <option value={'socks4'}>Use a SOCKS 4 proxy</option>
+                    <option value={'socks4a'}>Use a SOCKS 4a proxy</option>
+                    <option value={'socks5'}>Use a SOCKS 5 proxy</option>
+                    <option value={'socks5h'}>Use a SOCKS 5h proxy</option>
                 </UpstreamProxyDropdown>
 
                 { proxyType === 'system' && (
