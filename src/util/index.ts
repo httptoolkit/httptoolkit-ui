@@ -102,7 +102,7 @@ export function isProbablyUtf8(buffer: Buffer) {
     }
 }
 
-function isSerializedBuffer(obj: any): obj is MockttpSerializedBuffer {
+export function isSerializedBuffer(obj: any): obj is MockttpSerializedBuffer {
     return obj && obj.type === 'Buffer' && !!obj.data;
 }
 

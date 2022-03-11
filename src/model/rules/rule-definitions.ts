@@ -12,7 +12,7 @@ import {
     Headers,
     MockttpSerializedBuffer
 } from '../../types';
-import { byteLength, tryParseJson } from '../../util';
+import { byteLength, isSerializedBuffer, tryParseJson } from '../../util';
 import * as amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';
@@ -97,7 +97,13 @@ export class StaticResponseHandler extends handlers.SimpleHandler {
 // Ensure that JSON-ified buffers deserialize as real buffers
 serializr.createModelSchema(StaticResponseHandler, {
     data: serializr.custom(
-        (data) => data,
+        (data: StaticResponseHandler['data']): string | MockttpSerializedBuffer | undefined => {
+            if (!data || typeof data === 'string' || isSerializedBuffer(data)) {
+                return data;
+            } else {
+                return { type: 'Buffer', data: [...data] };
+            }
+        },
         (serializedData: string | MockttpSerializedBuffer | undefined) => {
             if (!serializedData) {
                 return undefined;
