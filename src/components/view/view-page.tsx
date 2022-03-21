@@ -8,7 +8,8 @@ import {
     runInAction,
     when,
     reaction,
-    comparer
+    comparer,
+    observe
 } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
@@ -187,6 +188,25 @@ class ViewPage extends React.Component<ViewPageProps> {
                 [this.requestEditorRef, this.responseEditorRef].forEach((editorRef) => {
                     editorRef.current?.resetUIState();
                 });
+            })
+        );
+
+        // Due to https://github.com/facebook/react/issues/16087 in React, which is fundamentally caused by
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=1218275 in Chrome, we can leak filtered event
+        // list references, which means that HTTP exchanges persist in memory even after they're cleared.
+        // This observer ensures that the persisted array reference is always emptied after a new value appears:
+        disposeOnUnmount(this,
+            observe(this, 'filteredEventState', ({ newValue, oldValue }) => {
+                const newFilteredEvents = newValue.filteredEvents;
+                const oldFilteredEvents = oldValue?.filteredEvents;
+
+                if (
+                    oldFilteredEvents &&
+                    oldFilteredEvents !== newFilteredEvents &&
+                    oldFilteredEvents !== this.props.eventsStore.events
+                ) {
+                    oldFilteredEvents.length = 0;
+                }
             })
         );
     }
