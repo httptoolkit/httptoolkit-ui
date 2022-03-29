@@ -20,6 +20,7 @@ import {
 
 import { UI_VERSION } from '../../services/service-versions';
 import { isHttpExchange } from './exchange';
+import { getStatusMessage } from './http-docs';
 
 // We only include request/response bodies that are under 500KB
 const HAR_BODY_SIZE_LIMIT = 500000;
@@ -457,8 +458,17 @@ function cleanRawHarData(harContents: any) {
 
         // FF fails to write headersSize or writes null for req/res that has no headers.
         // We don't use it anyway - set it to -1 if it's missing
-        if (entry.request) entry.request.headersSize ??= -1;
-        if (entry.response) entry.response.headersSize ??= -1;
+        if (entry.request) {
+            entry.request.headersSize ??= -1;
+            if (entry.request.postData) {
+                // Charles sets this to null, but the spec requires a string
+                entry.request.postData.mimeType ??= 'application/octet-stream';
+            }
+
+            // Cookie data is often messed up (Charles adds extra ""/null pairs, sets bad expires datastring format)
+            // and it's optional and we don't use it, so it's better to drop it entirely.
+            entry.request.cookies = [];
+        }
 
         // Firefox fails to write timing data for some requests, e.g. requests blocked
         // by adblocker extensions: https://bugzilla.mozilla.org/show_bug.cgi?id=1716335
@@ -468,27 +478,41 @@ function cleanRawHarData(harContents: any) {
             entry.timings.receive ??= -1;
         }
 
-        if (entry.response?.content) {
-            // Similarly, when there's no actual response some fields can be missing. Note that
-            // 'content' is response only, but we don't use these fields anyway:
-            entry.response.content.size ??= -1;
-            entry.response.content.mimeType ??= 'application/octet-stream';
-        }
+        if (entry.response) {
+            entry.response.redirectURL ??= ""; // Charles sets this to null, but the spec requires a string
+            entry.response.headersSize ??= -1;
 
-        if (entry.response && entry.response.bodySize === null) {
-            // Firefox sometimes sets bodySize to null, even when there is clearly a body being received.
-            // Fall back to content-length if available, or use -1 if not.
-            // We do want to use this where it's available so this is a bit annoying, but c'est la vie:
-            // it's not super important data (just used to compare compression perf) and there's no much
-            // we can do when the imported file contains invalid data like this.
-            const contentLengthHeader = _.find(entry.response.headers || [],
-                ({ name }) => name.toLowerCase() === 'content-length'
-            );
-            if (contentLengthHeader) {
-                entry.response.bodySize = parseInt(contentLengthHeader.value, 10);
-            } else {
-                entry.response.bodySize = -1;
+            if (entry.response.statusText == null) {
+                // Charles omits the status message in some cases
+                entry.response.statusText = getStatusMessage(entry.response.status);
             }
+
+            if (entry.response.bodySize === null) {
+                // Firefox sometimes sets bodySize to null, even when there is clearly a body being received.
+                // Fall back to content-length if available, or use -1 if not.
+                // We do want to use this where it's available so this is a bit annoying, but c'est la vie:
+                // it's not super important data (just used to compare compression perf) and there's not much
+                // we can do when the imported file contains invalid data like this.
+                const contentLengthHeader = _.find(entry.response.headers || [],
+                    ({ name }) => name.toLowerCase() === 'content-length'
+                );
+                if (contentLengthHeader) {
+                    entry.response.bodySize = parseInt(contentLengthHeader.value, 10);
+                } else {
+                    entry.response.bodySize = -1;
+                }
+            }
+
+            if (entry.response.content) {
+                // Similarly, when there's no actual response some fields can be missing. Note that
+                // 'content' is response only, but we don't use these fields anyway:
+                entry.response.content.size ??= -1;
+                entry.response.content.mimeType ??= 'application/octet-stream';
+            }
+
+            // Cookie data is often messed up (Charles adds extra ""/null pairs, expires datastring format is often wrong)
+            // and it's optional and we don't use it, so it's better to drop it entirely.
+            entry.response.cookies = [];
         }
     });
 
