@@ -132,5 +132,9 @@ export class UiStore {
     }
 
     @persist @observable
+    preferredShell: string | undefined = 'Bash';
+
+    @persist @observable
     exportSnippetFormat: string | undefined;
+
 }

@@ -4,11 +4,19 @@ import { observable, runInAction, computed, when, action } from 'mobx';
 
 import { styled, css } from '../../../styles';
 
+import {
+    serverVersion,
+    versionSatisfies,
+    MULTIPLE_EXISTING_TERMINAL_RANGE
+} from '../../../services/service-versions';
+
+import { AccountStore } from '../../../model/account/account-store';
+import { UiStore } from '../../../model/ui-store';
 import { InterceptorStore } from '../../../model/interception/interceptor-store';
 import { Interceptor } from '../../../model/interception/interceptors';
 
 import { CopyButtonIcon } from '../../common/copy-button';
-import { AccountStore } from '../../../model/account/account-store';
+import { PillSelector } from '../../common/pill';
 
 const CopyableCommand = styled((p: {
     className?: string;
@@ -68,28 +76,78 @@ const CopyableCommand = styled((p: {
 
 const ConfigContainer = styled.div`
     user-select: text;
+
+    > select {
+        display: block;
+        margin-top: 20px;
+        margin-left: 0;
+    }
 `;
+
+const PLACEHOLDER_SHELL = "...";
+
+type ShellDefinition = { command: string, description: string };
 
 @inject('interceptorStore')
 @inject('accountStore')
+@inject('uiStore')
 @observer
 class ExistingTerminalConfig extends React.Component<{
     interceptor: Interceptor,
-    activateInterceptor: (options: { dockerEnabled: boolean }) => Promise<{ port: number }>,
+    activateInterceptor: (options: { dockerEnabled: boolean }) => Promise<{
+        port: number,
+        commands?: {
+            [shellName: string]: ShellDefinition
+        }
+    }>,
     reportStarted: () => void,
     reportSuccess: (options?: { showRequests?: boolean }) => void,
     closeSelf: () => void,
     interceptorStore?: InterceptorStore,
-    accountStore?: AccountStore
+    accountStore?: AccountStore,
+    uiStore?: UiStore
 }> {
 
     @observable reportedActivated = false;
 
-    @observable serverPort?: number;
+    @observable shellCommands: { [shellName: string]: ShellDefinition } = {
+        // Placeholder string, similar to the default, while we wait (v briefly) for server startup:
+        [PLACEHOLDER_SHELL]: {
+            command: 'eval "$(curl -sS localhost:..../setup)"',
+            description: ''
+        }
+    };
+
+    @observable
+    selectedShell = PLACEHOLDER_SHELL; // Updated to first key when list of shells arrives
 
     @computed
     get interceptCommand() {
-        return `. <(curl -sS localhost:${this.serverPort || '....'}/setup)`;
+        return this.shellCommands[this.selectedShell].command;
+    }
+
+    @computed
+    get shellDescription() {
+        return this.shellCommands[this.selectedShell].description;
+    }
+
+    @computed
+    get shouldShowDropdown() {
+        const multipleShellsMaybeSupported = serverVersion.state !== 'fulfilled' ||
+            versionSatisfies(serverVersion.value as string, MULTIPLE_EXISTING_TERMINAL_RANGE);
+
+        const multipleShellsMaybeAvailable = this.selectedShell === PLACEHOLDER_SHELL ||
+            Object.keys(this.shellCommands).length > 1;
+
+        // We show the dropdown unless we're sure (old server, or new server but only one shell
+        // returned) that there's only one option available.
+        return multipleShellsMaybeSupported && multipleShellsMaybeAvailable;
+    }
+
+    @action.bound
+    selectShell(shell: string) {
+        this.selectedShell = shell;
+        this.props.uiStore!.preferredShell = shell;
     }
 
     @action.bound
@@ -101,12 +159,33 @@ class ExistingTerminalConfig extends React.Component<{
     }
 
     async componentDidMount() {
-        const { port } = await this.props.activateInterceptor({
+        const { port, commands } = await this.props.activateInterceptor({
             dockerEnabled: this.props.accountStore!.featureFlags.includes('docker')
         });
 
         runInAction(() => {
-            this.serverPort = port;
+            if (!commands) {
+                // Backward compat for servers that only support bash:
+                this.shellCommands = {
+                    'Bash': {
+                        command: `eval "$(curl -sS localhost:${port}/setup)"`,
+                        description: 'Bash-compatible'
+                    }
+                };
+            } else {
+                this.shellCommands = commands;
+            }
+
+            // Remember which shell you prefer:
+            const { preferredShell } = this.props.uiStore!;
+            if (preferredShell && preferredShell in this.shellCommands) {
+                this.selectedShell = preferredShell;
+            }
+
+            // Make sure selected shell always refers to a valid command:
+            if (!this.shellCommands[this.selectedShell]) {
+                this.selectedShell = Object.keys(this.shellCommands)[0];
+            }
         });
 
         if (!this.props.interceptor.isActive) {
@@ -129,12 +208,20 @@ class ExistingTerminalConfig extends React.Component<{
     render() {
         return <ConfigContainer>
             <p>
-                Run the command below in any terminal on this machine, to immediately
-                enable interception for all new processes started there.
+                Run the command below in any {this.shellDescription} terminal on this machine, to
+                immediately enable interception for all new processes started there.
             </p>
+            { this.shouldShowDropdown
+                ? <PillSelector<string>
+                    onChange={this.selectShell}
+                    value={this.selectedShell}
+                    options={Object.keys(this.shellCommands)}
+                />
+                : null
+            }
             <CopyableCommand
                 onCopy={this.reportActivated}
-                disabled={this.serverPort === undefined}
+                disabled={this.selectedShell === PLACEHOLDER_SHELL}
             >
                 { this.interceptCommand }
             </CopyableCommand>
