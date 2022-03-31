@@ -32,7 +32,7 @@ const CopyableCommand = styled((p: {
     </div>
 )`
     display: inline-block;
-    margin: 20px auto;
+    margin-top: 20px;
 
     ${p => p.disabled && css`
         opacity: 0.5;
