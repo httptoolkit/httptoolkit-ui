@@ -186,7 +186,11 @@ function generateHarPostBody(body: string | false, mimeType: string): TextBody |
             // URL encoded data - expose this explicitly
             return {
                 mimeType,
-                params: generateHarParamsFromParsedQuery(parsedBody)
+                params: generateHarParamsFromParsedQuery(parsedBody),
+                // The spec says we shouldn't export params & text at the same time, but Chrome & FF do,
+                // it's required for full imports there in some cases, and it's useful to ensure we're
+                // perfectly reproducing the original body format.
+                text: body
             };
         } else {
             // URL encoded but not parseable so just use the raw data
@@ -563,9 +567,11 @@ function parseHarRequestContents(data: RequestContentData): Buffer {
 }
 
 function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
-    if (!data) {
-        return Buffer.from('');
-    } else if (data.params) {
+    if (data?.text) {
+        // Prefer raw exported 'text' data, when available
+        return Buffer.from(data.text, 'utf8');
+    } else if (data?.params) {
+        // If only 'params' is available, stringify and use that.
         return Buffer.from(
             // Go from array of key-value objects to object of key -> value array:
             querystring.stringify(_(data.params)
@@ -575,7 +581,7 @@ function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
             )
         );
     } else {
-        return Buffer.from(data.text, 'utf8');
+        return Buffer.from('');
     }
 }
 
