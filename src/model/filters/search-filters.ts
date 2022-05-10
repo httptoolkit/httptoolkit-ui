@@ -868,7 +868,7 @@ class HeaderFilter extends Filter {
         new SyntaxWrapperSyntax(
             ['[', ']'],
             new StringSyntax("header value", {
-                allowedChars: [[0, 255]], // Anything! Wrapper guards against spaces for us.
+                allowedChars: [[0, 255]], // Any ASCII! Wrapper guards against spaces for us.
                 suggestionGenerator: (value, index, events: CollectedEvent[]) => {
                     // Find the start of the wrapped header name text that preceeds this
                     const headerNameIndex = value.slice(0, index - 1).lastIndexOf('[');
@@ -1057,7 +1057,7 @@ class BodyFilter extends Filter {
         new SyntaxWrapperSyntax(
             ['[', ']'],
             new StringSyntax("body content", {
-                allowedChars: [[0, 255]]
+                allowedChars: [[0, Infinity]] // Match all characters, all unicode included
             }),
             // [] should be required/suggested only if value contains a space
             { optional: true }

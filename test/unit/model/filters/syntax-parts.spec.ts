@@ -400,6 +400,16 @@ describe("String syntax", () => {
         expect(match.consumed).to.equal(3);
     });
 
+    it("should match valid unicode chars", () => {
+        const part = new StringSyntax("a string", {
+            allowedChars: [charRange("А", "Я")] // Match Cyrillic alphabet but not ASCII
+        });
+
+        const match = part.match("ЖЖЖЖЖ hello world", 0)!;
+        expect(match.type).to.equal('full');
+        expect(match.consumed).to.equal(5);
+    });
+
     it("should not match valid chars with prefixes", () => {
         const part = new StringSyntax("a string", { allowedChars: [charRange("a", "z")] });
 

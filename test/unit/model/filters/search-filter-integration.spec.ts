@@ -991,6 +991,43 @@ describe("Search filter model integration test:", () => {
             ]);
         });
 
+        it("should be able to filter for unicode content", async () => {
+            const filter = createFilter("body*=Ж");
+
+            const exampleEvents = [
+                getFailedTls(),
+                getExchangeData({ requestBody: 'an ascii string', responseBody: 'more ascii' }),
+                getExchangeData({ requestBody: 'NOT АЅСІІ', responseBody: 'Ж Cyrillic chars' }),
+                getExchangeData({
+                    responseState: 'aborted',
+                    requestBody: 'big-aborted-request'
+                }),
+                getExchangeData({
+                    responseState: 'pending',
+                    requestBody: 'big-pending-request'
+                }),
+                getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
+            ];
+
+            await decodeBodies(exampleEvents);
+
+            const matchedEvents = exampleEvents.filter(e =>
+                filter.matches(e)
+            ) as HttpExchange[];
+
+            expect(
+                matchedEvents.map((e) =>
+                    e.request.body.encoded.toString('utf8') +
+                    (e.isSuccessfulExchange()
+                        ? e.response.body.encoded.toString('utf8')
+                        : ''
+                    )
+                )
+            ).to.deep.equal([
+                "NOT АЅСІІЖ Cyrillic chars"
+            ]);
+        });
+
         it("should wait for and use decoded bodies", async () => {
             const filter = createFilter("body^=hello");
 
