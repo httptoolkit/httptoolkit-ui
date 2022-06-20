@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { MockRuleData, completionCheckers } from 'mockttp';
+import { RequestRuleData, completionCheckers } from 'mockttp';
 import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 
@@ -11,7 +11,7 @@ import {
 
 export type HtkMockItem = HtkMockRule | HtkMockRuleGroup | HtkMockRuleRoot;
 
-export interface HtkMockRule extends Omit<MockRuleData, 'matchers'> {
+export interface HtkMockRule extends Omit<RequestRuleData, 'matchers'> {
     id: string;
     activated: boolean;
     matchers: Array<Matcher> & { 0?: InitialMatcher };

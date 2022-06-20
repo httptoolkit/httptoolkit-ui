@@ -64,3 +64,4 @@ export const DNS_AND_RULE_PARAM_CONFIG_RANGE = '^1.5.0';
 export const DOCKER_INTERCEPTION_RANGE = '^1.5.0';
 export const CUSTOM_CA_TRUST_RANGE = '^1.7.0';
 export const MULTIPLE_EXISTING_TERMINAL_RANGE = '^1.8.0';
+export const RAW_BODY_SUPPORTED = '^1.9.0';

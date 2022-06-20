@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { MockRuleData, matchers } from "mockttp";
+import { RequestRuleData, matchers } from "mockttp";
 
 import { MatcherClass, HandlerClass } from "./rules";
 import {
@@ -97,7 +97,7 @@ export function summarizeHandlerClass(handler: HandlerClass): string | undefined
 // Summarize the matchers of an instantiated rule
 // Slight varation on the Mockttp explanation to make the
 // comma positioning more consistent for UX of changing rules
-export function summarizeMatcher(rule: MockRuleData): string {
+export function summarizeMatcher(rule: RequestRuleData): string {
     const { matchers } = rule;
 
     if (matchers.length === 0) return 'Never';
@@ -116,6 +116,6 @@ export function summarizeMatcher(rule: MockRuleData): string {
 }
 
 // Summarize the handler of an instantiated rule
-export function summarizeHandler(rule: MockRuleData): string {
+export function summarizeHandler(rule: RequestRuleData): string {
     return withFirstCharUppercased(rule.handler.explain());
 }

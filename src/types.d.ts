@@ -15,9 +15,11 @@ import type { PortRange } from 'mockttp/dist/mockttp';
 import type {
     PassThroughResponse as MockttpBreakpointedResponse,
     CallbackRequestResult as MockttpBreakpointRequestResult,
-    CallbackResponseResult as MockttpBreakpointResponseResult,
-    SerializedBuffer as MockttpSerializedBuffer
+    CallbackResponseResult as MockttpBreakpointResponseResult
 } from 'mockttp/dist/rules/requests/request-handlers';
+import type {
+    SerializedBuffer as MockttpSerializedBuffer
+} from 'mockttp/dist/rules/requests/request-handler-definitions';
 
 import type { ObservablePromise } from './util/observable';
 import type { HttpExchange } from './model/http/exchange';

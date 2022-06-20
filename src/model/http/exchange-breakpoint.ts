@@ -16,6 +16,11 @@ import { asHeaderArray } from "../../util";
 import { getDeferred, Deferred } from "../../util/promise";
 import { reportError } from "../../errors";
 
+import {
+    RAW_BODY_SUPPORTED,
+    serverVersion,
+    versionSatisfies
+} from '../../services/service-versions';
 import { decodeBody } from "../../services/ui-worker-api";
 import { EditableBody } from './editable-body';
 import { getStatusMessage } from "./http-docs";
@@ -103,11 +108,11 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
     protected readonly deferred: Deferred<BreakpointResumeType<T>>;
 
     @observable.shallow
-    private resultMetadata: Omit<T, 'body'>;
+    private resultMetadata: Omit<T, 'body' | 'rawBody'>;
     private readonly editableBody: EditableBody;
 
     constructor(
-        result: Omit<T, 'body'>,
+        result: Omit<T, 'body' | 'rawBody'>,
         decodedBody: Buffer,
         encodedBody: Buffer | undefined
     ) {
@@ -179,8 +184,14 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
     readonly resume = async () => {
         this.deferred.resolve({
             ...this.resultMetadata,
-            // Build the full encoded body before sending
-            body: await this.editableBody.encoded,
+
+            ...(versionSatisfies(await serverVersion, RAW_BODY_SUPPORTED)
+                // Mockttp v3+ skips auto-encoding only if you use rawBody:
+                ? { rawBody: await this.editableBody.encoded }
+                // Old Mockttp doesn't support rawBody, never auto-encodes:
+                : { body: await this.editableBody.encoded }
+            ),
+
             // Psuedo-headers those will be generated automatically from the other,
             // fields, as part of the rest of the request process.
             headers: omitPsuedoHeaders(this.resultMetadata.headers)

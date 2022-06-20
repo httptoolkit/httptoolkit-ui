@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import {
-    handlers,
+    requestHandlerDefinitions,
     matchers
 } from 'mockttp';
 
@@ -51,12 +51,14 @@ export const MatcherKeys = new Map<MatcherClass, MatcherClassKey>(
     ) as Array<[MatcherClass, MatcherClassKey]>
 );
 
+const HandlerDefinitionLookup = requestHandlerDefinitions.HandlerDefinitionLookup;
+
 // Define maps to/from handler keys to handler classes, and
 // types for the handlers & classes themselves; both the built-in
 // ones and our own extra additions & overrides.
 export const HandlerLookup = Object.assign(
     {},
-    handlers.HandlerLookup as Omit<typeof handlers.HandlerLookup, 'passthrough'>,
+    HandlerDefinitionLookup as Omit<typeof HandlerDefinitionLookup, 'passthrough'>,
     {
         'passthrough': PassThroughHandler,
         'simple': StaticResponseHandler,

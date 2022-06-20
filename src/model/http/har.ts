@@ -549,6 +549,7 @@ function parseHarRequest(
         // We need to promise it has a 'host' header (i.e. the headers are
         // legal for an HTTP request):
         headers: asHtkHeaders(request.headers) as Headers & { host: string },
+        rawHeaders: request.headers.map(h => [h.name, h.value]),
         body: {
             decoded: request._content
                 ? parseHarRequestContents(request._content)
@@ -597,6 +598,7 @@ function parseHarResponse(
         statusCode: response.status,
         statusMessage: response.statusText,
         headers: asHtkHeaders(response.headers),
+        rawHeaders: response.headers.map(h => [h.name, h.value]),
         body: {
             decoded: Buffer.from(
                 response.content.text || '',

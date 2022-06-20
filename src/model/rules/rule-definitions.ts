@@ -1,7 +1,12 @@
 import * as _ from 'lodash';
 import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
-import { Method, matchers, handlers, completionCheckers } from 'mockttp';
+import {
+    Method,
+    matchers,
+    requestHandlerDefinitions,
+    completionCheckers
+} from 'mockttp';
 import * as serializr from 'serializr';
 import * as querystring from 'querystring';
 
@@ -86,7 +91,7 @@ export class AmIUsingMatcher extends matchers.RegexPathMatcher {
     }
 }
 
-export class StaticResponseHandler extends handlers.SimpleHandler {
+export class StaticResponseHandler extends requestHandlerDefinitions.SimpleHandlerDefinition {
     explain() {
         return `respond with status ${this.status}${
             byteLength(this.data) ? ' and static content' : ''
@@ -124,13 +129,13 @@ serializr.createModelSchema(StaticResponseHandler, {
 }, (context) => new StaticResponseHandler(context.args.rulesStore));
 
 
-export class FromFileResponseHandler extends handlers.FileHandler {
+export class FromFileResponseHandler extends requestHandlerDefinitions.FileHandlerDefinition {
     explain() {
         return `respond with status ${this.status} and content from ${this.filePath || 'a file'}`;
     }
 }
 
-export class PassThroughHandler extends handlers.PassThroughHandler {
+export class PassThroughHandler extends requestHandlerDefinitions.PassThroughHandlerDefinition {
 
     constructor(rulesStore: RulesStore) {
         super(rulesStore.activePassthroughOptions);
@@ -142,7 +147,7 @@ serializr.createModelSchema(PassThroughHandler, {
     type: serializr.primitive()
 }, (context) => new PassThroughHandler(context.args.rulesStore));
 
-export class ForwardToHostHandler extends handlers.PassThroughHandler {
+export class ForwardToHostHandler extends requestHandlerDefinitions.PassThroughHandlerDefinition {
 
     constructor(forwardToLocation: string, updateHostHeader: boolean, rulesStore: RulesStore) {
         super({
@@ -169,10 +174,10 @@ serializr.createModelSchema(ForwardToHostHandler, {
     );
 });
 
-export type RequestTransform = handlers.RequestTransform;
-export type ResponseTransform = handlers.ResponseTransform;
+export type RequestTransform = requestHandlerDefinitions.RequestTransform;
+export type ResponseTransform = requestHandlerDefinitions.ResponseTransform;
 
-export class TransformingHandler extends handlers.PassThroughHandler {
+export class TransformingHandler extends requestHandlerDefinitions.PassThroughHandlerDefinition {
 
     constructor(
         rulesStore: RulesStore,
@@ -237,7 +242,7 @@ serializr.createModelSchema(TransformingHandler, {
     );
 });
 
-export class RequestBreakpointHandler extends handlers.PassThroughHandler {
+export class RequestBreakpointHandler extends requestHandlerDefinitions.PassThroughHandlerDefinition {
 
     constructor(rulesStore: RulesStore) {
         super({
@@ -256,7 +261,7 @@ serializr.createModelSchema(RequestBreakpointHandler, {
     type: serializr.primitive()
 }, (context) => new RequestBreakpointHandler(context.args.rulesStore));
 
-export class ResponseBreakpointHandler extends handlers.PassThroughHandler {
+export class ResponseBreakpointHandler extends requestHandlerDefinitions.PassThroughHandlerDefinition {
 
     constructor(rulesStore: RulesStore) {
         super({
@@ -276,7 +281,7 @@ serializr.createModelSchema(ResponseBreakpointHandler, {
 }, (context) => new ResponseBreakpointHandler(context.args.rulesStore));
 
 
-export class RequestAndResponseBreakpointHandler extends handlers.PassThroughHandler {
+export class RequestAndResponseBreakpointHandler extends requestHandlerDefinitions.PassThroughHandlerDefinition {
 
     constructor(rulesStore: RulesStore) {
         super({
@@ -296,10 +301,10 @@ serializr.createModelSchema(RequestAndResponseBreakpointHandler, {
     type: serializr.primitive()
 }, (context) => new RequestAndResponseBreakpointHandler(context.args.rulesStore));
 
-export type TimeoutHandler = handlers.TimeoutHandler;
-export const TimeoutHandler = handlers.TimeoutHandler;
-export type CloseConnectionHandler = handlers.CloseConnectionHandler;
-export const CloseConnectionHandler = handlers.CloseConnectionHandler;
+export type TimeoutHandler = requestHandlerDefinitions.TimeoutHandlerDefinition;
+export const TimeoutHandler = requestHandlerDefinitions.TimeoutHandlerDefinition;
+export type CloseConnectionHandler = requestHandlerDefinitions.CloseConnectionHandlerDefinition;
+export const CloseConnectionHandler = requestHandlerDefinitions.CloseConnectionHandlerDefinition;
 
 export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     return observable({
