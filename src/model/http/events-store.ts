@@ -23,6 +23,7 @@ import { ApiStore } from '../api/api-store';
 import { lazyObservablePromise } from '../../util/observable';
 import { reportError } from '../../errors';
 import { parseHar } from './har';
+import { WebSocketStream } from '../websockets/websocket-stream';
 
 // Would be nice to magically infer this from the overloaded on() type, but sadly:
 // https://github.com/Microsoft/TypeScript/issues/24275#issuecomment-390701982
@@ -30,6 +31,8 @@ type EventTypesMap = {
     'request-initiated': InputInitiatedRequest
     'request': InputCompletedRequest
     'response': InputResponse
+    'websocket-request': InputCompletedRequest,
+    'websocket-accepted': InputResponse,
     'abort': InputInitiatedRequest
     'tls-client-error': InputTlsRequest,
     'client-error': InputClientError
@@ -39,6 +42,8 @@ const eventTypes = [
     'request-initiated',
     'request',
     'response',
+    'websocket-request',
+    'websocket-accepted',
     'abort',
     'tls-client-error',
     'client-error'
@@ -50,9 +55,11 @@ type QueuedEvent = ({
     [T in EventType]: { type: T, event: EventTypesMap[T] }
 }[EventType]);
 
-type OrphanableQueuedEvent =
-    | { type: 'response', event: InputResponse }
-    | { type: 'abort', event: InputInitiatedRequest };
+type OrphanableQueuedEvent<T extends
+    | 'response'
+    | 'abort'
+    | 'websocket-accepted'
+> = { type: T, event: EventTypesMap[T] };
 
 export class EventsStore {
 
@@ -85,7 +92,7 @@ export class EventsStore {
     isPaused = false;
 
     private eventQueue: Array<QueuedEvent> = [];
-    private orphanedEvents: { [id: string]: OrphanableQueuedEvent } = {};
+    private orphanedEvents: { [id: string]: OrphanableQueuedEvent<any> } = {};
 
     private isFlushQueued = false;
     private queueEventFlush() {
@@ -101,6 +108,13 @@ export class EventsStore {
     get exchanges(): Array<HttpExchange> {
         return this.events.filter(
             (event: any): event is HttpExchange => !!event.request
+        );
+    }
+
+    @computed
+    get websockets(): Array<WebSocketStream> {
+        return this.exchanges.filter(
+            (event): event is WebSocketStream => event.isWebSocket()
         );
     }
 
@@ -135,6 +149,11 @@ export class EventsStore {
                 return this.checkForOrphan(queuedEvent.event.id);
             case 'response':
                 return this.setResponse(queuedEvent.event);
+            case 'websocket-request':
+                this.addWebSocketRequest(queuedEvent.event);
+                return this.checkForOrphan(queuedEvent.event.id);
+            case 'websocket-accepted':
+                return this.addAcceptedWebSocketResponse(queuedEvent.event);
             case 'abort':
                 return this.markRequestAborted(queuedEvent.event);
             case 'tls-client-error':
@@ -225,6 +244,33 @@ export class EventsStore {
             }
 
             exchange.setResponse(response);
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
+    @action
+    private addWebSocketRequest(request: InputCompletedRequest) {
+        try {
+            this.events.push(new WebSocketStream(this.apiStore, request));
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
+    @action
+    private addAcceptedWebSocketResponse(response: InputResponse) {
+        try {
+            const stream = _.find(this.websockets, { id: response.id });
+
+            if (!stream) {
+                // Handle this later, once the request has arrived
+                this.orphanedEvents[response.id] = { type: 'websocket-accepted', event: response };
+                return;
+            }
+
+            stream.setResponse(response);
+            stream.setAccepted(response);
         } catch (e) {
             reportError(e);
         }

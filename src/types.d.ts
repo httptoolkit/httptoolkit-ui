@@ -23,6 +23,7 @@ import type {
 
 import type { ObservablePromise } from './util/observable';
 import type { HttpExchange } from './model/http/exchange';
+import type { WebSocketStream } from './model/websockets/websocket-stream';
 import type { TrafficSource } from './model/http/sources';
 import type { ViewableContentType } from './model/http/content-types';
 
@@ -104,6 +105,7 @@ export type MessageBody = {
 export type { HttpExchange };
 export type CollectedEvent =
     | HttpExchange
+    | WebSocketStream
     | FailedTlsRequest;
 export type ExchangeMessage = HtkRequest | HtkResponse;
 

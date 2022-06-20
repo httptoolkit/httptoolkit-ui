@@ -100,6 +100,7 @@ export const ExchangeCategories = [
     'font',
     'data',
     'mutative',
+    'websocket',
     'incomplete',
     'aborted',
     'unknown'
@@ -115,6 +116,8 @@ export function getExchangeCategory(exchange: HttpExchange): ExchangeCategory {
         }
     } else if (!exchange.isSuccessfulExchange()) {
         return 'aborted';
+    } else if (exchange.isWebSocket()) {
+        return 'websocket';
     } else if (isMutatativeExchange(exchange)) {
         return 'mutative';
     } else if (isImageExchange(exchange)) {
@@ -143,6 +146,7 @@ export function describeExchangeCategory(category: ExchangeCategory) {
         "incomplete": "an incomplete request",
         "aborted": "an aborted request",
         "image": "a request for an image",
+        "websocket": "a websocket stream",
         "js": "a request for JavaScript",
         "css": "a request for CSS",
         "html": "a request for HTML",
@@ -159,7 +163,8 @@ const highlights = {
     black: '#000',
     grey: '#888',
     red: '#ce3939',
-    green: '#4caf7d',
+    lightGreen: '#4caf7d',
+    brightGreen: '#409309',
     orange: '#ff8c38',
     yellow: '#e9f05b',
     lightBlue: '#2fb4e0',
@@ -179,7 +184,9 @@ export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | Exch
         case 'mutative':
             return highlights.red;
         case 'image':
-            return highlights.green;
+            return highlights.lightGreen;
+        case 'websocket':
+            return highlights.brightGreen;
         case 'js':
             return highlights.orange;
         case 'css':
@@ -206,7 +213,9 @@ export function getStatusColor(status: undefined | 'aborted' | number, theme: Th
     } else if (status >= 300) {
         return highlights.darkBlue;
     } else if (status >= 200) {
-        return highlights.green;
+        return highlights.lightGreen;
+    } else if (status === 101) {
+        return highlights.lightGreen; // Almost always a websocket, so special case as OK
     } else if (status >= 100) {
         return highlights.grey;
     }
@@ -217,7 +226,7 @@ export function getStatusColor(status: undefined | 'aborted' | number, theme: Th
 
 export function getMethodColor(method: string): string {
     if (method === 'GET') {
-        return highlights.green;
+        return highlights.lightGreen;
     } else if (method === 'POST') {
         return highlights.orange;
     } else if (method === 'DELETE') {

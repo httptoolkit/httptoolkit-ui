@@ -25,6 +25,8 @@ import {
 } from '../../util';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 
+import { reportError } from '../../errors';
+
 import { parseSource } from './sources';
 import { getContentType } from './content-types';
 import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
@@ -40,7 +42,7 @@ import {
     getResponseBreakpoint,
     getDummyResponseBreakpoint
 } from './exchange-breakpoint';
-import { reportError } from '../../errors';
+import type { WebSocketStream } from '../websockets/websocket-stream';
 
 export function isHttpExchange(event: CollectedEvent): event is HttpExchange {
     return 'request' in event;
@@ -235,6 +237,10 @@ export class HttpExchange {
 
     isSuccessfulExchange(): this is SuccessfulExchange {
         return this.isCompletedExchange() && this.response !== 'aborted';
+    }
+
+    isWebSocket(): this is WebSocketStream {
+        return false;
     }
 
     hasRequestBody(): this is CompletedRequest {
