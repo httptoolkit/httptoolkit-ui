@@ -182,7 +182,7 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 });
 
 self.addEventListener('activate', async (event) => {
-    event.waitUntil(async () => {
+    event.waitUntil((async () => {
         writeToLog({ type: 'activate' });
         console.log(`SW activating for version ${appVersion}`);
 
@@ -218,7 +218,7 @@ self.addEventListener('activate', async (event) => {
             await precacheController.activate(event);
             writeToLog({ type: 'activated' });
         }
-    });
+    })());
 });
 
 // Webpack Dev Server goes straight to the network:
