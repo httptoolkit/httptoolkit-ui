@@ -184,12 +184,22 @@ self.addEventListener('activate', async (event) => {
     })());
 });
 
+const localPathMatcher = (regex: RegExp) => ({ url }: { url: URL }): boolean | string[] => {
+    // Matches the logic of Workbox's RegExpRoute, more or less, but enforcing local-only
+    // matches explicitly, without the annoying warnings, and just matching the path:
+
+    if (url.origin !== location.origin) return false;
+    const matchResult = regex.exec(url.pathname);
+    if (!matchResult) return false;
+    else return matchResult.slice(1);
+};
+
 // Webpack Dev Server goes straight to the network:
-registerRoute(/\/sockjs-node\/.*/, new NetworkOnly());
+registerRoute(localPathMatcher(/\/sockjs-node\/.*/), new NetworkOnly());
 
 // API routes aren't preloaded (there's thousands, it'd kill everything), but we
 // try to keep your recently used ones around for offline use.
-registerRoute(/api\/.*/, new StaleWhileRevalidate({
+registerRoute(localPathMatcher(/\/api\/.*/), new StaleWhileRevalidate({
     cacheName: 'api-cache',
     plugins: [
         new ExpirationPlugin({
@@ -204,11 +214,11 @@ registerRoute(new NavigationRoute(
     precacheController.createHandlerBoundToURL('/index.html')
 ));
 
-// All other app code _must_ be precached - no random updates from elsewhere please.
+// All other (non-API) app code _must_ be precached - no random updates from elsewhere.
 // The below is broadly based on the precaching.addRoute, but resetting the cache
 // 100% if any requests ever fail to match.
 let resettingSw = false;
-registerRoute(/\/.*/, async ({ event }) => {
+registerRoute(localPathMatcher(/\/.*/), async ({ event }) => {
     const fetchEvent = event as FetchEvent;
 
     if (resettingSw) return fetch(fetchEvent.request);
