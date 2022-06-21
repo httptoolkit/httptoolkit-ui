@@ -1,7 +1,6 @@
-import { initSentry, reportError, Sentry } from '../errors';
+import { initSentry, reportError } from '../errors';
 initSentry(process.env.SENTRY_DSN);
 
-import * as kv from 'idb-keyval';
 import * as localForage from 'localforage';
 
 import { registerRoute, NavigationRoute } from 'workbox-routing';
@@ -15,40 +14,7 @@ import { lastServerVersion, versionSatisfies } from './service-versions';
 import { delay } from '../util/promise';
 
 const appVersion = process.env.UI_VERSION || "Unknown";
-const SW_LOG = 'sw-log';
 localForage.config({ name: "httptoolkit", version: 1 });
-
-async function readLog(): Promise<Array<any>> {
-    const currentLog = await kv.get<Array<any>>(SW_LOG);
-    return currentLog || [];
-}
-
-async function getCacheUrls(cacheName: string): Promise<string[]> {
-    return (
-        await (
-            await caches.open(cacheName)
-        ).keys()
-    ).map(r => r.url);
-}
-
-async function writeToLog(data: any) {
-    data.v = appVersion;
-    data.dt = Date.now();
-
-    const logData = await readLog();
-
-    data.quota = navigator.storage && navigator.storage.estimate
-        ? await navigator.storage.estimate()
-        : {};
-
-    data.precached = await getCacheUrls(precacheName);
-    data.tmpPrecached = await getCacheUrls(precacheName + '-temp');
-
-    logData.push(data);
-    kv.set(SW_LOG, logData);
-}
-
-writeToLog({ type: 'startup' });
 
 // Check if the server is accessible, and that we've been given the relevant auth
 // details. If we haven't, that means the desktop has started the server with an
@@ -168,7 +134,6 @@ function deleteOldWorkboxCaches() {
 }
 
 self.addEventListener('install', (event: ExtendableEvent) => {
-    writeToLog({ type: 'install' });
     console.log(`SW installing for version ${appVersion}`);
     event.waitUntil(
         precacheNewVersionIfSupported(event)
@@ -183,12 +148,10 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 
 self.addEventListener('activate', async (event) => {
     event.waitUntil((async () => {
-        writeToLog({ type: 'activate' });
         console.log(`SW activating for version ${appVersion}`);
 
         if (await forceUpdateRequired) {
             reportError("Force update required on newly activated SW");
-            writeToLog({ type: 'forcing-refresh' });
 
             resettingSw = true; // Pass through all requests
 
@@ -206,8 +169,6 @@ self.addEventListener('activate', async (event) => {
                     });
             });
 
-            writeToLog({ type: 'refresh-forced' });
-
             // Unregister, so that future registration loads the SW & caches from scratch
             self.registration.unregister();
             console.log("SW forcibly refreshed");
@@ -216,7 +177,9 @@ self.addEventListener('activate', async (event) => {
             deleteOldWorkboxCaches();
 
             await precacheController.activate(event);
-            writeToLog({ type: 'activated' });
+
+            // Delete the old (now unused) SW event logs
+            indexedDB.deleteDatabase('keyval-store');
         }
     })());
 });
@@ -290,19 +253,11 @@ function isDevToolsRequest(event: FetchEvent) {
 function brokenCacheResponse(event: FetchEvent): Promise<Response> {
     console.log('SW cache has failed for resource request', event.request);
 
-    writeToLog({ type: 'load-failed' })
-    .then(readLog)
-    .then((swLogData) => {
-        Sentry.withScope(scope => {
-            scope.setExtra('sw-log', swLogData);
-
-            // Somehow we're returning a broken null/undefined response.
-            // This can happen if the precache somehow disappears. Though in theory
-            // that shouldn't happen, it does seem to very occasionally, and it
-            // then breaks app loading. If this does somehow happen, refresh everything:
-            reportError(`Null result for ${event.request.url}, resetting SW.`);
-        });
-    });
+    // Somehow we're returning a broken null/undefined response.
+    // This can happen if the precache somehow disappears. Though in theory
+    // that shouldn't happen, it does seem to very occasionally, and it
+    // then breaks app loading. If this does somehow happen, refresh everything:
+    reportError(`Null result for ${event.request.url}, resetting SW.`);
 
     // Refresh the SW (won't take effect until after all pages unload).
     self.registration.unregister();
