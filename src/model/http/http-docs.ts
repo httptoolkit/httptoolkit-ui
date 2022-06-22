@@ -16,7 +16,7 @@
  * GPLv3 content, allowing us to combine both in a single project.
  */
 
-interface DocsData {
+interface MdnDocsData {
     mdnSlug: string;
     name: string;
     summary: string;
@@ -43,7 +43,7 @@ interface DocsData {
  * .value())
  * console.log(JSON.stringify(output, null, 4));
  */
-const STATUSES: { [key: string]: DocsData | undefined } = {
+const STATUSES: { [key: string]: MdnDocsData | undefined } = {
     "100": {
         "name": "100 Continue",
         "mdnSlug": "Web/HTTP/Status/100",
@@ -316,6 +316,79 @@ const STATUSES: { [key: string]: DocsData | undefined } = {
     }
 };
 
+interface RawDocsData {
+    name: string;
+    summary: string;
+}
+
+// Manually paraphrased from the RFC: https://www.rfc-editor.org/rfc/rfc6455.html#section-7.4.1
+const WEBSOCKET_CLOSE_CODES: { [key: string]: RawDocsData } = {
+    1000: {
+        "name": "Normal Closure",
+        "summary": "A normal WebSocket closure, meaning that the purpose for which the connection was established has been fulfilled."
+    },
+    1001: {
+        "name": "Going Away",
+        "summary": "An endpoint is \"going away\", such as a server going down or a browser having navigated away from a page."
+    },
+    1002: {
+        "name": "Protocol Error",
+        "summary": "An endpoint terminated the connection due to a protocol error"
+    },
+    1003: {
+        "name": "Unsupported Data",
+        "summary": "An endpoint is terminating the connection because it has received a type of data it cannot accept (e.g., an endpoint that understands only text data MAY send this if it receives a binary message)."
+    },
+    1004: {
+        "name": "Reserved",
+        "summary": "This close code is not used. A specific meaning might be defined in future."
+    },
+    1005: {
+        "name": "No Close Code Received",
+        "summary": "This is a reserved value that must not be sent by an endpoint. It is designated for use in applications expecting a status code, to indicate that no status code was actually present."
+    },
+    1006: {
+        "name": "Abnormal Closure",
+        "summary": "This is a reserved value that must not be sent by an endpoint. It is designated for use in applications expecting a status code, to indicate that the connection was closed abnormally, e.g., without sending or receiving a Close control frame."
+    },
+    1007: {
+        "name": "Invalid Frame Payload Data",
+        "summary": "An endpoint is terminating the connection because it has received data within a message that was not consistent with the type of the message (e.g., non-UTF-8 data within a text message)."
+    },
+    1008: {
+        "name": "Policy Violation",
+        "summary": "An endpoint is terminating the connection because it has received a message that violates its policy. This is a generic status code that can be returned when there is no other more suitable status code (e.g., 1003 or 1009) or if there is a need to hide specific details about the policy."
+    },
+    1009: {
+        "name": "Message Too Large",
+        "summary": "An endpoint is terminating the connection because it has received a message that is too big for it to process."
+    },
+    1010: {
+        "name": "Mandatory Extension",
+        "summary": "The client is terminating the connection because it has expected the server to negotiate one or more extensions, but the server didn't return them in the response message of the WebSocket handshake.  The list of extensions that are needed SHOULD appear in the /reason/ part of the Close frame."
+    },
+    1011: {
+        "name": "Internal Error",
+        "summary": "The server is terminating the connection because it encountered an unexpected condition that prevented it from fulfilling the request."
+    },
+    1012: {
+        "name": "Service Restart",
+        "summary": "The server is terminating the connection because it is restarting."
+    },
+    1013: {
+        "name": "Try Again Later",
+        "summary": "The server is terminating the connection due to a temporary condition, such as being overloaded."
+    },
+    1014: {
+        "name": "Bad Gateway",
+        "summary": "The server was acting as a gateway or proxy, and received an invalid response from an upstream server."
+    },
+    1015: {
+        "name": "TLS Handshake",
+        "summary": "This is a reserved value that must not be sent by an endpoint. It is designated for use in applications expecting a status code, to indicate that the connection was closed due to a failure to perform a TLS handshake (e.g., the server certificate can't be verified)."
+    }
+};
+
 /*
  * Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers$children?expand
  * Transformed with:
@@ -338,7 +411,7 @@ const STATUSES: { [key: string]: DocsData | undefined } = {
  * .value())
  * console.log(JSON.stringify(output, null, 4));
  */
-const HEADERS: { [key: string]: DocsData | undefined } = {
+const HEADERS: { [key: string]: MdnDocsData | undefined } = {
     "accept": {
         "mdnSlug": "Web/HTTP/Headers/Accept",
         "name": "Accept",
@@ -876,7 +949,7 @@ const HEADERS: { [key: string]: DocsData | undefined } = {
  * .value())
  * console.log(JSON.stringify(output, null, 4));
  */
-const METHODS: { [key: string]: DocsData | undefined } = {
+const METHODS: { [key: string]: MdnDocsData | undefined } = {
     "connect": {
         "mdnSlug": "Web/HTTP/Methods/CONNECT",
         "name": "CONNECT",
@@ -935,7 +1008,7 @@ type DocsInfo = {
 };
 
 function getDocs(
-    data: { [key: string]: DocsData | undefined },
+    data: { [key: string]: MdnDocsData | undefined },
     key: string
 ): DocsInfo | undefined {
     const docsInfo = data[key];
@@ -960,6 +1033,11 @@ export function getStatusDocs(statusCode: string | number) {
 
     statusDocs.message = statusDocs.name!.split(' ').slice(1).join(' ');
     return statusDocs as StatusDocsInfo;
+}
+
+export function getWebSocketCloseCodeDocs(closeCode: string | number | undefined) {
+    if (!closeCode) return;
+    return WEBSOCKET_CLOSE_CODES[closeCode.toString()];
 }
 
 export function getMethodDocs(methodName: string) {
