@@ -55,6 +55,10 @@ const pillStyles = css`
     font-weight: bold;
     word-spacing: 3px;
 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
     color: ${(p: { color?: string, theme?: Theme }) =>
         getTextColor(p.color || getDefaultColor(p.theme!), p.theme!)
     };
