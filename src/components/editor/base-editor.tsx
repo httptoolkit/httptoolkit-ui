@@ -304,6 +304,10 @@ export class BaseEditor extends React.Component<EditorProps> {
         const options: monacoTypes.editor.IEditorConstructionOptions = {
             showFoldingControls: 'always',
 
+            scrollbar: {
+                alwaysConsumeMouseWheel: false
+            },
+
             quickSuggestions: false,
             parameterHints: { enabled: false },
             codeLens: false,
