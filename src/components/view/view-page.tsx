@@ -89,17 +89,29 @@ const ViewPageKeyboardShortcuts = (props: {
     return null;
 };
 
+const EDITOR_KEYS = [
+    'request',
+    'response',
+    'streamMessage'
+] as const;
+type EditorKey = typeof EDITOR_KEYS[number];
+
 @inject('eventsStore')
 @inject('proxyStore')
 @inject('uiStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    requestEditorNode = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
-    responseEditorNode = portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>();
-
-    requestEditorRef = React.createRef<SelfSizedBaseEditor>();
-    responseEditorRef = React.createRef<SelfSizedBaseEditor>();
+    private readonly editors = EDITOR_KEYS.reduce((v, key) => ({
+        ...v,
+        [key]: {
+            node: portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>(),
+            ref: React.createRef<SelfSizedBaseEditor>()
+        }
+    }), {} as { [K in EditorKey]: {
+        node: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
+        ref: React.RefObject<SelfSizedBaseEditor>
+    } });
 
     searchInputRef = React.createRef<HTMLInputElement>();
 
@@ -173,6 +185,10 @@ class ViewPage extends React.Component<ViewPageProps> {
                     expandedCard === 'responseBody' &&
                     !selectedEvent.hasResponseBody() &&
                     !selectedEvent.responseBreakpoint
+                ) ||
+                (
+                    expandedCard === 'webSocketMessages' &&
+                    !selectedEvent.isWebSocket()
                 )
             ) {
                 runInAction(() => {
@@ -185,8 +201,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         // Every time the selected event changes, reset the editors:
         disposeOnUnmount(this,
             reaction(() => this.selectedEvent, () => {
-                [this.requestEditorRef, this.responseEditorRef].forEach((editorRef) => {
-                    editorRef.current?.resetUIState();
+                Object.values(this.editors).forEach(({ ref }) => {
+                    ref.current?.resetUIState();
                 });
             })
         );
@@ -225,8 +241,11 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if ('request' in this.selectedEvent) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}
-                requestEditor={this.requestEditorNode}
-                responseEditor={this.responseEditorNode}
+
+                requestEditor={this.editors.request.node}
+                responseEditor={this.editors.response.node}
+                streamMessageEditor={this.editors.streamMessage.node}
+
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
                 onScrollToEvent={this.onScrollToCenterEvent}
@@ -279,11 +298,9 @@ class ViewPage extends React.Component<ViewPageProps> {
                 { rightPane }
             </SplitPane>
 
-            {[this.requestEditorNode, this.responseEditorNode].map((editorNode, i) =>
-                <portals.InPortal key={i} node={editorNode}>
-                    <ThemedSelfSizedEditor
-                        ref={i === 0 ? this.requestEditorRef : this.responseEditorRef}
-                    />
+            {Object.values(this.editors).map(({ node, ref }, i) =>
+                <portals.InPortal key={i} node={node}>
+                    <ThemedSelfSizedEditor ref={ref} />
                 </portals.InPortal>
             )}
         </div>;

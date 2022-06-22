@@ -3,7 +3,8 @@ import type { ComponentClass } from 'react';
 import type {
     InitiatedRequest as MockttpInitiatedRequest,
     CompletedRequest as MockttpCompletedRequest,
-    CompletedResponse as MockttpResponse
+    CompletedResponse as MockttpResponse,
+    WebSocketMessage as MockttpWebSocketMessage
 } from 'mockttp';
 import type {
     Headers,
@@ -40,6 +41,8 @@ export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
+
+export type InputWebSocketMessage = MockttpWebSocketMessage;
 
 export interface BreakpointBody {
     decoded: Buffer;

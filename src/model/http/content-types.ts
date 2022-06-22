@@ -124,12 +124,16 @@ function isValidBase64Byte(byte: number) {
 export function getCompatibleTypes(
     contentType: ViewableContentType,
     rawContentType: string | undefined,
-    body: MessageBody
+    body: MessageBody | Buffer | undefined
 ): ViewableContentType[] {
     let types = [contentType];
 
+    if (body && !Buffer.isBuffer(body)) {
+        body = body.decoded;
+    }
+
     // Examine the first char of the body, assuming it's ascii
-    let firstChar = body.decoded && body.decoded.slice(0, 1).toString('ascii');
+    let firstChar = body && body.slice(0, 1).toString('ascii');
 
     // Allow formatting non-JSON text as JSON, if it looks like it might be
     if (contentType === 'text' && (firstChar === '{' || firstChar === '[')) {
@@ -155,11 +159,11 @@ export function getCompatibleTypes(
     if (contentType !== 'raw') types.push('raw');
 
     if (
-        body.decoded &&
-        body.decoded.length > 0 &&
-        body.decoded.length % 4 === 0 && // Multiple of 4 bytes
-        body.decoded.length < 1000 * 100 && // < 100 KB of content
-        body.decoded.every(isValidBase64Byte)
+        body &&
+        body.length > 0 &&
+        body.length % 4 === 0 && // Multiple of 4 bytes
+        body.length < 1000 * 100 && // < 100 KB of content
+        body.every(isValidBase64Byte)
     ) {
         types.push('base64');
     }

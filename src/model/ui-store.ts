@@ -82,12 +82,18 @@ export class UiStore {
         'response': { collapsed: false },
         'responseBody': { collapsed: false },
 
+        'webSocketMessages': { collapsed: false },
+
         'performance': { collapsed: true },
         'export': { collapsed: true }
     };
 
     @observable
-    expandedCard: 'requestBody' | 'responseBody' | undefined;
+    expandedCard:
+        | 'requestBody'
+        | 'responseBody'
+        | 'webSocketMessages'
+        | undefined;
 
     @observable
     readonly settingsCardStates = {

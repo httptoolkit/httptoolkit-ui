@@ -13,7 +13,8 @@ import {
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
-    CollectedEvent
+    CollectedEvent,
+    InputWebSocketMessage
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
@@ -33,6 +34,8 @@ type EventTypesMap = {
     'response': InputResponse
     'websocket-request': InputCompletedRequest,
     'websocket-accepted': InputResponse,
+    'websocket-message-received': InputWebSocketMessage,
+    'websocket-message-sent': InputWebSocketMessage,
     'abort': InputInitiatedRequest
     'tls-client-error': InputTlsRequest,
     'client-error': InputClientError
@@ -44,6 +47,8 @@ const eventTypes = [
     'response',
     'websocket-request',
     'websocket-accepted',
+    'websocket-message-received',
+    'websocket-message-sent',
     'abort',
     'tls-client-error',
     'client-error'
@@ -59,6 +64,8 @@ type OrphanableQueuedEvent<T extends
     | 'response'
     | 'abort'
     | 'websocket-accepted'
+    | 'websocket-message-received'
+    | 'websocket-message-sent'
 > = { type: T, event: EventTypesMap[T] };
 
 export class EventsStore {
@@ -154,6 +161,9 @@ export class EventsStore {
                 return this.checkForOrphan(queuedEvent.event.id);
             case 'websocket-accepted':
                 return this.addAcceptedWebSocketResponse(queuedEvent.event);
+            case 'websocket-message-received':
+            case 'websocket-message-sent':
+                return this.addWebSocketMessage(queuedEvent.event);
             case 'abort':
                 return this.markRequestAborted(queuedEvent.event);
             case 'tls-client-error':
@@ -271,6 +281,26 @@ export class EventsStore {
 
             stream.setResponse(response);
             stream.setAccepted(response);
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
+    @action
+    private addWebSocketMessage(message: InputWebSocketMessage) {
+        try {
+            const stream = _.find(this.websockets, { id: message.streamId });
+
+            if (!stream) {
+                // Handle this later, once the request has arrived
+                this.orphanedEvents[message.streamId] = {
+                    type: `websocket-message-${message.direction}`,
+                    event: message
+                };
+                return;
+            }
+
+            stream.addMessage(message);
         } catch (e) {
             reportError(e);
         }

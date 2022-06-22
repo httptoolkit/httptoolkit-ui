@@ -270,6 +270,17 @@ export const warningIconHtml = iconHtml(
     }
 );
 
+export const ArrowIcon = styled(Icon).attrs(() => ({
+    icon: ['fas', 'arrow-left']
+}))`
+    ${(p: { direction: 'left' | 'right' }) =>
+        p.direction === 'right'
+        ? 'transform: rotate(180deg);'
+        : ''
+    }
+    padding: 0 15px;
+`;
+
 function iconHtml(iconLookup: IconLookup, options?: IconParams): string {
     return icon(iconLookup, options).html.join('');
 }
