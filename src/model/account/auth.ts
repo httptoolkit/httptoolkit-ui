@@ -60,6 +60,10 @@ const auth0Lock = new Auth0LockPasswordless(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
         params: { scope: 'openid email offline_access app_metadata' },
     },
 
+    // Don't persist logins for easy auto-login later. This makes sense for apps you log into
+    // every day, but it's weird otherwise (e.g. after logout -> one-click login? Very odd).
+    rememberLastLogin: false,
+
     // UI config
     autofocus: true,
     allowAutocomplete: true,
