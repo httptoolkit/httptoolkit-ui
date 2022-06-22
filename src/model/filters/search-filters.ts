@@ -7,6 +7,7 @@ import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../http/bodies';
 import { ExchangeCategories } from '../http/exchange-colors';
+import { WebSocketStream } from '../websockets/websocket-stream';
 
 import {
     matchSyntax,
@@ -532,6 +533,31 @@ class HttpVersionFilter extends Filter {
     }
 }
 
+class WebSocketFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("websocket")
+    ] as const;
+
+    static filterName = "websocket";
+
+    static filterDescription() {
+        return "websocket streams";
+    }
+
+    constructor(filter: string) {
+        super(filter);
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event instanceof WebSocketStream;
+    }
+
+    toString() {
+        return 'WebSocket';
+    }
+}
+
 class ProtocolFilter extends Filter {
 
     static filterSyntax = [
@@ -539,7 +565,9 @@ class ProtocolFilter extends Filter {
         new FixedStringSyntax("="),
         new StringOptionsSyntax([
             "http",
-            "https"
+            "https",
+            "ws",
+            "wss"
         ])
     ] as const;
 
@@ -549,7 +577,7 @@ class ProtocolFilter extends Filter {
         const [, , protocol] = tryParseFilter(ProtocolFilter, value);
 
         if (!protocol) {
-            return "exchanges using either HTTP or HTTPS";
+            return "exchanges using HTTP, HTTPS, WS or WSS";
         } else {
             return `exchanges using ${protocol.toUpperCase()}`;
         }
@@ -566,7 +594,7 @@ class ProtocolFilter extends Filter {
     matches(event: CollectedEvent): boolean {
         if (!(event instanceof HttpExchange)) return false;
 
-        // Parsed protocol is either http: or https:, so we strip the colon
+        // Parsed protocol is like 'http:', so we strip the colon
         const protocol = event.request.parsedUrl.protocol.toLowerCase().slice(0, -1);
         return protocol === this.expectedProtocol;
     }
@@ -1129,7 +1157,8 @@ const BaseSearchFilterClasses: FilterClass[] = [
     CategoryFilter,
     PortFilter,
     ProtocolFilter,
-    HttpVersionFilter
+    HttpVersionFilter,
+    WebSocketFilter
 ];
 
 // Meta-filters, which can wrap the base filters above:

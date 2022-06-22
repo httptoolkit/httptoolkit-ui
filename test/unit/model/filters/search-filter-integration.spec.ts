@@ -72,6 +72,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "port" },
                 { index: 0, showAs: "protocol" },
                 { index: 0, showAs: "httpVersion" },
+                { index: 0, showAs: "websocket" },
                 { index: 0, showAs: "not" },
                 { index: 0, showAs: "or" }
             ]);
@@ -97,8 +98,9 @@ describe("Search filter model integration test:", () => {
                 "requests that weren't transmitted successfully",
                 "exchanges by their general category",
                 "requests sent to a given port",
-                "exchanges using either HTTP or HTTPS",
+                "exchanges using HTTP, HTTPS, WS or WSS",
                 "exchanges using a given version of HTTP",
+                "websocket streams",
                 "exchanges that do not match a given condition",
                 "exchanges that match any one of multiple conditions"
             ]);
@@ -1154,6 +1156,7 @@ describe("Search filter model integration test:", () => {
                 { index: 3, showAs: "port" },
                 { index: 3, showAs: "protocol" },
                 { index: 3, showAs: "httpVersion" },
+                { index: 3, showAs: "websocket" }
             ]);
         });
 
@@ -1205,6 +1208,7 @@ describe("Search filter model integration test:", () => {
                 { index: 14, showAs: "port" },
                 { index: 14, showAs: "protocol" },
                 { index: 14, showAs: "httpVersion" },
+                { index: 14, showAs: "websocket)" }
             ]);
         });
 
@@ -1315,6 +1319,7 @@ describe("Search filter model integration test:", () => {
                 { index: 4, showAs: "port" },
                 { index: 4, showAs: "protocol" },
                 { index: 4, showAs: "httpVersion" },
+                { index: 4, showAs: "websocket)" },
             ]);
         });
 
