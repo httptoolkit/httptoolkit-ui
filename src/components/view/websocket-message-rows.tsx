@@ -152,6 +152,8 @@ export class WebSocketMessageEditorRow extends React.Component<MessageEditorRowP
     @observable
     private selectedContentType: ViewableContentType | undefined;
 
+    private containerRef = React.createRef<HTMLDivElement>();
+
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
             const message = this.props.message;
@@ -161,6 +163,43 @@ export class WebSocketMessageEditorRow extends React.Component<MessageEditorRowP
                 return;
             }
         }));
+
+        this.onMessageChanged();
+    }
+
+    componentDidUpdate(prevProps: MessageEditorRowProps) {
+        if (prevProps?.message.messageIndex !== this.props.message.messageIndex) {
+            this.onMessageChanged();
+        }
+    }
+
+    onMessageChanged() {
+        // We've just changed message - scroll to show this editor fully and
+        // focus the contained editor itself.
+        const container = this.containerRef.current!;
+
+        container.scrollIntoView({
+            behavior: 'smooth',
+        });
+
+        const editor = container.querySelector('.monaco-editor textarea');
+        if (editor) {
+            (editor as HTMLElement).focus();
+        } else {
+            // If the editor content needs formatting, e.g. for JSON messages, the editor itself won't
+            // yet be visible. In this case, we'll focus the container instead, and jump to the editor
+            // when onContentRendered fires from the content viewer.
+            container.focus();
+        }
+    }
+
+    onEditorContentRendered = () => {
+        // Only if the row is focused (not any buttons within etc) and the content has just rendered then
+        // you should jump to it. This should only happen if the editor content was not visible initially.
+        if (this.containerRef.current === document.activeElement) {
+            const editor = this.containerRef.current?.querySelector('.monaco-editor textarea');
+            (editor as HTMLElement | undefined)?.focus();
+        }
     }
 
     @action.bound
