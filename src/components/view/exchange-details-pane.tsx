@@ -296,9 +296,9 @@ export class ExchangeDetailsPane extends React.Component<{
             )) {
             return this.renderResponseBody(exchange, apiExchange);
         } else if (
-            expandedCard === 'webSocketMessages' && (
-                exchange.isWebSocket()
-            )
+            expandedCard === 'webSocketMessages' &&
+            exchange.isWebSocket() &&
+            exchange.wasAccepted()
         ) {
             return this.renderWebSocketMessages(exchange);
         } else {
@@ -398,7 +398,7 @@ export class ExchangeDetailsPane extends React.Component<{
             }
         }
 
-        if (exchange.isWebSocket()) {
+        if (exchange.isWebSocket() && exchange.wasAccepted()) {
             cards.push(this.renderWebSocketMessages(exchange));
 
             if (exchange.closeState) {
