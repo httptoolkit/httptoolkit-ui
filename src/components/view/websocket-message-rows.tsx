@@ -35,6 +35,23 @@ export const WebSocketMessageCollapsedRow = (p: {
 }) => <CollapsedWebSocketRowContainer
         messageDirection={visualDirection(p.message)}
         onClick={p.onClick}
+
+        tabIndex={0}
+        onKeyDown={(e) => {
+            if (e.key === 'Enter') p.onClick();
+
+            // If focused, up/down move up & down the list. This is slightly different from
+            // tab focus: it stops at the ends, and moving to an open editor row focuses the
+            // entire row (jumping to the editor only on 'enter').
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                (e.currentTarget.nextElementSibling as HTMLElement)?.focus?.();
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                (e.currentTarget.previousElementSibling as HTMLElement)?.focus?.();
+            }
+        }}
     >
     <MessageArrow selected={false} messageDirection={visualDirection(p.message)} />
     <CollapsedWebSocketContent>
@@ -97,7 +114,8 @@ const CollapsedWebSocketRowContainer = styled.div<{ messageDirection: 'left' | '
     border-bottom-color: ${p => p.theme.containerWatermark};
 
     cursor: pointer;
-    &:hover {
+    &:hover, &:focus {
+        outline: none;
         border-${p => p.messageDirection}-color: ${p => p.theme.popColor};
         background-color: ${p => p.theme.mainBackground};
     }
@@ -121,13 +139,15 @@ const CollapsedWebSocketContent = styled(ContentMonoValue)`
     padding: 3px 0 4px;
 `;
 
-@observer
-export class WebSocketMessageEditorRow extends React.Component<{
+interface MessageEditorRowProps {
     message: WebSocketMessage,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
     isPaidUser: boolean,
     onExportMessage: (message: WebSocketMessage) => void
-}> {
+}
+
+@observer
+export class WebSocketMessageEditorRow extends React.Component<MessageEditorRowProps> {
 
     @observable
     private selectedContentType: ViewableContentType | undefined;
@@ -165,7 +185,35 @@ export class WebSocketMessageEditorRow extends React.Component<{
 
         const messageDirection = message.direction === 'sent' ? 'left' : 'right';
 
-        return <EditorRowContainer>
+        return <EditorRowContainer
+            ref={this.containerRef}
+            tabIndex={-1} // Only ever focused by up/down on other rows
+            onKeyDown={(e) => {
+                // Only listen to events where the entire row is specifically focused:
+                if (e.target !== e.currentTarget) return;
+
+                // When focused (via up/down) if you press enter is jumps to the content. That means
+                // you can up/down past this no problem, or press enter and then move to tab-based
+                // control back to the rows, and then up/down again.
+                else if (e.target === e.currentTarget && e.key === 'Enter') {
+                    const editor = (e.target as HTMLElement).querySelector('.monaco-editor textarea');
+                    (editor as HTMLElement | undefined)?.focus();
+                }
+
+                // TODO: It would be nice to allow Escape here to exit the editor, but because it's a portal, the keydown
+                // events don't actually bubble back up here. Might be worth re-investigating this after eventually
+                // fixing https://github.com/httptoolkit/react-reverse-portal/issues/13. Not easy though.
+
+                // Keep the same up/down behaviour as the collapsed rows
+                else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    (e.currentTarget.nextElementSibling as HTMLElement)?.focus?.();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    (e.currentTarget.previousElementSibling as HTMLElement)?.focus?.();
+                }
+            }}
+        >
             <EditorRowHeader messageDirection={messageDirection}>
                 <MessageArrow selected={true} messageDirection={messageDirection} />
                 <ContentLabel>
@@ -198,6 +246,7 @@ export class WebSocketMessageEditorRow extends React.Component<{
                     contentType={contentType}
                     cache={message.cache}
                     expanded={false}
+                    onContentRendered={this.onEditorContentRendered}
                 >
                     {message.content}
                 </ContentViewer>
