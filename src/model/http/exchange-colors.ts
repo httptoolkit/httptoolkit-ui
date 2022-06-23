@@ -224,6 +224,25 @@ export function getStatusColor(status: undefined | 'aborted' | number, theme: Th
     return highlights.black;
 }
 
+export function getWebSocketCloseColor(closeCode: undefined | 'aborted' | number, theme: Theme): string {
+    // See https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1 for definitions
+    if (!closeCode || closeCode === 'aborted') {
+        // All odd undefined/unknown cases
+        return theme.mainColor;
+    } else if (closeCode === 1000 || closeCode === 1001) {
+        // Closed OK or due to clean client/server shutdown
+        return highlights.lightGreen;
+    } else if (closeCode >= 1002 && closeCode <= 3000) {
+        // Closed due to some protocol errors
+        return highlights.red;
+    } else if (closeCode >= 3000) {
+        return highlights.orange;
+    }
+
+    // Anything else weird.
+    return highlights.black;
+}
+
 export function getMethodColor(method: string): string {
     if (method === 'GET') {
         return highlights.lightGreen;

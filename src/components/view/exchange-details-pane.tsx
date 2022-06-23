@@ -33,6 +33,7 @@ import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-car
 import { ExchangeBreakpointResponseCard } from './exchange-breakpoint-response-card';
 import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
 
+import { WebSocketCloseCard } from './websocket-close-card';
 import { WebSocketMessageListCard } from './websocket-message-list-card';
 
 const OuterContainer = styled.div`
@@ -108,6 +109,7 @@ const cardKeys = [
     'response',
     'responseBody',
     'webSocketMessages',
+    'webSocketClose',
     'performance',
     'export'
 ] as const;
@@ -398,6 +400,14 @@ export class ExchangeDetailsPane extends React.Component<{
 
         if (exchange.isWebSocket()) {
             cards.push(this.renderWebSocketMessages(exchange));
+
+            if (exchange.closeState) {
+                cards.push(<WebSocketCloseCard
+                    {...this.cardProps.webSocketClose}
+                    theme={uiStore!.theme}
+                    closeState={exchange.closeState}
+                />);
+            }
         } else {
             // We only show performance & export for non-websockets, for now:
 

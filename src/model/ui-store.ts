@@ -83,6 +83,7 @@ export class UiStore {
         'responseBody': { collapsed: false },
 
         'webSocketMessages': { collapsed: false },
+        'webSocketClose': { collapsed: false },
 
         'performance': { collapsed: true },
         'export': { collapsed: true }

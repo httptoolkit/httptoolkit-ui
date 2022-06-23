@@ -14,7 +14,8 @@ import {
     InputCompletedRequest,
     InputClientError,
     CollectedEvent,
-    InputWebSocketMessage
+    InputWebSocketMessage,
+    InputWebSocketClose
 } from '../../types';
 import { HttpExchange } from './exchange';
 import { parseSource } from './sources';
@@ -36,6 +37,7 @@ type EventTypesMap = {
     'websocket-accepted': InputResponse,
     'websocket-message-received': InputWebSocketMessage,
     'websocket-message-sent': InputWebSocketMessage,
+    'websocket-close': InputWebSocketClose,
     'abort': InputInitiatedRequest
     'tls-client-error': InputTlsRequest,
     'client-error': InputClientError
@@ -49,6 +51,7 @@ const eventTypes = [
     'websocket-accepted',
     'websocket-message-received',
     'websocket-message-sent',
+    'websocket-close',
     'abort',
     'tls-client-error',
     'client-error'
@@ -66,6 +69,7 @@ type OrphanableQueuedEvent<T extends
     | 'websocket-accepted'
     | 'websocket-message-received'
     | 'websocket-message-sent'
+    | 'websocket-close'
 > = { type: T, event: EventTypesMap[T] };
 
 export class EventsStore {
@@ -164,6 +168,8 @@ export class EventsStore {
             case 'websocket-message-received':
             case 'websocket-message-sent':
                 return this.addWebSocketMessage(queuedEvent.event);
+            case 'websocket-close':
+                return this.markWebSocketClosed(queuedEvent.event);
             case 'abort':
                 return this.markRequestAborted(queuedEvent.event);
             case 'tls-client-error':
@@ -301,6 +307,23 @@ export class EventsStore {
             }
 
             stream.addMessage(message);
+        } catch (e) {
+            reportError(e);
+        }
+    }
+
+    @action
+    private markWebSocketClosed(close: InputWebSocketClose) {
+        try {
+            const stream = _.find(this.websockets, { id: close.streamId });
+
+            if (!stream) {
+                // Handle this later, once the request has arrived
+                this.orphanedEvents[close.streamId] = { type: 'websocket-close', event: close };
+                return;
+            }
+
+            stream.markClosed(close);
         } catch (e) {
             reportError(e);
         }

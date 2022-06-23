@@ -50,6 +50,12 @@ export const CopyableMonoValue = styled.span`
     word-break: break-word;
 `;
 
+export const BlankContentPlaceholder = styled.div`
+    opacity: ${p => p.theme.lowlightTextOpacity};
+    font-style: italic;
+    display: inline-block;
+`;
+
 // Takes some HTML (in an __html object) and renders it with nice
 // default formatting. THIS MUST ONLY BE CALLED WITH SANITIZED HTML.
 // The __html format is intended to enforce this - those objects

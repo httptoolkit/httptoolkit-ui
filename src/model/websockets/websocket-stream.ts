@@ -5,7 +5,8 @@ import {
     InputInitiatedRequest,
     InputRequest,
     InputResponse,
-    InputWebSocketMessage
+    InputWebSocketMessage,
+    InputWebSocketClose
 } from '../../types';
 
 import { ApiStore } from '../api/api-store';
@@ -53,6 +54,34 @@ export class WebSocketStream extends HttpExchange {
     @action
     addMessage(message: InputWebSocketMessage) {
         this.messages.push(new WebSocketMessage(message, this.messages.length));
+    }
+
+    @observable
+    private closeData: InputWebSocketClose | 'aborted' | undefined;
+
+    @action
+    markClosed(closeData: InputWebSocketClose) {
+        this.closeData = closeData;
+    }
+
+    get closeState() {
+        return this.closeData;
+    }
+
+    markAborted(request: Pick<InputInitiatedRequest, 'timingEvents' | 'tags'>) {
+        if (!this.wasAccepted()) {
+            // An abort before accept acts exactly as in normal HTTP
+            return super.markAborted(request);
+        } else {
+            // Unlike normal HTTP, websockets can get an abort *after* a successful HTTP
+            // response. We handle that as a separate case:
+            this.closeData = 'aborted';
+            this.searchIndex += '\naborted';
+            // Note that we *don't* update this.response - that was still a complete response.
+
+            Object.assign(this.timingEvents, request.timingEvents);
+            this.tags = _.union(this.tags, request.tags);
+        }
     }
 
     cleanup() {

@@ -6,13 +6,14 @@ import { styled } from '../../../styles';
 import { Headers } from '../../../types';
 
 import { getHeaderDocs } from '../../../model/http/http-docs';
+import { AccountStore } from '../../../model/account/account-store';
 
 import { CollapsibleSection } from '../../common/collapsible-section';
-import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from '../exchange-card';
 import { DocsLink } from '../../common/docs-link';
-import { AccountStore } from '../../../model/account/account-store';
+import { BlankContentPlaceholder } from '../../common/text-content';
+import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from '../exchange-card';
+
 import { CookieHeaderDescription } from './set-cookie-header-description';
-import { get } from 'typesafe-get';
 import { UserAgentHeaderDescription } from './user-agent-header-description';
 
 const HeadersGrid = styled.section`
@@ -45,11 +46,6 @@ const HeaderDocsLink = styled(DocsLink)`
     margin-top: 10px;
 `;
 
-const EmptyState = styled.div`
-    opacity: ${p => p.theme.lowlightTextOpacity};
-    font-style: italic;
-`;
-
 const getHeaderDescription = (
     name: string,
     value: string,
@@ -69,7 +65,7 @@ const getHeaderDescription = (
         }
     }
 
-    const headerDocs = get(getHeaderDocs(name), 'summary');
+    const headerDocs = getHeaderDocs(name)?.summary;
 
     return headerDocs && <p>
         { headerDocs }
@@ -84,7 +80,7 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
     const headerNames = Object.keys(props.headers).sort();
 
     return headerNames.length === 0 ?
-        <EmptyState>(None)</EmptyState>
+        <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
     :
         <HeadersGrid>
             { _.flatMap(headerNames, (name) => {

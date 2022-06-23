@@ -4,7 +4,8 @@ import type {
     InitiatedRequest as MockttpInitiatedRequest,
     CompletedRequest as MockttpCompletedRequest,
     CompletedResponse as MockttpResponse,
-    WebSocketMessage as MockttpWebSocketMessage
+    WebSocketMessage as MockttpWebSocketMessage,
+    WebSocketClose as MockttpWebSocketClose
 } from 'mockttp';
 import type {
     Headers,
@@ -43,6 +44,7 @@ export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 
 export type InputWebSocketMessage = MockttpWebSocketMessage;
+export type InputWebSocketClose = MockttpWebSocketClose;
 
 export interface BreakpointBody {
     decoded: Buffer;
