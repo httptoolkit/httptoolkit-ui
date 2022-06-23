@@ -51,6 +51,7 @@ export class WebSocketMessageListCard extends React.Component<{
 
     isPaidUser: boolean,
     url: string,
+    streamId: string,
     messages: Array<WebSocketMessage>,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
@@ -61,6 +62,7 @@ export class WebSocketMessageListCard extends React.Component<{
     render() {
         const {
             url,
+            streamId,
             messages,
             isPaidUser,
             editorNode,
@@ -115,6 +117,7 @@ export class WebSocketMessageListCard extends React.Component<{
                             key='expanded' // Constant, which preserves content type between rows
                             message={message}
 
+                            streamId={streamId}
                             isPaidUser={isPaidUser}
                             onExportMessage={this.exportMessage}
                             editorNode={editorNode}

@@ -136,6 +136,7 @@ const ExportSnippetEditor = observer((p: {
         </SnippetDescriptionContainer>
         <SnippetEditorContainer>
             <ThemedSelfSizedEditor
+                contentId={null}
                 value={snippet}
                 language={
                     ({

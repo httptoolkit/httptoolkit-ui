@@ -633,6 +633,7 @@ class RawBodyMatcherConfig<
             }
             <BodyContainer>
                 <ThemedSelfSizedEditor
+                    contentId={null}
                     value={content}
                     onChange={this.onBodyChange}
                     language='text'
@@ -723,6 +724,7 @@ class JsonMatcherConfig<
             }
             <BodyContainer error={!!error}>
                 <ThemedSelfSizedEditor
+                    contentId={null}
                     value={content}
                     onChange={this.onBodyChange}
                     language='json'

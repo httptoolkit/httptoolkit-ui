@@ -424,6 +424,7 @@ export class ExchangeDetailsPane extends React.Component<{
         return requestBreakpoint
             ? <ExchangeBreakpointBodyCard
                 {...this.requestBodyParams()}
+                exchangeId={exchange.id}
                 body={requestBreakpoint.inProgressResult.body.decoded}
                 headers={requestBreakpoint.inProgressResult.headers}
                 onChange={requestBreakpoint.updateBody}
@@ -443,6 +444,7 @@ export class ExchangeDetailsPane extends React.Component<{
         return responseBreakpoint
             ? <ExchangeBreakpointBodyCard
                 {...this.responseBodyParams()}
+                exchangeId={exchange.id}
                 body={responseBreakpoint.inProgressResult.body.decoded}
                 headers={responseBreakpoint.inProgressResult.headers}
                 onChange={responseBreakpoint.updateBody}
@@ -463,6 +465,7 @@ export class ExchangeDetailsPane extends React.Component<{
             // Link the key to the exchange, to ensure selected-message state gets
             // reset when we switch between exchanges:
             key={`${this.cardProps.webSocketMessages.key}-${this.props.exchange.id}`}
+            streamId={this.props.exchange.id}
 
             expanded={this.props.uiStore!.expandedCard === 'webSocketMessages'}
             onExpandToggled={this.toggleExpand.bind(this, 'webSocketMessages')}

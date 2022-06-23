@@ -339,6 +339,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
                             <EditorContainer>
                                 <BaseEditor
+                                    contentId={null}
                                     language='html'
                                     theme={uiStore.theme.monacoTheme}
                                     defaultValue={amIUsingHtml}

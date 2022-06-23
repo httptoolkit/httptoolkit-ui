@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, disposeOnUnmount } from 'mobx-react';
-import { observable, action, autorun } from 'mobx';
+import { observable, action, autorun, reaction } from 'mobx';
 import { withTheme } from 'styled-components';
 import type { SchemaObject } from 'openapi-directory';
 
@@ -13,7 +13,6 @@ import { delay } from '../../util/promise';
 import { Omit } from '../../types';
 import { styled, Theme, defineMonacoThemes } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
-
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
@@ -43,6 +42,13 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
 
 export interface EditorProps extends MonacoEditorProps {
     onContentSizeChange?: (contentUpdate: monacoTypes.editor.IContentSizeChangedEvent) => void;
+
+    // When this prop changes, the editor layout will be reset. This can be used to indicate a change of the content
+    // represented by the editor (which should update state, e.g. the editor content selection) even when editors
+    // are reused via portals etc. This is not strictly required in non-reused editors, but it's useful to enforce it
+    // here to make sure we handle this correctly in all cases. Can be set to null to explicitly ignore this.
+    contentId: string | null;
+
     schema?: SchemaObject;
 }
 
@@ -102,15 +108,10 @@ export class SelfSizedBaseEditor extends React.Component<
         if (this.container.current) {
             this.resizeObserver.observe(this.container.current);
         }
-        this.resetUIState();
     }
 
     componentWillUnmount() {
         this.resizeObserver.disconnect();
-    }
-
-    public resetUIState() {
-        this.editor.current?.resetUIState();
     }
 
     @observable contentHeight: number = 0;
@@ -174,6 +175,8 @@ export class BaseEditor extends React.Component<EditorProps> {
                 })
                 .then(action(() => this.monacoEditorLoaded = true));
         }
+
+        reaction(() => this.props.contentId, () => this.resetUIState());
     }
 
     public relayout() {
@@ -191,7 +194,7 @@ export class BaseEditor extends React.Component<EditorProps> {
         }
     }
 
-    public async resetUIState() {
+    private async resetUIState() {
         if (this.editor && this.monaco) {
             this.editor.setSelection(
                 new this.monaco.Selection(0, 0, 0, 0)

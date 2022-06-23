@@ -32,6 +32,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
     onCollapseToggled: () => void,
     onExpandToggled: () => void,
 
+    exchangeId: string,
     body: Buffer,
     headers: Headers,
     onChange: (result: Buffer) => void,
@@ -67,6 +68,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
         const {
             body,
             title,
+            exchangeId,
             direction,
             collapsed,
             expanded,
@@ -108,6 +110,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
             </header>
             <EditorCardContent>
                 <portals.OutPortal<typeof ThemedSelfSizedEditor>
+                    contentId={`bp-${exchangeId}-${direction}`}
                     node={this.props.editorNode}
                     language={this.contentType}
                     value={bodyString}

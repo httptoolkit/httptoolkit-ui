@@ -198,15 +198,6 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
         }));
 
-        // Every time the selected event changes, reset the editors:
-        disposeOnUnmount(this,
-            reaction(() => this.selectedEvent, () => {
-                Object.values(this.editors).forEach(({ ref }) => {
-                    ref.current?.resetUIState();
-                });
-            })
-        );
-
         // Due to https://github.com/facebook/react/issues/16087 in React, which is fundamentally caused by
         // https://bugs.chromium.org/p/chromium/issues/detail?id=1218275 in Chrome, we can leak filtered event
         // list references, which means that HTTP exchanges persist in memory even after they're cleared.
@@ -300,7 +291,10 @@ class ViewPage extends React.Component<ViewPageProps> {
 
             {Object.values(this.editors).map(({ node, ref }, i) =>
                 <portals.InPortal key={i} node={node}>
-                    <ThemedSelfSizedEditor ref={ref} />
+                    <ThemedSelfSizedEditor
+                        contentId={null}
+                        ref={ref}
+                    />
                 </portals.InPortal>
             )}
         </div>;

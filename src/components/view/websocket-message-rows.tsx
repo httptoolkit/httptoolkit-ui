@@ -140,6 +140,7 @@ const CollapsedWebSocketContent = styled(ContentMonoValue)`
 `;
 
 interface MessageEditorRowProps {
+    streamId: string,
     message: WebSocketMessage,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
     isPaidUser: boolean,
@@ -212,7 +213,7 @@ export class WebSocketMessageEditorRow extends React.Component<MessageEditorRowP
     }
 
     render() {
-        const { message, isPaidUser, onExportMessage, editorNode } = this.props;
+        const { message, isPaidUser, onExportMessage, editorNode, streamId } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(
             message.contentType,
@@ -281,6 +282,7 @@ export class WebSocketMessageEditorRow extends React.Component<MessageEditorRowP
             </EditorRowHeader>
             <EditorCardContent>
                 <ContentViewer
+                    contentId={`ws-${streamId}-${message.messageIndex}`}
                     editorNode={editorNode}
                     contentType={contentType}
                     cache={message.cache}

@@ -291,6 +291,7 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
             </BodyHeader>
             <BodyContainer>
                 <ThemedSelfSizedEditor
+                    contentId={null}
                     language={this.contentType}
                     value={bodyAsString}
                     onChange={this.setBody}
@@ -1023,6 +1024,7 @@ const RawBodyTransfomConfig = (props: {
         </BodyHeader>
         <BodyContainer>
             <ThemedSelfSizedEditor
+                contentId={null}
                 language={contentType}
                 value={props.body.toString('utf8')}
                 onChange={props.updateBody}
@@ -1068,6 +1070,7 @@ const JsonUpdateTransformConfig = (props: {
         </BodyHeader>
         <BodyContainer>
             <ThemedSelfSizedEditor
+                contentId={null}
                 language='json'
                 value={bodyString}
                 onChange={(content) => setBodyString(content)}

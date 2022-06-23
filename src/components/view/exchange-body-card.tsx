@@ -165,6 +165,7 @@ export class ExchangeBodyCard extends React.Component<{
                 </header>
                 <EditorCardContent>
                     <ContentViewer
+                        contentId={`${message.id}-${direction}`}
                         editorNode={this.props.editorNode}
                         rawContentType={lastHeader(message.headers['content-type'])}
                         contentType={contentType}

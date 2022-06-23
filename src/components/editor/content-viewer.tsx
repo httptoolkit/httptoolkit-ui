@@ -23,6 +23,9 @@ interface ContentViewerProps {
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
     cache: Map<Symbol, unknown>;
 
+    // See BaseEditor.props.contentid
+    contentId: string | null;
+
     // Called after content was successfully rendered into the editor. This may be immediate and uninteresting in
     // simple cases, or it may take longer if the content is large with a complex format (1MB of formatted JSON).
     onContentRendered?: () => void;
@@ -109,6 +112,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                     return <LoadingCardContent height='500px' />;
                 } else {
                     return <portals.OutPortal<typeof ThemedSelfSizedEditor>
+                        contentId={this.props.contentId}
                         node={this.props.editorNode}
                         options={this.editorOptions}
                         language={this.formatter.language}
