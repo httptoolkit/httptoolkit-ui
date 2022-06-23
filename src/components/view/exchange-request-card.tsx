@@ -117,6 +117,7 @@ export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) =>
         <header>
             <SourceIcon source={request.source} />
             <Pill color={getExchangeSummaryColour(exchange)}>
+                { exchange.isWebSocket() ? 'WebSocket ' : '' }
                 { request.method } {
                     (request.hostname || '')
                     // Add some tiny spaces to split up parts of the hostname

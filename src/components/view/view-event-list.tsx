@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { get } from 'typesafe-get';
 import { observer, Observer } from 'mobx-react';
 import { action, computed } from 'mobx';
 
@@ -280,18 +279,25 @@ const ExchangeRow = observer(({
     index,
     isSelected,
     style,
-    exchange: { id, category, pinned, isBreakpointed, request, response }
+    exchange
 }: {
     index: number,
     isSelected: boolean,
     style: {},
     exchange: HttpExchange
-}) =>
-    <ExchangeListRow
+}) => {
+    const {
+        request,
+        response,
+        pinned,
+        category
+    } = exchange;
+
+    return <ExchangeListRow
         role="row"
         aria-label='row'
         aria-rowindex={index + 1}
-        data-event-id={id}
+        data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
 
         className={isSelected ? 'selected' : ''}
@@ -304,11 +310,22 @@ const ExchangeRow = observer(({
             {
                 response === 'aborted'
                     ? <StatusCode status={'aborted'} />
-                : isBreakpointed
+                : exchange.isBreakpointed
                     ? <WarningIcon title='Breakpointed, waiting to be resumed' />
+                : exchange.isWebSocket() && response?.statusCode === 101
+                    ? <StatusCode // Special UI for accepted WebSockets
+                        status={exchange.closeState
+                            ? 'WS:closed'
+                            : 'WS:open'
+                        }
+                        message={`${exchange.closeState
+                            ? 'A closed'
+                            : 'An open'
+                        } WebSocket connection`}
+                    />
                 : <StatusCode
-                    status={get(response, 'statusCode')}
-                    message={get(response, 'statusMessage')}
+                    status={response?.statusCode}
+                    message={response?.statusMessage}
                 />
             }
         </Status>
@@ -324,8 +341,8 @@ const ExchangeRow = observer(({
         <PathAndQuery title={ request.parsedUrl.pathname + request.parsedUrl.search }>
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
-    </ExchangeListRow>
-);
+    </ExchangeListRow>;
+});
 
 const FailedRequestRow = observer((p: {
     index: number,

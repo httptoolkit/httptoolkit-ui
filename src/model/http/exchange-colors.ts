@@ -146,11 +146,11 @@ export function describeExchangeCategory(category: ExchangeCategory) {
         "incomplete": "an incomplete request",
         "aborted": "an aborted request",
         "image": "a request for an image",
-        "websocket": "a websocket stream",
         "js": "a request for JavaScript",
         "css": "a request for CSS",
         "html": "a request for HTML",
         "font": "a request for a font file",
+        "websocket": "a WebSocket stream",
         "data": "an API request",
         "unknown": "an unknown type of request"
     } as const)[category]}`;
@@ -183,20 +183,20 @@ export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | Exch
             return highlights.black;
         case 'mutative':
             return highlights.red;
+        case 'data':
+            return highlights.purple;
+        case 'websocket':
+            return highlights.lightBlue;
         case 'image':
             return highlights.lightGreen;
-        case 'websocket':
+        case 'font':
             return highlights.brightGreen;
         case 'js':
             return highlights.orange;
         case 'css':
             return highlights.yellow;
         case 'html':
-            return highlights.lightBlue;
-        case 'font':
             return highlights.darkBlue;
-        case 'data':
-            return highlights.purple;
         case 'unknown':
             return highlights.grey;
     }
@@ -215,7 +215,7 @@ export function getStatusColor(status: undefined | 'aborted' | number, theme: Th
     } else if (status >= 200) {
         return highlights.lightGreen;
     } else if (status === 101) {
-        return highlights.lightGreen; // Almost always a websocket, so special case as OK
+        return highlights.lightBlue; // Almost always a websocket, so special case to match
     } else if (status >= 100) {
         return highlights.grey;
     }

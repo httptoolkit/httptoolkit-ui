@@ -5,7 +5,12 @@ import { Icon } from '../../icons';
 import { getStatusColor } from '../../model/http/exchange-colors';
 
 export const StatusCode = styled((props: {
-    status: undefined | 'aborted' | number,
+    status:
+        | undefined // Still in progress
+        | 'aborted' // Failed before response
+        | 'WS:open' // Accepted active websocket
+        | 'WS:closed' // Accepted but now closed websocket
+        | number, // Any other status
     message?: string,
     className?: string
 }) => (
@@ -16,6 +21,15 @@ export const StatusCode = styled((props: {
         {
             props.status === 'aborted' ?
                 <Icon icon={['fas', 'ban']} />
+            : props.status === 'WS:open'
+                ? <>
+                    WS <Icon
+                        icon={['fas', 'spinner']}
+                        spin={true}
+                    />
+                </>
+            : props.status === 'WS:closed'
+                ? 'WS'
             : (
                 props.status ||
                 <Icon
@@ -28,6 +42,9 @@ export const StatusCode = styled((props: {
 ))`
     font-weight: bold;
 
+    display: flex;
+    align-items: center;
+
     .fa-spinner {
         padding: 6px;
     }
@@ -36,5 +53,10 @@ export const StatusCode = styled((props: {
         padding: 5px;
     }
 
-    color: ${props => getStatusColor(props.status, props.theme)};
+    color: ${props => getStatusColor(
+        (props.status === 'WS:open' || props.status === 'WS:closed')
+            ? undefined
+            : props.status,
+        props.theme
+    )};
 `;
