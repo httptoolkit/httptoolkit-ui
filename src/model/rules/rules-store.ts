@@ -261,8 +261,8 @@ export class RulesStore {
     // updated immediately as this changes too.
     @computed.struct
     get activePassthroughOptions(): requestHandlers.PassThroughHandlerOptions {
-        return _.cloneDeep({ // Clone to ensure we touch & subscribe to everything here
-            ignoreHostCertificateErrors: this.whitelistedCertificateHosts,
+        const options: requestHandlers.PassThroughHandlerOptions = { // Check the type to catch changes
+            ignoreHostHttpsErrors: this.whitelistedCertificateHosts,
             trustAdditionalCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM })),
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
                 pfx: Buffer.from(cert.pfx),
@@ -272,7 +272,10 @@ export class RulesStore {
             lookupOptions: this.accountStore.featureFlags.includes('docker') && this.proxyStore.dnsServers.length
                 ? { servers: this.proxyStore.dnsServers }
                 : undefined
-        });
+        };
+
+        // Clone to ensure we touch & subscribe to everything here
+        return _.cloneDeep(options);
     }
 
     @persist @observable
