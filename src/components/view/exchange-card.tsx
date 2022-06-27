@@ -53,9 +53,7 @@ export const LoadingExchangeCard = (props:
     ExchangeCardProps & { height?: string }
 ) =>
     <ExchangeCard {...props}>
-        <header>
-            { props.children }
-        </header>
+        { props.children }
         <LoadingCardContent height={props.height} />
     </ExchangeCard>;
 
