@@ -424,6 +424,7 @@ export const buildDefaultRules = (rulesStore: RulesStore, proxyStore: ProxyStore
                 completionChecker: new completionCheckers.Always(),
                 handler: new StaticResponseHandler(200, undefined, amIUsingHtml, {
                     'content-type': 'text/html',
+                    'cache-control': 'no-store',
                     'httptoolkit-active': 'true'
                 })
             },
