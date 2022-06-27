@@ -41,7 +41,24 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
         language: 'text',
         cacheKey: Symbol('raw'),
-        render: buildAsyncRenderer('raw')
+        render: (input: Buffer) => {
+            if (input.byteLength < 2000) {
+                try {
+                    // For short-ish inputs, we return synchronously - conveniently this avoids
+                    // showing the loading spinner that churns the layout in short content cases.
+                    return input.toString('hex')
+                        .replace(/(\w\w)/g, '$1 ')
+                        .trimRight();
+                        // ^ Same logic as in UI-worker-formatter
+                } catch (e) {
+                    return observablePromise(Promise.reject(e));
+                }
+            } else {
+                return observablePromise(
+                    formatBufferAsync(input, 'raw')
+                );
+            }
+        }
     },
     text: {
         language: 'text',
@@ -78,7 +95,26 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     json: {
         language: 'json',
         cacheKey: Symbol('json'),
-        render: buildAsyncRenderer('json')
+        render: (input: Buffer) => {
+            if (input.byteLength < 2000) {
+                try {
+                    // For short-ish inputs, we return synchronously - conveniently this avoids
+                    // showing the loading spinner that churns the layout in short content cases.
+                    return JSON.stringify(
+                        JSON.parse(
+                            input.toString('utf8')
+                        ),
+                    null, 2);
+                    // ^ Same logic as in UI-worker-formatter
+                } catch (e) {
+                    return observablePromise(Promise.reject(e));
+                }
+            } else {
+                return observablePromise(
+                    formatBufferAsync(input, 'json')
+                );
+            }
+        }
     },
     javascript: {
         language: 'javascript',
