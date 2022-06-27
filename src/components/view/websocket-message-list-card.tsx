@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, observable } from 'mobx';
+import { action, computed, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -59,6 +59,11 @@ export class WebSocketMessageListCard extends React.Component<{
     @observable
     expandedRow: number | undefined = undefined;
 
+    @computed
+    get someBinaryMessages() {
+        return this.props.messages.some(m => m.isBinary);
+    }
+
     render() {
         const {
             url,
@@ -71,8 +76,6 @@ export class WebSocketMessageListCard extends React.Component<{
             onCollapseToggled,
             onExpandToggled
         } = this.props;
-
-        const someMessageBinary = messages.some(m => m.isBinary);
 
         return <WebSocketMessageListCardCard
             collapsed={collapsed}
@@ -93,15 +96,7 @@ export class WebSocketMessageListCard extends React.Component<{
                                 : "With Pro: Save these messages as a file"
                         }
                         disabled={!isPaidUser}
-                        onClick={() => saveFile(
-                            getFilename(url, someMessageBinary),
-                            someMessageBinary
-                                ? 'application/octet-stream'
-                                : 'text/plain',
-                            messages
-                                .map(m => m.content)
-                                .join('\n\n---\n\n')
-                        )}
+                        onClick={this.exportMessages}
                     />
                 </CollapsingButtons>
                 <Pill>{ messages.length } messages</Pill>
@@ -125,7 +120,9 @@ export class WebSocketMessageListCard extends React.Component<{
                         : <WebSocketMessageCollapsedRow
                             key={i}
                             message={message}
-                            onClick={() => this.expandRow(i)}
+
+                            index={i}
+                            onClick={this.expandRow}
                         />
                     )
                 }
@@ -137,6 +134,18 @@ export class WebSocketMessageListCard extends React.Component<{
     expandRow(index: number) {
         this.expandedRow = index;
     }
+
+    exportMessages = () => {
+        saveFile(
+            getFilename(this.props.url, this.someBinaryMessages),
+            this.someBinaryMessages
+                ? 'application/octet-stream'
+                : 'text/plain',
+            this.props.messages
+                .map(m => m.content)
+                .join('\n\n---\n\n')
+        );
+    };
 
     exportMessage = (message: WebSocketMessage) => {
         saveFile(

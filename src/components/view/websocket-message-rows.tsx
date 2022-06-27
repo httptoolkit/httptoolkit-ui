@@ -29,16 +29,17 @@ const visualDirection = (message: WebSocketMessage) =>
         : 'right';
 
 
-export const WebSocketMessageCollapsedRow = (p: {
+export const WebSocketMessageCollapsedRow = React.memo((p: {
     message: WebSocketMessage
-    onClick: () => void
+    index: number,
+    onClick: (index: number) => void
 }) => <CollapsedWebSocketRowContainer
         messageDirection={visualDirection(p.message)}
-        onClick={p.onClick}
+        onClick={() => p.onClick(p.index)}
 
         tabIndex={0}
         onKeyDown={(e) => {
-            if (e.key === 'Enter') p.onClick();
+            if (e.key === 'Enter') p.onClick(p.index);
 
             // If focused, up/down move up & down the list. This is slightly different from
             // tab focus: it stops at the ends, and moving to an open editor row focuses the
@@ -71,9 +72,9 @@ export const WebSocketMessageCollapsedRow = (p: {
     <Pill>
         { getReadableSize(p.message.content.byteLength) }
     </Pill>
-</CollapsedWebSocketRowContainer>;
+</CollapsedWebSocketRowContainer>);
 
-const MessageArrow = styled((p: {
+const MessageArrow = styled(React.memo((p: {
     className?: string,
     messageDirection: 'left' | 'right',
     selected: boolean
@@ -81,7 +82,7 @@ const MessageArrow = styled((p: {
     return <div className={p.className}>
         <ArrowIcon direction={p.messageDirection} />
     </div>
-})`
+}))`
     width: 25px;
     flex-grow: 0;
     flex-shrink: 0;
