@@ -51,7 +51,7 @@ function addErrorTag(key: string, value: string) {
     });
 }
 
-export function reportError(error: Error | string, metadata: object = {}) {
+export function reportError(error: Error | string | unknown, metadata: object = {}) {
     console.log('Reporting error:', error, metadata);
     if (!sentryInitialized) return;
 
@@ -62,8 +62,11 @@ export function reportError(error: Error | string, metadata: object = {}) {
 
         if (typeof error === 'string') {
             Sentry.captureMessage(error);
-        } else {
+        } else if (error instanceof Error) {
             Sentry.captureException(error);
+        } else {
+            console.warn('Reporting non-error', error);
+            Sentry.captureMessage(`Non-error thrown: ${error}`);
         }
     });
 }

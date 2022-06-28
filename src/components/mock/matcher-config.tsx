@@ -8,7 +8,9 @@ import { matchers } from "mockttp";
 
 import { Headers } from '../../types';
 import { css, styled } from '../../styles';
+
 import { tryParseJson } from '../../util';
+import { asError } from '../../util/error';
 
 import { Matcher, MatcherClass, MatcherLookup, MatcherClassKey } from "../../model/rules/rules";
 
@@ -142,9 +144,9 @@ class HostMatcherConfig extends MatcherConfig<matchers.HostMatcher> {
         } catch (e) {
             console.log(e);
 
-            this.error = e;
+            this.error = asError(e);
             this.props.onInvalidState();
-            event.target.setCustomValidity(e.message);
+            event.target.setCustomValidity(this.error.message);
         }
         event.target.reportValidity();
     }
@@ -242,9 +244,9 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
         } catch (e) {
             console.log(e);
 
-            this.error = e;
+            this.error = asError(e);
             this.props.onInvalidState();
-            event.target.setCustomValidity(e.message);
+            event.target.setCustomValidity(this.error.message);
         }
         event.target.reportValidity();
     }
@@ -358,9 +360,9 @@ class RegexPathMatcherConfig extends MatcherConfig<matchers.RegexPathMatcher> {
         } catch (e) {
             console.log(e);
 
-            this.error = e;
+            this.error = asError(e);
             this.props.onInvalidState();
-            event.target.setCustomValidity(e.message);
+            event.target.setCustomValidity(this.error.message);
         }
         event.target.reportValidity();
     }
@@ -480,9 +482,9 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
         } catch (e) {
             console.log(e);
 
-            this.error = e;
+            this.error = asError(e);
             this.props.onInvalidState();
-            event.target.setCustomValidity(e.message);
+            event.target.setCustomValidity(this.error.message);
         }
         event.target.reportValidity();
     }
@@ -743,7 +745,7 @@ class JsonMatcherConfig<
             this.error = undefined;
         } catch (e) {
             console.log(e);
-            this.error = e;
+            this.error = asError(e);
             this.props.onInvalidState();
         }
     }

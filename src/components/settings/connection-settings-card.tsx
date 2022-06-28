@@ -7,6 +7,9 @@ import { styled } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
 import { trackEvent } from '../../tracking';
 
+import { uploadFile } from '../../util/ui';
+import { asError } from '../../util/error';
+
 import { UpstreamProxyType, RulesStore } from '../../model/rules/rules-store';
 import { ParsedCertificate, ValidationResult } from '../../model/crypto';
 import { parseCert, validatePKCS } from '../../services/ui-worker-api';
@@ -26,7 +29,6 @@ import {
 import { ContentLabel } from '../common/text-content';
 import { Select, TextInput } from '../common/inputs';
 import { SettingsButton, SettingsExplanation } from './settings-components';
-import { uploadFile } from '../../util/ui';
 
 const SpacedContentLabel = styled(ContentLabel)`
     margin-top: 40px;
@@ -584,7 +586,7 @@ class AdditionalCAConfig extends React.Component<{ rulesStore: RulesStore }> {
         const button = this.certFileButtonRef.current!;
 
         try {
-            const rawData = yield uploadFile('arraybuffer', [
+            const rawData: ArrayBuffer = yield uploadFile('arraybuffer', [
                 '.pem',
                 '.crt',
                 '.cert',
@@ -593,7 +595,7 @@ class AdditionalCAConfig extends React.Component<{ rulesStore: RulesStore }> {
                 'application/x-x509-ca-cert'
             ]);
 
-            const certificate = yield parseCert(rawData);
+            const certificate: ParsedCertificate = yield parseCert(rawData);
 
             if (rulesStore.additionalCaCertificates.some(({ rawPEM }) => rawPEM === certificate.rawPEM)) {
                 button.setCustomValidity(`This CA is already trusted.`);
@@ -604,10 +606,13 @@ class AdditionalCAConfig extends React.Component<{ rulesStore: RulesStore }> {
             rulesStore.additionalCaCertificates.push(certificate);
         } catch (error) {
             console.warn(error);
+
+            const errorMessage = asError(error).message;
+
             button.setCustomValidity(`Could not load certificate: ${
-                error.message
+                errorMessage
             }${
-                error.message.endsWith('.') ? '' : '.'
+                errorMessage.endsWith('.') ? '' : '.'
             } File must be a PEM or DER-formatted CA certificate.`);
             button.reportValidity();
         }

@@ -10,6 +10,7 @@ import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-e
 
 import { reportError } from '../../errors';
 import { delay } from '../../util/promise';
+import { asError } from '../../util/error';
 import { Omit } from '../../types';
 import { styled, Theme, defineMonacoThemes } from '../../styles';
 import { FocusWrapper } from './focus-wrapper';
@@ -30,7 +31,7 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
         defineMonacoThemes(monacoEditorModule);
         MonacoEditor = rmeModule.default;
     } catch (err) {
-        console.log('Monaco load failed', err.message);
+        console.log('Monaco load failed', asError(err).message);
         if (retries <= 0) {
             console.warn('Repeatedly failed to load monaco editor, giving up');
             throw err;

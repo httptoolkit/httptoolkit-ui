@@ -38,7 +38,7 @@ export const FocusWrapper = (p: { children: React.ReactNode, className?: string 
                         // Pressing tab tabs forwards past all the children of this element.
                         const allFocusableElements = getFocusableChildren(document.body);
                         const elementLastChild = _.last(thisElement.children) as HTMLElement;
-                        const currentTabIndex = _.findIndex(allFocusableElements, elementLastChild);
+                        const currentTabIndex = allFocusableElements.indexOf(elementLastChild);
 
                         const nextTabbableElement = allFocusableElements[currentTabIndex + 1];
                         if (nextTabbableElement) {

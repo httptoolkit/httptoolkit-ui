@@ -82,7 +82,7 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
                     try {
                         data = JSON.parse(uploadedFile);
                         await props.eventsStore!.loadFromHar(data);
-                    } catch (error) {
+                    } catch (error: any) {
                         reportError(error);
 
                         if (error.name === 'HARError' && error.errors) {
@@ -99,7 +99,7 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
                             alert(dedent`
                                 Could not parse HAR file.
 
-                                ${error.message}
+                                ${error.message || error}
                             `);
                         }
                     }

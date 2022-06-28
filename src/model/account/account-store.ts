@@ -162,9 +162,11 @@ export class AccountStore {
 
             // Otherwise, it's checkout time, and the rest is in the hands of Paddle
             yield this.purchasePlan(this.user.email!, selectedPlan);
-        } catch (error) {
+        } catch (error: any) {
             reportError(error);
-            alert(`${error.message || error.code || 'Error'}\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.tech.`);
+            alert(`${
+                error.message || error.code || 'Error'
+            }\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.tech.`);
             this.modal = undefined;
         }
     }.bind(this));

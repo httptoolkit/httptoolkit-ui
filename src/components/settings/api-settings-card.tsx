@@ -11,6 +11,7 @@ import { styled } from '../../styles';
 import { Icon } from '../../icons';
 import { uploadFile } from '../../util/ui';
 import { attempt } from '../../util/promise';
+import { asError } from '../../util/error';
 
 import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 
@@ -225,7 +226,7 @@ export class ApiSettingsCard extends React.Component<
             }
         } catch (e) {
             console.log(e);
-            updateValidationMessage(this.uploadSpecButtonRef.current!, e.message);
+            updateValidationMessage(this.uploadSpecButtonRef.current!, asError(e).message);
         } finally {
             this.specUploadInProgress = false;
         }
@@ -265,11 +266,11 @@ export class ApiSettingsCard extends React.Component<
             this.baseUrlError = undefined;
             updateValidationMessage(input);
         } catch (e) {
-            this.baseUrlError = e;
+            this.baseUrlError = asError(e);
             updateValidationMessage(input,
                 e instanceof TypeError
                     ? "Not a valid URL"
-                    : e.message
+                    : asError(e).message
             );
         }
     }

@@ -7,6 +7,7 @@ import * as portals from 'react-reverse-portal';
 
 import { css, styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
+import { asError } from '../../util/error';
 
 import { ViewableContentType } from '../../model/http/content-types';
 import { Formatters, isEditorFormatter } from '../../model/http/body-formatting';
@@ -124,7 +125,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
             } catch (e) {
                 return <div>
                     Failed to render {this.props.contentType} content:<br/>
-                    {e.toString()}
+                    { asError(e).toString() }
                 </div>;
             }
         } else {

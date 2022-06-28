@@ -16,7 +16,7 @@ export function validatePKCS12(
     try {
         asn1Data = forge.asn1.fromDer(forge.util.createBuffer(data));
     } catch (e) {
-        console.log(e.message);
+        console.log(e);
         return 'invalid-format';
     }
 
@@ -26,7 +26,7 @@ export function validatePKCS12(
         forge.pkcs12.pkcs12FromAsn1(asn1Data, passphrase);
         return 'valid';
     } catch (e) {
-        console.log(e.message);
+        console.log(e);
         return 'invalid-passphrase';
     }
 }

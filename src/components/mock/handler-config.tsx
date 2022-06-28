@@ -8,6 +8,7 @@ import { Headers } from '../../types';
 import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
+import { asError } from '../../util/error';
 
 import {
     Handler
@@ -581,7 +582,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
             this.error = undefined;
         } catch (e) {
             console.log(e);
-            this.error = e;
+            this.error = asError(e);
             if (this.props.onInvalidState) this.props.onInvalidState();
             throw e;
         }
@@ -595,7 +596,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
             this.updateHandler();
             event.target.setCustomValidity('');
         } catch (e) {
-            event.target.setCustomValidity(e.message);
+            event.target.setCustomValidity(asError(e).message);
         }
         event.target.reportValidity();
     }
@@ -1053,7 +1054,7 @@ const JsonUpdateTransformConfig = (props: {
             props.updateBody(JSON.parse(bodyString));
             setError(undefined);
         } catch (e) {
-            setError(e);
+            setError(asError(e));
         }
     }, [bodyString]);
 
