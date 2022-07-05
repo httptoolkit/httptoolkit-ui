@@ -147,7 +147,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                 position: 'bottom',
                 highlight: true,
                 type: 'web',
-                url: 'https://github.com/httptoolkit/httptoolkit/issues/new'
+                url: 'https://github.com/httptoolkit/httptoolkit/issues/new/choose'
             }
         ] as SidebarItem[];
     }
