@@ -330,10 +330,10 @@ export class RulesStore {
     @computed.struct
     get proxyConfig(): ProxyConfig {
         const { userProxyConfig } = this;
-        const serverPort = this.proxyStore.serverPort;
+        const { httpProxyPort } = this.proxyStore;
 
-        if (this.proxyStore.ruleParameterKeys.includes(dockerProxyRuleParamName(serverPort))) {
-            const dockerProxyConfig = { [MOCKTTP_PARAM_REF]: dockerProxyRuleParamName(serverPort) };
+        if (this.proxyStore.ruleParameterKeys.includes(dockerProxyRuleParamName(httpProxyPort))) {
+            const dockerProxyConfig = { [MOCKTTP_PARAM_REF]: dockerProxyRuleParamName(httpProxyPort) };
 
             return userProxyConfig
                 ? [dockerProxyConfig, userProxyConfig]

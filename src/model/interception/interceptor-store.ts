@@ -40,7 +40,7 @@ export class InterceptorStore {
     @observable interceptors: _.Dictionary<Interceptor>;
 
     async refreshInterceptors() {
-        const serverInterceptors = await getInterceptors(this.proxyStore.serverPort);
+        const serverInterceptors = await getInterceptors(this.proxyStore.httpProxyPort);
         const serverVersion = await serverVersionPromise;
 
         runInAction(() => {
@@ -69,7 +69,7 @@ export class InterceptorStore {
 
         return activateInterceptor(
             interceptorId,
-            this.proxyStore.serverPort,
+            this.proxyStore.httpProxyPort,
             options
         ).then(
             (metadata) => metadata || true

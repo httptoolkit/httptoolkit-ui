@@ -17,8 +17,6 @@ class ExistingBrowserConfig extends React.Component<{
     closeSelf: () => void
 }> {
 
-    @observable serverPort?: number;
-
     async componentDidMount() {
         const { activateInterceptor, reportStarted, reportSuccess, closeSelf } = this.props;
         closeSelf(); // We immediately unmount, but continue activating:
