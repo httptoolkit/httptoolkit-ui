@@ -13,12 +13,13 @@ import {
     MockttpPluggableAdmin,
     ProxySetting,
     RequestRuleData,
-    WebSocketRuleData,
-    SubscribableEvent
+    WebSocketRuleData
 } from 'mockttp';
 import * as MockRTC from 'mockrtc';
 
 import {
+    InputHTTPEvent,
+    InputRTCEvent,
     PortRange,
 } from '../types';
 import {
@@ -90,6 +91,7 @@ export class ProxyStore {
     private adminClient!: HtkAdminClient // Definitely set *after* initialization
 
     private mockttpRequestBuilder!: MockttpPluggableAdmin.MockttpAdminRequestBuilder;
+    private mockRTCRequestBuilder = new MockRTC.MockRTCAdminRequestBuilder();
 
     @observable
     // !-asserted, because it's definitely set *after initialized*
@@ -281,7 +283,7 @@ export class ProxyStore {
     }
 
     // Proxy event subscriptions through to the server instance:
-    onServerEvent = (event: SubscribableEvent, callback: (data: any) => void) => {
+    onMockttpEvent = (event: InputHTTPEvent, callback: (data: any) => void) => {
         const subRequest = this.mockttpRequestBuilder.buildSubscriptionRequest(event);
 
         if (!subRequest) {
@@ -290,6 +292,22 @@ export class ProxyStore {
             // sources in the same kind of situation). This is what happens when the *client* doesn't
             // recognize the event. Subscribe() below handles the unknown-to-server case.
             console.warn(`Ignoring subscription for event unrecognized by Mockttp client: ${event}`);
+            return Promise.resolve();
+        }
+
+        return this.adminClient.subscribe(subRequest, callback);
+    }
+
+    // Proxy event subscriptions through to the server instance:
+    onMockRTCEvent = (event: InputRTCEvent, callback: (data: any) => void) => {
+        const subRequest = this.mockRTCRequestBuilder.buildSubscriptionRequest(event);
+
+        if (!subRequest) {
+            // We just return an immediately promise if we don't recognize the event, which will quietly
+            // succeed but never call the corresponding callback (the same as the server and most event
+            // sources in the same kind of situation). This is what happens when the *client* doesn't
+            // recognize the event. Subscribe() below handles the unknown-to-server case.
+            console.warn(`Ignoring subscription for event unrecognized by MockRTC client: ${event}`);
             return Promise.resolve();
         }
 

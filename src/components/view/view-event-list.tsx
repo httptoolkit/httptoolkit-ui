@@ -269,13 +269,18 @@ const EventRow = observer((props: EventRowProps) => {
             style={style}
             failure={event}
         />;
-    } else {
+    } else if (event.isHttp()) {
         return <ExchangeRow
             index={index}
             isSelected={isSelected}
             style={style}
             exchange={event}
         />;
+    } else {
+        // TODO: Not yet supported
+        return <div style={style}>
+            WebRTC
+        </div>;
     };
 });
 

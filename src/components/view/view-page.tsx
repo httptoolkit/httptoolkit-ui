@@ -241,11 +241,14 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onDelete={this.onDelete}
                 onScrollToEvent={this.onScrollToCenterEvent}
             />;
-        } else {
+        } else if ('failureCause' in this.selectedEvent) {
             rightPane = <TlsFailureDetailsPane
                 failure={this.selectedEvent}
                 certPath={certPath}
             />;
+        } else {
+            // TODO: View WebRTC
+            throw new Error('Viewing WebRTC data is not yet supported');
         }
 
         return <div className={this.props.className}>

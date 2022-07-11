@@ -58,9 +58,11 @@ export type HarTlsErrorEntry = {
 }
 
 export async function generateHar(events: CollectedEvent[]): Promise<Har> {
-    const [exchanges, errors] = _.partition(events, e => e.isHttp()) as [
-        HttpExchange[], FailedTLSConnection[]
+    const [exchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [
+        HttpExchange[], CollectedEvent[]
     ];
+
+    const errors = otherEvents.filter(e => e.isTLSFailure()) as FailedTLSConnection[];
 
     const sourcePages = getSourcesAsHarPages(exchanges);
     const entries = await Promise.all(exchanges.map(generateHarEntry));
