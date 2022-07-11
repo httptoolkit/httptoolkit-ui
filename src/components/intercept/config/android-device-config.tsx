@@ -12,7 +12,7 @@ import { styled } from '../../../styles';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
-import { EventsStore } from '../../../model/http/events-store';
+import { EventsStore } from '../../../model/events/events-store';
 
 import {
     MethodMatchers,

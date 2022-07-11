@@ -21,7 +21,7 @@ import { debounceComputed } from '../../util/observable';
 
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
-import { EventsStore } from '../../model/http/events-store';
+import { EventsStore } from '../../model/events/events-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 

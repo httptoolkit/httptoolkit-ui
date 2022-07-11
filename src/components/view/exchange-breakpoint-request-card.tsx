@@ -8,7 +8,7 @@ import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
 import { TrafficSource } from '../../model/http/sources';
-import { getExchangeSummaryColour } from '../../model/http/exchange-colors';
+import { getSummaryColour } from '../../model/events/event-colors';
 
 import { CollapsibleCardHeading } from '../common/card';
 import {
@@ -68,7 +68,7 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
         return <ExchangeCard {...cardProps} direction='right'>
             <header>
                 <SourceIcon source={request.source} />
-                <Pill color={getExchangeSummaryColour(exchange)}>
+                <Pill color={getSummaryColour(exchange)}>
                     { method } {
                         (request.hostname || '')
                         // Add some tiny spaces to split up parts of the hostname

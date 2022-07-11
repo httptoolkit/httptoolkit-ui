@@ -11,7 +11,7 @@ import { reportError } from '../../errors';
 import { UiStore } from '../../model/ui-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getStatusColor } from '../../model/http/exchange-colors';
+import { getStatusColor } from '../../model/events/event-colors';
 import { ApiExchange } from '../../model/api/openapi';
 import { buildRuleFromRequest } from '../../model/rules/rule-definitions';
 import { WebSocketStream } from '../../model/websockets/websocket-stream';

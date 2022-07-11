@@ -6,7 +6,7 @@ import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
 import { TrafficSource } from '../../model/http/sources';
-import { getExchangeSummaryColour } from '../../model/http/exchange-colors';
+import { getSummaryColour } from '../../model/events/event-colors';
 import { getMethodDocs } from '../../model/http/http-docs';
 
 import { CollapsibleCardHeading } from '../common/card';
@@ -116,7 +116,7 @@ export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) =>
     return <ExchangeCard {...props} direction='right'>
         <header>
             <SourceIcon source={request.source} />
-            <Pill color={getExchangeSummaryColour(exchange)}>
+            <Pill color={getSummaryColour(exchange)}>
                 { exchange.isWebSocket() ? 'WebSocket ' : '' }
                 { request.method } {
                     (request.hostname || '')

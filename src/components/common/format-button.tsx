@@ -4,8 +4,8 @@ import {
     Formatters,
     isEditorFormatter,
     EditorFormatter
-} from '../../model/http/body-formatting';
-import { getContentEditorName } from '../../model/http/content-types';
+} from '../../model/events/body-formatting';
+import { getContentEditorName } from '../../model/events/content-types';
 
 import { IconButton } from './icon-button';
 

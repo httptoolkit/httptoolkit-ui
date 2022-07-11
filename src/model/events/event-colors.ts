@@ -5,7 +5,7 @@ import { lastHeader } from '../../util';
 import { Theme } from '../../styles';
 
 import { getBaseContentType } from './content-types';
-import { HttpExchange, SuccessfulExchange } from './exchange';
+import { HttpExchange, SuccessfulExchange } from '../http/exchange';
 
 export const getMessageBaseAcceptTypes = (message: ExchangeMessage) =>
     (lastHeader(message.headers['accept'])?.split(',') || [])
@@ -105,9 +105,9 @@ export const ExchangeCategories = [
     'aborted',
     'unknown'
 ] as const;
-export type ExchangeCategory = typeof ExchangeCategories[number];
+export type EventCategory = typeof ExchangeCategories[number];
 
-export function getExchangeCategory(exchange: HttpExchange): ExchangeCategory {
+export function getEventCategory(exchange: HttpExchange): EventCategory {
     if (!exchange.isCompletedExchange()) {
         if (isMutatativeExchange(exchange)) {
             return 'mutative';
@@ -137,8 +137,8 @@ export function getExchangeCategory(exchange: HttpExchange): ExchangeCategory {
     }
 };
 
-export function describeExchangeCategory(category: ExchangeCategory) {
-    const categoryColour = getExchangeSummaryColour(category);
+export function describeEventCategory(category: EventCategory) {
+    const categoryColour = getSummaryColour(category);
     const colourName = _.startCase(_.findKey(highlights, (c) => c === categoryColour)!);
 
     return `${colourName}: ${({
@@ -173,7 +173,7 @@ const highlights = {
     pink: '#dd3a96'
 };
 
-export function getExchangeSummaryColour(exchangeOrCategory: HttpExchange | ExchangeCategory): string {
+export function getSummaryColour(exchangeOrCategory: HttpExchange | EventCategory): string {
     const category = isExchange(exchangeOrCategory) ?
         exchangeOrCategory.category : exchangeOrCategory;
 

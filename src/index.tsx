@@ -25,7 +25,7 @@ import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worke
 import { UiStore } from './model/ui-store';
 import { AccountStore } from './model/account/account-store';
 import { ProxyStore } from './model/proxy-store';
-import { EventsStore } from './model/http/events-store';
+import { EventsStore } from './model/events/events-store';
 import { RulesStore } from './model/rules/rules-store';
 import { InterceptorStore } from './model/interception/interceptor-store';
 import { ApiStore } from './model/api/api-store';

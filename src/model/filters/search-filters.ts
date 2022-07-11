@@ -5,8 +5,8 @@ import { joinAnd } from '../../util';
 
 import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
-import { getReadableSize } from '../http/bodies';
-import { ExchangeCategories } from '../http/exchange-colors';
+import { getReadableSize } from '../events/bodies';
+import { ExchangeCategories } from '../events/event-colors';
 import { WebSocketStream } from '../websockets/websocket-stream';
 
 import {

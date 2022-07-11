@@ -1,6 +1,6 @@
 import { expect } from '../../../test-setup';
 
-import { getContentType, getEditableContentType } from '../../../../src/model/http/content-types';
+import { getContentType, getEditableContentType } from '../../../../src/model/events/content-types';
 
 describe('Content type parsing', () => {
     describe('getContentType', () => {

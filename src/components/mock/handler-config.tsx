@@ -33,7 +33,7 @@ import {
     getDefaultMimeType,
     EditableContentType,
     getEditableContentType
-} from '../../model/http/content-types';
+} from '../../model/events/content-types';
 import { RulesStore } from '../../model/rules/rules-store';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';

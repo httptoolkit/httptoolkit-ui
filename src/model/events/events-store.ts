@@ -17,14 +17,14 @@ import {
     InputWebSocketMessage,
     InputWebSocketClose
 } from '../../types';
-import { HttpExchange } from './exchange';
-import { parseSource } from './sources';
+import { HttpExchange } from '../http/exchange';
+import { parseSource } from '../http/sources';
 
 import { ProxyStore } from "../proxy-store";
 import { ApiStore } from '../api/api-store';
 import { lazyObservablePromise } from '../../util/observable';
 import { reportError } from '../../errors';
-import { parseHar } from './har';
+import { parseHar } from '../http/har';
 import { WebSocketStream } from '../websockets/websocket-stream';
 
 // Would be nice to magically infer this from the overloaded on() type, but sadly:

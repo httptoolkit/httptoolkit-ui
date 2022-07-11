@@ -28,8 +28,8 @@ import { lazyObservablePromise, ObservablePromise, observablePromise } from "../
 import { reportError } from '../../errors';
 
 import { parseSource } from './sources';
-import { getContentType } from './content-types';
-import { getExchangeCategory, ExchangeCategory } from './exchange-colors';
+import { getContentType } from '../events/content-types';
+import { getEventCategory, EventCategory } from '../events/event-colors';
 
 import { ApiStore } from '../api/api-store';
 import { ApiExchange } from '../api/openapi';
@@ -199,7 +199,7 @@ export class HttpExchange {
         .join('\n')
         .toLowerCase();
 
-        this.category = getExchangeCategory(this);
+        this.category = getEventCategory(this);
 
         // Start loading the relevant Open API specs for this request, if any.
         this._apiMetadataPromise = apiStore.getApi(this.request);
@@ -262,7 +262,7 @@ export class HttpExchange {
     public searchIndex: string;
 
     @observable
-    public category: ExchangeCategory;
+    public category: EventCategory;
 
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new ExchangeBody(request, request.headers);
@@ -278,7 +278,7 @@ export class HttpExchange {
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);
-        this.category = getExchangeCategory(this);
+        this.category = getEventCategory(this);
 
         if (this.requestBreakpoint) {
             this.requestBreakpoint.reject(
@@ -300,7 +300,7 @@ export class HttpExchange {
         Object.assign(this.timingEvents, response.timingEvents);
         this.tags = _.union(this.tags, response.tags);
 
-        this.category = getExchangeCategory(this);
+        this.category = getEventCategory(this);
         this.searchIndex = [
             this.searchIndex,
             response.statusCode.toString(),

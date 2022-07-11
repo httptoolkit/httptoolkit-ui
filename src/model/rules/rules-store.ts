@@ -35,7 +35,7 @@ import { reportError } from '../../errors';
 
 import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';
-import { EventsStore } from '../http/events-store';
+import { EventsStore } from '../events/events-store';
 import { getDesktopInjectedValue } from '../../services/desktop-api';
 import { WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 

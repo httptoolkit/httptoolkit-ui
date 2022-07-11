@@ -27,7 +27,7 @@ import type { ObservablePromise } from './util/observable';
 import type { HttpExchange } from './model/http/exchange';
 import type { WebSocketStream } from './model/websockets/websocket-stream';
 import type { TrafficSource } from './model/http/sources';
-import type { ViewableContentType } from './model/http/content-types';
+import type { ViewableContentType } from './model/events/content-types';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &

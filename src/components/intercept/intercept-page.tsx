@@ -8,7 +8,7 @@ import { WithInjected } from '../../types';
 import { styled } from '../../styles';
 
 import { InterceptorStore } from '../../model/interception/interceptor-store';
-import { EventsStore } from '../../model/http/events-store';
+import { EventsStore } from '../../model/events/events-store';
 import { MANUAL_INTERCEPT_ID } from '../../model/interception/interceptors';
 
 import { ConnectedSources } from './connected-sources';

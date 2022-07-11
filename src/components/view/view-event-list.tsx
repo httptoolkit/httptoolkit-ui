@@ -11,10 +11,10 @@ import { Icon, WarningIcon } from '../../icons';
 import { CollectedEvent, HttpExchange, FailedTlsRequest } from '../../types';
 
 import {
-    getExchangeSummaryColour,
-    ExchangeCategory,
-    describeExchangeCategory
-} from '../../model/http/exchange-colors';
+    getSummaryColour,
+    EventCategory,
+    describeEventCategory
+} from '../../model/events/event-colors';
 
 import { filterProps } from '../component-utils';
 import { EmptyState } from '../common/empty-state';
@@ -102,7 +102,7 @@ const RowPin = styled(
 
 const RowMarker = styled(Column)`
     transition: color 0.2s;
-    color: ${(p: { category: ExchangeCategory }) => getExchangeSummaryColour(p.category)};
+    color: ${(p: { category: EventCategory }) => getSummaryColour(p.category)};
 
     background-color: currentColor;
 
@@ -304,7 +304,7 @@ const ExchangeRow = observer(({
         style={style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker category={category} title={describeExchangeCategory(category)} />
+        <RowMarker category={category} title={describeEventCategory(category)} />
         <Method pinned={pinned}>{ request.method }</Method>
         <Status>
             {

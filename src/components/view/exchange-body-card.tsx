@@ -10,8 +10,8 @@ import { styled } from '../../styles';
 import { lastHeader } from '../../util';
 import { saveFile } from '../../util/ui';
 
-import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/http/content-types';
-import { getReadableSize } from '../../model/http/bodies';
+import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/events/content-types';
+import { getReadableSize } from '../../model/events/bodies';
 
 import { CollapsibleCardHeading } from '../common/card';
 import { ExchangeCard, LoadingExchangeCard } from './exchange-card';

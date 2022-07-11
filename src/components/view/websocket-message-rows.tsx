@@ -12,8 +12,8 @@ import {
     ViewableContentType,
     getCompatibleTypes,
     getContentEditorName
-} from '../../model/http/content-types';
-import { getReadableSize } from '../../model/http/bodies';
+} from '../../model/events/content-types';
+import { getReadableSize } from '../../model/events/bodies';
 import { WebSocketMessage } from '../../model/websockets/websocket-message';
 
 import { ContentLabel, ContentMonoValue } from '../common/text-content';

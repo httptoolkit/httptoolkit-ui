@@ -12,8 +12,8 @@ import {
     EditableContentTypes,
     getEditableContentType,
     getContentEditorName
-} from '../../model/http/content-types';
-import { getReadableSize } from '../../model/http/bodies';
+} from '../../model/events/content-types';
+import { getReadableSize } from '../../model/events/bodies';
 
 import { CollapsibleCardHeading } from '../common/card';
 import { CollapsingButtons } from '../common/collapsing-buttons';

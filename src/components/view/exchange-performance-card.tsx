@@ -14,7 +14,7 @@ import { asHeaderArray, joinAnd } from '../../util';
 import { Icon, WarningIcon, SuggestionIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
-import { getReadableSize, testEncodings } from '../../model/http/bodies';
+import { getReadableSize, testEncodings } from '../../model/events/bodies';
 import {
     explainCacheability,
     explainCacheLifetime,

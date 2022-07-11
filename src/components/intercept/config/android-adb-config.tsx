@@ -8,7 +8,7 @@ import { styled } from '../../../styles';
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
 import { AccountStore } from '../../../model/account/account-store';
-import { EventsStore } from '../../../model/http/events-store';
+import { EventsStore } from '../../../model/events/events-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 
 import { setUpAndroidCertificateRule } from './android-device-config';

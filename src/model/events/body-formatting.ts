@@ -1,6 +1,6 @@
 import { styled } from '../../styles';
 
-import { ViewableContentType } from './content-types';
+import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';

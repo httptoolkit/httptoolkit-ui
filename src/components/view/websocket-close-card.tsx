@@ -22,7 +22,7 @@ import {
     Markdown
 } from '../common/text-content';
 import { DocsLink } from '../common/docs-link';
-import { getWebSocketCloseColor } from '../../model/http/exchange-colors';
+import { getWebSocketCloseColor } from '../../model/events/event-colors';
 import { getWebSocketCloseCodeDocs } from '../../model/http/http-docs';
 
 interface WebSocketCloseCardProps extends Omit<CollapsibleCardProps, 'children'> {

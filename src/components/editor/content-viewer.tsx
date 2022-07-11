@@ -9,8 +9,8 @@ import { css, styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
 import { asError } from '../../util/error';
 
-import { ViewableContentType } from '../../model/http/content-types';
-import { Formatters, isEditorFormatter } from '../../model/http/body-formatting';
+import { ViewableContentType } from '../../model/events/content-types';
+import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
 
 import { ThemedSelfSizedEditor } from './base-editor';
 import { LoadingCardContent } from '../view/exchange-card';
