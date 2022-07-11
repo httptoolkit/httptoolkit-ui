@@ -151,31 +151,35 @@ export class EventsStore {
     }
 
     private updateFromQueuedEvent = (queuedEvent: QueuedEvent) => {
-        switch (queuedEvent.type) {
-            case 'request-initiated':
-                this.addInitiatedRequest(queuedEvent.event);
-                return this.checkForOrphan(queuedEvent.event.id);
-            case 'request':
-                this.addCompletedRequest(queuedEvent.event);
-                return this.checkForOrphan(queuedEvent.event.id);
-            case 'response':
-                return this.setResponse(queuedEvent.event);
-            case 'websocket-request':
-                this.addWebSocketRequest(queuedEvent.event);
-                return this.checkForOrphan(queuedEvent.event.id);
-            case 'websocket-accepted':
-                return this.addAcceptedWebSocketResponse(queuedEvent.event);
-            case 'websocket-message-received':
-            case 'websocket-message-sent':
-                return this.addWebSocketMessage(queuedEvent.event);
-            case 'websocket-close':
-                return this.markWebSocketClosed(queuedEvent.event);
-            case 'abort':
-                return this.markRequestAborted(queuedEvent.event);
-            case 'tls-client-error':
-                return this.addFailedTlsRequest(queuedEvent.event);
-            case 'client-error':
-                return this.addClientError(queuedEvent.event);
+        try {
+            switch (queuedEvent.type) {
+                case 'request-initiated':
+                    this.addInitiatedRequest(queuedEvent.event);
+                    return this.checkForOrphan(queuedEvent.event.id);
+                case 'request':
+                    this.addCompletedRequest(queuedEvent.event);
+                    return this.checkForOrphan(queuedEvent.event.id);
+                case 'response':
+                    return this.setResponse(queuedEvent.event);
+                case 'websocket-request':
+                    this.addWebSocketRequest(queuedEvent.event);
+                    return this.checkForOrphan(queuedEvent.event.id);
+                case 'websocket-accepted':
+                    return this.addAcceptedWebSocketResponse(queuedEvent.event);
+                case 'websocket-message-received':
+                case 'websocket-message-sent':
+                    return this.addWebSocketMessage(queuedEvent.event);
+                case 'websocket-close':
+                    return this.markWebSocketClosed(queuedEvent.event);
+                case 'abort':
+                    return this.markRequestAborted(queuedEvent.event);
+                case 'tls-client-error':
+                    return this.addFailedTlsRequest(queuedEvent.event);
+                case 'client-error':
+                    return this.addClientError(queuedEvent.event);
+            }
+        } catch (e) {
+            reportError(e);
         }
     }
 
@@ -200,154 +204,118 @@ export class EventsStore {
 
     @action
     private addInitiatedRequest(request: InputInitiatedRequest) {
-        try {
-            // Due to race conditions, it's possible this request already exists. If so,
-            // we just skip this - the existing data will be more up to date.
-            const existingEventIndex = _.findIndex(this.events, { id: request.id });
-            if (existingEventIndex === -1) {
-                const exchange = new HttpExchange(this.apiStore, request);
-                this.events.push(exchange);
-            }
-        } catch (e) {
-            reportError(e);
+        // Due to race conditions, it's possible this request already exists. If so,
+        // we just skip this - the existing data will be more up to date.
+        const existingEventIndex = _.findIndex(this.events, { id: request.id });
+        if (existingEventIndex === -1) {
+            const exchange = new HttpExchange(this.apiStore, request);
+            this.events.push(exchange);
         }
     }
 
     @action
     private addCompletedRequest(request: InputCompletedRequest) {
-        try {
-            // The request should already exist: we get an event when the initial path & headers
-            // are received, and this one later when the full body is received.
-            // We add the request from scratch if it's somehow missing, which can happen given
-            // races or if the server doesn't support request-initiated events.
-            const existingEventIndex = _.findIndex(this.events, { id: request.id });
-            if (existingEventIndex >= 0) {
-                (this.events[existingEventIndex] as HttpExchange).updateFromCompletedRequest(request);
-            } else {
-                this.events.push(new HttpExchange(this.apiStore, request));
-            }
-        } catch (e) {
-            reportError(e);
+        // The request should already exist: we get an event when the initial path & headers
+        // are received, and this one later when the full body is received.
+        // We add the request from scratch if it's somehow missing, which can happen given
+        // races or if the server doesn't support request-initiated events.
+        const existingEventIndex = _.findIndex(this.events, { id: request.id });
+        if (existingEventIndex >= 0) {
+            (this.events[existingEventIndex] as HttpExchange).updateFromCompletedRequest(request);
+        } else {
+            this.events.push(new HttpExchange(this.apiStore, request));
         }
     }
 
     @action
     private markRequestAborted(request: InputInitiatedRequest) {
-        try {
-            const exchange = _.find(this.exchanges, { id: request.id });
+        const exchange = _.find(this.exchanges, { id: request.id });
 
-            if (!exchange) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[request.id] = { type: 'abort', event: request };
-                return;
-            };
+        if (!exchange) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[request.id] = { type: 'abort', event: request };
+            return;
+        };
 
-            exchange.markAborted(request);
-        } catch (e) {
-            reportError(e);
-        }
+        exchange.markAborted(request);
     }
 
     @action
     private setResponse(response: InputResponse) {
-        try {
-            const exchange = _.find(this.exchanges, { id: response.id });
+        const exchange = _.find(this.exchanges, { id: response.id });
 
-            if (!exchange) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[response.id] = { type: 'response', event: response };
-                return;
-            }
-
-            exchange.setResponse(response);
-        } catch (e) {
-            reportError(e);
+        if (!exchange) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[response.id] = { type: 'response', event: response };
+            return;
         }
+
+        exchange.setResponse(response);
     }
 
     @action
     private addWebSocketRequest(request: InputCompletedRequest) {
-        try {
-            this.events.push(new WebSocketStream(this.apiStore, request));
-        } catch (e) {
-            reportError(e);
-        }
+        this.events.push(new WebSocketStream(this.apiStore, request));
     }
 
     @action
     private addAcceptedWebSocketResponse(response: InputResponse) {
-        try {
-            const stream = _.find(this.websockets, { id: response.id });
+        const stream = _.find(this.websockets, { id: response.id });
 
-            if (!stream) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[response.id] = { type: 'websocket-accepted', event: response };
-                return;
-            }
-
-            stream.setResponse(response);
-            stream.setAccepted(response);
-        } catch (e) {
-            reportError(e);
+        if (!stream) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[response.id] = { type: 'websocket-accepted', event: response };
+            return;
         }
+
+        stream.setResponse(response);
+        stream.setAccepted(response);
     }
 
     @action
     private addWebSocketMessage(message: InputWebSocketMessage) {
-        try {
-            const stream = _.find(this.websockets, { id: message.streamId });
+        const stream = _.find(this.websockets, { id: message.streamId });
 
-            if (!stream) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[message.streamId] = {
-                    type: `websocket-message-${message.direction}`,
-                    event: message
-                };
-                return;
-            }
-
-            stream.addMessage(message);
-        } catch (e) {
-            reportError(e);
+        if (!stream) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[message.streamId] = {
+                type: `websocket-message-${message.direction}`,
+                event: message
+            };
+            return;
         }
+
+        stream.addMessage(message);
     }
 
     @action
     private markWebSocketClosed(close: InputWebSocketClose) {
-        try {
-            const stream = _.find(this.websockets, { id: close.streamId });
+        const stream = _.find(this.websockets, { id: close.streamId });
 
-            if (!stream) {
-                // Handle this later, once the request has arrived
-                this.orphanedEvents[close.streamId] = { type: 'websocket-close', event: close };
-                return;
-            }
-
-            stream.markClosed(close);
-        } catch (e) {
-            reportError(e);
+        if (!stream) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[close.streamId] = { type: 'websocket-close', event: close };
+            return;
         }
+
+        stream.markClosed(close);
     }
 
     @action
     private addFailedTlsRequest(request: InputTlsRequest) {
-        try {
-            if (_.some(this.events, (event) =>
-                'hostname' in event &&
-                event.hostname === request.hostname &&
-                event.remoteIpAddress === request.remoteIpAddress
-            )) return; // Drop duplicate TLS failures
+        if (_.some(this.events, (event) =>
+            'hostname' in event &&
+            event.hostname === request.hostname &&
+            event.remoteIpAddress === request.remoteIpAddress
+        )) return; // Drop duplicate TLS failures
 
-            this.events.push(Object.assign(request, {
-                id: uuid(),
-                pinned: false,
-                searchIndex: [request.hostname, request.remoteIpAddress]
-                    .filter((x): x is string => !!x)
-                    .join('\n')
-            }));
-        } catch (e) {
-            reportError(e);
-        }
+        this.events.push(Object.assign(request, {
+            id: uuid(),
+            pinned: false,
+            searchIndex: [request.hostname, request.remoteIpAddress]
+                .filter((x): x is string => !!x)
+                .join('\n')
+        }));
     }
 
     @action
@@ -364,26 +332,22 @@ export class EventsStore {
             return;
         }
 
-        try {
-            const exchange = new HttpExchange(this.apiStore, {
-                ...error.request,
-                protocol: error.request.protocol || '',
-                method: error.request.method || '',
-                url: error.request.url || `${error.request.protocol || 'http'}://`,
-                path: error.request.path || '/',
-                headers: error.request.headers
-            });
+        const exchange = new HttpExchange(this.apiStore, {
+            ...error.request,
+            protocol: error.request.protocol || '',
+            method: error.request.method || '',
+            url: error.request.url || `${error.request.protocol || 'http'}://`,
+            path: error.request.path || '/',
+            headers: error.request.headers
+        });
 
-            if (error.response === 'aborted') {
-                exchange.markAborted(error.request);
-            } else {
-                exchange.setResponse(error.response);
-            }
-
-            this.events.push(exchange);
-        } catch (e) {
-            reportError(e);
+        if (error.response === 'aborted') {
+            exchange.markAborted(error.request);
+        } else {
+            exchange.setResponse(error.response);
         }
+
+        this.events.push(exchange);
     }
 
     @action.bound
