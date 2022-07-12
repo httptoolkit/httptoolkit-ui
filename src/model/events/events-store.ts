@@ -172,37 +172,27 @@ export class EventsStore {
 
     @computed.struct
     get exchanges(): Array<HttpExchange> {
-        return this.events.filter(
-            (event: any): event is HttpExchange => !!event.request
-        );
+        return this.events.filter((e): e is HttpExchange => e.isHttp());
     }
 
     @computed.struct
     get websockets(): Array<WebSocketStream> {
-        return this.exchanges.filter(
-            (event): event is WebSocketStream => event.isWebSocket()
-        );
+        return this.exchanges.filter((e): e is WebSocketStream => e.isWebSocket());
     }
 
     @computed.struct
     get rtcConnections(): Array<RTCConnection> {
-        return this.events.filter(
-            (event): event is RTCConnection => event instanceof RTCConnection
-        );
+        return this.events.filter((e): e is RTCConnection => e.isRTCConnection());
     }
 
     @computed.struct
     get rtcDataChannels(): Array<RTCDataChannel> {
-        return this.events.filter(
-            (event): event is RTCDataChannel => event instanceof RTCDataChannel
-        );
+        return this.events.filter((e): e is RTCDataChannel => e.isRTCDataChannel());
     }
 
     @computed.struct
     get rtcMediaTracks(): Array<RTCMediaTrack> {
-        return this.events.filter(
-            (event): event is RTCMediaTrack => event instanceof RTCMediaTrack
-        );
+        return this.events.filter((e): e is RTCMediaTrack => e.isRTCMediaTrack());
     }
 
     @computed.struct
@@ -451,8 +441,11 @@ export class EventsStore {
     @action
     private attachExternalRTCPeer(event: InputRTCExternalPeerAttached) {
         const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const otherHalf = this.rtcConnections.find(c => c.isOtherHalfOf(event));
+
         if (conn) {
-            conn.attachExternalPeer(event);
+            conn.attachExternalPeer(event, otherHalf);
+            if (otherHalf) otherHalf.connectOtherHalf(conn);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'external-peer-attached', event };
         }

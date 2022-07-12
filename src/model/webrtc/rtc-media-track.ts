@@ -20,6 +20,10 @@ export class RTCMediaTrack extends HTKEventBase {
 
     readonly id = this.sessionId + ':media:' + this.mid;
 
+    isRTCMediaTrack() {
+        return true;
+    }
+
     get rtcConnection() {
         return this.connection;
     }

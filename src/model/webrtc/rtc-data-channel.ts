@@ -21,6 +21,10 @@ export class RTCDataChannel extends HTKEventBase {
 
     readonly id = this.sessionId + ':data:' + this.channelId;
 
+    isRTCDataChannel() {
+        return true;
+    }
+
     get rtcConnection() {
         return this.connection;
     }
