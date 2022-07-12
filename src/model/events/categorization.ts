@@ -5,6 +5,8 @@ import { lastHeader } from '../../util';
 import { Theme } from '../../styles';
 
 import { getBaseContentType } from './content-types';
+
+import { HTKEventBase } from './event-base';
 import { HttpExchange, SuccessfulExchange } from '../http/exchange';
 
 export const getMessageBaseAcceptTypes = (message: ExchangeMessage) =>
@@ -92,7 +94,7 @@ const isFontExchange = (exchange: SuccessfulExchange) =>
         'application/x-font-opentype',
     ], getMessageBaseContentType(exchange.response));
 
-export const ExchangeCategories = [
+export const EventCategories = [
     'image',
     'js',
     'css',
@@ -105,36 +107,38 @@ export const ExchangeCategories = [
     'aborted',
     'unknown'
 ] as const;
-export type EventCategory = typeof ExchangeCategories[number];
+export type EventCategory = typeof EventCategories[number];
 
-export function getEventCategory(exchange: HttpExchange): EventCategory {
-    if (!exchange.isCompletedExchange()) {
-        if (isMutatativeExchange(exchange)) {
+export function getEventCategory(event: HTKEventBase): EventCategory {
+    if (event.isHttp()) {
+        if (!event.isCompletedExchange()) {
+            if (isMutatativeExchange(event)) {
+                return 'mutative';
+            } else {
+                return 'incomplete';
+            }
+        } else if (!event.isSuccessfulExchange()) {
+            return 'aborted';
+        } else if (event.isWebSocket()) {
+            return 'websocket';
+        } else if (isMutatativeExchange(event)) {
             return 'mutative';
-        } else {
-            return 'incomplete';
+        } else if (isImageExchange(event)) {
+            return 'image';
+        } else if (isJSExchange(event)) {
+            return 'js';
+        } else if (isCSSExchange(event)) {
+            return 'css';
+        } else if (isHTMLExchange(event)) {
+            return 'html';
+        } else if (isFontExchange(event)) {
+            return 'font';
+        } else if (isDataExchange(event)) {
+            return 'data';
         }
-    } else if (!exchange.isSuccessfulExchange()) {
-        return 'aborted';
-    } else if (exchange.isWebSocket()) {
-        return 'websocket';
-    } else if (isMutatativeExchange(exchange)) {
-        return 'mutative';
-    } else if (isImageExchange(exchange)) {
-        return 'image';
-    } else if (isJSExchange(exchange)) {
-        return 'js';
-    } else if (isCSSExchange(exchange)) {
-        return 'css';
-    } else if (isHTMLExchange(exchange)) {
-        return 'html';
-    } else if (isFontExchange(exchange)) {
-        return 'font';
-    } else if (isDataExchange(exchange)) {
-        return 'data';
-    } else {
-        return 'unknown';
     }
+
+    return 'unknown';
 };
 
 export function describeEventCategory(category: EventCategory) {
@@ -150,14 +154,11 @@ export function describeEventCategory(category: EventCategory) {
         "css": "a request for CSS",
         "html": "a request for HTML",
         "font": "a request for a font file",
-        "websocket": "a WebSocket stream",
         "data": "an API request",
+        "websocket": "a WebSocket stream",
         "unknown": "an unknown type of request"
     } as const)[category]}`;
 }
-
-const isExchange = (maybeExchange: any): maybeExchange is HttpExchange =>
-    maybeExchange.request && maybeExchange.category;
 
 const highlights = {
     black: '#000',
@@ -174,8 +175,8 @@ const highlights = {
 };
 
 export function getSummaryColour(exchangeOrCategory: HttpExchange | EventCategory): string {
-    const category = isExchange(exchangeOrCategory) ?
-        exchangeOrCategory.category : exchangeOrCategory;
+    const category = typeof exchangeOrCategory === 'string' ?
+        exchangeOrCategory : exchangeOrCategory.category;
 
     switch (category) {
         case 'incomplete':

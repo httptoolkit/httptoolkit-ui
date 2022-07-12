@@ -9,7 +9,7 @@ import { Draggable, DraggingStyle, NotDraggingStyle, DraggableStateSnapshot } fr
 import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
 
-import { getMethodColor } from '../../model/events/event-colors';
+import { getMethodColor } from '../../model/events/categorization';
 import { Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
 import { HtkMockRule, ItemPath } from '../../model/rules/rules-structure';
 import {

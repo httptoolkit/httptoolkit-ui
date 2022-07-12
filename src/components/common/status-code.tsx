@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { styled } from '../../styles'
 import { Icon } from '../../icons';
-import { getStatusColor } from '../../model/events/event-colors';
+import { getStatusColor } from '../../model/events/categorization';
 
 export const StatusCode = styled((props: {
     status:

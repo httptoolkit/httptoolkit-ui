@@ -18,7 +18,7 @@ import {
     getSummaryColour,
     EventCategory,
     describeEventCategory
-} from '../../model/events/event-colors';
+} from '../../model/events/categorization';
 
 import { filterProps } from '../component-utils';
 import { EmptyState } from '../common/empty-state';

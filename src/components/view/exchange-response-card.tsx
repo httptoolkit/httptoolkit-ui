@@ -7,7 +7,7 @@ import { HtkResponse, Omit } from '../../types';
 import { Theme } from '../../styles';
 
 import { ApiExchange } from '../../model/api/openapi';
-import { getStatusColor } from '../../model/events/event-colors';
+import { getStatusColor } from '../../model/events/categorization';
 import { getStatusDocs, getStatusMessage } from '../../model/http/http-docs';
 
 import { CollapsibleCardHeading } from '../common/card';

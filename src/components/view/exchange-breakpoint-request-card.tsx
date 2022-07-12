@@ -8,7 +8,7 @@ import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
 
 import { TrafficSource } from '../../model/http/sources';
-import { getSummaryColour } from '../../model/events/event-colors';
+import { getSummaryColour } from '../../model/events/categorization';
 
 import { CollapsibleCardHeading } from '../common/card';
 import {

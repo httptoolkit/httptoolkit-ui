@@ -5,7 +5,7 @@ import { observer } from 'mobx-react';
 import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../types';
 import { styled, Theme } from '../../styles';
 
-import { getStatusColor } from '../../model/events/event-colors';
+import { getStatusColor } from '../../model/events/categorization';
 
 import { CollapsibleCardHeading } from '../common/card';
 import {

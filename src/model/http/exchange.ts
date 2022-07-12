@@ -28,7 +28,6 @@ import { reportError } from '../../errors';
 
 import { parseSource } from './sources';
 import { getContentType } from '../events/content-types';
-import { getEventCategory, EventCategory } from '../events/event-colors';
 import { HTKEventBase } from '../events/event-base';
 
 import { ApiStore } from '../api/api-store';
@@ -196,8 +195,6 @@ export class HttpExchange extends HTKEventBase {
         .join('\n')
         .toLowerCase();
 
-        this.category = getEventCategory(this);
-
         // Start loading the relevant Open API specs for this request, if any.
         this._apiMetadataPromise = apiStore.getApi(this.request);
     }
@@ -252,9 +249,6 @@ export class HttpExchange extends HTKEventBase {
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;
 
-    @observable
-    public category: EventCategory;
-
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new ExchangeBody(request, request.headers);
         this.matchedRuleId = request.matchedRuleId || "?";
@@ -269,7 +263,6 @@ export class HttpExchange extends HTKEventBase {
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);
-        this.category = getEventCategory(this);
 
         if (this.requestBreakpoint) {
             this.requestBreakpoint.reject(
@@ -291,7 +284,6 @@ export class HttpExchange extends HTKEventBase {
         Object.assign(this.timingEvents, response.timingEvents);
         this.tags = _.union(this.tags, response.tags);
 
-        this.category = getEventCategory(this);
         this.searchIndex = [
             this.searchIndex,
             response.statusCode.toString(),

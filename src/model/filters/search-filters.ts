@@ -6,7 +6,7 @@ import { joinAnd } from '../../util';
 import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../events/bodies';
-import { ExchangeCategories } from '../events/event-colors';
+import { EventCategories } from '../events/categorization';
 import { WebSocketStream } from '../websockets/websocket-stream';
 
 import {
@@ -395,7 +395,7 @@ class CategoryFilter extends Filter {
     static filterSyntax = [
         new FixedStringSyntax("category"),
         new FixedStringSyntax("="), // Separate, so initial suggestions are names only
-        new StringOptionsSyntax(ExchangeCategories)
+        new StringOptionsSyntax(EventCategories)
     ] as const;
 
     static filterName = "category";

@@ -78,7 +78,6 @@ export const getExchangeData = ({
     } as HtkResponse,
     timingEvents: { startTime: Date.now() },
     searchIndex: '',
-    category: 'unknown',
     cache: new Map() as any,
     tags: requestTags.concat(responseTags)
 }) as HttpExchange;

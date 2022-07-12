@@ -19,7 +19,7 @@ import {
     mapRules,
     flattenRules
 } from '../../model/rules/rules-structure';
-import { getMethodColor } from '../../model/events/event-colors';
+import { getMethodColor } from '../../model/events/categorization';
 
 import { clickOnEnter, noPropagation } from '../component-utils';
 import { TextInput } from '../common/inputs';
