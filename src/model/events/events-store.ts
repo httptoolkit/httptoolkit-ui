@@ -4,12 +4,11 @@ import {
     action,
     computed,
 } from 'mobx';
-import * as uuid from 'uuid/v4';
 import { HarParseError } from 'har-validator';
 
 import {
     InputResponse,
-    InputTlsRequest,
+    InputTLSRequest,
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
@@ -17,14 +16,17 @@ import {
     InputWebSocketMessage,
     InputWebSocketClose
 } from '../../types';
-import { HttpExchange } from '../http/exchange';
+
 import { parseSource } from '../http/sources';
+import { parseHar } from '../http/har';
 
 import { ProxyStore } from "../proxy-store";
 import { ApiStore } from '../api/api-store';
 import { lazyObservablePromise } from '../../util/observable';
 import { reportError } from '../../errors';
-import { parseHar } from '../http/har';
+
+import { FailedTLSConnection } from './failed-tls-connection';
+import { HttpExchange } from '../http/exchange';
 import { WebSocketStream } from '../websockets/websocket-stream';
 
 // Would be nice to magically infer this from the overloaded on() type, but sadly:
@@ -39,7 +41,7 @@ type EventTypesMap = {
     'websocket-message-sent': InputWebSocketMessage,
     'websocket-close': InputWebSocketClose,
     'abort': InputInitiatedRequest
-    'tls-client-error': InputTlsRequest,
+    'tls-client-error': InputTLSRequest,
     'client-error': InputClientError
 };
 
@@ -302,20 +304,14 @@ export class EventsStore {
     }
 
     @action
-    private addFailedTlsRequest(request: InputTlsRequest) {
+    private addFailedTlsRequest(request: InputTLSRequest) {
         if (_.some(this.events, (event) =>
             'hostname' in event &&
             event.hostname === request.hostname &&
             event.remoteIpAddress === request.remoteIpAddress
         )) return; // Drop duplicate TLS failures
 
-        this.events.push(Object.assign(request, {
-            id: uuid(),
-            pinned: false,
-            searchIndex: [request.hostname, request.remoteIpAddress]
-                .filter((x): x is string => !!x)
-                .join('\n')
-        }));
+        this.events.push(new FailedTLSConnection(request));
     }
 
     @action

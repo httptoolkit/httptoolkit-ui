@@ -14,8 +14,8 @@ import {
     HttpExchange,
     CollectedEvent,
     TimingEvents,
-    InputTlsRequest,
-    FailedTlsRequest
+    InputTLSRequest,
+    FailedTLSConnection
 } from '../../types';
 
 import { UI_VERSION } from '../../services/service-versions';
@@ -52,7 +52,7 @@ export type HarTlsErrorEntry = {
     startedDateTime: string;
     time: number; // Floating-point high-resolution duration, in ms
     hostname?: string; // Undefined if connection fails before hostname received
-    cause: FailedTlsRequest['failureCause'];
+    cause: FailedTLSConnection['failureCause'];
 
     clientIPAddress: string;
     clientPort: number;
@@ -60,7 +60,7 @@ export type HarTlsErrorEntry = {
 
 export async function generateHar(events: CollectedEvent[]): Promise<Har> {
     const [exchanges, errors] = _.partition(events, isHttpExchange) as [
-        HttpExchange[], FailedTlsRequest[]
+        HttpExchange[], FailedTLSConnection[]
     ];
 
     const sourcePages = getSourcesAsHarPages(exchanges);
@@ -342,7 +342,7 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
     };
 }
 
-function generateHarTlsError(event: FailedTlsRequest): HarTlsErrorEntry {
+function generateHarTlsError(event: FailedTLSConnection): HarTlsErrorEntry {
     const timingEvents = event.timingEvents ?? {};
 
     const startTime = 'startTime' in timingEvents
@@ -367,7 +367,7 @@ export type ParsedHar = {
     requests: HarRequest[],
     responses: HarResponse[],
     aborts: HarRequest[],
-    tlsErrors: InputTlsRequest[]
+    tlsErrors: InputTLSRequest[]
 };
 
 const sumTimings = (
@@ -388,7 +388,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
     const requests: HarRequest[] = [];
     const responses: HarResponse[] = [];
     const aborts: HarRequest[] = [];
-    const tlsErrors: InputTlsRequest[] = [];
+    const tlsErrors: InputTLSRequest[] = [];
 
     har.log.entries.forEach((entry, i) => {
         const id = baseId + i;

@@ -8,7 +8,11 @@ import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
 import { Icon, WarningIcon } from '../../icons';
-import { CollectedEvent, HttpExchange, FailedTlsRequest } from '../../types';
+import {
+    CollectedEvent,
+    HttpExchange,
+    FailedTLSConnection
+} from '../../types';
 
 import {
     getSummaryColour,
@@ -346,7 +350,7 @@ const ExchangeRow = observer(({
 
 const FailedRequestRow = observer((p: {
     index: number,
-    failure: FailedTlsRequest,
+    failure: FailedTLSConnection,
     isSelected: boolean,
     style: {}
 }) =>

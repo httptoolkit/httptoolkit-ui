@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { CollectedEvent } from '../../types';
 import { joinAnd } from '../../util';
 
-import { HttpExchange } from '../http/exchange';
+import { HttpExchange, isHttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../events/bodies';
 import { ExchangeCategories } from '../events/event-colors';
@@ -443,7 +443,7 @@ class MethodFilter extends Filter {
             ],
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
-                .map(e => 'request' in e && e.request.method)
+                .map(e => isHttpExchange(e) && e.request.method)
                 .uniq()
                 .filter(Boolean)
                 .valueOf() as string[]
@@ -625,7 +625,7 @@ class HostnameFilter extends Filter {
             ],
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
-                .map(e => 'request' in e && e.request.parsedUrl.hostname.toLowerCase())
+                .map(e => isHttpExchange(e) && e.request.parsedUrl.hostname.toLowerCase())
                 .uniq()
                 .filter(Boolean)
                 .valueOf() as string[]
@@ -748,7 +748,7 @@ class PathFilter extends Filter {
         new StringSyntax("path", {
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
-                .map(e => 'request' in e && e.request.parsedUrl.pathname)
+                .map(e => isHttpExchange(e) && e.request.parsedUrl.pathname)
                 .uniq()
                 .filter(Boolean)
                 .valueOf() as string[]
@@ -813,7 +813,7 @@ class QueryFilter extends Filter {
             },
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
-                .map(e => 'request' in e && e.request.parsedUrl.search)
+                .map(e => isHttpExchange(e) && e.request.parsedUrl.search)
                 .uniq()
                 .filter(Boolean)
                 .valueOf() as string[]

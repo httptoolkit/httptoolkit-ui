@@ -10,7 +10,7 @@ import type {
 import type {
     Headers,
     TimingEvents,
-    TlsRequest,
+    TlsRequest as TLSRequest,
     ClientError
 } from 'mockttp/dist/types';
 import type { PortRange } from 'mockttp/dist/mockttp';
@@ -24,6 +24,8 @@ import type {
 } from 'mockttp/dist/rules/requests/request-handler-definitions';
 
 import type { ObservablePromise } from './util/observable';
+
+import type { FailedTLSConnection } from './model/events/failed-tls-connection';
 import type { HttpExchange } from './model/http/exchange';
 import type { WebSocketStream } from './model/websockets/websocket-stream';
 import type { TrafficSource } from './model/http/sources';
@@ -36,7 +38,7 @@ export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
 export type InputClientError = ClientError;
-export type InputTlsRequest = TlsRequest;
+export type InputTLSRequest = TLSRequest;
 export type InputInitiatedRequest = MockttpInitiatedRequest;
 export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
@@ -80,12 +82,6 @@ export {
     MockttpBreakpointedResponse,
 };
 
-export type FailedTlsRequest = InputTlsRequest & {
-    id: string;
-    searchIndex: string;
-    pinned: boolean;
-}
-
 export type HtkRequest = Omit<InputRequest, 'body' | 'path'> & {
     parsedUrl: URL & { parseable: boolean },
     source: TrafficSource,
@@ -107,11 +103,11 @@ export type MessageBody = {
     cleanup(): void
 };
 
-export type { HttpExchange };
+export type { HttpExchange, FailedTLSConnection };
 export type CollectedEvent =
     | HttpExchange
     | WebSocketStream
-    | FailedTlsRequest;
+    | FailedTLSConnection;
 export type ExchangeMessage = HtkRequest | HtkResponse;
 
 export {

@@ -1,7 +1,8 @@
 import * as dateFns from 'date-fns';
 import { SourceIcons } from '../../src/icons';
 import { HttpExchange, ExchangeBody } from '../../src/model/http/exchange';
-import { FailedTlsRequest, HtkRequest, HtkResponse } from '../../src/types';
+import { FailedTLSConnection } from '../../src/model/events/failed-tls-connection';
+import { HtkRequest, HtkResponse } from '../../src/types';
 
 export const getExchangeData = ({
     hostname = 'example.com',
@@ -35,6 +36,7 @@ export const getExchangeData = ({
         hostname,
         path,
         headers: requestHeaders as { host: string },
+        rawHeaders: [], // Ignore for now
         body: new ExchangeBody({
                 body: {
                     buffer: Buffer.isBuffer(requestBody)
@@ -59,6 +61,7 @@ export const getExchangeData = ({
         statusCode,
         statusMessage,
         headers: responseHeaders,
+        rawHeaders: [], // Ignore for now
         body: new ExchangeBody({
                 body: {
                     buffer: Buffer.isBuffer(responseBody)
@@ -83,11 +86,11 @@ export const getExchangeData = ({
 export const getFailedTls = ({
     remoteIpAddress = "10.0.0.1",
     failureCause = 'cert-rejected'
-} = {}) => ({
+} = {}) => Object.assign(Object.create(FailedTLSConnection.prototype), {
     remoteIpAddress,
     failureCause,
     tags: [] as string[]
-}) as FailedTlsRequest;
+}) as FailedTLSConnection;
 
 export function httpDate(date: Date) {
     const utcDate = dateFns.addMinutes(date, date.getTimezoneOffset());

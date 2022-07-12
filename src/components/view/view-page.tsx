@@ -22,7 +22,7 @@ import { debounceComputed } from '../../util/observable';
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
-import { HttpExchange } from '../../model/http/exchange';
+import { HttpExchange, isHttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
@@ -229,7 +229,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <EmptyState icon={['fas', 'arrow-left']}>
                 Select an exchange to see the full details.
             </EmptyState>;
-        } else if ('request' in this.selectedEvent) {
+        } else if (isHttpExchange(this.selectedEvent)) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}
 

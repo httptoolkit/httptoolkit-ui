@@ -3,6 +3,15 @@ import * as zlib from 'zlib';
 
 import { expect } from '../../../test-setup';
 
+import { delay } from '../../../../src/util/promise';
+import { decodeBody } from '../../../../src/services/ui-worker-api';
+
+import { CollectedEvent } from '../../../../src/types';
+import { FailedTLSConnection } from '../../../../src/model/events/failed-tls-connection';
+import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
+
+import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
+
 import {
     Filter,
     FilterSet,
@@ -16,12 +25,6 @@ import {
 import {
     applySuggestionToText
 } from '../../../../src/model/filters/syntax-matching';
-
-import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
-import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
-import { CollectedEvent, FailedTlsRequest } from '../../../../src/types';
-import { delay } from '../../../../src/util/promise';
-import { decodeBody } from '../../../../src/services/ui-worker-api';
 
 // Given an exact input for a filter, creates the filter and returns it
 function createFilter(input: string): Filter {
@@ -342,7 +345,7 @@ describe("Search filter model integration test:", () => {
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
             expect(matchedEvents.length).to.equal(2);
             expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(500);
-            expect((matchedEvents[1] as FailedTlsRequest).failureCause).to.equal('cert-rejected');
+            expect((matchedEvents[1] as FailedTLSConnection).failureCause).to.equal('cert-rejected');
         });
     });
 
