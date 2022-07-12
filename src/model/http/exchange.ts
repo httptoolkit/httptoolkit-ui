@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import { observable, computed, action, runInAction } from 'mobx';
 
 import {
-    CollectedEvent,
     HtkRequest,
     HtkResponse,
     Headers,
@@ -30,6 +29,7 @@ import { reportError } from '../../errors';
 import { parseSource } from './sources';
 import { getContentType } from '../events/content-types';
 import { getEventCategory, EventCategory } from '../events/event-colors';
+import { HTKEventBase } from '../events/event-base';
 
 import { ApiStore } from '../api/api-store';
 import { ApiExchange } from '../api/openapi';
@@ -42,11 +42,6 @@ import {
     getResponseBreakpoint,
     getDummyResponseBreakpoint
 } from './exchange-breakpoint';
-import type { WebSocketStream } from '../websockets/websocket-stream';
-
-export function isHttpExchange(event: CollectedEvent): event is HttpExchange {
-    return 'request' in event;
-}
 
 function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undefined  {
     try {
@@ -177,9 +172,11 @@ export type SuccessfulExchange = Omit<HttpExchange, 'response'> & {
     response: HtkResponse
 };
 
-export class HttpExchange {
+export class HttpExchange extends HTKEventBase {
 
     constructor(apiStore: ApiStore, request: InputRequest) {
+        super();
+
         this.request = addRequestMetadata(request);
 
         this.timingEvents = request.timingEvents;
@@ -219,12 +216,13 @@ export class HttpExchange {
     @observable
     public tags: string[];
 
-    @observable
-    public pinned: boolean = false;
-
     @computed
     get httpVersion() {
         return this.request.httpVersion === '2.0' ? 2 : 1;
+    }
+
+    isHttp() {
+        return true;
     }
 
     isCompletedRequest(): this is CompletedRequest {
@@ -237,10 +235,6 @@ export class HttpExchange {
 
     isSuccessfulExchange(): this is SuccessfulExchange {
         return this.isCompletedExchange() && this.response !== 'aborted';
-    }
-
-    isWebSocket(): this is WebSocketStream {
-        return false;
     }
 
     hasRequestBody(): this is CompletedRequest {
@@ -257,9 +251,6 @@ export class HttpExchange {
 
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;
-
-    @observable
-    public searchIndex: string;
 
     @observable
     public category: EventCategory;

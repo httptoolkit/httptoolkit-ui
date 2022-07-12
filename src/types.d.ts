@@ -103,7 +103,11 @@ export type MessageBody = {
     cleanup(): void
 };
 
-export type { HttpExchange, FailedTLSConnection };
+export type {
+    FailedTLSConnection,
+    HttpExchange,
+    WebSocketStream
+};
 export type CollectedEvent =
     | HttpExchange
     | WebSocketStream

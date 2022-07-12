@@ -948,7 +948,7 @@ describe("Search filter model integration test:", () => {
 
         const decodeBodies = async (events: CollectedEvent[]) => {
             events.forEach(e => {
-                if (e instanceof HttpExchange) {
+                if (e.isHttp()) {
                     e.request.body.decoded;
                     if (e.isSuccessfulExchange()) e.response.body.decoded;
                 }

@@ -22,7 +22,7 @@ import { debounceComputed } from '../../util/observable';
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
-import { HttpExchange, isHttpExchange } from '../../model/http/exchange';
+import { HttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
@@ -62,7 +62,7 @@ const ViewPageKeyboardShortcuts = (props: {
     }, [props.moveSelection]);
 
     useHotkeys('Ctrl+p, Cmd+p', (event) => {
-        if (props.selectedEvent instanceof HttpExchange) {
+        if (props.selectedEvent?.isHttp()) {
             props.onPin(props.selectedEvent);
             event.preventDefault();
         }
@@ -175,7 +175,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             // If you have a pane expanded, and select an event with no data
             // for that pane, then disable the expansion
             if (
-                !(selectedEvent instanceof HttpExchange) ||
+                !(selectedEvent.isHttp()) ||
                 (
                     expandedCard === 'requestBody' &&
                     !selectedEvent.hasRequestBody() &&
@@ -229,7 +229,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <EmptyState icon={['fas', 'arrow-left']}>
                 Select an exchange to see the full details.
             </EmptyState>;
-        } else if (isHttpExchange(this.selectedEvent)) {
+        } else if (this.selectedEvent.isHttp()) {
             rightPane = <ExchangeDetailsPane
                 exchange={this.selectedEvent}
 

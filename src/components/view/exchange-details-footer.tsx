@@ -115,7 +115,7 @@ export const ExchangeDetailsFooter = inject('rulesStore')(
                     onClick={() => props.onDelete(event)}
                 />
                 <MockButton
-                    isExchange={event instanceof HttpExchange}
+                    isExchange={event.isHttp()}
                     isPaidUser={props.isPaidUser}
                     onClick={() => {
                         const rule = buildRuleFromExchange(

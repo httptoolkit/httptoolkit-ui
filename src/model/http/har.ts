@@ -19,7 +19,6 @@ import {
 } from '../../types';
 
 import { UI_VERSION } from '../../services/service-versions';
-import { isHttpExchange } from './exchange';
 import { getStatusMessage } from './http-docs';
 
 // We only include request/response bodies that are under 500KB
@@ -59,7 +58,7 @@ export type HarTlsErrorEntry = {
 }
 
 export async function generateHar(events: CollectedEvent[]): Promise<Har> {
-    const [exchanges, errors] = _.partition(events, isHttpExchange) as [
+    const [exchanges, errors] = _.partition(events, e => e.isHttp()) as [
         HttpExchange[], FailedTLSConnection[]
     ];
 
