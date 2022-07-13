@@ -97,17 +97,18 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         cacheKey: Symbol('json'),
         render: (input: Buffer) => {
             if (input.byteLength < 2000) {
+                const inputAsString = input.toString('utf8')
+
                 try {
                     // For short-ish inputs, we return synchronously - conveniently this avoids
                     // showing the loading spinner that churns the layout in short content cases.
                     return JSON.stringify(
-                        JSON.parse(
-                            input.toString('utf8')
-                        ),
+                        JSON.parse(inputAsString),
                     null, 2);
                     // ^ Same logic as in UI-worker-formatter
                 } catch (e) {
-                    return observablePromise(Promise.reject(e));
+                    // Fallback to showing the raw un-formatted JSON:
+                    return inputAsString;
                 }
             } else {
                 return observablePromise(
