@@ -14,7 +14,7 @@ import {
     getContentEditorName
 } from '../../model/events/content-types';
 import { getReadableSize } from '../../model/events/bodies';
-import { WebSocketMessage } from '../../model/websockets/websocket-message';
+import { StreamMessage } from '../../model/events/stream-message';
 
 import { ContentLabel, ContentMonoValue } from '../common/text-content';
 import { Pill, PillSelector } from '../common/pill';
@@ -23,17 +23,17 @@ import { IconButton } from '../common/icon-button';
 import { ContentViewer } from '../editor/content-viewer';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
-const visualDirection = (message: WebSocketMessage) =>
+const visualDirection = (message: StreamMessage) =>
     message.direction === 'sent'
         ? 'left'
         : 'right';
 
 
-export const WebSocketMessageCollapsedRow = React.memo((p: {
-    message: WebSocketMessage
+export const StreamMessageCollapsedRow = React.memo((p: {
+    message: StreamMessage
     index: number,
     onClick: (index: number) => void
-}) => <CollapsedWebSocketRowContainer
+}) => <CollapsedStreamRowContainer
         messageDirection={visualDirection(p.message)}
         onClick={() => p.onClick(p.index)}
 
@@ -55,7 +55,7 @@ export const WebSocketMessageCollapsedRow = React.memo((p: {
         }}
     >
     <MessageArrow selected={false} messageDirection={visualDirection(p.message)} />
-    <CollapsedWebSocketContent>
+    <CollapsedStreamContent>
         {
             p.message.content
             // Limit the length - no point showing huge messages here. On a typical UI, we show about
@@ -64,7 +64,7 @@ export const WebSocketMessageCollapsedRow = React.memo((p: {
             // Show everything as UTF-8 - binary data can be viewed up close instead.
             .toString('utf8')
         }
-    </CollapsedWebSocketContent>
+    </CollapsedStreamContent>
     {
         p.message.isBinary &&
             <Pill color={warningColor}>Binary</Pill>
@@ -72,7 +72,7 @@ export const WebSocketMessageCollapsedRow = React.memo((p: {
     <Pill>
         { getReadableSize(p.message.content.byteLength) }
     </Pill>
-</CollapsedWebSocketRowContainer>);
+</CollapsedStreamRowContainer>);
 
 const MessageArrow = styled(React.memo((p: {
     className?: string,
@@ -102,7 +102,7 @@ const MessageArrow = styled(React.memo((p: {
     text-align: center;
 `;
 
-const CollapsedWebSocketRowContainer = styled.div<{ messageDirection: 'left' | 'right' }>`
+const CollapsedStreamRowContainer = styled.div<{ messageDirection: 'left' | 'right' }>`
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -131,7 +131,7 @@ const CollapsedWebSocketRowContainer = styled.div<{ messageDirection: 'left' | '
     }
 `;
 
-const CollapsedWebSocketContent = styled(ContentMonoValue)`
+const CollapsedStreamContent = styled(ContentMonoValue)`
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -142,14 +142,14 @@ const CollapsedWebSocketContent = styled(ContentMonoValue)`
 
 interface MessageEditorRowProps {
     streamId: string,
-    message: WebSocketMessage,
+    message: StreamMessage,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
     isPaidUser: boolean,
-    onExportMessage: (message: WebSocketMessage) => void
+    onExportMessage: (message: StreamMessage) => void
 }
 
 @observer
-export class WebSocketMessageEditorRow extends React.Component<MessageEditorRowProps> {
+export class StreamMessageEditorRow extends React.Component<MessageEditorRowProps> {
 
     @observable
     private selectedContentType: ViewableContentType | undefined;

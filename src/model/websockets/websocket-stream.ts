@@ -10,8 +10,8 @@ import {
 } from '../../types';
 
 import { ApiStore } from '../api/api-store';
+import { StreamMessage } from '../events/stream-message';
 import { HttpExchange } from '../http/exchange';
-import { WebSocketMessage } from './websocket-message';
 
 // A websocket stream is an HTTP exchange (the initial setup, or even rejection), but
 // may include a series of many ongoing messages and a final websocket close event,
@@ -49,11 +49,11 @@ export class WebSocketStream extends HttpExchange {
     }
 
     @observable
-    readonly messages: Array<WebSocketMessage> = [];
+    readonly messages: Array<StreamMessage> = [];
 
     @action
     addMessage(message: InputWebSocketMessage) {
-        this.messages.push(new WebSocketMessage(message, this.messages.length));
+        this.messages.push(new StreamMessage(message, this.messages.length));
     }
 
     @observable

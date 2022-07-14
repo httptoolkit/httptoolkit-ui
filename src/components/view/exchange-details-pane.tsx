@@ -34,7 +34,7 @@ import { ExchangeBreakpointResponseCard } from './exchange-breakpoint-response-c
 import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
 
 import { WebSocketCloseCard } from './websocket-close-card';
-import { WebSocketMessageListCard } from './websocket-message-list-card';
+import { StreamMessageListCard } from './stream-message-list-card';
 
 const OuterContainer = styled.div`
     height: 100%;
@@ -469,13 +469,20 @@ export class ExchangeDetailsPane extends React.Component<{
     }
 
     private renderWebSocketMessages(exchange: WebSocketStream) {
-        return <WebSocketMessageListCard
+        const urlParts = exchange.request.url.split('/');
+        const domain = urlParts[2].split(':')[0];
+        const baseName = urlParts.length >= 2 ? urlParts[urlParts.length - 1] : undefined;
+
+        const filenamePrefix = `${domain}${baseName ? `- ${baseName}` : ''} - websocket`;
+
+        return <StreamMessageListCard
             {...this.cardProps.webSocketMessages}
 
             // Link the key to the exchange, to ensure selected-message state gets
             // reset when we switch between exchanges:
             key={`${this.cardProps.webSocketMessages.key}-${this.props.exchange.id}`}
             streamId={this.props.exchange.id}
+            streamType='WebSocket'
 
             expanded={this.props.uiStore!.expandedCard === 'webSocketMessages'}
             onExpandToggled={this.toggleExpand.bind(this, 'webSocketMessages')}
@@ -483,7 +490,7 @@ export class ExchangeDetailsPane extends React.Component<{
             editorNode={this.props.streamMessageEditor}
 
             isPaidUser={this.props.accountStore!.isPaidUser}
-            url={exchange.request.url}
+            filenamePrefix={filenamePrefix}
             messages={exchange.messages}
         />;
     }

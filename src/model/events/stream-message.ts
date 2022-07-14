@@ -1,16 +1,17 @@
 import { computed, observable } from 'mobx';
 
-import { InputWebSocketMessage } from "../../types";
+import { InputStreamMessage } from "../../types";
 import { asBuffer } from '../../util';
 
-export class WebSocketMessage {
+export class StreamMessage {
 
-    @observable private inputMessage: InputWebSocketMessage;
+    @observable
+    private inputMessage: InputStreamMessage;
 
     public readonly cache = observable.map(new Map<symbol, unknown>(), { deep: false });
 
     constructor(
-        inputMessage: InputWebSocketMessage,
+        inputMessage: InputStreamMessage,
         public readonly messageIndex: number
     ) {
         this.inputMessage = inputMessage;
@@ -45,4 +46,5 @@ export class WebSocketMessage {
         this.inputMessage.content = Buffer.from([]);
         this.cache.clear();
     }
+
 }

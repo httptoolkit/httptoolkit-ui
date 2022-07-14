@@ -48,6 +48,8 @@ export type InputMessage = InputRequest | InputResponse;
 export type InputWebSocketMessage = MockttpWebSocketMessage;
 export type InputWebSocketClose = MockttpWebSocketClose;
 
+export type InputStreamMessage = InputWebSocketMessage;
+
 export interface BreakpointBody {
     decoded: Buffer;
     encoded: ObservablePromise<Buffer>;

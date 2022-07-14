@@ -6,8 +6,7 @@ import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 import { saveFile } from '../../util/ui';
-import { WebSocketMessage } from '../../model/websockets/websocket-message';
-
+import { StreamMessage } from '../../model/events/stream-message';
 import { Pill } from '../common/pill';
 import { IconButton } from '../common/icon-button';
 import { CollapsingButtons } from '../common/collapsing-buttons';
@@ -17,42 +16,39 @@ import { ExchangeCard } from './exchange-card';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import {
-    WebSocketMessageCollapsedRow,
-    WebSocketMessageEditorRow
-} from './websocket-message-rows';
+    StreamMessageCollapsedRow,
+    StreamMessageEditorRow
+} from './stream-message-rows';
 
-export const WebSocketMessageListCardCard = styled(ExchangeCard)`
+export const StreamMessageListCardCard = styled(ExchangeCard)`
     display: flex;
     flex-direction: column;
 `;
 
 function getFilename(
-    url: string,
+    filenamePrefix: string,
     someBinary: boolean,
     messageIndex?: number
 ) {
-    const urlParts = url.split('/');
-    const domain = urlParts[2].split(':')[0];
-    const baseName = urlParts.length >= 2 ? urlParts[urlParts.length - 1] : undefined;
-
     const extension = someBinary ? 'bin' : 'txt';
 
-    return `${domain}${baseName ? `- ${baseName}` : ''} - websocket ${
+    return `${filenamePrefix} ${
         messageIndex ? `message ${messageIndex}` : 'messages'
     }.${extension}`;
 }
 
 @observer
-export class WebSocketMessageListCard extends React.Component<{
+export class StreamMessageListCard extends React.Component<{
     collapsed: boolean,
     expanded: boolean,
-    onCollapseToggled: () => void,
-    onExpandToggled: () => void,
+    onCollapseToggled?: () => void,
+    onExpandToggled?: () => void,
 
     isPaidUser: boolean,
-    url: string,
+    filenamePrefix: string,
     streamId: string,
-    messages: Array<WebSocketMessage>,
+    streamType: string,
+    messages: Array<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
 
@@ -66,7 +62,7 @@ export class WebSocketMessageListCard extends React.Component<{
 
     render() {
         const {
-            url,
+            streamType,
             streamId,
             messages,
             isPaidUser,
@@ -77,17 +73,17 @@ export class WebSocketMessageListCard extends React.Component<{
             onExpandToggled
         } = this.props;
 
-        return <WebSocketMessageListCardCard
+        return <StreamMessageListCardCard
             collapsed={collapsed}
-            onCollapseToggled={onCollapseToggled}
+            onCollapseToggled={onCollapseToggled ?? _.noop}
             expanded={expanded}
         >
             <header>
                 <CollapsingButtons>
-                    <ExpandShrinkButton
+                    { onExpandToggled && <ExpandShrinkButton
                         expanded={expanded}
                         onClick={onExpandToggled}
-                    />
+                    /> }
                     <IconButton
                         icon={['fas', 'download']}
                         title={
@@ -100,15 +96,17 @@ export class WebSocketMessageListCard extends React.Component<{
                     />
                 </CollapsingButtons>
                 <Pill>{ messages.length } messages</Pill>
-                <CollapsibleCardHeading onCollapseToggled={onCollapseToggled}>
-                    WebSocket messages
+                <CollapsibleCardHeading
+                    onCollapseToggled={onCollapseToggled?? _.noop}
+                >
+                    { streamType } messages
                 </CollapsibleCardHeading>
             </header>
-            <WebSocketMessagesList expanded={expanded}>
+            <StreamMessagesList expanded={expanded}>
                 {
                     messages.map((message, i) =>
                         this.expandedRow === i
-                        ? <WebSocketMessageEditorRow
+                        ? <StreamMessageEditorRow
                             key='expanded' // Constant, which preserves content type between rows
                             message={message}
 
@@ -117,7 +115,7 @@ export class WebSocketMessageListCard extends React.Component<{
                             onExportMessage={this.exportMessage}
                             editorNode={editorNode}
                         />
-                        : <WebSocketMessageCollapsedRow
+                        : <StreamMessageCollapsedRow
                             key={i}
                             message={message}
 
@@ -126,8 +124,8 @@ export class WebSocketMessageListCard extends React.Component<{
                         />
                     )
                 }
-            </WebSocketMessagesList>
-        </WebSocketMessageListCardCard>;
+            </StreamMessagesList>
+        </StreamMessageListCardCard>;
     }
 
     @action.bound
@@ -137,7 +135,7 @@ export class WebSocketMessageListCard extends React.Component<{
 
     exportMessages = () => {
         saveFile(
-            getFilename(this.props.url, this.someBinaryMessages),
+            getFilename(this.props.filenamePrefix, this.someBinaryMessages),
             this.someBinaryMessages
                 ? 'application/octet-stream'
                 : 'text/plain',
@@ -147,9 +145,15 @@ export class WebSocketMessageListCard extends React.Component<{
         );
     };
 
-    exportMessage = (message: WebSocketMessage) => {
+    exportMessage = (message: StreamMessage) => {
+        const filename = getFilename(
+            this.props.filenamePrefix,
+            message.isBinary,
+            this.props.messages.indexOf(message)
+        );
+
         saveFile(
-            getFilename(this.props.url, message.isBinary, this.props.messages.indexOf(message)),
+            filename,
             message.isBinary
                 ? 'application/octet-stream'
                 : 'text/plain',
@@ -159,7 +163,7 @@ export class WebSocketMessageListCard extends React.Component<{
 
 }
 
-const WebSocketMessagesList = styled.div<{ expanded: boolean }>`
+const StreamMessagesList = styled.div<{ expanded: boolean }>`
     width: calc(100% + 40px);
     margin: 0 -20px -20px -20px;
 
