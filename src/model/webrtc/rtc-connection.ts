@@ -6,6 +6,7 @@ import {
     InputRTCPeerDisconnected
 } from "../../types";
 import { HTKEventBase } from "../events/event-base";
+import { parseSource } from "../http/sources";
 
 const candidateToUrl = (candidate: SelectedRTCCandidate) =>
     `${candidate.protocol}://${candidate.address}:${candidate.port}`;
@@ -20,7 +21,7 @@ export class RTCConnection extends HTKEventBase {
 
     readonly id = this.connectionEvent.sessionId;
 
-    isRTCConnection() {
+    isRTCConnection(): this is RTCConnection  {
         return true;
     }
 
@@ -34,6 +35,11 @@ export class RTCConnection extends HTKEventBase {
 
     get remoteSessionDescription() {
         return this.connectionEvent.remoteSessionDescription;
+    }
+
+    @computed
+    get source() {
+        return parseSource(this.connectionEvent.metadata.userAgent);
     }
 
     @computed

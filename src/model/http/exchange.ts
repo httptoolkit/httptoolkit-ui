@@ -215,7 +215,7 @@ export class HttpExchange extends HTKEventBase {
         return this.request.httpVersion === '2.0' ? 2 : 1;
     }
 
-    isHttp() {
+    isHttp(): this is HttpExchange {
         return true;
     }
 

@@ -7,11 +7,14 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
-import { Icon, WarningIcon } from '../../icons';
+import { ArrowIcon, Icon, WarningIcon } from '../../icons';
 import {
     CollectedEvent,
     HttpExchange,
-    FailedTLSConnection
+    RTCDataChannel,
+    RTCMediaTrack,
+    FailedTLSConnection,
+    RTCConnection
 } from '../../types';
 
 import {
@@ -20,7 +23,10 @@ import {
     describeEventCategory
 } from '../../model/events/categorization';
 
+import { UnreachableCheck } from '../../util/error';
+import { getReadableSize } from '../../model/events/bodies';
 import { filterProps } from '../component-utils';
+
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
@@ -161,6 +167,45 @@ const PathAndQuery = styled(Column)`
     flex-basis: 1000px;
 `;
 
+// Match Method + Status, but shrink right margin slightly so that
+// spinner + "WebRTC Media" fits OK.
+const RTCEventType = styled(Column)`
+    transition: flex-basis 0.1s;
+    ${(p: { pinned?: boolean }) =>
+        p.pinned
+        ? 'flex-basis: 109px;'
+        : 'flex-basis: 130px;'
+    }
+    margin-right: 6px;
+
+    flex-shrink: 0;
+    flex-grow: 0;
+`;
+
+// Match Host column:
+const RTCEventLabel = styled(Column)`
+    flex-shrink: 1;
+    flex-grow: 0;
+    flex-basis: 500px;
+
+    > svg {
+        padding-right: 0; /* Right, not left - it's rotated */
+    }
+`;
+
+// Match PathAndQuery column:
+const RTCEventDetails = styled(Column)`
+    flex-shrink: 1;
+    flex-grow: 0;
+    flex-basis: 1000px;
+
+    ${(p: { centered?: boolean }) =>
+        p.centered && `
+            text-align: center;
+        `
+    }
+`;
+
 const EventListRow = styled.div`
     display: flex;
     flex-direction: row;
@@ -179,7 +224,7 @@ const EventListRow = styled.div`
     }
 `;
 
-const ExchangeListRow = styled(EventListRow)`
+const TrafficEventListRow = styled(EventListRow)`
     background-color: ${props => props.theme.mainBackground};
 
     border-width: 2px 0;
@@ -262,7 +307,7 @@ const EventRow = observer((props: EventRowProps) => {
 
     const isSelected = (selectedEvent === event);
 
-    if ('failureCause' in event) {
+    if (event.isTLSFailure()) {
         return <FailedRequestRow
             index={index}
             isSelected={isSelected}
@@ -276,12 +321,23 @@ const EventRow = observer((props: EventRowProps) => {
             style={style}
             exchange={event}
         />;
+    } else if (event.isRTCConnection()) {
+        return <RTCConnectionRow
+            index={index}
+            isSelected={isSelected}
+            style={style}
+            event={event}
+        />;
+    } else if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
+        return <RTCStreamRow
+            index={index}
+            isSelected={isSelected}
+            style={style}
+            event={event}
+        />;
     } else {
-        // TODO: Not yet supported
-        return <div style={style}>
-            WebRTC
-        </div>;
-    };
+        throw new UnreachableCheck(event);
+    }
 });
 
 const ExchangeRow = observer(({
@@ -302,7 +358,7 @@ const ExchangeRow = observer(({
         category
     } = exchange;
 
-    return <ExchangeListRow
+    return <TrafficEventListRow
         role="row"
         aria-label='row'
         aria-rowindex={index + 1}
@@ -350,7 +406,123 @@ const ExchangeRow = observer(({
         <PathAndQuery title={ request.parsedUrl.pathname + request.parsedUrl.search }>
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
-    </ExchangeListRow>;
+    </TrafficEventListRow>;
+});
+
+const RTCConnectedIcon = styled(Icon).attrs(() => ({
+    icon: ['fas', 'spinner'],
+    spin: true,
+    title: 'Connected'
+}))`
+    margin: 0 5px 0 0;
+`;
+
+const RTCConnectionRow = observer(({
+    index,
+    isSelected,
+    style,
+    event
+}: {
+    index: number,
+    isSelected: boolean,
+    style: {},
+    event: RTCConnection
+}) => {
+    const { category, pinned } = event;
+
+    return <TrafficEventListRow
+        role="row"
+        aria-label='row'
+        aria-rowindex={index + 1}
+        data-event-id={event.id}
+        tabIndex={isSelected ? 0 : -1}
+
+        className={isSelected ? 'selected' : ''}
+        style={style}
+    >
+        <RowPin pinned={pinned}/>
+        <RowMarker category={category} title={describeEventCategory(category)} />
+        <RTCEventType>
+            { !event.closeState && <RTCConnectedIcon /> } WebRTC
+        </RTCEventType>
+        <Source title={event.source.summary}>
+            <Icon
+                {...event.source.icon}
+                fixedWidth={true}
+            />
+        </Source>
+        <RTCEventDetails>
+            {
+                event.clientURL
+            } <ArrowIcon direction='right' /> {
+                event.remoteURL || '?'
+            }
+        </RTCEventDetails>
+    </TrafficEventListRow>;
+});
+
+const RTCStreamRow = observer(({
+    index,
+    isSelected,
+    style,
+    event
+}: {
+    index: number,
+    isSelected: boolean,
+    style: {},
+    event: RTCDataChannel | RTCMediaTrack
+}) => {
+    const { category, pinned } = event;
+
+    return <TrafficEventListRow
+        role="row"
+        aria-label='row'
+        aria-rowindex={index + 1}
+        data-event-id={event.id}
+        tabIndex={isSelected ? 0 : -1}
+
+        className={isSelected ? 'selected' : ''}
+        style={style}
+    >
+        <RowPin pinned={pinned}/>
+        <RowMarker category={category} title={describeEventCategory(category)} />
+        <RTCEventType>
+            { !event.closeState && <RTCConnectedIcon /> } WebRTC {
+                event.isRTCDataChannel()
+                    ? 'Data'
+                : // RTCMediaTrack:
+                    'Media'
+            }
+        </RTCEventType>
+        <Source title={event.rtcConnection.source.summary}>
+            <Icon
+                {...event.rtcConnection.source.icon}
+                fixedWidth={true}
+            />
+        </Source>
+        <RTCEventLabel>
+            <ArrowIcon direction='right' /> { event.rtcConnection.remoteURL }
+        </RTCEventLabel>
+        <RTCEventDetails>
+            {
+                event.isRTCDataChannel()
+                    ? <>
+                        { event.label } <em>
+                            ({event.protocol ? `${event.protocol} - ` : ''}
+                            { event.messages.length } messages)
+                        </em>
+                    </>
+                // Media track:
+                    : <>
+                        { event.direction } { event.type } <em>{
+                            getReadableSize(event.totalBytesSent)
+                        } sent, {
+                            getReadableSize(event.totalBytesReceived)
+                        } received</em>
+                    </>
+            }
+        </RTCEventDetails>
+    </TrafficEventListRow>;
 });
 
 const FailedRequestRow = observer((p: {

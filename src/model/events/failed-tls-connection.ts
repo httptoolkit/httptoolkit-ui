@@ -24,7 +24,7 @@ export class FailedTLSConnection extends HTKEventBase {
     readonly tags = this.failureEvent.tags;
     readonly timingEvents = this.failureEvent.timingEvents;
 
-    isTLSFailure() {
+    isTLSFailure(): this is FailedTLSConnection {
         return true;
     }
 

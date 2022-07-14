@@ -1,4 +1,4 @@
-import { action, observable } from 'mobx';
+import { action, observable, computed } from 'mobx';
 
 import {
     InputRTCMediaTrackOpened,
@@ -20,7 +20,7 @@ export class RTCMediaTrack extends HTKEventBase {
 
     readonly id = this.sessionId + ':media:' + this.mid;
 
-    isRTCMediaTrack() {
+    isRTCMediaTrack(): this is RTCMediaTrack {
         return true;
     }
 
@@ -50,6 +50,18 @@ export class RTCMediaTrack extends HTKEventBase {
     @action
     addStats(message: InputRTCMediaStats) {
         this.stats.push(message);
+    }
+
+    @computed
+    get totalBytesSent() {
+        if (this.stats.length === 0) return 0;
+        return this.stats[this.stats.length - 1].totalBytesSent;
+    }
+
+    @computed
+    get totalBytesReceived() {
+        if (this.stats.length === 0) return 0;
+        return this.stats[this.stats.length - 1].totalBytesReceived;
     }
 
     @observable

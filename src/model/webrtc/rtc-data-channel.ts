@@ -21,7 +21,7 @@ export class RTCDataChannel extends HTKEventBase {
 
     readonly id = this.sessionId + ':data:' + this.channelId;
 
-    isRTCDataChannel() {
+    isRTCDataChannel(): this is RTCDataChannel {
         return true;
     }
 
@@ -39,6 +39,10 @@ export class RTCDataChannel extends HTKEventBase {
 
     get label() {
         return this.openEvent.channelLabel;
+    }
+
+    get protocol() {
+        return this.openEvent.channelProtocol;
     }
 
     @observable
