@@ -1,10 +1,14 @@
-import { action, observable } from "mobx";
+import { action, observable, computed } from "mobx";
+import { SelectedRTCCandidate } from "mockrtc";
 import {
     InputRTCPeerConnected,
     InputRTCExternalPeerAttached,
     InputRTCPeerDisconnected
 } from "../../types";
 import { HTKEventBase } from "../events/event-base";
+
+const candidateToUrl = (candidate: SelectedRTCCandidate) =>
+    `${candidate.protocol}://${candidate.address}:${candidate.port}`;
 
 export class RTCConnection extends HTKEventBase {
 
@@ -32,17 +36,33 @@ export class RTCConnection extends HTKEventBase {
         return this.connectionEvent.remoteSessionDescription;
     }
 
+    @computed
+    get clientURL() {
+        return candidateToUrl(this.connectionEvent.selectedRemoteCandidate);
+    }
+
+    @computed
+    get remoteURL() {
+        if (!this.attachedConnection) return undefined;
+
+        const { externalConnection, otherHalf } = this.attachedConnection;
+
+        if (otherHalf) {
+            return otherHalf.clientURL;
+        } else {
+            return candidateToUrl(externalConnection.selectedRemoteCandidate);
+        }
+    }
+
+    @observable
     private attachedConnection:
         | {
-            externalConnection: {
-                sessionId: string,
-                localSessionDescription: RTCSessionDescriptionInit,
-                remoteSessionDescription: RTCSessionDescriptionInit
-            },
+            externalConnection: InputRTCExternalPeerAttached['externalConnection'],
             otherHalf?: RTCConnection
         }
         | undefined;
 
+    @action
     attachExternalPeer(
         attachEvent: InputRTCExternalPeerAttached,
         otherHalf: RTCConnection | undefined
@@ -59,14 +79,17 @@ export class RTCConnection extends HTKEventBase {
         const { externalConnection: ourExternalConnection } = this.attachedConnection;
         const { externalConnection: theirExternalConnection } = attachEvent;
 
-        const ourLocalSdp = ourExternalConnection.localSessionDescription.sdp;
-        const theirLocalSdp = theirExternalConnection.localSessionDescription.sdp;
-        const ourRemoteSdp = ourExternalConnection.remoteSessionDescription.sdp;
-        const theirRemoteSdp = theirExternalConnection.remoteSessionDescription.sdp;
+        const ourExternalAddress = candidateToUrl(ourExternalConnection.selectedLocalCandidate);
+        const ourRemoteAddress = candidateToUrl(ourExternalConnection.selectedRemoteCandidate);
 
-        return ourLocalSdp === theirRemoteSdp && ourRemoteSdp === theirLocalSdp;
+        const theirExternalAddress = candidateToUrl(theirExternalConnection.selectedLocalCandidate);
+        const theirRemoteAddress = candidateToUrl(theirExternalConnection.selectedRemoteCandidate);
+
+        return ourExternalAddress === theirRemoteAddress &&
+            theirExternalAddress === ourRemoteAddress;
     }
 
+    @action
     connectOtherHalf(otherHalf: RTCConnection) {
         this.attachedConnection!.otherHalf = otherHalf;
     }
