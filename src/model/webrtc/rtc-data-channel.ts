@@ -6,8 +6,8 @@ import {
     InputRTCDataChannelClosed
 } from '../../types';
 import { HTKEventBase } from '../events/event-base';
+import { StreamMessage } from '../events/stream-message';
 
-import { DataChannelMessage } from './data-channel-message';
 import { RTCConnection } from './rtc-connection';
 
 export class RTCDataChannel extends HTKEventBase {
@@ -46,11 +46,11 @@ export class RTCDataChannel extends HTKEventBase {
     }
 
     @observable
-    readonly messages: Array<DataChannelMessage> = [];
+    readonly messages: Array<StreamMessage> = [];
 
     @action
     addMessage(message: InputRTCMessage) {
-        this.messages.push(new DataChannelMessage(message, this.messages.length));
+        this.messages.push(new StreamMessage(message, this.messages.length));
     }
 
     @observable

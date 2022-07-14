@@ -37,6 +37,8 @@ function getFilename(
     }.${extension}`;
 }
 
+export type StreamType = 'WebSocket' | 'DataChannel';
+
 @observer
 export class StreamMessageListCard extends React.Component<{
     collapsed: boolean,
@@ -47,7 +49,7 @@ export class StreamMessageListCard extends React.Component<{
     isPaidUser: boolean,
     filenamePrefix: string,
     streamId: string,
-    streamType: string,
+    streamType: StreamType,
     messages: Array<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {

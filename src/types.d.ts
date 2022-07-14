@@ -56,8 +56,6 @@ export type InputMessage = InputRequest | InputResponse;
 export type InputWebSocketMessage = MockttpWebSocketMessage;
 export type InputWebSocketClose = MockttpWebSocketClose;
 
-export type InputStreamMessage = InputWebSocketMessage;
-
 // Map from event name to data for each MockRTC event:
 export type InputRTCEventData = MockRTC.MockRTCEventData;
 export type InputRTCEvent = keyof InputRTCEventData;
@@ -73,6 +71,8 @@ export type InputRTCMessage =
 export type InputRTCMediaTrackOpened = InputRTCEventData['media-track-opened'];
 export type InputRTCMediaStats = InputRTCEventData['media-track-stats'];
 export type InputRTCMediaTrackClosed = InputRTCEventData['media-track-closed'];
+
+export type InputStreamMessage = InputRTCMessage | InputWebSocketMessage;
 
 export interface BreakpointBody {
     decoded: Buffer;
