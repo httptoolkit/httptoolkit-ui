@@ -426,8 +426,7 @@ export class RulesStore {
 
                 if (targetDraftParentParent) {
                     targetDraftParent = missingParents.reduce(({ draftParent, activeParent }, missingGroup) => {
-                        const newGroup = observable(_.clone(_.omit(missingGroup, 'items')));
-                        newGroup.items = [];
+                        const newGroup = observable(_.clone({ ...missingGroup, items: [] }));
 
                         const draftCommonSiblings = _.intersectionBy(draftParent.items, activeParent.items, 'id');
                         const activeCommonSiblings = _.intersectionBy(activeParent.items, draftParent.items.concat(missingGroup), 'id');

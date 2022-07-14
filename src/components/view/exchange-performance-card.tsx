@@ -165,7 +165,7 @@ const CompressionOptions = observer((p: {
             _(encodingTestResults)
             .omitBy((_size, encoding) =>
                 encodings.length === 1 && encoding === encodings[0]
-            ).map((size, encoding) => {
+            ).map((size: number, encoding) => {
                 const testedCompressionRatio = Math.round(100 * (
                     1 - (size / decodedBodyLength)
                 ));

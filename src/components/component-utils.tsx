@@ -5,7 +5,7 @@ export function filterProps<C extends React.ComponentType<any>>(
     Component: C,
     ...keys: string[]
 ): C {
-    return ((props: any) => <Component {..._.omit(props, keys)} />) as C;
+    return ((props: any) => <Component {..._.omit(props, keys) as any} />) as C;
 }
 
 // Trigger the click handler when Enter is pressed on this element

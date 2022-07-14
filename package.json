@@ -50,7 +50,7 @@
     "@types/js-beautify": "^1.8.0",
     "@types/json-schema": "^7.0.3",
     "@types/jsonwebtoken": "^8.3.0",
-    "@types/lodash": "^4.14.104",
+    "@types/lodash": "^4.14.146",
     "@types/node": "^15.3.0",
     "@types/node-forge": "^0.8.6",
     "@types/qrcode.react": "^1.0.0",

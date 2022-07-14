@@ -862,9 +862,9 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
         );
     }
 
-    convertHeaderResult = (headers: Headers) => {
+    convertHeaderResult = (headers: Headers): Headers => {
         if (this.selected === 'updateHeaders') {
-            return _.mapValues(headers, (header) => header === '' ? undefined : header);
+            return _.mapValues(headers, (header) => header === '' ? undefined : header) as Headers;
         } else {
             return headers;
         }

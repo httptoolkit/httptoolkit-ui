@@ -120,10 +120,13 @@ export const CollapseIcon = styled((props: CollapseIconProps) =>
     }
 `;
 
-export interface CollapsibleCardProps {
+interface CollapsibleCardContainerProps {
     collapsed: boolean;
-    onCollapseToggled: () => void;
     expanded?: boolean;
+}
+
+export interface CollapsibleCardProps extends CollapsibleCardContainerProps {
+    onCollapseToggled: () => void;
     children: React.ReactNode;
 }
 
@@ -131,13 +134,13 @@ const CollapsibleCardContainer = styled(MediumCard)`
     margin-bottom: 20px;
     transition: margin-bottom 0.1s;
 
-    ${(p: Omit<CollapsibleCardProps, 'children'>) => p.collapsed && css`
+    ${(p: CollapsibleCardContainerProps) => p.collapsed && css`
         :not(:last-child) {
             margin-bottom: -16px;
         }
     `}
 
-    ${(p: Omit<CollapsibleCardProps, 'children'>) => p.expanded && css`
+    ${(p: CollapsibleCardContainerProps) => p.expanded && css`
         height: 100%;
         width: 100%;
         border-radius: 0;
@@ -171,7 +174,7 @@ export class CollapsibleCard extends React.Component<
         const { children, collapsed } = this.props;
 
         return <CollapsibleCardContainer
-            {..._.omit(this.props, ['onCollapseToggled', 'onExpandToggled'])}
+            {..._.omit(this.props, ['onCollapseToggled'])}
             tabIndex={0}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}
