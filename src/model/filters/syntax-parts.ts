@@ -20,7 +20,11 @@ export function charRange(charA: string, charB?: string): CharRange {
     }
 }
 
-function matchesRange(charCode: number, range: CharRange) {
+export const ALPHABETICAL = [charRange("a", "z"), charRange("A", "Z")];
+export const NUMERIC = charRange("0", "9");
+export const ALPHANUMERIC = [...ALPHABETICAL, NUMERIC];
+
+export function matchesRange(charCode: number, range: CharRange) {
     return charCode >= range[0] && charCode <= range[1];
 }
 

@@ -15,6 +15,8 @@ import {
     SyntaxPartValues
 } from './syntax-matching';
 import {
+    ALPHABETICAL,
+    ALPHANUMERIC,
     charRange,
     CombinedSyntax,
     FixedLengthNumberSyntax,
@@ -437,10 +439,7 @@ class MethodFilter extends Filter {
             "!="
         ]),
         new StringSyntax("method", {
-            allowedChars: [
-                charRange('a', 'z'),
-                charRange('A', 'Z')
-            ],
+            allowedChars: ALPHABETICAL,
             suggestionGenerator: (_v, _i, events: CollectedEvent[]) =>
                 _(events)
                 .map(e => e.isHttp() && e.request.method)
@@ -617,9 +616,7 @@ class HostnameFilter extends Filter {
         ]),
         new StringSyntax("hostname", {
             allowedChars: [
-                charRange("a", "z"),
-                charRange("A", "Z"),
-                charRange("0", "9"),
+                ...ALPHANUMERIC,
                 charRange("-"),
                 charRange(".")
             ],
