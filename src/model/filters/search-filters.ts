@@ -1281,7 +1281,7 @@ class OrFilter extends Filter {
     constructor(private filterValue: string) {
         super(filterValue);
 
-        this.innerFilters = filterValue.slice(3).split(', ').map((valuePart) => {
+        this.innerFilters = filterValue.slice(3).split(',').map(v => v.trim()).map((valuePart) => {
             const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
                 matchSyntax(filter.filterSyntax, valuePart, 0)?.type === 'full'
             )!;
