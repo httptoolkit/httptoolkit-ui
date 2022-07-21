@@ -1243,6 +1243,8 @@ class OrFilter extends Filter {
     static filterName = "or";
 
     static filterDescription(value: string, isTemplate: boolean) {
+        if (value[value.length - 1] === ')') value = value.slice(0, -1);
+
         const innerValues = value.slice(3).split(',').map(v => v.trim());
 
         if (innerValues.length === 1 && innerValues[0].length === 0) {
@@ -1278,7 +1280,7 @@ class OrFilter extends Filter {
     constructor(private filterValue: string) {
         super(filterValue);
 
-        this.innerFilters = filterValue.slice(3).split(',').map(v => v.trim()).map((valuePart) => {
+        this.innerFilters = filterValue.slice(3, -1).split(',').map(v => v.trim()).map((valuePart) => {
             const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
                 matchSyntax(filter.filterSyntax, valuePart, 0)?.type === 'full'
             )!;

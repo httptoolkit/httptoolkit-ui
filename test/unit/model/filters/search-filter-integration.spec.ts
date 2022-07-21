@@ -1264,6 +1264,7 @@ describe("Search filter model integration test:", () => {
                 ["or(errored, method=POST", "requests that weren't transmitted successfully, or POST requests"],
                 ["or(errored, method=POST, ", "requests that weren't transmitted successfully, POST requests, or ..."],
                 ["or(errored, method=POST)", "requests that weren't transmitted successfully, or POST requests"],
+                ["or(errored, path=/X)", "requests that weren't transmitted successfully, or requests to /X"],
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
                 expect(description).to.equal(expectedOutput);
@@ -1271,7 +1272,7 @@ describe("Search filter model integration test:", () => {
         });
 
         it("should correctly filter for multiple properties", () => {
-            const filter = createFilter("or(header[my-header], status=404)");
+            const filter = createFilter("or(header[my-header], status=404, path=/a)");
 
             const exampleEvents = [
                 getExchangeData({ responseState: 'aborted' }),
@@ -1288,6 +1289,10 @@ describe("Search filter model integration test:", () => {
                 }),
                 getExchangeData({
                     statusCode: 404
+                }),
+                getExchangeData({
+                    path: '/a',
+                    statusCode: 321
                 }),
                 getFailedTls()
             ];
@@ -1306,7 +1311,8 @@ describe("Search filter model integration test:", () => {
             expect(matchedValues).to.deep.equal([
                 { status: undefined, 'my-header': 'pending-req-with-header' },
                 { status: 200, 'MY-HEADER': 'completed-req-with-header' },
-                { status: 404 }
+                { status: 404 },
+                { status: 321 }
             ]);
         });
     });
