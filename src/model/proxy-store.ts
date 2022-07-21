@@ -7,7 +7,8 @@ import {
     observe,
     runInAction,
 } from 'mobx';
-import { getRemote, Mockttp, ProxySetting, ProxyConfig } from 'mockttp';
+import { getRemote, Mockttp, ProxySetting } from 'mockttp';
+import type { MockttpClient } from 'mockttp/dist/client/mockttp-client';
 
 import {
     PortRange,
@@ -21,6 +22,7 @@ import {
 import { AccountStore } from './account/account-store';
 
 import { delay } from '../util/promise';
+import { reportError } from '../errors';
 import { lazyObservablePromise } from '../util/observable';
 import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
@@ -151,6 +153,8 @@ export class ProxyStore {
         });
         this._http2CurrentlyEnabled = this.http2Enabled;
 
+        this.monitorRemoteClientConnection(this.server as MockttpClient);
+
         yield startServer(this.server, this._portConfig);
         announceServerReady();
         console.log('Server started');
@@ -173,6 +177,20 @@ export class ProxyStore {
             this.server.stop().catch(() => { });
         });
     });
+
+    private monitorRemoteClientConnection(client: MockttpClient) {
+        client.on('admin-client:stream-error', (err) => {
+            console.log('Admin client stream error');
+            reportError(err.message ? err : new Error('Client stream error'), { cause: err });
+        });
+        client.on('admin-client:subscription-error', (err) => {
+            console.log('Admin client subscription error');
+            reportError(err.message ? err : new Error('Client subscription error'), { cause: err });
+        });
+        client.on('admin-client:stream-reconnect-failed', (err) => {
+            reportError(err.message ? err : new Error('Client reconnect error'), { cause: err });
+        });
+    }
 
     @persist('object') @observable
     private _portConfig: PortRange | undefined;
