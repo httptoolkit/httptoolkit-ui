@@ -50,11 +50,8 @@ function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undef
         );
     } catch (e) {
         console.log('Unparseable URL:', request.url);
-
-        // Don't bother reporting empty URLs - we use these as placeholders for some bad requests
-        if (request.url === 'http://' || request.url === 'https://') return;
-
-        reportError(e);
+        // There are many unparseable URLs, especially when unintentionally intercepting traffic
+        // from non-HTTP sources, so we don't report this - we just log locally & return undefined.
     }
 }
 
