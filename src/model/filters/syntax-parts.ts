@@ -396,7 +396,8 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
 
 /**
  * Vararg syntax, including a minimum repetitions. This allows you to create
- * syntax like "any number of numbers, separated by a comma".
+ * syntax like "any number of numbers, separated by a comma". Separators may be
+ * followed by any number of spaces, which will be ignored.
  */
 export class SyntaxRepeaterSyntax<
     Part extends SyntaxPart<any, any>,
@@ -433,6 +434,7 @@ export class SyntaxRepeaterSyntax<
 
         let index = startIndex;
         let matchCount = 0;
+        let lastPartMatchEndIndex = 0;
 
         while (true) {
             // Check the syntax within:
@@ -449,19 +451,18 @@ export class SyntaxRepeaterSyntax<
                 index
             );
 
-            // If we run into non-matching values, we're done. Un-consume the last
-            // delimiter and return what we have so far.
+            // If we run into non-matching values, we're done. Return everything up
+            // to the last matching part:
             if (!submatch) {
                 return {
                     matchCount,
                     type: 'full',
-                    consumed: index - startIndex - (
-                        matchCount > 0 ? delimiterString.length : 0
-                    )
+                    consumed: lastPartMatchEndIndex - startIndex
                 };
             }
 
             index += submatch.consumed;
+            lastPartMatchEndIndex = index;
 
             if (submatch.type === 'partial') {
                 // An incomplete match means we're done, we stop here and return
@@ -488,8 +489,10 @@ export class SyntaxRepeaterSyntax<
                 };
             }
 
-            // Otherwise we must have a whole delimiter, so we go around again
+            // Otherwise we must have a whole delimiter. We consume any following spaces too,
+            // and then we go around again.
             index += delimiterMatch.consumed;
+            while (value[index] === ' ') index += 1;
         }
     }
 
@@ -591,12 +594,13 @@ export class SyntaxRepeaterSyntax<
                     showAs: '',
                     value: ''
                 }];
-            } else if (delimiterMatch.type === 'partial') {
-                // Partial/empty delimiter: suggest completing it (with a template value)
+            } else if (delimiterMatch.type === 'partial' || value[index + delimiterMatch.consumed] === undefined) {
+                // If we have a partial delimiter, no delimiter, or a delimiter but no following space at
+                // the end of the value: suggest completing a nice delimiter+space+template for the next value.
                 const suggestions: SyntaxSuggestion[] = [{
-                    showAs: `${delimiterString}{another ${this.placeholderName}}`,
+                    showAs: `${delimiterString} {another ${this.placeholderName}}`,
                     index,
-                    value: delimiterString,
+                    value: delimiterString + ' ',
                     matchType: 'template'
                 }];
 
@@ -612,8 +616,10 @@ export class SyntaxRepeaterSyntax<
                 }
 
                 return suggestions;
-            } else {
+            } else { // Full delimiter match before the end of the string:
+                // Consume the delimiter and any following spaces, then continue:
                 index += delimiterMatch.consumed;
+                while (value[index] === ' ') index += 1;
             }
         }
     }
@@ -625,7 +631,7 @@ export class SyntaxRepeaterSyntax<
 
         const matchedValue = value.slice(index, index + match.consumed);
         const matchedValueParts = matchedValue.split(this.delimiterString);
-        return matchedValueParts.map((part) => this.wrappedSyntax.parse(part, 0));
+        return matchedValueParts.map((part) => this.wrappedSyntax.parse(part.trim(), 0));
     }
 
 }

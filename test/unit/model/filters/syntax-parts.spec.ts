@@ -754,9 +754,9 @@ describe("Wrapper syntax", () => {
 
 describe("Repeater syntax", () => {
 
-    it("should match a single value", () => {
+    it("should match a valid list of values", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string")
         );
         expect(part.match("string, string", 0)).to.deep.equal({
@@ -765,9 +765,20 @@ describe("Repeater syntax", () => {
         });
     });
 
+    it("should match a valid list of values with an unspaced delimiter", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ',',
+            new FixedStringSyntax("string")
+        );
+        expect(part.match("string,string", 0)).to.deep.equal({
+            type: 'full',
+            consumed: 13
+        });
+    });
+
     it("should not match non-delimited values", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -776,7 +787,7 @@ describe("Repeater syntax", () => {
 
     it("should only partially match given too few values", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 3 }
         );
@@ -788,7 +799,7 @@ describe("Repeater syntax", () => {
 
     it("should fully match given sufficient values and a suffix", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -800,7 +811,7 @@ describe("Repeater syntax", () => {
 
     it("should only partially match given too few values and a bad suffix", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 3 }
         );
@@ -809,7 +820,7 @@ describe("Repeater syntax", () => {
 
     it("should support matching 0 times", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 0 }
         );
@@ -821,7 +832,7 @@ describe("Repeater syntax", () => {
 
     it("should partially match incomplete repetitions", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -833,11 +844,11 @@ describe("Repeater syntax", () => {
 
     it("should partially match incomplete delimiters", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            '::',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
-        expect(part.match("string,", 0)).to.deep.equal({
+        expect(part.match("string:", 0)).to.deep.equal({
             type: 'partial',
             consumed: 7
         });
@@ -845,7 +856,7 @@ describe("Repeater syntax", () => {
 
     it("should partially match trailing delimiters", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -857,7 +868,7 @@ describe("Repeater syntax", () => {
 
     it("should fully match repetitions with a suffix", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -869,7 +880,7 @@ describe("Repeater syntax", () => {
 
     it("should fully match repetitions with a delimited suffix", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -881,7 +892,7 @@ describe("Repeater syntax", () => {
 
     it("should suggest completing repetitions", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -897,7 +908,7 @@ describe("Repeater syntax", () => {
 
     it("should suggest new values only until we have sufficient repetitions", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2, placeholderName: 'word' }
         );
@@ -913,13 +924,29 @@ describe("Repeater syntax", () => {
 
     it("should suggest completing partial delimiters", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            '::',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
+        expect(part.getSuggestions("string:", 0)).to.deep.equal([
+            {
+                showAs: ":: {another value}",
+                index: 6,
+                value: ":: ",
+                matchType: 'template'
+            }
+        ]);
+    });
+
+    it("should suggest a space plus template after non-spaced delimiters", () => {
+        const part = new SyntaxRepeaterSyntax(
+            ',',
+            new FixedStringSyntax("string"),
+            { minimumRepetitions: 2, placeholderName: 'word' }
+        );
         expect(part.getSuggestions("string,", 0)).to.deep.equal([
             {
-                showAs: ", {another value}",
+                showAs: ", {another word}",
                 index: 6,
                 value: ", ",
                 matchType: 'template'
@@ -927,9 +954,9 @@ describe("Repeater syntax", () => {
         ]);
     });
 
-    it("should suggest new values without templates after delimiters", () => {
+    it("should suggest new values without templates after a spaced delimiter", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2, placeholderName: 'word' }
         );
@@ -945,7 +972,7 @@ describe("Repeater syntax", () => {
 
     it("should suggest values or nothing after sufficient repetitions", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2, placeholderName: 'word' }
         );
@@ -967,7 +994,7 @@ describe("Repeater syntax", () => {
 
     it("should suggest the first repetition", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -983,7 +1010,7 @@ describe("Repeater syntax", () => {
 
     it("should suggest skipping valid empty repetitions", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 0 }
         );
@@ -999,7 +1026,7 @@ describe("Repeater syntax", () => {
 
     it("should parse valid repeated inputs", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 2 }
         );
@@ -1010,7 +1037,7 @@ describe("Repeater syntax", () => {
 
     it("should parse valid empty input", () => {
         const part = new SyntaxRepeaterSyntax(
-            ', ',
+            ',',
             new FixedStringSyntax("string"),
             { minimumRepetitions: 0 }
         );

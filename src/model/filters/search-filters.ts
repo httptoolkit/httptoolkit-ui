@@ -1226,7 +1226,7 @@ class NotFilter extends Filter {
 class OrFilter extends Filter {
 
     private static innerFilterSyntax = new SyntaxRepeaterSyntax(
-        ', ',
+        ',',
         new OptionsSyntax(
             BaseSearchFilterClasses.map(f =>
                 new CombinedSyntax(...f.filterSyntax)
@@ -1246,7 +1246,7 @@ class OrFilter extends Filter {
     static filterName = "or";
 
     static filterDescription(value: string, isTemplate: boolean) {
-        const innerValues = value.slice(3).split(', ');
+        const innerValues = value.slice(3).split(',').map(v => v.trim());
 
         if (innerValues.length === 1 && innerValues[0].length === 0) {
             return "exchanges that match any one of multiple conditions"

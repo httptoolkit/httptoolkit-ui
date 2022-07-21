@@ -1224,6 +1224,16 @@ describe("Search filter model integration test:", () => {
             ]);
         });
 
+        it("should allow skipping the space if the user actively does so", () => {
+            let input = "or(completed,completed";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index', 'matchType'))).to.deep.equal([
+                { index: 22, showAs: ")", matchType: 'full' },
+                { index: 22, showAs: ", {another condition})", matchType: 'template' }
+            ]);
+        });
+
         it("should use context in suggestions", () => {
             let input = "or(header";
 
@@ -1249,6 +1259,7 @@ describe("Search filter model integration test:", () => {
                 ["or(error", "requests that weren't transmitted successfully, or ..."],
                 ["or(errored,", "requests that weren't transmitted successfully, or ..."],
                 ["or(errored, ", "requests that weren't transmitted successfully, or ..."],
+                ["or(errored,method", "requests that weren't transmitted successfully, or requests with a given method"],
                 ["or(errored, method", "requests that weren't transmitted successfully, or requests with a given method"],
                 ["or(errored, method=POST", "requests that weren't transmitted successfully, or POST requests"],
                 ["or(errored, method=POST, ", "requests that weren't transmitted successfully, POST requests, or ..."],
