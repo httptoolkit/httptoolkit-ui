@@ -176,7 +176,8 @@ const RTCEventType = styled(Column)`
         ? 'flex-basis: 109px;'
         : 'flex-basis: 130px;'
     }
-    margin-right: 6px;
+
+    margin-right: 6px !important;
 
     flex-shrink: 0;
     flex-grow: 0;
@@ -198,12 +199,10 @@ const RTCEventDetails = styled(Column)`
     flex-shrink: 1;
     flex-grow: 0;
     flex-basis: 1000px;
+`;
 
-    ${(p: { centered?: boolean }) =>
-        p.centered && `
-            text-align: center;
-        `
-    }
+const RTCConnectionDetails = styled(RTCEventDetails)`
+    text-align: center;
 `;
 
 const EventListRow = styled.div`
@@ -451,13 +450,13 @@ const RTCConnectionRow = observer(({
                 fixedWidth={true}
             />
         </Source>
-        <RTCEventDetails>
+        <RTCConnectionDetails>
             {
                 event.clientURL
             } <ArrowIcon direction='right' /> {
                 event.remoteURL || '?'
             }
-        </RTCEventDetails>
+        </RTCConnectionDetails>
     </TrafficEventListRow>;
 });
 
