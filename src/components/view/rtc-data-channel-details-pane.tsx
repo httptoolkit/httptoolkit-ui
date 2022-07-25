@@ -44,8 +44,8 @@ export class RTCDataChannelDetailsPane extends React.Component<{
             <StreamMessageListCard
                 collapsed={false}
 
-                // Link the key to the exchange, to ensure selected-message state gets
-                // reset when we switch between exchanges:
+                // Link the key to the channel, to ensure selected-message state gets
+                // reset when we switch between traffic:
                 key={dataChannel.id}
                 streamId={dataChannel.id}
                 streamType='DataChannel'

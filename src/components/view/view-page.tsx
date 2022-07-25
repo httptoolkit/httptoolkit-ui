@@ -32,6 +32,7 @@ import { ViewEventListFooter } from './view-event-list-footer';
 import { ExchangeDetailsPane } from './exchange-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc-data-channel-details-pane';
+import { RTCMediaDetailsPane } from './rtc-media-details-pane';
 import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
 
 interface ViewPageProps {
@@ -250,6 +251,10 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <RTCDataChannelDetailsPane
                 dataChannel={this.selectedEvent}
                 streamMessageEditor={this.editors.streamMessage.node}
+            />
+        } else if (this.selectedEvent.isRTCMediaTrack()) {
+            rightPane = <RTCMediaDetailsPane
+                mediaTrack={this.selectedEvent}
             />
         } else {
             // TODO: View WebRTC

@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { action, observable, computed } from 'mobx';
 
 import {
@@ -8,6 +9,13 @@ import {
 import { HTKEventBase } from '../events/event-base';
 
 import { RTCConnection } from './rtc-connection';
+
+export interface RTCMediaStatEvent {
+    timestamp: number;
+
+    sentDelta: number;
+    receivedDelta: number;
+}
 
 export class RTCMediaTrack extends HTKEventBase {
 
@@ -45,23 +53,47 @@ export class RTCMediaTrack extends HTKEventBase {
     }
 
     @observable
-    readonly stats: Array<InputRTCMediaStats> = [];
+    readonly stats: Array<RTCMediaStatEvent> = [];
 
     @action
-    addStats(message: InputRTCMediaStats) {
-        this.stats.push(message);
+    addStats(event: InputRTCMediaStats) {
+        const previousEvent: RTCMediaStatEvent | undefined = this.stats[this.stats.length - 1];
+
+        if (previousEvent?.timestamp < event.eventTimestamp - 1500) { // If we've missed some events:
+            const skippedEventCount = Math.round((event.eventTimestamp - previousEvent.timestamp) / 1000) - 1;
+
+            if (skippedEventCount > 0) {
+                // No stats are sent when there's no traffic. If we now have traffic, we need to backfill
+                // skipped events with zeros to give us a complete timeline:
+                this.stats.push(
+                    ..._.range(previousEvent.timestamp + 1000, event.eventTimestamp - 500, 1000)
+                    .map(timestamp => ({ timestamp, sentDelta: 0, receivedDelta: 0 }))
+                );
+            }
+        }
+
+        this.stats.push({
+            timestamp: event.eventTimestamp,
+            sentDelta: event.totalBytesSent - this.totalBytesSent,
+            receivedDelta: event.totalBytesReceived - this.totalBytesReceived
+        });
+
+        this._totalBytesSent = event.totalBytesSent;
+        this._totalBytesReceived = event.totalBytesReceived;
     }
 
-    @computed
+    @observable
+    private _totalBytesSent: number = 0;
+
     get totalBytesSent() {
-        if (this.stats.length === 0) return 0;
-        return this.stats[this.stats.length - 1].totalBytesSent;
+        return this._totalBytesSent;
     }
 
-    @computed
+    @observable
+    private _totalBytesReceived: number = 0;
+
     get totalBytesReceived() {
-        if (this.stats.length === 0) return 0;
-        return this.stats[this.stats.length - 1].totalBytesReceived;
+        return this._totalBytesReceived;
     }
 
     @observable
