@@ -90,21 +90,6 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
     </div>;
 }
 
-const WarningIcon = styled(Icon).attrs(() => ({
-    icon: ['fas', 'exclamation-triangle']
-}))`
-    color: ${p => p.theme.warningColor};
-    line-height: 1.2;
-
-    &:not(:first-child) {
-        margin-left: 9px;
-    }
-
-    &:not(:last-child) {
-        margin-right: 9px;
-    }
-`;
-
 interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
 }
