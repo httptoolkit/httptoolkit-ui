@@ -1,7 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { computed } from 'mobx';
-import { observer } from 'mobx-react';
+import { Observer, observer } from 'mobx-react';
+import { ParentSize } from '@vx/responsive';
+
+import { styled } from '../../styles';
 
 import { RTCMediaTrack } from '../../model/webrtc/rtc-media-track';
 
@@ -10,7 +13,14 @@ import {
     CollapsibleCardHeading,
     CollapsibleCardProps
 } from '../common/card';
-import { SendReceiveGraph } from '../common/send-recieve-graph';
+import { Pill } from '../common/pill';
+import {
+    SendReceiveGraph,
+    SentDataColour,
+    ReceivedDataColour
+} from '../common/send-recieve-graph';
+
+import { getReadableSize } from '../../model/events/bodies';
 
 export type RTCMediaCardProps = Omit<CollapsibleCardProps, 'children'> & {
     mediaTrack: RTCMediaTrack
@@ -18,16 +28,40 @@ export type RTCMediaCardProps = Omit<CollapsibleCardProps, 'children'> & {
 
 export const RTCMediaCard = observer((props: RTCMediaCardProps) => {
     const { mediaTrack } = props;
-    return <CollapsibleCard {...props}>
+    return <RTCMediaCardCard {...props}>
         <header>
+            <Pill color={SentDataColour}>
+                { getReadableSize(props.mediaTrack.totalBytesSent) } sent
+            </Pill>
+            <Pill color={ReceivedDataColour}>
+                { getReadableSize(props.mediaTrack.totalBytesReceived) } received
+            </Pill>
             <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
-                Request
+                RTC Media
             </CollapsibleCardHeading>
         </header>
 
-        <RTCMediaStats mediaTrack={mediaTrack} />
-    </CollapsibleCard>;
+        <StatsGraphWrapper>
+            <RTCMediaStats mediaTrack={mediaTrack} />
+        </StatsGraphWrapper>
+    </RTCMediaCardCard>;
 });
+
+const RTCMediaCardCard = styled(CollapsibleCard)`
+    display: flex;
+    flex-direction: column;
+`;
+
+const StatsGraphWrapper = styled.div`
+    margin: 0 -20px -20px -20px;
+    border-top: solid 1px ${p => p.theme.containerBorder};
+    background-color: ${p => p.theme.highlightBackground};
+
+    position: relative;
+    flex-grow: 1;
+
+    min-height: 400px;
+`;
 
 @observer
 class RTCMediaStats extends React.Component<{ mediaTrack: RTCMediaTrack }> {
@@ -39,11 +73,15 @@ class RTCMediaStats extends React.Component<{ mediaTrack: RTCMediaTrack }> {
     }
 
     render() {
-        return <SendReceiveGraph
-            width={400}
-            height={200}
-            graphPaddingPx={10}
-            data={this.graphData}
-        />;
+        return <ParentSize>{ parent =>
+            <Observer>{() =>
+                <SendReceiveGraph
+                    width={parent.width}
+                    height={parent.height}
+                    graphPaddingPx={10}
+                    data={this.graphData}
+                />
+            }</Observer>
+        }</ParentSize>;
     }
 }

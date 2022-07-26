@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer, inject } from 'mobx-react';
-import * as portals from 'react-reverse-portal';
+import { observer } from 'mobx-react';
 
 import { styled } from '../../styles';
 
