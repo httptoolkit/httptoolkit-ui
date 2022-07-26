@@ -1,38 +1,17 @@
 import * as React from 'react';
 import * as semver from 'semver';
 
-import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { reportError } from '../../errors';
 
 import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../services/service-versions';
 
 import { clickOnEnter } from '../component-utils';
-import { Button } from '../common/inputs';
-import { ExchangeHeaderCard } from './exchange-card';
-
-const HeaderExplanation = styled.p`
-    width: 100%;
-    margin-bottom: 10px;
-    line-height: 1.3;
-
-    a[href] {
-        color: ${p => p.theme.linkColor};
-
-        &:visited {
-            color: ${p => p.theme.visitedLinkColor};
-        }
-    }
-`;
-
-const HeaderButton = styled(Button)`
-    padding: 10px 20px;
-    font-weight: bold;
-    font-size: ${p => p.theme.textSize};
-
-    margin: 10px 0 0 20px;
-    align-self: stretch;
-`;
+import {
+    HeaderCard,
+    HeaderText,
+    HeaderButton
+} from './header-card';
 
 type ErrorType =
     | 'untrusted'
@@ -179,16 +158,16 @@ export const ExchangeErrorHeader = (p: {
             DESKTOP_HEADER_LIMIT_CONFIGURABLE
         );
 
-    return <ExchangeHeaderCard>
-        <HeaderExplanation>
+    return <HeaderCard>
+        <HeaderText>
             <WarningIcon /> {
                 isInitialRequestError(p.type) || p.type === 'unknown'
                 ? <strong>This request could not be handled</strong>
                 : <strong>This request was not forwarded successfully</strong>
             }
-        </HeaderExplanation>
+        </HeaderText>
 
-        <HeaderExplanation>
+        <HeaderText>
             { isInitialRequestError(p.type)
                 ? <>
                     The client's request {
@@ -237,16 +216,16 @@ export const ExchangeErrorHeader = (p: {
                     }, so HTTP Toolkit could not return a response.
                 </>
             }
-        </HeaderExplanation>
+        </HeaderText>
 
         { p.type === 'tls-error'
             ? <>
-                <HeaderExplanation>
+                <HeaderText>
                     This could be caused by the server not supporting modern cipher
                     standards or TLS versions, requiring a client certificate that hasn't
                     been provided, or other TLS configuration issues.
-                </HeaderExplanation>
-                <HeaderExplanation>
+                </HeaderText>
+                <HeaderText>
                     { p.isPaidUser
                         ? <>
                             From the Settings page you can configure client certificates, or
@@ -259,90 +238,90 @@ export const ExchangeErrorHeader = (p: {
                             configure per-host client certificates for authentication.
                         </>
                     }
-                </HeaderExplanation>
+                </HeaderText>
             </>
         : p.type === 'host-not-found'
             ? <>
-                <HeaderExplanation>
+                <HeaderText>
                     This typically means the host doesn't exist, although it
                     could be an issue with your DNS or network configuration.
-                </HeaderExplanation>
-                <HeaderExplanation>
+                </HeaderText>
+                <HeaderText>
                     You can define mock responses for requests like this from the
                     Mock page, to return fake data even for servers and hostnames
                     that don't exist.
-                </HeaderExplanation>
+                </HeaderText>
             </>
         : p.type === 'host-unreachable'
             ? <>
-                <HeaderExplanation>
+                <HeaderText>
                     This is typically an issue with your network connection or the
                     host's DNS records.
-                </HeaderExplanation>
-                <HeaderExplanation>
+                </HeaderText>
+                <HeaderText>
                     You can define mock responses for requests like this from the
                     Mock page, to return fake data even for servers and hostnames
                     that aren't accessible.
-                </HeaderExplanation>
+                </HeaderText>
             </>
         : p.type === 'dns-error'
             ? <>
-                <HeaderExplanation>
+                <HeaderText>
                     The DNS server hit an unknown error looking up this hostname.
                     This is likely due to a issue in your DNS configuration or network
                     connectivity, and may just be a temporary issue.
-                </HeaderExplanation>
-                <HeaderExplanation>
+                </HeaderText>
+                <HeaderText>
                     You can define mock responses for requests like this from the
                     Mock page, to return fake data even for servers and hostnames
                     that don't exist or aren't accessible.
-                </HeaderExplanation>
+                </HeaderText>
             </>
         : p.type === 'untrusted'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 By default unrecognized certificate authorities (CAs) are only accepted for localhost servers, but {
                     p.isPaidUser
                         ? 'additional CAs can be trusted from the Settings page.'
                         : 'Pro users can trust additional CAs or disable HTTPS validation for a host entirely.'
                 }
-            </HeaderExplanation>
+            </HeaderText>
         : isWhitelistable(p.type)
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 By default this is only allowed for localhost servers, but {
                     p.isPaidUser
                         ? 'other hosts can be added to the whitelist from the Settings page.'
                         : 'Pro users can whitelist other custom hosts.'
                 }
-            </HeaderExplanation>
+            </HeaderText>
         : p.type === 'connection-refused'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 This typically means the server isn't running right now on the port you're using,
                 although it's possible this is an intermittent connection issue. You can either
                 try again, or you can mock requests like this to avoid sending them upstream
                 at all.
-            </HeaderExplanation>
+            </HeaderText>
         : p.type === 'connection-reset'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 This could be due to a connection issue, or may be caused by an issue on the server.
                 In many cases, this is an intermittent issue that will be solved by retrying
                 the request. You can also mock requests like this, to avoid sending them upstream
                 at all.
-            </HeaderExplanation>
+            </HeaderText>
         : p.type === 'timeout'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 This could be due to connection issues, general issues on the server, or issues
                 with handling this request specifically. This might be resolved by retrying
                 the request, or you can mock requests like this to avoid sending them upstream
                 at all.
-            </HeaderExplanation>
+            </HeaderText>
         : isClientBug(p.type)
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 This means the client sent HTTP Toolkit some fundamentally invalid data that does
                 not follow the HTTP spec. That suggests either a major bug in the client, or that
                 they're not sending HTTP at all.
-            </HeaderExplanation>
+            </HeaderText>
         : p.type === 'header-overflow'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 { desktopVersion.value && advancedHeaderOverflowSupported
                     ? <>
                         This means the request included more than 100KB of headers. The HTTP specification
@@ -361,9 +340,9 @@ export const ExchangeErrorHeader = (p: {
                         servers will refuse to process anything longer than 8KB.
                     </>
                 }
-            </HeaderExplanation>
+            </HeaderText>
         : p.type === 'invalid-method'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 Because this method is unrecognized, HTTP Toolkit doesn't know how it should
                 be handled, and cannot safely forward it on elsewhere. If you think this
                 method should be supported, please <a
@@ -371,9 +350,9 @@ export const ExchangeErrorHeader = (p: {
                 >
                     get in touch
                 </a>.
-            </HeaderExplanation>
+            </HeaderText>
         : p.type === 'invalid-http-version'
-            ? <HeaderExplanation>
+            ? <HeaderText>
                 The client may be using a newer or experimental HTTP version that HTTP
                 Toolkit doesn't yet support. If you think this version should be supported,
                 please <a
@@ -381,20 +360,20 @@ export const ExchangeErrorHeader = (p: {
                 >
                     get in touch
                 </a>.
-            </HeaderExplanation>
+            </HeaderText>
         : // 'unknown':
-            <HeaderExplanation>
+            <HeaderText>
                 It's not clear what's gone wrong here, but for some reason HTTP Toolkit
                 couldn't successfully and/or securely complete this request.
                 This might be an intermittent issue, and may be resolved by retrying
                 the request.
-            </HeaderExplanation>
+            </HeaderText>
         }
 
-        { isInitialRequestError(p.type) && <HeaderExplanation>
+        { isInitialRequestError(p.type) && <HeaderText>
             The data shown below is a best guess from the data that was available
             and parseable, and may be incomplete or inaccurate.
-        </HeaderExplanation> }
+        </HeaderText> }
 
         <HeaderButton onClick={p.ignoreError} onKeyPress={clickOnEnter}>
             Ignore
@@ -418,5 +397,5 @@ export const ExchangeErrorHeader = (p: {
             )
         : null }
 
-    </ExchangeHeaderCard>;
+    </HeaderCard>;
 };
