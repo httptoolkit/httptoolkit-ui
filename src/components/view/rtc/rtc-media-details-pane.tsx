@@ -2,9 +2,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled } from '../../styles';
+import { styled } from '../../../styles';
 
-import { RTCMediaTrack } from '../../model/webrtc/rtc-media-track';
+import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
 import { RTCMediaCard } from './rtc-media-card';
 
 const ExpandedContentContainer = styled.div`

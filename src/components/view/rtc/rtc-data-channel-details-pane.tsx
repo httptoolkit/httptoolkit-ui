@@ -3,14 +3,14 @@ import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { styled } from '../../styles';
+import { styled } from '../../../styles';
 
-import { AccountStore } from '../../model/account/account-store';
-import { RTCDataChannel } from '../../model/webrtc/rtc-data-channel';
+import { AccountStore } from '../../../model/account/account-store';
+import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 
-import { StreamMessageListCard } from './stream-message-list-card';
+import { StreamMessageListCard } from '../stream-message-list-card';
 
 const ExpandedContentContainer = styled.div`
     padding: 0;

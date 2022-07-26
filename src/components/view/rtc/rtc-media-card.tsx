@@ -4,23 +4,22 @@ import { computed } from 'mobx';
 import { Observer, observer } from 'mobx-react';
 import { ParentSize } from '@vx/responsive';
 
-import { styled } from '../../styles';
+import { styled } from '../../../styles';
 
-import { RTCMediaTrack } from '../../model/webrtc/rtc-media-track';
+import { getReadableSize } from '../../../model/events/bodies';
+import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
 
 import {
     CollapsibleCard,
     CollapsibleCardHeading,
     CollapsibleCardProps
-} from '../common/card';
-import { Pill } from '../common/pill';
+} from '../../common/card';
+import { Pill } from '../../common/pill';
 import {
     SendReceiveGraph,
     SentDataColour,
     ReceivedDataColour
-} from '../common/send-recieve-graph';
-
-import { getReadableSize } from '../../model/events/bodies';
+} from '../../common/send-recieve-graph';
 
 export type RTCMediaCardProps = Omit<CollapsibleCardProps, 'children'> & {
     mediaTrack: RTCMediaTrack
