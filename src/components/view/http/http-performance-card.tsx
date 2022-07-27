@@ -3,38 +3,38 @@ import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import { get } from 'typesafe-get';
 
-import { styled } from '../../styles';
+import { styled } from '../../../styles';
 import {
     Omit,
     HttpExchange,
     TimingEvents,
     ExchangeMessage
-} from '../../types';
-import { asHeaderArray, joinAnd } from '../../util';
-import { Icon, WarningIcon, SuggestionIcon } from '../../icons';
+} from '../../../types';
+import { asHeaderArray, joinAnd } from '../../../util';
+import { Icon, WarningIcon, SuggestionIcon } from '../../../icons';
 
-import { AccountStore } from '../../model/account/account-store';
-import { getReadableSize, testEncodings } from '../../model/events/bodies';
+import { AccountStore } from '../../../model/account/account-store';
+import { getReadableSize, testEncodings } from '../../../model/events/bodies';
 import {
     explainCacheability,
     explainCacheLifetime,
     explainCacheMatching,
     explainValidCacheTypes
-} from '../../model/http/caching';
+} from '../../../model/http/caching';
 
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading } from '../../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { CollapsibleSection } from '../common/collapsible-section';
-import { ContentLabelBlock, Markdown } from '../common/text-content';
-import { ProHeaderPill, CardSalesPitch } from '../account/pro-placeholders';
+} from '../exchange-card';
+import { Pill } from '../../common/pill';
+import { CollapsibleSection } from '../../common/collapsible-section';
+import { ContentLabelBlock, Markdown } from '../../common/text-content';
+import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 
-interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpPerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
     accountStore?: AccountStore;
 }
@@ -58,7 +58,7 @@ const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents
     }</Pill>;
 });
 
-export const ExchangePerformanceCard = inject('accountStore')(observer((props: ExchangePerformanceCardProps) => {
+export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpPerformanceCardProps) => {
     const { exchange, accountStore } = props;
     const { isPaidUser } = accountStore!;
 

@@ -1,29 +1,29 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, Html } from '../../types';
-import { styled } from '../../styles';
-import { Icon } from '../../icons';
-import { joinAnd } from '../../util';
+import { Omit, Html } from '../../../types';
+import { styled } from '../../../styles';
+import { Icon } from '../../../icons';
+import { joinAnd } from '../../../util';
 
-import { ApiExchange, Parameter } from '../../model/api/openapi';
+import { ApiExchange, Parameter } from '../../../model/api/openapi';
 
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading } from '../../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
-} from './exchange-card';
-import { CollapsibleSection } from '../common/collapsible-section';
-import { OptionalImage } from '../common/optional-image';
+} from '../exchange-card';
+import { CollapsibleSection } from '../../common/collapsible-section';
+import { OptionalImage } from '../../common/optional-image';
 import {
     ContentLabel,
     ContentLabelBlock,
     ExternalContent
-} from '../common/text-content';
-import { DocsLink } from '../common/docs-link';
-import { CardSalesPitch, ProHeaderPill } from '../account/pro-placeholders';
+} from '../../common/text-content';
+import { DocsLink } from '../../common/docs-link';
+import { CardSalesPitch, ProHeaderPill } from '../../account/pro-placeholders';
 
 const ServiceLogo = styled(OptionalImage)`
     float: right;
@@ -217,12 +217,12 @@ const ApiRequestDetails = (props: {
     </>;
 }
 
-interface ExchangeApiCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpApiCardProps extends Omit<ExchangeCardProps, 'children'> {
     apiName: string;
     apiExchange: ApiExchange
 }
 
-export const ExchangeApiCard = observer((props: ExchangeApiCardProps) => {
+export const HttpApiCard = observer((props: HttpApiCardProps) => {
     const { apiName, apiExchange } = props;
 
     return <ExchangeCard {...props}>
@@ -236,11 +236,11 @@ export const ExchangeApiCard = observer((props: ExchangeApiCardProps) => {
     </ExchangeCard>;
 });
 
-interface ExchangeApiPlaceholderCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpApiPlaceholderCardProps extends Omit<ExchangeCardProps, 'children'> {
     apiName: string;
 }
 
-export const ExchangeApiPlaceholderCard = observer((props: ExchangeApiPlaceholderCardProps) => {
+export const HttpApiPlaceholderCard = observer((props: HttpApiPlaceholderCardProps) => {
     const { apiName } = props;
 
     return <ExchangeCard {...props}>

@@ -1,17 +1,17 @@
 import * as React from 'react';
 import * as semver from 'semver';
 
-import { WarningIcon } from '../../icons';
-import { reportError } from '../../errors';
+import { WarningIcon } from '../../../icons';
+import { reportError } from '../../../errors';
 
-import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../services/service-versions';
+import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../../services/service-versions';
 
-import { clickOnEnter } from '../component-utils';
+import { clickOnEnter } from '../../component-utils';
 import {
     HeaderCard,
     HeaderText,
     HeaderButton
-} from './header-card';
+} from '../header-card';
 
 type ErrorType =
     | 'untrusted'
@@ -142,7 +142,7 @@ const isMockable = typeCheck([
     'timeout'
 ]);
 
-export const ExchangeErrorHeader = (p: {
+export const HttpErrorHeader = (p: {
     isPaidUser: boolean,
     type: ErrorType,
     getPro: (source: string) => void,

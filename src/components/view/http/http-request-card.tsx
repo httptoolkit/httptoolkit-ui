@@ -1,32 +1,32 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, HttpExchange, HtkRequest } from '../../types';
-import { styled } from '../../styles';
-import { SourceIcons, Icon } from '../../icons';
+import { Omit, HttpExchange, HtkRequest } from '../../../types';
+import { styled } from '../../../styles';
+import { SourceIcons, Icon } from '../../../icons';
 
-import { TrafficSource } from '../../model/http/sources';
-import { getSummaryColour } from '../../model/events/categorization';
-import { getMethodDocs } from '../../model/http/http-docs';
+import { TrafficSource } from '../../../model/http/sources';
+import { getSummaryColour } from '../../../model/events/categorization';
+import { getMethodDocs } from '../../../model/http/http-docs';
 
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading } from '../../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { CollapsibleSection } from '../common/collapsible-section';
+} from '../exchange-card';
+import { Pill } from '../../common/pill';
+import { CollapsibleSection } from '../../common/collapsible-section';
 import {
     ContentLabel,
     ContentLabelBlock,
     ContentMonoValue,
     Markdown
-} from '../common/text-content';
-import { DocsLink } from '../common/docs-link';
-import { HeaderDetails } from './headers/header-details';
-import { UrlBreakdown } from './url-breakdown';
+} from '../../common/text-content';
+import { DocsLink } from '../../common/docs-link';
+import { HeaderDetails } from './header-details';
+import { UrlBreakdown } from '../url-breakdown';
 
 const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
     source.icon !== SourceIcons.Unknown ?
@@ -90,11 +90,11 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
     </div>;
 }
 
-interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
     exchange: HttpExchange;
 }
 
-export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) => {
+export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
     const { exchange } = props;
     const { request } = exchange;
 

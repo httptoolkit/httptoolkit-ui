@@ -74,7 +74,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
         return Object.assign(request, {
             parsedUrl: tryParseUrl(request) || getFallbackUrl(request),
             source: parseSource(request.headers['user-agent']),
-            body: new ExchangeBody(request, request.headers),
+            body: new HttpBody(request, request.headers),
             contentType: getContentType(lastHeader(request.headers['content-type'])) || 'text',
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })
         }) as HtkRequest;
@@ -86,7 +86,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
 
 function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
-        body: new ExchangeBody(response, response.headers),
+        body: new HttpBody(response, response.headers),
         contentType: getContentType(
             // There should only ever be one. If we get multiple though, just use the last.
             lastHeader(response.headers['content-type'])
@@ -95,7 +95,7 @@ function addResponseMetadata(response: InputResponse): HtkResponse {
     }) as HtkResponse;
 }
 
-export class ExchangeBody implements MessageBody {
+export class HttpBody implements MessageBody {
 
     constructor(
         message: InputMessage,
@@ -247,7 +247,7 @@ export class HttpExchange extends HTKEventBase {
     public response: HtkResponse | 'aborted' | undefined;
 
     updateFromCompletedRequest(request: InputCompletedRequest) {
-        this.request.body = new ExchangeBody(request, request.headers);
+        this.request.body = new HttpBody(request, request.headers);
         this.matchedRuleId = request.matchedRuleId || "?";
 
         Object.assign(this.timingEvents, request.timingEvents);

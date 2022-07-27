@@ -2,20 +2,20 @@ import * as React from 'react';
 import { action } from 'mobx';
 import { observer } from 'mobx-react';
 
-import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../types';
-import { styled, Theme } from '../../styles';
+import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../../types';
+import { styled, Theme } from '../../../styles';
 
-import { getStatusColor } from '../../model/events/categorization';
+import { getStatusColor } from '../../../model/events/categorization';
 
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading } from '../../common/card';
 import {
     ExchangeCard,
     ExchangeCardProps,
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { ContentLabelBlock, ContentLabel } from '../common/text-content';
-import { EditableHeaders } from '../common/editable-headers';
-import { EditableStatus } from '../common/editable-status';
+} from '../exchange-card';
+import { Pill } from '../../common/pill';
+import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
+import { EditableHeaders } from '../../common/editable-headers';
+import { EditableStatus } from '../../common/editable-status';
 
 interface ResponseBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
     theme: Theme;
@@ -36,7 +36,7 @@ const InlineEditableStatus = styled(EditableStatus)`
 `;
 
 @observer
-export class ExchangeBreakpointResponseCard extends React.Component<ResponseBreakpointCardProps> {
+export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpointCardProps> {
 
     render() {
         const { exchange, onChange, theme, ...cardProps } = this.props;

@@ -2,16 +2,16 @@ import * as React from 'react';
 import { action, runInAction } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { CollectedEvent } from '../../types';
-import { styled, css } from '../../styles';
-import { Ctrl } from '../../util/ui';
+import { CollectedEvent } from '../../../types';
+import { styled, css } from '../../../styles';
+import { Ctrl } from '../../../util/ui';
 
-import { HttpExchange } from '../../model/http/exchange';
-import { RulesStore } from '../../model/rules/rules-store';
-import { buildRuleFromExchange } from '../../model/rules/rule-definitions';
+import { HttpExchange } from '../../../model/http/exchange';
+import { RulesStore } from '../../../model/rules/rules-store';
+import { buildRuleFromExchange } from '../../../model/rules/rule-definitions';
 
-import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
-import { IconButton } from '../common/icon-button';
+import { HEADER_FOOTER_HEIGHT } from '../view-event-list-footer';
+import { IconButton } from '../../common/icon-button';
 
 const ButtonsContainer = styled.div`
     height: ${HEADER_FOOTER_HEIGHT}px;
@@ -86,7 +86,7 @@ const MockButton = observer((p: {
     disabled={!p.isExchange || !p.isPaidUser}
 />);
 
-export const ExchangeDetailsFooter = inject('rulesStore')(
+export const HttpDetailsFooter = inject('rulesStore')(
     observer(
         (props: {
             rulesStore?: RulesStore,

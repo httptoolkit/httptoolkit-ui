@@ -3,39 +3,39 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { get } from 'typesafe-get';
 
-import { HtkResponse, Omit } from '../../types';
-import { Theme } from '../../styles';
+import { HtkResponse, Omit } from '../../../types';
+import { Theme } from '../../../styles';
 
-import { ApiExchange } from '../../model/api/openapi';
-import { getStatusColor } from '../../model/events/categorization';
-import { getStatusDocs, getStatusMessage } from '../../model/http/http-docs';
+import { ApiExchange } from '../../../model/api/openapi';
+import { getStatusColor } from '../../../model/events/categorization';
+import { getStatusDocs, getStatusMessage } from '../../../model/http/http-docs';
 
-import { CollapsibleCardHeading } from '../common/card';
-import { Pill } from '../common/pill';
-import { HeaderDetails } from './headers/header-details';
+import { CollapsibleCardHeading } from '../../common/card';
+import { Pill } from '../../common/pill';
+import { HeaderDetails } from './header-details';
 import {
     ExchangeCard,
     ExchangeCardProps,
     ExchangeCollapsibleSummary,
     ExchangeCollapsibleBody
-} from './exchange-card';
-import { CollapsibleSection } from '../common/collapsible-section';
+} from '../exchange-card';
+import { CollapsibleSection } from '../../common/collapsible-section';
 import {
     ContentLabel,
     ContentLabelBlock,
     ExternalContent,
     Markdown
-} from '../common/text-content';
-import { DocsLink } from '../common/docs-link';
+} from '../../common/text-content';
+import { DocsLink } from '../../common/docs-link';
 
-interface ExchangeResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {
+interface HttpResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {
     theme: Theme;
     requestUrl: URL;
     response: HtkResponse;
     apiExchange: ApiExchange | undefined;
 }
 
-export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) => {
+export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
     const { response, requestUrl, theme, apiExchange } = props;
 
     const apiResponseDescription = get(apiExchange, 'response', 'description');

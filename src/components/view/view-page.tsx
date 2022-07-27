@@ -29,7 +29,7 @@ import { EmptyState } from '../common/empty-state';
 
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
-import { ExchangeDetailsPane } from './exchange-details-pane';
+import { HttpDetailsPane } from './http/http-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
@@ -231,7 +231,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 Select an exchange to see the full details.
             </EmptyState>;
         } else if (this.selectedEvent.isHttp()) {
-            rightPane = <ExchangeDetailsPane
+            rightPane = <HttpDetailsPane
                 exchange={this.selectedEvent}
 
                 requestEditor={this.editors.request.node}

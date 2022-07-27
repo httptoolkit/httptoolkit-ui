@@ -4,27 +4,26 @@ import { observable, action, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { Headers } from '../../types';
-import { styled } from '../../styles';
-import { lastHeader, isProbablyUtf8 } from '../../util';
+import { Headers } from '../../../types';
+import { lastHeader, isProbablyUtf8 } from '../../../util';
 import {
     EditableContentType,
     EditableContentTypes,
     getEditableContentType,
     getContentEditorName
-} from '../../model/events/content-types';
-import { getReadableSize } from '../../model/events/bodies';
+} from '../../../model/events/content-types';
+import { getReadableSize } from '../../../model/events/bodies';
 
-import { CollapsibleCardHeading } from '../common/card';
-import { CollapsingButtons } from '../common/collapsing-buttons';
-import { Pill, PillSelector } from '../common/pill';
-import { ExpandShrinkButton } from '../common/expand-shrink-button';
-import { FormatButton } from '../common/format-button';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { ExchangeBodyCardCard, EditorCardContent } from './exchange-body-card';
+import { CollapsibleCardHeading } from '../../common/card';
+import { CollapsingButtons } from '../../common/collapsing-buttons';
+import { Pill, PillSelector } from '../../common/pill';
+import { ExpandShrinkButton } from '../../common/expand-shrink-button';
+import { FormatButton } from '../../common/format-button';
+import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { HttpBodyCardCard, EditorCardContent } from './http-body-card';
 
 @observer
-export class ExchangeBreakpointBodyCard extends React.Component<{
+export class HttpBreakpointBodyCard extends React.Component<{
     title: string,
     direction: 'left' | 'right',
     collapsed: boolean,
@@ -78,7 +77,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
 
         const bodyString = body.toString(this.textEncoding);
 
-        return <ExchangeBodyCardCard
+        return <HttpBodyCardCard
             direction={direction}
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled}
@@ -118,7 +117,7 @@ export class ExchangeBreakpointBodyCard extends React.Component<{
                     expanded={expanded}
                 />
             </EditorCardContent>
-        </ExchangeBodyCardCard>;
+        </HttpBodyCardCard>;
     }
 
     private onBodyChange = (body: string) => {

@@ -1,18 +1,18 @@
 import * as React from 'react';
 
-import { WarningIcon } from '../../icons';
+import { WarningIcon } from '../../../icons';
 
-import { versionSatisfies, serverVersion, CLOSE_IN_BREAKPOINT } from '../../services/service-versions';
+import { versionSatisfies, serverVersion, CLOSE_IN_BREAKPOINT } from '../../../services/service-versions';
 
-import { clickOnEnter } from '../component-utils';
+import { clickOnEnter } from '../../component-utils';
 import {
     HeaderCard,
     HeaderText,
     HeaderButton,
     SecondaryHeaderButton
-} from './header-card';
+} from '../header-card';
 
-export const ExchangeRequestBreakpointHeader = (p: {
+export const HttpRequestBreakpointHeader = (p: {
     onResume: () => void,
     onCreateResponse: () => void,
     onClose: () => void
@@ -51,7 +51,7 @@ export const ExchangeRequestBreakpointHeader = (p: {
         </HeaderButton>
     </HeaderCard>;
 
-export const ExchangeResponseBreakpointHeader = (p: {
+export const HttpResponseBreakpointHeader = (p: {
     onResume: () => void,
     onClose: () => void
 }) =>
