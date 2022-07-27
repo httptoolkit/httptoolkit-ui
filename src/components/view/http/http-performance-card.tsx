@@ -150,6 +150,18 @@ const CompressionDescription = observer((p: {
     </>;
 });
 
+const CompressionResultsContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-right: 10px;
+`;
+
+const CompressionResultsPill = styled(Pill)`
+    flex-shrink: 0;
+    margin: 0;
+`;
+
 const CompressionOptions = observer((p: {
     encodings: string[],
     encodedBodyLength: number,
@@ -163,7 +175,7 @@ const CompressionOptions = observer((p: {
             1 - (encodedBodyLength / decodedBodyLength)
         ));
 
-        return <>{
+        return <CompressionResultsContainer>{
             _(encodingTestResults)
             .omitBy((_size, encoding) =>
                 encodings.length === 1 && encoding === encodings[0]
@@ -172,7 +184,7 @@ const CompressionOptions = observer((p: {
                     1 - (size / decodedBodyLength)
                 ));
 
-                return <Pill key={encoding} title={
+                return <CompressionResultsPill key={encoding} title={
                         `${
                             getReadableSize(decodedBodyLength)
                         } would compress to ${
@@ -186,9 +198,9 @@ const CompressionOptions = observer((p: {
                     }
                 >
                     { _.upperFirst(encoding) }: { testedCompressionRatio }%
-                </Pill>
+                </CompressionResultsPill>
             }).valueOf()
-        }</>
+        }</CompressionResultsContainer>
     } else {
         return <Icon icon={['fas', 'spinner']} spin />;
     }
