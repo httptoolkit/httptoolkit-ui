@@ -18,6 +18,15 @@ import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 
 import { Pill } from '../../common/pill';
 import { CollapsibleCard, CollapsibleCardHeading } from '../../common/card';
+
+import {
+    PaneOuterContainer,
+    PaneScrollContainer,
+    ExpandedPaneContentContainer
+} from '../view-details-pane';
+import { StreamMessageListCard } from '../stream-message-list-card';
+import { WebSocketCloseCard } from '../websocket-close-card';
+
 import { HttpBodyCard } from './http-body-card';
 import { HttpApiCard, HttpApiPlaceholderCard } from './http-api-card';
 import { HttpRequestCard } from './http-request-card';
@@ -31,58 +40,6 @@ import { HttpRequestBreakpointHeader, HttpResponseBreakpointHeader } from './htt
 import { HttpBreakpointRequestCard } from './http-breakpoint-request-card';
 import { HttpBreakpointResponseCard } from './http-breakpoint-response-card';
 import { HttpBreakpointBodyCard } from './http-breakpoint-body-card';
-
-import { WebSocketCloseCard } from '../websocket-close-card';
-import { StreamMessageListCard } from '../stream-message-list-card';
-
-const OuterContainer = styled.div`
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-`;
-
-const ScrollContainer = styled.div`
-    position: relative;
-    overflow-y: scroll;
-
-    flex-grow: 1;
-    padding: 0 20px 0 20px;
-
-    background-color: ${p => p.theme.containerBackground};
-`;
-
-const ContentContainer = styled.div`
-    min-height: 100%;
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-
-    /*
-    * This padding could be padding on the scroll container, but doing so causes odd
-    * behaviour where position: sticky headers don't take it into account, on OSX only.
-    * Moving to the direct parent of the header makes that consistent, for some reason. Ew.
-    */
-    padding-top: 20px;
-`;
-
-const ExpandedContentContainer = styled.div`
-    ${(p: { expandCompleted: boolean }) => !p.expandCompleted
-        ? `padding: 20px;`
-        : `
-            padding: 0;
-            transition: padding 0.1s;
-        `
-    }
-
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-`;
 
 // Used to push all cards below it to the bottom (when less than 100% height)
 const CardDivider = styled.div`
@@ -186,23 +143,21 @@ export class HttpDetailsPane extends React.Component<{
         const headerCard = this.renderHeaderCard(exchange);
 
         if (expandedCard) {
-            return <ExpandedContentContainer expandCompleted={expandCompleted}>
+            return <ExpandedPaneContentContainer expandCompleted={expandCompleted}>
                 { headerCard }
                 { this.renderExpandedCard(expandedCard, exchange, apiExchange) }
-            </ExpandedContentContainer>;
+            </ExpandedPaneContentContainer>;
         }
 
         const cards = (requestBreakpoint || responseBreakpoint)
             ? this.renderBreakpointCards(exchange, apiName, apiExchange)
             : this.renderNormalCards(exchange, apiName, apiExchange);
 
-        return <OuterContainer>
-            <ScrollContainer>
-                <ContentContainer>
-                    { headerCard }
-                    { cards }
-                </ContentContainer>
-            </ScrollContainer>
+        return <PaneOuterContainer>
+            <PaneScrollContainer>
+                { headerCard }
+                { cards }
+            </PaneScrollContainer>
             <HttpDetailsFooter
                 event={exchange}
                 onDelete={onDelete}
@@ -210,7 +165,7 @@ export class HttpDetailsPane extends React.Component<{
                 navigate={navigate}
                 isPaidUser={isPaidUser}
             />
-        </OuterContainer>;
+        </PaneOuterContainer>;
     }
 
     renderHeaderCard(exchange: HttpExchange): JSX.Element | null {

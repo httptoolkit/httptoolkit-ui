@@ -63,6 +63,7 @@ export const LittleCard = styled(Card)`
 // Normal card size
 export const MediumCard = styled(Card)`
     padding: 20px;
+    margin-bottom: 20px;
 
     > header, > h1 {
         text-transform: uppercase;
@@ -212,7 +213,6 @@ const CollapsibleCardContainer = styled(MediumCard)<{
     expanded: boolean;
     direction?: 'left' | 'right';
 }>`
-    margin-bottom: 20px;
     transition: margin-bottom 0.1s;
 
     ${p => p.collapsed && css`

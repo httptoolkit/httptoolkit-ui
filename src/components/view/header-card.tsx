@@ -8,8 +8,6 @@ export const HeaderCard = styled(MediumCard)`
     top: -10px;
     z-index: 2;
 
-    margin-bottom: 20px;
-
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
