@@ -13,14 +13,18 @@ import { saveFile } from '../../../util/ui';
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../../model/events/content-types';
 import { getReadableSize } from '../../../model/events/bodies';
 
-import { CollapsibleCardHeading } from '../../common/card';
-import { ExchangeCard, LoadingExchangeCard } from '../exchange-card';
+import {
+    CollapsibleCardHeading,
+    CollapsibleCard
+} from '../../common/card';
 import { CollapsingButtons } from '../../common/collapsing-buttons';
 import { Pill, PillSelector } from '../../common/pill';
 import { ExpandShrinkButton } from '../../common/expand-shrink-button';
+import { IconButton } from '../../common/icon-button';
+
+import { LoadingCard } from '../loading-card';
 import { ContentViewer } from '../../editor/content-viewer';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
-import { IconButton } from '../../common/icon-button';
 
 export const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
@@ -42,7 +46,7 @@ export const EditorCardContent = styled.div`
     min-height: 0;
 `;
 
-export const HttpBodyCardCard = styled(ExchangeCard)`
+export const HttpBodyCardCard = styled(CollapsibleCard)`
     display: flex;
     flex-direction: column;
 `;
@@ -178,7 +182,7 @@ export class HttpBodyCard extends React.Component<{
                 </EditorCardContent>
             </HttpBodyCardCard>
         :
-            <LoadingExchangeCard
+            <LoadingCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -196,7 +200,7 @@ export class HttpBodyCard extends React.Component<{
                         { title }
                     </CollapsibleCardHeading>
                 </header>
-            </LoadingExchangeCard>;
+            </LoadingCard>;
     }
 
 }

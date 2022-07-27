@@ -17,8 +17,7 @@ import { buildRuleFromRequest } from '../../../model/rules/rule-definitions';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 
 import { Pill } from '../../common/pill';
-import { CollapsibleCardHeading } from '../../common/card';
-import { ExchangeCard } from '../exchange-card';
+import { CollapsibleCard, CollapsibleCardHeading } from '../../common/card';
 import { HttpBodyCard } from './http-body-card';
 import { HttpApiCard, HttpApiPlaceholderCard } from './http-api-card';
 import { HttpRequestCard } from './http-request-card';
@@ -152,7 +151,7 @@ export class HttpDetailsPane extends React.Component<{
         return _.fromPairs(cardKeys.map((key) => [key, {
             key,
             expanded: key === this.props.uiStore!.expandedCard,
-            collapsed: this.props.uiStore!.viewExchangeCardStates[key].collapsed &&
+            collapsed: this.props.uiStore!.viewCardStates[key].collapsed &&
                 !this.props.uiStore!.expandedCard,
             onCollapseToggled: this.toggleCollapse.bind(this, key)
         }]));
@@ -373,7 +372,7 @@ export class HttpDetailsPane extends React.Component<{
         }
 
         if (response === 'aborted') {
-            cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
+            cards.push(<CollapsibleCard {...this.cardProps.response} direction='left'>
                 <header>
                     <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
                     <CollapsibleCardHeading onCollapseToggled={this.cardProps.response.onCollapseToggled}>
@@ -383,7 +382,7 @@ export class HttpDetailsPane extends React.Component<{
                 <div>
                     The request was aborted before the response was completed.
                 </div>
-            </ExchangeCard>);
+            </CollapsibleCard>);
         } else if (!!response) {
             cards.push(<HttpResponseCard
                 {...this.cardProps.response}
@@ -522,9 +521,9 @@ export class HttpDetailsPane extends React.Component<{
 
     @action.bound
     private toggleCollapse(key: string) {
-        const { viewExchangeCardStates } = this.props.uiStore!;
+        const { viewCardStates } = this.props.uiStore!;
 
-        const cardState = viewExchangeCardStates[key as CardKey];
+        const cardState = viewCardStates[key as CardKey];
         cardState.collapsed = !cardState.collapsed;
 
         this.props.uiStore!.expandedCard = undefined;
@@ -541,7 +540,7 @@ export class HttpDetailsPane extends React.Component<{
             key === 'responseBody' ||
             key === 'webSocketMessages'
         ) {
-            uiStore.viewExchangeCardStates[key].collapsed = false;
+            uiStore.viewCardStates[key].collapsed = false;
             uiStore.expandedCard = key;
 
             this.expandCompleted = false;

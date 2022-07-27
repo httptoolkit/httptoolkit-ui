@@ -7,17 +7,17 @@ import { styled, Theme } from '../../../styles';
 
 import { getStatusColor } from '../../../model/events/categorization';
 
-import { CollapsibleCardHeading } from '../../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-} from '../exchange-card';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps,
+} from '../../common/card';
 import { Pill } from '../../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
 import { EditableHeaders } from '../../common/editable-headers';
 import { EditableStatus } from '../../common/editable-status';
 
-interface ResponseBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface ResponseBreakpointCardProps extends CollapsibleCardProps {
     theme: Theme;
     exchange: HttpExchange;
     onChange: (response: Partial<BreakpointResponseResult>) => void;
@@ -45,7 +45,7 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
         const headers = inProgressResult.headers || {};
         const { statusCode, statusMessage } = inProgressResult;
 
-        return <ExchangeCard {...cardProps} direction='left'>
+        return <CollapsibleCard {...cardProps} direction='left'>
             <header>
                 <Pill color={getStatusColor(inProgressResult.statusCode, theme!)}>{ statusCode }</Pill>
                 <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
@@ -68,7 +68,7 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
                 headers={headers}
                 onChange={this.onHeadersChanged}
             />
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 
     @action.bound

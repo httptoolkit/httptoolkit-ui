@@ -4,9 +4,6 @@ import { observer } from 'mobx-react';
 
 import { styled, Theme, ThemeProps, css } from '../../styles';
 import { Icon } from '../../icons';
-import { Omit } from '../../types';
-
-import { CollapsingButtons } from './collapsing-buttons';
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
@@ -40,7 +37,6 @@ const Card = styled.section.attrs((p: CardProps) => ({
     border-radius: 4px;
     box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
 
-    overflow: hidden;
     position: relative;
 
     > header h1, > h1 {
@@ -55,6 +51,7 @@ const Card = styled.section.attrs((p: CardProps) => ({
     }
 `;
 
+// Card-like buttons, e.g. mock rule rows & intercept buttons
 export const LittleCard = styled(Card)`
     padding: 15px;
 
@@ -63,17 +60,7 @@ export const LittleCard = styled(Card)`
     }
 `;
 
-export const CollapsibleCardHeading = styled((p: {
-    className?: string,
-    onCollapseToggled: () => void,
-    children: React.ReactNode
-}) => <h1 className={p.className} onClick={p.onCollapseToggled}>
-    { p.children }
-</h1>)`
-    cursor: pointer;
-    user-select: none;
-`;
-
+// Normal card size
 export const MediumCard = styled(Card)`
     padding: 20px;
 
@@ -88,6 +75,7 @@ export const MediumCard = styled(Card)`
     }
 `;
 
+// Oversized cards for extra info - used for Connected Sources UI
 export const BigCard = styled(MediumCard)`
     padding: 30px;
 
@@ -96,72 +84,15 @@ export const BigCard = styled(MediumCard)`
     }
 `;
 
-interface CollapseIconProps extends ThemeProps<Theme> {
-    className?: string;
-    onClick: () => void;
-    collapsed: boolean;
-}
-
-export const CollapseIcon = styled((props: CollapseIconProps) =>
-    <Icon
-        className={props.className}
-        icon={['fas', props.collapsed ? 'chevron-down' : 'chevron-up']}
-        onClick={props.onClick}
-    />
-)`
-    cursor: pointer;
-    user-select: none;
-
-    padding: 4px 10px;
-    margin: 0 -10px 0 5px;
-
-    &:hover {
-        color: ${p => p.theme.popColor};
-    }
-`;
-
-interface CollapsibleCardContainerProps {
+export interface CollapsibleCardProps {
     collapsed: boolean;
     expanded?: boolean;
+    direction?: 'left' | 'right';
+
+    className?: string;
+
+    onCollapseToggled?: () => void;
 }
-
-export interface CollapsibleCardProps extends CollapsibleCardContainerProps {
-    onCollapseToggled: () => void;
-    children: React.ReactNode;
-}
-
-const CollapsibleCardContainer = styled(MediumCard)`
-    margin-bottom: 20px;
-    transition: margin-bottom 0.1s;
-
-    ${(p: CollapsibleCardContainerProps) => p.collapsed && css`
-        :not(:last-child) {
-            margin-bottom: -16px;
-        }
-    `}
-
-    ${(p: CollapsibleCardContainerProps) => p.expanded && css`
-        height: 100%;
-        width: 100%;
-        border-radius: 0;
-        margin: 0;
-    `}
-
-    &:focus {
-        ${CollapseIcon} {
-            color: ${p => p.theme.popColor};
-        }
-    }
-
-    &:focus-within {
-        header h1 {
-            color: ${p => p.theme.popColor};
-        }
-
-        outline: none;
-        border-color: ${p => p.theme.popColor};
-    }
-`;
 
 @observer
 export class CollapsibleCard extends React.Component<
@@ -171,31 +102,50 @@ export class CollapsibleCard extends React.Component<
     private cardRef = React.createRef<HTMLElement>();
 
     render() {
-        const { children, collapsed } = this.props;
-
         return <CollapsibleCardContainer
-            {..._.omit(this.props, ['onCollapseToggled'])}
+            className={this.props.className}
+            collapsed={this.props.collapsed}
+            expanded={this.props.expanded ?? false}
+            direction={this.props.direction}
+
             tabIndex={0}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}
         >{
-            React.Children.map(children as React.ReactElement<any>[], (child, i) =>
-                i === 0 ?
-                    React.cloneElement(child, { },
-                        React.Children.toArray(child.props.children).concat(
-                            <CollapseIcon
-                                key='collapse-icon'
-                                collapsed={collapsed}
-                                onClick={this.toggleCollapse}
-                            />
-                        )
-                    )
-                    : !collapsed && child
-            )
+            this.renderChildren()
         }</CollapsibleCardContainer>;
     }
 
+    renderChildren() {
+        const { children, collapsed } = this.props;
+
+        const showCollapseIcon = !!this.props.onCollapseToggled;
+
+        return React.Children.map(children as React.ReactElement<any>[], (child, i) =>
+            (i === 0 && showCollapseIcon)
+                // If we have a collapse handler, inject a collapse button as the
+                // last child of our first child:
+                ? React.cloneElement(child, { },
+                    React.Children.toArray(child.props.children).concat(
+                        <CollapseIcon
+                            key='collapse-icon'
+                            collapsed={collapsed}
+                            onClick={this.toggleCollapse}
+                        />
+                    )
+                )
+            : (i === 0 && !showCollapseIcon)
+                ? child
+            : !collapsed
+                ? child
+            : null // When collapsed, skip all but the first child
+        );
+    }
+
     toggleCollapse = () => {
+        // Should never happen, but guard against it just in case:
+        if (!this.props.onCollapseToggled) return;
+
         // Scroll the element into view, after giving it a moment to rerender
         requestAnimationFrame(() => {
             if (!this.cardRef.current) return;
@@ -220,3 +170,89 @@ export class CollapsibleCard extends React.Component<
     }
 
 }
+
+interface CollapseIconProps extends ThemeProps<Theme> {
+    className?: string;
+    onClick: () => void;
+    collapsed: boolean;
+}
+
+const CollapseIcon = styled((props: CollapseIconProps) =>
+    <Icon
+        className={props.className}
+        icon={['fas', props.collapsed ? 'chevron-down' : 'chevron-up']}
+        onClick={props.onClick}
+    />
+)`
+    cursor: pointer;
+    user-select: none;
+
+    padding: 4px 10px;
+    margin: 0 -10px 0 5px;
+
+    &:hover {
+        color: ${p => p.theme.popColor};
+    }
+`;
+
+// Bit of redundancy here, but just because the TS styled plugin
+// gets super confused if you use variables in property names.
+const cardDirectionCss = (direction?: string) =>
+    direction === 'right' ? css`
+        padding-right: 15px;
+        border-right: solid 5px ${p => p.theme.containerBorder};
+    ` :
+    direction === 'left' ? css`
+        padding-left: 15px;
+        border-left: solid 5px ${p => p.theme.containerBorder};
+    ` : '';
+
+const CollapsibleCardContainer = styled(MediumCard)<{
+    collapsed: boolean;
+    expanded: boolean;
+    direction?: 'left' | 'right';
+}>`
+    margin-bottom: 20px;
+    transition: margin-bottom 0.1s;
+
+    ${p => p.collapsed && css`
+        :not(:last-child) {
+            margin-bottom: -16px;
+        }
+    `}
+
+    ${p => p.expanded && css`
+        height: 100%;
+        width: 100%;
+        border-radius: 0;
+        margin: 0;
+    `}
+
+    &:focus {
+        ${CollapseIcon} {
+            color: ${p => p.theme.popColor};
+        }
+    }
+
+    &:focus-within {
+        header h1 {
+            color: ${p => p.theme.popColor};
+        }
+
+        outline: none;
+        border-color: ${p => p.theme.popColor};
+    }
+
+    ${p => cardDirectionCss(p.direction)};
+`;
+
+export const CollapsibleCardHeading = styled((p: {
+    className?: string,
+    onCollapseToggled?: () => void,
+    children: React.ReactNode
+}) => <h1 className={p.className} onClick={p.onCollapseToggled}>
+    { p.children }
+</h1>)`
+    cursor: pointer;
+    user-select: none;
+`;

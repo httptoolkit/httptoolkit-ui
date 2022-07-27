@@ -10,16 +10,20 @@ import { ApiExchange } from '../../../model/api/openapi';
 import { getStatusColor } from '../../../model/events/categorization';
 import { getStatusDocs, getStatusMessage } from '../../../model/http/http-docs';
 
-import { CollapsibleCardHeading } from '../../common/card';
+import {
+    CollapsibleCard,
+    CollapsibleCardProps,
+    CollapsibleCardHeading
+} from '../../common/card';
 import { Pill } from '../../common/pill';
 import { HeaderDetails } from './header-details';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from '../exchange-card';
-import { CollapsibleSection } from '../../common/collapsible-section';
+} from '../../common/card';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
 import {
     ContentLabel,
     ContentLabelBlock,
@@ -28,7 +32,7 @@ import {
 } from '../../common/text-content';
 import { DocsLink } from '../../common/docs-link';
 
-interface HttpResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {
+interface HttpResponseCardProps extends CollapsibleCardProps  {
     theme: Theme;
     requestUrl: URL;
     response: HtkResponse;
@@ -55,7 +59,7 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
         </p>
     ].filter(d => !!d);
 
-    return <ExchangeCard {...props} direction='left'>
+    return <CollapsibleCard {...props} direction='left'>
         <header>
             <Pill color={getStatusColor(response.statusCode, theme)}>{
                 response.statusCode
@@ -67,16 +71,16 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
 
         <div>
             <CollapsibleSection>
-                <ExchangeCollapsibleSummary>
+                <CollapsibleSectionSummary>
                     <ContentLabel>Status:</ContentLabel>{' '}
                     {response.statusCode} {response.statusMessage || getStatusMessage(response.statusCode)}
-                </ExchangeCollapsibleSummary>
+                </CollapsibleSectionSummary>
 
                 {
                     responseDetails.length ?
-                        <ExchangeCollapsibleBody>
+                        <CollapsibleSectionBody>
                             { responseDetails }
-                        </ExchangeCollapsibleBody>
+                        </CollapsibleSectionBody>
                     : null
                 }
             </CollapsibleSection>
@@ -84,5 +88,5 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
             <ContentLabelBlock>Headers</ContentLabelBlock>
             <HeaderDetails headers={response.headers} requestUrl={requestUrl} />
         </div>
-    </ExchangeCard>;
+    </CollapsibleCard>;
 });

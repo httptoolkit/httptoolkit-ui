@@ -11,8 +11,7 @@ import { Pill } from '../common/pill';
 import { IconButton } from '../common/icon-button';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
-import { CollapsibleCardHeading } from '../common/card';
-import { ExchangeCard } from './exchange-card';
+import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import {
@@ -20,7 +19,7 @@ import {
     StreamMessageEditorRow
 } from './stream-message-rows';
 
-export const StreamMessageListCardCard = styled(ExchangeCard)`
+export const StreamMessageListCardCard = styled(CollapsibleCard)`
     display: flex;
     flex-direction: column;
 `;

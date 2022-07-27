@@ -17,11 +17,14 @@ import { UiStore } from '../../../model/ui-store';
 import { generateHarRequest, generateHar } from '../../../model/http/har';
 
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
-import { CollapsibleCardHeading } from '../../common/card';
+import {
+    CollapsibleCard,
+    CollapsibleCardProps,
+    CollapsibleCardHeading
+} from '../../common/card';
 import { PillSelector, PillButton } from '../../common/pill';
 import { CopyButtonPill } from '../../common/copy-button';
 import { DocsLink } from '../../common/docs-link';
-import { ExchangeCard, ExchangeCardProps } from "../exchange-card";
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 
 interface SnippetOption {
@@ -57,7 +60,7 @@ const getExportOptionName = (option: SnippetOption) => ({
     'node~~native': 'Node.js HTTP'
 } as _.Dictionary<string>)[getExportOptionKey(option)] || option.name;
 
-interface ExportCardProps extends Omit<ExchangeCardProps, 'children'>  {
+interface ExportCardProps extends CollapsibleCardProps  {
     exchange: HttpExchange;
     accountStore?: AccountStore;
     uiStore?: UiStore;
@@ -189,7 +192,7 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
         const { exchange, accountStore } = this.props;
         const { isPaidUser } = accountStore!;
 
-        return <ExchangeCard {...this.props}>
+        return <CollapsibleCard {...this.props}>
             <header>
                 { isPaidUser
                     ? <ExportHarPill exchange={exchange} />
@@ -230,7 +233,7 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
                     </p>
                 </CardSalesPitch>
             }
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 
     @computed

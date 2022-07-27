@@ -4,17 +4,20 @@ import { observer } from 'mobx-react';
 import { Theme } from '../../styles';
 import { InputWebSocketClose } from '../../types';
 
+import { getWebSocketCloseColor } from '../../model/events/categorization';
+import { getWebSocketCloseCodeDocs } from '../../model/http/http-docs';
+
 import {
+    CollapsibleCard,
     CollapsibleCardHeading,
     CollapsibleCardProps
 } from '../common/card';
-import { CollapsibleSection } from '../common/collapsible-section';
-import { Pill } from '../common/pill';
 import {
-    ExchangeCard,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from './exchange-card';
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../common/collapsible-section';
+import { Pill } from '../common/pill';
 import {
     ContentLabel,
     ContentValue,
@@ -22,10 +25,8 @@ import {
     Markdown
 } from '../common/text-content';
 import { DocsLink } from '../common/docs-link';
-import { getWebSocketCloseColor } from '../../model/events/categorization';
-import { getWebSocketCloseCodeDocs } from '../../model/http/http-docs';
 
-interface WebSocketCloseCardProps extends Omit<CollapsibleCardProps, 'children'> {
+interface WebSocketCloseCardProps extends CollapsibleCardProps {
     theme: Theme;
     closeState: InputWebSocketClose | 'aborted';
 }
@@ -50,7 +51,7 @@ export const WebSocketCloseCard = observer((props: WebSocketCloseCardProps) => {
 
 
     if (closeState === 'aborted') {
-        return <ExchangeCard {...props}>
+        return <CollapsibleCard {...props}>
             <header>
                 <Pill color={getWebSocketCloseColor('aborted', theme)}>Aborted</Pill>
                 <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
@@ -60,11 +61,11 @@ export const WebSocketCloseCard = observer((props: WebSocketCloseCardProps) => {
             <div>
                 The connection was closed abruptly, without a clean close message.
             </div>
-        </ExchangeCard>;
+        </CollapsibleCard>;
     } else {
         const { closeCode, closeReason } = closeState;
 
-        return <ExchangeCard {...props}>
+        return <CollapsibleCard {...props}>
             <header>
                 <Pill color={getWebSocketCloseColor(closeCode, theme)}>{
                     closeCode ?? 'No close code'
@@ -75,18 +76,18 @@ export const WebSocketCloseCard = observer((props: WebSocketCloseCardProps) => {
             </header>
 
             <CollapsibleSection>
-                <ExchangeCollapsibleSummary>
+                <CollapsibleSectionSummary>
                     <ContentLabel>Close code: </ContentLabel>
                     { closeCode
                         ? <ContentValue>{ closeCode }</ContentValue>
                         : <BlankContentPlaceholder>(No close code)</BlankContentPlaceholder>
                     }
-                </ExchangeCollapsibleSummary>
+                </CollapsibleSectionSummary>
 
                 { responseDetails &&
-                    <ExchangeCollapsibleBody>
+                    <CollapsibleSectionBody>
                         { responseDetails }
-                    </ExchangeCollapsibleBody>
+                    </CollapsibleSectionBody>
                 }
             </CollapsibleSection>
 
@@ -97,6 +98,6 @@ export const WebSocketCloseCard = observer((props: WebSocketCloseCardProps) => {
                     : <BlankContentPlaceholder>(No reason provided)</BlankContentPlaceholder>
                 }
             </div>
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 });

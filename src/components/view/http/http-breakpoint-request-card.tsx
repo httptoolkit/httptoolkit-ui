@@ -10,11 +10,11 @@ import { SourceIcons, Icon } from '../../../icons';
 import { TrafficSource } from '../../../model/http/sources';
 import { getSummaryColour } from '../../../model/events/categorization';
 
-import { CollapsibleCardHeading } from '../../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-} from '../exchange-card';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps,
+} from '../../common/card';
 import { Pill } from '../../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
 import { EditableHeaders } from '../../common/editable-headers';
@@ -28,7 +28,7 @@ const SourceIcon = ({ source, className }: { source: TrafficSource, className?: 
             {...source.icon}
         /> : null;
 
-interface RequestBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface RequestBreakpointCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
     onChange: (request: Partial<BreakpointRequestResult>) => void;
 }
@@ -65,7 +65,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
         const headers = inProgressResult.headers || {};
         const { method, url } = inProgressResult;
 
-        return <ExchangeCard {...cardProps} direction='right'>
+        return <CollapsibleCard {...cardProps} direction='right'>
             <header>
                 <SourceIcon source={request.source} />
                 <Pill color={getSummaryColour(exchange)}>
@@ -105,7 +105,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
                 headers={headers}
                 onChange={this.onHeadersChanged}
             />
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 
     @computed

@@ -100,7 +100,7 @@ const Http2SettingsContainer = styled.div`
 @inject('proxyStore')
 @observer
 export class ProxySettingsCard extends React.Component<
-    Omit<CollapsibleCardProps, 'children'> & {
+    CollapsibleCardProps & {
         proxyStore?: ProxyStore
     }
 > {

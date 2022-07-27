@@ -71,10 +71,10 @@ export class UiStore {
         }
     }
 
-    // Store the view exchange details cards state here, so that it persists
-    // when moving away from the page or deselecting all exchanges.
+    // Store the view details cards state here, so that they persist
+    // when moving away from the page or deselecting all traffic.
     @observable
-    readonly viewExchangeCardStates = {
+    readonly viewCardStates = {
         'api': { collapsed: true },
 
         'request': { collapsed: false },

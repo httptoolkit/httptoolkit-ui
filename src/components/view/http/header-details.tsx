@@ -11,7 +11,10 @@ import { AccountStore } from '../../../model/account/account-store';
 import { CollapsibleSection } from '../../common/collapsible-section';
 import { DocsLink } from '../../common/docs-link';
 import { BlankContentPlaceholder } from '../../common/text-content';
-import { ExchangeCollapsibleSummary, ExchangeCollapsibleBody } from '../exchange-card';
+import {
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
 
 import { CookieHeaderDescription } from './set-cookie-header-description';
 import { UserAgentHeaderDescription } from './user-agent-header-description';
@@ -26,7 +29,7 @@ const HeadersGrid = styled.section`
     }
 `;
 
-const HeaderKeyValue = styled(ExchangeCollapsibleSummary)`
+const HeaderKeyValue = styled(CollapsibleSectionSummary)`
     word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
     font-family: ${p => p.theme.monoFontFamily};
@@ -37,7 +40,7 @@ const HeaderName = styled.span`
     margin-right: 10px;
 `;
 
-const HeaderDescriptionContainer = styled(ExchangeCollapsibleBody)`
+const HeaderDescriptionContainer = styled(CollapsibleSectionBody)`
     line-height: 1.3;
 `;
 

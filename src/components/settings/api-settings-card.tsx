@@ -71,7 +71,7 @@ function updateValidationMessage(element: HTMLInputElement | HTMLButtonElement, 
 @inject('apiStore')
 @observer
 export class ApiSettingsCard extends React.Component<
-    Omit<CollapsibleCardProps, 'children'> & {
+    CollapsibleCardProps & {
         apiStore?: ApiStore
     }
 > {

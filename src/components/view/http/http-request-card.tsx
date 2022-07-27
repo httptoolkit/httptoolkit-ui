@@ -9,15 +9,17 @@ import { TrafficSource } from '../../../model/http/sources';
 import { getSummaryColour } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
 
-import { CollapsibleCardHeading } from '../../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from '../exchange-card';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps
+} from '../../common/card';
 import { Pill } from '../../common/pill';
-import { CollapsibleSection } from '../../common/collapsible-section';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
 import {
     ContentLabel,
     ContentLabelBlock,
@@ -54,15 +56,15 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
 
     return <div>
         <CollapsibleSection>
-            <ExchangeCollapsibleSummary>
+            <CollapsibleSectionSummary>
                 <ContentLabel>Method:</ContentLabel> { p.request.method }
-            </ExchangeCollapsibleSummary>
+            </CollapsibleSectionSummary>
 
             {
                 methodDetails.length ?
-                    <ExchangeCollapsibleBody>
+                    <CollapsibleSectionBody>
                         { methodDetails }
-                    </ExchangeCollapsibleBody>
+                    </CollapsibleSectionBody>
                 : null
             }
         </CollapsibleSection>
@@ -70,18 +72,18 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
         <ContentLabelBlock>URL</ContentLabelBlock>
 
         <CollapsibleSection prefixTrigger={true}>
-            <ExchangeCollapsibleSummary>
+            <CollapsibleSectionSummary>
                 <UrlLabel>{
                     p.request.parsedUrl.parseable
                         ? p.request.parsedUrl.toString()
                         : p.request.url
                 }</UrlLabel>
-            </ExchangeCollapsibleSummary>
+            </CollapsibleSectionSummary>
 
             {
-                <ExchangeCollapsibleBody>
+                <CollapsibleSectionBody>
                     <UrlBreakdown url={p.request.parsedUrl} />
-                </ExchangeCollapsibleBody>
+                </CollapsibleSectionBody>
             }
         </CollapsibleSection>
 
@@ -90,7 +92,7 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
     </div>;
 }
 
-interface HttpRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpRequestCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
 }
 
@@ -98,7 +100,7 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
     const { exchange } = props;
     const { request } = exchange;
 
-    return <ExchangeCard {...props} direction='right'>
+    return <CollapsibleCard {...props} direction='right'>
         <header>
             <SourceIcon source={request.source} />
             <Pill color={getSummaryColour(exchange)}>
@@ -115,5 +117,5 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
         </header>
 
         <RawRequestDetails request={request} />
-    </ExchangeCard>;
+    </CollapsibleCard>;
 });

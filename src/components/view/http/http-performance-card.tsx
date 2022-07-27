@@ -22,19 +22,21 @@ import {
     explainValidCacheTypes
 } from '../../../model/http/caching';
 
-import { CollapsibleCardHeading } from '../../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from '../exchange-card';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps
+} from '../../common/card';
 import { Pill } from '../../common/pill';
-import { CollapsibleSection } from '../../common/collapsible-section';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
 import { ContentLabelBlock, Markdown } from '../../common/text-content';
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 
-interface HttpPerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpPerformanceCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
     accountStore?: AccountStore;
 }
@@ -62,7 +64,7 @@ export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpP
     const { exchange, accountStore } = props;
     const { isPaidUser } = accountStore!;
 
-    return <ExchangeCard {...props}>
+    return <CollapsibleCard {...props}>
         <header>
             { isPaidUser
                 ? ('startTime' in exchange.timingEvents
@@ -89,7 +91,7 @@ export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpP
                 </p>
             </CardSalesPitch>
         }
-    </ExchangeCard>;
+    </CollapsibleCard>;
 }));
 
 function getEncodingName(key: string): string {
@@ -317,14 +319,14 @@ const CachingPerformance = observer((p: { exchange: HttpExchange }) => {
         </ContentLabelBlock>
         { cacheDetails.map((details, i) =>
             <CollapsibleSection prefixTrigger={true} key={i}>
-                <ExchangeCollapsibleSummary>
+                <CollapsibleSectionSummary>
                     { details.summary }{' '}
                     { details.type === 'warning' && <WarningIcon /> }
                     { details.type === 'suggestion' && <SuggestionIcon /> }
-                </ExchangeCollapsibleSummary>
-                <ExchangeCollapsibleBody>
+                </CollapsibleSectionSummary>
+                <CollapsibleSectionBody>
                     <Markdown content={ details.explanation } />
-                </ExchangeCollapsibleBody>
+                </CollapsibleSectionBody>
             </CollapsibleSection>
         ) }
     </>;
