@@ -7,6 +7,41 @@ import { persist, hydrate } from '../util/mobx-persist/persist';
 import { AccountStore } from './account/account-store';
 import { emptyFilterSet, FilterSet } from './filters/search-filters';
 
+const VIEW_CARD_KEYS = [
+    'api',
+
+    'request',
+    'requestBody',
+    'response',
+    'responseBody',
+
+    'webSocketMessages',
+    'webSocketClose',
+
+    'performance',
+    'export'
+] as const;
+type ViewCardKey = typeof VIEW_CARD_KEYS[number];
+
+const EXPANDABLE_CARD_KEYS = [
+    'requestBody',
+    'responseBody',
+    'webSocketMessages'
+] as const;
+type ExpandableCardKey = typeof EXPANDABLE_CARD_KEYS[number];
+
+const isExpandableCard = (key: any): key is ExpandableCardKey =>
+    EXPANDABLE_CARD_KEYS.includes(key);
+
+const SETTINGS_CARD_KEYS =[
+    'account',
+    'proxy',
+    'connection',
+    'api',
+    'themes'
+] as const;
+type SettingsCardKey = typeof SETTINGS_CARD_KEYS[number];
+
 export class UiStore {
 
     constructor(
@@ -74,7 +109,7 @@ export class UiStore {
     // Store the view details cards state here, so that they persist
     // when moving away from the page or deselecting all traffic.
     @observable
-    readonly viewCardStates = {
+    private readonly viewCardStates = {
         'api': { collapsed: true },
 
         'request': { collapsed: false },
@@ -85,24 +120,77 @@ export class UiStore {
         'webSocketMessages': { collapsed: false },
         'webSocketClose': { collapsed: false },
 
+        'rtcLocalSession': { collapsed: false },
+        'rtcRemoteSession': { collapsed: false },
+
         'performance': { collapsed: true },
         'export': { collapsed: true }
     };
 
     @observable
-    expandedCard:
-        | 'requestBody'
-        | 'responseBody'
-        | 'webSocketMessages'
-        | undefined;
+    expandedCard: ExpandableCardKey | undefined;
 
     @observable
-    readonly settingsCardStates = {
+    expandCompleted = true; // Used to trigger animations during expand process
+
+    @computed
+    get viewCardProps() {
+        return _.mapValues(this.viewCardStates, (state, key) => ({
+            key,
+            expanded: key === this.expandedCard,
+            collapsed: state.collapsed && key !== this.expandedCard,
+            onCollapseToggled: this.toggleViewCardCollapsed.bind(this, key as ViewCardKey),
+            onExpandToggled: isExpandableCard(key)
+                ? this.toggleViewCardExpanded.bind(this, key)
+                : _.noop
+        }));
+    }
+
+    @action
+    toggleViewCardCollapsed(key: ViewCardKey) {
+        const cardState = this.viewCardStates[key];
+        cardState.collapsed = !cardState.collapsed;
+        this.expandedCard = undefined;
+    }
+
+    @action
+    private toggleViewCardExpanded(key: ExpandableCardKey) {
+        if (this.expandedCard === key) {
+            this.expandedCard = undefined;
+        } else if (isExpandableCard(key)) {
+            this.viewCardStates[key].collapsed = false;
+            this.expandedCard = key;
+
+            this.expandCompleted = false;
+            requestAnimationFrame(action(() => {
+                this.expandCompleted = true;
+            }));
+        }
+    }
+
+    @observable
+    private settingsCardStates = {
         'account': { collapsed: false },
         'proxy': { collapsed: false },
         'connection': { collapsed: false },
         'api': { collapsed: false },
         'themes': { collapsed: false }
+    };
+
+    @computed
+    get settingsCardProps() {
+        return _.mapValues(this.settingsCardStates, (state, key) => ({
+            key,
+            collapsed: state.collapsed,
+            onCollapseToggled: this.toggleSettingsCardCollapsed.bind(this, key as SettingsCardKey)
+        }));
+    }
+
+    @action
+    toggleSettingsCardCollapsed(key: SettingsCardKey) {
+        const cardState = this.settingsCardStates[key];
+        cardState.collapsed = !cardState.collapsed;
+        this.expandedCard = undefined;
     }
 
     @action.bound

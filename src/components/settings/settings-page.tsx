@@ -103,37 +103,10 @@ const EditorContainer = styled.div`
     flex-grow: 1;
 `;
 
-const cardKeys = [
-    'account',
-    'proxy',
-    'connection',
-    'themes',
-    'api'
-] as const;
-
-type CardKey = typeof cardKeys[number];
-
 @inject('accountStore')
 @inject('uiStore')
 @observer
 class SettingsPage extends React.Component<SettingsPageProps> {
-
-    @computed
-    get cardProps() {
-        return _.fromPairs(cardKeys.map((key) => [key, {
-            key,
-            collapsed: this.props.uiStore!.settingsCardStates[key].collapsed,
-            onCollapseToggled: this.toggleCollapse.bind(this, key)
-        }]));
-    }
-
-    @action.bound
-    private toggleCollapse(key: CardKey) {
-        const { settingsCardStates } = this.props.uiStore!;
-        const cardState = settingsCardStates[key];
-        cardState.collapsed = !cardState.collapsed;
-    }
-
 
     render() {
         const { uiStore } = this.props;
@@ -146,6 +119,8 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             getPro,
             logOut
         } = this.props.accountStore;
+
+        const cardProps = uiStore.settingsCardProps;
 
         if (!isPaidUser && !isPastDueUser) {
             // Can only happen if you log out whilst on this page.
@@ -161,10 +136,10 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             <SettingPageContainer>
                 <SettingsHeading>Settings</SettingsHeading>
 
-                <CollapsibleCard {...this.cardProps.account}>
+                <CollapsibleCard {...cardProps.account}>
                     <header>
                         <CollapsibleCardHeading onCollapseToggled={
-                            this.cardProps.account.onCollapseToggled
+                            cardProps.account.onCollapseToggled
                         }>
                             Account
                         </CollapsibleCardHeading>
@@ -276,20 +251,20 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     {
                         _.isString(serverVersion.value) &&
                         versionSatisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) && <>
-                            <ProxySettingsCard {...this.cardProps.proxy} />
-                            <ConnectionSettingsCard {...this.cardProps.connection} />
+                            <ProxySettingsCard {...cardProps.proxy} />
+                            <ConnectionSettingsCard {...cardProps.connection} />
                         </>
                     }
 
                     {
                         this.props.accountStore!.featureFlags.includes('openapi') &&
-                        <ApiSettingsCard {...this.cardProps.api} />
+                        <ApiSettingsCard {...cardProps.api} />
                     }
 
-                    <CollapsibleCard {...this.cardProps.themes}>
+                    <CollapsibleCard {...cardProps.themes}>
                         <header>
                             <CollapsibleCardHeading onCollapseToggled={
-                                this.cardProps.themes.onCollapseToggled
+                                cardProps.themes.onCollapseToggled
                             }>
                                 Themes
                             </CollapsibleCardHeading>

@@ -58,27 +58,6 @@ const makeFriendlyApiName = (rawName: string) => {
         : cleanedName;
 }
 
-const cardKeys = [
-    'api',
-    'request',
-    'requestBody',
-    'response',
-    'responseBody',
-    'webSocketMessages',
-    'webSocketClose',
-    'performance',
-    'export'
-] as const;
-
-type CardKey = typeof cardKeys[number];
-
-type CardBaseProps = {
-    key: string,
-    expanded: boolean,
-    collapsed: boolean,
-    onCollapseToggled: () => void
-};
-
 @inject('uiStore')
 @inject('accountStore')
 @inject('rulesStore')
@@ -100,18 +79,8 @@ export class HttpDetailsPane extends React.Component<{
     rulesStore?: RulesStore
 }> {
 
-    // Used to trigger animation on initial card expansion
-    @observable private expandCompleted = true;
-
-    @computed
-    get cardProps(): { [name: string]: CardBaseProps } {
-        return _.fromPairs(cardKeys.map((key) => [key, {
-            key,
-            expanded: key === this.props.uiStore!.expandedCard,
-            collapsed: this.props.uiStore!.viewCardStates[key].collapsed &&
-                !this.props.uiStore!.expandedCard,
-            onCollapseToggled: this.toggleCollapse.bind(this, key)
-        }]));
+    get cardProps() {
+        return this.props.uiStore!.viewCardProps;
     }
 
     render() {
@@ -123,10 +92,12 @@ export class HttpDetailsPane extends React.Component<{
             accountStore,
             navigate
         } = this.props;
-        const { isPaidUser } = accountStore!;
-        const { expandedCard } = uiStore!;
-        const { expandCompleted } = this;
 
+        const { isPaidUser } = accountStore!;
+        const {
+            expandedCard,
+            expandCompleted
+        } = uiStore!;
         const { requestBreakpoint, responseBreakpoint } = exchange;
 
         // The full API details - only available for paid usage, so we drop this
@@ -438,9 +409,6 @@ export class HttpDetailsPane extends React.Component<{
             streamId={this.props.exchange.id}
             streamType='WebSocket'
 
-            expanded={this.props.uiStore!.expandedCard === 'webSocketMessages'}
-            onExpandToggled={this.toggleExpand.bind(this, 'webSocketMessages')}
-
             editorNode={this.props.streamMessageEditor}
 
             isPaidUser={this.props.accountStore!.isPaidUser}
@@ -455,9 +423,7 @@ export class HttpDetailsPane extends React.Component<{
             ...this.cardProps.requestBody,
             title: 'Request Body',
             direction: 'right' as const,
-            expanded: this.props.uiStore!.expandedCard === 'requestBody',
-            editorNode: this.props.requestEditor,
-            onExpandToggled: this.toggleExpand.bind(this, 'requestBody'),
+            editorNode: this.props.requestEditor
         };
     }
 
@@ -465,44 +431,10 @@ export class HttpDetailsPane extends React.Component<{
     private responseBodyParams() {
         return {
             ...this.cardProps.responseBody,
-
             title: 'Response Body',
             direction: 'left' as const,
-            expanded: this.props.uiStore!.expandedCard === 'responseBody',
-            editorNode: this.props.responseEditor,
-            onExpandToggled: this.toggleExpand.bind(this, 'responseBody'),
+            editorNode: this.props.responseEditor
         };
-    }
-
-    @action.bound
-    private toggleCollapse(key: string) {
-        const { viewCardStates } = this.props.uiStore!;
-
-        const cardState = viewCardStates[key as CardKey];
-        cardState.collapsed = !cardState.collapsed;
-
-        this.props.uiStore!.expandedCard = undefined;
-    }
-
-    @action.bound
-    private toggleExpand(key: CardKey) {
-        const uiStore = this.props.uiStore!;
-
-        if (uiStore.expandedCard === key) {
-            uiStore.expandedCard = undefined;
-        } else if (
-            key === 'requestBody' ||
-            key === 'responseBody' ||
-            key === 'webSocketMessages'
-        ) {
-            uiStore.viewCardStates[key].collapsed = false;
-            uiStore.expandedCard = key;
-
-            this.expandCompleted = false;
-            requestAnimationFrame(action(() => {
-                this.expandCompleted = true;
-            }));
-        }
     }
 
     @action.bound
