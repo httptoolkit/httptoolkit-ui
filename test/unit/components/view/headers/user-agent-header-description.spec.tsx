@@ -17,7 +17,7 @@ describe('User agent header description', () => {
         expect(
             description.find('p').at(0).text()
         ).to.equal(
-            'This request came from Chrome 60, which uses the ' +
+            'This request came from Chrome 60, based on the ' +
                 'Blink engine. The device is running Windows 10, with ' +
                 'an amd64 CPU.'
         );

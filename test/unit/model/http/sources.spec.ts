@@ -125,7 +125,7 @@ describe('HTTP source parsing', () => {
             const source = parseSource(LINUX_CHROME);
 
             expect(source.description).to.equal(
-                'This request came from Chrome 70, which uses the ' +
+                'This request came from Chrome 70, based on the ' +
                     'Blink engine. The device is running Linux x86_64, with ' +
                     'an amd64 CPU.'
             );
@@ -135,7 +135,7 @@ describe('HTTP source parsing', () => {
             const source = parseSource(WINDOWS_CHROME);
 
             expect(source.description).to.equal(
-                'This request came from Chrome 60, which uses the ' +
+                'This request came from Chrome 60, based on the ' +
                     'Blink engine. The device is running Windows 10, with ' +
                     'an amd64 CPU.'
             );
@@ -145,7 +145,7 @@ describe('HTTP source parsing', () => {
             const source = parseSource(LINUX_FIREFOX);
 
             expect(source.description).to.equal(
-                'This request came from Firefox 64, which uses the ' +
+                'This request came from Firefox 64, based on the ' +
                     'Gecko 64 engine. The device is running Ubuntu, with ' +
                     'an amd64 CPU.'
             );
@@ -155,7 +155,7 @@ describe('HTTP source parsing', () => {
             const source = parseSource(ANDROID_CHROME);
 
             expect(source.description).to.equal(
-                'This request came from Chrome 38, which uses the ' +
+                'This request came from Chrome 38, based on the ' +
                     'WebKit 535.19 engine. The device is a LG Nexus 5 mobile phone, ' +
                     'running Android 4.2.'
             );
@@ -165,7 +165,7 @@ describe('HTTP source parsing', () => {
             const source = parseSource(IPHONE_SAFARI);
 
             expect(source.description).to.equal(
-                'This request came from Mobile Safari 11, which uses the ' +
+                'This request came from Mobile Safari 11, based on the ' +
                     'WebKit 605.1 engine. The device is an Apple iPhone mobile phone, ' +
                     'running iOS 11.4.'
             );
