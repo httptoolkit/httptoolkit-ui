@@ -19,6 +19,8 @@ const VIEW_CARD_KEYS = [
     'webSocketClose',
 
     'rtcConnection',
+    'rtcSessionOffer',
+    'rtcSessionAnswer',
 
     'performance',
     'export'
@@ -123,6 +125,8 @@ export class UiStore {
         'webSocketClose': { collapsed: false },
 
         'rtcConnection': { collapsed: false },
+        'rtcSessionOffer': { collapsed: false },
+        'rtcSessionAnswer': { collapsed: false },
 
         'performance': { collapsed: true },
         'export': { collapsed: true }

@@ -261,6 +261,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if (this.selectedEvent.isRTCConnection()) {
             rightPane = <RTCConnectionDetailsPane
                 connection={this.selectedEvent}
+                offerEditor={this.editors.request.node}
+                answerEditor={this.editors.response.node}
             />
         } else {
             throw new UnreachableCheck(this.selectedEvent);
