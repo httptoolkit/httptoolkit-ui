@@ -104,6 +104,7 @@ const GraphArea = (props: {
 
             tickFormat={d => getReadableSize(d.valueOf())}
             tickClassName='axis-tick'
+            numTicks={6}
         />
 
         <AreaClosed
