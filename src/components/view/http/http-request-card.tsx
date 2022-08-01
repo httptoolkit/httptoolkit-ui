@@ -21,17 +21,13 @@ import {
 import {
     ContentLabel,
     ContentLabelBlock,
-    ContentMonoValue,
+    ContentMonoValueInline,
     Markdown
 } from '../../common/text-content';
 import { DocsLink } from '../../common/docs-link';
 import { SourceIcon } from '../../common/source-icon';
 import { HeaderDetails } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
-
-const UrlLabel = styled(ContentMonoValue)`
-    display: inline;
-`;
 
 const RawRequestDetails = (p: { request: HtkRequest }) => {
     const methodDocs = getMethodDocs(p.request.method);
@@ -64,11 +60,11 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
 
         <CollapsibleSection prefixTrigger={true}>
             <CollapsibleSectionSummary>
-                <UrlLabel>{
+                <ContentMonoValueInline>{
                     p.request.parsedUrl.parseable
                         ? p.request.parsedUrl.toString()
                         : p.request.url
-                }</UrlLabel>
+                }</ContentMonoValueInline>
             </CollapsibleSectionSummary>
 
             {

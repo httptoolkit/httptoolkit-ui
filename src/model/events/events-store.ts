@@ -465,7 +465,9 @@ export class EventsStore {
     private addRTCDataChannel(event: InputRTCDataChannelOpened) {
         const conn = this.rtcConnections.find(c => c.id === event.sessionId);
         if (conn) {
-            this.events.push(new RTCDataChannel(event, conn));
+            const dc = new RTCDataChannel(event, conn);
+            this.events.push(dc);
+            conn.addStream(dc);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'data-channel-opened', event };
         }
@@ -495,7 +497,9 @@ export class EventsStore {
     private addRTCMediaTrack(event: InputRTCMediaTrackOpened) {
         const conn = this.rtcConnections.find(c => c.id === event.sessionId);
         if (conn) {
-            this.events.push(new RTCMediaTrack(event, conn));
+            const track = new RTCMediaTrack(event, conn);
+            this.events.push(track);
+            conn.addStream(track);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'media-track-opened', event };
         }

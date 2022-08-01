@@ -3,7 +3,7 @@ import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { Omit, BreakpointRequestResult, HttpExchange, Headers } from '../../../types';
+import { BreakpointRequestResult, HttpExchange, Headers } from '../../../types';
 import { styled } from '../../../styles';
 
 import { getSummaryColour } from '../../../model/events/categorization';

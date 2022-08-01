@@ -19,11 +19,6 @@ import {
     StreamMessageEditorRow
 } from './stream-message-rows';
 
-export const StreamMessageListCardCard = styled(CollapsibleCard)`
-    display: flex;
-    flex-direction: column;
-`;
-
 function getFilename(
     filenamePrefix: string,
     someBinary: boolean,
@@ -74,7 +69,7 @@ export class StreamMessageListCard extends React.Component<{
             onExpandToggled
         } = this.props;
 
-        return <StreamMessageListCardCard
+        return <CollapsibleCard
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled ?? _.noop}
             expanded={expanded}
@@ -126,7 +121,7 @@ export class StreamMessageListCard extends React.Component<{
                     )
                 }
             </StreamMessagesList>
-        </StreamMessageListCardCard>;
+        </CollapsibleCard>;
     }
 
     @action.bound

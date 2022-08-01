@@ -14,13 +14,13 @@ import {
 } from '../../../model/events/content-types';
 import { getReadableSize } from '../../../model/events/bodies';
 
-import { CollapsibleCardHeading } from '../../common/card';
+import { CollapsibleCard, CollapsibleCardHeading } from '../../common/card';
 import { CollapsingButtons } from '../../common/collapsing-buttons';
 import { Pill, PillSelector } from '../../common/pill';
 import { ExpandShrinkButton } from '../../common/expand-shrink-button';
 import { FormatButton } from '../../common/format-button';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
-import { HttpBodyCardCard, EditorCardContent } from './http-body-card';
+import { EditorCardContent } from './http-body-card';
 
 @observer
 export class HttpBreakpointBodyCard extends React.Component<{
@@ -77,7 +77,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
 
         const bodyString = body.toString(this.textEncoding);
 
-        return <HttpBodyCardCard
+        return <CollapsibleCard
             direction={direction}
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled}
@@ -117,7 +117,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
                     expanded={expanded}
                 />
             </EditorCardContent>
-        </HttpBodyCardCard>;
+        </CollapsibleCard>;
     }
 
     private onBodyChange = (body: string) => {

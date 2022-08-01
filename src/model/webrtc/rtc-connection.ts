@@ -8,6 +8,9 @@ import {
 import { HTKEventBase } from "../events/event-base";
 import { parseSource } from "../http/sources";
 
+import { RTCMediaTrack } from './rtc-media-track';
+import { RTCDataChannel } from './rtc-data-channel';
+
 const candidateToUrl = (candidate: SelectedRTCCandidate) =>
     `${candidate.protocol}://${candidate.address}:${candidate.port}`;
 
@@ -45,19 +48,6 @@ export class RTCConnection extends HTKEventBase {
     @computed
     get clientURL() {
         return candidateToUrl(this.connectionEvent.selectedRemoteCandidate);
-    }
-
-    @computed
-    get remoteURL() {
-        if (!this.attachedConnection) return undefined;
-
-        const { externalConnection, otherHalf } = this.attachedConnection;
-
-        if (otherHalf) {
-            return otherHalf.clientURL;
-        } else {
-            return candidateToUrl(externalConnection.selectedRemoteCandidate);
-        }
     }
 
     @observable
@@ -98,6 +88,31 @@ export class RTCConnection extends HTKEventBase {
     @action
     connectOtherHalf(otherHalf: RTCConnection) {
         this.attachedConnection!.otherHalf = otherHalf;
+    }
+
+    @computed
+    get remoteCandidate() {
+        if (!this.attachedConnection) return this.connectionEvent.selectedLocalCandidate;
+
+        const { externalConnection, otherHalf } = this.attachedConnection;
+
+        if (otherHalf) {
+            return otherHalf.connectionEvent.selectedRemoteCandidate;
+        } else {
+            return externalConnection.selectedRemoteCandidate;
+        }
+    }
+
+    @computed
+    get remoteURL() {
+        return candidateToUrl(this.remoteCandidate);
+    }
+
+    readonly streams: Array<RTCMediaTrack | RTCDataChannel> = [];
+
+    @action
+    addStream(stream: RTCMediaTrack | RTCDataChannel) {
+        this.streams.push(stream);
     }
 
     @observable

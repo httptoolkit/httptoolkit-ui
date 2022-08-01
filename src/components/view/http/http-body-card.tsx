@@ -46,11 +46,6 @@ export const EditorCardContent = styled.div`
     min-height: 0;
 `;
 
-export const HttpBodyCardCard = styled(CollapsibleCard)`
-    display: flex;
-    flex-direction: column;
-`;
-
 function getFilename(url: string, message: HtkResponse | HtkRequest): string | undefined {
     const contentDisposition = lastHeader(message.headers['content-disposition']) || "";
     const filenameMatch = / filename="([^"]+)"/.exec(contentDisposition);
@@ -128,7 +123,7 @@ export class HttpBodyCard extends React.Component<{
         const decodedBody = message.body.decoded;
 
         return decodedBody ?
-            <HttpBodyCardCard
+            <CollapsibleCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -180,7 +175,7 @@ export class HttpBodyCard extends React.Component<{
                         {decodedBody}
                     </ContentViewer>
                 </EditorCardContent>
-            </HttpBodyCardCard>
+            </CollapsibleCard>
         :
             <LoadingCard
                 direction={direction}

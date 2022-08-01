@@ -17,6 +17,7 @@ import { WithInjected, CollectedEvent } from '../../types';
 import { styled } from '../../styles';
 import { useHotkeys, isEditable } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
+import { UnreachableCheck } from '../../util/error';
 
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
@@ -26,6 +27,7 @@ import { FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
+import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
 
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
@@ -33,7 +35,7 @@ import { HttpDetailsPane } from './http/http-details-pane';
 import { TlsFailureDetailsPane } from './tls-failure-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
-import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
+import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
 
 interface ViewPageProps {
     className?: string;
@@ -256,9 +258,12 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <RTCMediaDetailsPane
                 mediaTrack={this.selectedEvent}
             />
+        } else if (this.selectedEvent.isRTCConnection()) {
+            rightPane = <RTCConnectionDetailsPane
+                connection={this.selectedEvent}
+            />
         } else {
-            // TODO: View WebRTC
-            throw new Error('Viewing WebRTC data is not yet supported');
+            throw new UnreachableCheck(this.selectedEvent);
         }
 
         return <div className={this.props.className}>

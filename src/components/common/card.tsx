@@ -213,6 +213,9 @@ const CollapsibleCardContainer = styled(MediumCard)<{
     expanded: boolean;
     direction?: 'left' | 'right';
 }>`
+    display: flex;
+    flex-direction: column;
+
     transition: margin-bottom 0.1s;
 
     ${p => p.collapsed && css`
