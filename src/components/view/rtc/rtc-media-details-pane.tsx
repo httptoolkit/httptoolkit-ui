@@ -2,22 +2,10 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled } from '../../../styles';
-
 import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
+
+import { ExpandedPaneContentContainer } from '../view-details-pane';
 import { RTCMediaCard } from './rtc-media-card';
-
-const ExpandedContentContainer = styled.div`
-    padding: 0;
-    transition: padding 0.1s;
-
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-`;
 
 @observer
 export class RTCMediaDetailsPane extends React.Component<{
@@ -29,7 +17,7 @@ export class RTCMediaDetailsPane extends React.Component<{
             mediaTrack
         } = this.props;
 
-        return <ExpandedContentContainer>
+        return <ExpandedPaneContentContainer>
             <RTCMediaCard
                 collapsed={false}
                 expanded={true}
@@ -41,7 +29,7 @@ export class RTCMediaDetailsPane extends React.Component<{
 
                 mediaTrack={mediaTrack}
             />
-        </ExpandedContentContainer>;
+        </ExpandedPaneContentContainer>;
 
     }
 

@@ -26,30 +26,26 @@ export type RTCMediaCardProps = Omit<CollapsibleCardProps, 'children'> & {
 };
 
 export const RTCMediaCard = observer((props: RTCMediaCardProps) => {
-    const { mediaTrack } = props;
-    return <RTCMediaCardCard {...props}>
+    const { mediaTrack, ...cardProps } = props;
+
+    return <CollapsibleCard {...cardProps}>
         <header>
             <Pill color={SentDataColour}>
-                { getReadableSize(props.mediaTrack.totalBytesSent) } sent
+                { getReadableSize(mediaTrack.totalBytesSent) } sent
             </Pill>
             <Pill color={ReceivedDataColour}>
-                { getReadableSize(props.mediaTrack.totalBytesReceived) } received
+                { getReadableSize(mediaTrack.totalBytesReceived) } received
             </Pill>
-            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
-                RTC Media
+            <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
+                RTC { mediaTrack.type }
             </CollapsibleCardHeading>
         </header>
 
         <StatsGraphWrapper>
             <RTCMediaStats mediaTrack={mediaTrack} />
         </StatsGraphWrapper>
-    </RTCMediaCardCard>;
+    </CollapsibleCard>;
 });
-
-const RTCMediaCardCard = styled(CollapsibleCard)`
-    display: flex;
-    flex-direction: column;
-`;
 
 const StatsGraphWrapper = styled.div`
     margin: 0 -20px -20px -20px;
@@ -60,6 +56,15 @@ const StatsGraphWrapper = styled.div`
     flex-grow: 1;
 
     min-height: 400px;
+
+    /* Fix the ParentSize measuring div to match our size exactly. */
+    > div {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
 `;
 
 @observer

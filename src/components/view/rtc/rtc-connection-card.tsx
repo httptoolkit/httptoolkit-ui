@@ -74,7 +74,7 @@ export class RTCConnectionCard extends React.Component<RTCConnectionCardProps> {
                 }
 
                 { this.hasAudio &&
-                    <Pill color={getSummaryColour('rtc-media')}>Audio</Pill>
+                    <Pill color={getSummaryColour('css')}>Audio</Pill>
                 }
 
                 <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>

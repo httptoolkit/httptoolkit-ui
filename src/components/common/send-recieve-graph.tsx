@@ -68,14 +68,6 @@ export const SendReceiveGraph = ({
         width={width}
         height={height}
     >
-        <rect
-            x={0}
-            y={0}
-            width={width}
-            height={height}
-            fill="#fafafa"
-        />
-
         <Group left={axisMargin}>
             <GraphArea
                 label='Received'

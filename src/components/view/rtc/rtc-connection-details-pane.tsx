@@ -7,6 +7,7 @@ import { UiStore } from '../../../model/ui-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
 import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
+import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
 
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
@@ -14,6 +15,7 @@ import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
 import { RTCConnectionCard } from './rtc-connection-card';
 import { SDPCard } from './sdp-card';
 import { RTCDataChannelCard } from './rtc-data-channel-card';
+import { RTCMediaCard } from './rtc-media-card';
 
 @inject('uiStore')
 @inject('accountStore')
@@ -29,6 +31,12 @@ export class RTCConnectionDetailsPane extends React.Component<{
     uiStore?: UiStore,
     accountStore?: AccountStore
 }> {
+
+    @computed.struct
+    get mediaTracks() {
+        const { streams } = this.props.connection;
+        return streams.filter((s): s is RTCMediaTrack => s.isRTCMediaTrack());
+    }
 
     @computed.struct
     get dataChannels() {
@@ -109,6 +117,23 @@ export class RTCConnectionDetailsPane extends React.Component<{
                     sessionDescription={answerDescription}
                     editorNode={answerEditor}
                 />
+
+                {
+                    this.mediaTracks.map((mediaTrack) =>
+                        <RTCMediaCard
+                            // Link the key to the track, to ensure selected-message state gets
+                            // reset when we switch between traffic:
+                            key={mediaTrack.id}
+
+                            mediaTrack={mediaTrack}
+
+                            expanded={false}
+                            collapsed={!!this.streamCardState[mediaTrack.id]?.collapsed}
+                            onCollapseToggled={this.toggleCollapse.bind(this, mediaTrack.id)}
+                            onExpandToggled={this.expandStream.bind(this, mediaTrack.id)}
+                        />
+                    )
+                }
 
                 {
                     this.dataChannels.map((dataChannel, i) =>
