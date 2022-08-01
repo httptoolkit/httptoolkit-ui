@@ -27,7 +27,7 @@ import { FilterSet } from '../../model/filters/search-filters';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
-import { ThemedSelfSizedEditor, SelfSizedBaseEditor } from '../editor/base-editor';
+import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
@@ -107,14 +107,10 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private readonly editors = EDITOR_KEYS.reduce((v, key) => ({
         ...v,
-        [key]: {
-            node: portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>(),
-            ref: React.createRef<SelfSizedBaseEditor>()
-        }
-    }), {} as { [K in EditorKey]: {
-        node: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
-        ref: React.RefObject<SelfSizedBaseEditor>
-    } });
+        [key]: portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>()
+    }), {} as {
+        [K in EditorKey]: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
+    });
 
     searchInputRef = React.createRef<HTMLInputElement>();
 
@@ -236,9 +232,9 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <HttpDetailsPane
                 exchange={this.selectedEvent}
 
-                requestEditor={this.editors.request.node}
-                responseEditor={this.editors.response.node}
-                streamMessageEditor={this.editors.streamMessage.node}
+                requestEditor={this.editors.request}
+                responseEditor={this.editors.response}
+                streamMessageEditor={this.editors.streamMessage}
 
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
@@ -252,7 +248,7 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if (this.selectedEvent.isRTCDataChannel()) {
             rightPane = <RTCDataChannelDetailsPane
                 dataChannel={this.selectedEvent}
-                streamMessageEditor={this.editors.streamMessage.node}
+                streamMessageEditor={this.editors.streamMessage}
             />
         } else if (this.selectedEvent.isRTCMediaTrack()) {
             rightPane = <RTCMediaDetailsPane
@@ -261,8 +257,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else if (this.selectedEvent.isRTCConnection()) {
             rightPane = <RTCConnectionDetailsPane
                 connection={this.selectedEvent}
-                offerEditor={this.editors.request.node}
-                answerEditor={this.editors.response.node}
+                offerEditor={this.editors.request}
+                answerEditor={this.editors.response}
             />
         } else {
             throw new UnreachableCheck(this.selectedEvent);
@@ -309,11 +305,10 @@ class ViewPage extends React.Component<ViewPageProps> {
                 { rightPane }
             </SplitPane>
 
-            {Object.values(this.editors).map(({ node, ref }, i) =>
+            {Object.values(this.editors).map((node, i) =>
                 <portals.InPortal key={i} node={node}>
                     <ThemedSelfSizedEditor
                         contentId={null}
-                        ref={ref}
                     />
                 </portals.InPortal>
             )}
