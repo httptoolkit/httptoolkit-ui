@@ -249,10 +249,12 @@ class ViewPage extends React.Component<ViewPageProps> {
             rightPane = <RTCDataChannelDetailsPane
                 dataChannel={this.selectedEvent}
                 streamMessageEditor={this.editors.streamMessage}
+                navigate={this.props.navigate}
             />
         } else if (this.selectedEvent.isRTCMediaTrack()) {
             rightPane = <RTCMediaDetailsPane
                 mediaTrack={this.selectedEvent}
+                navigate={this.props.navigate}
             />
         } else if (this.selectedEvent.isRTCConnection()) {
             rightPane = <RTCConnectionDetailsPane

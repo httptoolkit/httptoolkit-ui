@@ -10,6 +10,7 @@ import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 import { ExpandedPaneContentContainer } from '../view-details-pane';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 import { RTCDataChannelCard } from './rtc-data-channel-card';
+import { RTCConnectionHeader } from './rtc-connection-header';
 
 @inject('accountStore')
 @observer
@@ -17,10 +18,24 @@ export class RTCDataChannelDetailsPane extends React.Component<{
     dataChannel: RTCDataChannel,
 
     streamMessageEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
+    navigate: (path: string) => void,
 
     // Injected:
     accountStore?: AccountStore
 }> {
+
+    @observable
+    private isConnectionHidden = false;
+
+    @action.bound
+    hideConnection() {
+        this.isConnectionHidden = true;
+    }
+
+    jumpToConnection = () => {
+        const { rtcConnection } = this.props.dataChannel;
+        this.props.navigate(`/view/${rtcConnection.id}`);
+    }
 
     render() {
         const {
@@ -30,6 +45,13 @@ export class RTCDataChannelDetailsPane extends React.Component<{
         } = this.props;
 
         return <ExpandedPaneContentContainer>
+            { !this.isConnectionHidden &&
+                <RTCConnectionHeader
+                    connection={dataChannel.rtcConnection}
+                    hideConnection={this.hideConnection}
+                    jumpToConnection={this.jumpToConnection}
+                />
+            }
             <RTCDataChannelCard
                 dataChannel={dataChannel}
                 isPaidUser={accountStore!.isPaidUser}
@@ -37,6 +59,8 @@ export class RTCDataChannelDetailsPane extends React.Component<{
 
                 collapsed={false}
                 expanded={true}
+                onExpandToggled={this.jumpToConnection}
+                onCollapseToggled={undefined} // Hide the collapse button
             />
         </ExpandedPaneContentContainer>;
 

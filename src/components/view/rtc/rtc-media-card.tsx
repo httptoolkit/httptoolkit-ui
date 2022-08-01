@@ -11,8 +11,7 @@ import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
 
 import {
     CollapsibleCard,
-    CollapsibleCardHeading,
-    CollapsibleCardProps
+    CollapsibleCardHeading
 } from '../../common/card';
 import { Pill } from '../../common/pill';
 import {
@@ -20,9 +19,16 @@ import {
     SentDataColour,
     ReceivedDataColour
 } from '../../common/send-recieve-graph';
+import { CollapsingButtons } from '../../common/collapsing-buttons';
+import { ExpandShrinkButton } from '../../common/expand-shrink-button';
 
-export type RTCMediaCardProps = Omit<CollapsibleCardProps, 'children'> & {
-    mediaTrack: RTCMediaTrack
+export type RTCMediaCardProps = {
+    mediaTrack: RTCMediaTrack,
+
+    collapsed: boolean,
+    expanded: boolean,
+    onExpandToggled: () => void,
+    onCollapseToggled?: () => void
 };
 
 export const RTCMediaCard = observer((props: RTCMediaCardProps) => {
@@ -30,6 +36,13 @@ export const RTCMediaCard = observer((props: RTCMediaCardProps) => {
 
     return <CollapsibleCard {...cardProps}>
         <header>
+            <CollapsingButtons>
+                <ExpandShrinkButton
+                    expanded={cardProps.expanded}
+                    onClick={cardProps.onExpandToggled}
+                />
+            </CollapsingButtons>
+
             <Pill color={SentDataColour}>
                 { getReadableSize(mediaTrack.totalBytesSent) } sent
             </Pill>
