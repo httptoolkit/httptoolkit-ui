@@ -5,9 +5,7 @@ import { Method } from 'mockttp';
 
 import { Omit, BreakpointRequestResult, HttpExchange, Headers } from '../../../types';
 import { styled } from '../../../styles';
-import { SourceIcons, Icon } from '../../../icons';
 
-import { TrafficSource } from '../../../model/http/sources';
 import { getSummaryColour } from '../../../model/events/categorization';
 
 import {
@@ -19,14 +17,7 @@ import { Pill } from '../../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
 import { EditableHeaders } from '../../common/editable-headers';
 import { TextInput, Select } from '../../common/inputs';
-
-const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
-    source.icon !== SourceIcons.Unknown ?
-        <Icon
-            className={className}
-            title={source.summary}
-            {...source.icon}
-        /> : null;
+import { SourceIcon } from '../../common/source-icon';
 
 interface RequestBreakpointCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;

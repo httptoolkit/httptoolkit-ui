@@ -1,11 +1,9 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, HttpExchange, HtkRequest } from '../../../types';
+import { HttpExchange, HtkRequest } from '../../../types';
 import { styled } from '../../../styles';
-import { SourceIcons, Icon } from '../../../icons';
 
-import { TrafficSource } from '../../../model/http/sources';
 import { getSummaryColour } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
 
@@ -27,16 +25,9 @@ import {
     Markdown
 } from '../../common/text-content';
 import { DocsLink } from '../../common/docs-link';
+import { SourceIcon } from '../../common/source-icon';
 import { HeaderDetails } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
-
-const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
-    source.icon !== SourceIcons.Unknown ?
-        <Icon
-            className={className}
-            title={source.summary}
-            {...source.icon}
-        /> : null;
 
 const UrlLabel = styled(ContentMonoValue)`
     display: inline;
