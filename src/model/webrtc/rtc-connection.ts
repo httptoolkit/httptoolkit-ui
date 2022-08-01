@@ -3,13 +3,11 @@ import { SelectedRTCCandidate } from "mockrtc";
 import {
     InputRTCPeerConnected,
     InputRTCExternalPeerAttached,
-    InputRTCPeerDisconnected
+    InputRTCPeerDisconnected,
+    RTCStream
 } from "../../types";
 import { HTKEventBase } from "../events/event-base";
 import { parseSource } from "../http/sources";
-
-import { RTCMediaTrack } from './rtc-media-track';
-import { RTCDataChannel } from './rtc-data-channel';
 
 const candidateToUrl = (candidate: SelectedRTCCandidate) =>
     `${candidate.protocol}://${candidate.address}:${candidate.port}`;
@@ -110,10 +108,10 @@ export class RTCConnection extends HTKEventBase {
         return candidateToUrl(this.remoteCandidate);
     }
 
-    readonly streams: Array<RTCMediaTrack | RTCDataChannel> = [];
+    readonly streams: Array<RTCStream> = [];
 
     @action
-    addStream(stream: RTCMediaTrack | RTCDataChannel) {
+    addStream(stream: RTCStream) {
         this.streams.push(stream);
     }
 

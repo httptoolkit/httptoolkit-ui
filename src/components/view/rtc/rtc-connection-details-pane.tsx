@@ -1,16 +1,22 @@
 import * as React from 'react';
+import { action, computed, observable } from 'mobx';
 import { inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { UiStore } from '../../../model/ui-store';
+import { AccountStore } from '../../../model/account/account-store';
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 
+import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
+
 import { RTCConnectionCard } from './rtc-connection-card';
 import { SDPCard } from './sdp-card';
+import { RTCDataChannelCard } from './rtc-data-channel-card';
 
 @inject('uiStore')
+@inject('accountStore')
 @observer
 export class RTCConnectionDetailsPane extends React.Component<{
     connection: RTCConnection,
@@ -18,15 +24,46 @@ export class RTCConnectionDetailsPane extends React.Component<{
     offerEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
     answerEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
 
-    uiStore?: UiStore
+    navigate: (path: string) => void,
+
+    uiStore?: UiStore,
+    accountStore?: AccountStore
 }> {
+
+    @computed.struct
+    get dataChannels() {
+        const { streams } = this.props.connection;
+        return streams.filter((s): s is RTCDataChannel => s.isRTCDataChannel());
+    }
+
+    // Create a editor portal node for every data channel.
+    private readonly dataChannelEditors = this.dataChannels.map(() =>
+        portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>()
+    );
+
+    @observable
+    private streamCardState: {
+        [streamId: string]: { collapsed: boolean } | undefined
+    } = {};
+
+    @action.bound
+    toggleCollapse(streamId: string) {
+        this.streamCardState[streamId] = {
+            collapsed: !this.streamCardState[streamId]?.collapsed ?? true
+        };
+    }
+
+    expandStream(streamId: string) {
+        this.props.navigate(`/view/${streamId}`);
+    }
 
     render() {
         const {
             connection,
             uiStore,
             offerEditor,
-            answerEditor
+            answerEditor,
+            accountStore
         } = this.props;
         const {
             localSessionDescription,
@@ -72,6 +109,30 @@ export class RTCConnectionDetailsPane extends React.Component<{
                     sessionDescription={answerDescription}
                     editorNode={answerEditor}
                 />
+
+                {
+                    this.dataChannels.map((dataChannel, i) =>
+                        <RTCDataChannelCard
+                            key={dataChannel.id}
+                            dataChannel={dataChannel}
+                            isPaidUser={accountStore!.isPaidUser}
+                            streamMessageEditor={this.dataChannelEditors[i]}
+
+                            expanded={false}
+                            collapsed={!!this.streamCardState[dataChannel.id]?.collapsed}
+                            onCollapseToggled={this.toggleCollapse.bind(this, dataChannel.id)}
+                            onExpandToggled={this.expandStream.bind(this, dataChannel.id)}
+                        />
+                    )
+                }
+
+                { this.dataChannelEditors.map((node, i) =>
+                    <portals.InPortal key={i} node={node}>
+                        <ThemedSelfSizedEditor
+                            contentId={null}
+                        />
+                    </portals.InPortal>
+                )}
             </PaneScrollContainer>
         </PaneOuterContainer>;
     }

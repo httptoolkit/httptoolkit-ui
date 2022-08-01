@@ -11,8 +11,7 @@ import { ArrowIcon, Icon, WarningIcon } from '../../icons';
 import {
     CollectedEvent,
     HttpExchange,
-    RTCDataChannel,
-    RTCMediaTrack,
+    RTCStream,
     FailedTLSConnection,
     RTCConnection
 } from '../../types';
@@ -469,7 +468,7 @@ const RTCStreamRow = observer(({
     index: number,
     isSelected: boolean,
     style: {},
-    event: RTCDataChannel | RTCMediaTrack
+    event: RTCStream
 }) => {
     const { category, pinned } = event;
 
@@ -508,7 +507,9 @@ const RTCStreamRow = observer(({
                     ? <>
                         { event.label } <em>
                             ({event.protocol ? `${event.protocol} - ` : ''}
-                            { event.messages.length } messages)
+                            { event.messages.length } message{
+                                event.messages.length !== 1 ? 's' : ''
+                            })
                         </em>
                     </>
                 // Media track:

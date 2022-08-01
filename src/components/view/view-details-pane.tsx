@@ -42,7 +42,7 @@ export const PaneScrollContainer = (p: { children: React.ReactNode }) =>
     </PaneScrollOuterContainer>;
 
 export const ExpandedPaneContentContainer = styled.div`
-    ${(p: { expandCompleted: boolean }) => !p.expandCompleted
+    ${(p: { expandCompleted?: boolean }) => p.expandCompleted === false
         ? `padding: 20px;`
         : `
             padding: 0;

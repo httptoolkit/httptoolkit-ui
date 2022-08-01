@@ -259,6 +259,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 connection={this.selectedEvent}
                 offerEditor={this.editors.request}
                 answerEditor={this.editors.response}
+                navigate={this.props.navigate}
             />
         } else {
             throw new UnreachableCheck(this.selectedEvent);

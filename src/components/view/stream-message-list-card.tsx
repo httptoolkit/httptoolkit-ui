@@ -91,7 +91,11 @@ export class StreamMessageListCard extends React.Component<{
                         onClick={this.exportMessages}
                     />
                 </CollapsingButtons>
-                <Pill>{ messages.length } messages</Pill>
+                <Pill>
+                    { messages.length } message{
+                        messages.length !== 1 ? 's' : ''
+                    }
+                </Pill>
                 <CollapsibleCardHeading
                     onCollapseToggled={onCollapseToggled?? _.noop}
                 >

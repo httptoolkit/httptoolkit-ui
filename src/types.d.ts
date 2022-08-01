@@ -144,7 +144,9 @@ export type CollectedEvent =
     | RTCConnection
     | RTCDataChannel
     | RTCMediaTrack;
+
 export type ExchangeMessage = HtkRequest | HtkResponse;
+export type RTCStream = RTCDataChannel | RTCMediaTrack;
 
 export {
     Headers,
