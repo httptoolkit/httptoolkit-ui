@@ -54,15 +54,32 @@ function startServer(
         console.log('Server initialization failed', e);
 
         if (e.response) {
-            // Server is listening, but failed to start as requested. Almost certainly
-            // means our HTTP port config is bad - retry immediately without it.
-            return startServer(adminClient, {
-                ...config,
-                http: {
-                    ...config.http,
-                    port: undefined
+            // Server is listening, but failed to start as requested.
+            // This generally means that some of our config is bad.
+
+            if (e.message?.includes('unrecognized plugin: webrtc')) {
+                // We have webrtc enabled, but the server is old and doesn't support it.
+                // Skip that entirely then:
+                config = {
+                    ...config,
+                    webrtc: undefined
+                };
+            } else {
+                // Some other error - probably means that the HTTP port is in use.
+                // Drop the port config and try again:
+                config = {
+                    ...config,
+                    http: {
+                        ...config.http,
+                        port: undefined
+                    }
                 }
-            }, maxDelay, delayMs);
+            }
+
+            // Retry with our updated config after the tiniest possible delay:
+            return delay(100).then(() =>
+                startServer(adminClient, config, maxDelay, delayMs)
+            );
         }
 
         // For anything else (unknown errors, or more likely server not listening yet),
