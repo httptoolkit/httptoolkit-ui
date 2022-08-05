@@ -6,7 +6,10 @@ import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 import { saveFile } from '../../util/ui';
+
 import { StreamMessage } from '../../model/events/stream-message';
+import { getSummaryColour } from '../../model/events/categorization';
+
 import { Pill } from '../common/pill';
 import { IconButton } from '../common/icon-button';
 import { CollapsingButtons } from '../common/collapsing-buttons';
@@ -44,6 +47,7 @@ export class StreamMessageListCard extends React.Component<{
     filenamePrefix: string,
     streamId: string,
     streamType: StreamType,
+    streamLabel?: string,
     messages: Array<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
@@ -58,8 +62,9 @@ export class StreamMessageListCard extends React.Component<{
 
     render() {
         const {
-            streamType,
             streamId,
+            streamType,
+            streamLabel,
             messages,
             isPaidUser,
             editorNode,
@@ -91,6 +96,12 @@ export class StreamMessageListCard extends React.Component<{
                         onClick={this.exportMessages}
                     />
                 </CollapsingButtons>
+                { streamLabel && <Pill
+                    color={getSummaryColour('data')}
+                    title={streamLabel}
+                >
+                    { streamLabel }
+                </Pill> }
                 <Pill>
                     { messages.length } message{
                         messages.length !== 1 ? 's' : ''

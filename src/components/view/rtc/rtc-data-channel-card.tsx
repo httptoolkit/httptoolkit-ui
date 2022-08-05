@@ -29,6 +29,7 @@ export const RTCDataChannelCard = observer(({
     key={dataChannel.id}
     streamId={dataChannel.id}
     streamType='DataChannel'
+    streamLabel={dataChannel.label}
 
     editorNode={streamMessageEditor}
 
