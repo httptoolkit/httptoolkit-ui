@@ -108,11 +108,16 @@ export class RTCConnection extends HTKEventBase {
         return candidateToUrl(this.remoteCandidate);
     }
 
-    readonly streams: Array<RTCStream> = [];
+    readonly streams = observable.array<RTCStream>([], { deep: false });
 
     @action
     addStream(stream: RTCStream) {
         this.streams.push(stream);
+    }
+
+    @action
+    removeStream(stream: RTCStream) {
+        this.streams.remove(stream);
     }
 
     @observable

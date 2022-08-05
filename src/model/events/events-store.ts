@@ -528,6 +528,14 @@ export class EventsStore {
     @action.bound
     deleteEvent(event: CollectedEvent) {
         this.events.remove(event);
+
+        if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
+            event.rtcConnection.removeStream(event);
+        } else if (event.isRTCConnection()) {
+            const streams = [...event.streams];
+            streams.forEach((stream) => this.deleteEvent(stream));
+        }
+
         if ('cleanup' in event) event.cleanup();
     }
 
