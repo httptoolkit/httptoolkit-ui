@@ -1,44 +1,33 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, HttpExchange, HtkRequest } from '../../types';
-import { styled } from '../../styles';
-import { SourceIcons, Icon } from '../../icons';
+import { HttpExchange, HtkRequest } from '../../../types';
+import { styled } from '../../../styles';
 
-import { TrafficSource } from '../../model/http/sources';
-import { getSummaryColour } from '../../model/events/categorization';
-import { getMethodDocs } from '../../model/http/http-docs';
+import { getSummaryColour } from '../../../model/events/categorization';
+import { getMethodDocs } from '../../../model/http/http-docs';
 
-import { CollapsibleCardHeading } from '../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { CollapsibleSection } from '../common/collapsible-section';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps
+} from '../../common/card';
+import { Pill } from '../../common/pill';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
 import {
     ContentLabel,
     ContentLabelBlock,
-    ContentMonoValue,
+    ContentMonoValueInline,
     Markdown
-} from '../common/text-content';
-import { DocsLink } from '../common/docs-link';
-import { HeaderDetails } from './headers/header-details';
-import { UrlBreakdown } from './url-breakdown';
-
-const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
-    source.icon !== SourceIcons.Unknown ?
-        <Icon
-            className={className}
-            title={source.summary}
-            {...source.icon}
-        /> : null;
-
-const UrlLabel = styled(ContentMonoValue)`
-    display: inline;
-`;
+} from '../../common/text-content';
+import { DocsLink } from '../../common/docs-link';
+import { SourceIcon } from '../../common/source-icon';
+import { HeaderDetails } from './header-details';
+import { UrlBreakdown } from '../url-breakdown';
 
 const RawRequestDetails = (p: { request: HtkRequest }) => {
     const methodDocs = getMethodDocs(p.request.method);
@@ -54,15 +43,15 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
 
     return <div>
         <CollapsibleSection>
-            <ExchangeCollapsibleSummary>
+            <CollapsibleSectionSummary>
                 <ContentLabel>Method:</ContentLabel> { p.request.method }
-            </ExchangeCollapsibleSummary>
+            </CollapsibleSectionSummary>
 
             {
                 methodDetails.length ?
-                    <ExchangeCollapsibleBody>
+                    <CollapsibleSectionBody>
                         { methodDetails }
-                    </ExchangeCollapsibleBody>
+                    </CollapsibleSectionBody>
                 : null
             }
         </CollapsibleSection>
@@ -70,18 +59,18 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
         <ContentLabelBlock>URL</ContentLabelBlock>
 
         <CollapsibleSection prefixTrigger={true}>
-            <ExchangeCollapsibleSummary>
-                <UrlLabel>{
+            <CollapsibleSectionSummary>
+                <ContentMonoValueInline>{
                     p.request.parsedUrl.parseable
                         ? p.request.parsedUrl.toString()
                         : p.request.url
-                }</UrlLabel>
-            </ExchangeCollapsibleSummary>
+                }</ContentMonoValueInline>
+            </CollapsibleSectionSummary>
 
             {
-                <ExchangeCollapsibleBody>
+                <CollapsibleSectionBody>
                     <UrlBreakdown url={p.request.parsedUrl} />
-                </ExchangeCollapsibleBody>
+                </CollapsibleSectionBody>
             }
         </CollapsibleSection>
 
@@ -90,30 +79,15 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
     </div>;
 }
 
-const WarningIcon = styled(Icon).attrs(() => ({
-    icon: ['fas', 'exclamation-triangle']
-}))`
-    color: ${p => p.theme.warningColor};
-    line-height: 1.2;
-
-    &:not(:first-child) {
-        margin-left: 9px;
-    }
-
-    &:not(:last-child) {
-        margin-right: 9px;
-    }
-`;
-
-interface ExchangeRequestCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpRequestCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
 }
 
-export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) => {
+export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
     const { exchange } = props;
     const { request } = exchange;
 
-    return <ExchangeCard {...props} direction='right'>
+    return <CollapsibleCard {...props} direction='right'>
         <header>
             <SourceIcon source={request.source} />
             <Pill color={getSummaryColour(exchange)}>
@@ -130,5 +104,5 @@ export const ExchangeRequestCard = observer((props: ExchangeRequestCardProps) =>
         </header>
 
         <RawRequestDetails request={request} />
-    </ExchangeCard>;
+    </CollapsibleCard>;
 });

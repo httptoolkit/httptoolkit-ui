@@ -1,29 +1,31 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, Html } from '../../types';
-import { styled } from '../../styles';
-import { Icon } from '../../icons';
-import { joinAnd } from '../../util';
+import { Omit, Html } from '../../../types';
+import { styled } from '../../../styles';
+import { Icon } from '../../../icons';
+import { joinAnd } from '../../../util';
 
-import { ApiExchange, Parameter } from '../../model/api/openapi';
+import { ApiExchange, Parameter } from '../../../model/api/openapi';
 
-import { CollapsibleCardHeading } from '../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from './exchange-card';
-import { CollapsibleSection } from '../common/collapsible-section';
-import { OptionalImage } from '../common/optional-image';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps
+} from '../../common/card';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
+import { OptionalImage } from '../../common/optional-image';
 import {
     ContentLabel,
     ContentLabelBlock,
     ExternalContent
-} from '../common/text-content';
-import { DocsLink } from '../common/docs-link';
-import { CardSalesPitch, ProHeaderPill } from '../account/pro-placeholders';
+} from '../../common/text-content';
+import { DocsLink } from '../../common/docs-link';
+import { CardSalesPitch, ProHeaderPill } from '../../account/pro-placeholders';
 
 const ServiceLogo = styled(OptionalImage)`
     float: right;
@@ -43,7 +45,7 @@ const ParametersGrid = styled.section`
     }
 `;
 
-const ParameterKeyValue = styled(ExchangeCollapsibleSummary)`
+const ParameterKeyValue = styled(CollapsibleSectionSummary)`
     word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
     font-family: ${p => p.theme.monoFontFamily};
@@ -148,40 +150,40 @@ const ApiRequestDetails = (props: {
 
     return <>
         <CollapsibleSection>
-            <ExchangeCollapsibleSummary>
+            <CollapsibleSectionSummary>
                 <ContentLabel>Service:</ContentLabel> { api.service.name }
                 { !api.service.description &&
                     <DocsLink href={api.service.docsUrl} />
                 }
-            </ExchangeCollapsibleSummary>
+            </CollapsibleSectionSummary>
 
             { api.service.description &&
-                <ExchangeCollapsibleBody>
+                <CollapsibleSectionBody>
                     <ServiceLogo src={ api.service.logoUrl } alt='' />
                     <ExternalContent content={api.service.description} />
                     <DocsLink href={api.service.docsUrl}>
                         Find out more
                     </DocsLink>
-                </ExchangeCollapsibleBody>
+                </CollapsibleSectionBody>
             }
         </CollapsibleSection>
 
         <CollapsibleSection>
-            <ExchangeCollapsibleSummary>
+            <CollapsibleSectionSummary>
                 <ContentLabel>Operation:</ContentLabel> { api.operation.name }
                 { !hasOperationDetails &&
                     <DocsLink href={api.operation.docsUrl} />
                 }
                 { api.operation.warnings.length ? <WarningIcon /> : null }
-            </ExchangeCollapsibleSummary>
+            </CollapsibleSectionSummary>
 
             { hasOperationDetails &&
-                <ExchangeCollapsibleBody>
+                <CollapsibleSectionBody>
                     { operationDetails }
                     <DocsLink href={api.operation.docsUrl}>
                         Find out more
                     </DocsLink>
-                </ExchangeCollapsibleBody>
+                </CollapsibleSectionBody>
             }
         </CollapsibleSection>
 
@@ -206,10 +208,10 @@ const ApiRequestDetails = (props: {
                             { param.warnings.length ? <WarningIcon /> : <div/> }
                         </ParameterKeyValue>
 
-                        <ExchangeCollapsibleBody>
+                        <CollapsibleSectionBody>
                             { getDetailsWithWarnings(param.description, param.warnings) }
                             <ParamMetadata param={param}/>
-                        </ExchangeCollapsibleBody>
+                        </CollapsibleSectionBody>
                     </CollapsibleSection>
                 ) }
             </ParametersGrid>
@@ -217,15 +219,15 @@ const ApiRequestDetails = (props: {
     </>;
 }
 
-interface ExchangeApiCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpApiCardProps extends CollapsibleCardProps {
     apiName: string;
     apiExchange: ApiExchange
 }
 
-export const ExchangeApiCard = observer((props: ExchangeApiCardProps) => {
+export const HttpApiCard = observer((props: HttpApiCardProps) => {
     const { apiName, apiExchange } = props;
 
-    return <ExchangeCard {...props}>
+    return <CollapsibleCard {...props}>
         <header>
             <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
                 { apiName }
@@ -233,17 +235,17 @@ export const ExchangeApiCard = observer((props: ExchangeApiCardProps) => {
         </header>
 
         <ApiRequestDetails api={apiExchange} />
-    </ExchangeCard>;
+    </CollapsibleCard>;
 });
 
-interface ExchangeApiPlaceholderCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpApiPlaceholderCardProps extends CollapsibleCardProps {
     apiName: string;
 }
 
-export const ExchangeApiPlaceholderCard = observer((props: ExchangeApiPlaceholderCardProps) => {
+export const HttpApiPlaceholderCard = observer((props: HttpApiPlaceholderCardProps) => {
     const { apiName } = props;
 
-    return <ExchangeCard {...props}>
+    return <CollapsibleCard {...props}>
         <header>
             <ProHeaderPill />
 
@@ -267,5 +269,5 @@ export const ExchangeApiPlaceholderCard = observer((props: ExchangeApiPlaceholde
                 endpoints and parameters.
             </p>
         </CardSalesPitch>
-    </ExchangeCard>;
+    </CollapsibleCard>;
 });

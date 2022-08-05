@@ -4,7 +4,7 @@ import { shallow } from 'enzyme';
 import { expect } from '../../../../test-setup';
 import {
     CookieHeaderDescription
-} from '../../../../../src/components/view/headers/set-cookie-header-description';
+} from '../../../../../src/components/view/http/set-cookie-header-description';
 
 describe('Set-Cookie header description', () => {
     it('should use sensible defaults for the minimal case', () => {

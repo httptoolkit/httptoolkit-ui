@@ -61,7 +61,7 @@ const getDescription = (useragent: IUAParser.IResult): string | undefined => {
     const browserDescription = useragent.browser.name ?
         useragent.browser.name + formatVersion(useragent.browser.version)
         + (useragent.engine.name ?
-            `, which uses the ${useragent.engine.name}${
+            `, based on the ${useragent.engine.name}${
                 useragent.engine.name !== 'Blink' // Blink duplicates the Chrome version, noisy
                     ? formatVersion(useragent.engine.version)
                     : ''
@@ -144,12 +144,14 @@ function checkForElectron(userAgent: IUAParser.IResult) {
     }
 }
 
+export const UNKNOWN_SOURCE = {
+    ua: '',
+    summary: 'Unknown client',
+    icon: SourceIcons.Unknown
+};
+
 export const parseSource = (userAgentHeader: string | undefined): TrafficSource => {
-    if (!userAgentHeader) return {
-        ua: '',
-        summary: 'Unknown client',
-        icon: SourceIcons.Unknown
-    };
+    if (!userAgentHeader) return UNKNOWN_SOURCE;
 
     const useragent = new UAParser(userAgentHeader).getResult();
 

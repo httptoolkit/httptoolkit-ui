@@ -7,10 +7,19 @@ import {
     observe,
     runInAction,
 } from 'mobx';
-import { getRemote, Mockttp, ProxySetting } from 'mockttp';
-import type { MockttpClient } from 'mockttp/dist/client/mockttp-client';
 
 import {
+    PluggableAdmin,
+    MockttpPluggableAdmin,
+    ProxySetting,
+    RequestRuleData,
+    WebSocketRuleData
+} from 'mockttp';
+import * as MockRTC from 'mockrtc';
+
+import {
+    InputHTTPEvent,
+    InputRTCEvent,
     PortRange,
 } from '../types';
 import {
@@ -28,29 +37,57 @@ import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
 import { serverVersion } from '../services/service-versions';
 
+type HtkAdminClient =
+    // WebRTC is initially behind a feature flag:
+    | PluggableAdmin.AdminClient<{ http: MockttpPluggableAdmin.MockttpAdminPlugin, webrtc: MockRTC.MockRTCAdminPlugin }>
+    | PluggableAdmin.AdminClient<{ http: MockttpPluggableAdmin.MockttpAdminPlugin }>;
+
 // Start the server, with slowly decreasing retry frequency (up to a limit).
 // Note that this never fails - any timeout to this process needs to happen elsewhere.
 function startServer(
-    server: Mockttp,
-    portConfig: PortRange | undefined,
+    adminClient: HtkAdminClient,
+    config: Parameters<HtkAdminClient['start']>[0],
     maxDelay = 500,
     delayMs = 200
 ): Promise<void> {
-    return server.start(portConfig).catch((e) => {
+    return adminClient.start(config as any).catch((e) => {
         console.log('Server initialization failed', e);
 
         if (e.response) {
-            // Server is listening, but failed to start as requested. Almost
-            // certainly means our port config is bad - retry immediately without it.
-            return startServer(server, undefined, maxDelay, delayMs);
+            // Server is listening, but failed to start as requested.
+            // This generally means that some of our config is bad.
+
+            if (e.message?.includes('unrecognized plugin: webrtc')) {
+                // We have webrtc enabled, but the server is old and doesn't support it.
+                // Skip that entirely then:
+                config = {
+                    ...config,
+                    webrtc: undefined
+                };
+            } else {
+                // Some other error - probably means that the HTTP port is in use.
+                // Drop the port config and try again:
+                config = {
+                    ...config,
+                    http: {
+                        ...config.http,
+                        port: undefined
+                    }
+                }
+            }
+
+            // Retry with our updated config after the tiniest possible delay:
+            return delay(100).then(() =>
+                startServer(adminClient, config, maxDelay, delayMs)
+            );
         }
 
         // For anything else (unknown errors, or more likely server not listening yet),
         // wait briefly and then retry the same config:
         return delay(Math.min(delayMs, maxDelay)).then(() =>
-            startServer(server, portConfig, maxDelay, delayMs * 1.2)
+            startServer(adminClient, config, maxDelay, delayMs * 1.2)
         );
-    });
+    }) as Promise<void>;
 }
 
 export function isValidPortConfiguration(portConfig: PortRange | undefined) {
@@ -68,7 +105,10 @@ export class ProxyStore {
     ) { }
 
     @observable.ref
-    private server!: Mockttp; // Definitely set *after* initialization
+    private adminClient!: HtkAdminClient // Definitely set *after* initialization
+
+    private mockttpRequestBuilder!: MockttpPluggableAdmin.MockttpAdminRequestBuilder;
+    private mockRTCRequestBuilder = new MockRTC.MockRTCAdminRequestBuilder();
 
     @observable
     // !-asserted, because it's definitely set *after initialized*
@@ -144,22 +184,42 @@ export class ProxyStore {
     }
 
     private startIntercepting = flow(function* (this: ProxyStore) {
-        this.server = getRemote({
-            cors: false,
-            suggestChanges: false,
-            adminServerUrl: 'http://127.0.0.1:45456',
-            // User configurable settings:
-            http2: this.http2Enabled
+        const webRTCEnabled = this.accountStore.featureFlags.includes('webrtc');
+
+        this.adminClient = new PluggableAdmin.AdminClient<{
+            http: any,
+            webrtc: any
+        }>({
+            adminServerUrl: 'http://127.0.0.1:45456'
         });
+
         this._http2CurrentlyEnabled = this.http2Enabled;
 
-        this.monitorRemoteClientConnection(this.server as MockttpClient);
+        this.monitorRemoteClientConnection(this.adminClient);
 
-        yield startServer(this.server, this._portConfig);
+        yield startServer(this.adminClient, {
+            http: {
+                options: {
+                    cors: false,
+                    suggestChanges: false,
+                    // User configurable settings:
+                    http2: this.http2Enabled,
+                },
+                port: this.portConfig
+            },
+            ...(webRTCEnabled ? {
+                webrtc: {}
+            } : {})
+        });
+
+        this.mockttpRequestBuilder = new MockttpPluggableAdmin.MockttpAdminRequestBuilder(
+            this.adminClient.schema
+        );
+
         announceServerReady();
         console.log('Server started');
 
-        yield getConfig(this.serverPort).then((config) => {
+        yield getConfig(this.httpProxyPort).then((config) => {
             this.certPath = config.certificatePath;
             this.certContent = config.certificateContent;
             this.certFingerprint = config.certificateFingerprint;
@@ -171,14 +231,14 @@ export class ProxyStore {
         });
 
         // Everything seems to agree that here we're 'done'
-        console.log(`Server started on port ${this.server.port}`);
+        console.log(`Server started on port ${this.httpProxyPort}`);
 
         window.addEventListener('beforeunload', () => {
-            this.server.stop().catch(() => { });
+            this.adminClient.stop().catch(() => { });
         });
     });
 
-    private monitorRemoteClientConnection(client: MockttpClient) {
+    private monitorRemoteClientConnection(client: PluggableAdmin.AdminClient<{}>) {
         client.on('admin-client:stream-error', (err) => {
             console.log('Admin client stream error');
             reportError(err.message ? err : new Error('Client stream error'), { cause: err });
@@ -212,8 +272,8 @@ export class ProxyStore {
         }
     }
 
-    @computed get serverPort() {
-        return this.server.port;
+    @computed get httpProxyPort() {
+        return this.adminClient.metadata.http.port;
     }
 
     @persist @observable
@@ -223,19 +283,52 @@ export class ProxyStore {
         return this._http2CurrentlyEnabled;
     }
 
-    // Proxy request rules config through to the server instance:
-    @computed get setRequestRules() {
-        return this.server.setRequestRules.bind(this.server);
+    setRequestRules = (...rules: RequestRuleData[]) => {
+        const { adminStream } = this.adminClient;
+
+        return this.adminClient.sendQuery(
+            this.mockttpRequestBuilder.buildAddRequestRulesQuery(rules, true, adminStream)
+        );
     }
 
-    // Proxy websocket rules config through to the server instance:
-    @computed get setWebSocketRules() {
-        return this.server.setWebSocketRules.bind(this.server);
+    setWebSocketRules = (...rules: WebSocketRuleData[]) => {
+        const { adminStream } = this.adminClient;
+
+        return this.adminClient.sendQuery(
+            this.mockttpRequestBuilder.buildAddWebSocketRulesQuery(rules, true, adminStream)
+        );
     }
 
     // Proxy event subscriptions through to the server instance:
-    @computed get onServerEvent() {
-        return this.server.on.bind(this.server);
+    onMockttpEvent = (event: InputHTTPEvent, callback: (data: any) => void) => {
+        const subRequest = this.mockttpRequestBuilder.buildSubscriptionRequest(event);
+
+        if (!subRequest) {
+            // We just return an immediately promise if we don't recognize the event, which will quietly
+            // succeed but never call the corresponding callback (the same as the server and most event
+            // sources in the same kind of situation). This is what happens when the *client* doesn't
+            // recognize the event. Subscribe() below handles the unknown-to-server case.
+            console.warn(`Ignoring subscription for event unrecognized by Mockttp client: ${event}`);
+            return Promise.resolve();
+        }
+
+        return this.adminClient.subscribe(subRequest, callback);
+    }
+
+    // Proxy event subscriptions through to the server instance:
+    onMockRTCEvent = (event: InputRTCEvent, callback: (data: any) => void) => {
+        const subRequest = this.mockRTCRequestBuilder.buildSubscriptionRequest(event);
+
+        if (!subRequest) {
+            // We just return an immediately promise if we don't recognize the event, which will quietly
+            // succeed but never call the corresponding callback (the same as the server and most event
+            // sources in the same kind of situation). This is what happens when the *client* doesn't
+            // recognize the event. Subscribe() below handles the unknown-to-server case.
+            console.warn(`Ignoring subscription for event unrecognized by MockRTC client: ${event}`);
+            return Promise.resolve();
+        }
+
+        return this.adminClient.subscribe(subRequest, callback);
     }
 
     private setNetworkAddresses(networkInterfaces: NetworkInterfaces) {

@@ -23,3 +23,11 @@ export function asError(error: any): Error {
         return new Error(error.message || error.toString());
     }
 }
+
+export class UnreachableCheck extends Error {
+
+    constructor(value: never) {
+        super(`Unhandled switch value: ${value}`);
+    }
+
+}

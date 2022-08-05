@@ -2,22 +2,22 @@ import * as React from 'react';
 import { action } from 'mobx';
 import { observer } from 'mobx-react';
 
-import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../types';
-import { styled, Theme } from '../../styles';
+import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../../types';
+import { styled, Theme } from '../../../styles';
 
-import { getStatusColor } from '../../model/events/categorization';
+import { getStatusColor } from '../../../model/events/categorization';
 
-import { CollapsibleCardHeading } from '../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { ContentLabelBlock, ContentLabel } from '../common/text-content';
-import { EditableHeaders } from '../common/editable-headers';
-import { EditableStatus } from '../common/editable-status';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps,
+} from '../../common/card';
+import { Pill } from '../../common/pill';
+import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
+import { EditableHeaders } from '../../common/editable-headers';
+import { EditableStatus } from '../../common/editable-status';
 
-interface ResponseBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface ResponseBreakpointCardProps extends CollapsibleCardProps {
     theme: Theme;
     exchange: HttpExchange;
     onChange: (response: Partial<BreakpointResponseResult>) => void;
@@ -36,7 +36,7 @@ const InlineEditableStatus = styled(EditableStatus)`
 `;
 
 @observer
-export class ExchangeBreakpointResponseCard extends React.Component<ResponseBreakpointCardProps> {
+export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpointCardProps> {
 
     render() {
         const { exchange, onChange, theme, ...cardProps } = this.props;
@@ -45,7 +45,7 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
         const headers = inProgressResult.headers || {};
         const { statusCode, statusMessage } = inProgressResult;
 
-        return <ExchangeCard {...cardProps} direction='left'>
+        return <CollapsibleCard {...cardProps} direction='left'>
             <header>
                 <Pill color={getStatusColor(inProgressResult.statusCode, theme!)}>{ statusCode }</Pill>
                 <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
@@ -68,7 +68,7 @@ export class ExchangeBreakpointResponseCard extends React.Component<ResponseBrea
                 headers={headers}
                 onChange={this.onHeadersChanged}
             />
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 
     @action.bound

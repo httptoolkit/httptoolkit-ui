@@ -676,7 +676,7 @@ class AdditionalCAConfig extends React.Component<{ rulesStore: RulesStore }> {
 @inject('rulesStore')
 @observer
 export class ConnectionSettingsCard extends React.Component<
-    Omit<CollapsibleCardProps, 'children'> & {
+    CollapsibleCardProps & {
         rulesStore?: RulesStore
     }
 > {

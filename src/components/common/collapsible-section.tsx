@@ -206,8 +206,8 @@ export const CollapsibleSectionSummary = styled.header`
         display: inline-block;
     `}
 
-    margin: -6px 0 0 0;
-    padding: 9px 0 12px;
+    margin: -6px 0 0 -20px;
+    padding: 9px 0 12px 20px;
 
     box-sizing: border-box;
 
@@ -262,4 +262,9 @@ export const CollapsibleSectionBody = styled.div`
     line-height: 1.3;
 
     position: relative;
+
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
 `;

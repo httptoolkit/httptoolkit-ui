@@ -1,28 +1,31 @@
 import * as _ from 'lodash';
 import React from "react";
-import { observable, action, computed } from "mobx";
+import { action, computed } from "mobx";
 import { inject, observer } from "mobx-react";
 import * as HarFormat from 'har-format';
 import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 import dedent from 'dedent';
 
-import { Omit, HttpExchange } from "../../types";
-import { styled } from '../../styles';
-import { Icon } from '../../icons';
-import { saveFile } from '../../util/ui';
-import { reportError } from '../../errors';
+import { Omit, HttpExchange } from '../../../types';
+import { styled } from '../../../styles';
+import { Icon } from '../../../icons';
+import { saveFile } from '../../../util/ui';
+import { reportError } from '../../../errors';
 
-import { AccountStore } from "../../model/account/account-store";
-import { UiStore } from '../../model/ui-store';
-import { generateHarRequest, generateHar } from "../../model/http/har";
+import { AccountStore } from '../../../model/account/account-store';
+import { UiStore } from '../../../model/ui-store';
+import { generateHarRequest, generateHar } from '../../../model/http/har';
 
-import { ProHeaderPill, CardSalesPitch } from "../account/pro-placeholders";
-import { CollapsibleCardHeading } from '../common/card';
-import { PillSelector, PillButton } from "../common/pill";
-import { CopyButtonPill } from '../common/copy-button';
-import { DocsLink } from '../common/docs-link';
-import { ExchangeCard, ExchangeCardProps } from "./exchange-card";
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
+import {
+    CollapsibleCard,
+    CollapsibleCardProps,
+    CollapsibleCardHeading
+} from '../../common/card';
+import { PillSelector, PillButton } from '../../common/pill';
+import { CopyButtonPill } from '../../common/copy-button';
+import { DocsLink } from '../../common/docs-link';
+import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 
 interface SnippetOption {
     target: HTTPSnippet.Target,
@@ -57,7 +60,7 @@ const getExportOptionName = (option: SnippetOption) => ({
     'node~~native': 'Node.js HTTP'
 } as _.Dictionary<string>)[getExportOptionKey(option)] || option.name;
 
-interface ExportCardProps extends Omit<ExchangeCardProps, 'children'>  {
+interface ExportCardProps extends CollapsibleCardProps  {
     exchange: HttpExchange;
     accountStore?: AccountStore;
     uiStore?: UiStore;
@@ -183,13 +186,13 @@ const ExportHarPill = styled(observer((p: {
 @inject('accountStore')
 @inject('uiStore')
 @observer
-export class ExchangeExportCard extends React.Component<ExportCardProps> {
+export class HttpExportCard extends React.Component<ExportCardProps> {
 
     render() {
         const { exchange, accountStore } = this.props;
         const { isPaidUser } = accountStore!;
 
-        return <ExchangeCard {...this.props}>
+        return <CollapsibleCard {...this.props}>
             <header>
                 { isPaidUser
                     ? <ExportHarPill exchange={exchange} />
@@ -230,7 +233,7 @@ export class ExchangeExportCard extends React.Component<ExportCardProps> {
                     </p>
                 </CardSalesPitch>
             }
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 
     @computed

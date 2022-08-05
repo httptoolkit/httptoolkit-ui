@@ -6,24 +6,21 @@ import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 import { saveFile } from '../../util/ui';
+
 import { StreamMessage } from '../../model/events/stream-message';
+import { getSummaryColour } from '../../model/events/categorization';
+
 import { Pill } from '../common/pill';
 import { IconButton } from '../common/icon-button';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
-import { CollapsibleCardHeading } from '../common/card';
-import { ExchangeCard } from './exchange-card';
+import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import {
     StreamMessageCollapsedRow,
     StreamMessageEditorRow
 } from './stream-message-rows';
-
-export const StreamMessageListCardCard = styled(ExchangeCard)`
-    display: flex;
-    flex-direction: column;
-`;
 
 function getFilename(
     filenamePrefix: string,
@@ -37,6 +34,8 @@ function getFilename(
     }.${extension}`;
 }
 
+export type StreamType = 'WebSocket' | 'DataChannel';
+
 @observer
 export class StreamMessageListCard extends React.Component<{
     collapsed: boolean,
@@ -47,7 +46,8 @@ export class StreamMessageListCard extends React.Component<{
     isPaidUser: boolean,
     filenamePrefix: string,
     streamId: string,
-    streamType: string,
+    streamType: StreamType,
+    streamLabel?: string,
     messages: Array<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
 }> {
@@ -62,8 +62,9 @@ export class StreamMessageListCard extends React.Component<{
 
     render() {
         const {
-            streamType,
             streamId,
+            streamType,
+            streamLabel,
             messages,
             isPaidUser,
             editorNode,
@@ -73,9 +74,9 @@ export class StreamMessageListCard extends React.Component<{
             onExpandToggled
         } = this.props;
 
-        return <StreamMessageListCardCard
+        return <CollapsibleCard
             collapsed={collapsed}
-            onCollapseToggled={onCollapseToggled ?? _.noop}
+            onCollapseToggled={onCollapseToggled}
             expanded={expanded}
         >
             <header>
@@ -95,9 +96,19 @@ export class StreamMessageListCard extends React.Component<{
                         onClick={this.exportMessages}
                     />
                 </CollapsingButtons>
-                <Pill>{ messages.length } messages</Pill>
+                { streamLabel && <Pill
+                    color={getSummaryColour('data')}
+                    title={streamLabel}
+                >
+                    { streamLabel }
+                </Pill> }
+                <Pill>
+                    { messages.length } message{
+                        messages.length !== 1 ? 's' : ''
+                    }
+                </Pill>
                 <CollapsibleCardHeading
-                    onCollapseToggled={onCollapseToggled?? _.noop}
+                    onCollapseToggled={onCollapseToggled}
                 >
                     { streamType } messages
                 </CollapsibleCardHeading>
@@ -125,7 +136,7 @@ export class StreamMessageListCard extends React.Component<{
                     )
                 }
             </StreamMessagesList>
-        </StreamMessageListCardCard>;
+        </CollapsibleCard>;
     }
 
     @action.bound
@@ -176,9 +187,6 @@ const StreamMessagesList = styled.div<{ expanded: boolean }>`
 
     position: relative;
     ${p => p.expanded && `
-        left: 0;
-        right: 0;
-        bottom: 0;
         height: auto !important;
         overflow-y: auto;
     `}

@@ -40,6 +40,10 @@ export const ContentMonoValue = styled.div`
     line-height: 1.1;
 `;
 
+export const ContentMonoValueInline = styled(ContentMonoValue)`
+    display: inline;
+`;
+
 export const CopyableMonoValue = styled.span`
     font-family: ${p => p.theme.monoFontFamily};
     font-size: 90%;

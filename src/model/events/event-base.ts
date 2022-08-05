@@ -3,6 +3,9 @@ import { observable, computed } from 'mobx';
 import {
     FailedTLSConnection,
     HttpExchange,
+    RTCConnection,
+    RTCDataChannel,
+    RTCMediaTrack,
     WebSocketStream
 } from '../../types';
 
@@ -16,6 +19,10 @@ export abstract class HTKEventBase {
     isHttp(): this is HttpExchange { return false; }
     isWebSocket(): this is WebSocketStream { return false; }
     isTLSFailure(): this is FailedTLSConnection { return false; }
+
+    isRTCConnection(): this is RTCConnection { return false; }
+    isRTCDataChannel(): this is RTCDataChannel { return false; }
+    isRTCMediaTrack(): this is RTCMediaTrack { return false; }
 
     @computed
     public get category() {

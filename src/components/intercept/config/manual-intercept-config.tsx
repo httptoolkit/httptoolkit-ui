@@ -70,7 +70,7 @@ const ManualInterceptPill = inject('proxyStore')(observer(
         children?: React.ReactNode
     }) =>
         <StatusPill color='#4caf7d'>
-            Proxy port: { p.proxyStore!.serverPort }
+            Proxy port: { p.proxyStore!.httpProxyPort }
         </StatusPill>
 ));
 
@@ -98,7 +98,7 @@ const ManualInterceptConfig = inject('proxyStore')(
         // Report activation when first opened
         React.useEffect(() => p.reportStarted(), []);
 
-        const { serverPort, certPath, certContent } = p.proxyStore!;
+        const { httpProxyPort, certPath, certContent } = p.proxyStore!;
 
         return <Observer>{() =>
             <InstructionsContainer>
@@ -126,7 +126,7 @@ const ManualInterceptConfig = inject('proxyStore')(
                     <h2>1. Send traffic via HTTP Toolkit</h2>
                     <p>
                         To intercept an HTTP client on this machine, configure it to send traffic via{' '}
-                        <CopyableMonoValue>http://localhost:{serverPort}</CopyableMonoValue>.
+                        <CopyableMonoValue>http://localhost:{httpProxyPort}</CopyableMonoValue>.
                     </p>
                     <p>
                         Most tools can be configured to do so by using the above address as an HTTP or

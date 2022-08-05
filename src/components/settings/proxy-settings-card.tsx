@@ -100,7 +100,7 @@ const Http2SettingsContainer = styled.div`
 @inject('proxyStore')
 @observer
 export class ProxySettingsCard extends React.Component<
-    Omit<CollapsibleCardProps, 'children'> & {
+    CollapsibleCardProps & {
         proxyStore?: ProxyStore
     }
 > {
@@ -125,12 +125,12 @@ export class ProxySettingsCard extends React.Component<
 
     @computed
     get isCurrentPortInRange() {
-        const { serverPort, portConfig } = this.props.proxyStore!;
+        const { httpProxyPort, portConfig } = this.props.proxyStore!;
 
         if (!portConfig) {
-            return serverPort >= 8000;
+            return httpProxyPort >= 8000;
         } else {
-            return serverPort >= portConfig.startPort && serverPort <= portConfig.endPort;
+            return httpProxyPort >= portConfig.startPort && httpProxyPort <= portConfig.endPort;
         }
     }
 
@@ -154,7 +154,7 @@ export class ProxySettingsCard extends React.Component<
 
     render() {
         const { proxyStore, ...cardProps } = this.props;
-        const { serverPort, http2Enabled, http2CurrentlyEnabled } = proxyStore!;
+        const { httpProxyPort, http2Enabled, http2CurrentlyEnabled } = proxyStore!;
 
         return <CollapsibleCard {...cardProps}>
             <header>
@@ -200,7 +200,7 @@ export class ProxySettingsCard extends React.Component<
             </ProxyPortsContainer>
             <ProxyPortStateExplanation>
                 The proxy is currently using port <strong>
-                    { serverPort }
+                    { httpProxyPort }
                 </strong>{
                     (this.isCurrentPortConfigValid && !this.isCurrentPortInRange)
                     ? ', outside this range. Restart the app now to use this configuration.'

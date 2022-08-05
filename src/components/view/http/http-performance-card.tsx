@@ -3,38 +3,40 @@ import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 import { get } from 'typesafe-get';
 
-import { styled } from '../../styles';
+import { styled } from '../../../styles';
 import {
     Omit,
     HttpExchange,
     TimingEvents,
     ExchangeMessage
-} from '../../types';
-import { asHeaderArray, joinAnd } from '../../util';
-import { Icon, WarningIcon, SuggestionIcon } from '../../icons';
+} from '../../../types';
+import { asHeaderArray, joinAnd } from '../../../util';
+import { Icon, WarningIcon, SuggestionIcon } from '../../../icons';
 
-import { AccountStore } from '../../model/account/account-store';
-import { getReadableSize, testEncodings } from '../../model/events/bodies';
+import { AccountStore } from '../../../model/account/account-store';
+import { getReadableSize, testEncodings } from '../../../model/events/bodies';
 import {
     explainCacheability,
     explainCacheLifetime,
     explainCacheMatching,
     explainValidCacheTypes
-} from '../../model/http/caching';
+} from '../../../model/http/caching';
 
-import { CollapsibleCardHeading } from '../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { CollapsibleSection } from '../common/collapsible-section';
-import { ContentLabelBlock, Markdown } from '../common/text-content';
-import { ProHeaderPill, CardSalesPitch } from '../account/pro-placeholders';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps
+} from '../../common/card';
+import { Pill } from '../../common/pill';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
+import { ContentLabelBlock, Markdown } from '../../common/text-content';
+import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 
-interface ExchangePerformanceCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface HttpPerformanceCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
     accountStore?: AccountStore;
 }
@@ -58,11 +60,11 @@ const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents
     }</Pill>;
 });
 
-export const ExchangePerformanceCard = inject('accountStore')(observer((props: ExchangePerformanceCardProps) => {
+export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpPerformanceCardProps) => {
     const { exchange, accountStore } = props;
     const { isPaidUser } = accountStore!;
 
-    return <ExchangeCard {...props}>
+    return <CollapsibleCard {...props}>
         <header>
             { isPaidUser
                 ? ('startTime' in exchange.timingEvents
@@ -89,7 +91,7 @@ export const ExchangePerformanceCard = inject('accountStore')(observer((props: E
                 </p>
             </CardSalesPitch>
         }
-    </ExchangeCard>;
+    </CollapsibleCard>;
 }));
 
 function getEncodingName(key: string): string {
@@ -148,6 +150,18 @@ const CompressionDescription = observer((p: {
     </>;
 });
 
+const CompressionResultsContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-right: 10px;
+`;
+
+const CompressionResultsPill = styled(Pill)`
+    flex-shrink: 0;
+    margin: 0;
+`;
+
 const CompressionOptions = observer((p: {
     encodings: string[],
     encodedBodyLength: number,
@@ -161,7 +175,7 @@ const CompressionOptions = observer((p: {
             1 - (encodedBodyLength / decodedBodyLength)
         ));
 
-        return <>{
+        return <CompressionResultsContainer>{
             _(encodingTestResults)
             .omitBy((_size, encoding) =>
                 encodings.length === 1 && encoding === encodings[0]
@@ -170,7 +184,7 @@ const CompressionOptions = observer((p: {
                     1 - (size / decodedBodyLength)
                 ));
 
-                return <Pill key={encoding} title={
+                return <CompressionResultsPill key={encoding} title={
                         `${
                             getReadableSize(decodedBodyLength)
                         } would compress to ${
@@ -184,9 +198,9 @@ const CompressionOptions = observer((p: {
                     }
                 >
                     { _.upperFirst(encoding) }: { testedCompressionRatio }%
-                </Pill>
+                </CompressionResultsPill>
             }).valueOf()
-        }</>
+        }</CompressionResultsContainer>
     } else {
         return <Icon icon={['fas', 'spinner']} spin />;
     }
@@ -317,14 +331,14 @@ const CachingPerformance = observer((p: { exchange: HttpExchange }) => {
         </ContentLabelBlock>
         { cacheDetails.map((details, i) =>
             <CollapsibleSection prefixTrigger={true} key={i}>
-                <ExchangeCollapsibleSummary>
+                <CollapsibleSectionSummary>
                     { details.summary }{' '}
                     { details.type === 'warning' && <WarningIcon /> }
                     { details.type === 'suggestion' && <SuggestionIcon /> }
-                </ExchangeCollapsibleSummary>
-                <ExchangeCollapsibleBody>
+                </CollapsibleSectionSummary>
+                <CollapsibleSectionBody>
                     <Markdown content={ details.explanation } />
-                </ExchangeCollapsibleBody>
+                </CollapsibleSectionBody>
             </CollapsibleSection>
         ) }
     </>;

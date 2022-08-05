@@ -52,7 +52,7 @@ class JvmConfig extends React.Component<{
             !target.name.startsWith("org.apache.maven.wrapper.MavenWrapperMain ")
         );
 
-        const proxyPort = this.props.proxyStore!.serverPort;
+        const proxyPort = this.props.proxyStore!.httpProxyPort;
 
         return <ConfigContainer>
             <p>
@@ -132,7 +132,7 @@ class JvmConfig extends React.Component<{
             // Optimistically update the UI's success state
             const target = this.jvmTargets[pid];
             if (target) {
-                target.interceptedByProxy = proxyStore!.serverPort;
+                target.interceptedByProxy = proxyStore!.httpProxyPort;
             }
 
             this.props.reportSuccess({

@@ -1,6 +1,6 @@
 import * as dateFns from 'date-fns';
 import { SourceIcons } from '../../src/icons';
-import { HttpExchange, ExchangeBody } from '../../src/model/http/exchange';
+import { HttpExchange, HttpBody } from '../../src/model/http/exchange';
 import { FailedTLSConnection } from '../../src/model/events/failed-tls-connection';
 import { HtkRequest, HtkResponse } from '../../src/types';
 
@@ -37,7 +37,7 @@ export const getExchangeData = ({
         path,
         headers: requestHeaders as { host: string },
         rawHeaders: [], // Ignore for now
-        body: new ExchangeBody({
+        body: new HttpBody({
                 body: {
                     buffer: Buffer.isBuffer(requestBody)
                         ? requestBody
@@ -62,7 +62,7 @@ export const getExchangeData = ({
         statusMessage,
         headers: responseHeaders,
         rawHeaders: [], // Ignore for now
-        body: new ExchangeBody({
+        body: new HttpBody({
                 body: {
                     buffer: Buffer.isBuffer(responseBody)
                         ? responseBody

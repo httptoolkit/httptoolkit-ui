@@ -90,7 +90,7 @@ class DockerAttachConfig extends React.Component<{
     }
 
     render() {
-        const proxyPort = this.props.proxyStore!.serverPort;
+        const proxyPort = this.props.proxyStore!.httpProxyPort;
         const targets = Object.values(this.targets)
             .filter(target =>
                 !target.image.startsWith('httptoolkit/docker-socks-tunnel')
@@ -158,7 +158,7 @@ class DockerAttachConfig extends React.Component<{
             // Optimistically update the UI's success state
             const target = this.targets[containerId];
             if (target) {
-                target.labels[CONTAINER_PROXY_LABEL] = proxyStore!.serverPort.toString();
+                target.labels[CONTAINER_PROXY_LABEL] = proxyStore!.httpProxyPort.toString();
             }
 
             this.props.reportSuccess({

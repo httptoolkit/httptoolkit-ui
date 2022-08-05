@@ -14,38 +14,59 @@ import {
     InputClientError,
     CollectedEvent,
     InputWebSocketMessage,
-    InputWebSocketClose
+    InputWebSocketClose,
+    InputRTCEvent,
+    InputRTCEventData,
+    InputRTCPeerConnected,
+    InputRTCDataChannelOpened,
+    InputRTCMessage,
+    InputRTCDataChannelClosed,
+    InputRTCPeerDisconnected,
+    InputRTCMediaTrackOpened,
+    InputRTCMediaStats,
+    InputRTCMediaTrackClosed,
+    InputRTCExternalPeerAttached
 } from '../../types';
+
+import { lazyObservablePromise } from '../../util/observable';
+import { reportError } from '../../errors';
+
+import { ProxyStore } from "../proxy-store";
+import { ApiStore } from '../api/api-store';
 
 import { parseSource } from '../http/sources';
 import { parseHar } from '../http/har';
 
-import { ProxyStore } from "../proxy-store";
-import { ApiStore } from '../api/api-store';
-import { lazyObservablePromise } from '../../util/observable';
-import { reportError } from '../../errors';
-
 import { FailedTLSConnection } from './failed-tls-connection';
 import { HttpExchange } from '../http/exchange';
 import { WebSocketStream } from '../websockets/websocket-stream';
+import { RTCConnection } from '../webrtc/rtc-connection';
+import { RTCDataChannel } from '../webrtc/rtc-data-channel';
+import { RTCMediaTrack } from '../webrtc/rtc-media-track';
 
 // Would be nice to magically infer this from the overloaded on() type, but sadly:
 // https://github.com/Microsoft/TypeScript/issues/24275#issuecomment-390701982
 type EventTypesMap = {
+    // HTTP:
     'request-initiated': InputInitiatedRequest
     'request': InputCompletedRequest
     'response': InputResponse
+    // WebSockets:
     'websocket-request': InputCompletedRequest,
     'websocket-accepted': InputResponse,
     'websocket-message-received': InputWebSocketMessage,
     'websocket-message-sent': InputWebSocketMessage,
     'websocket-close': InputWebSocketClose,
+    // Mockttp misc:
     'abort': InputInitiatedRequest
     'tls-client-error': InputTLSRequest,
-    'client-error': InputClientError
-};
+    'client-error': InputClientError,
+} & {
+    // MockRTC:
+    [K in InputRTCEvent]: InputRTCEventData[K];
+}
 
-const eventTypes = [
+const mockttpEventTypes = [
     'request-initiated',
     'request',
     'response',
@@ -59,7 +80,25 @@ const eventTypes = [
     'client-error'
 ] as const;
 
-type EventType = typeof eventTypes[number];
+const mockRTCEventTypes = [
+    'peer-connected',
+    'peer-disconnected',
+    'external-peer-attached',
+    'data-channel-opened',
+    'data-channel-message-sent',
+    'data-channel-message-received',
+    'data-channel-closed',
+    'media-track-opened',
+    'media-track-stats',
+    'media-track-closed'
+] as const;
+
+type MockttpEventType = typeof mockttpEventTypes[number];
+type MockRTCEventType = typeof mockRTCEventTypes[number]
+
+type EventType =
+    | MockttpEventType
+    | MockRTCEventType;
 
 type QueuedEvent = ({
     [T in EventType]: { type: T, event: EventTypesMap[T] }
@@ -72,6 +111,15 @@ type OrphanableQueuedEvent<T extends
     | 'websocket-message-received'
     | 'websocket-message-sent'
     | 'websocket-close'
+    | 'peer-disconnected'
+    | 'external-peer-attached'
+    | 'data-channel-opened'
+    | 'data-channel-message-sent'
+    | 'data-channel-message-received'
+    | 'data-channel-closed'
+    | 'media-track-opened'
+    | 'media-track-stats'
+    | 'media-track-closed'
 > = { type: T, event: EventTypesMap[T] };
 
 export class EventsStore {
@@ -87,15 +135,20 @@ export class EventsStore {
             this.apiStore.initialized
         ]);
 
-        const { onServerEvent } = this.proxyStore;
-
-        eventTypes.forEach(<T extends EventType>(eventName: T) => {
-            // Lots of 'any' because TS can't handle overload + type interception
-            onServerEvent(eventName as any, ((eventData: EventTypesMap[T]) => {
+        mockttpEventTypes.forEach(<T extends MockttpEventType>(eventName: T) => {
+            this.proxyStore.onMockttpEvent(eventName, ((eventData: EventTypesMap[T]) => {
                 if (this.isPaused) return;
                 this.eventQueue.push({ type: eventName, event: eventData } as any);
                 this.queueEventFlush();
-            }) as any);
+            }));
+        });
+
+        mockRTCEventTypes.forEach(<T extends MockRTCEventType>(eventName: T) => {
+            this.proxyStore.onMockRTCEvent(eventName, ((eventData: EventTypesMap[T]) => {
+                if (this.isPaused) return;
+                this.eventQueue.push({ type: eventName, event: eventData } as any);
+                this.queueEventFlush();
+            }));
         });
 
         console.log('Events store initialized');
@@ -117,21 +170,33 @@ export class EventsStore {
 
     readonly events = observable.array<CollectedEvent>([], { deep: false });
 
-    @computed
+    @computed.struct
     get exchanges(): Array<HttpExchange> {
-        return this.events.filter(
-            (event: any): event is HttpExchange => !!event.request
-        );
+        return this.events.filter((e): e is HttpExchange => e.isHttp());
     }
 
-    @computed
+    @computed.struct
     get websockets(): Array<WebSocketStream> {
-        return this.exchanges.filter(
-            (event): event is WebSocketStream => event.isWebSocket()
-        );
+        return this.exchanges.filter((e): e is WebSocketStream => e.isWebSocket());
     }
 
-    @computed get activeSources() {
+    @computed.struct
+    get rtcConnections(): Array<RTCConnection> {
+        return this.events.filter((e): e is RTCConnection => e.isRTCConnection());
+    }
+
+    @computed.struct
+    get rtcDataChannels(): Array<RTCDataChannel> {
+        return this.events.filter((e): e is RTCDataChannel => e.isRTCDataChannel());
+    }
+
+    @computed.struct
+    get rtcMediaTracks(): Array<RTCMediaTrack> {
+        return this.events.filter((e): e is RTCMediaTrack => e.isRTCMediaTrack());
+    }
+
+    @computed.struct
+    get activeSources() {
         return _(this.exchanges)
             .map(e => e.request.headers['user-agent'])
             .uniq()
@@ -179,8 +244,30 @@ export class EventsStore {
                     return this.addFailedTlsRequest(queuedEvent.event);
                 case 'client-error':
                     return this.addClientError(queuedEvent.event);
+
+                case 'peer-connected':
+                    return this.addRTCPeerConnection(queuedEvent.event);
+                case 'external-peer-attached':
+                    return this.attachExternalRTCPeer(queuedEvent.event);
+                case 'peer-disconnected':
+                    return this.markRTCPeerDisconnected(queuedEvent.event);
+                case 'data-channel-opened':
+                    return this.addRTCDataChannel(queuedEvent.event);
+                case 'data-channel-message-sent':
+                case 'data-channel-message-received':
+                    return this.addRTCDataChannelMessage(queuedEvent.event);
+                case 'data-channel-closed':
+                    return this.markRTCDataChannelClosed(queuedEvent.event);
+                case 'media-track-opened':
+                    return this.addRTCMediaTrack(queuedEvent.event);
+                case 'media-track-stats':
+                    return this.addRTCMediaTrackStats(queuedEvent.event);
+                case 'media-track-closed':
+                    return this.markRTCMediaTrackClosed(queuedEvent.event);
             }
         } catch (e) {
+            // It's possible we might fail to parse an input event. This shouldn't happen, but if it
+            // does it's better to drop that one event and continue instead of breaking completely.
             reportError(e);
         }
     }
@@ -346,9 +433,109 @@ export class EventsStore {
         this.events.push(exchange);
     }
 
+    @action
+    private addRTCPeerConnection(event: InputRTCPeerConnected) {
+        this.events.push(new RTCConnection(event));
+    }
+
+    @action
+    private attachExternalRTCPeer(event: InputRTCExternalPeerAttached) {
+        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const otherHalf = this.rtcConnections.find(c => c.isOtherHalfOf(event));
+
+        if (conn) {
+            conn.attachExternalPeer(event, otherHalf);
+            if (otherHalf) otherHalf.connectOtherHalf(conn);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'external-peer-attached', event };
+        }
+    }
+
+    @action
+    private markRTCPeerDisconnected(event: InputRTCPeerDisconnected) {
+        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        if (conn) {
+            conn.markClosed(event);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'peer-disconnected', event };
+        }
+    }
+
+    @action
+    private addRTCDataChannel(event: InputRTCDataChannelOpened) {
+        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        if (conn) {
+            const dc = new RTCDataChannel(event, conn);
+            this.events.push(dc);
+            conn.addStream(dc);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'data-channel-opened', event };
+        }
+    }
+
+    @action
+    private addRTCDataChannelMessage(event: InputRTCMessage) {
+        const channel = this.rtcDataChannels.find(c => c.sessionId === event.sessionId && c.channelId === event.channelId);
+        if (channel) {
+            channel.addMessage(event);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: `data-channel-message-${event.direction}`, event };
+        }
+    }
+
+    @action
+    private markRTCDataChannelClosed(event: InputRTCDataChannelClosed) {
+        const channel = this.rtcDataChannels.find(c => c.sessionId === event.sessionId && c.channelId === event.channelId);
+        if (channel) {
+            channel.markClosed(event);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'data-channel-closed', event };
+        }
+    }
+
+    @action
+    private addRTCMediaTrack(event: InputRTCMediaTrackOpened) {
+        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        if (conn) {
+            const track = new RTCMediaTrack(event, conn);
+            this.events.push(track);
+            conn.addStream(track);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'media-track-opened', event };
+        }
+    }
+
+    @action
+    private addRTCMediaTrackStats(event: InputRTCMediaStats) {
+        const track = this.rtcMediaTracks.find(t => t.sessionId === event.sessionId && t.mid === event.trackMid);
+        if (track) {
+            track.addStats(event);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'media-track-stats', event };
+        }
+    }
+
+    @action
+    private markRTCMediaTrackClosed(event: InputRTCMediaTrackClosed) {
+        const track = this.rtcMediaTracks.find(t => t.sessionId === event.sessionId && t.mid === event.trackMid);
+        if (track) {
+            track.markClosed(event);
+        } else {
+            this.orphanedEvents[event.sessionId] = { type: 'media-track-closed', event };
+        }
+    }
+
     @action.bound
     deleteEvent(event: CollectedEvent) {
         this.events.remove(event);
+
+        if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
+            event.rtcConnection.removeStream(event);
+        } else if (event.isRTCConnection()) {
+            const streams = [...event.streams];
+            streams.forEach((stream) => this.deleteEvent(stream));
+        }
+
         if ('cleanup' in event) event.cleanup();
     }
 

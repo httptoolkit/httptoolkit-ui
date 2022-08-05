@@ -5,22 +5,26 @@ import { disposeOnUnmount, observer } from 'mobx-react';
 import type { SchemaObject } from 'openapi-directory';
 import * as portals from 'react-reverse-portal';
 
-import { ExchangeMessage, HtkResponse, HtkRequest } from '../../types';
-import { styled } from '../../styles';
-import { lastHeader } from '../../util';
-import { saveFile } from '../../util/ui';
+import { ExchangeMessage, HtkResponse, HtkRequest } from '../../../types';
+import { styled } from '../../../styles';
+import { lastHeader } from '../../../util';
+import { saveFile } from '../../../util/ui';
 
-import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../model/events/content-types';
-import { getReadableSize } from '../../model/events/bodies';
+import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../../model/events/content-types';
+import { getReadableSize } from '../../../model/events/bodies';
 
-import { CollapsibleCardHeading } from '../common/card';
-import { ExchangeCard, LoadingExchangeCard } from './exchange-card';
-import { CollapsingButtons } from '../common/collapsing-buttons';
-import { Pill, PillSelector } from '../common/pill';
-import { ExpandShrinkButton } from '../common/expand-shrink-button';
-import { ContentViewer } from '../editor/content-viewer';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { IconButton } from '../common/icon-button';
+import {
+    CollapsibleCardHeading,
+    CollapsibleCard
+} from '../../common/card';
+import { CollapsingButtons } from '../../common/collapsing-buttons';
+import { Pill, PillSelector } from '../../common/pill';
+import { ExpandShrinkButton } from '../../common/expand-shrink-button';
+import { IconButton } from '../../common/icon-button';
+
+import { LoadingCard } from '../loading-card';
+import { ContentViewer } from '../../editor/content-viewer';
+import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 
 export const EditorCardContent = styled.div`
     margin: 0 -20px -20px -20px;
@@ -42,11 +46,6 @@ export const EditorCardContent = styled.div`
     min-height: 0;
 `;
 
-export const ExchangeBodyCardCard = styled(ExchangeCard)`
-    display: flex;
-    flex-direction: column;
-`;
-
 function getFilename(url: string, message: HtkResponse | HtkRequest): string | undefined {
     const contentDisposition = lastHeader(message.headers['content-disposition']) || "";
     const filenameMatch = / filename="([^"]+)"/.exec(contentDisposition);
@@ -61,7 +60,7 @@ function getFilename(url: string, message: HtkResponse | HtkRequest): string | u
 }
 
 @observer
-export class ExchangeBodyCard extends React.Component<{
+export class HttpBodyCard extends React.Component<{
     title: string,
     direction: 'left' | 'right',
     collapsed: boolean,
@@ -124,7 +123,7 @@ export class ExchangeBodyCard extends React.Component<{
         const decodedBody = message.body.decoded;
 
         return decodedBody ?
-            <ExchangeBodyCardCard
+            <CollapsibleCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -176,9 +175,9 @@ export class ExchangeBodyCard extends React.Component<{
                         {decodedBody}
                     </ContentViewer>
                 </EditorCardContent>
-            </ExchangeBodyCardCard>
+            </CollapsibleCard>
         :
-            <LoadingExchangeCard
+            <LoadingCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -196,7 +195,7 @@ export class ExchangeBodyCard extends React.Component<{
                         { title }
                     </CollapsibleCardHeading>
                 </header>
-            </LoadingExchangeCard>;
+            </LoadingCard>;
     }
 
 }

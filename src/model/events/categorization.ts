@@ -101,6 +101,8 @@ export const EventCategories = [
     'html',
     'font',
     'data',
+    'rtc-data',
+    'rtc-media',
     'mutative',
     'websocket',
     'incomplete',
@@ -136,6 +138,10 @@ export function getEventCategory(event: HTKEventBase): EventCategory {
         } else if (isDataExchange(event)) {
             return 'data';
         }
+    } else if (event.isRTCDataChannel()) {
+        return 'rtc-data';
+    } else if (event.isRTCMediaTrack()) {
+        return 'rtc-media';
     }
 
     return 'unknown';
@@ -156,6 +162,8 @@ export function describeEventCategory(category: EventCategory) {
         "font": "a request for a font file",
         "data": "an API request",
         "websocket": "a WebSocket stream",
+        "rtc-data": "a WebRTC data stream",
+        "rtc-media": "a WebRTC media stream",
         "unknown": "an unknown type of request"
     } as const)[category]}`;
 }
@@ -185,12 +193,14 @@ export function getSummaryColour(exchangeOrCategory: HttpExchange | EventCategor
         case 'mutative':
             return highlights.red;
         case 'data':
+        case 'rtc-data':
             return highlights.purple;
         case 'websocket':
             return highlights.lightBlue;
         case 'image':
             return highlights.lightGreen;
         case 'font':
+        case 'rtc-media':
             return highlights.brightGreen;
         case 'js':
             return highlights.orange;

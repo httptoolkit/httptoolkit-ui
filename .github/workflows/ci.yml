@@ -10,10 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # Install Node 14
+      # Install Node 16
       - uses: actions/setup-node@v1
         with:
-          node-version: 14
+          node-version: 16.16.0
 
       - run: npm install -g npm@8.5.5
 

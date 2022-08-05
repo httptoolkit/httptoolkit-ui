@@ -3,39 +3,43 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { get } from 'typesafe-get';
 
-import { HtkResponse, Omit } from '../../types';
-import { Theme } from '../../styles';
+import { HtkResponse, Omit } from '../../../types';
+import { Theme } from '../../../styles';
 
-import { ApiExchange } from '../../model/api/openapi';
-import { getStatusColor } from '../../model/events/categorization';
-import { getStatusDocs, getStatusMessage } from '../../model/http/http-docs';
+import { ApiExchange } from '../../../model/api/openapi';
+import { getStatusColor } from '../../../model/events/categorization';
+import { getStatusDocs, getStatusMessage } from '../../../model/http/http-docs';
 
-import { CollapsibleCardHeading } from '../common/card';
-import { Pill } from '../common/pill';
-import { HeaderDetails } from './headers/header-details';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-    ExchangeCollapsibleSummary,
-    ExchangeCollapsibleBody
-} from './exchange-card';
-import { CollapsibleSection } from '../common/collapsible-section';
+    CollapsibleCard,
+    CollapsibleCardProps,
+    CollapsibleCardHeading
+} from '../../common/card';
+import { Pill } from '../../common/pill';
+import { HeaderDetails } from './header-details';
+import {
+} from '../../common/card';
+import {
+    CollapsibleSection,
+    CollapsibleSectionSummary,
+    CollapsibleSectionBody
+} from '../../common/collapsible-section';
 import {
     ContentLabel,
     ContentLabelBlock,
     ExternalContent,
     Markdown
-} from '../common/text-content';
-import { DocsLink } from '../common/docs-link';
+} from '../../common/text-content';
+import { DocsLink } from '../../common/docs-link';
 
-interface ExchangeResponseCardProps extends Omit<ExchangeCardProps, 'children'>  {
+interface HttpResponseCardProps extends CollapsibleCardProps  {
     theme: Theme;
     requestUrl: URL;
     response: HtkResponse;
     apiExchange: ApiExchange | undefined;
 }
 
-export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) => {
+export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
     const { response, requestUrl, theme, apiExchange } = props;
 
     const apiResponseDescription = get(apiExchange, 'response', 'description');
@@ -55,7 +59,7 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
         </p>
     ].filter(d => !!d);
 
-    return <ExchangeCard {...props} direction='left'>
+    return <CollapsibleCard {...props} direction='left'>
         <header>
             <Pill color={getStatusColor(response.statusCode, theme)}>{
                 response.statusCode
@@ -67,16 +71,16 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
 
         <div>
             <CollapsibleSection>
-                <ExchangeCollapsibleSummary>
+                <CollapsibleSectionSummary>
                     <ContentLabel>Status:</ContentLabel>{' '}
                     {response.statusCode} {response.statusMessage || getStatusMessage(response.statusCode)}
-                </ExchangeCollapsibleSummary>
+                </CollapsibleSectionSummary>
 
                 {
                     responseDetails.length ?
-                        <ExchangeCollapsibleBody>
+                        <CollapsibleSectionBody>
                             { responseDetails }
-                        </ExchangeCollapsibleBody>
+                        </CollapsibleSectionBody>
                     : null
                 }
             </CollapsibleSection>
@@ -84,5 +88,5 @@ export const ExchangeResponseCard = observer((props: ExchangeResponseCardProps) 
             <ContentLabelBlock>Headers</ContentLabelBlock>
             <HeaderDetails headers={response.headers} requestUrl={requestUrl} />
         </div>
-    </ExchangeCard>;
+    </CollapsibleCard>;
 });

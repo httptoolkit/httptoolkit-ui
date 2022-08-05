@@ -156,13 +156,13 @@ class AndroidConfig extends React.Component<{
     render() {
         const {
             certFingerprint,
-            serverPort,
+            httpProxyPort,
             externalNetworkAddresses
         } = this.props.proxyStore!;
 
         const setupParams ={
             addresses: externalNetworkAddresses,
-            port: serverPort,
+            port: httpProxyPort,
             certFingerprint: certFingerprint!
         };
 

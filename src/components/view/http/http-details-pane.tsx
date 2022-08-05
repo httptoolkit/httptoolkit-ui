@@ -1,89 +1,45 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, computed, observable } from 'mobx';
+import { action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { CollectedEvent, HtkResponse, HttpExchange } from '../../types';
-import { styled } from '../../styles';
-import { reportError } from '../../errors';
+import { CollectedEvent, HtkResponse, HttpExchange } from '../../../types';
+import { styled } from '../../../styles';
+import { reportError } from '../../../errors';
 
-import { UiStore } from '../../model/ui-store';
-import { RulesStore } from '../../model/rules/rules-store';
-import { AccountStore } from '../../model/account/account-store';
-import { getStatusColor } from '../../model/events/categorization';
-import { ApiExchange } from '../../model/api/openapi';
-import { buildRuleFromRequest } from '../../model/rules/rule-definitions';
-import { WebSocketStream } from '../../model/websockets/websocket-stream';
+import { UiStore } from '../../../model/ui-store';
+import { RulesStore } from '../../../model/rules/rules-store';
+import { AccountStore } from '../../../model/account/account-store';
+import { getStatusColor } from '../../../model/events/categorization';
+import { ApiExchange } from '../../../model/api/openapi';
+import { buildRuleFromRequest } from '../../../model/rules/rule-definitions';
+import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 
-import { Pill } from '../common/pill';
-import { CollapsibleCardHeading } from '../common/card';
-import { ExchangeCard } from './exchange-card';
-import { ExchangeBodyCard } from './exchange-body-card';
-import { ExchangeApiCard, ExchangeApiPlaceholderCard } from './exchange-api-card';
-import { ExchangeRequestCard } from './exchange-request-card';
-import { ExchangeResponseCard } from './exchange-response-card';
-import { ExchangePerformanceCard } from './exchange-performance-card';
-import { ExchangeExportCard } from './exchange-export-card';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { ExchangeErrorHeader, tagsToErrorType } from './exchange-error-header';
-import { ExchangeDetailsFooter } from './exchange-details-footer';
-import { ExchangeRequestBreakpointHeader, ExchangeResponseBreakpointHeader } from './exchange-breakpoint-header';
-import { ExchangeBreakpointRequestCard } from './exchange-breakpoint-request-card';
-import { ExchangeBreakpointResponseCard } from './exchange-breakpoint-response-card';
-import { ExchangeBreakpointBodyCard } from './exchange-breakpoint-body-card';
+import { Pill } from '../../common/pill';
+import { CollapsibleCard, CollapsibleCardHeading } from '../../common/card';
 
-import { WebSocketCloseCard } from './websocket-close-card';
-import { StreamMessageListCard } from './stream-message-list-card';
+import {
+    PaneOuterContainer,
+    PaneScrollContainer,
+    ExpandedPaneContentContainer
+} from '../view-details-pane';
+import { StreamMessageListCard } from '../stream-message-list-card';
+import { WebSocketCloseCard } from '../websocket-close-card';
 
-const OuterContainer = styled.div`
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-`;
-
-const ScrollContainer = styled.div`
-    position: relative;
-    overflow-y: scroll;
-
-    flex-grow: 1;
-    padding: 0 20px 0 20px;
-
-    background-color: ${p => p.theme.containerBackground};
-`;
-
-const ContentContainer = styled.div`
-    min-height: 100%;
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-
-    /*
-    * This padding could be padding on the scroll container, but doing so causes odd
-    * behaviour where position: sticky headers don't take it into account, on OSX only.
-    * Moving to the direct parent of the header makes that consistent, for some reason. Ew.
-    */
-    padding-top: 20px;
-`;
-
-const ExpandedContentContainer = styled.div`
-    ${(p: { expandCompleted: boolean }) => !p.expandCompleted
-        ? `padding: 20px;`
-        : `
-            padding: 0;
-            transition: padding 0.1s;
-        `
-    }
-
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-`;
+import { HttpBodyCard } from './http-body-card';
+import { HttpApiCard, HttpApiPlaceholderCard } from './http-api-card';
+import { HttpRequestCard } from './http-request-card';
+import { HttpResponseCard } from './http-response-card';
+import { HttpPerformanceCard } from './http-performance-card';
+import { HttpExportCard } from './http-export-card';
+import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { HttpErrorHeader, tagsToErrorType } from './http-error-header';
+import { HttpDetailsFooter } from './http-details-footer';
+import { HttpRequestBreakpointHeader, HttpResponseBreakpointHeader } from './http-breakpoint-header';
+import { HttpBreakpointRequestCard } from './http-breakpoint-request-card';
+import { HttpBreakpointResponseCard } from './http-breakpoint-response-card';
+import { HttpBreakpointBodyCard } from './http-breakpoint-body-card';
 
 // Used to push all cards below it to the bottom (when less than 100% height)
 const CardDivider = styled.div`
@@ -102,32 +58,11 @@ const makeFriendlyApiName = (rawName: string) => {
         : cleanedName;
 }
 
-const cardKeys = [
-    'api',
-    'request',
-    'requestBody',
-    'response',
-    'responseBody',
-    'webSocketMessages',
-    'webSocketClose',
-    'performance',
-    'export'
-] as const;
-
-type CardKey = typeof cardKeys[number];
-
-type CardBaseProps = {
-    key: string,
-    expanded: boolean,
-    collapsed: boolean,
-    onCollapseToggled: () => void
-};
-
 @inject('uiStore')
 @inject('accountStore')
 @inject('rulesStore')
 @observer
-export class ExchangeDetailsPane extends React.Component<{
+export class HttpDetailsPane extends React.Component<{
     exchange: HttpExchange,
 
     requestEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
@@ -144,18 +79,8 @@ export class ExchangeDetailsPane extends React.Component<{
     rulesStore?: RulesStore
 }> {
 
-    // Used to trigger animation on initial card expansion
-    @observable private expandCompleted = true;
-
-    @computed
-    get cardProps(): { [name: string]: CardBaseProps } {
-        return _.fromPairs(cardKeys.map((key) => [key, {
-            key,
-            expanded: key === this.props.uiStore!.expandedCard,
-            collapsed: this.props.uiStore!.viewExchangeCardStates[key].collapsed &&
-                !this.props.uiStore!.expandedCard,
-            onCollapseToggled: this.toggleCollapse.bind(this, key)
-        }]));
+    get cardProps() {
+        return this.props.uiStore!.viewCardProps;
     }
 
     render() {
@@ -167,10 +92,12 @@ export class ExchangeDetailsPane extends React.Component<{
             accountStore,
             navigate
         } = this.props;
-        const { isPaidUser } = accountStore!;
-        const { expandedCard } = uiStore!;
-        const { expandCompleted } = this;
 
+        const { isPaidUser } = accountStore!;
+        const {
+            expandedCard,
+            expandCompleted
+        } = uiStore!;
         const { requestBreakpoint, responseBreakpoint } = exchange;
 
         // The full API details - only available for paid usage, so we drop this
@@ -187,31 +114,29 @@ export class ExchangeDetailsPane extends React.Component<{
         const headerCard = this.renderHeaderCard(exchange);
 
         if (expandedCard) {
-            return <ExpandedContentContainer expandCompleted={expandCompleted}>
+            return <ExpandedPaneContentContainer expandCompleted={expandCompleted}>
                 { headerCard }
                 { this.renderExpandedCard(expandedCard, exchange, apiExchange) }
-            </ExpandedContentContainer>;
+            </ExpandedPaneContentContainer>;
         }
 
         const cards = (requestBreakpoint || responseBreakpoint)
             ? this.renderBreakpointCards(exchange, apiName, apiExchange)
             : this.renderNormalCards(exchange, apiName, apiExchange);
 
-        return <OuterContainer>
-            <ScrollContainer>
-                <ContentContainer>
-                    { headerCard }
-                    { cards }
-                </ContentContainer>
-            </ScrollContainer>
-            <ExchangeDetailsFooter
+        return <PaneOuterContainer>
+            <PaneScrollContainer>
+                { headerCard }
+                { cards }
+            </PaneScrollContainer>
+            <HttpDetailsFooter
                 event={exchange}
                 onDelete={onDelete}
                 onScrollToEvent={onScrollToEvent}
                 navigate={navigate}
                 isPaidUser={isPaidUser}
             />
-        </OuterContainer>;
+        </PaneOuterContainer>;
     }
 
     renderHeaderCard(exchange: HttpExchange): JSX.Element | null {
@@ -225,7 +150,7 @@ export class ExchangeDetailsPane extends React.Component<{
         } = exchange;
 
         if (requestBreakpoint) {
-            return <ExchangeRequestBreakpointHeader
+            return <HttpRequestBreakpointHeader
                 key='breakpoint-header'
                 onCreateResponse={respondToBreakpointedRequest}
                 onResume={requestBreakpoint.resume}
@@ -234,7 +159,7 @@ export class ExchangeDetailsPane extends React.Component<{
         }
 
         if (responseBreakpoint) {
-            return <ExchangeResponseBreakpointHeader
+            return <HttpResponseBreakpointHeader
                 key='breakpoint-header'
                 onResume={responseBreakpoint.resume}
                 onClose={responseBreakpoint.close}
@@ -253,7 +178,7 @@ export class ExchangeDetailsPane extends React.Component<{
         const errorType = tagsToErrorType(tags);
 
         if (errorType) {
-            return <ExchangeErrorHeader type={errorType} {...errorHeaderProps} />;
+            return <HttpErrorHeader type={errorType} {...errorHeaderProps} />;
         } else {
             return null;
         }
@@ -268,14 +193,14 @@ export class ExchangeDetailsPane extends React.Component<{
         if (!this.props.accountStore!.isPaidUser) {
             // If you're not paid, but we do recognize this as a specific API
             // operation, we show a placeholder:
-            return <ExchangeApiPlaceholderCard
+            return <HttpApiPlaceholderCard
                 {...this.cardProps.api}
                 apiName={apiName}
             />;
         }
 
         // If paid & we have a name, we must have full API details, show them:
-        return <ExchangeApiCard
+        return <HttpApiCard
             {...this.cardProps.api}
             apiName={apiName}
             apiExchange={apiExchange!}
@@ -318,7 +243,7 @@ export class ExchangeDetailsPane extends React.Component<{
         const cards: Array<JSX.Element | null> = [];
 
         if (requestBreakpoint) {
-            cards.push(<ExchangeBreakpointRequestCard
+            cards.push(<HttpBreakpointRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
                 onChange={requestBreakpoint.updateMetadata}
@@ -329,7 +254,7 @@ export class ExchangeDetailsPane extends React.Component<{
             const responseBreakpoint = exchange.responseBreakpoint!;
 
             cards.push(this.renderApiCard(apiName, apiExchange));
-            cards.push(<ExchangeRequestCard
+            cards.push(<HttpRequestCard
                 {...this.cardProps.request}
                 exchange={exchange}
             />);
@@ -338,7 +263,7 @@ export class ExchangeDetailsPane extends React.Component<{
                 cards.push(this.renderRequestBody(exchange, apiExchange));
             }
 
-            cards.push(<ExchangeBreakpointResponseCard
+            cards.push(<HttpBreakpointResponseCard
                 {...this.cardProps.response}
                 exchange={exchange}
                 onChange={responseBreakpoint.updateMetadata}
@@ -363,7 +288,7 @@ export class ExchangeDetailsPane extends React.Component<{
 
         cards.push(this.renderApiCard(apiName, apiExchange));
 
-        cards.push(<ExchangeRequestCard
+        cards.push(<HttpRequestCard
             {...this.cardProps.request}
             exchange={exchange}
         />);
@@ -373,7 +298,7 @@ export class ExchangeDetailsPane extends React.Component<{
         }
 
         if (response === 'aborted') {
-            cards.push(<ExchangeCard {...this.cardProps.response} direction='left'>
+            cards.push(<CollapsibleCard {...this.cardProps.response} direction='left'>
                 <header>
                     <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
                     <CollapsibleCardHeading onCollapseToggled={this.cardProps.response.onCollapseToggled}>
@@ -383,9 +308,9 @@ export class ExchangeDetailsPane extends React.Component<{
                 <div>
                     The request was aborted before the response was completed.
                 </div>
-            </ExchangeCard>);
+            </CollapsibleCard>);
         } else if (!!response) {
-            cards.push(<ExchangeResponseCard
+            cards.push(<HttpResponseCard
                 {...this.cardProps.response}
                 response={response}
                 requestUrl={exchange.request.parsedUrl}
@@ -414,12 +339,12 @@ export class ExchangeDetailsPane extends React.Component<{
             // Push all cards below this point to the bottom
             cards.push(<CardDivider key='divider' />);
 
-            cards.push(<ExchangePerformanceCard
+            cards.push(<HttpPerformanceCard
                 exchange={exchange}
                 {...this.cardProps.performance}
             />);
 
-            cards.push(<ExchangeExportCard
+            cards.push(<HttpExportCard
                 exchange={exchange}
                 {...this.cardProps.export}
             />);
@@ -432,14 +357,14 @@ export class ExchangeDetailsPane extends React.Component<{
         const { request, requestBreakpoint } = exchange;
 
         return requestBreakpoint
-            ? <ExchangeBreakpointBodyCard
+            ? <HttpBreakpointBodyCard
                 {...this.requestBodyParams()}
                 exchangeId={exchange.id}
                 body={requestBreakpoint.inProgressResult.body.decoded}
                 headers={requestBreakpoint.inProgressResult.headers}
                 onChange={requestBreakpoint.updateBody}
             />
-            : <ExchangeBodyCard
+            : <HttpBodyCard
                 {...this.requestBodyParams()}
                 isPaidUser={this.props.accountStore!.isPaidUser}
                 url={exchange.request.url}
@@ -452,14 +377,14 @@ export class ExchangeDetailsPane extends React.Component<{
         const { response, responseBreakpoint } = exchange;
 
         return responseBreakpoint
-            ? <ExchangeBreakpointBodyCard
+            ? <HttpBreakpointBodyCard
                 {...this.responseBodyParams()}
                 exchangeId={exchange.id}
                 body={responseBreakpoint.inProgressResult.body.decoded}
                 headers={responseBreakpoint.inProgressResult.headers}
                 onChange={responseBreakpoint.updateBody}
             />
-            : <ExchangeBodyCard
+            : <HttpBodyCard
                 {...this.responseBodyParams()}
                 isPaidUser={this.props.accountStore!.isPaidUser}
                 url={exchange.request.url}
@@ -484,9 +409,6 @@ export class ExchangeDetailsPane extends React.Component<{
             streamId={this.props.exchange.id}
             streamType='WebSocket'
 
-            expanded={this.props.uiStore!.expandedCard === 'webSocketMessages'}
-            onExpandToggled={this.toggleExpand.bind(this, 'webSocketMessages')}
-
             editorNode={this.props.streamMessageEditor}
 
             isPaidUser={this.props.accountStore!.isPaidUser}
@@ -501,9 +423,7 @@ export class ExchangeDetailsPane extends React.Component<{
             ...this.cardProps.requestBody,
             title: 'Request Body',
             direction: 'right' as const,
-            expanded: this.props.uiStore!.expandedCard === 'requestBody',
-            editorNode: this.props.requestEditor,
-            onExpandToggled: this.toggleExpand.bind(this, 'requestBody'),
+            editorNode: this.props.requestEditor
         };
     }
 
@@ -511,44 +431,10 @@ export class ExchangeDetailsPane extends React.Component<{
     private responseBodyParams() {
         return {
             ...this.cardProps.responseBody,
-
             title: 'Response Body',
             direction: 'left' as const,
-            expanded: this.props.uiStore!.expandedCard === 'responseBody',
-            editorNode: this.props.responseEditor,
-            onExpandToggled: this.toggleExpand.bind(this, 'responseBody'),
+            editorNode: this.props.responseEditor
         };
-    }
-
-    @action.bound
-    private toggleCollapse(key: string) {
-        const { viewExchangeCardStates } = this.props.uiStore!;
-
-        const cardState = viewExchangeCardStates[key as CardKey];
-        cardState.collapsed = !cardState.collapsed;
-
-        this.props.uiStore!.expandedCard = undefined;
-    }
-
-    @action.bound
-    private toggleExpand(key: CardKey) {
-        const uiStore = this.props.uiStore!;
-
-        if (uiStore.expandedCard === key) {
-            uiStore.expandedCard = undefined;
-        } else if (
-            key === 'requestBody' ||
-            key === 'responseBody' ||
-            key === 'webSocketMessages'
-        ) {
-            uiStore.viewExchangeCardStates[key].collapsed = false;
-            uiStore.expandedCard = key;
-
-            this.expandCompleted = false;
-            requestAnimationFrame(action(() => {
-                this.expandCompleted = true;
-            }));
-        }
     }
 
     @action.bound

@@ -76,6 +76,7 @@ const InterceptOptionCard = styled(LittleCard)<{
 }>`
     height: 100%;
     width: 100%;
+    overflow: hidden;
 
     ${p => {
         if (!p.expanded || !p.uiConfig) {

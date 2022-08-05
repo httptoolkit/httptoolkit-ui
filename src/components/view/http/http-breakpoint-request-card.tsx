@@ -3,32 +3,23 @@ import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { Omit, BreakpointRequestResult, HttpExchange, Headers } from '../../types';
-import { styled } from '../../styles';
-import { SourceIcons, Icon } from '../../icons';
+import { BreakpointRequestResult, HttpExchange, Headers } from '../../../types';
+import { styled } from '../../../styles';
 
-import { TrafficSource } from '../../model/http/sources';
-import { getSummaryColour } from '../../model/events/categorization';
+import { getSummaryColour } from '../../../model/events/categorization';
 
-import { CollapsibleCardHeading } from '../common/card';
 import {
-    ExchangeCard,
-    ExchangeCardProps,
-} from './exchange-card';
-import { Pill } from '../common/pill';
-import { ContentLabelBlock, ContentLabel } from '../common/text-content';
-import { EditableHeaders } from '../common/editable-headers';
-import { TextInput, Select } from '../common/inputs';
+    CollapsibleCardHeading,
+    CollapsibleCard,
+    CollapsibleCardProps,
+} from '../../common/card';
+import { Pill } from '../../common/pill';
+import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
+import { EditableHeaders } from '../../common/editable-headers';
+import { TextInput, Select } from '../../common/inputs';
+import { SourceIcon } from '../../common/source-icon';
 
-const SourceIcon = ({ source, className }: { source: TrafficSource, className?: string }) =>
-    source.icon !== SourceIcons.Unknown ?
-        <Icon
-            className={className}
-            title={source.summary}
-            {...source.icon}
-        /> : null;
-
-interface RequestBreakpointCardProps extends Omit<ExchangeCardProps, 'children'> {
+interface RequestBreakpointCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
     onChange: (request: Partial<BreakpointRequestResult>) => void;
 }
@@ -55,7 +46,7 @@ const MethodSelect = styled(Select)`
 `;
 
 @observer
-export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakpointCardProps> {
+export class HttpBreakpointRequestCard extends React.Component<RequestBreakpointCardProps> {
 
     render() {
         const { exchange, onChange, ...cardProps } = this.props;
@@ -65,7 +56,7 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
         const headers = inProgressResult.headers || {};
         const { method, url } = inProgressResult;
 
-        return <ExchangeCard {...cardProps} direction='right'>
+        return <CollapsibleCard {...cardProps} direction='right'>
             <header>
                 <SourceIcon source={request.source} />
                 <Pill color={getSummaryColour(exchange)}>
@@ -105,7 +96,7 @@ export class ExchangeBreakpointRequestCard extends React.Component<RequestBreakp
                 headers={headers}
                 onChange={this.onHeadersChanged}
             />
-        </ExchangeCard>;
+        </CollapsibleCard>;
     }
 
     @computed
