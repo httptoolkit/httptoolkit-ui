@@ -55,7 +55,7 @@
     "@types/node-forge": "^0.8.6",
     "@types/qrcode.react": "^1.0.0",
     "@types/reach__router": "^1.2.4",
-    "@types/react": "^16.9.35",
+    "@types/react": "^16.14.29",
     "@types/react-autosuggest": "^10.0.1",
     "@types/react-dom": "^16.8.25",
     "@types/react-fontawesome": "^1.6.4",
