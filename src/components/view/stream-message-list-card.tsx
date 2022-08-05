@@ -71,7 +71,7 @@ export class StreamMessageListCard extends React.Component<{
 
         return <CollapsibleCard
             collapsed={collapsed}
-            onCollapseToggled={onCollapseToggled ?? _.noop}
+            onCollapseToggled={onCollapseToggled}
             expanded={expanded}
         >
             <header>
@@ -97,7 +97,7 @@ export class StreamMessageListCard extends React.Component<{
                     }
                 </Pill>
                 <CollapsibleCardHeading
-                    onCollapseToggled={onCollapseToggled?? _.noop}
+                    onCollapseToggled={onCollapseToggled}
                 >
                     { streamType } messages
                 </CollapsibleCardHeading>
@@ -176,9 +176,6 @@ const StreamMessagesList = styled.div<{ expanded: boolean }>`
 
     position: relative;
     ${p => p.expanded && `
-        left: 0;
-        right: 0;
-        bottom: 0;
         height: auto !important;
         overflow-y: auto;
     `}
