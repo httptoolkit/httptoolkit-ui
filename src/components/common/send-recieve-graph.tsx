@@ -45,11 +45,14 @@ export const SendReceiveGraph = ({
     const top = graphPaddingPx;
     const bottom = height - graphPaddingPx;
     const innerHeight = bottom - top;
+
     const axisMargin = 85 + graphPaddingPx;
+    const innerWidth = width - axisMargin;
+    // ^ Note we don't subtract right-edge padding: we go fully up to the right edge
 
     const xScale = scaleLinear()
         .domain([0, data.length - 1])
-        .range([0, width]);
+        .range([0, innerWidth]);
 
     const dataMax = _.max(data.map(d => Math.max(d.sent, d.received))) ?? 0;
 
