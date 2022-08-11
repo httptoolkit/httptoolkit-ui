@@ -63,7 +63,7 @@ function getPath(api: ApiMetadata, request: HtkRequest): {
     const { parsedUrl } = request;
 
     // Request URL without query params
-    const url = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.pathname}`;
+    const url = `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}`;
 
     // Test the base server up front, just to keep things quick
     if (!api.serverMatcher.exec(url)) return;

@@ -96,6 +96,12 @@ const simplifyHarForSnippetExport = (harRequest: HarFormat.Request) => {
             // headers as required for a request where it's unspecified. If we override this,
             // it can cause problems if tools change the body length (due to encoding/compression).
             if (header.name.toLowerCase() === 'content-length') return false;
+
+            // HTTP/2 headers should never be included in snippets - they're implicitly part of
+            // the other request data (the method etc).
+            // We can drop this after fixing https://github.com/Kong/httpsnippet/issues/298
+            if (header.name.startsWith(':')) return false;
+
             return true;
         })
     };
