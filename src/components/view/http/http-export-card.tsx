@@ -14,7 +14,7 @@ import { reportError } from '../../../errors';
 
 import { AccountStore } from '../../../model/account/account-store';
 import { UiStore } from '../../../model/ui-store';
-import { generateHarRequest, generateHar } from '../../../model/http/har';
+import { generateHarRequest, generateHar, ExtendedHarRequest } from '../../../model/http/har';
 
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 import {
@@ -84,13 +84,33 @@ const snippetEditorOptions = {
     hover: { enabled: false }
 };
 
-const simplifyHarForSnippetExport = (harRequest: HarFormat.Request) => {
+const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
+    const postData = !!harRequest.postData
+            ? harRequest.postData
+        : harRequest._requestBodyStatus === 'discarded:not-representable'
+            ? {
+                mimeType: 'text/plain',
+                text: "!!! UNREPRESENTABLE BINARY REQUEST BODY - BODY MUST BE EXPORTED SEPARATELY !!!"
+            }
+        : harRequest._requestBodyStatus === 'discarded:too-large'
+            ? {
+                mimeType: 'text/plain',
+                text: "!!! VERY LARGE REQUEST BODY - BODY MUST BE EXPORTED & INCLUDED SEPARATELY !!!"
+            }
+        : harRequest._requestBodyStatus === 'discarded:not-decodable'
+            ? {
+                mimeType: 'text/plain',
+                text: "!!! REQUEST BODY COULD NOT BE DECODED !!!"
+            }
+        : undefined;
+
     // When exporting code snippets the primary goal is to generate convenient code to send the
     // request that's *sematantically* equivalent to the original request, not to force every
     // tool to produce byte-for-byte identical requests (that's effectively impossible). To do
     // this, we drop headers that tools can produce automatically for themselves:
     return {
         ...harRequest,
+        postData,
         headers: _.filter(harRequest.headers, (header) => {
             // All clients should be able to automatically generate the correct content-length
             // headers as required for a request where it's unspecified. If we override this,

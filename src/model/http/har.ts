@@ -41,8 +41,11 @@ export type RequestContentData = {
     comment?: string;
 };
 
-interface ExtendedHarRequest extends HarFormat.Request {
-    _postDataDiscarded?: boolean;
+export interface ExtendedHarRequest extends HarFormat.Request {
+    _requestBodyStatus?:
+        | 'discarded:too-large'
+        | 'discarded:not-representable'
+        | 'discarded:not-decodable';
     _content?: RequestContentData;
 }
 
@@ -136,7 +139,7 @@ export function generateHarRequest(
 
     if (request.body.decoded) {
         if (request.body.decoded.byteLength > HAR_BODY_SIZE_LIMIT) {
-            requestEntry._postDataDiscarded = true;
+            requestEntry._requestBodyStatus = 'discarded:too-large';
             requestEntry.comment = `Body discarded during HAR generation: longer than limit of ${HAR_BODY_SIZE_LIMIT} bytes`;
         } else {
             try {
@@ -146,6 +149,7 @@ export function generateHarRequest(
                 );
             } catch (e) {
                 if (e instanceof TypeError) {
+                    requestEntry._requestBodyStatus = 'discarded:not-representable';
                     requestEntry._content = {
                         text: request.body.decoded.toString('base64'),
                         size: request.body.decoded.byteLength,
@@ -156,6 +160,8 @@ export function generateHarRequest(
                 }
             }
         }
+    } else {
+        requestEntry._requestBodyStatus = 'discarded:not-decodable';
     }
 
     return requestEntry;
