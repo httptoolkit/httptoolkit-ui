@@ -24,7 +24,7 @@ import type {
 import Worker from 'worker-loader!./ui-worker';
 
 import { Omit } from '../types';
-import { ApiMetadata } from '../model/api/build-openapi';
+import { ApiMetadata } from '../model/api/api-interfaces';
 import { WorkerFormatterKey } from './ui-worker-formatters';
 
 const worker = new Worker();

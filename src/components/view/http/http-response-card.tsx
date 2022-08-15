@@ -6,7 +6,7 @@ import { get } from 'typesafe-get';
 import { HtkResponse, Omit } from '../../../types';
 import { Theme } from '../../../styles';
 
-import { ApiExchange } from '../../../model/api/openapi';
+import { ApiExchange } from '../../../model/api/api-interfaces';
 import { getStatusColor } from '../../../model/events/categorization';
 import { getStatusDocs, getStatusMessage } from '../../../model/http/http-docs';
 

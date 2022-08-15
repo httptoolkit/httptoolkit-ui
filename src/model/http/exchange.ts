@@ -31,8 +31,9 @@ import { getContentType } from '../events/content-types';
 import { HTKEventBase } from '../events/event-base';
 
 import { ApiStore } from '../api/api-store';
-import { ApiExchange } from '../api/openapi';
-import { ApiMetadata } from '../api/build-openapi';
+import { ApiExchange } from '../api/api-interfaces';
+import { OpenApiExchange } from '../api/openapi';
+import { ApiMetadata } from '../api/api-interfaces';
 import { decodeBody } from '../../services/ui-worker-api';
 import {
     RequestBreakpoint,
@@ -325,7 +326,7 @@ export class HttpExchange extends HTKEventBase {
 
         if (apiMetadata) {
             try {
-                return new ApiExchange(apiMetadata, this);
+                return new OpenApiExchange(apiMetadata, this);
             } catch (e) {
                 reportError(e);
                 throw e;

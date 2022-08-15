@@ -6,7 +6,7 @@ import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 import { joinAnd } from '../../../util';
 
-import { ApiExchange, Parameter } from '../../../model/api/openapi';
+import { ApiExchange, ApiParameter } from '../../../model/api/api-interfaces';
 
 import {
     CollapsibleCardHeading,
@@ -63,7 +63,7 @@ const UnsetValue = styled.span`
 `;
 
 const ParamMetadata = styled((p: {
-    param: Parameter,
+    param: ApiParameter,
     className?: string
 }) => <div className={p.className}>
         {

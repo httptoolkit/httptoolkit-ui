@@ -2,7 +2,11 @@ import { expect } from '../../../test-setup';
 import { getExchangeData } from '../../unit-test-helpers';
 
 import { buildApiMetadata } from '../../../../src/model/api/build-openapi';
-import { ApiExchange, getParameters, getBodySchema } from '../../../../src/model/api/openapi';
+import {
+    OpenApiExchange,
+    getParameters,
+    getBodySchema
+} from '../../../../src/model/api/openapi';
 
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
 import slackSpec from 'openapi-directory/api/slack.com.json';
@@ -15,7 +19,7 @@ describe('OpenAPI support', () => {
 
         it('should pull generic service info regardless of endpoint', async () => {
             expect(
-                new ApiExchange(
+                new OpenApiExchange(
                     await stripeApi,
                     getExchangeData({
                         hostname: 'api.stripe.com',
@@ -51,7 +55,7 @@ describe('OpenAPI support', () => {
 
         it('should pull detailed operation info for matching operations', async () => {
             expect(
-                new ApiExchange(
+                new OpenApiExchange(
                     await stripeApi,
                     getExchangeData({
                         hostname: 'api.stripe.com',
@@ -83,7 +87,7 @@ describe('OpenAPI support', () => {
 
         it('should respect x-http-method-override', async () => {
             expect(
-                new ApiExchange(
+                new OpenApiExchange(
                     await stripeApi,
                     getExchangeData({
                         hostname: 'api.stripe.com',
@@ -103,7 +107,7 @@ describe('OpenAPI support', () => {
 
         it('should report an error for deprecated operations', async () => {
             expect(
-                new ApiExchange(
+                new OpenApiExchange(
                     await stripeApi,
                     getExchangeData({
                         hostname: 'api.stripe.com',
@@ -123,7 +127,7 @@ describe('OpenAPI support', () => {
 
         it('should include the response details', async () => {
             expect(
-                new ApiExchange(
+                new OpenApiExchange(
                     await slackApi,
                     getExchangeData({
                         hostname: 'slack.com',
@@ -140,7 +144,7 @@ describe('OpenAPI support', () => {
 
         it('should fall back to default response details', async () => {
             expect(
-                new ApiExchange(
+                new OpenApiExchange(
                     await slackApi,
                     getExchangeData({
                         hostname: 'slack.com',

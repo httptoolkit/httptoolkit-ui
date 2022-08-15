@@ -12,7 +12,7 @@ import { UiStore } from '../../../model/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { getStatusColor } from '../../../model/events/categorization';
-import { ApiExchange } from '../../../model/api/openapi';
+import { ApiExchange } from '../../../model/api/api-interfaces';
 import { buildRuleFromRequest } from '../../../model/rules/rule-definitions';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 

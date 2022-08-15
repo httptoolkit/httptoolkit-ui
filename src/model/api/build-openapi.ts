@@ -4,23 +4,21 @@ import * as querystring from 'querystring';
 import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import * as Ajv from 'ajv';
 
+import type { ApiRequestMatcher } from './api-interfaces';
 import { openApiSchema } from './openapi-schema';
 import { dereference } from '../../util/json-schema';
+
+
+export interface OpenApiMetadata {
+    type: 'openapi';
+    spec: OpenAPIObject;
+    serverMatcher: RegExp;
+    requestMatchers: Map<ApiRequestMatcher, Path>;
+}
 
 interface Path {
     path: string;
     pathSpec: PathItemObject;
-}
-
-interface RequestMatcher {
-    pathMatcher: RegExp;
-    queryMatcher: querystring.ParsedUrlQuery;
-}
-
-export interface ApiMetadata {
-    spec: OpenAPIObject;
-    serverMatcher: RegExp;
-    requestMatchers: Map<RequestMatcher, Path>;
 }
 
 const filterSpec = new Ajv({
@@ -40,7 +38,7 @@ function templateStringToRegexString(template: string): string {
 export async function buildApiMetadata(
     spec: OpenAPIObject,
     baseUrlOverrides?: string[]
-): Promise<ApiMetadata> {
+): Promise<OpenApiMetadata> {
     const specId = `${
         spec.info['x-providerName'] || 'unknown'
     }/${
@@ -71,7 +69,7 @@ export async function buildApiMetadata(
     // Build a regex that matches any of these at the start of a URL
     const serverMatcher = new RegExp(`^(${serverUrlRegexSources.join('|')})`, 'i')
 
-    const requestMatchers = new Map<RequestMatcher, Path>();
+    const requestMatchers = new Map<ApiRequestMatcher, Path>();
     _.entries(spec.paths)
         // Sort path & pathspec pairs to ensure that more specific paths are
         // always listed first, so that later on we can always use the first match
@@ -129,6 +127,7 @@ export async function buildApiMetadata(
         });
 
     return {
+        type: 'openapi',
         spec,
         serverMatcher,
         requestMatchers

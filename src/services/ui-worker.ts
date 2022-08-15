@@ -13,7 +13,8 @@ import {
     SUPPORTED_ENCODING
 } from 'http-encoding';
 
-import { buildApiMetadata, ApiMetadata } from '../model/api/build-openapi';
+import { ApiMetadata } from '../model/api/api-interfaces';
+import { buildApiMetadata } from '../model/api/build-openapi';
 import { parseCert, ParsedCertificate, validatePKCS12, ValidationResult } from '../model/crypto';
 import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 

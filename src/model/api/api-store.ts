@@ -10,7 +10,7 @@ import { lazyObservablePromise } from "../../util/observable";
 import { hydrate, persist } from "../../util/mobx-persist/persist";
 
 import { AccountStore } from "../account/account-store";
-import { ApiMetadata } from "./build-openapi";
+import { ApiMetadata } from "./api-interfaces";
 import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 import { findBestMatchingApi } from './openapi';
 import { serializeRegex, serializeMap } from '../serialization';
