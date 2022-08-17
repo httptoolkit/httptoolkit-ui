@@ -9,6 +9,28 @@
 		},
 		"version": "0.0.0"
 	},
+	"servers": [
+		{ "url": "http://localhost:8545" },
+		{ "url": "http://127.0.0.1:8545" },
+		{
+			"url": "https://${chain}.infura.io/v3/${key}",
+			"variables": {
+				"chain": {
+					"default": "mainnet",
+					"enum": [
+						"mainnet",
+						"ropsten",
+						"rinkeby",
+						"kovan",
+						"goerli"
+					]
+				},
+				"key": {
+					"default": "API-KEY-REQUIRED"
+				}
+			}
+		}
+	],
 	"methods": [
 		{
 			"name": "eth_getBlockByHash",
