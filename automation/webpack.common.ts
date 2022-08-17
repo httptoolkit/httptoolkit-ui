@@ -111,7 +111,8 @@ export default <Webpack.Configuration>{
             template: path.join(SRC_DIR, 'index.html')
         }),
         new CopyPlugin([
-            { from: 'node_modules/openapi-directory/api', to: 'api' }
+            { from: 'node_modules/openapi-directory/api', to: 'api' },
+            { from: './extra-apis', to: 'api' },
         ]),
         new MonacoWebpackPlugin({
             languages: [
