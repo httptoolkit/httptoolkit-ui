@@ -40,6 +40,36 @@ const apiMetadataSchema = serializr.createSimpleSchema({
     )
 });
 
+// In addition to the public OpenAPI directory, we have a few extra APIs (stored in
+// this repo in /extra-apis) that we match seprately:
+const EXTRA_APIS: { [urlPrefix: string]: 'ipfs' | 'ethereum' } = {
+    // See the 'servers' field in /extra-apis/ipfs.json:
+    'localhost:5001/api/v0': 'ipfs',
+    '127.0.0.1:5001/api/v0': 'ipfs',
+    'ipfs.infura.io:5001/api/v0': 'ipfs',
+
+    // See the 'servers' field in /extra-apis/ethereum.json:
+    'localhost:8545/': 'ethereum',
+    '127.0.0.1:8545/': 'ethereum',
+    'mainnet.infura.io/v3/': 'ethereum',
+    'ropsten.infura.io/v3/': 'ethereum',
+    'rinkeby.infura.io/v3/': 'ethereum',
+    'kovan.infura.io/v3/': 'ethereum',
+    'goerli.infura.io/v3/': 'ethereum'
+};
+
+function findPublicApi(url: string) {
+    const openApiId = findPublicOpenApi(url);
+
+    if (openApiId) return openApiId;
+
+    const matchingExtraApiKey = Object.keys(EXTRA_APIS)
+        .find((apiPrefix) => url.startsWith(apiPrefix));
+
+    if (matchingExtraApiKey) return EXTRA_APIS[matchingExtraApiKey];
+    else return undefined;
+}
+
 export class ApiStore {
 
     constructor(
@@ -156,7 +186,7 @@ export class ApiStore {
         // If not, is this a known public API? (note that private always has precedence)
         const requestUrl = `${parsedUrl.host}${parsedUrl.pathname}`;
 
-        let publicSpecId = findPublicOpenApi(requestUrl);
+        let publicSpecId = findPublicApi(requestUrl);
         if (!publicSpecId) return;
         if (!Array.isArray(publicSpecId)) publicSpecId = [publicSpecId];
 
