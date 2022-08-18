@@ -121,11 +121,15 @@ export class JsonRpcApiService implements ApiService {
 
     constructor(api: OpenRpcMetadata) {
         this.name = api.spec.info.title;
+        this.shortName = api.spec.info['x-httptoolkit-short-name']
+            ?? this.name.split(' ')[0];
+
         this.logoUrl = api.spec.info['x-logo']?.url;
         this.description = fromMarkdown(api.spec.info.description);
         this.docsUrl = api.spec.externalDocs?.url;
     }
 
+    readonly shortName: string;
     readonly name: string;
     readonly logoUrl?: string | undefined;
     readonly description?: Html | undefined;

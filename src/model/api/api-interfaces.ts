@@ -40,6 +40,7 @@ export interface ApiExchange {
 }
 
 export interface ApiService {
+    readonly shortName: string;
     readonly name: string;
     readonly logoUrl?: string;
     readonly description?: Html;

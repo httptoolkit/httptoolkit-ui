@@ -320,7 +320,7 @@ const EventRow = observer((props: EventRowProps) => {
             failure={event}
         />;
     } else if (event.isHttp()) {
-        if (event.api?.isBuiltInApi) {
+        if (event.api?.isBuiltInApi && event.api.matchedOperation()) {
             return <BuiltInApiRow
                 index={index}
                 isSelected={isSelected}
@@ -554,9 +554,6 @@ const BuiltInApiRow = observer((p: {
     } = p.exchange;
     const api = p.exchange.api!; // Only shown for built-in APIs, so this must be set
 
-    // Quick hack, but it works for our only two current examples:
-    const name = api.service.name.split(' ')[0];
-
     return <TrafficEventListRow
         role="row"
         aria-label='row'
@@ -569,7 +566,14 @@ const BuiltInApiRow = observer((p: {
     >
         <RowPin pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn>{ name }</EventTypeColumn>
+        <EventTypeColumn>
+            { api.service.shortName }: {
+                _.startCase(
+                    api.operation.name
+                    .replace('eth_', '') // One-off hack for Ethereum, but result looks much nicer.
+                )
+            }
+        </EventTypeColumn>
         <Source title={request.source.summary}>
             <Icon
                 {...request.source.icon}
@@ -577,12 +581,12 @@ const BuiltInApiRow = observer((p: {
             />
         </Source>
         <BuiltInApiRequestDetails>
-            { api.operation.name }({
+            {
                 api.request.parameters
-                    .filter(param => param.value !== undefined)
-                    .map(param => `${param.name}=${JSON.stringify(param.value)}`)
-                    .join(', ')
-            })
+                .filter(param => param.value !== undefined)
+                .map(param => `${param.name}=${JSON.stringify(param.value)}`)
+                .join(', ')
+            }
         </BuiltInApiRequestDetails>
     </TrafficEventListRow>
 });

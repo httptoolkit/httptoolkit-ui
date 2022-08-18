@@ -318,11 +318,15 @@ class OpenApiService implements ApiService {
         const { info: service } = spec;
 
         this.name = service.title;
+        this.shortName = service['x-httptoolkit-short-name']
+            ?? this.name.split(' ')[0];
+
         this.logoUrl = service['x-logo']?.url;
         this.description = fromMarkdown(service.description);
         this.docsUrl = spec?.externalDocs?.url;
     }
 
+    public readonly shortName: string;
     public readonly name: string;
     public readonly logoUrl?: string;
     public readonly description?: Html;

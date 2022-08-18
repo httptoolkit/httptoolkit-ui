@@ -109,6 +109,9 @@ export const openApiSchema = {
         "x-httptoolkit-builtin-api": {
           "type": "boolean",
           "default": false
+        },
+        "x-httptoolkit-short-name": {
+          "type": "string"
         }
       },
       "additionalProperties": false
