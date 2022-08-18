@@ -168,7 +168,7 @@ const PathAndQuery = styled(Column)`
 
 // Match Method + Status, but shrink right margin slightly so that
 // spinner + "WebRTC Media" fits OK.
-const RTCEventType = styled(Column)`
+const EventTypeColumn = styled(Column)`
     transition: flex-basis 0.1s;
     ${(p: { pinned?: boolean }) =>
         p.pinned
@@ -202,6 +202,13 @@ const RTCEventDetails = styled(Column)`
 
 const RTCConnectionDetails = styled(RTCEventDetails)`
     text-align: center;
+`;
+
+// Host + Path + Query columns:
+const BuiltInApiRequestDetails = styled(Column)`
+    flex-shrink: 1;
+    flex-grow: 0;
+    flex-basis: 1000px;
 `;
 
 const EventListRow = styled.div`
@@ -313,12 +320,21 @@ const EventRow = observer((props: EventRowProps) => {
             failure={event}
         />;
     } else if (event.isHttp()) {
-        return <ExchangeRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            exchange={event}
-        />;
+        if (event.api?.isBuiltInApi) {
+            return <BuiltInApiRow
+                index={index}
+                isSelected={isSelected}
+                style={style}
+                exchange={event}
+            />
+        } else {
+            return <ExchangeRow
+                index={index}
+                isSelected={isSelected}
+                style={style}
+                exchange={event}
+            />;
+        }
     } else if (event.isRTCConnection()) {
         return <RTCConnectionRow
             index={index}
@@ -440,9 +456,9 @@ const RTCConnectionRow = observer(({
     >
         <RowPin pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
-        <RTCEventType>
+        <EventTypeColumn>
             { !event.closeState && <RTCConnectedIcon /> } WebRTC
-        </RTCEventType>
+        </EventTypeColumn>
         <Source title={event.source.summary}>
             <Icon
                 {...event.source.icon}
@@ -484,14 +500,14 @@ const RTCStreamRow = observer(({
     >
         <RowPin pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
-        <RTCEventType>
+        <EventTypeColumn>
             { !event.closeState && <RTCConnectedIcon /> } WebRTC {
                 event.isRTCDataChannel()
                     ? 'Data'
                 : // RTCMediaTrack:
                     'Media'
             }
-        </RTCEventType>
+        </EventTypeColumn>
         <Source title={event.rtcConnection.source.summary}>
             <Icon
                 {...event.rtcConnection.source.icon}
@@ -523,6 +539,52 @@ const RTCStreamRow = observer(({
             }
         </RTCEventDetails>
     </TrafficEventListRow>;
+});
+
+const BuiltInApiRow = observer((p: {
+    index: number,
+    exchange: HttpExchange,
+    isSelected: boolean,
+    style: {}
+}) => {
+    const {
+        request,
+        pinned,
+        category
+    } = p.exchange;
+    const api = p.exchange.api!; // Only shown for built-in APIs, so this must be set
+
+    // Quick hack, but it works for our only two current examples:
+    const name = api.service.name.split(' ')[0];
+
+    return <TrafficEventListRow
+        role="row"
+        aria-label='row'
+        aria-rowindex={p.index + 1}
+        data-event-id={p.exchange.id}
+        tabIndex={p.isSelected ? 0 : -1}
+
+        className={p.isSelected ? 'selected' : ''}
+        style={p.style}
+    >
+        <RowPin pinned={pinned}/>
+        <RowMarker category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn>{ name }</EventTypeColumn>
+        <Source title={request.source.summary}>
+            <Icon
+                {...request.source.icon}
+                fixedWidth={true}
+            />
+        </Source>
+        <BuiltInApiRequestDetails>
+            { api.operation.name }({
+                api.request.parameters
+                    .filter(param => param.value !== undefined)
+                    .map(param => `${param.name}=${JSON.stringify(param.value)}`)
+                    .join(', ')
+            })
+        </BuiltInApiRequestDetails>
+    </TrafficEventListRow>
 });
 
 const FailedRequestRow = observer((p: {
