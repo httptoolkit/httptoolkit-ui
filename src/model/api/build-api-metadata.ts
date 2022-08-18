@@ -2,18 +2,23 @@ import * as _ from 'lodash';
 import * as querystring from 'querystring';
 
 import { OpenAPIObject, PathItemObject } from 'openapi-directory';
+import { MethodObject } from '@open-rpc/meta-schema';
 import * as Ajv from 'ajv';
 
-import type { ApiRequestMatcher } from './api-interfaces';
 import { openApiSchema } from './openapi-schema';
 import { dereference } from '../../util/json-schema';
-
+import { OpenRpcDocument, OpenRpcMetadata } from './jsonrpc';
 
 export interface OpenApiMetadata {
     type: 'openapi';
     spec: OpenAPIObject;
     serverMatcher: RegExp;
-    requestMatchers: Map<ApiRequestMatcher, Path>;
+    requestMatchers: Map<OpenApiRequestMatcher, Path>;
+}
+
+interface OpenApiRequestMatcher {
+    pathMatcher: RegExp;
+    queryMatcher: querystring.ParsedUrlQuery;
 }
 
 interface Path {
@@ -25,7 +30,9 @@ const filterSpec = new Ajv({
     removeAdditional: 'failing'
 }).compile(openApiSchema);
 
-function templateStringToRegexString(template: string): string {
+// Note that OpenAPI template strings are not the same as JSON template language templates,
+// which use ${...} instead of {...}.
+function openApiTemplateStringToRegexString(template: string): string {
     return template
         // Escape all regex chars *except* { }
         .replace(/[\^$\\.*+?()[\]|]/g, '\\$&')
@@ -35,7 +42,7 @@ function templateStringToRegexString(template: string): string {
         .replace(/\/$/, '');
 }
 
-export async function buildApiMetadata(
+export async function buildOpenApiMetadata(
     spec: OpenAPIObject,
     baseUrlOverrides?: string[]
 ): Promise<OpenApiMetadata> {
@@ -58,18 +65,18 @@ export async function buildApiMetadata(
     }
 
     // Now it's relatively small & tidy, dereference everything.
-    spec = <OpenAPIObject> dereference(spec);
+    spec = dereference(spec);
 
     const serverUrlRegexSources = baseUrlOverrides && baseUrlOverrides.length
         // Look for one of the given base URLs, ignoring trailing slashes
         ? baseUrlOverrides.map(url => _.escapeRegExp(url).replace(/\/$/, ''))
         // Look for any URL of the base servers in the spec
-        : spec.servers!.map(s => templateStringToRegexString(s.url));
+        : spec.servers!.map(s => openApiTemplateStringToRegexString(s.url));
 
     // Build a regex that matches any of these at the start of a URL
-    const serverMatcher = new RegExp(`^(${serverUrlRegexSources.join('|')})`, 'i')
+    const serverMatcher = new RegExp(`^(${serverUrlRegexSources.join('|')})`, 'i');
 
-    const requestMatchers = new Map<ApiRequestMatcher, Path>();
+    const requestMatchers = new Map<OpenApiRequestMatcher, Path>();
     _.entries(spec.paths)
         // Sort path & pathspec pairs to ensure that more specific paths are
         // always listed first, so that later on we can always use the first match
@@ -115,7 +122,7 @@ export async function buildApiMetadata(
             requestMatchers.set({
                 // Build a regex that matches this path on any of those base servers
                 pathMatcher: new RegExp(
-                    serverMatcher.source + templateStringToRegexString(realPath) + '/?$',
+                    serverMatcher.source + openApiTemplateStringToRegexString(realPath) + '/?$',
                     'i'
                 ),
                 // Some specs (AWS) also match requests by specific params
@@ -131,5 +138,39 @@ export async function buildApiMetadata(
         spec,
         serverMatcher,
         requestMatchers
+    };
+}
+
+// Approximately transform a JSON template string into a regex string that will match
+// values, using wildcards for each template. This is based on this draft RFC:
+// https://datatracker.ietf.org/doc/draft-jonas-json-template-language/
+// Only seems relevant to OpenRPC, doesn't seem widely used elsewhere.
+function jsonTemplateStringToRegexString(template: string): string {
+    return template
+        // Escape all regex chars *except* $, {, }
+        .replace(/[\^\\.*+?()[\]|]/g, '\\$&')
+        // Replace templates with wildcards
+        .replace(/\$\{([^/}]+)}/g, '([^\/]*)')
+        // Drop trailing slashes
+        .replace(/\/$/, '');
+}
+
+export function buildOpenRpcMetadata(spec: OpenRpcDocument, baseUrlOverrides?: string[]): OpenRpcMetadata {
+    spec = dereference(spec);
+
+    const serverUrlRegexSources = baseUrlOverrides && baseUrlOverrides.length
+        // Look for one of the given base URLs, ignoring trailing slashes
+        ? baseUrlOverrides.map(url => _.escapeRegExp(url).replace(/\/$/, ''))
+        // Look for any URL of the base servers in the spec
+        : spec.servers!.map(s => jsonTemplateStringToRegexString(s.url));
+
+    // Build a regex that matches any of these at the start of a URL
+    const serverMatcher = new RegExp(`^(${serverUrlRegexSources.join('|')})`, 'i');
+
+    return {
+        type: 'openrpc',
+        spec,
+        serverMatcher,
+        requestMatchers: _.keyBy(spec.methods, 'name') as _.Dictionary<MethodObject> // Dereferenced
     };
 }

@@ -1,5 +1,5 @@
-import type * as querystring from 'querystring';
 import type {
+    OpenAPIObject,
     SchemaObject
 } from 'openapi-directory';
 
@@ -7,15 +7,17 @@ import type {
     HtkResponse,
     Html
 } from "../../types";
-import { OpenApiMetadata } from './build-openapi';
+
+import type { OpenApiMetadata } from './build-api-metadata';
+import type { OpenRpcDocument, OpenRpcMetadata } from './jsonrpc';
 
 export type ApiMetadata =
-    | OpenApiMetadata;
+    | OpenApiMetadata
+    | OpenRpcMetadata;
 
-export interface ApiRequestMatcher {
-    pathMatcher: RegExp;
-    queryMatcher: querystring.ParsedUrlQuery;
-}
+export type ApiSpec =
+    | OpenAPIObject
+    | OpenRpcDocument;
 
 export interface ApiExchange {
     readonly service: ApiService;

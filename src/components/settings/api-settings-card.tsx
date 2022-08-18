@@ -24,6 +24,7 @@ import { SettingsButton, SettingsExplanation } from './settings-components';
 import { TextInput } from '../common/inputs';
 import { ApiStore } from '../../model/api/api-store';
 import { ContentLabel } from '../common/text-content';
+import { ApiMetadata } from '../../model/api/api-interfaces';
 
 const UploadSpecButton = styled(SettingsButton).attrs(() => ({
     type: 'submit'
@@ -278,7 +279,7 @@ export class ApiSettingsCard extends React.Component<
     saveApi = flow(function * (this: ApiSettingsCard) {
         const baseUrl = this.enteredBaseUrl.replace(/https?:\/\//, '');
 
-        const api = yield buildApiMetadataAsync(
+        const api: ApiMetadata = yield buildApiMetadataAsync(
             this.selectedSpec!,
             ['http://' + baseUrl, 'https://' + baseUrl]
         );

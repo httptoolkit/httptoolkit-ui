@@ -1,6 +1,5 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
-import type { OpenAPIObject } from 'openapi-directory';
 import type { SUPPORTED_ENCODING } from 'http-encoding';
 
 import type {
@@ -24,7 +23,7 @@ import type {
 import Worker from 'worker-loader!./ui-worker';
 
 import { Omit } from '../types';
-import { ApiMetadata } from '../model/api/api-interfaces';
+import type { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
 import { WorkerFormatterKey } from './ui-worker-formatters';
 
 const worker = new Worker();
@@ -117,7 +116,7 @@ export async function testEncodingsAsync(decodedBuffer: Buffer) {
 }
 
 export async function buildApiMetadataAsync(
-    spec: OpenAPIObject,
+    spec: ApiSpec,
     baseUrlOverrides?: string[]
 ): Promise<ApiMetadata> {
     return (await callApi<BuildApiRequest, BuildApiResponse>({

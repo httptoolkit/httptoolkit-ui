@@ -29,42 +29,16 @@ import {
     ApiOperation,
     ApiRequest,
     ApiResponse,
-    ApiParameter
+    ApiParameter,
+    ApiMetadata
 } from './api-interfaces';
-import { OpenApiMetadata } from './build-openapi';
+import { OpenApiMetadata } from './build-api-metadata';
 import { fromMarkdown } from '../markdown';
 
 const paramValidator = new Ajv({
     coerceTypes: 'array',
     unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
 });
-
-// If we match multiple APIs, build all of them, try to match each one
-// against the request, and return only the matching one. This happens if
-// multiple services have the exact same base request URL (rds.amazonaws.com)
-export function findBestMatchingApi(
-    apis: OpenApiMetadata[],
-    request: HtkRequest
-): OpenApiMetadata | undefined {
-    const matchingApis = apis.filter((api) => matchOperation(api, request).matched);
-
-    // If we've successfully found one matching API, return it
-    if (matchingApis.length === 1) return matchingApis[0];
-
-    // If this is a non-matching request to one of these APIs, but we're not
-    // sure which, return the one with the most paths (as a best guess metric of
-    // which is the most popular service)
-    if (matchingApis.length === 0) return _.maxBy(apis, a => a.spec.paths.length)!;
-
-    // Otherwise we've matched multiple APIs which all define operations that
-    // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
-
-    // Report this so we can try to improve & avoid in future.
-    reportError('Overlapping APIs', matchingApis);
-
-    // Return our guess of the most popular service, from the matching services only
-    return _.maxBy(matchingApis, a => a.spec.paths.length)!;
-}
 
 function getPath(api: OpenApiMetadata, request: HtkRequest): {
     pathSpec: PathObject,
@@ -308,7 +282,7 @@ export class OpenApiExchange implements ApiExchange {
         this.service = new OpenApiService(api.spec);
 
         this._spec = api.spec;
-        this._opSpec = matchOperation(api, request);
+        this._opSpec = matchOpenApiOperation(api, request);
 
         this.operation = new OpenApiOperation(this._opSpec);
         this.request = new OpenApiRequest(api.spec, this._opSpec, request);
@@ -342,7 +316,7 @@ class OpenApiService implements ApiService {
         const { info: service } = spec;
 
         this.name = service.title;
-        this.logoUrl = service['x-logo']?.url
+        this.logoUrl = service['x-logo']?.url;
         this.description = fromMarkdown(service.description);
         this.docsUrl = spec?.externalDocs?.url;
     }
@@ -353,7 +327,7 @@ class OpenApiService implements ApiService {
     public readonly docsUrl?: string;
 }
 
-function matchOperation(api: OpenApiMetadata, request: HtkRequest) {
+export function matchOpenApiOperation(api: OpenApiMetadata, request: HtkRequest) {
     const matchingPath = getPath(api, request);
 
     const { pathSpec, path } = matchingPath || {
@@ -376,7 +350,7 @@ function matchOperation(api: OpenApiMetadata, request: HtkRequest) {
     };
 }
 
-type MatchedOperation = ReturnType<typeof matchOperation>;
+type MatchedOperation = ReturnType<typeof matchOpenApiOperation>;
 
 class OpenApiOperation implements ApiOperation {
     constructor(

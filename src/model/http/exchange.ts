@@ -22,6 +22,7 @@ import {
     asHeaderArray,
     lastHeader,
 } from '../../util';
+import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 
 import { reportError } from '../../errors';
@@ -33,6 +34,7 @@ import { HTKEventBase } from '../events/event-base';
 import { ApiStore } from '../api/api-store';
 import { ApiExchange } from '../api/api-interfaces';
 import { OpenApiExchange } from '../api/openapi';
+import { parseRpcApiExchange } from '../api/jsonrpc';
 import { ApiMetadata } from '../api/api-interfaces';
 import { decodeBody } from '../../services/ui-worker-api';
 import {
@@ -326,7 +328,13 @@ export class HttpExchange extends HTKEventBase {
 
         if (apiMetadata) {
             try {
-                return new OpenApiExchange(apiMetadata, this);
+                if (apiMetadata.type === 'openapi') {
+                    return new OpenApiExchange(apiMetadata, this);
+                } else if (apiMetadata.type === 'openrpc') {
+                    return await parseRpcApiExchange(apiMetadata, this);
+                } else {
+                    throw new UnreachableCheck(apiMetadata, m => m.type);
+                }
             } catch (e) {
                 reportError(e);
                 throw e;

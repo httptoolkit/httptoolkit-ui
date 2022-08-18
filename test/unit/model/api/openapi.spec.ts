@@ -1,7 +1,7 @@
 import { expect } from '../../../test-setup';
 import { getExchangeData } from '../../unit-test-helpers';
 
-import { buildApiMetadata } from '../../../../src/model/api/build-openapi';
+import { buildOpenApiMetadata } from '../../../../src/model/api/build-api-metadata';
 import {
     OpenApiExchange,
     getParameters,
@@ -11,8 +11,8 @@ import {
 import stripeSpec from 'openapi-directory/api/stripe.com.json';
 import slackSpec from 'openapi-directory/api/slack.com.json';
 import { OpenAPIObject } from 'openapi-directory';
-const stripeApi = buildApiMetadata(stripeSpec);
-const slackApi = buildApiMetadata(slackSpec);
+const stripeApi = buildOpenApiMetadata(stripeSpec);
+const slackApi = buildOpenApiMetadata(slackSpec);
 
 describe('OpenAPI support', () => {
     describe('full exchange parsing', () => {

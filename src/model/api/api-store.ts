@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { observable, observe, computed } from "mobx";
 import * as localForage from 'localforage';
 import * as serializr from 'serializr';
-import { findApi as findPublicOpenApi, OpenAPIObject } from 'openapi-directory';
+import { findApi as findPublicOpenApi } from 'openapi-directory';
 
 import { HtkRequest } from '../../types';
 import { reportError } from '../../errors';
@@ -10,12 +10,12 @@ import { lazyObservablePromise } from "../../util/observable";
 import { hydrate, persist } from "../../util/mobx-persist/persist";
 
 import { AccountStore } from "../account/account-store";
-import { ApiMetadata } from "./api-interfaces";
+import { ApiMetadata, ApiSpec } from "./api-interfaces";
 import { buildApiMetadataAsync } from '../../services/ui-worker-api';
-import { findBestMatchingApi } from './openapi';
+import { matchOpenApiOperation } from './openapi';
 import { serializeRegex, serializeMap } from '../serialization';
 
-async function fetchApiMetadata(specId: string): Promise<OpenAPIObject> {
+async function fetchApiMetadata(specId: string): Promise<ApiSpec> {
     const specResponse = await fetch(`/api/${specId}.json`);
     return specResponse.json();
 }
@@ -125,12 +125,12 @@ export class ApiStore {
             : undefined;
     }
 
-    private publicOpenApiCache: _.Dictionary<Promise<ApiMetadata>> = {};
+    private publicApiCache: _.Dictionary<Promise<ApiMetadata>> = {};
 
     private getPublicApi(specId: string) {
-        const { publicOpenApiCache } = this;
-        if (!publicOpenApiCache[specId]) {
-            publicOpenApiCache[specId] = fetchApiMetadata(specId)
+        const { publicApiCache } = this;
+        if (!publicApiCache[specId]) {
+            publicApiCache[specId] = fetchApiMetadata(specId)
                 .then(buildApiMetadataAsync)
                 .catch((e) => {
                     console.log(`Failed to build API ${specId}`);
@@ -140,11 +140,11 @@ export class ApiStore {
                     throw e;
                 });
         }
-        return publicOpenApiCache[specId];
+        return publicApiCache[specId];
     }
 
     async getApi(request: HtkRequest): Promise<ApiMetadata | undefined> {
-        const { parsedUrl, url } = request;
+        const { parsedUrl } = request;
 
         // Is this a configured private API? I.e. has the user explicitly given
         // us a spec to use for requests like these.
@@ -154,10 +154,9 @@ export class ApiStore {
         }
 
         // If not, is this a known public API? (note that private always has precedence)
-        const requestUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
+        const requestUrl = `${parsedUrl.host}${parsedUrl.pathname}`;
 
         let publicSpecId = findPublicOpenApi(requestUrl);
-
         if (!publicSpecId) return;
         if (!Array.isArray(publicSpecId)) publicSpecId = [publicSpecId];
 
@@ -179,4 +178,34 @@ export class ApiStore {
         return findBestMatchingApi(publicSpecs, request);
     }
 
+}
+
+// If we match multiple APIs, build all of them, try to match each one
+// against the request, and return only the matching one. This happens if
+// multiple services have the exact same base request URL (rds.amazonaws.com)
+export function findBestMatchingApi(
+    apis: ApiMetadata[],
+    request: HtkRequest
+): ApiMetadata | undefined {
+    const matchingApis = apis.filter((api) =>
+        api.type == 'openrpc' || // Since we have so few JSON-RPC APIs, we assume they match
+        matchOpenApiOperation(api, request).matched // For OpenAPI, we check for a matching op
+    );
+
+    // If we've successfully found one matching API, return it
+    if (matchingApis.length === 1) return matchingApis[0];
+
+    // If this is a non-matching request to one of these APIs, but we're not
+    // sure which, return the one with the most paths (as a best guess metric of
+    // which is the most popular service)
+    if (matchingApis.length === 0) return _.maxBy(apis, a => a.spec.paths.length)!;
+
+    // Otherwise we've matched multiple APIs which all define operations that
+    // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
+
+    // Report this so we can try to improve & avoid in future.
+    reportError('Overlapping APIs', matchingApis);
+
+    // Return our guess of the most popular service, from the matching services only
+    return _.maxBy(matchingApis, a => a.spec.paths.length)!;
 }

@@ -2,7 +2,6 @@
 const ctx: Worker = self as any;
 
 import * as serializeError from 'serialize-error';
-import { OpenAPIObject } from 'openapi3-ts';
 import {
     encodeBuffer,
     decodeBuffer,
@@ -12,9 +11,10 @@ import {
     zstdCompress,
     SUPPORTED_ENCODING
 } from 'http-encoding';
+import { OpenAPIObject } from 'openapi-directory';
 
-import { ApiMetadata } from '../model/api/api-interfaces';
-import { buildApiMetadata } from '../model/api/build-openapi';
+import { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
+import { buildOpenApiMetadata, buildOpenRpcMetadata } from '../model/api/build-api-metadata';
 import { parseCert, ParsedCertificate, validatePKCS12, ValidationResult } from '../model/crypto';
 import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 
@@ -57,7 +57,7 @@ export interface TestEncodingsResponse extends Message {
 
 export interface BuildApiRequest extends Message {
     type: 'build-api';
-    spec: OpenAPIObject;
+    spec: ApiSpec;
     baseUrlOverrides?: string[];
 }
 
@@ -163,7 +163,12 @@ async function testEncodings(request: TestEncodingsRequest) {
 
 async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
     const { id, spec, baseUrlOverrides } = request;
-    return { id, api: await buildApiMetadata(spec, baseUrlOverrides) };
+    return {
+        id,
+        api: 'openapi' in spec
+            ? await buildOpenApiMetadata(spec as OpenAPIObject, baseUrlOverrides)
+            : await buildOpenRpcMetadata(spec, baseUrlOverrides)
+    };
 }
 
 ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
