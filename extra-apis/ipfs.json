@@ -30,7 +30,7 @@
   "paths": {
     "/api/v0/add": {
       "post": {
-        "operationId": "/api/v0/add",
+        "operationId": "add",
         "description": "Add a file or directory to IPFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-add"
@@ -197,7 +197,7 @@
     },
     "/api/v0/bitswap/ledger": {
       "post": {
-        "operationId": "/api/v0/bitswap/ledger",
+        "operationId": "bitswap/ledger",
         "description": "Show the current ledger for a peer.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bitswap-ledger"
@@ -233,7 +233,7 @@
     },
     "/api/v0/bitswap/reprovide": {
       "post": {
-        "operationId": "/api/v0/bitswap/reprovide",
+        "operationId": "bitswap/reprovide",
         "description": "Trigger reprovider.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bitswap-reprovide"
@@ -248,7 +248,7 @@
     },
     "/api/v0/bitswap/stat": {
       "post": {
-        "operationId": "/api/v0/bitswap/stat",
+        "operationId": "bitswap/stat",
         "description": "Show some diagnostic information on the bitswap agent.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bitswap-stat"
@@ -302,7 +302,7 @@
     },
     "/api/v0/bitswap/wantlist": {
       "post": {
-        "operationId": "/api/v0/bitswap/wantlist",
+        "operationId": "bitswap/wantlist",
         "description": "Show blocks currently on the wantlist.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bitswap-wantlist"
@@ -337,7 +337,7 @@
     },
     "/api/v0/block/get": {
       "post": {
-        "operationId": "/api/v0/block/get",
+        "operationId": "block/get",
         "description": "Get a raw IPFS block.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-block-get"
@@ -362,7 +362,7 @@
     },
     "/api/v0/block/put": {
       "post": {
-        "operationId": "/api/v0/block/put",
+        "operationId": "block/put",
         "description": "Store input as an IPFS block.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-block-put"
@@ -444,7 +444,7 @@
     },
     "/api/v0/block/rm": {
       "post": {
-        "operationId": "/api/v0/block/rm",
+        "operationId": "block/rm",
         "description": "Remove IPFS block(s) from the local datastore.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-block-rm"
@@ -493,7 +493,7 @@
     },
     "/api/v0/block/stat": {
       "post": {
-        "operationId": "/api/v0/block/stat",
+        "operationId": "block/stat",
         "description": "Print information of a raw IPFS block.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-block-stat"
@@ -526,7 +526,7 @@
     },
     "/api/v0/bootstrap": {
       "post": {
-        "operationId": "/api/v0/bootstrap",
+        "operationId": "bootstrap",
         "description": "Show or edit the list of bootstrap peers.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bootstrap"
@@ -550,7 +550,7 @@
     },
     "/api/v0/bootstrap/add": {
       "post": {
-        "operationId": "/api/v0/bootstrap/add",
+        "operationId": "bootstrap/add",
         "description": "Add peers to the bootstrap list.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bootstrap-add"
@@ -592,7 +592,7 @@
     },
     "/api/v0/bootstrap/add/default": {
       "post": {
-        "operationId": "/api/v0/bootstrap/add/default",
+        "operationId": "bootstrap/add/default",
         "description": "Add default peers to the bootstrap list.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bootstrap-add-default"
@@ -616,7 +616,7 @@
     },
     "/api/v0/bootstrap/list": {
       "post": {
-        "operationId": "/api/v0/bootstrap/list",
+        "operationId": "bootstrap/list",
         "description": "Show peers in the bootstrap list.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bootstrap-list"
@@ -640,7 +640,7 @@
     },
     "/api/v0/bootstrap/rm": {
       "post": {
-        "operationId": "/api/v0/bootstrap/rm",
+        "operationId": "bootstrap/rm",
         "description": "Remove peers from the bootstrap list.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bootstrap-rm"
@@ -682,7 +682,7 @@
     },
     "/api/v0/bootstrap/rm/all": {
       "post": {
-        "operationId": "/api/v0/bootstrap/rm/all",
+        "operationId": "bootstrap/rm/all",
         "description": "Remove all peers from the bootstrap list.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-bootstrap-rm-all"
@@ -706,7 +706,7 @@
     },
     "/api/v0/cat": {
       "post": {
-        "operationId": "/api/v0/cat",
+        "operationId": "cat",
         "description": "Show IPFS object data.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cat"
@@ -756,7 +756,7 @@
     },
     "/api/v0/cid/base32": {
       "post": {
-        "operationId": "/api/v0/cid/base32",
+        "operationId": "cid/base32",
         "description": "Convert CIDs to Base32 CID version 1.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cid-base32"
@@ -790,7 +790,7 @@
     },
     "/api/v0/cid/bases": {
       "post": {
-        "operationId": "/api/v0/cid/bases",
+        "operationId": "cid/bases",
         "description": "List available multibase encodings.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cid-bases"
@@ -832,7 +832,7 @@
     },
     "/api/v0/cid/codecs": {
       "post": {
-        "operationId": "/api/v0/cid/codecs",
+        "operationId": "cid/codecs",
         "description": "List available CID multicodecs.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cid-codecs"
@@ -874,7 +874,7 @@
     },
     "/api/v0/cid/format": {
       "post": {
-        "operationId": "/api/v0/cid/format",
+        "operationId": "cid/format",
         "description": "Format and convert a CID in various useful ways.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cid-format"
@@ -941,7 +941,7 @@
     },
     "/api/v0/cid/hashes": {
       "post": {
-        "operationId": "/api/v0/cid/hashes",
+        "operationId": "cid/hashes",
         "description": "List available multihashes.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-cid-hashes"
@@ -983,7 +983,7 @@
     },
     "/api/v0/commands": {
       "post": {
-        "operationId": "/api/v0/commands",
+        "operationId": "commands",
         "description": "List all available commands.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-commands"
@@ -1036,7 +1036,7 @@
     },
     "/api/v0/commands/completion/bash": {
       "post": {
-        "operationId": "/api/v0/commands/completion/bash",
+        "operationId": "commands/completion/bash",
         "description": "Generate bash shell completions.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-commands-completion-bash"
@@ -1051,7 +1051,7 @@
     },
     "/api/v0/config": {
       "post": {
-        "operationId": "/api/v0/config",
+        "operationId": "config",
         "description": "Get and set IPFS config values.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-config"
@@ -1104,7 +1104,7 @@
     },
     "/api/v0/config/edit": {
       "post": {
-        "operationId": "/api/v0/config/edit",
+        "operationId": "config/edit",
         "description": "Open the config file for editing in $EDITOR.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-config-edit"
@@ -1119,7 +1119,7 @@
     },
     "/api/v0/config/profile/apply": {
       "post": {
-        "operationId": "/api/v0/config/profile/apply",
+        "operationId": "config/profile/apply",
         "description": "Apply profile to config.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-config-profile-apply"
@@ -1164,7 +1164,7 @@
     },
     "/api/v0/config/replace": {
       "post": {
-        "operationId": "/api/v0/config/replace",
+        "operationId": "config/replace",
         "description": "Replace the config with &lt;file&gt;.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-config-replace"
@@ -1183,7 +1183,7 @@
     },
     "/api/v0/config/show": {
       "post": {
-        "operationId": "/api/v0/config/show",
+        "operationId": "config/show",
         "description": "Output config file contents.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-config-show"
@@ -1205,7 +1205,7 @@
     },
     "/api/v0/dag/export": {
       "post": {
-        "operationId": "/api/v0/dag/export",
+        "operationId": "dag/export",
         "description": "Streams the selected DAG as a .car stream on stdout.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dag-export"
@@ -1238,7 +1238,7 @@
     },
     "/api/v0/dag/get": {
       "post": {
-        "operationId": "/api/v0/dag/get",
+        "operationId": "dag/get",
         "description": "Get a DAG node from IPFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dag-get"
@@ -1272,7 +1272,7 @@
     },
     "/api/v0/dag/import": {
       "post": {
-        "operationId": "/api/v0/dag/import",
+        "operationId": "dag/import",
         "description": "Import the contents of .car files",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dag-import"
@@ -1342,7 +1342,7 @@
     },
     "/api/v0/dag/put": {
       "post": {
-        "operationId": "/api/v0/dag/put",
+        "operationId": "dag/put",
         "description": "Add a DAG node to IPFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dag-put"
@@ -1415,7 +1415,7 @@
     },
     "/api/v0/dag/resolve": {
       "post": {
-        "operationId": "/api/v0/dag/resolve",
+        "operationId": "dag/resolve",
         "description": "Resolve IPLD block.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dag-resolve"
@@ -1450,7 +1450,7 @@
     },
     "/api/v0/dag/stat": {
       "post": {
-        "operationId": "/api/v0/dag/stat",
+        "operationId": "dag/stat",
         "description": "Gets stats for a DAG.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dag-stat"
@@ -1492,7 +1492,7 @@
     },
     "/api/v0/dht/query": {
       "post": {
-        "operationId": "/api/v0/dht/query",
+        "operationId": "dht/query",
         "description": "Find the closest Peer IDs to a given Peer ID by querying the DHT.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dht-query"
@@ -1542,7 +1542,7 @@
     },
     "/api/v0/diag/cmds": {
       "post": {
-        "operationId": "/api/v0/diag/cmds",
+        "operationId": "diag/cmds",
         "description": "List commands run on this IPFS node.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-diag-cmds"
@@ -1585,7 +1585,7 @@
     },
     "/api/v0/diag/cmds/clear": {
       "post": {
-        "operationId": "/api/v0/diag/cmds/clear",
+        "operationId": "diag/cmds/clear",
         "description": "Clear inactive requests from the log.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-diag-cmds-clear"
@@ -1600,7 +1600,7 @@
     },
     "/api/v0/diag/cmds/set-time": {
       "post": {
-        "operationId": "/api/v0/diag/cmds/set-time",
+        "operationId": "diag/cmds/set-time",
         "description": "Set how long to keep inactive requests in the log.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-diag-cmds-set-time"
@@ -1625,7 +1625,7 @@
     },
     "/api/v0/diag/profile": {
       "post": {
-        "operationId": "/api/v0/diag/profile",
+        "operationId": "diag/profile",
         "description": "Collect a performance profile for debugging.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-diag-profile"
@@ -1688,7 +1688,7 @@
     },
     "/api/v0/diag/sys": {
       "post": {
-        "operationId": "/api/v0/diag/sys",
+        "operationId": "diag/sys",
         "description": "Print system diagnostic information.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-diag-sys"
@@ -1703,7 +1703,7 @@
     },
     "/api/v0/files/chcid": {
       "post": {
-        "operationId": "/api/v0/files/chcid",
+        "operationId": "files/chcid",
         "description": "Change the CID version or hash function of the root node of a given path.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-chcid"
@@ -1746,7 +1746,7 @@
     },
     "/api/v0/files/cp": {
       "post": {
-        "operationId": "/api/v0/files/cp",
+        "operationId": "files/cp",
         "description": "Add references to IPFS files and directories in MFS (or copy within MFS).",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-cp"
@@ -1783,7 +1783,7 @@
     },
     "/api/v0/files/flush": {
       "post": {
-        "operationId": "/api/v0/files/flush",
+        "operationId": "files/flush",
         "description": "Flush a given path&#39;s data to disk.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-flush"
@@ -1815,7 +1815,7 @@
     },
     "/api/v0/files/ls": {
       "post": {
-        "operationId": "/api/v0/files/ls",
+        "operationId": "files/ls",
         "description": "List directories in the local mutable namespace.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-ls"
@@ -1869,7 +1869,7 @@
     },
     "/api/v0/files/mkdir": {
       "post": {
-        "operationId": "/api/v0/files/mkdir",
+        "operationId": "files/mkdir",
         "description": "Make directories.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-mkdir"
@@ -1920,7 +1920,7 @@
     },
     "/api/v0/files/mv": {
       "post": {
-        "operationId": "/api/v0/files/mv",
+        "operationId": "files/mv",
         "description": "Move files.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-mv"
@@ -1949,7 +1949,7 @@
     },
     "/api/v0/files/read": {
       "post": {
-        "operationId": "/api/v0/files/read",
+        "operationId": "files/read",
         "description": "Read a file in a given MFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-read"
@@ -1990,7 +1990,7 @@
     },
     "/api/v0/files/rm": {
       "post": {
-        "operationId": "/api/v0/files/rm",
+        "operationId": "files/rm",
         "description": "Remove a file.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-rm"
@@ -2031,7 +2031,7 @@
     },
     "/api/v0/files/stat": {
       "post": {
-        "operationId": "/api/v0/files/stat",
+        "operationId": "files/stat",
         "description": "Display file status.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-stat"
@@ -2103,7 +2103,7 @@
     },
     "/api/v0/files/write": {
       "post": {
-        "operationId": "/api/v0/files/write",
+        "operationId": "files/write",
         "description": "Write to a mutable file in a given filesystem.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-files-write"
@@ -2199,7 +2199,7 @@
     },
     "/api/v0/filestore/dups": {
       "post": {
-        "operationId": "/api/v0/filestore/dups",
+        "operationId": "filestore/dups",
         "description": "List blocks that are both in the filestore and standard block storage.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-filestore-dups"
@@ -2222,7 +2222,7 @@
     },
     "/api/v0/filestore/ls": {
       "post": {
-        "operationId": "/api/v0/filestore/ls",
+        "operationId": "filestore/ls",
         "description": "List objects in filestore.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-filestore-ls"
@@ -2268,7 +2268,7 @@
     },
     "/api/v0/filestore/verify": {
       "post": {
-        "operationId": "/api/v0/filestore/verify",
+        "operationId": "filestore/verify",
         "description": "Verify objects in filestore.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-filestore-verify"
@@ -2314,7 +2314,7 @@
     },
     "/api/v0/get": {
       "post": {
-        "operationId": "/api/v0/get",
+        "operationId": "get",
         "description": "Download IPFS objects.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-get"
@@ -2380,7 +2380,7 @@
     },
     "/api/v0/id": {
       "post": {
-        "operationId": "/api/v0/id",
+        "operationId": "id",
         "description": "Show IPFS node id info.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-id"
@@ -2437,7 +2437,7 @@
     },
     "/api/v0/key/export": {
       "post": {
-        "operationId": "/api/v0/key/export",
+        "operationId": "key/export",
         "description": "Export a keypair",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-export"
@@ -2479,7 +2479,7 @@
     },
     "/api/v0/key/gen": {
       "post": {
-        "operationId": "/api/v0/key/gen",
+        "operationId": "key/gen",
         "description": "Create a new keypair",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-gen"
@@ -2538,7 +2538,7 @@
     },
     "/api/v0/key/import": {
       "post": {
-        "operationId": "/api/v0/key/import",
+        "operationId": "key/import",
         "description": "Import a key and prints imported key id",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-import"
@@ -2602,7 +2602,7 @@
     },
     "/api/v0/key/list": {
       "post": {
-        "operationId": "/api/v0/key/list",
+        "operationId": "key/list",
         "description": "List all local keypairs.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-list"
@@ -2647,7 +2647,7 @@
     },
     "/api/v0/key/rename": {
       "post": {
-        "operationId": "/api/v0/key/rename",
+        "operationId": "key/rename",
         "description": "Rename a keypair.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-rename"
@@ -2703,7 +2703,7 @@
     },
     "/api/v0/key/rm": {
       "post": {
-        "operationId": "/api/v0/key/rm",
+        "operationId": "key/rm",
         "description": "Remove a keypair.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-rm"
@@ -2757,7 +2757,7 @@
     },
     "/api/v0/key/rotate": {
       "post": {
-        "operationId": "/api/v0/key/rotate",
+        "operationId": "key/rotate",
         "description": "Rotates the IPFS identity.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-key-rotate"
@@ -2798,7 +2798,7 @@
     },
     "/api/v0/log/level": {
       "post": {
-        "operationId": "/api/v0/log/level",
+        "operationId": "log/level",
         "description": "Change the logging level.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-log-level"
@@ -2834,7 +2834,7 @@
     },
     "/api/v0/log/ls": {
       "post": {
-        "operationId": "/api/v0/log/ls",
+        "operationId": "log/ls",
         "description": "List the logging subsystems.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-log-ls"
@@ -2858,7 +2858,7 @@
     },
     "/api/v0/ls": {
       "post": {
-        "operationId": "/api/v0/ls",
+        "operationId": "ls",
         "description": "List directory contents for Unix filesystem objects.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-ls"
@@ -2938,7 +2938,7 @@
     },
     "/api/v0/multibase/decode": {
       "post": {
-        "operationId": "/api/v0/multibase/decode",
+        "operationId": "multibase/decode",
         "description": "Decode multibase string",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-multibase-decode"
@@ -2957,7 +2957,7 @@
     },
     "/api/v0/multibase/encode": {
       "post": {
-        "operationId": "/api/v0/multibase/encode",
+        "operationId": "multibase/encode",
         "description": "Encode data into multibase string",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-multibase-encode"
@@ -2986,7 +2986,7 @@
     },
     "/api/v0/multibase/list": {
       "post": {
-        "operationId": "/api/v0/multibase/list",
+        "operationId": "multibase/list",
         "description": "List available multibase encodings.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-multibase-list"
@@ -3028,7 +3028,7 @@
     },
     "/api/v0/multibase/transcode": {
       "post": {
-        "operationId": "/api/v0/multibase/transcode",
+        "operationId": "multibase/transcode",
         "description": "Transcode multibase string between bases",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-multibase-transcode"
@@ -3057,7 +3057,7 @@
     },
     "/api/v0/name/publish": {
       "post": {
-        "operationId": "/api/v0/name/publish",
+        "operationId": "name/publish",
         "description": "Publish IPNS names.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-name-publish"
@@ -3151,7 +3151,7 @@
     },
     "/api/v0/name/resolve": {
       "post": {
-        "operationId": "/api/v0/name/resolve",
+        "operationId": "name/resolve",
         "description": "Resolve IPNS names.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-name-resolve"
@@ -3223,7 +3223,7 @@
     },
     "/api/v0/pin/add": {
       "post": {
-        "operationId": "/api/v0/pin/add",
+        "operationId": "pin/add",
         "description": "Pin objects to local storage.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-add"
@@ -3275,7 +3275,7 @@
     },
     "/api/v0/pin/ls": {
       "post": {
-        "operationId": "/api/v0/pin/ls",
+        "operationId": "pin/ls",
         "description": "List objects pinned to local storage.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-ls"
@@ -3341,7 +3341,7 @@
     },
     "/api/v0/pin/remote/add": {
       "post": {
-        "operationId": "/api/v0/pin/remote/add",
+        "operationId": "pin/remote/add",
         "description": "Pin object to remote pinning service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-add"
@@ -3400,7 +3400,7 @@
     },
     "/api/v0/pin/remote/ls": {
       "post": {
-        "operationId": "/api/v0/pin/remote/ls",
+        "operationId": "pin/remote/ls",
         "description": "List objects pinned to remote pinning service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-ls"
@@ -3463,7 +3463,7 @@
     },
     "/api/v0/pin/remote/rm": {
       "post": {
-        "operationId": "/api/v0/pin/remote/rm",
+        "operationId": "pin/remote/rm",
         "description": "Remove pins from remote pinning service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-rm"
@@ -3526,7 +3526,7 @@
     },
     "/api/v0/pin/remote/service/add": {
       "post": {
-        "operationId": "/api/v0/pin/remote/service/add",
+        "operationId": "pin/remote/service/add",
         "description": "Add remote pinning service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-service-add"
@@ -3555,7 +3555,7 @@
     },
     "/api/v0/pin/remote/service/ls": {
       "post": {
-        "operationId": "/api/v0/pin/remote/service/ls",
+        "operationId": "pin/remote/service/ls",
         "description": "List remote pinning services.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-service-ls"
@@ -3601,7 +3601,7 @@
     },
     "/api/v0/pin/remote/service/rm": {
       "post": {
-        "operationId": "/api/v0/pin/remote/service/rm",
+        "operationId": "pin/remote/service/rm",
         "description": "Remove remote pinning service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-remote-service-rm"
@@ -3626,7 +3626,7 @@
     },
     "/api/v0/pin/rm": {
       "post": {
-        "operationId": "/api/v0/pin/rm",
+        "operationId": "pin/rm",
         "description": "Remove object from pin-list.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-rm"
@@ -3669,7 +3669,7 @@
     },
     "/api/v0/pin/update": {
       "post": {
-        "operationId": "/api/v0/pin/update",
+        "operationId": "pin/update",
         "description": "Update a recursive pin.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-update"
@@ -3716,7 +3716,7 @@
     },
     "/api/v0/pin/verify": {
       "post": {
-        "operationId": "/api/v0/pin/verify",
+        "operationId": "pin/verify",
         "description": "Verify that recursive pins are complete.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pin-verify"
@@ -3764,7 +3764,7 @@
     },
     "/api/v0/ping": {
       "post": {
-        "operationId": "/api/v0/ping",
+        "operationId": "ping",
         "description": "Send echo request packets to IPFS hosts.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-ping"
@@ -3807,7 +3807,7 @@
     },
     "/api/v0/refs": {
       "post": {
-        "operationId": "/api/v0/refs",
+        "operationId": "refs",
         "description": "List links (references) from an object.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-refs"
@@ -3882,7 +3882,7 @@
     },
     "/api/v0/refs/local": {
       "post": {
-        "operationId": "/api/v0/refs/local",
+        "operationId": "refs/local",
         "description": "List all local references.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-refs-local"
@@ -3905,7 +3905,7 @@
     },
     "/api/v0/repo/gc": {
       "post": {
-        "operationId": "/api/v0/repo/gc",
+        "operationId": "repo/gc",
         "description": "Perform a garbage collection sweep on the repo.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-repo-gc"
@@ -3955,7 +3955,7 @@
     },
     "/api/v0/repo/migrate": {
       "post": {
-        "operationId": "/api/v0/repo/migrate",
+        "operationId": "repo/migrate",
         "description": "Apply any outstanding migrations to the repo.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-repo-migrate"
@@ -3979,7 +3979,7 @@
     },
     "/api/v0/repo/stat": {
       "post": {
-        "operationId": "/api/v0/repo/stat",
+        "operationId": "repo/stat",
         "description": "Get stats for the currently used repo.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-repo-stat"
@@ -4024,7 +4024,7 @@
     },
     "/api/v0/repo/verify": {
       "post": {
-        "operationId": "/api/v0/repo/verify",
+        "operationId": "repo/verify",
         "description": "Verify all blocks in repo are not corrupted.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-repo-verify"
@@ -4047,7 +4047,7 @@
     },
     "/api/v0/repo/version": {
       "post": {
-        "operationId": "/api/v0/repo/version",
+        "operationId": "repo/version",
         "description": "Show the repo version.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-repo-version"
@@ -4078,7 +4078,7 @@
     },
     "/api/v0/resolve": {
       "post": {
-        "operationId": "/api/v0/resolve",
+        "operationId": "resolve",
         "description": "Resolve the value of names to IPFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-resolve"
@@ -4135,7 +4135,7 @@
     },
     "/api/v0/routing/findpeer": {
       "post": {
-        "operationId": "/api/v0/routing/findpeer",
+        "operationId": "routing/findpeer",
         "description": "Find the multiaddresses associated with a Peer ID.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-routing-findpeer"
@@ -4185,7 +4185,7 @@
     },
     "/api/v0/routing/findprovs": {
       "post": {
-        "operationId": "/api/v0/routing/findprovs",
+        "operationId": "routing/findprovs",
         "description": "Find peers that can provide a specific value, given a key.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-routing-findprovs"
@@ -4244,7 +4244,7 @@
     },
     "/api/v0/routing/get": {
       "post": {
-        "operationId": "/api/v0/routing/get",
+        "operationId": "routing/get",
         "description": "Given a key, query the routing system for its best value.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-routing-get"
@@ -4294,7 +4294,7 @@
     },
     "/api/v0/routing/provide": {
       "post": {
-        "operationId": "/api/v0/routing/provide",
+        "operationId": "routing/provide",
         "description": "Announce to the network that you are providing given values.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-routing-provide"
@@ -4352,7 +4352,7 @@
     },
     "/api/v0/routing/put": {
       "post": {
-        "operationId": "/api/v0/routing/put",
+        "operationId": "routing/put",
         "description": "Write a key/value pair to the routing system.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-routing-put"
@@ -4406,7 +4406,7 @@
     },
     "/api/v0/shutdown": {
       "post": {
-        "operationId": "/api/v0/shutdown",
+        "operationId": "shutdown",
         "description": "Shut down the IPFS daemon.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-shutdown"
@@ -4421,7 +4421,7 @@
     },
     "/api/v0/stats/bitswap": {
       "post": {
-        "operationId": "/api/v0/stats/bitswap",
+        "operationId": "stats/bitswap",
         "description": "Show some diagnostic information on the bitswap agent.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-stats-bitswap"
@@ -4475,7 +4475,7 @@
     },
     "/api/v0/stats/bw": {
       "post": {
-        "operationId": "/api/v0/stats/bw",
+        "operationId": "stats/bw",
         "description": "Print IPFS bandwidth information.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-stats-bw"
@@ -4534,7 +4534,7 @@
     },
     "/api/v0/stats/dht": {
       "post": {
-        "operationId": "/api/v0/stats/dht",
+        "operationId": "stats/dht",
         "description": "Returns statistics about the node&#39;s DHT(s).",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-stats-dht"
@@ -4580,7 +4580,7 @@
     },
     "/api/v0/stats/provide": {
       "post": {
-        "operationId": "/api/v0/stats/provide",
+        "operationId": "stats/provide",
         "description": "Returns statistics about the node&#39;s (re)provider system.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-stats-provide"
@@ -4605,7 +4605,7 @@
     },
     "/api/v0/stats/repo": {
       "post": {
-        "operationId": "/api/v0/stats/repo",
+        "operationId": "stats/repo",
         "description": "Get stats for the currently used repo.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-stats-repo"
@@ -4650,7 +4650,7 @@
     },
     "/api/v0/swarm/addrs": {
       "post": {
-        "operationId": "/api/v0/swarm/addrs",
+        "operationId": "swarm/addrs",
         "description": "List known addresses. Useful for debugging.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-addrs"
@@ -4676,7 +4676,7 @@
     },
     "/api/v0/swarm/addrs/listen": {
       "post": {
-        "operationId": "/api/v0/swarm/addrs/listen",
+        "operationId": "swarm/addrs/listen",
         "description": "List interface listening addresses.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-addrs-listen"
@@ -4700,7 +4700,7 @@
     },
     "/api/v0/swarm/addrs/local": {
       "post": {
-        "operationId": "/api/v0/swarm/addrs/local",
+        "operationId": "swarm/addrs/local",
         "description": "List local addresses.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-addrs-local"
@@ -4733,7 +4733,7 @@
     },
     "/api/v0/swarm/connect": {
       "post": {
-        "operationId": "/api/v0/swarm/connect",
+        "operationId": "swarm/connect",
         "description": "Open connection to a given address.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-connect"
@@ -4767,7 +4767,7 @@
     },
     "/api/v0/swarm/disconnect": {
       "post": {
-        "operationId": "/api/v0/swarm/disconnect",
+        "operationId": "swarm/disconnect",
         "description": "Close connection to a given address.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-disconnect"
@@ -4801,7 +4801,7 @@
     },
     "/api/v0/swarm/filters": {
       "post": {
-        "operationId": "/api/v0/swarm/filters",
+        "operationId": "swarm/filters",
         "description": "Manipulate address filters.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-filters"
@@ -4825,7 +4825,7 @@
     },
     "/api/v0/swarm/filters/add": {
       "post": {
-        "operationId": "/api/v0/swarm/filters/add",
+        "operationId": "swarm/filters/add",
         "description": "Add an address filter.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-filters-add"
@@ -4859,7 +4859,7 @@
     },
     "/api/v0/swarm/filters/rm": {
       "post": {
-        "operationId": "/api/v0/swarm/filters/rm",
+        "operationId": "swarm/filters/rm",
         "description": "Remove an address filter.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-filters-rm"
@@ -4893,7 +4893,7 @@
     },
     "/api/v0/swarm/peering/add": {
       "post": {
-        "operationId": "/api/v0/swarm/peering/add",
+        "operationId": "swarm/peering/add",
         "description": "Add peers into the peering subsystem.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-peering-add"
@@ -4926,7 +4926,7 @@
     },
     "/api/v0/swarm/peering/ls": {
       "post": {
-        "operationId": "/api/v0/swarm/peering/ls",
+        "operationId": "swarm/peering/ls",
         "description": "List peers registered in the peering subsystem.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-peering-ls"
@@ -4955,7 +4955,7 @@
     },
     "/api/v0/swarm/peering/rm": {
       "post": {
-        "operationId": "/api/v0/swarm/peering/rm",
+        "operationId": "swarm/peering/rm",
         "description": "Remove a peer from the peering subsystem.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-peering-rm"
@@ -4988,7 +4988,7 @@
     },
     "/api/v0/swarm/peers": {
       "post": {
-        "operationId": "/api/v0/swarm/peers",
+        "operationId": "swarm/peers",
         "description": "List peers with open connections.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-peers"
@@ -5056,7 +5056,7 @@
     },
     "/api/v0/update": {
       "post": {
-        "operationId": "/api/v0/update",
+        "operationId": "update",
         "description": "",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-update"
@@ -5080,7 +5080,7 @@
     },
     "/api/v0/version": {
       "post": {
-        "operationId": "/api/v0/version",
+        "operationId": "version",
         "description": "Show IPFS version information.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-version"
@@ -5139,7 +5139,7 @@
     },
     "/api/v0/version/deps": {
       "post": {
-        "operationId": "/api/v0/version/deps",
+        "operationId": "version/deps",
         "description": "Shows information about dependencies used for build.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-version-deps"
@@ -5164,7 +5164,7 @@
     },
     "/api/v0/log/tail": {
       "post": {
-        "operationId": "/api/v0/log/tail",
+        "operationId": "log/tail",
         "description": "Read the event log.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-log-tail"
@@ -5180,7 +5180,7 @@
     },
     "/api/v0/mount": {
       "post": {
-        "operationId": "/api/v0/mount",
+        "operationId": "mount",
         "description": "Mounts IPFS to the filesystem (read-only).",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-mount"
@@ -5222,7 +5222,7 @@
     },
     "/api/v0/name/pubsub/cancel": {
       "post": {
-        "operationId": "/api/v0/name/pubsub/cancel",
+        "operationId": "name/pubsub/cancel",
         "description": "Cancel a name subscription.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-name-pubsub-cancel"
@@ -5255,7 +5255,7 @@
     },
     "/api/v0/name/pubsub/state": {
       "post": {
-        "operationId": "/api/v0/name/pubsub/state",
+        "operationId": "name/pubsub/state",
         "description": "Query the state of IPNS pubsub.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-name-pubsub-state"
@@ -5278,7 +5278,7 @@
     },
     "/api/v0/name/pubsub/subs": {
       "post": {
-        "operationId": "/api/v0/name/pubsub/subs",
+        "operationId": "name/pubsub/subs",
         "description": "Show current name subscriptions.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-name-pubsub-subs"
@@ -5313,7 +5313,7 @@
     },
     "/api/v0/p2p/close": {
       "post": {
-        "operationId": "/api/v0/p2p/close",
+        "operationId": "p2p/close",
         "description": "Stop listening for new connections to forward.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-p2p-close"
@@ -5367,7 +5367,7 @@
     },
     "/api/v0/p2p/forward": {
       "post": {
-        "operationId": "/api/v0/p2p/forward",
+        "operationId": "p2p/forward",
         "description": "Forward connections to libp2p service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-p2p-forward"
@@ -5405,7 +5405,7 @@
     },
     "/api/v0/p2p/listen": {
       "post": {
-        "operationId": "/api/v0/p2p/listen",
+        "operationId": "p2p/listen",
         "description": "Create libp2p service.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-p2p-listen"
@@ -5451,7 +5451,7 @@
     },
     "/api/v0/p2p/ls": {
       "post": {
-        "operationId": "/api/v0/p2p/ls",
+        "operationId": "p2p/ls",
         "description": "List active p2p listeners.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-p2p-ls"
@@ -5489,7 +5489,7 @@
     },
     "/api/v0/p2p/stream/close": {
       "post": {
-        "operationId": "/api/v0/p2p/stream/close",
+        "operationId": "p2p/stream/close",
         "description": "Close active p2p stream.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-p2p-stream-close"
@@ -5522,7 +5522,7 @@
     },
     "/api/v0/p2p/stream/ls": {
       "post": {
-        "operationId": "/api/v0/p2p/stream/ls",
+        "operationId": "p2p/stream/ls",
         "description": "List active p2p streams.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-p2p-stream-ls"
@@ -5561,7 +5561,7 @@
     },
     "/api/v0/pubsub/ls": {
       "post": {
-        "operationId": "/api/v0/pubsub/ls",
+        "operationId": "pubsub/ls",
         "description": "List subscribed topics by name.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pubsub-ls"
@@ -5586,7 +5586,7 @@
     },
     "/api/v0/pubsub/peers": {
       "post": {
-        "operationId": "/api/v0/pubsub/peers",
+        "operationId": "pubsub/peers",
         "description": "List peers we are currently pubsubbing with.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pubsub-peers"
@@ -5620,7 +5620,7 @@
     },
     "/api/v0/pubsub/pub": {
       "post": {
-        "operationId": "/api/v0/pubsub/pub",
+        "operationId": "pubsub/pub",
         "description": "Publish data to a given pubsub topic.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pubsub-pub"
@@ -5650,7 +5650,7 @@
     },
     "/api/v0/pubsub/sub": {
       "post": {
-        "operationId": "/api/v0/pubsub/sub",
+        "operationId": "pubsub/sub",
         "description": "Subscribe to messages on a given topic.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-pubsub-sub"
@@ -5688,7 +5688,7 @@
     },
     "/api/v0/swarm/limit": {
       "post": {
-        "operationId": "/api/v0/swarm/limit",
+        "operationId": "swarm/limit",
         "description": "Get or set resource limits for a scope.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-limit"
@@ -5718,7 +5718,7 @@
     },
     "/api/v0/swarm/stats": {
       "post": {
-        "operationId": "/api/v0/swarm/stats",
+        "operationId": "swarm/stats",
         "description": "Report resource usage for a scope.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-swarm-stats"
@@ -5744,7 +5744,7 @@
     },
     "/api/v0/dht/findpeer": {
       "post": {
-        "operationId": "/api/v0/dht/findpeer",
+        "operationId": "dht/findpeer",
         "description": "Find the multiaddresses associated with a Peer ID.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dht-findpeer"
@@ -5795,7 +5795,7 @@
     },
     "/api/v0/dht/findprovs": {
       "post": {
-        "operationId": "/api/v0/dht/findprovs",
+        "operationId": "dht/findprovs",
         "description": "Find peers that can provide a specific value, given a key.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dht-findprovs"
@@ -5855,7 +5855,7 @@
     },
     "/api/v0/dht/get": {
       "post": {
-        "operationId": "/api/v0/dht/get",
+        "operationId": "dht/get",
         "description": "Given a key, query the routing system for its best value.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dht-get"
@@ -5906,7 +5906,7 @@
     },
     "/api/v0/dht/provide": {
       "post": {
-        "operationId": "/api/v0/dht/provide",
+        "operationId": "dht/provide",
         "description": "Announce to the network that you are providing given values.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dht-provide"
@@ -5965,7 +5965,7 @@
     },
     "/api/v0/dht/put": {
       "post": {
-        "operationId": "/api/v0/dht/put",
+        "operationId": "dht/put",
         "description": "Write a key/value pair to the routing system.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dht-put"
@@ -6020,7 +6020,7 @@
     },
     "/api/v0/dns": {
       "post": {
-        "operationId": "/api/v0/dns",
+        "operationId": "dns",
         "description": "Resolve DNSLink records.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-dns"
@@ -6062,7 +6062,7 @@
     },
     "/api/v0/file/ls": {
       "post": {
-        "operationId": "/api/v0/file/ls",
+        "operationId": "file/ls",
         "description": "List directory contents for Unix filesystem objects. Deprecated: Use &#39;ipfs ls&#39; and &#39;ipfs files ls&#39; instead.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-file-ls"
@@ -6112,7 +6112,7 @@
     },
     "/api/v0/object/data": {
       "post": {
-        "operationId": "/api/v0/object/data",
+        "operationId": "object/data",
         "description": "Deprecated way to read the raw bytes of a dag-pb object: use &#39;dag get&#39; instead.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-data"
@@ -6138,7 +6138,7 @@
     },
     "/api/v0/object/diff": {
       "post": {
-        "operationId": "/api/v0/object/diff",
+        "operationId": "object/diff",
         "description": "Display the diff between two IPFS objects.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-diff"
@@ -6194,7 +6194,7 @@
     },
     "/api/v0/object/get": {
       "post": {
-        "operationId": "/api/v0/object/get",
+        "operationId": "object/get",
         "description": "Deprecated way to get and serialize the dag-pb node. Use &#39;dag get&#39; instead",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-get"
@@ -6243,7 +6243,7 @@
     },
     "/api/v0/object/links": {
       "post": {
-        "operationId": "/api/v0/object/links",
+        "operationId": "object/links",
         "description": "Deprecated way to output links in the specified dag-pb object: use &#39;dag get&#39; instead.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-links"
@@ -6291,7 +6291,7 @@
     },
     "/api/v0/object/new": {
       "post": {
-        "operationId": "/api/v0/object/new",
+        "operationId": "object/new",
         "description": "Deprecated way to create a new dag-pb object from a template.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-new"
@@ -6330,7 +6330,7 @@
     },
     "/api/v0/object/patch/add-link": {
       "post": {
-        "operationId": "/api/v0/object/patch/add-link",
+        "operationId": "object/patch/add-link",
         "description": "Deprecated way to add a link to a given dag-pb.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-patch-add-link"
@@ -6382,7 +6382,7 @@
     },
     "/api/v0/object/patch/append-data": {
       "post": {
-        "operationId": "/api/v0/object/patch/append-data",
+        "operationId": "object/patch/append-data",
         "description": "Deprecated way to append data to the data segment of a DAG node.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-patch-append-data"
@@ -6426,7 +6426,7 @@
     },
     "/api/v0/object/patch/rm-link": {
       "post": {
-        "operationId": "/api/v0/object/patch/rm-link",
+        "operationId": "object/patch/rm-link",
         "description": "Deprecated way to remove a link from dag-pb object.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-patch-rm-link"
@@ -6470,7 +6470,7 @@
     },
     "/api/v0/object/patch/set-data": {
       "post": {
-        "operationId": "/api/v0/object/patch/set-data",
+        "operationId": "object/patch/set-data",
         "description": "Deprecated way to set the data field of dag-pb object.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-patch-set-data"
@@ -6514,7 +6514,7 @@
     },
     "/api/v0/object/put": {
       "post": {
-        "operationId": "/api/v0/object/put",
+        "operationId": "object/put",
         "description": "Deprecated way to store input as a DAG object. Use &#39;dag put&#39; instead.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-put"
@@ -6583,7 +6583,7 @@
     },
     "/api/v0/object/stat": {
       "post": {
-        "operationId": "/api/v0/object/stat",
+        "operationId": "object/stat",
         "description": "Deprecated way to read stats for the dag-pb node. Use &#39;files stat&#39; instead.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-object-stat"
@@ -6629,7 +6629,7 @@
     },
     "/api/v0/repo/fsck": {
       "post": {
-        "operationId": "/api/v0/repo/fsck",
+        "operationId": "repo/fsck",
         "description": "Remove repo lockfiles.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-repo-fsck"
@@ -6652,7 +6652,7 @@
     },
     "/api/v0/tar/add": {
       "post": {
-        "operationId": "/api/v0/tar/add",
+        "operationId": "tar/add",
         "description": "Import a tar file into IPFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-tar-add"
@@ -6682,7 +6682,7 @@
     },
     "/api/v0/tar/cat": {
       "post": {
-        "operationId": "/api/v0/tar/cat",
+        "operationId": "tar/cat",
         "description": "Export a tar file from IPFS.",
         "externalDocs": {
           "url": "https://docs.ipfs.tech/reference/kubo/rpc/#api-v0-tar-cat"
