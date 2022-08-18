@@ -1,8 +1,8 @@
 {
 	"openrpc": "1.2.4",
 	"info": {
-		"title": "Ethereum JSON-RPC Specification",
-		"description": "A specification of the standard interface for Ethereum clients.",
+		"title": "Ethereum JSON-RPC API",
+		"description": "The standard JSON-RPC interface for Ethereum node clients.",
 		"license": {
 			"name": "CC0-1.0",
 			"url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode"
@@ -31,6 +31,10 @@
 			}
 		}
 	],
+	"externalDocs": {
+		"url": "https://ethereum.org/en/developers/docs/apis/json-rpc/",
+		"x-method-base-url": "https://ethereum.org/en/developers/docs/apis/json-rpc/#"
+	},
 	"methods": [
 		{
 			"name": "eth_getBlockByHash",
