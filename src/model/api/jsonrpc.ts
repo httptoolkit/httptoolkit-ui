@@ -71,10 +71,12 @@ interface MatchedOperation {
 export class JsonRpcApiExchange implements ApiExchange {
 
     constructor(
-        private _api: OpenRpcMetadata,
-        private _exchange: HttpExchange,
+        _api: OpenRpcMetadata,
+        _exchange: HttpExchange,
         private _rpcMethod: MatchedOperation | ErrorLike
     ) {
+        this.isBuiltInApi = _api.spec.info['x-httptoolkit-builtin-api'] === true;
+
         this.service = new JsonRpcApiService(_api);
 
         if (isErrorLike(_rpcMethod)) {
@@ -91,6 +93,8 @@ export class JsonRpcApiExchange implements ApiExchange {
             this.request = new JsonRpcApiRequest(_rpcMethod, _exchange);
         }
     }
+
+    readonly isBuiltInApi: boolean;
 
     readonly service: ApiService;
     readonly operation: ApiOperation;

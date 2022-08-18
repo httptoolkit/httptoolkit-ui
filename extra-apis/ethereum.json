@@ -7,7 +7,8 @@
 			"name": "CC0-1.0",
 			"url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode"
 		},
-		"version": "0.0.0"
+		"version": "0.0.0",
+		"x-httptoolkit-builtin-api": true
 	},
 	"servers": [
 		{ "url": "http://localhost:8545" },

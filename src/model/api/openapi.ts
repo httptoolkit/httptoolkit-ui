@@ -21,7 +21,6 @@ import {
 } from "../../types";
 import { firstMatch, empty, lastHeader } from '../../util';
 import { formatAjvError } from '../../util/json-schema';
-import { reportError } from '../../errors';
 
 import {
     ApiExchange,
@@ -29,8 +28,7 @@ import {
     ApiOperation,
     ApiRequest,
     ApiResponse,
-    ApiParameter,
-    ApiMetadata
+    ApiParameter
 } from './api-interfaces';
 import { OpenApiMetadata } from './build-api-metadata';
 import { fromMarkdown } from '../markdown';
@@ -278,6 +276,8 @@ function stripTags(input: string | undefined): string | undefined {
 
 export class OpenApiExchange implements ApiExchange {
     constructor(api: OpenApiMetadata, exchange: HttpExchange) {
+        this.isBuiltInApi = api.spec.info['x-httptoolkit-builtin-api'] === true;
+
         const { request } = exchange;
         this.service = new OpenApiService(api.spec);
 
@@ -294,6 +294,8 @@ export class OpenApiExchange implements ApiExchange {
 
     private _spec: OpenAPIObject;
     private _opSpec: MatchedOperation;
+
+    public readonly isBuiltInApi: boolean;
 
     public readonly service: ApiService;
     public readonly operation: ApiOperation;

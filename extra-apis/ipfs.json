@@ -7,7 +7,8 @@
     "x-providerName": "IPFS",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ipfs/ipfs-docs/55fe8bc6a53ba3b9023951fb4b432efbbc81fba5/docs/.vuepress/public/images/ipfs-logo.svg"
-    }
+    },
+    "x-httptoolkit-builtin-api": true
   },
   "servers": [
     {

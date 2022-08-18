@@ -100,9 +100,12 @@ export class HttpDetailsPane extends React.Component<{
         } = uiStore!;
         const { requestBreakpoint, responseBreakpoint } = exchange;
 
-        // The full API details - only available for paid usage, so we drop this
-        // for non-paid users at this stage.
-        const apiExchange = isPaidUser ? exchange.api : undefined;
+        // The full API details - for paid APIs, and non-paid users, we don't show
+        // the detailed API data in any of the cards, we just show the name (below)
+        // in a collapsed API card.
+        const apiExchange = (isPaidUser || exchange.api?.isBuiltInApi)
+            ? exchange.api
+            : undefined;
 
         // We do still want the API name though, if there is one - we use this to
         // show non-paid users when API data might be available, iff this request
@@ -190,16 +193,16 @@ export class HttpDetailsPane extends React.Component<{
     ) {
         if (!apiName) return null;
 
-        if (!this.props.accountStore!.isPaidUser) {
-            // If you're not paid, but we do recognize this as a specific API
-            // operation, we show a placeholder:
+        if (!apiExchange) {
+            // If you're not a paid user, and it's a paid API, then we only have
+            // the basic API name here but no details, so we just show a placeholder:
             return <HttpApiPlaceholderCard
                 {...this.cardProps.api}
                 apiName={apiName}
             />;
         }
 
-        // If paid & we have a name, we must have full API details, show them:
+        // If paid/built-in API & we have a name, we must have full API details, show them:
         return <HttpApiCard
             {...this.cardProps.api}
             apiName={apiName}
