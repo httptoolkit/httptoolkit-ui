@@ -60,7 +60,8 @@ export interface ApiParameter {
         | 'cookie'
         | 'path'
         | 'header'
-        | 'query';
+        | 'query'
+        | 'body';
     required: boolean;
     deprecated: boolean;
     warnings: string[];

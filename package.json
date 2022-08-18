@@ -37,6 +37,7 @@
     "@fortawesome/react-fontawesome": "^0.1.8",
     "@httptoolkit/auth0-lock": "^11.26.3",
     "@httptoolkit/httpsnippet": "^2.1.1",
+    "@open-rpc/meta-schema": "^1.14.2",
     "@reach/router": "^1.2.1",
     "@sentry/browser": "^4.2.4",
     "@sentry/webpack-plugin": "^1.14.0",
