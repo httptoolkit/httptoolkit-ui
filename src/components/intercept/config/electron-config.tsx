@@ -142,7 +142,14 @@ class ElectronConfig extends React.Component<{
     }
 
     selectApplication = async () => {
-        const pathToApplication = await uploadFile('path');
+        const pathToApplication = platform == 'mac'
+            ? window.prompt(
+                // Mac Electron doesn't allow file pickers inside .app bundles, and does very weird things
+                // if you select the whole bundle, scanning everything within, so we require manual entry:
+                "Please enter the path to the Electron application:"
+            )
+            : await uploadFile('path');
+
         if (!pathToApplication) {
             this.props.closeSelf();
             return;
@@ -177,12 +184,13 @@ class ElectronConfig extends React.Component<{
         return <ConfigContainer>
             <p>
                 Start an Electron {binary} with HTTP Toolkit's settings injected,
-                to intercept all its HTTP & HTTPS traffic.
+                to intercept all its HTTP &amp; HTTPS traffic.
             </p>
             {
                 platform === 'mac' && previousElectronAppPaths.length < 2 && <p>
-                    To run a Mac .app bundle, select the executable within. It's typically
-                    in Contents/MacOS inside the bundle.
+                    For .app bundles, enter either the bundle name (with or without .app)
+                    or the full path to the executable itself, typically stored in
+                    Contents/MacOS inside the bundle.
                 </p>
             }
             <p>
