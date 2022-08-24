@@ -528,9 +528,14 @@ function cleanRawHarData(harContents: any) {
     });
 
     const pages = harContents?.log?.pages ?? [];
-    pages.forEach((page: any) => {
+    pages.forEach((page: HarFormat.Page) => {
         // FF doesn't give pages their (required) titles:
         if (page.title === undefined) page.title = page.id;
+
+        // All timings fields are optional, but some sources provide 'null' values (instead of -1)
+        // to mark missing data, which isn't valid. Fortunately, we never use this data, so we can
+        // just drop it entirely:
+        page.pageTimings = {};
     });
 
     return harContents;
