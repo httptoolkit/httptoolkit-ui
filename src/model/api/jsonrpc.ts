@@ -174,28 +174,34 @@ export class JsonRpcApiRequest implements ApiRequest {
         const { methodSpec, parsedBody } = rpcMethod;
 
         this.parameters = (methodSpec.params as ContentDescriptorObject[])
-            .map((param: ContentDescriptorObject, i: number) => ({
-                name: param.name,
-                description: fromMarkdown([
-                    param.summary,
-                    param.description,
-                    (param.schema as JSONSchemaObject)?.title
-                ].filter(x => !!x).join('\n\n')),
-                in: 'body',
-                required: !!param.required,
-                deprecated: !!param.deprecated,
-                value: parsedBody.params[i],
-                defaultValue: (param.schema as JSONSchemaObject).default,
-                warnings: [
-                    ...(param.deprecated ? [`The '${param.name}' parameter is deprecated.`] : []),
-                    ...(param.required &&
-                        parsedBody.params[i] === undefined &&
-                        (param.schema as JSONSchemaObject).default === undefined
-                        ? [`The '${param.name}' parameter is required.`]
-                        : []
-                    )
-                ]
-            }));
+            .map((param: ContentDescriptorObject, i: number) => {
+                const schema = param.schema as JSONSchemaObject | undefined;
+
+                return {
+                    name: param.name,
+                    description: fromMarkdown([
+                        param.summary,
+                        param.description,
+                        schema?.title
+                    ].filter(x => !!x).join('\n\n')),
+                    in: 'body',
+                    required: !!param.required,
+                    deprecated: !!param.deprecated,
+                    type: schema?.type,
+                    value: parsedBody.params[i],
+                    defaultValue: schema?.default,
+                    enum: schema?.enum || (schema?.items as SchemaObject | undefined)?.enum,
+                    warnings: [
+                        ...(param.deprecated ? [`The '${param.name}' parameter is deprecated.`] : []),
+                        ...(param.required &&
+                            parsedBody.params[i] === undefined &&
+                            (schema && schema.default === undefined)
+                            ? [`The '${param.name}' parameter is required.`]
+                            : []
+                        )
+                    ]
+                };
+            });
     }
 
     parameters: ApiParameter[];

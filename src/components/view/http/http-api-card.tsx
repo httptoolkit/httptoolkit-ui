@@ -132,6 +132,33 @@ const getDetailsWithWarnings = (details: Html | undefined, warnings: string[]) =
     details && <ExternalContent key='details' content={details} />
 ].filter(d => !!d);
 
+
+const ObjectParamContainer = styled.div`
+    display: grid;
+    grid-template-columns: fit-content(30%) auto;
+    grid-gap: 5px;
+    margin-bottom: 10px;
+`;
+
+const ObjectParamKey = styled.div`
+    font-family: ${p => p.theme.monoFontFamily};
+    word-break: break-all;
+    text-align: right;
+`;
+
+const ObjectParamValue = styled.pre`
+    font-family: ${p => p.theme.monoFontFamily};
+    word-break: break-all;
+    white-space: pre-wrap;
+`;
+
+const ObjectParamDetails = (p: { value: object }) => <ObjectParamContainer>{
+    Object.entries(p.value).map(([key, value], i) => [
+        <ObjectParamKey key={`${i}-key`}>{ key }:</ObjectParamKey>,
+        <ObjectParamValue key={`${i}-value`}>{ value }</ObjectParamValue>
+    ])
+}</ObjectParamContainer>;
+
 const ApiRequestDetails = (props: {
     api: ApiExchange
 }) => {
@@ -210,6 +237,10 @@ const ApiRequestDetails = (props: {
 
                         <CollapsibleSectionBody>
                             { getDetailsWithWarnings(param.description, param.warnings) }
+                            { param.type === 'object' && Object.keys(param).length > 1
+                                ? <ObjectParamDetails value={param.value as object} />
+                                : null
+                            }
                             <ParamMetadata param={param}/>
                         </CollapsibleSectionBody>
                     </CollapsibleSection>
