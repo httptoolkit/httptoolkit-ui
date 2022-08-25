@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { observable, computed, action, runInAction } from 'mobx';
+import { observable, computed, action, runInAction, when } from 'mobx';
 
 import {
     HtkRequest,
@@ -327,6 +327,10 @@ export class HttpExchange extends HTKEventBase {
         const apiMetadata = await this._apiMetadataPromise;
 
         if (apiMetadata) {
+            // We load the spec, but we don't try to parse API requests until we've received
+            // the whole thing (because e.g. JSON-RPC requests aren't parseable without the body)
+            await when(() => this.isCompletedRequest());
+
             try {
                 if (apiMetadata.type === 'openapi') {
                     return new OpenApiExchange(apiMetadata, this);
