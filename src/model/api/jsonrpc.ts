@@ -168,6 +168,11 @@ export class JsonRpcApiOperation implements ApiOperation {
 
 }
 
+const capitalizeFirst = (input: string | undefined) =>
+    input
+    ? input.charAt(0).toUpperCase() + input.slice(1)
+    : undefined;
+
 export class JsonRpcApiRequest implements ApiRequest {
 
     constructor(rpcMethod: MatchedOperation, exchange: HttpExchange) {
@@ -182,7 +187,18 @@ export class JsonRpcApiRequest implements ApiRequest {
                     description: fromMarkdown([
                         param.summary,
                         param.description,
-                        schema?.title
+                        capitalizeFirst(schema?.title),
+                        ...(schema?.oneOf?.length
+                            ? [
+                                'One of:',
+                                (schema.oneOf as JSONSchemaObject[]).map(subschema =>
+                                    `* ${capitalizeFirst(subschema.title)}: ${
+                                        subschema.description || subschema.type || 'unknown'
+                                    }`
+                                ).join('\n')
+                            ]
+                            : []
+                        )
                     ].filter(x => !!x).join('\n\n')),
                     in: 'body',
                     required: !!param.required,
