@@ -208,7 +208,22 @@ export class JsonRpcApiResponse implements ApiResponse {
         const resultSpec = rpcMethod.methodSpec.result as ContentDescriptorObject;
 
         this.description = fromMarkdown(resultSpec.description);
-        this.bodySchema = resultSpec.schema as SchemaObject;
+        this.bodySchema = {
+            type: 'object',
+            properties: {
+                id: { type: 'number' },
+                jsonrpc: { type: 'string', enum: ['2.0'] },
+                result: resultSpec.schema as SchemaObject,
+                error: {
+                    type: 'object',
+                    properties: {
+                        code: { type: 'number' },
+                        message: { type: 'string' }
+                    }
+                }
+            },
+            required: ['id', 'jsonrpc']
+        };
     }
 
     description?: Html;
