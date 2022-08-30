@@ -295,7 +295,7 @@ function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
             'startTime' in e.timingEvents
                 ? e.timingEvents.startTime
                 : Date.now()
-        ));
+        ), Date.now());
 
         return {
             id: source,
