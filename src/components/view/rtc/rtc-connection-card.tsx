@@ -5,6 +5,7 @@ import { observer } from 'mobx-react';
 
 import { UNKNOWN_SOURCE } from '../../../model/http/sources';
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
+import { getSummaryColour } from '../../../model/events/categorization';
 
 import {
     CollapsibleCard,
@@ -17,12 +18,13 @@ import {
 } from '../../common/collapsible-section';
 import {
     ContentLabel,
+    ContentLabelBlock,
     ContentMonoValueInline,
     ContentValue
 } from '../../common/text-content';
 import { SourceIcon } from '../../common/source-icon';
 import { Pill } from '../../common/pill';
-import { getSummaryColour } from '../../../model/events/categorization';
+import { UrlBreakdown } from '../url-breakdown';
 
 interface RTCConnectionCardProps {
     connection: RTCConnection;
@@ -116,19 +118,37 @@ export class RTCConnectionCard extends React.Component<RTCConnectionCardProps> {
                 </CollapsibleSectionSummary>
             </CollapsibleSection>
 
-            { connection.source !== UNKNOWN_SOURCE
-                ? <CollapsibleSection>
+            { connection.sourceURL && <>
+                <ContentLabelBlock>Source page: </ContentLabelBlock>
+
+                <CollapsibleSection prefixTrigger={true}>
                     <CollapsibleSectionSummary>
-                        <ContentLabel>Client: </ContentLabel>
-                        <ContentValue>{ connection.source.summary }</ContentValue>
+                        <ContentMonoValueInline>
+                            { connection.sourceURL.toString() }
+                        </ContentMonoValueInline>
+                    </CollapsibleSectionSummary>
+
+                    <CollapsibleSectionBody>
+                        <UrlBreakdown url={connection.sourceURL} />
+                    </CollapsibleSectionBody>
+                </CollapsibleSection>
+            </> }
+
+            { connection.source !== UNKNOWN_SOURCE && <>
+                <ContentLabelBlock>Client: </ContentLabelBlock>
+
+                <CollapsibleSection prefixTrigger={true}>
+                    <CollapsibleSectionSummary>
+                        <ContentMonoValueInline>
+                            { connection.source.ua }
+                        </ContentMonoValueInline>
                     </CollapsibleSectionSummary>
 
                     <CollapsibleSectionBody>
                         <p>{ connection.source.description }</p>
                     </CollapsibleSectionBody>
                 </CollapsibleSection>
-                : null
-            }
+            </> }
         </CollapsibleCard>;
     }
 }

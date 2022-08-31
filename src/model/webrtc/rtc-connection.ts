@@ -46,6 +46,17 @@ export class RTCConnection extends HTKEventBase {
     }
 
     @computed
+    get sourceURL() {
+        if (!this.connectionEvent.metadata.sourceURL) return undefined;
+
+        try {
+            return new URL(this.connectionEvent.metadata.sourceURL);
+        } catch (e) {
+            return undefined;
+        }
+    }
+
+    @computed
     get clientURL() {
         return candidateToUrl(this.connectionEvent.selectedRemoteCandidate);
     }
