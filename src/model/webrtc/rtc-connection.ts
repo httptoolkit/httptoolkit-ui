@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Tim Perry <tim@httptoolkit.tech>
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 import { action, observable, computed } from "mobx";
 import { SelectedRTCCandidate } from "mockrtc";
 import {

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Tim Perry <tim@httptoolkit.tech>
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
