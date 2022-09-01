@@ -26,7 +26,10 @@ import {
     TimeoutHandler,
     CloseConnectionHandler,
     FromFileResponseHandler
-} from '../../model/rules/rule-definitions';
+} from '../../model/rules/definitions/http-rule-definitions';
+import {
+    WebSocketPassThroughHandler
+} from '../../model/rules/definitions/websocket-rule-definitions';
 import { HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
 import {
@@ -85,7 +88,10 @@ export function HandlerConfiguration(props: {
         return <FromFileResponseHandlerConfig {...configProps} />;
     } else if (handler instanceof ForwardToHostHandler) {
         return <ForwardToHostHandlerConfig {...configProps} />;
-    } else if (handler instanceof PassThroughHandler) {
+    } else if (
+        handler instanceof PassThroughHandler ||
+        handler instanceof WebSocketPassThroughHandler
+    ) {
         return <PassThroughHandlerConfig {...configProps} />;
     } else if (handler instanceof TransformingHandler) {
         return <TransformingHandlerConfig {...configProps} />;

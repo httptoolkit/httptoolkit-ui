@@ -1,44 +1,32 @@
 import * as _ from 'lodash';
-import {
-    requestHandlerDefinitions,
-    matchers
-} from 'mockttp';
-
-import { Omit } from '../../types';
 
 import {
     MethodMatchers,
     WildcardMatcher,
     StaticResponseHandler,
-    AmIUsingMatcher,
-    DefaultWildcardMatcher,
     ForwardToHostHandler,
-    PassThroughHandler,
-    RequestBreakpointHandler,
-    ResponseBreakpointHandler,
-    RequestAndResponseBreakpointHandler,
     TimeoutHandler,
     CloseConnectionHandler,
     FromFileResponseHandler,
-    TransformingHandler
-} from './rule-definitions';
+    TransformingHandler,
+    HttpMatcherLookup,
+    HttpHandlerLookup,
+    HttpMockRule
+} from './definitions/http-rule-definitions';
+
+import {
+    WebSocketMatcherLookup,
+    WebSocketHandlerLookup,
+    WebSocketMockRule
+} from './definitions/websocket-rule-definitions';
 
 // Define maps to/from matcher keys to matcher classes, and
 // types for the matchers & classes themselves; both the built-in
 // ones and our own extra additions & overrides.
-export const MatcherLookup = Object.assign(
-    {},
-    matchers.MatcherLookup,
-    MethodMatchers,
-    {
-        // Replace the built-in wildcard matcher with our own:
-        wildcard: WildcardMatcher,
-        // Add special types for our built-in matcher explanation overrides:
-        'default-wildcard': DefaultWildcardMatcher,
-        'am-i-using': AmIUsingMatcher
-    }
-
-);
+export const MatcherLookup = {
+    ...HttpMatcherLookup,
+    ...WebSocketMatcherLookup
+};
 
 export type MatcherClassKey = keyof typeof MatcherLookup;
 export type MatcherClass = typeof MatcherLookup[MatcherClassKey];
@@ -51,25 +39,13 @@ export const MatcherKeys = new Map<MatcherClass, MatcherClassKey>(
     ) as Array<[MatcherClass, MatcherClassKey]>
 );
 
-const HandlerDefinitionLookup = requestHandlerDefinitions.HandlerDefinitionLookup;
-
 // Define maps to/from handler keys to handler classes, and
 // types for the handlers & classes themselves; both the built-in
 // ones and our own extra additions & overrides.
-export const HandlerLookup = Object.assign(
-    {},
-    HandlerDefinitionLookup as Omit<typeof HandlerDefinitionLookup, 'passthrough'>,
-    {
-        'passthrough': PassThroughHandler,
-        'simple': StaticResponseHandler,
-        'file': FromFileResponseHandler,
-        'forward-to-host': ForwardToHostHandler,
-        'req-res-transformer': TransformingHandler,
-        'request-breakpoint': RequestBreakpointHandler,
-        'response-breakpoint': ResponseBreakpointHandler,
-        'request-and-response-breakpoint': RequestAndResponseBreakpointHandler
-    }
-);
+export const HandlerLookup = {
+    ...HttpHandlerLookup,
+    ...WebSocketHandlerLookup
+};
 
 const PaidHandlerClasses: HandlerClass[] = [
     StaticResponseHandler,
@@ -105,3 +81,15 @@ export const InitialMatcherClasses = [
 ];
 export type InitialMatcherClass = typeof InitialMatcherClasses[0];
 export type InitialMatcher = InstanceType<InitialMatcherClass>;
+
+export type HtkMockRule =
+    | WebSocketMockRule
+    | HttpMockRule;
+
+const matchRuleType = <T extends HtkMockRule['type']>(
+    type: T
+) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
+    rule.type === type;
+
+export const isHttpRule = matchRuleType('http');
+export const isWebSocketRule = matchRuleType('websocket');

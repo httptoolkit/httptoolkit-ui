@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as dedent from 'dedent';
 
 import { isRuleGroup } from './rules-structure';
-import { buildDefaultGroup } from './rule-definitions';
+import { buildDefaultGroup } from './rule-creation';
 
 // Take some raw serialized rule data, exported from any version of the app since HTTP Mock was
 // launched, and convert it into raw modern rule data, ready to be deserialized.
@@ -52,6 +52,9 @@ function migrateRuleItem(item: any) {
 }
 
 function migrateRule(rule: any) {
+    // Migrate rules from the HTTP-only days into a world with rules for other protocols:
+    if (rule.type === undefined) rule.type = 'http';
+
     const { handler } = rule;
 
     if (handler.type === 'passthrough') {

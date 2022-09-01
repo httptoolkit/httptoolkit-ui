@@ -10,8 +10,8 @@ import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
 
 import { getMethodColor } from '../../model/events/categorization';
-import { Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
-import { HtkMockRule, ItemPath } from '../../model/rules/rules-structure';
+import { HtkMockRule, Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
+import { ItemPath } from '../../model/rules/rules-structure';
 import {
     summarizeMatcher,
     summarizeHandler
@@ -289,6 +289,9 @@ export class RuleRow extends React.Component<{
             isPaidUser,
             getPro
         } = this.props.accountStore!;
+
+        // Hide non-HTTP rules (...for now)
+        if (rule.type !== 'http') return null;
 
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 

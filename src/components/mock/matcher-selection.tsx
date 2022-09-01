@@ -31,10 +31,12 @@ import {
 
 import { MatcherConfiguration } from './matcher-config';
 
-const getMatcherKey = (m: MatcherClass | Matcher | undefined) =>
-    m === undefined
-        ? ''
-        : MatcherKeys.get(m as any) || MatcherKeys.get(m.constructor as any);
+const getMatcherKey = (m: MatcherClass | Matcher | undefined) => {
+    if (m === undefined) return '';
+
+    return MatcherKeys.get(m as any) ||
+        MatcherKeys.get(m.constructor as any);
+};
 const getMatcherClassByKey = (k: MatcherClassKey) => MatcherLookup[k];
 
 const MatcherRow = styled.li`

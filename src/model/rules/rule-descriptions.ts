@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
-import { RequestRuleData, matchers } from "mockttp";
+import { matchers } from "mockttp";
 
-import { MatcherClass, HandlerClass } from "./rules";
+import { HtkMockRule, MatcherClass, HandlerClass } from "./rules";
 import {
     WildcardMatcher,
     DefaultWildcardMatcher,
@@ -16,7 +16,7 @@ import {
     TimeoutHandler,
     CloseConnectionHandler,
     FromFileResponseHandler
-} from './rule-definitions';
+} from './definitions/http-rule-definitions';
 
 function withFirstCharUppercased(input: string): string {
     return input[0].toUpperCase() + input.slice(1);
@@ -97,25 +97,25 @@ export function summarizeHandlerClass(handler: HandlerClass): string | undefined
 // Summarize the matchers of an instantiated rule
 // Slight varation on the Mockttp explanation to make the
 // comma positioning more consistent for UX of changing rules
-export function summarizeMatcher(rule: RequestRuleData): string {
+export function summarizeMatcher(rule: HtkMockRule): string {
     const { matchers } = rule;
 
     if (matchers.length === 0) return 'Never';
-    if (matchers.length === 1) return matchers[0].explain();
+    if (matchers.length === 1) return matchers[0]!.explain();
     if (matchers.length === 2) {
         // With just two explanations you can just combine them
-        return `${matchers[0].explain()} ${matchers[1].explain()}`;
+        return `${matchers[0]!.explain()} ${matchers[1].explain()}`;
     }
 
     // With 3+, we need to oxford comma separate the later
     // explanations, to make them readable
-    return matchers[0].explain() + ' ' +
+    return matchers[0]!.explain() + ' ' +
         matchers.slice(1, -1)
         .map((m) => m.explain())
         .join(', ') + ', and ' + matchers.slice(-1)[0].explain();
 }
 
 // Summarize the handler of an instantiated rule
-export function summarizeHandler(rule: RequestRuleData): string {
+export function summarizeHandler(rule: HtkMockRule): string {
     return withFirstCharUppercased(rule.handler.explain());
 }

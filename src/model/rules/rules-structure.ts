@@ -1,23 +1,13 @@
 import * as _ from 'lodash';
-import { RequestRuleData, completionCheckers } from 'mockttp';
 import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 
-import {
-    Matcher,
-    InitialMatcher,
-    Handler
-} from './rules';
+import { HtkMockRule } from './rules';
 
-export type HtkMockItem = HtkMockRule | HtkMockRuleGroup | HtkMockRuleRoot;
-
-export interface HtkMockRule extends Omit<RequestRuleData, 'matchers'> {
-    id: string;
-    activated: boolean;
-    matchers: Array<Matcher> & { 0?: InitialMatcher };
-    handler: Handler;
-    completionChecker: completionCheckers.Always; // HTK rules all *always* match
-};
+export type HtkMockItem =
+    | HtkMockRule
+    | HtkMockRuleGroup
+    | HtkMockRuleRoot;
 
 export type HtkMockRuleGroup = {
     id: string;

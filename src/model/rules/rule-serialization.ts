@@ -6,9 +6,8 @@ import * as serializr from 'serializr';
 import { hasSerializrSchema, serializeAsTag } from '../serialization';
 
 import { RulesStore } from './rules-store';
-import { MatcherLookup, HandlerLookup } from './rules';
+import { HtkMockRule, MatcherLookup, HandlerLookup } from './rules';
 import {
-    HtkMockRule,
     HtkMockItem,
     HtkMockRuleRoot,
     isRuleGroup,
@@ -62,6 +61,7 @@ const MockRuleSerializer = serializr.custom(
     (data: HtkMockRule, context: { args: DeserializationArgs }) => {
         return {
             id: data.id,
+            type: data.type,
             activated: data.activated,
             matchers: data.matchers.map((m) =>
                 deserializeByType(m, MatcherLookup, context.args)

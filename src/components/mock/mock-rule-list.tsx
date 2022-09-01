@@ -8,7 +8,6 @@ import { styled } from '../../styles';
 
 import {
     areItemsEqual,
-    HtkMockRule,
     HtkMockRuleGroup,
     ItemPath,
     findItemPath,
@@ -19,6 +18,7 @@ import {
     getItemAtPath,
     findItem,
 } from '../../model/rules/rules-structure';
+import { HtkMockRule } from '../../model/rules/rules';
 
 import { GroupHeader, GroupTail } from './mock-rule-group';
 import { AddRuleRow, RuleRow } from './mock-rule-row';

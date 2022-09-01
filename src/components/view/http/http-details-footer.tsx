@@ -8,7 +8,7 @@ import { Ctrl } from '../../../util/ui';
 
 import { HttpExchange } from '../../../model/http/exchange';
 import { RulesStore } from '../../../model/rules/rules-store';
-import { buildRuleFromExchange } from '../../../model/rules/rule-definitions';
+import { buildRuleFromExchange } from '../../../model/rules/rule-creation';
 
 import { HEADER_FOOTER_HEIGHT } from '../view-event-list-footer';
 import { IconButton } from '../../common/icon-button';

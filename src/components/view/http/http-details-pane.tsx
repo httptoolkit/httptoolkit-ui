@@ -13,7 +13,7 @@ import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { getStatusColor } from '../../../model/events/categorization';
 import { ApiExchange } from '../../../model/api/api-interfaces';
-import { buildRuleFromRequest } from '../../../model/rules/rule-definitions';
+import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 
 import { Pill } from '../../common/pill';

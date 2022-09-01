@@ -17,7 +17,7 @@ import { EventsStore } from '../../../model/events/events-store';
 import {
     MethodMatchers,
     StaticResponseHandler
-} from '../../../model/rules/rule-definitions';
+} from '../../../model/rules/definitions/http-rule-definitions';
 import { RulesStore } from '../../../model/rules/rules-store';
 
 const ConfigContainer = styled.div`
@@ -80,6 +80,7 @@ export function setUpAndroidCertificateRule(
 ) {
     rulesStore.ensureRuleExists({
         id: 'default-android-certificate',
+        type: 'http',
         activated: true,
         matchers: [
             new MethodMatchers.GET(),

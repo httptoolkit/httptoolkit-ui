@@ -12,7 +12,7 @@ import { uploadFile, saveFile } from '../../util/ui';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getNewRule } from '../../model/rules/rule-definitions';
+import { getNewRule } from '../../model/rules/rule-creation';
 import {
     cloneItem,
     getItemAtPath,

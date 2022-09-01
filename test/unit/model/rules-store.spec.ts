@@ -1,6 +1,6 @@
 import { RulesStore } from "../../../src/model/rules/rules-store";
+import { HtkMockRule } from "../../../src/model/rules/rules";
 import {
-    HtkMockRule,
     HtkMockRuleRoot,
     HtkMockItem
 } from "../../../src/model/rules/rules-structure";

@@ -26,7 +26,7 @@ import {
     TimeoutHandler,
     CloseConnectionHandler,
     FromFileResponseHandler
-} from '../../model/rules/rule-definitions';
+} from '../../model/rules/definitions/http-rule-definitions';
 
 import { Select } from '../common/inputs';
 import {

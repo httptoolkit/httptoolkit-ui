@@ -1,9 +1,7 @@
 import * as _ from 'lodash';
 
 import {
-    completionCheckers,
     requestHandlers,
-    webSocketHandlers,
     MOCKTTP_PARAM_REF,
     ProxyConfig,
     ProxySetting
@@ -40,6 +38,11 @@ import { getDesktopInjectedValue } from '../../services/desktop-api';
 import { WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 
 import {
+    HtkMockRule,
+    isHttpRule,
+    isWebSocketRule
+} from './rules';
+import {
     HtkMockRuleGroup,
     flattenRules,
     ItemPath,
@@ -53,15 +56,13 @@ import {
     HtkMockRuleRoot,
     isRuleRoot,
     HtkMockItem,
-    HtkMockRule,
-    areItemsEqual
+    areItemsEqual,
 } from './rules-structure';
 import {
     buildDefaultGroup,
     buildDefaultRules,
     buildForwardingRuleIntegration,
-    DefaultWildcardMatcher
-} from './rule-definitions';
+} from './rule-creation';
 import {
     serializeRules,
     deserializeRules,
@@ -156,16 +157,10 @@ export class RulesStore {
                 ),
                 (rules) => {
                     resolve(Promise.all([
-                        setRequestRules(...rules),
+                        setRequestRules(...rules.filter(isHttpRule)),
                         ...(semver.satisfies(serverVersion, WEBSOCKET_RULE_RANGE)
                             ? [
-                                setWebSocketRules({
-                                    matchers: [new DefaultWildcardMatcher()],
-                                    completionChecker: new completionCheckers.Always(),
-                                    handler: new webSocketHandlers.PassThroughWebSocketHandler(
-                                        this.activePassthroughOptions
-                                    )
-                                })
+                                setWebSocketRules(...rules.filter(isWebSocketRule))
                             ] : []
                         )
                     ]))
