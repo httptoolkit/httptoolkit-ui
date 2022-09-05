@@ -26,7 +26,10 @@ const deserializeByType = <T extends { type: string, uiType?: string }>(
 ) => {
     // uiType allows us to override deserialization for UI representations only,
     // but keep the same serialization type for real Mockttp rules.
-    const clazz = lookup[data.uiType || data.type];
+    const typeKey = data.uiType || data.type;
+    const clazz = lookup[typeKey];
+
+    if (!clazz) throw new Error(`Can't load unrecognized rule type: ${typeKey}`);
 
     if (hasSerializrSchema(clazz)) {
         return serializr.deserialize(clazz, data, () => {}, args);
