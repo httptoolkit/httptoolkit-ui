@@ -207,6 +207,16 @@ export class RulesStore {
                     rules: migrateRuleData(data.rules)
                 }),
                 customArgs: { rulesStore: this } as DeserializationArgs
+            }).catch((err) => {
+                console.log('Failed to load last-run rules',
+                    err,
+                    // Log the full rule data for debugging:
+                    JSON.parse(localStorage.getItem('rules-store') ?? '{}')?.rules
+                );
+
+                reportError(err);
+                alert(`Could not load rules from last run.\n\n${err}`);
+                // We then continue, which resets the rules exactly as if this was the user's first run.
             });
 
             if (!this.rules) {
