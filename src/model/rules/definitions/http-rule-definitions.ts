@@ -19,13 +19,13 @@ import { CUSTOM_RULE_EQUALS } from '../rules-structure';
 // Create per-method classes (that all serialize to the same MethodMatcher class + param)
 // for each supported HTTP method, as a methodName -> methodClass lookup object.
 export const MethodMatchers = _.reduce<MethodName, {
-    [key in MethodName]: { new(): httpMatchers.MethodMatcher }
+    [K in MethodName]: { new(): TypedMethodMatcher<K> }
 }>(
     MethodNames,
     (result, method) => {
         result[method] = class SpecificMethodMatcher extends httpMatchers.MethodMatcher {
 
-            uiType = method;
+            readonly uiType = method;
 
             constructor() {
                 super(Method[method]);
@@ -34,11 +34,16 @@ export const MethodMatchers = _.reduce<MethodName, {
             explain() {
                 return `${Method[this.method]} requests`;
             }
-        };
+        } as any; // Difficult to get TS to infer or accept TypedMethodMatcher<typeof method>
         return result;
     },
     {} as any
 );
+
+// Tiny interface to let us make the METHOD -> methodMatcher{ uiType: METHOD } mapping explicit
+interface TypedMethodMatcher<R extends MethodName> extends httpMatchers.MethodMatcher {
+    readonly uiType: R;
+}
 
 // Override various specific & actions, so we can inject our own specific
 // explanations for certain cases
@@ -51,7 +56,7 @@ export class WildcardMatcher extends httpMatchers.WildcardMatcher {
 
 export class DefaultWildcardMatcher extends httpMatchers.WildcardMatcher {
 
-    uiType = 'default-wildcard';
+    readonly uiType = 'default-wildcard';
 
     explain() {
         return 'Any other requests';
@@ -60,7 +65,7 @@ export class DefaultWildcardMatcher extends httpMatchers.WildcardMatcher {
 
 export class AmIUsingMatcher extends httpMatchers.RegexPathMatcher {
 
-    uiType = 'am-i-using';
+    readonly uiType = 'am-i-using';
 
     constructor() {
         // Optional slash is for backward compat: for server 0.1.18+ it's always present
@@ -130,6 +135,8 @@ serializr.createModelSchema(PassThroughHandler, {
 
 export class ForwardToHostHandler extends httpHandlers.PassThroughHandlerDefinition {
 
+    readonly uiType = 'forward-to-host';
+
     constructor(forwardToLocation: string, updateHostHeader: boolean, rulesStore: RulesStore) {
         super({
             ...rulesStore.activePassthroughOptions,
@@ -159,6 +166,8 @@ export type RequestTransform = httpHandlers.RequestTransform;
 export type ResponseTransform = httpHandlers.ResponseTransform;
 
 export class TransformingHandler extends httpHandlers.PassThroughHandlerDefinition {
+
+    readonly uiType = 'req-res-transformer';
 
     constructor(
         rulesStore: RulesStore,
@@ -225,6 +234,8 @@ serializr.createModelSchema(TransformingHandler, {
 
 export class RequestBreakpointHandler extends httpHandlers.PassThroughHandlerDefinition {
 
+    readonly uiType = 'request-breakpoint';
+
     constructor(rulesStore: RulesStore) {
         super({
             ...rulesStore.activePassthroughOptions,
@@ -243,6 +254,8 @@ serializr.createModelSchema(RequestBreakpointHandler, {
 }, (context) => new RequestBreakpointHandler(context.args.rulesStore));
 
 export class ResponseBreakpointHandler extends httpHandlers.PassThroughHandlerDefinition {
+
+    readonly uiType = 'response-breakpoint';
 
     constructor(rulesStore: RulesStore) {
         super({
@@ -263,6 +276,8 @@ serializr.createModelSchema(ResponseBreakpointHandler, {
 
 
 export class RequestAndResponseBreakpointHandler extends httpHandlers.PassThroughHandlerDefinition {
+
+    readonly uiType = 'request-and-response-breakpoint';
 
     constructor(rulesStore: RulesStore) {
         super({

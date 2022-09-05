@@ -14,7 +14,7 @@ import {
 
 export class WebSocketWildcardMatcher extends WildcardMatcher {
 
-    uiType = 'ws-wildcard';
+    readonly uiType = 'ws-wildcard';
 
     explain() {
         return 'Any WebSocket';
@@ -22,9 +22,9 @@ export class WebSocketWildcardMatcher extends WildcardMatcher {
 
 }
 
-export class DefaultWebSocketWildcardMatcher extends WebSocketWildcardMatcher {
+export class DefaultWebSocketWildcardMatcher extends WildcardMatcher {
 
-    uiType = 'default-ws-wildcard';
+    readonly uiType = 'default-ws-wildcard';
 
     explain() {
         return 'Any other WebSockets';
@@ -63,7 +63,9 @@ export interface WebSocketMockRule extends Omit<WebSocketRuleData, 'matchers'> {
     type: 'websocket';
     activated: boolean;
     // WebSockets use the same HTTP matchers, but require an initial WebSocket matcher:
-    matchers: Array<HttpMatcher> & { 0?: WebSocketWildcardMatcher };
+    matchers: Array<HttpMatcher> & {
+        0?: WebSocketWildcardMatcher | DefaultWebSocketWildcardMatcher
+    };
     handler: WebSocketHandler;
     completionChecker: completionCheckers.Always; // HTK rules all *always* match
 };
