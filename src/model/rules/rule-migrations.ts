@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as dedent from 'dedent';
 
 import { isRuleGroup } from './rules-structure';
-import { buildDefaultGroup } from './rule-creation';
+import { buildDefaultGroupWrapper } from './rule-creation';
 
 // Take some raw serialized rule data, exported from any version of the app since HTTP Mock was
 // launched, and convert it into raw modern rule data, ready to be deserialized.
@@ -22,7 +22,7 @@ export function migrateRuleData(data: any) {
             if (defaultRules.length) {
                 data.items = [
                     ...otherRules,
-                    buildDefaultGroup(defaultRules)
+                    buildDefaultGroupWrapper(defaultRules)
                 ];
             } else {
                 data.items = otherRules;

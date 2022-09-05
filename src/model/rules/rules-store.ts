@@ -59,8 +59,9 @@ import {
     areItemsEqual,
 } from './rules-structure';
 import {
-    buildDefaultGroup,
-    buildDefaultRules,
+    buildDefaultGroupRules,
+    buildDefaultGroupWrapper,
+    buildDefaultRulesRoot,
     buildForwardingRuleIntegration,
 } from './rule-creation';
 import {
@@ -214,6 +215,10 @@ export class RulesStore {
             } else {
                 // Drafts are never persisted, so always need resetting to match the just-loaded data:
                 this.resetRuleDrafts();
+
+                // Recreate default rules on startup, even if we're restoring persisted rules
+                const defaultRules = buildDefaultGroupRules(this, this.proxyStore);
+                defaultRules.forEach(r => this.ensureRuleExists(r));
             }
         } else {
             // For free users, reset rules to default (separately, so defaults can use settings loaded above)
@@ -371,7 +376,7 @@ export class RulesStore {
     @action.bound
     resetRulesToDefault() {
         // Set the rules back to the default settings
-        this.rules = buildDefaultRules(this, this.proxyStore);
+        this.rules = buildDefaultRulesRoot(this, this.proxyStore);
         this.resetRuleDrafts();
     }
 
@@ -382,7 +387,7 @@ export class RulesStore {
 
     @computed
     get areSomeRulesNonDefault() {
-        const defaultRules = buildDefaultRules(this, this.proxyStore);
+        const defaultRules = buildDefaultRulesRoot(this, this.proxyStore);
         return !_.isEqualWith(this.draftRules, defaultRules, areItemsEqual);
     }
 
@@ -686,7 +691,7 @@ export class RulesStore {
         let draftDefaultGroupPath = findItemPath(this.draftRules, { id: 'default-group' });
         if (!draftDefaultGroupPath) {
             // If there's no draft default rules at all, build one
-            this.draftRules.items.push(buildDefaultGroup([rule]));
+            this.draftRules.items.push(buildDefaultGroupWrapper([rule]));
             draftDefaultGroupPath = [this.draftRules.items.length - 1];
         } else {
             const draftDefaultGroup = getItemAtPath(this.draftRules, draftDefaultGroupPath) as HtkMockRuleGroup;

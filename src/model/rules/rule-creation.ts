@@ -131,71 +131,78 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
     };
 }
 
-export const buildDefaultGroup = (items: HtkMockItem[]): HtkMockRuleGroup => ({
+export const buildDefaultGroupWrapper = (items: HtkMockItem[]): HtkMockRuleGroup => ({
     id: 'default-group',
     title: "Default rules",
     collapsed: true,
     items: items
-})
+});
 
-export const buildDefaultRules = (rulesStore: RulesStore, proxyStore: ProxyStore) => ({
+export const buildDefaultGroupRules = (
+    rulesStore: RulesStore,
+    proxyStore: ProxyStore
+): HtkMockItem[] => [
+    // Respond to amiusing.httptoolkit.tech with an emphatic YES
+    {
+        id: 'default-amiusing',
+        type: 'http',
+        activated: true,
+        matchers: [
+            new HttpRule.MethodMatchers.GET(),
+            new HttpRule.AmIUsingMatcher()
+        ],
+        completionChecker: new completionCheckers.Always(),
+        handler: new HttpRule.StaticResponseHandler(200, undefined, amIUsingHtml, {
+            'content-type': 'text/html',
+            'cache-control': 'no-store',
+            'httptoolkit-active': 'true'
+        })
+    },
+
+    // Share the server certificate on a convenient URL, assuming it supports that
+    ...(versionSatisfies(proxyStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
+        ? [{
+            id: 'default-certificate',
+            type: 'http' as 'http',
+            activated: true,
+            matchers: [
+                new HttpRule.MethodMatchers.GET(),
+                new matchers.SimplePathMatcher("amiusing.httptoolkit.tech/certificate")
+            ],
+            completionChecker: new completionCheckers.Always(),
+            handler: new HttpRule.FromFileResponseHandler(200, undefined, proxyStore.certPath, {
+                'content-type': 'application/x-x509-ca-cert'
+            })
+        }] : []
+    ),
+
+    // Pass through all other traffic to the real target
+    {
+        id: 'default-wildcard',
+        type: 'http',
+        activated: true,
+        matchers: [new HttpRule.DefaultWildcardMatcher()],
+        completionChecker: new completionCheckers.Always(),
+        handler: new HttpRule.PassThroughHandler(rulesStore)
+    },
+    {
+        id: 'default-ws-wildcard',
+        type: 'websocket',
+        activated: true,
+        matchers: [new DefaultWebSocketWildcardMatcher()],
+        completionChecker: new completionCheckers.Always(),
+        handler: new WebSocketPassThroughHandler(rulesStore)
+    }
+];
+
+export const buildDefaultRulesRoot = (rulesStore: RulesStore, proxyStore: ProxyStore) => ({
     id: 'root',
     title: "HTTP Toolkit Rules",
     isRoot: true,
     items: [
-        buildDefaultGroup([
-            // Respond to amiusing.httptoolkit.tech with an emphatic YES
-            {
-                id: 'default-amiusing',
-                type: 'http',
-                activated: true,
-                matchers: [
-                    new HttpRule.MethodMatchers.GET(),
-                    new HttpRule.AmIUsingMatcher()
-                ],
-                completionChecker: new completionCheckers.Always(),
-                handler: new HttpRule.StaticResponseHandler(200, undefined, amIUsingHtml, {
-                    'content-type': 'text/html',
-                    'cache-control': 'no-store',
-                    'httptoolkit-active': 'true'
-                })
-            },
-
-            // Share the server certificate on a convenient URL, assuming it supports that
-            ...(versionSatisfies(proxyStore.serverVersion, FROM_FILE_HANDLER_SERVER_RANGE)
-                ? [{
-                    id: 'default-certificate',
-                    type: 'http' as 'http',
-                    activated: true,
-                    matchers: [
-                        new HttpRule.MethodMatchers.GET(),
-                        new matchers.SimplePathMatcher("amiusing.httptoolkit.tech/certificate")
-                    ],
-                    completionChecker: new completionCheckers.Always(),
-                    handler: new HttpRule.FromFileResponseHandler(200, undefined, proxyStore.certPath, {
-                        'content-type': 'application/x-x509-ca-cert'
-                    })
-                }] : []
-            ),
-
-            // Pass through all other traffic to the real target
-            {
-                id: 'default-wildcard',
-                type: 'http',
-                activated: true,
-                matchers: [new HttpRule.DefaultWildcardMatcher()],
-                completionChecker: new completionCheckers.Always(),
-                handler: new HttpRule.PassThroughHandler(rulesStore)
-            },
-            {
-                id: 'default-ws-wildcard',
-                type: 'websocket',
-                activated: true,
-                matchers: [new DefaultWebSocketWildcardMatcher()],
-                completionChecker: new completionCheckers.Always(),
-                handler: new WebSocketPassThroughHandler(rulesStore)
-            }
-        ])
+        buildDefaultGroupWrapper(
+            buildDefaultGroupRules(rulesStore, proxyStore)
+        )
     ]
 } as HtkMockRuleRoot);
 
