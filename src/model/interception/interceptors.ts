@@ -272,10 +272,9 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         description: ["Launch an Electron application with all its traffic intercepted"],
         iconProps: SourceIcons.Electron,
         uiConfig: ElectronCustomUi,
-        checkRequirements: ({ serverVersion, interceptorVersion }) => {
-            return navigator.platform.startsWith('Mac')
-                ? versionSatisfies(serverVersion, '^1.10.1')
-                : versionSatisfies(interceptorVersion, "^1.0.1")
+        checkRequirements: ({ interceptorVersion }) => {
+            return !navigator.platform.startsWith('Mac') &&
+                versionSatisfies(interceptorVersion, "^1.0.1")
         },
         tags: ['electron', 'desktop', 'postman']
     },

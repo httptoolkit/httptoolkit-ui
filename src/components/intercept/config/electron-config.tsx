@@ -142,13 +142,7 @@ class ElectronConfig extends React.Component<{
     }
 
     selectApplication = async () => {
-        const pathToApplication = platform == 'mac'
-            ? window.prompt(
-                // Mac Electron doesn't allow file pickers inside .app bundles, and does very weird things
-                // if you select the whole bundle, scanning everything within, so we require manual entry:
-                "Please enter the path to the Electron application:"
-            )
-            : await uploadFile('path');
+        const pathToApplication = await uploadFile('path');
 
         if (!pathToApplication) {
             this.props.closeSelf();
