@@ -14,7 +14,7 @@ import {
 import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
 
-import { getMethodColor } from '../../model/events/categorization';
+import { getMethodColor, getSummaryColour } from '../../model/events/categorization';
 import {
     HtkMockRule,
     Matcher,
@@ -306,19 +306,19 @@ export class RuleRow extends React.Component<{
         } = this.props.accountStore!;
 
         const ruleType = rule.type;
- 
-        // Hide non-HTTP rules (...for now)
-        if (ruleType !== 'http') return null;
-
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
-        let method: string | undefined;
-        if (initialMatcher instanceof matchers.MethodMatcher) {
-            method = Method[initialMatcher.method];
-        } else if (initialMatcher !== undefined) {
-            method = 'unknown';
+        let ruleColour: string;
+        if (ruleType === 'http') {
+            if (initialMatcher instanceof matchers.MethodMatcher) {
+                ruleColour = getMethodColor(Method[initialMatcher.method]);
+            } else if (initialMatcher !== undefined) {
+                ruleColour = getMethodColor('unknown');
+            } else {
+                ruleColour = 'transparent';
+            }
         } else {
-            method = undefined;
+            ruleColour = getSummaryColour(ruleType);
         }
 
         const serverVersion = serverVersionObservable.state === 'fulfilled'
@@ -343,10 +343,7 @@ export class RuleRow extends React.Component<{
         >{ (provided, snapshot) => <Observer>{ () =>
             <RowContainer
                 {...provided.draggableProps}
-                borderColor={method
-                    ? getMethodColor(method)
-                    : 'transparent'
-                }
+                borderColor={ruleColour}
                 ref={(ref: HTMLElement | null) => {
                     provided.innerRef(ref);
                     this.containerRef = ref;
