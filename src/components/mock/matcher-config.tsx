@@ -42,6 +42,9 @@ export function MatcherConfiguration(props:
         ? MatcherLookup[props.matcher.type as MatcherClassKey]
         : props.matcherClass!;
 
+    // No matcher class selected yet - no config to show:
+    if (!matcherClass) return null;
+
     const configProps = {
         matcher: matcher as any,
         matcherIndex: props.matcherIndex,
@@ -71,7 +74,7 @@ export function MatcherConfiguration(props:
         case matchers.JsonBodyFlexibleMatcher:
             return <JsonBodyIncludingMatcherConfig {...configProps} />;
         default:
-            return null;
+            throw new Error(`Cannot render config component for ${matcherClass.name}`);
     }
 }
 

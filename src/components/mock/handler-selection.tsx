@@ -10,7 +10,7 @@ import {
     HandlerClass,
     Handler,
     HandlerClassKey,
-    HandlerKeys,
+    HandlerClassKeyLookup,
     HandlerLookup,
     isPaidHandlerClass
 } from '../../model/rules/rules';
@@ -29,27 +29,19 @@ import {
 } from '../../model/rules/definitions/http-rule-definitions';
 
 import { Select } from '../common/inputs';
-import {
-    serverVersion,
-    versionSatisfies,
-    FROM_FILE_HANDLER_SERVER_RANGE,
-    PASSTHROUGH_TRANSFORMS_RANGE
-} from '../../services/service-versions';
 
 const getHandlerKey = (h: HandlerClass | Handler) =>
-    HandlerKeys.get(h as any) || HandlerKeys.get(h.constructor as any);
+    HandlerClassKeyLookup.get(h as any) || HandlerClassKeyLookup.get(h.constructor as any);
 const getHandlerClassByKey = (k: HandlerClassKey) => HandlerLookup[k];
 
 const HandlerOptions = (p: { handlers: Array<HandlerClass> }) => <>{
     p.handlers.map((handler): JSX.Element | null => {
-        const key = getHandlerKey(handler);
-        const description = summarizeHandlerClass(handler);
+        const key = getHandlerKey(handler)!;
+        const description = summarizeHandlerClass(key);
 
-        return description
-            ? <option key={key} value={key}>
-                { description }
-            </option>
-            : null;
+        return <option key={key} value={key}>
+            { description }
+        </option>;
     })
 }</>;
 
@@ -85,39 +77,21 @@ const instantiateHandler = (
     }
 }
 
-const supportsFileHandlers = () =>
-    _.isString(serverVersion.value) &&
-    versionSatisfies(serverVersion.value, FROM_FILE_HANDLER_SERVER_RANGE);
-
-const supportsTransforms = () =>
-    _.isString(serverVersion.value) &&
-    versionSatisfies(serverVersion.value, PASSTHROUGH_TRANSFORMS_RANGE);
-
 export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p: {
     rulesStore?: RulesStore,
     accountStore?: AccountStore,
+    availableHandlers: Array<HandlerClass>,
     value: Handler,
     onChange: (handler: Handler) => void
 }) => {
-    const allHandlers = [
-        StaticResponseHandler,
-        supportsFileHandlers() && FromFileResponseHandler,
-        PassThroughHandler,
-        ForwardToHostHandler,
-        supportsTransforms() && TransformingHandler,
-        RequestBreakpointHandler,
-        ResponseBreakpointHandler,
-        RequestAndResponseBreakpointHandler,
-        TimeoutHandler,
-        CloseConnectionHandler
-    ].filter(Boolean);
-
-    // Do some type tricks to make TS understand that we've filtered 'false' out of the handlers.
-    type DefinedHandler = Exclude<typeof allHandlers[number], false>;
-
-    const [ availableHandlers, needProHandlers ] = _.partition<DefinedHandler>(
-        allHandlers as DefinedHandler[],
+    let [ allowedHandlers, needProHandlers ] = _.partition(
+        p.availableHandlers,
         (handlerClass) => p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
+    );
+
+    // Pull the breakpoint handlers to the top, since they're kind of separate
+    allowedHandlers = _.sortBy(allowedHandlers, h =>
+        getHandlerKey(h)!.includes('breakpoint') ? 0 : 1
     );
 
     return <HandlerSelect
@@ -129,7 +103,7 @@ export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p:
             p.onChange(handler);
         }}
     >
-        <HandlerOptions handlers={availableHandlers} />
+        <HandlerOptions handlers={allowedHandlers} />
         { needProHandlers.length &&
             <optgroup label='With HTTP Toolkit Pro:'>
                 <HandlerOptions handlers={needProHandlers} />

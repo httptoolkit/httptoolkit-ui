@@ -4,19 +4,34 @@ import * as polished from 'polished';
 import { observer, inject, disposeOnUnmount, Observer } from 'mobx-react';
 import { action, observable, reaction } from 'mobx';
 import { Method, matchers } from 'mockttp';
-import { Draggable, DraggingStyle, NotDraggingStyle, DraggableStateSnapshot } from 'react-beautiful-dnd';
+import {
+    Draggable,
+    DraggingStyle,
+    NotDraggingStyle,
+    DraggableStateSnapshot
+} from 'react-beautiful-dnd';
 
 import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
 
 import { getMethodColor } from '../../model/events/categorization';
-import { HtkMockRule, Matcher, Handler, isPaidHandler } from '../../model/rules/rules';
+import {
+    HtkMockRule,
+    Matcher,
+    Handler,
+    isPaidHandler,
+    getAvailableAdditionalMatchers,
+    getAvailableHandlers
+} from '../../model/rules/rules';
 import { ItemPath } from '../../model/rules/rules-structure';
 import {
     summarizeMatcher,
     summarizeHandler
 } from '../../model/rules/rule-descriptions';
 import { AccountStore } from '../../model/account/account-store';
+import {
+    serverVersion as serverVersionObservable
+} from '../../services/service-versions';
 
 import { clickOnEnter, noPropagation } from '../component-utils';
 import { GetProOverlay } from '../account/pro-placeholders';
@@ -290,8 +305,10 @@ export class RuleRow extends React.Component<{
             getPro
         } = this.props.accountStore!;
 
+        const ruleType = rule.type;
+ 
         // Hide non-HTTP rules (...for now)
-        if (rule.type !== 'http') return null;
+        if (ruleType !== 'http') return null;
 
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
@@ -303,6 +320,13 @@ export class RuleRow extends React.Component<{
         } else {
             method = undefined;
         }
+
+        const serverVersion = serverVersionObservable.state === 'fulfilled'
+            ? serverVersionObservable.value as string
+            : undefined;
+
+        const availableMatchers = getAvailableAdditionalMatchers(ruleType, serverVersion);
+        const availableHandlers = getAvailableHandlers(ruleType, serverVersion);
 
         // Handlers are in demo mode (uneditable, behind a 'Get Pro' overlay), either if the rule
         // has a handler you can't use, or you've picked a Pro handler and its been put in demoHandler
@@ -378,6 +402,7 @@ export class RuleRow extends React.Component<{
 
                                 { rule.matchers.length > 0 &&
                                     <NewMatcherRow
+                                        availableMatchers={availableMatchers}
                                         existingMatchers={rule.matchers}
                                         onAdd={this.addMatcher}
                                     />
@@ -400,6 +425,7 @@ export class RuleRow extends React.Component<{
                             <HandlerSelector
                                 value={ruleHandler}
                                 onChange={this.updateHandler}
+                                availableHandlers={availableHandlers}
                             />
 
                             { isHandlerDemo
@@ -407,13 +433,13 @@ export class RuleRow extends React.Component<{
                                 // show a handler demo with a 'Get Pro' overlay:
                                 ? <GetProOverlay getPro={getPro} source={`rule-${ruleHandler.type}`}>
                                     <HandlerConfiguration
-                                        ruleType={rule.type}
+                                        ruleType={ruleType}
                                         handler={ruleHandler}
                                         onChange={_.noop}
                                     />
                                 </GetProOverlay>
                                 : <HandlerConfiguration
-                                    ruleType={rule.type}
+                                    ruleType={ruleType}
                                     handler={ruleHandler}
                                     onChange={this.updateHandler}
                                 />

@@ -3,22 +3,14 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { action, observable } from 'mobx';
 
-import { matchers } from 'mockttp';
-
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
-import {
-    serverVersion as serverVersionObservable,
-    versionSatisfies,
-    HOST_MATCHER_SERVER_RANGE,
-    BODY_MATCHING_RANGE
-} from '../../services/service-versions';
 import { Button, Select } from '../common/inputs';
 
 import {
     Matcher,
     MatcherClass,
-    MatcherKeys,
+    MatcherClassKeyLookup,
     MatcherLookup,
     MatcherClassKey,
     InitialMatcher,
@@ -31,12 +23,9 @@ import {
 
 import { MatcherConfiguration } from './matcher-config';
 
-const getMatcherKey = (m: MatcherClass | Matcher | undefined) => {
-    if (m === undefined) return '';
+const getMatcherKey = (m: MatcherClass | Matcher | undefined) =>
+    MatcherClassKeyLookup.get(m as any) || MatcherClassKeyLookup.get(m?.constructor as any);
 
-    return MatcherKeys.get(m as any) ||
-        MatcherKeys.get(m.constructor as any);
-};
 const getMatcherClassByKey = (k: MatcherClassKey) => MatcherLookup[k];
 
 const MatcherRow = styled.li`
@@ -129,14 +118,12 @@ export class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps>
 
 const MatcherOptions = (p: { matchers: Array<MatcherClass> }) => <>{
     p.matchers.map((matcher): JSX.Element | null => {
-        const key = getMatcherKey(matcher);
-        const description = summarizeMatcherClass(matcher);
+        const key = getMatcherKey(matcher)!;
+        const description = summarizeMatcherClass(key);
 
-        return description
-            ? <option key={key} value={key}>
-                { description }
-            </option>
-            : null;
+        return <option key={key} value={key}>
+            { description }
+        </option>;
     })
 }</>
 
@@ -153,6 +140,7 @@ const LowlightedOption = styled.option`
 @observer
 export class NewMatcherRow extends React.Component<{
     onAdd: (matcher: Matcher) => void,
+    availableMatchers: MatcherClass[],
     existingMatchers: Matcher[]
 }> {
 
@@ -204,6 +192,8 @@ export class NewMatcherRow extends React.Component<{
     }
 
     render() {
+        const { availableMatchers } = this.props;
+
         const {
             matcherClass,
             draftMatchers,
@@ -212,27 +202,6 @@ export class NewMatcherRow extends React.Component<{
             markMatcherInvalid,
             saveMatcher
         } = this;
-
-        const serverVersion = serverVersionObservable.state === 'fulfilled'
-            ? serverVersionObservable.value as string
-            : undefined;
-
-        const availableMatchers = [
-            ...(versionSatisfies(serverVersion, HOST_MATCHER_SERVER_RANGE) ? [
-                matchers.HostMatcher
-            ] : []),
-            matchers.SimplePathMatcher,
-            matchers.RegexPathMatcher,
-            matchers.QueryMatcher,
-            matchers.ExactQueryMatcher,
-            matchers.HeaderMatcher,
-            ...(versionSatisfies(serverVersion, BODY_MATCHING_RANGE) ? [
-                matchers.RawBodyMatcher,
-                matchers.RawBodyIncludesMatcher,
-                matchers.JsonBodyMatcher,
-                matchers.JsonBodyFlexibleMatcher
-            ] : [])
-        ];
 
         return <MatcherRow>
             <MatcherInputsContainer>
