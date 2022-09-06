@@ -407,11 +407,13 @@ export class RuleRow extends React.Component<{
                                 // show a handler demo with a 'Get Pro' overlay:
                                 ? <GetProOverlay getPro={getPro} source={`rule-${ruleHandler.type}`}>
                                     <HandlerConfiguration
+                                        ruleType={rule.type}
                                         handler={ruleHandler}
                                         onChange={_.noop}
                                     />
                                 </GetProOverlay>
                                 : <HandlerConfiguration
+                                    ruleType={rule.type}
                                     handler={ruleHandler}
                                     onChange={this.updateHandler}
                                 />

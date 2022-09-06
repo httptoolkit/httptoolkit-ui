@@ -11,7 +11,8 @@ import { uploadFile } from '../../util/ui';
 import { asError } from '../../util/error';
 
 import {
-    Handler
+    Handler,
+    RuleType
 } from '../../model/rules/rules';
 import {
     StaticResponseHandler,
@@ -47,6 +48,7 @@ import { FormatButton } from '../common/format-button';
 import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 type HandlerConfigProps<H extends Handler> = {
+    ruleType: RuleType;
     handler: H;
     onChange: (handler: H) => void;
     onInvalidState: () => void;
@@ -70,6 +72,7 @@ const ConfigExplanation = styled.p`
 `;
 
 export function HandlerConfiguration(props: {
+    ruleType: RuleType,
     handler: Handler,
     onChange: (handler: Handler) => void,
     onInvalidState?: () => void // Currently unused - intended to improve invalid entry UX later on
@@ -77,6 +80,7 @@ export function HandlerConfiguration(props: {
     const { handler, onChange, onInvalidState } = props;
 
     const configProps = {
+        ruleType: props.ruleType,
         handler: handler as any,
         onChange,
         onInvalidState: onInvalidState || _.noop
@@ -1154,9 +1158,14 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                When a matching request is received, the server will keep the connection
-                open but do nothing. With no data or response, most clients will time out
-                and abort the request after sufficient time has passed.
+                When a matching {
+                    this.props.ruleType === 'http'
+                        ? 'HTTP'
+                    // ruleType === 'websocket'
+                        : 'WebSocket'
+                } is received, the server will keep the connection open but do nothing.
+                With no data or response, most clients will time out and abort the
+                request after sufficient time has passed.
             </ConfigExplanation>
         </ConfigContainer>;
     }
@@ -1167,8 +1176,12 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                As soon as a matching request is received, the connection will
-                be closed, with no response.
+                As soon as a matching {
+                    this.props.ruleType === 'http'
+                        ? 'HTTP'
+                    // ruleType === 'websocket'
+                        : 'WebSocket'
+                } is received, the connection will be closed, with no response.
             </ConfigExplanation>
         </ConfigContainer>;
     }

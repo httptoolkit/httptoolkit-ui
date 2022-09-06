@@ -104,7 +104,9 @@ export type HtkMockRule =
     | WebSocketMockRule
     | HttpMockRule;
 
-const matchRuleType = <T extends HtkMockRule['type']>(
+export type RuleType = HtkMockRule['type'];
+
+const matchRuleType = <T extends RuleType>(
     type: T
 ) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
     rule.type === type;
