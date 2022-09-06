@@ -34,7 +34,9 @@ import { triggerServerUpdate } from './services/server-api';
 import { App } from './components/app';
 import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
 import { ErrorBoundary } from './components/error-boundary';
-import { serverVersion, lastServerVersion } from './services/service-versions';
+import { serverVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
+
+console.log(`Initialising UI (version ${UI_VERSION})`);
 
 const APP_ELEMENT_SELECTOR = '#app';
 

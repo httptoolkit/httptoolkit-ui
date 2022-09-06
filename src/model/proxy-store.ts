@@ -141,7 +141,7 @@ export class ProxyStore {
         await this.loadSettings();
         await this.startIntercepting();
         this.serverVersion = await serverVersion;
-        console.log('Proxy store initialized');
+        console.log(`Proxy store initialized (server version ${this.serverVersion})`);
     });
 
     private async loadSettings() {
