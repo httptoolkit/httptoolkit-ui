@@ -392,6 +392,25 @@ class ErrorFilter extends Filter {
     }
 }
 
+class PinnedFilter extends Filter {
+
+    static filterSyntax = [new FixedStringSyntax("pinned")] as const;
+
+    static filterName = "pinned";
+
+    static filterDescription(value: string) {
+        return "exchanges that are pinned";
+    }
+
+    matches(event: CollectedEvent): boolean {
+        return event.pinned;
+    }
+
+    toString() {
+        return `Pinned`;
+    }
+}
+
 class CategoryFilter extends Filter {
 
     static filterSyntax = [
@@ -1151,6 +1170,7 @@ const BaseSearchFilterClasses: FilterClass[] = [
     PendingFilter,
     AbortedFilter,
     ErrorFilter,
+    PinnedFilter,
     CategoryFilter,
     PortFilter,
     ProtocolFilter,
