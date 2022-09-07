@@ -562,7 +562,8 @@ export class EventsStore {
             requests,
             responses,
             aborts,
-            tlsErrors
+            tlsErrors,
+            pinnedIds
         } = await parseHar(harContents).catch((harParseError: HarParseError) => {
             // Log all suberrors, for easier reporting & debugging.
             // This does not include HAR data - only schema errors like
@@ -590,6 +591,14 @@ export class EventsStore {
         );
 
         this.queueEventFlush();
+
+        if (pinnedIds.length) {
+            // This rAF will be scheduled after the queued flush, so the event should
+            // always be fully imported by this stage:
+            requestAnimationFrame(action(() => pinnedIds.forEach((id) => {
+                this.events.find(e => e.id === id)!.pinned = true;
+            })));
+        }
     }
 
 }

@@ -32,6 +32,9 @@ export interface Har extends HarFormat.Har {
 interface HarLog extends HarFormat.Log {
     // Custom field to expose failed TLS connections
     _tlsErrors: HarTlsErrorEntry[];
+
+    // Our extended version of HAR entries:
+    entries: HarEntry[];
 }
 
 export type RequestContentData = {
@@ -49,7 +52,10 @@ export interface ExtendedHarRequest extends HarFormat.Request {
     _content?: RequestContentData;
 }
 
-export type HarEntry = HarFormat.Entry;
+export interface HarEntry extends HarFormat.Entry {
+    _pinned?: true;
+}
+
 export type HarTlsErrorEntry = {
     startedDateTime: string;
     time: number; // Floating-point high-resolution duration, in ms
@@ -345,7 +351,8 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
             send: Math.max(sendDuration, 0),
             wait: Math.max(waitDuration, 0),
             receive: Math.max(receiveDuration, 0)
-        }
+        },
+        _pinned: exchange.pinned || undefined
     };
 }
 
@@ -375,6 +382,7 @@ export type ParsedHar = {
     responses: HarResponse[],
     aborts: HarRequest[],
     tlsErrors: InputTLSRequest[]
+    pinnedIds: string[]
 };
 
 const sumTimings = (
@@ -396,6 +404,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
     const responses: HarResponse[] = [];
     const aborts: HarRequest[] = [];
     const tlsErrors: InputTLSRequest[] = [];
+    const pinnedIds: string[] = []
 
     har.log.entries.forEach((entry, i) => {
         const id = baseId + i;
@@ -429,6 +438,8 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
         } else {
             aborts.push(request);
         }
+
+        if (entry._pinned) pinnedIds.push(id);
     });
 
     if (har.log._tlsErrors) {
@@ -448,7 +459,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
         });
     }
 
-    return { requests, responses, aborts, tlsErrors };
+    return { requests, responses, aborts, tlsErrors, pinnedIds };
 }
 
 // Mutatively cleans & returns the HAR, to tidy up irrelevant but potentially
