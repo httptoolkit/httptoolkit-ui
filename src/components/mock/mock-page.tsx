@@ -12,7 +12,9 @@ import { uploadFile, saveFile } from '../../util/ui';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
-import { getNewRule } from '../../model/rules/rule-creation';
+
+import { RuleType } from '../../model/rules/rules';
+import { getNewRule, getRuleDefaultHandler } from '../../model/rules/rule-creation';
 import {
     cloneItem,
     getItemAtPath,
@@ -219,9 +221,11 @@ class MockPage extends React.Component<MockPageProps> {
                     cloneItem={this.cloneItem}
                     deleteItem={deleteDraftItem}
                     toggleRuleCollapsed={this.toggleRuleCollapsed}
+                    updateGroupTitle={updateGroupTitle}
+                    getRuleDefaultHandler={this.getRuleDefaultHandler}
+
                     moveRule={moveDraftRule}
                     combineRulesAsGroup={combineDraftRulesAsGroup}
-                    updateGroupTitle={updateGroupTitle}
                 />
             </MockPageScrollContainer>
         </MockPageContainer>
@@ -308,6 +312,10 @@ class MockPage extends React.Component<MockPageProps> {
     toggleRuleCollapsed(ruleId: string) {
         this.collapsedRulesMap[ruleId] = !this.collapsedRulesMap[ruleId];
     }
+
+    getRuleDefaultHandler = (type: RuleType) => {
+        return getRuleDefaultHandler(type, this.props.rulesStore);
+    };
 
     readonly importRules = async () => {
         const uploadedFile = await uploadFile('text', [

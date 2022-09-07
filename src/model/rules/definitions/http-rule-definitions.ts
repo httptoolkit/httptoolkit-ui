@@ -303,7 +303,7 @@ export type CloseConnectionHandler = httpHandlers.CloseConnectionHandlerDefiniti
 export const CloseConnectionHandler = httpHandlers.CloseConnectionHandlerDefinition;
 
 export const HttpMatcherLookup = {
-    ...httpMatchers.MatcherLookup,
+    ..._.omit(httpMatchers.MatcherLookup, ['method']), // We skip method to use per-method matchers instead
     ...MethodMatchers,
 
     // Replace the built-in wildcard matcher with our own:

@@ -20,8 +20,13 @@ import {
     Matcher,
     Handler,
     isPaidHandler,
+    InitialMatcher,
+    getRuleTypeFromInitialMatcher,
+    isCompatibleMatcher,
+    isCompatibleHandler,
     getAvailableAdditionalMatchers,
-    getAvailableHandlers
+    getAvailableHandlers,
+    RuleType
 } from '../../model/rules/rules';
 import { ItemPath } from '../../model/rules/rules-structure';
 import {
@@ -274,6 +279,8 @@ export class RuleRow extends React.Component<{
     resetRule: (path: ItemPath) => void;
     deleteRule: (path: ItemPath) => void;
     cloneRule: (path: ItemPath) => void;
+
+    getRuleDefaultHandler: (type: RuleType) => Handler;
 }> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
@@ -384,7 +391,7 @@ export class RuleRow extends React.Component<{
                                 <InitialMatcherRow
                                     ref={this.initialMatcherSelect}
                                     matcher={initialMatcher}
-                                    onChange={(...ms) => this.updateMatcher(0, ...ms)}
+                                    onChange={this.setInitialMatcher}
                                 />
 
                                 { rule.matchers.slice(1).map((matcher, i) =>
@@ -478,13 +485,42 @@ export class RuleRow extends React.Component<{
     });
 
     @action.bound
+    setInitialMatcher(matcher: InitialMatcher) {
+        const currentRuleType = this.props.rule.type;
+        const newRuleType = getRuleTypeFromInitialMatcher(matcher);
+
+        if (currentRuleType === newRuleType) {
+            this.props.rule.matchers[0] = matcher;
+        } else {
+            this.props.rule.type = newRuleType;
+
+            this.props.rule.matchers = [
+                matcher,
+                // Drop any incompatible matchers:
+                ...this.props.rule.matchers
+                    .slice(1)
+                    .filter(m => isCompatibleMatcher(m, newRuleType))
+            ];
+
+            // Reset the rule handler, if incompatible:
+            this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, newRuleType)
+                ? this.props.rule.handler
+                : this.props.getRuleDefaultHandler(newRuleType);
+        }
+    }
+
+    @action.bound
     addMatcher(matcher: Matcher) {
-        this.props.rule.matchers.push(matcher);
+        this.props.rule.matchers.push(
+            matcher as any // Matcher must be valid, as availableMatchers is type-based
+        );
     }
 
     @action.bound
     updateMatcher(index: number, ...matchers: Matcher[]) {
-        this.props.rule.matchers.splice(index, 1, ...matchers);
+        this.props.rule.matchers.splice(index, 1,
+            ...matchers as any[] // Matchers must be valid, as availableMatchers is type-based
+        );
     }
 
     @action.bound

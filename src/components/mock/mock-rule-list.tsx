@@ -18,7 +18,7 @@ import {
     getItemAtPath,
     findItem,
 } from '../../model/rules/rules-structure';
-import { HtkMockRule } from '../../model/rules/rules';
+import { Handler, HtkMockRule, RuleType } from '../../model/rules/rules';
 
 import { GroupHeader, GroupTail } from './mock-rule-group';
 import { AddRuleRow, RuleRow } from './mock-rule-row';
@@ -112,8 +112,10 @@ export class MockRuleList extends React.Component<{
     cloneItem: (path: ItemPath) => void,
     deleteItem: (path: ItemPath) => void,
     toggleRuleCollapsed: (id: string) => void,
-    moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
+    getRuleDefaultHandler: (ruleType: RuleType) => Handler,
+
+    moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
     combineRulesAsGroup: (sourcePath: ItemPath, targetPath: ItemPath) => void,
 
     collapsedRulesMap: { [id: string]: boolean }
@@ -205,6 +207,7 @@ export class MockRuleList extends React.Component<{
             cloneItem,
             toggleRuleCollapsed,
             updateGroupTitle,
+            getRuleDefaultHandler,
 
             collapsedRulesMap
         } = this.props;
@@ -225,7 +228,8 @@ export class MockRuleList extends React.Component<{
             resetRule,
             cloneItem,
             deleteItem,
-            updateGroupTitle
+            updateGroupTitle,
+            getRuleDefaultHandler
         );
 
         return <DragDropContext
@@ -268,6 +272,7 @@ function buildRuleRows(
     cloneItem: (path: ItemPath) => void,
     deleteItem: (path: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
+    getRuleDefaultHandler: (ruleType: RuleType) => Handler,
 
     ruleGroup: HtkMockRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
@@ -278,7 +283,8 @@ function buildRuleRows(
         saveRule,
         resetRule,
         cloneRule: cloneItem,
-        deleteRule: deleteItem
+        deleteRule: deleteItem,
+        getRuleDefaultHandler
     };
 
     return ruleGroup.items.reduce<RuleRowsData>((result, item, index) => {
@@ -314,6 +320,7 @@ function buildRuleRows(
                 cloneItem,
                 deleteItem,
                 updateGroupTitle,
+                getRuleDefaultHandler,
 
                 item,
                 itemPath,

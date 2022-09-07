@@ -22,17 +22,14 @@ import { MethodName } from '../http/methods';
 import { getStatusMessage } from '../http/http-docs';
 
 import { RulesStore } from './rules-store';
-import { HtkMockRule } from './rules';
+import { Handler, HtkMockRule, RuleType } from './rules';
 import {
     HtkMockItem,
     HtkMockRuleGroup,
     HtkMockRuleRoot
 } from './rules-structure';
 import * as HttpRule from './definitions/http-rule-definitions';
-import {
-    DefaultWebSocketWildcardMatcher,
-    WebSocketPassThroughHandler
-} from './definitions/websocket-rule-definitions';
+import * as WsRule from './definitions/websocket-rule-definitions';
 
 export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     return observable({
@@ -41,9 +38,21 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
         activated: true,
         matchers: [],
         completionChecker: new completionCheckers.Always(),
-        handler: new HttpRule.PassThroughHandler(rulesStore)
+        handler: getRuleDefaultHandler('http', rulesStore)
     });
 }
+
+export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpMockRule['handler'];
+export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketMockRule['handler'];
+export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
+export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
+    switch (type) {
+        case 'http':
+            return new HttpRule.PassThroughHandler(ruleStore);
+        case 'websocket':
+            return new WsRule.WebSocketPassThroughHandler(ruleStore);
+    }
+};
 
 function buildRequestMatchers(request: HtkRequest) {
     const hasBody = !!request.body.decoded &&
@@ -189,9 +198,9 @@ export const buildDefaultGroupRules = (
         id: 'default-ws-wildcard',
         type: 'websocket',
         activated: true,
-        matchers: [new DefaultWebSocketWildcardMatcher()],
+        matchers: [new WsRule.DefaultWebSocketWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
-        handler: new WebSocketPassThroughHandler(rulesStore)
+        handler: new WsRule.WebSocketPassThroughHandler(rulesStore)
     }
 ];
 

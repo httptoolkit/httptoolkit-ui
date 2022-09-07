@@ -3,16 +3,16 @@ import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../styles';
+import { UnreachableCheck } from '../../util/error';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 import {
     HandlerClass,
     Handler,
-    HandlerClassKey,
+    AvailableHandlerKey,
     HandlerClassKeyLookup,
-    HandlerLookup,
-    isPaidHandlerClass
+    isPaidHandlerClass,
 } from '../../model/rules/rules';
 import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
@@ -27,12 +27,17 @@ import {
     CloseConnectionHandler,
     FromFileResponseHandler
 } from '../../model/rules/definitions/http-rule-definitions';
+import {
+    WebSocketPassThroughHandler,
+    EchoWebSocketHandlerDefinition,
+    RejectWebSocketHandlerDefinition,
+    ListenWebSocketHandlerDefinition
+} from '../../model/rules/definitions/websocket-rule-definitions';
 
 import { Select } from '../common/inputs';
 
 const getHandlerKey = (h: HandlerClass | Handler) =>
     HandlerClassKeyLookup.get(h as any) || HandlerClassKeyLookup.get(h.constructor as any);
-const getHandlerClassByKey = (k: HandlerClassKey) => HandlerLookup[k];
 
 const HandlerOptions = (p: { handlers: Array<HandlerClass> }) => <>{
     p.handlers.map((handler): JSX.Element | null => {
@@ -50,30 +55,40 @@ const HandlerSelect = styled(Select)`
 `;
 
 const instantiateHandler = (
-    handlerClass: HandlerClass,
+    handlerKey: AvailableHandlerKey,
     rulesStore: RulesStore
-): Handler | undefined => {
-    switch (handlerClass) {
-        case StaticResponseHandler:
+): Handler => {
+    switch (handlerKey) {
+        case 'simple':
             return new StaticResponseHandler(200);
-        case FromFileResponseHandler:
+        case 'file':
             return new FromFileResponseHandler(200, undefined, '');
-        case PassThroughHandler:
+        case 'passthrough':
             return new PassThroughHandler(rulesStore);
-        case ForwardToHostHandler:
+        case 'ws-passthrough':
+            return new WebSocketPassThroughHandler(rulesStore);
+        case 'forward-to-host':
             return new ForwardToHostHandler('', true, rulesStore);
-        case TransformingHandler:
+        case 'req-res-transformer':
             return new TransformingHandler(rulesStore, {}, {});
-        case RequestBreakpointHandler:
+        case 'request-breakpoint':
             return new RequestBreakpointHandler(rulesStore);
-        case ResponseBreakpointHandler:
+        case 'response-breakpoint':
             return new ResponseBreakpointHandler(rulesStore);
-        case RequestAndResponseBreakpointHandler:
+        case 'request-and-response-breakpoint':
             return new RequestAndResponseBreakpointHandler(rulesStore);
-        case TimeoutHandler:
+        case 'timeout':
             return new TimeoutHandler();
-        case CloseConnectionHandler:
+        case 'close-connection':
             return new CloseConnectionHandler();
+        case 'ws-echo':
+            return new EchoWebSocketHandlerDefinition();
+        case 'ws-reject':
+            return new RejectWebSocketHandlerDefinition(400);
+        case 'ws-listen':
+            return new ListenWebSocketHandlerDefinition();
+        default:
+            throw new UnreachableCheck(handlerKey);
     }
 }
 
@@ -97,9 +112,8 @@ export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p:
     return <HandlerSelect
         value={getHandlerKey(p.value)}
         onChange={(event) => {
-            const handlerClass = getHandlerClassByKey(event.target.value as HandlerClassKey);
-            const handler = instantiateHandler(handlerClass, p.rulesStore!);
-            if (!handler) return;
+            const handlerKey = event.target.value as AvailableHandlerKey;
+            const handler = instantiateHandler(handlerKey, p.rulesStore!);
             p.onChange(handler);
         }}
     >

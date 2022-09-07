@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import { action, observable } from 'mobx';
@@ -207,7 +206,7 @@ export class NewMatcherRow extends React.Component<{
             <MatcherInputsContainer>
                 <Select
                     onChange={this.selectMatcher}
-                    value={getMatcherKey(matcherClass)}
+                    value={getMatcherKey(matcherClass) ?? ''}
                     ref={this.dropdownRef}
                 >
                     <LowlightedOption value={''}>Add another matcher:</LowlightedOption>

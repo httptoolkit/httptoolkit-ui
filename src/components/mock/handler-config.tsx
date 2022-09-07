@@ -8,11 +8,14 @@ import { Headers } from '../../types';
 import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
-import { asError } from '../../util/error';
+import { asError, UnreachableCheck } from '../../util/error';
+import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 import {
     Handler,
-    RuleType
+    RuleType,
+    getRulePartKey,
+    AvailableHandlerKey
 } from '../../model/rules/rules';
 import {
     StaticResponseHandler,
@@ -29,9 +32,12 @@ import {
     FromFileResponseHandler
 } from '../../model/rules/definitions/http-rule-definitions';
 import {
-    WebSocketPassThroughHandler
+    WebSocketPassThroughHandler,
+    EchoWebSocketHandlerDefinition,
+    RejectWebSocketHandlerDefinition,
+    ListenWebSocketHandlerDefinition
 } from '../../model/rules/definitions/websocket-rule-definitions';
-import { HEADER_NAME_REGEX } from '../../model/http/http-docs';
+import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
 import {
     getDefaultMimeType,
@@ -45,7 +51,6 @@ import { TextInput, Select, Button } from '../common/inputs';
 import { EditableHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
 import { FormatButton } from '../common/format-button';
-import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 type HandlerConfigProps<H extends Handler> = {
     ruleType: RuleType;
@@ -86,32 +91,39 @@ export function HandlerConfiguration(props: {
         onInvalidState: onInvalidState || _.noop
     };
 
-    if (handler instanceof StaticResponseHandler) {
-        return <StaticResponseHandlerConfig {...configProps} />;
-    } else if (handler instanceof FromFileResponseHandler) {
-        return <FromFileResponseHandlerConfig {...configProps} />;
-    } else if (handler instanceof ForwardToHostHandler) {
-        return <ForwardToHostHandlerConfig {...configProps} />;
-    } else if (
-        handler instanceof PassThroughHandler ||
-        handler instanceof WebSocketPassThroughHandler
-    ) {
-        return <PassThroughHandlerConfig {...configProps} />;
-    } else if (handler instanceof TransformingHandler) {
-        return <TransformingHandlerConfig {...configProps} />;
-    } else if (handler instanceof RequestBreakpointHandler) {
-        return <RequestBreakpointHandlerConfig {...configProps} />;
-    } else if (handler instanceof ResponseBreakpointHandler) {
-        return <ResponseBreakpointHandlerConfig {...configProps} />;
-    } else if (handler instanceof RequestAndResponseBreakpointHandler) {
-        return <RequestAndResponseBreakpointHandlerConfig {...configProps} />;
-    } else if (handler instanceof TimeoutHandler) {
-        return <TimeoutHandlerConfig {...configProps} />;
-    } else if (handler instanceof CloseConnectionHandler) {
-        return <CloseConnectionHandlerConfig {...configProps} />;
-    }
+    const handlerKey = getRulePartKey(handler) as AvailableHandlerKey;
 
-    throw new Error('Unknown handler: ' + handler.type);
+    switch (handlerKey) {
+        case 'simple':
+            return <StaticResponseHandlerConfig {...configProps} />;
+        case 'file':
+            return <FromFileResponseHandlerConfig {...configProps} />;
+        case 'forward-to-host':
+            return <ForwardToHostHandlerConfig {...configProps} />;
+        case 'passthrough':
+        case 'ws-passthrough':
+            return <PassThroughHandlerConfig {...configProps} />;
+        case 'req-res-transformer':
+            return <TransformingHandlerConfig {...configProps} />;
+        case 'request-breakpoint':
+            return <RequestBreakpointHandlerConfig {...configProps} />;
+        case 'response-breakpoint':
+            return <ResponseBreakpointHandlerConfig {...configProps} />;
+        case 'request-and-response-breakpoint':
+            return <RequestAndResponseBreakpointHandlerConfig {...configProps} />;
+        case 'timeout':
+            return <TimeoutHandlerConfig {...configProps} />;
+        case 'close-connection':
+            return <CloseConnectionHandlerConfig {...configProps} />;
+        case 'ws-echo':
+            return <WebSocketEchoHandlerConfig {...configProps} />;
+        case 'ws-reject':
+            return <StaticResponseHandlerConfig {...configProps} />;
+        case 'ws-listen':
+            return <WebSocketListenHandlerConfig {...configProps} />;
+        default:
+            throw new UnreachableCheck(handlerKey);
+    }
 }
 
 const SectionLabel = styled.h2`
@@ -169,10 +181,12 @@ function getHeaderValue(headers: Headers, headerName: string): string | undefine
 }
 
 @observer
-class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<StaticResponseHandler>> {
+class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | RejectWebSocketHandlerDefinition> {
 
     @observable
-    statusCode: number | undefined = this.props.handler.status;
+    statusCode: number | undefined = (this.props.handler instanceof StaticResponseHandler)
+        ? this.props.handler.status
+        : this.props.handler.statusCode;
 
     @observable
     statusMessage = this.props.handler.statusMessage;
@@ -184,7 +198,10 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
     contentType: EditableContentType = 'text';
 
     @observable
-    body = asBuffer(this.props.handler.data);
+    body = asBuffer(this.props.handler instanceof StaticResponseHandler
+        ? this.props.handler.data
+        : this.props.handler.body
+    );
 
     componentDidMount() {
         // If any of our data fields change, rebuild & update the handler
@@ -194,7 +211,10 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
 
         // If the handler changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { status, statusMessage, headers, data } = this.props.handler;
+            const { status, statusMessage, headers, data } = this.props.handler instanceof StaticResponseHandler
+                ? this.props.handler
+                : { ...this.props.handler, status: this.props.handler.statusCode, data: this.props.handler.body };
+
             runInAction(() => {
                 this.statusCode = status;
                 this.statusMessage = statusMessage;
@@ -342,11 +362,18 @@ class StaticResponseHandlerConfig extends React.Component<HandlerConfigProps<Sta
         ) return this.props.onInvalidState();
 
         this.props.onChange(
-            new StaticResponseHandler(
+            this.props.ruleType === 'http'
+            ? new StaticResponseHandler(
                 this.statusCode,
                 this.statusMessage,
                 this.body,
                 this.headers
+            )
+            : new RejectWebSocketHandlerDefinition(
+                this.statusCode,
+                this.statusMessage ?? getStatusMessage(this.statusCode),
+                this.headers,
+                this.body
             )
         );
     }
@@ -376,7 +403,7 @@ const BodyFilePath = styled.div`
 `;
 
 @observer
-class FromFileResponseHandlerConfig extends React.Component<HandlerConfigProps<FromFileResponseHandler>> {
+class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
 
     @observable
     statusCode: number | undefined = this.props.handler.status;
@@ -668,9 +695,7 @@ const SelectTransform = styled(Select)`
 
 @inject('rulesStore')
 @observer
-class TransformingHandlerConfig extends React.Component<HandlerConfigProps<TransformingHandler> & {
-    rulesStore?: RulesStore
-}> {
+class TransformingHandlerConfig extends HandlerConfig<TransformingHandler, { rulesStore?: RulesStore }> {
 
     @observable
     transformRequest = this.props.handler.transformRequest || {};
@@ -1091,11 +1116,16 @@ const JsonUpdateTransformConfig = (props: {
 };
 
 @observer
-class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler> {
+class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler | WebSocketPassThroughHandler> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                All matching traffic will be transparently passed through to the upstream target host.
+                All matching {
+                    this.props.ruleType === 'http'
+                        ? 'requests'
+                    // ruleType === 'websocket'
+                        : 'WebSockets'
+                } will be transparently passed through to the upstream target host.
             </ConfigExplanation>
         </ConfigContainer>;
     }
@@ -1160,7 +1190,7 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
             <ConfigExplanation>
                 When a matching {
                     this.props.ruleType === 'http'
-                        ? 'HTTP'
+                        ? 'request'
                     // ruleType === 'websocket'
                         : 'WebSocket'
                 } is received, the server will keep the connection open but do nothing.
@@ -1178,10 +1208,35 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
             <ConfigExplanation>
                 As soon as a matching {
                     this.props.ruleType === 'http'
-                        ? 'HTTP'
+                        ? 'request'
                     // ruleType === 'websocket'
                         : 'WebSocket'
                 } is received, the connection will be closed, with no response.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+}
+
+@observer
+class WebSocketEchoHandlerConfig extends HandlerConfig<EchoWebSocketHandlerDefinition> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                The WebSocket will be opened successfully, but not forwarded upstream, and every
+                message that's sent will be echoed back to the client until the client closes
+                the connection.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+}
+
+@observer
+class WebSocketListenHandlerConfig extends HandlerConfig<ListenWebSocketHandlerDefinition> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                The WebSocket will be opened successfully, but not forwarded upstream. All
+                messages from the client will be accepted, but no responses will be sent.
             </ConfigExplanation>
         </ConfigContainer>;
     }

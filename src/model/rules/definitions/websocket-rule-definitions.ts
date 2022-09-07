@@ -1,16 +1,30 @@
+import * as _ from 'lodash';
 import {
     WebSocketRuleData,
     webSocketHandlerDefinitions as wsHandlers,
-    completionCheckers
+    matchers,
+    completionCheckers,
+    Method
 } from 'mockttp';
 import * as serializr from 'serializr';
 
 import { RulesStore } from '../rules-store';
+
+import { MethodNames } from '../../http/methods';
 import {
     HttpMatcherLookup,
     HttpMatcher,
     WildcardMatcher
 } from './http-rule-definitions';
+
+export const {
+    EchoWebSocketHandlerDefinition,
+    RejectWebSocketHandlerDefinition,
+    ListenWebSocketHandlerDefinition
+} = wsHandlers;
+export type EchoWebSocketHandlerDefinition = wsHandlers.EchoWebSocketHandlerDefinition;
+export type RejectWebSocketHandlerDefinition = wsHandlers.RejectWebSocketHandlerDefinition;
+export type ListenWebSocketHandlerDefinition = wsHandlers.ListenWebSocketHandlerDefinition;
 
 export class WebSocketWildcardMatcher extends WildcardMatcher {
 
@@ -31,6 +45,14 @@ export class DefaultWebSocketWildcardMatcher extends WildcardMatcher {
     }
 }
 
+export class WebSocketMethodMatcher extends matchers.MethodMatcher {
+
+    explain() {
+        return `started with ${Method[this.method]}`;
+    }
+
+}
+
 export class WebSocketPassThroughHandler extends wsHandlers.PassThroughWebSocketHandlerDefinition {
 
     constructor(rulesStore: RulesStore) {
@@ -44,11 +66,17 @@ serializr.createModelSchema(WebSocketPassThroughHandler, {
 }, (context) => new WebSocketPassThroughHandler(context.args.rulesStore));
 
 export const WebSocketMatcherLookup = {
-    ...HttpMatcherLookup,
+    ..._.omit(HttpMatcherLookup, MethodNames),
+    'method': WebSocketMethodMatcher, // Unlike HTTP rules, WS uses a single method matcher
+
     // Replace the wildcard matchers with our own WebSocket versions:
     'ws-wildcard': WebSocketWildcardMatcher,
     'default-ws-wildcard': DefaultWebSocketWildcardMatcher
 };
+
+export const WebSocketInitialMatcherClasses = [
+    WebSocketWildcardMatcher
+];
 
 export const WebSocketHandlerLookup = {
     ...wsHandlers.WsHandlerDefinitionLookup,

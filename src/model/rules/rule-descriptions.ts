@@ -32,7 +32,7 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
         case 'default-ws-wildcard':
             return 'Any WebSocket';
         case 'method':
-            return "Requests using method";
+            return "Sent with HTTP method";
         case 'host':
             return "For a host";
         case 'simple-path':
@@ -98,8 +98,11 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'close-connection':
             return "Close the connection immediately";
         case 'ws-reject':
+            return "Reject the WebSocket setup request";
         case 'ws-listen':
+            return "Accept the WebSocket but send no messages";
         case 'ws-echo':
+            return "Echo all messages";
         case 'callback':
         case 'stream':
             throw new Error(`${key} handler should not be used directly`);

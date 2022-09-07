@@ -6,7 +6,7 @@ import * as serializr from 'serializr';
 import { hasSerializrSchema, serializeAsTag } from '../serialization';
 
 import { RulesStore } from './rules-store';
-import { HtkMockRule, MatcherLookup, HandlerLookup } from './rules';
+import { HtkMockRule, MatcherLookup, HandlerLookup, getRulePartKey } from './rules';
 import {
     HtkMockItem,
     HtkMockRuleRoot,
@@ -24,9 +24,7 @@ const deserializeByType = <T extends { type: string, uiType?: string }>(
     lookup: _.Dictionary<any>,
     args: DeserializationArgs
 ) => {
-    // uiType allows us to override deserialization for UI representations only,
-    // but keep the same serialization type for real Mockttp rules.
-    const typeKey = data.uiType || data.type;
+    const typeKey = getRulePartKey(data);
     const clazz = lookup[typeKey];
 
     if (!clazz) throw new Error(`Can't load unrecognized rule type: ${typeKey}`);

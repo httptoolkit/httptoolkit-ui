@@ -8,8 +8,6 @@ import {
 } from '../../services/service-versions';
 
 import {
-    MethodMatchers,
-    WildcardMatcher,
     StaticResponseHandler,
     ForwardToHostHandler,
     TimeoutHandler,
@@ -26,10 +24,23 @@ import {
     WebSocketMatcherLookup,
     WebSocketHandlerLookup,
     WebSocketMockRule,
-    WebSocketWildcardMatcher
+    WebSocketInitialMatcherClasses,
+    EchoWebSocketHandlerDefinition,
+    RejectWebSocketHandlerDefinition,
+    ListenWebSocketHandlerDefinition
 } from './definitions/websocket-rule-definitions';
 
 /// --- Part-generic logic ---
+
+export const getRulePartKey = (part: {
+    type: string,
+    uiType?: string
+})=>
+    // Mockttp and friends define a 'type' field that's used for (de)serialization.
+    // In addition, we define a uiType, for more specific representations of the
+    // same rule part in some cases, which takes precedence.
+    (part.uiType ?? part.type) as
+        keyof typeof MatcherLookup | keyof typeof HandlerLookup;
 
 const PartVersionRequirements: {
     [PartType in keyof typeof MatcherLookup | keyof typeof HandlerLookup]?: string
@@ -72,6 +83,11 @@ export type Matcher = typeof MatcherLookup extends {
     ? InstanceType<MatcherClass>
     : never;
 
+export const isCompatibleMatcher = (matcher: Matcher, type: RuleType) => {
+    const matcherKey = getRulePartKey(matcher);
+    return !!(MatchersByType[type] as _.Dictionary<MatcherClass>)[matcherKey];
+};
+
 // A runtime map from class to the 'uiType'/'type' key that will be
 // present on constructed instances.
 export const MatcherClassKeyLookup = new Map<MatcherClass, MatcherClassKey>(
@@ -113,33 +129,54 @@ export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
     ) as Array<[HandlerClass, HandlerClassKey]>
 );
 
+export const isCompatibleHandler = (handler: Handler, type: RuleType) => {
+    const handlerKey = getRulePartKey(handler);
+    return !!(HandlersByType[type] as _.Dictionary<HandlerClass>)[handlerKey];
+};
+
 /// --- Matcher/handler special categories ---
 
 export const InitialMatcherClasses = [
-    WildcardMatcher,
-    ...Object.values(MethodMatchers)
+    ...HttpInitialMatcherClasses,
+    ...WebSocketInitialMatcherClasses
 ];
-export type InitialMatcherClass = typeof InitialMatcherClasses[0];
+
+export type InitialMatcherClass = typeof InitialMatcherClasses[number];
 export type InitialMatcher = InstanceType<InitialMatcherClass>;
+type InitialMatcherKey = {
+    [K in MatcherClassKey]: typeof MatcherLookup[K] extends InitialMatcherClass ? K : never
+}[MatcherClassKey];
+
+export const getRuleTypeFromInitialMatcher = (matcher: InitialMatcher): RuleType => {
+    const matcherClass = matcher.constructor as any;
+
+    if (HttpInitialMatcherClasses.includes(matcherClass)) {
+        return 'http';
+    } else if (WebSocketInitialMatcherClasses.includes(matcherClass)) {
+        return 'websocket';
+    } else {
+        throw new Error(`Unknown type for initial matcher class: ${matcherClass.name}`);
+    }
+}
 
 // Some real matchers aren't shown in the selection dropdowns, either because they're not suitable
 // for use here, or because we just don't support them yet:
-const HiddenMatchers: readonly MatcherClassKey[] = [
+const HiddenMatchers = [
     'callback',
     'am-i-using',
     'default-wildcard',
-    'method',
+    'default-ws-wildcard',
     'multipart-form-data',
     'raw-body-regexp',
     'hostname',
     'port',
     'protocol',
     'form-data',
-    'cookie',
-    'default-ws-wildcard'
+    'cookie'
 ] as const;
 
 type HiddenMatcherKey = typeof HiddenMatchers[number];
+export type AdditionalMatcherKey = Exclude<MatcherClassKey, HiddenMatcherKey | InitialMatcherKey>;
 
 // The set of non-initial matchers a user can pick for a given rule.
 export const getAvailableAdditionalMatchers = (
@@ -151,7 +188,7 @@ export const getAvailableAdditionalMatchers = (
             const matcherKey = MatcherClassKeyLookup.get(matcher)!;
 
             if (HiddenMatchers.includes(matcherKey as HiddenMatcherKey)) return false;
-            if (InitialMatcherClasses.includes(matcher as InitialMatcherClass)) return false;
+            if (InitialMatcherClasses.includes(matcher as any)) return false;
 
             const versionRequirement = PartVersionRequirements[matcherKey];
             return !versionRequirement || versionSatisfies(serverVersion, versionRequirement);
@@ -159,14 +196,12 @@ export const getAvailableAdditionalMatchers = (
 };
 
 const HiddenHandlers = [
-    'ws-reject',
-    'ws-listen',
-    'ws-echo',
     'callback',
     'stream'
 ] as const;
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
+export type AvailableHandlerKey = Exclude<HandlerClassKey, HiddenHandlerKey>;
 
 export const getAvailableHandlers = (ruleType: RuleType, serverVersion: string | undefined) => {
     return Object.values(HandlersByType[ruleType])
@@ -186,7 +221,10 @@ const PaidHandlerClasses: HandlerClass[] = [
     ForwardToHostHandler,
     TransformingHandler,
     TimeoutHandler,
-    CloseConnectionHandler
+    CloseConnectionHandler,
+    EchoWebSocketHandlerDefinition,
+    RejectWebSocketHandlerDefinition,
+    ListenWebSocketHandlerDefinition
 ];
 
 export const isPaidHandler = (handler: Handler) => {
