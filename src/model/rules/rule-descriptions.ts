@@ -129,7 +129,9 @@ export function summarizeMatcher(rule: HtkMockRule): string {
     return matchers[0]!.explain() + ' ' +
         matchers.slice(1, -1)
         .map((m) => m.explain())
-        .join(', ') + ', and ' + matchers.slice(-1)[0].explain();
+        .join(', ') +
+        (matchers.length > 3 ? ', and ' : ', ') + // We 'and' only with *many*
+        matchers.slice(-1)[0].explain();
 }
 
 // Summarize the handler of an instantiated rule
