@@ -4,7 +4,8 @@ import {
     BODY_MATCHING_RANGE,
     HOST_MATCHER_SERVER_RANGE,
     FROM_FILE_HANDLER_SERVER_RANGE,
-    PASSTHROUGH_TRANSFORMS_RANGE
+    PASSTHROUGH_TRANSFORMS_RANGE,
+    WEBSOCKET_MESSAGING_RULES_SUPPORTED
 } from '../../services/service-versions';
 
 import {
@@ -55,7 +56,10 @@ const PartVersionRequirements: {
 
     // Handlers:
     'file': FROM_FILE_HANDLER_SERVER_RANGE,
-    'req-res-transformer': PASSTHROUGH_TRANSFORMS_RANGE
+    'req-res-transformer': PASSTHROUGH_TRANSFORMS_RANGE,
+    'ws-echo': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
+    'ws-listen': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
+    'ws-reject': WEBSOCKET_MESSAGING_RULES_SUPPORTED
 };
 
 /// --- Matchers ---
