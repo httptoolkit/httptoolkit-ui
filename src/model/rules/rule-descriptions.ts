@@ -63,6 +63,8 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
             return "For port";
         case 'hostname':
             return "For hostname";
+        case 'ethereum-method':
+            return "An Ethereum interaction";
         case 'am-i-using':
         case 'callback':
         case 'multipart-form-data':

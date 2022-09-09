@@ -50,6 +50,7 @@ import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
 import { DragHandle } from './mock-drag-handle';
 import { IconMenu, IconMenuButton } from './mock-item-menu';
+import { UnreachableCheck } from '../../util/error';
 
 const RowContainer = styled(LittleCard)<{
     deactivated?: boolean,
@@ -324,8 +325,12 @@ export class RuleRow extends React.Component<{
             } else {
                 ruleColour = 'transparent';
             }
+        } else if (ruleType === 'websocket') {
+            ruleColour = getSummaryColour('websocket');
+        } else if (ruleType === 'ethereum') {
+            ruleColour = getSummaryColour('mutative');
         } else {
-            ruleColour = getSummaryColour(ruleType);
+            throw new UnreachableCheck(ruleType);
         }
 
         const serverVersion = serverVersionObservable.state === 'fulfilled'
@@ -495,7 +500,7 @@ export class RuleRow extends React.Component<{
             this.props.rule.type = newRuleType;
 
             this.props.rule.matchers = [
-                matcher,
+                matcher as any, // No need to check type - it must match by definition
                 // Drop any incompatible matchers:
                 ...this.props.rule.matchers
                     .slice(1)

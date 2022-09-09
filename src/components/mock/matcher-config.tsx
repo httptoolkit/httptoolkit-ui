@@ -16,6 +16,8 @@ import {
     Matcher,
     MatcherClass,
     MatcherClassKeyLookup,
+    InitialMatcher,
+    InitialMatcherKey,
     AdditionalMatcherKey,
     getRulePartKey,
     isHiddenMatcherKey
@@ -23,6 +25,11 @@ import {
 import {
     WebSocketMethodMatcher
 } from '../../model/rules/definitions/websocket-rule-definitions';
+import {
+    EthereumMethod,
+    EthereumMethodMatcher,
+    EthereumMethods
+} from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { Select, TextInput } from '../common/inputs';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
@@ -39,7 +46,47 @@ type MatcherConfigProps<M extends Matcher> = {
 abstract class MatcherConfig<M extends Matcher, P = {}> extends
     React.Component<MatcherConfigProps<M> & P> { }
 
-export function MatcherConfiguration(props:
+export function InitialMatcherConfiguration(props: {
+        matcher?: InitialMatcher,
+        onChange: (matcher: InitialMatcher) => void
+    }
+) {
+    const { matcher } = props;
+
+    // If no there's matcher class selected, we have no config to show:
+    if (!matcher) return null;
+
+    const matcherKey = getRulePartKey(matcher) as InitialMatcherKey;
+
+    const configProps = {
+        matcher: matcher as any,
+        matcherIndex: 0,
+        onChange: props.onChange,
+        onInvalidState: _.noop
+    };
+
+    switch (matcherKey) {
+        case 'ethereum-method':
+            return <EthereumMethodMatcherConfig {...configProps} />;
+        // All the other initial matchers need no configuration:
+        case 'wildcard':
+        case 'ws-wildcard':
+        case 'default-wildcard':
+        case 'default-ws-wildcard':
+        case 'GET':
+        case 'POST':
+        case 'PUT':
+        case 'PATCH':
+        case 'DELETE':
+        case 'HEAD':
+        case 'OPTIONS':
+            return null;
+        default:
+            throw new UnreachableCheck(matcherKey);
+    }
+}
+
+export function AdditionalMatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
         matcherIndex: number | undefined,
         onChange: (...matchers: Matcher[]) => void,
@@ -178,6 +225,63 @@ class WsMethodMatcherConfig extends MatcherConfig<WebSocketMethodMatcher> {
     onChange(event: React.ChangeEvent<HTMLSelectElement>) {
         this.method = parseInt(event.currentTarget.value, 10);
         this.props.onChange(new WebSocketMethodMatcher(this.method));
+    }
+}
+
+@observer
+class EthereumMethodMatcherConfig extends React.Component<{
+    matcher?: EthereumMethodMatcher;
+    matcherIndex: number | undefined,
+    onChange: (matcher: InitialMatcher) => void;
+}> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private method: EthereumMethod = 'eth_call';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const method = this.props.matcher?.methodName ?? 'eth_call';
+            runInAction(() => { this.method = method });
+        }));
+
+        // The matcher is valid by default, so immediately announce that (making the
+        // add button enabled) if this is a new matcher that we're adding:
+        if (!this.props.matcher) {
+            this.props.onChange(new EthereumMethodMatcher(this.method));
+        }
+    }
+
+    render() {
+        const { method } = this;
+
+        return <MatcherConfigContainer title={
+            `Match ${
+                method
+            } requests to Ethereum nodes`
+        }>
+            <ConfigLabel>
+                Requesting a node to
+            </ConfigLabel>
+            <Select
+                id={this.fieldId}
+                value={method}
+                onChange={this.onChange}
+            >
+                { (Object.keys(EthereumMethods) as EthereumMethod[]).map((method) =>
+                    <option value={method} key={method}>
+                        { EthereumMethods[method] }
+                    </option>
+                )}
+            </Select>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLSelectElement>) {
+        this.method = event.currentTarget.value as EthereumMethod;
+        this.props.onChange(new EthereumMethodMatcher(this.method));
     }
 }
 

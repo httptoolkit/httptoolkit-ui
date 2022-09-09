@@ -31,6 +31,13 @@ import {
     ListenWebSocketHandlerDefinition
 } from './definitions/websocket-rule-definitions';
 
+import {
+    EthereumMatcherLookup,
+    EthereumHandlerLookup,
+    EthereumInitialMatcherClasses,
+    EthereumMockRule
+} from './definitions/ethereum-rule-definitions';
+
 /// --- Part-generic logic ---
 
 export const getRulePartKey = (part: {
@@ -66,7 +73,8 @@ const PartVersionRequirements: {
 
 const MatchersByType = {
     'http': HttpMatcherLookup,
-    'websocket': WebSocketMatcherLookup
+    'websocket': WebSocketMatcherLookup,
+    'ethereum': EthereumMatcherLookup
 };
 
 // Define maps to/from matcher keys to matcher classes, and
@@ -75,7 +83,8 @@ const MatchersByType = {
 export const MatcherLookup = {
     // These are kept as references to MatchersByType, so the content is always the same:
     ...MatchersByType['http'],
-    ...MatchersByType['websocket']
+    ...MatchersByType['websocket'],
+    ...MatchersByType['ethereum']
 };
 
 export type MatcherClassKey = keyof typeof MatcherLookup;
@@ -105,7 +114,8 @@ export const MatcherClassKeyLookup = new Map<MatcherClass, MatcherClassKey>(
 
 export const HandlersByType = {
     'http': HttpHandlerLookup,
-    'websocket': WebSocketHandlerLookup
+    'websocket': WebSocketHandlerLookup,
+    'ethereum': EthereumHandlerLookup
 };
 
 // Define maps to/from handler keys to handler classes, and
@@ -114,7 +124,8 @@ export const HandlersByType = {
 export const HandlerLookup = {
     // These are kept as references to HandlersByType, so the content is always the same:
     ...HandlersByType['http'],
-    ...HandlersByType['websocket']
+    ...HandlersByType['websocket'],
+    ...HandlersByType['ethereum']
 };
 
 export type HandlerClassKey = keyof typeof HandlerLookup;
@@ -142,12 +153,13 @@ export const isCompatibleHandler = (handler: Handler, type: RuleType) => {
 
 export const InitialMatcherClasses = [
     ...HttpInitialMatcherClasses,
-    ...WebSocketInitialMatcherClasses
+    ...WebSocketInitialMatcherClasses,
+    ...EthereumInitialMatcherClasses
 ];
 
 export type InitialMatcherClass = typeof InitialMatcherClasses[number];
 export type InitialMatcher = InstanceType<InitialMatcherClass>;
-type InitialMatcherKey = {
+export type InitialMatcherKey = {
     [K in MatcherClassKey]: typeof MatcherLookup[K] extends InitialMatcherClass ? K : never
 }[MatcherClassKey];
 
@@ -158,6 +170,8 @@ export const getRuleTypeFromInitialMatcher = (matcher: InitialMatcher): RuleType
         return 'http';
     } else if (WebSocketInitialMatcherClasses.includes(matcherClass)) {
         return 'websocket';
+    } else if (EthereumInitialMatcherClasses.includes(matcherClass)) {
+        return 'ethereum';
     } else {
         throw new Error(`Unknown type for initial matcher class: ${matcherClass.name}`);
     }
@@ -180,15 +194,17 @@ const HiddenMatchers = [
 ] as const;
 
 type HiddenMatcherKey = typeof HiddenMatchers[number];
+
 export type AdditionalMatcherKey = Exclude<MatcherClassKey, HiddenMatcherKey | InitialMatcherKey>;
+type AdditionalMatcher = typeof MatcherLookup[AdditionalMatcherKey];
 
 // The set of non-initial matchers a user can pick for a given rule.
 export const getAvailableAdditionalMatchers = (
     ruleType: RuleType,
     serverVersion: string | undefined
-) => {
+): AdditionalMatcher[] => {
     return Object.values(MatchersByType[ruleType])
-        .filter((matcher) => {
+        .filter((matcher: MatcherClass) => {
             const matcherKey = MatcherClassKeyLookup.get(matcher)!;
 
             if (HiddenMatchers.includes(matcherKey as HiddenMatcherKey)) return false;
@@ -209,8 +225,12 @@ const HiddenHandlers = [
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
 export type AvailableHandlerKey = Exclude<HandlerClassKey, HiddenHandlerKey>;
+type AvailableHandler = typeof HandlerLookup[AvailableHandlerKey];
 
-export const getAvailableHandlers = (ruleType: RuleType, serverVersion: string | undefined) => {
+export const getAvailableHandlers = (
+    ruleType: RuleType,
+    serverVersion: string | undefined
+): AvailableHandler[] => {
     return Object.values(HandlersByType[ruleType])
         .filter((handler) => {
             const handlerKey = HandlerClassKeyLookup.get(handler)!;
@@ -245,8 +265,9 @@ export const isPaidHandlerClass = (handlerClass: HandlerClass) => {
 /// --- Rules ---
 
 export type HtkMockRule =
+    | HttpMockRule
     | WebSocketMockRule
-    | HttpMockRule;
+    | EthereumMockRule;
 
 export type RuleType = HtkMockRule['type'];
 

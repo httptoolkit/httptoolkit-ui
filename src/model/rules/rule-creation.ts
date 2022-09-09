@@ -30,6 +30,7 @@ import {
 } from './rules-structure';
 import * as HttpRule from './definitions/http-rule-definitions';
 import * as WsRule from './definitions/websocket-rule-definitions';
+import * as EthRule from './definitions/ethereum-rule-definitions';
 
 export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     return observable({
@@ -44,6 +45,7 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
 
 export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpMockRule['handler'];
 export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketMockRule['handler'];
+export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumMockRule['handler'];
 export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
 export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
     switch (type) {
@@ -51,6 +53,8 @@ export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Ha
             return new HttpRule.PassThroughHandler(ruleStore);
         case 'websocket':
             return new WsRule.WebSocketPassThroughHandler(ruleStore);
+        case 'ethereum':
+            return new HttpRule.PassThroughHandler(ruleStore);
     }
 };
 

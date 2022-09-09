@@ -20,7 +20,10 @@ import {
     summarizeMatcherClass
 } from '../../model/rules/rule-descriptions';
 
-import { MatcherConfiguration } from './matcher-config';
+import {
+    InitialMatcherConfiguration,
+    AdditionalMatcherConfiguration
+} from './matcher-config';
 
 const getMatcherKey = (m: MatcherClass | Matcher | undefined) =>
     MatcherClassKeyLookup.get(m as any) || MatcherClassKeyLookup.get(m?.constructor as any);
@@ -57,6 +60,12 @@ const MatcherButton = styled(Button)`
     flex-shrink: 0;
 `;
 
+const InitialMatcherConfigContainer = styled.div`
+    &:not(:empty) {
+        margin-top: 5px;
+    }
+`
+
 export const InitialMatcherRow = React.forwardRef((p: {
     matcher?: InitialMatcher,
     onChange: (m: InitialMatcher) => void
@@ -82,6 +91,13 @@ export const InitialMatcherRow = React.forwardRef((p: {
 
                 <MatcherOptions matchers={InitialMatcherClasses} />
             </Select>
+
+            <InitialMatcherConfigContainer>
+                <InitialMatcherConfiguration
+                    matcher={p.matcher}
+                    onChange={p.onChange}
+                />
+            </InitialMatcherConfigContainer>
         </MatcherInputsContainer>
     </MatcherRow>
 });
@@ -100,7 +116,7 @@ export class ExistingMatcherRow extends React.Component<ExistingMatcherRowProps>
 
         return <MatcherRow>
             <MatcherInputsContainer>
-                <MatcherConfiguration
+                <AdditionalMatcherConfiguration
                     matcherIndex={matcherIndex}
                     matcher={matcher}
                     onChange={onChange}
@@ -220,13 +236,13 @@ export class NewMatcherRow extends React.Component<{
                         : (e) => e.preventDefault()
                 }>
                     { draftMatchers.length >= 1
-                        ? <MatcherConfiguration
+                        ? <AdditionalMatcherConfiguration
                             matcherIndex={undefined}
                             matcher={draftMatchers[0]}
                             onChange={updateDraftMatcher}
                             onInvalidState={markMatcherInvalid}
                         />
-                        : <MatcherConfiguration
+                        : <AdditionalMatcherConfiguration
                             matcherIndex={undefined}
                             matcherClass={matcherClass}
                             onChange={updateDraftMatcher}
