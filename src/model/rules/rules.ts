@@ -199,6 +199,9 @@ export const getAvailableAdditionalMatchers = (
         });
 };
 
+export const isHiddenMatcherKey = (key: MatcherClassKey) =>
+    HiddenMatchers.includes(key as HiddenMatcherKey);
+
 const HiddenHandlers = [
     'callback',
     'stream'

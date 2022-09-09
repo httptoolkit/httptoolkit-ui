@@ -16,7 +16,9 @@ import {
     Matcher,
     MatcherClass,
     MatcherClassKeyLookup,
-    AdditionalMatcherKey
+    AdditionalMatcherKey,
+    getRulePartKey,
+    isHiddenMatcherKey
 } from "../../model/rules/rules";
 import {
     WebSocketMethodMatcher
@@ -46,13 +48,27 @@ export function MatcherConfiguration(props:
 ) {
     const { matcher } = props as { matcher?: Matcher };
 
-    const matcherKey = ('matcher' in props
-        ? props.matcher.type
+    let matcherKey = ('matcher' in props
+        ? getRulePartKey(props.matcher)
         : MatcherClassKeyLookup.get(props.matcherClass!)
     ) as AdditionalMatcherKey | undefined;
 
     // If no there's matcher class selected, we have no config to show:
     if (!matcherKey) return null;
+
+    if (isHiddenMatcherKey(matcherKey)) {
+        // This only happens, when we load a rule from elsewhere (defaults or file), and then
+        // you try to configure it. Notably case: the am-i-using matcher.
+
+        if (matcher && !isHiddenMatcherKey(matcher.type)) {
+            // For special cases like these, we show and allow reconfiguring the rule as its non-hidden
+            // base type, if there is one. I.e. we give some matchers a special display, which isn't selectable
+            // but we allow modifying them as a normal selectable format if you want to mess around.
+            matcherKey = matcher.type as AdditionalMatcherKey;
+        } else {
+            throw new Error(`Cannot configure hidden matcher type ${matcherKey}`);
+        }
+    }
 
     const configProps = {
         matcher: matcher as any,
