@@ -272,9 +272,9 @@ export type HtkMockRule =
 export type RuleType = HtkMockRule['type'];
 
 const matchRuleType = <T extends RuleType>(
-    type: T
+    ...types: T[]
 ) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
-    rule.type === type;
+    types.includes(rule.type as T);
 
-export const isHttpRule = matchRuleType('http');
+export const isHttpBasedRule = matchRuleType('http', 'ethereum');
 export const isWebSocketRule = matchRuleType('websocket');

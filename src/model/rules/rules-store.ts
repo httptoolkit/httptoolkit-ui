@@ -39,7 +39,7 @@ import { WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 
 import {
     HtkMockRule,
-    isHttpRule,
+    isHttpBasedRule,
     isWebSocketRule
 } from './rules';
 import {
@@ -158,7 +158,7 @@ export class RulesStore {
                 ),
                 (rules) => {
                     resolve(Promise.all([
-                        setRequestRules(...rules.filter(isHttpRule)),
+                        setRequestRules(...rules.filter(isHttpBasedRule)),
                         ...(semver.satisfies(serverVersion, WEBSOCKET_RULE_RANGE)
                             ? [
                                 setWebSocketRules(...rules.filter(isWebSocketRule))
