@@ -6,7 +6,8 @@ import {
     HOST_MATCHER_SERVER_RANGE,
     FROM_FILE_HANDLER_SERVER_RANGE,
     PASSTHROUGH_TRANSFORMS_RANGE,
-    WEBSOCKET_MESSAGING_RULES_SUPPORTED
+    WEBSOCKET_MESSAGING_RULES_SUPPORTED,
+    JSONRPC_RESPONSE_RULE_SUPPORTED
 } from '../../services/service-versions';
 
 import {
@@ -61,6 +62,7 @@ const PartVersionRequirements: {
     'raw-body-includes': BODY_MATCHING_RANGE,
     'json-body': BODY_MATCHING_RANGE,
     'json-body-matching': BODY_MATCHING_RANGE,
+    'ethereum-method': JSONRPC_RESPONSE_RULE_SUPPORTED, // Usable without, but a bit pointless
 
     // Handlers:
     'file': FROM_FILE_HANDLER_SERVER_RANGE,
@@ -162,11 +164,16 @@ export const isCompatibleHandler = (handler: Handler, type: RuleType) => {
 
 /// --- Matcher/handler special categories ---
 
-export const InitialMatcherClasses = [
+const InitialMatcherClasses = [
     ...HttpInitialMatcherClasses,
     ...WebSocketInitialMatcherClasses,
     ...EthereumInitialMatcherClasses
 ];
+
+export const getInitialMatchers = () => InitialMatcherClasses.filter((matcherCls) => {
+    const matcherKey = MatcherClassKeyLookup.get(matcherCls)!;
+    return serverSupports(PartVersionRequirements[matcherKey]);
+});
 
 export type InitialMatcherClass = typeof InitialMatcherClasses[number];
 export type InitialMatcher = InstanceType<InitialMatcherClass>;

@@ -14,7 +14,7 @@ import {
     MatcherClassKey,
     InitialMatcher,
     InitialMatcherClass,
-    InitialMatcherClasses
+    getInitialMatchers
 } from '../../model/rules/rules';
 import {
     summarizeMatcherClass
@@ -70,6 +70,8 @@ export const InitialMatcherRow = React.forwardRef((p: {
     matcher?: InitialMatcher,
     onChange: (m: InitialMatcher) => void
 }, ref: React.Ref<HTMLSelectElement>) => {
+    const availableInitialMatchers = getInitialMatchers();
+
     return <MatcherRow>
         <MatcherInputsContainer>
             <Select
@@ -89,7 +91,7 @@ export const InitialMatcherRow = React.forwardRef((p: {
                     </option>
                 }
 
-                <MatcherOptions matchers={InitialMatcherClasses} />
+                <MatcherOptions matchers={availableInitialMatchers} />
             </Select>
 
             <InitialMatcherConfigContainer>
