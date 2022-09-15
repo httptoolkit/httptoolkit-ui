@@ -22,13 +22,16 @@ import {
     isPaidHandler,
     InitialMatcher,
     getRuleTypeFromInitialMatcher,
-    isCompatibleMatcher,
     isCompatibleHandler,
     getAvailableAdditionalMatchers,
     getAvailableHandlers,
     RuleType
 } from '../../model/rules/rules';
 import { ItemPath } from '../../model/rules/rules-structure';
+import {
+    getRuleDefaultMatchers,
+    updateRuleAfterInitialMatcherChange
+} from '../../model/rules/rule-creation';
 import {
     summarizeMatcher,
     summarizeHandler
@@ -326,6 +329,8 @@ export class RuleRow extends React.Component<{
             ruleColour = getSummaryColour('websocket');
         } else if (ruleType === 'ethereum') {
             ruleColour = getSummaryColour('mutative');
+        } else if (ruleType === 'ipfs') {
+            ruleColour = getSummaryColour('html');
         } else {
             throw new UnreachableCheck(ruleType);
         }
@@ -492,19 +497,19 @@ export class RuleRow extends React.Component<{
         } else {
             this.props.rule.type = newRuleType;
 
-            this.props.rule.matchers = [
-                matcher as any, // No need to check type - it must match by definition
-                // Drop any incompatible matchers:
-                ...this.props.rule.matchers
-                    .slice(1)
-                    .filter(m => isCompatibleMatcher(m, newRuleType))
-            ];
+            this.props.rule.matchers = getRuleDefaultMatchers(
+                newRuleType,
+                matcher,
+                this.props.rule.matchers // Update from the old matchers
+            ) as any[];
 
             // Reset the rule handler, if incompatible:
             this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, newRuleType)
                 ? this.props.rule.handler
                 : this.props.getRuleDefaultHandler(newRuleType);
         }
+
+        updateRuleAfterInitialMatcherChange(this.props.rule);
     }
 
     @action.bound

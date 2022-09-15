@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, autorun, runInAction, reaction } from 'mobx';
+import { observable, action, autorun, runInAction, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as Randexp from 'randexp';
 
@@ -30,6 +30,13 @@ import {
     EthereumMethodMatcher,
     EthereumMethods
 } from '../../model/rules/definitions/ethereum-rule-definitions';
+import {
+    IpfsInteraction,
+    IpfsInteractionMatcher,
+    IpfsArgMatcher,
+    IpfsInteractions,
+    IpfsArgDescription
+} from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { Select, TextInput } from '../common/inputs';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
@@ -68,6 +75,8 @@ export function InitialMatcherConfiguration(props: {
     switch (matcherKey) {
         case 'ethereum-method':
             return <EthereumMethodMatcherConfig {...configProps} />;
+        case 'ipfs-interaction':
+            return <IpfsInteractionMatcherConfig {...configProps} />;
         // All the other initial matchers need no configuration:
         case 'wildcard':
         case 'ws-wildcard':
@@ -147,6 +156,8 @@ export function AdditionalMatcherConfiguration(props:
             return <JsonBodyExactMatcherConfig {...configProps} />;
         case 'json-body-matching':
             return <JsonBodyIncludingMatcherConfig {...configProps} />;
+        case 'ipfs-arg':
+            return <IpfsArgMatcherConfig {...configProps} />;
         default:
             throw new UnreachableCheck(matcherKey);
     }
@@ -261,7 +272,7 @@ class EthereumMethodMatcherConfig extends React.Component<{
                 method
             } requests to Ethereum nodes`
         }>
-            <ConfigLabel>
+            <ConfigLabel htmlFor={this.fieldId}>
                 Requesting a node to
             </ConfigLabel>
             <Select
@@ -282,6 +293,63 @@ class EthereumMethodMatcherConfig extends React.Component<{
     onChange(event: React.ChangeEvent<HTMLSelectElement>) {
         this.method = event.currentTarget.value as EthereumMethod;
         this.props.onChange(new EthereumMethodMatcher(this.method));
+    }
+}
+
+@observer
+class IpfsInteractionMatcherConfig extends React.Component<{
+    matcher?: IpfsInteractionMatcher;
+    matcherIndex: number | undefined,
+    onChange: (matcher: InitialMatcher) => void;
+}> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private interaction: IpfsInteraction = 'cat';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const interaction = this.props.matcher?.interactionName ?? 'cat';
+            runInAction(() => { this.interaction = interaction });
+        }));
+
+        // The matcher is valid by default, so immediately announce that (making the
+        // add button enabled) if this is a new matcher that we're adding:
+        if (!this.props.matcher) {
+            this.props.onChange(new IpfsInteractionMatcher(this.interaction));
+        }
+    }
+
+    render() {
+        const { interaction } = this;
+
+        return <MatcherConfigContainer title={
+            `Match ${
+                interaction
+            } IPFS interactions`
+        }>
+            <ConfigLabel htmlFor={this.fieldId}>
+                Requesting an IPFS node to
+            </ConfigLabel>
+            <Select
+                id={this.fieldId}
+                value={interaction}
+                onChange={this.onChange}
+            >
+                { (Object.keys(IpfsInteractions) as IpfsInteraction[]).map((interaction) =>
+                    <option value={interaction} key={interaction}>
+                        { IpfsInteractions[interaction] }
+                    </option>
+                )}
+            </Select>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLSelectElement>) {
+        this.interaction = event.currentTarget.value as IpfsInteraction;
+        this.props.onChange(new IpfsInteractionMatcher(this.interaction));
     }
 }
 
@@ -945,5 +1013,53 @@ class JsonMatcherConfig<
             this.error = asError(e);
             this.props.onInvalidState();
         }
+    }
+}
+
+@observer
+class IpfsArgMatcherConfig extends MatcherConfig<IpfsArgMatcher> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private arg: string | undefined;
+
+    @computed get interaction(): IpfsInteraction {
+        return this.props.matcher?.interaction || 'cat';
+    }
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const arg = this.props.matcher?.argValue || undefined;
+            runInAction(() => { this.arg = arg });
+        }));
+    }
+
+    render() {
+        const { matcherIndex } = this.props;
+
+        const { placeholder, argType } = IpfsArgDescription[this.interaction]
+            ?? { placeholder: '', argType: 'IPFS argument' };
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel htmlFor={this.fieldId}>
+                    { matcherIndex !== 0 && 'and ' } for { argType }
+                </ConfigLabel>
+            }
+            <TextInput
+                id={this.fieldId}
+                spellCheck={false}
+                value={this.arg || ''}
+                onChange={this.onChange}
+                placeholder={placeholder}
+            />
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.arg = event.target.value;
+        this.props.onChange(new IpfsArgMatcher(this.interaction, this.arg));
     }
 }

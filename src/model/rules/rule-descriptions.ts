@@ -65,6 +65,10 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
             return "For hostname";
         case 'ethereum-method':
             return "An Ethereum interaction";
+        case 'ipfs-interaction':
+            return "An IPFS interaction";
+        case 'ipfs-arg':
+            return "With IPFS argument";
         case 'am-i-using':
         case 'callback':
         case 'multipart-form-data':

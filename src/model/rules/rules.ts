@@ -40,6 +40,13 @@ import {
     EthereumMockRule
 } from './definitions/ethereum-rule-definitions';
 
+import {
+    IpfsMockRule,
+    IpfsMatcherLookup,
+    IpfsInitialMatcherClasses,
+    IpfsHandlerLookup
+} from './definitions/ipfs-rule-definitions';
+
 /// --- Part-generic logic ---
 
 export const getRulePartKey = (part: {
@@ -87,7 +94,8 @@ const serverSupports = (versionRequirement: string | undefined) => {
 const MatchersByType = {
     'http': HttpMatcherLookup,
     'websocket': WebSocketMatcherLookup,
-    'ethereum': EthereumMatcherLookup
+    'ethereum': EthereumMatcherLookup,
+    'ipfs': IpfsMatcherLookup
 };
 
 // Define maps to/from matcher keys to matcher classes, and
@@ -97,7 +105,8 @@ export const MatcherLookup = {
     // These are kept as references to MatchersByType, so the content is always the same:
     ...MatchersByType['http'],
     ...MatchersByType['websocket'],
-    ...MatchersByType['ethereum']
+    ...MatchersByType['ethereum'],
+    ...MatchersByType['ipfs']
 };
 
 export type MatcherClassKey = keyof typeof MatcherLookup;
@@ -128,7 +137,8 @@ export const MatcherClassKeyLookup = new Map<MatcherClass, MatcherClassKey>(
 export const HandlersByType = {
     'http': HttpHandlerLookup,
     'websocket': WebSocketHandlerLookup,
-    'ethereum': EthereumHandlerLookup
+    'ethereum': EthereumHandlerLookup,
+    'ipfs': IpfsHandlerLookup
 };
 
 // Define maps to/from handler keys to handler classes, and
@@ -167,7 +177,8 @@ export const isCompatibleHandler = (handler: Handler, type: RuleType) => {
 const InitialMatcherClasses = [
     ...HttpInitialMatcherClasses,
     ...WebSocketInitialMatcherClasses,
-    ...EthereumInitialMatcherClasses
+    ...EthereumInitialMatcherClasses,
+    ...IpfsInitialMatcherClasses
 ];
 
 export const getInitialMatchers = () => InitialMatcherClasses.filter((matcherCls) => {
@@ -190,6 +201,8 @@ export const getRuleTypeFromInitialMatcher = (matcher: InitialMatcher): RuleType
         return 'websocket';
     } else if (EthereumInitialMatcherClasses.includes(matcherClass)) {
         return 'ethereum';
+    } else if (IpfsInitialMatcherClasses.includes(matcherClass)) {
+        return 'ipfs';
     } else {
         throw new Error(`Unknown type for initial matcher class: ${matcherClass.name}`);
     }
@@ -277,7 +290,8 @@ export const isPaidHandlerClass = (handlerClass: HandlerClass) => {
 export type HtkMockRule =
     | HttpMockRule
     | WebSocketMockRule
-    | EthereumMockRule;
+    | EthereumMockRule
+    | IpfsMockRule;
 
 export type RuleType = HtkMockRule['type'];
 
@@ -286,5 +300,5 @@ const matchRuleType = <T extends RuleType>(
 ) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
     types.includes(rule.type as T);
 
-export const isHttpBasedRule = matchRuleType('http', 'ethereum');
+export const isHttpBasedRule = matchRuleType('http', 'ethereum', 'ipfs');
 export const isWebSocketRule = matchRuleType('websocket');
