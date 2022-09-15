@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import {
+    serverVersion as serverVersionObservable,
     versionSatisfies,
     BODY_MATCHING_RANGE,
     HOST_MATCHER_SERVER_RANGE,
@@ -68,6 +69,16 @@ const PartVersionRequirements: {
     'ws-listen': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     'ws-reject': WEBSOCKET_MESSAGING_RULES_SUPPORTED
 };
+
+const serverSupports = (versionRequirement: string | undefined) => {
+    if (!versionRequirement || versionRequirement === '*') return true;
+
+    // If we haven't got the server version yet, assume it doesn't support this
+    if (serverVersionObservable.state !== 'fulfilled') return false;
+
+    const version = serverVersionObservable.value as string; // Fulfilled -> string value
+    return versionSatisfies(version, versionRequirement);
+}
 
 /// --- Matchers ---
 
@@ -199,10 +210,7 @@ export type AdditionalMatcherKey = Exclude<MatcherClassKey, HiddenMatcherKey | I
 type AdditionalMatcher = typeof MatcherLookup[AdditionalMatcherKey];
 
 // The set of non-initial matchers a user can pick for a given rule.
-export const getAvailableAdditionalMatchers = (
-    ruleType: RuleType,
-    serverVersion: string | undefined
-): AdditionalMatcher[] => {
+export const getAvailableAdditionalMatchers = (ruleType: RuleType): AdditionalMatcher[] => {
     return Object.values(MatchersByType[ruleType])
         .filter((matcher: MatcherClass) => {
             const matcherKey = MatcherClassKeyLookup.get(matcher)!;
@@ -210,8 +218,7 @@ export const getAvailableAdditionalMatchers = (
             if (HiddenMatchers.includes(matcherKey as HiddenMatcherKey)) return false;
             if (InitialMatcherClasses.includes(matcher as any)) return false;
 
-            const versionRequirement = PartVersionRequirements[matcherKey];
-            return !versionRequirement || versionSatisfies(serverVersion, versionRequirement);
+            return serverSupports(PartVersionRequirements[matcherKey]);
         });
 };
 
@@ -227,18 +234,14 @@ type HiddenHandlerKey = typeof HiddenHandlers[number];
 export type AvailableHandlerKey = Exclude<HandlerClassKey, HiddenHandlerKey>;
 type AvailableHandler = typeof HandlerLookup[AvailableHandlerKey];
 
-export const getAvailableHandlers = (
-    ruleType: RuleType,
-    serverVersion: string | undefined
-): AvailableHandler[] => {
+export const getAvailableHandlers = (ruleType: RuleType): AvailableHandler[] => {
     return Object.values(HandlersByType[ruleType])
         .filter((handler) => {
             const handlerKey = HandlerClassKeyLookup.get(handler)!;
 
             if (HiddenHandlers.includes(handlerKey as HiddenHandlerKey)) return false;
 
-            const versionRequirement = PartVersionRequirements[handlerKey];
-            return !versionRequirement || versionSatisfies(serverVersion, versionRequirement);
+            return serverSupports(PartVersionRequirements[handlerKey]);
         });
 };
 

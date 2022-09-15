@@ -34,9 +34,6 @@ import {
     summarizeHandler
 } from '../../model/rules/rule-descriptions';
 import { AccountStore } from '../../model/account/account-store';
-import {
-    serverVersion as serverVersionObservable
-} from '../../services/service-versions';
 
 import { clickOnEnter, noPropagation } from '../component-utils';
 import { GetProOverlay } from '../account/pro-placeholders';
@@ -333,12 +330,8 @@ export class RuleRow extends React.Component<{
             throw new UnreachableCheck(ruleType);
         }
 
-        const serverVersion = serverVersionObservable.state === 'fulfilled'
-            ? serverVersionObservable.value as string
-            : undefined;
-
-        const availableMatchers = getAvailableAdditionalMatchers(ruleType, serverVersion);
-        const availableHandlers = getAvailableHandlers(ruleType, serverVersion);
+        const availableMatchers = getAvailableAdditionalMatchers(ruleType);
+        const availableHandlers = getAvailableHandlers(ruleType);
 
         // Handlers are in demo mode (uneditable, behind a 'Get Pro' overlay), either if the rule
         // has a handler you can't use, or you've picked a Pro handler and its been put in demoHandler
