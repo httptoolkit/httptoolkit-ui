@@ -536,6 +536,9 @@ function cleanRawHarData(harContents: any) {
             // and it's optional and we don't use it, so it's better to drop it entirely.
             entry.response.cookies = [];
         }
+
+        // We never use the 'cache' field, and it can be annoyingly invalid, so drop it.
+        entry.cache = {};
     });
 
     const pages = harContents?.log?.pages ?? [];
