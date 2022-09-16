@@ -6,6 +6,7 @@ export interface SubscriptionPlan {
     id: number;
     name: string;
     prices?: {
+        currency: string;
         monthly: string;
         total: string;
     };
@@ -59,6 +60,7 @@ async function loadPlanPrices() {
             : totalPrice;
 
         plan.prices = {
+            currency: currency,
             total: formatPrice(currency, totalPrice),
             monthly: formatPrice(currency, monthlyPrice)
         };
