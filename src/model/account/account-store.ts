@@ -152,9 +152,15 @@ export class AccountStore {
             const selectedPlan: SubscriptionPlanCode | undefined = yield this.pickPlan();
             if (!selectedPlan) return;
 
-            const isRiskyPayment = this.subscriptionPlans[selectedPlan].prices?.currency === 'BRL';
+            const alreadyLoggedIn = this.isLoggedIn;
+            if (!alreadyLoggedIn) yield this.logIn();
 
-            if (!this.isLoggedIn && isRiskyPayment) {
+            const isRiskyPayment = this.subscriptionPlans[selectedPlan].prices?.currency === 'BRL' &&
+                this.userEmail?.endsWith('@gmail.com'); // So far, all chargebacks have been from gmail accounts
+
+            this.user.subscription
+
+            if (!alreadyLoggedIn && isRiskyPayment) {
                 // This is annoying, I wish we didn't have to do this, but fraudulent BRL payments are now 80% of chargebacks,
                 // and we need to tighten this up and block that somehow or payment platforms will eventually block
                 // HTTP Toolkit globally. This error message is left intentionally vague to try and discourage fraudsters
@@ -171,8 +177,6 @@ export class AccountStore {
 
                 return;
             }
-
-            if (!this.isLoggedIn) yield this.logIn();
 
             // If we cancelled login, or we've already got a plan, we're done.
             if (!this.isLoggedIn || this.userHasSubscription) {
