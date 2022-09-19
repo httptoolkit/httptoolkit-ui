@@ -71,6 +71,11 @@ export class AccountStore {
         // Include the user email in error reports whilst they're logged in.
         // Useful generally, but especially for checkout/subscription issues.
         reportErrorsAsUser(this.user.email);
+
+        if (this.user.banned) {
+            alert('Your account has been blocked for abuse. Please contact help@httptoolkit.tech.');
+            window.close();
+        }
     }.bind(this));
 
     readonly subscriptionPlans = SubscriptionPlans;

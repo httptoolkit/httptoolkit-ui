@@ -223,6 +223,7 @@ type AppData = {
     cancel_url?: string;
     last_receipt_url?: string;
     feature_flags?: string[];
+    banned?: boolean;
 }
 
 type SubscriptionData = {
@@ -237,11 +238,12 @@ type SubscriptionData = {
 
 export type User = {
     email?: string;
+    banned: boolean;
     subscription?: SubscriptionData;
     featureFlags: string[];
 };
 
-const anonUser = (): User => ({ featureFlags: [] });
+const anonUser = (): User => ({ featureFlags: [], banned: false });
 
 /*
  * Synchronously gets the last received user data, _without_
@@ -317,7 +319,8 @@ function parseUserData(userJwt: string | null): User {
         subscription: _.every(_.omit(subscription, ...optionalFields))
             ? subscription as SubscriptionData
             : undefined,
-        featureFlags: appData.feature_flags || []
+        featureFlags: appData.feature_flags || [],
+        banned: !!appData.banned
     };
 }
 
