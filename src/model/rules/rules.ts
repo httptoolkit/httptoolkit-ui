@@ -297,8 +297,14 @@ export type RuleType = HtkMockRule['type'];
 
 const matchRuleType = <T extends RuleType>(
     ...types: T[]
-) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
-    types.includes(rule.type as T);
+) => (type: string): type is T =>
+    types.includes(type as T);
 
-export const isHttpBasedRule = matchRuleType('http', 'ethereum', 'ipfs');
-export const isWebSocketRule = matchRuleType('websocket');
+const matchRule = <T extends RuleType>(
+    matcher: (type: string) => type is T
+) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
+    matcher(rule.type);
+
+export const isHttpCompatibleType = matchRuleType('http', 'ethereum', 'ipfs');
+export const isHttpBasedRule = matchRule(isHttpCompatibleType);
+export const isWebSocketRule = matchRule(matchRuleType('websocket'));

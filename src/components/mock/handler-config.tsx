@@ -15,7 +15,8 @@ import {
     Handler,
     RuleType,
     getRulePartKey,
-    AvailableHandlerKey
+    AvailableHandlerKey,
+    isHttpCompatibleType
 } from '../../model/rules/rules';
 import {
     StaticResponseHandler,
@@ -1121,10 +1122,11 @@ class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler | WebSoc
         return <ConfigContainer>
             <ConfigExplanation>
                 All matching {
-                    this.props.ruleType === 'http'
+                    isHttpCompatibleType(this.props.ruleType)
                         ? 'requests'
-                    // ruleType === 'websocket'
-                        : 'WebSockets'
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSockets'
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } will be transparently passed through to the upstream target host.
             </ConfigExplanation>
         </ConfigContainer>;
@@ -1189,10 +1191,11 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
         return <ConfigContainer>
             <ConfigExplanation>
                 When a matching {
-                    this.props.ruleType === 'http'
+                    isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
-                    // ruleType === 'websocket'
-                        : 'WebSocket'
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSocket'
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } is received, the server will keep the connection open but do nothing.
                 With no data or response, most clients will time out and abort the
                 request after sufficient time has passed.
@@ -1207,10 +1210,11 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
         return <ConfigContainer>
             <ConfigExplanation>
                 As soon as a matching {
-                    this.props.ruleType === 'http'
+                    isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
-                    // ruleType === 'websocket'
-                        : 'WebSocket'
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSocket'
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } is received, the connection will be closed, with no response.
             </ConfigExplanation>
         </ConfigContainer>;
