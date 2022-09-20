@@ -109,14 +109,16 @@ export const MatcherLookup = {
     ...MatchersByType['ipfs']
 };
 
-export type MatcherClassKey = keyof typeof MatcherLookup;
-export type MatcherClass = typeof MatcherLookup[MatcherClassKey];
-export type Matcher = typeof MatcherLookup extends {
+// This const isn't used, but the assignment conveniently and clearly checks if
+// any handlers are created without the correct + readonly type/uiType values.
+const __MATCHER_KEY_CHECK__: {
     // Enforce that keys match .type or uiType for each matcher class:
     [K in keyof typeof MatcherLookup]: new (...args: any[]) => { type: K } | { uiType: K }
-}
-    ? InstanceType<MatcherClass>
-    : never;
+} = MatcherLookup;
+
+export type MatcherClassKey = keyof typeof MatcherLookup;
+export type MatcherClass = typeof MatcherLookup[MatcherClassKey];
+export type Matcher = InstanceType<MatcherClass>;
 
 export const isCompatibleMatcher = (matcher: Matcher, type: RuleType) => {
     const matcherKey = getRulePartKey(matcher);
@@ -151,14 +153,16 @@ export const HandlerLookup = {
     ...HandlersByType['ethereum']
 };
 
-export type HandlerClassKey = keyof typeof HandlerLookup;
-export type HandlerClass = typeof HandlerLookup[HandlerClassKey];
-export type Handler = typeof HandlerLookup extends {
+// This const isn't used, but the assignment conveniently and clearly checks if
+// any handlers are created without the correct + readonly type/uiType values.
+const __HANDLER_KEY_CHECK__: {
     // Enforce that keys match .type or uiType for each handler class:
     [K in keyof typeof HandlerLookup]: new (...args: any[]) => { type: K } | { uiType: K }
-}
-    ? InstanceType<HandlerClass>
-    : never;
+} = HandlerLookup;
+
+export type HandlerClassKey = keyof typeof HandlerLookup;
+export type HandlerClass = typeof HandlerLookup[HandlerClassKey];
+export type Handler = InstanceType<HandlerClass>;
 
 export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
     Object.entries(HandlerLookup)
