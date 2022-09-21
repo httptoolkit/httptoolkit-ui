@@ -40,7 +40,8 @@ import {
 } from '../../model/rules/definitions/websocket-rule-definitions';
 import {
     EthereumCallResultHandler,
-    EthereumNumberResultHandler
+    EthereumNumberResultHandler,
+    EthereumHashResultHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -83,6 +84,7 @@ const ConfigExplanation = styled.p`
     opacity: ${p => p.theme.lowlightTextOpacity};
     font-style: italic;
     margin-top: 10px;
+    overflow-wrap: break-word;
 `;
 
 export function HandlerConfiguration(props: {
@@ -134,6 +136,8 @@ export function HandlerConfiguration(props: {
             return <EthCallResultHandlerConfig {...configProps} />;
         case 'eth-number-result':
             return <EthNumberResultHandlerConfig {...configProps} />;
+        case 'eth-hash-result':
+            return <EthHashResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1424,6 +1428,56 @@ class EthNumberResultHandlerConfig extends HandlerConfig<EthereumNumberResultHan
 
         this.props.onChange(
             new EthereumNumberResultHandler(newValue || 0)
+        );
+    }
+}
+
+@observer
+class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler> {
+
+    @observable
+    value = this.props.handler.value;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { value } = this.props.handler;
+            runInAction(() => { this.value = value; });
+        }));
+    }
+
+    render() {
+        const { value } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Return hash value</SectionLabel>
+
+            <TextInput
+                type='text'
+                value={value}
+                onChange={this.onChange}
+            />
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and { this.value } will
+                be returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+
+            <ConfigExplanation>
+                <WarningIcon /> In most cases, you will also want to add a rule for transaction receipts
+                matching this value, to mock subsequent queries for the transaction's result.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const newValue = event.target.value;
+
+        if (!/^0x[0-9a-fA-F]*$/.test(newValue)) return; // Ignore anything that's not a valid hash
+
+        this.props.onChange(
+            new EthereumHashResultHandler(event.target.value)
         );
     }
 }

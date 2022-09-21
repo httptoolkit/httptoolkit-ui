@@ -84,6 +84,24 @@ export class EthereumNumberResultHandler extends HttpHandlerLookup['json-rpc-res
 
 }
 
+export class EthereumHashResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+
+    readonly uiType = 'eth-hash-result';
+
+    constructor(
+        public readonly value: string
+    ) {
+        super({
+            result: value
+        });
+    }
+
+    explain() {
+        return `Return transaction hash ${this.value}`;
+    }
+
+}
+
 export const EthereumMatcherLookup = {
     'eth-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
 
@@ -107,6 +125,7 @@ export const EthereumInitialMatcherClasses = [
 export const EthereumHandlerLookup = {
     'eth-call-result': EthereumCallResultHandler,
     'eth-number-result': EthereumNumberResultHandler,
+    'eth-hash-result': EthereumHashResultHandler,
 
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],

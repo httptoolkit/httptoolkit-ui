@@ -112,6 +112,7 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'eth-call-result':
             return "Return a fixed eth_call result";
         case 'eth-number-result':
+        case 'eth-hash-result':
             return "Return a fixed value";
         case 'json-rpc-response':
         case 'callback':

@@ -35,7 +35,8 @@ import {
 } from '../../model/rules/definitions/websocket-rule-definitions';
 import {
     EthereumCallResultHandler,
-    EthereumNumberResultHandler
+    EthereumNumberResultHandler,
+    EthereumHashResultHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -95,6 +96,8 @@ const instantiateHandler = (
             return new EthereumCallResultHandler([], []);
         case 'eth-number-result':
             return new EthereumNumberResultHandler(0);
+        case 'eth-hash-result':
+            return new EthereumHashResultHandler('0x0');
         default:
             throw new UnreachableCheck(handlerKey);
     }

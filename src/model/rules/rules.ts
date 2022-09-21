@@ -281,6 +281,13 @@ const MatcherLimitedHandlers: {
             'eth_blockNumber',
             'eth_gasPrice'
         ].includes(matcher.methodName),
+    'eth-hash-result': (matcher: InitialMatcher | undefined) =>
+        !!matcher &&
+        matcher instanceof EthereumMethodMatcher &&
+        [
+            'eth_sendRawTransaction',
+            'eth_sendTransaction'
+        ].includes(matcher.methodName),
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
