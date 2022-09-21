@@ -33,6 +33,9 @@ import {
     RejectWebSocketHandlerDefinition,
     ListenWebSocketHandlerDefinition
 } from '../../model/rules/definitions/websocket-rule-definitions';
+import {
+    EthereumCallResultHandler
+} from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { Select } from '../common/inputs';
 
@@ -87,6 +90,8 @@ const instantiateHandler = (
             return new RejectWebSocketHandlerDefinition(400);
         case 'ws-listen':
             return new ListenWebSocketHandlerDefinition();
+        case 'eth-call-result':
+            return new EthereumCallResultHandler([], []);
         default:
             throw new UnreachableCheck(handlerKey);
     }

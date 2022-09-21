@@ -336,7 +336,7 @@ export class RuleRow extends React.Component<{
         }
 
         const availableMatchers = getAvailableAdditionalMatchers(ruleType);
-        const availableHandlers = getAvailableHandlers(ruleType);
+        const availableHandlers = getAvailableHandlers(ruleType, initialMatcher);
 
         // Handlers are in demo mode (uneditable, behind a 'Get Pro' overlay), either if the rule
         // has a handler you can't use, or you've picked a Pro handler and its been put in demoHandler
@@ -504,7 +504,7 @@ export class RuleRow extends React.Component<{
             ) as any[];
 
             // Reset the rule handler, if incompatible:
-            this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, newRuleType)
+            this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, matcher)
                 ? this.props.rule.handler
                 : this.props.getRuleDefaultHandler(newRuleType);
         }

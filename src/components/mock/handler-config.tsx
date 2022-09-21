@@ -8,7 +8,7 @@ import { Headers } from '../../types';
 import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
-import { asError, UnreachableCheck } from '../../util/error';
+import { asError, isErrorLike, UnreachableCheck } from '../../util/error';
 import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 import {
@@ -52,6 +52,10 @@ import { TextInput, Select, Button } from '../common/inputs';
 import { EditableHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
 import { FormatButton } from '../common/format-button';
+import { EthereumCallResultHandler } from '../../model/rules/definitions/ethereum-rule-definitions';
+import { EditablePairs, PairsArray } from '../common/editable-pairs';
+import { NATIVE_ETH_TYPES } from '../../model/rules/definitions/ethereum-abi';
+import { ContentMonoValue } from '../common/text-content';
 
 type HandlerConfigProps<H extends Handler> = {
     ruleType: RuleType;
@@ -122,6 +126,8 @@ export function HandlerConfiguration(props: {
             return <StaticResponseHandlerConfig {...configProps} />;
         case 'ws-listen':
             return <WebSocketListenHandlerConfig {...configProps} />;
+        case 'eth-call-result':
+            return <EthCallResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -692,7 +698,7 @@ const SelectTransform = styled(Select)`
         color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.mainBackground};
     `}
-`
+`;
 
 @inject('rulesStore')
 @observer
@@ -1243,5 +1249,120 @@ class WebSocketListenHandlerConfig extends HandlerConfig<ListenWebSocketHandlerD
                 messages from the client will be accepted, but no responses will be sent.
             </ConfigExplanation>
         </ConfigContainer>;
+    }
+}
+
+const NATIVE_ETH_TYPES_PATTERN = `(${NATIVE_ETH_TYPES.join('|')})(\\[\\])?`;
+
+@observer
+class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler> {
+
+    @observable
+    typeValuePairs: PairsArray = [];
+
+    @observable error: Error | undefined;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { outputTypes, values } = this.props.handler;
+
+            const stringValues = values.map(v => {
+                if (Array.isArray(v)) return v.join(', ');
+                else return (v as any)?.toString();
+            });
+
+            runInAction(() => {
+                this.typeValuePairs = _.zip(outputTypes, stringValues)
+                    .map(([key, value]) => ({ key, value })) as PairsArray;
+            });
+        }));
+    }
+
+    render() {
+        const { typeValuePairs } = this;
+        const encodedData = this.props.handler.result.result;
+
+        return <ConfigContainer>
+            <SectionLabel>Eth_Call return values</SectionLabel>
+
+            <EditablePairs
+                pairs={typeValuePairs}
+                onChange={this.onChange}
+                keyPlaceholder='Return value type (e.g. string, int256, etc)'
+                keyPattern={NATIVE_ETH_TYPES_PATTERN}
+                valuePlaceholder='Return value'
+                allowEmptyValues={true}
+            />
+
+            { this.error
+                ? <>
+                    <ConfigExplanation>
+                        <WarningIcon /> Could not encode data. { this.error.message }
+                    </ConfigExplanation>
+                </>
+                : <>
+                    <ConfigExplanation>
+                        Encoded return value:
+                    </ConfigExplanation>
+                    <ContentMonoValue>
+                        { encodedData }
+                    </ContentMonoValue>
+                </>
+            }
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC calls will be intercepted, and the encoded output
+                above returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newPairs: PairsArray) {
+        this.typeValuePairs = newPairs;
+
+        // Allow array values, separated by commas:
+        const parsedValues = this.typeValuePairs.map(({ key, value }) => {
+            if (key === 'string[]') {
+                return { key, value: value.split(/,\s?/g) };
+            } else if (key.startsWith('bytes') || key.endsWith('[]')) {
+                return { key, value: value.split(/,\s?/g).map(x => parseInt(x, 10)) };
+            } else {
+                return { key, value };
+            }
+        });
+
+        try {
+            this.props.onChange(
+                new EthereumCallResultHandler(
+                    parsedValues.map(({ key }) => key),
+                    parsedValues.map(({ value }) => value)
+                )
+            );
+            this.error = undefined;
+        } catch (err) {
+            if (!isErrorLike(err)) throw err;
+
+            if (err.code === 'INVALID_ARGUMENT') {
+                const { argument, value, reason } = err as {
+                    argument: string,
+                    value: string,
+                    reason: string
+                };
+
+                if (argument === 'type' || argument === 'param') {
+                    this.error = new Error(`Invalid type: ${value}`);
+                } else if (argument === 'value') {
+                    this.error = new Error(`Invalid value: '${value}' (${reason})`);
+                } else {
+                    this.error = err as Error;
+                }
+            } else {
+                this.error = err as Error;
+            }
+
+            this.props.onInvalidState();
+        }
     }
 }

@@ -12,6 +12,7 @@ import {
 import {
     HttpHandlerLookup
 } from './http-rule-definitions';
+import { encodeAbi } from './ethereum-abi';
 
 export const EthereumMethods = {
     'eth_call': 'Call a contract method (without a transaction)',
@@ -29,7 +30,7 @@ export type EthereumMethod = keyof typeof EthereumMethods;
 
 export class EthereumMethodMatcher extends matchers.JsonBodyFlexibleMatcher {
 
-    readonly uiType = 'ethereum-method';
+    readonly uiType = 'eth-method';
 
     constructor(
         public readonly methodName: EthereumMethod = 'eth_call'
@@ -46,8 +47,27 @@ export class EthereumMethodMatcher extends matchers.JsonBodyFlexibleMatcher {
 
 }
 
+export class EthereumCallResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+
+    readonly uiType = 'eth-call-result';
+
+    constructor(
+        public readonly outputTypes: string[],
+        public readonly values: unknown[]
+    ) {
+        super({
+            result: encodeAbi(outputTypes, values)
+        });
+    }
+
+    explain() {
+        return `Return a eth_call result of ${this.values.join(', ')}`
+    }
+
+}
+
 export const EthereumMatcherLookup = {
-    'ethereum-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
+    'eth-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
 
     // The subset of relevant HTTP matchers:
     'protocol': matchers.ProtocolMatcher,
@@ -67,6 +87,8 @@ export const EthereumInitialMatcherClasses = [
 ];
 
 export const EthereumHandlerLookup = {
+    'eth-call-result': EthereumCallResultHandler,
+
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],
     'timeout': HttpHandlerLookup['timeout'],

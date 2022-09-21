@@ -63,7 +63,7 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
             return "For port";
         case 'hostname':
             return "For hostname";
-        case 'ethereum-method':
+        case 'eth-method':
             return "An Ethereum interaction";
         case 'ipfs-interaction':
             return "An IPFS interaction";
@@ -109,6 +109,9 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Accept the WebSocket but send no messages";
         case 'ws-echo':
             return "Echo all messages";
+        case 'eth-call-result':
+            return "Send a fake eth_call response";
+        case 'json-rpc-response':
         case 'callback':
         case 'stream':
             throw new Error(`${key} handler should not be used directly`);

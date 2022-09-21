@@ -37,7 +37,8 @@ import {
     EthereumMatcherLookup,
     EthereumHandlerLookup,
     EthereumInitialMatcherClasses,
-    EthereumMockRule
+    EthereumMockRule,
+    EthereumMethodMatcher
 } from './definitions/ethereum-rule-definitions';
 
 import {
@@ -69,7 +70,7 @@ const PartVersionRequirements: {
     'raw-body-includes': BODY_MATCHING_RANGE,
     'json-body': BODY_MATCHING_RANGE,
     'json-body-matching': BODY_MATCHING_RANGE,
-    'ethereum-method': JSONRPC_RESPONSE_RULE_SUPPORTED, // Usable without, but a bit pointless
+    'eth-method': JSONRPC_RESPONSE_RULE_SUPPORTED, // Usable without, but a bit pointless
 
     // Handlers:
     'file': FROM_FILE_HANDLER_SERVER_RANGE,
@@ -171,9 +172,13 @@ export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
     ) as Array<[HandlerClass, HandlerClassKey]>
 );
 
-export const isCompatibleHandler = (handler: Handler, type: RuleType) => {
+export const isCompatibleHandler = (handler: Handler, initialMatcher: InitialMatcher) => {
     const handlerKey = getRulePartKey(handler);
-    return !!(HandlersByType[type] as _.Dictionary<HandlerClass>)[handlerKey];
+
+    const ruleType = getRuleTypeFromInitialMatcher(initialMatcher);
+    const handlersForType = HandlersByType[ruleType] as _.Dictionary<HandlerClass>
+    const equivalentHandler = handlersForType[handlerKey];
+    return equivalentHandler !== undefined;
 };
 
 /// --- Matcher/handler special categories ---
@@ -250,20 +255,38 @@ export const isHiddenMatcherKey = (key: MatcherClassKey) =>
     HiddenMatchers.includes(key as HiddenMatcherKey);
 
 const HiddenHandlers = [
+    'json-rpc-response', // Only used internally, by Ethereum rules
     'callback',
     'stream'
 ] as const;
+
+const MatcherLimitedHandlers: {
+    [K in HandlerClassKey]?: ((matcher: InitialMatcher | undefined) => boolean)
+} = {
+    'eth-call-result': (matcher: InitialMatcher | undefined) =>
+        !!matcher &&
+        matcher instanceof EthereumMethodMatcher &&
+        matcher.methodName === 'eth_call'
+};
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
 export type AvailableHandlerKey = Exclude<HandlerClassKey, HiddenHandlerKey>;
 type AvailableHandler = typeof HandlerLookup[AvailableHandlerKey];
 
-export const getAvailableHandlers = (ruleType: RuleType): AvailableHandler[] => {
+export const getAvailableHandlers = (
+    ruleType: RuleType,
+    initialMatcher: InitialMatcher | undefined
+): AvailableHandler[] => {
     return Object.values(HandlersByType[ruleType])
         .filter((handler) => {
             const handlerKey = HandlerClassKeyLookup.get(handler)!;
 
             if (HiddenHandlers.includes(handlerKey as HiddenHandlerKey)) return false;
+
+            // Some handlers require a specific initial matcher, or they're not available.
+            // In those cases, we check the initial matcher is valid:
+            const matcherCheck = MatcherLimitedHandlers[handlerKey];
+            if (matcherCheck !== undefined && !matcherCheck(initialMatcher)) return false;
 
             return serverSupports(PartVersionRequirements[handlerKey]);
         });

@@ -73,7 +73,7 @@ export function InitialMatcherConfiguration(props: {
     };
 
     switch (matcherKey) {
-        case 'ethereum-method':
+        case 'eth-method':
             return <EthereumMethodMatcherConfig {...configProps} />;
         case 'ipfs-interaction':
             return <IpfsInteractionMatcherConfig {...configProps} />;
