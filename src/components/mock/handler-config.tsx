@@ -41,7 +41,8 @@ import {
 import {
     EthereumCallResultHandler,
     EthereumNumberResultHandler,
-    EthereumHashResultHandler
+    EthereumHashResultHandler,
+    EthereumReceiptResultHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -138,6 +139,8 @@ export function HandlerConfiguration(props: {
             return <EthNumberResultHandlerConfig {...configProps} />;
         case 'eth-hash-result':
             return <EthHashResultHandlerConfig {...configProps} />;
+        case 'eth-receipt-result':
+            return <EthReceiptResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1479,5 +1482,84 @@ class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler
         this.props.onChange(
             new EthereumHashResultHandler(event.target.value)
         );
+    }
+}
+
+@observer
+class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultHandler> {
+
+    @observable
+    valueString = JSON.stringify(this.props.handler.receiptValue, null, 2);
+
+    @observable
+    error: Error | undefined;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, reaction(
+            () => JSON.stringify(this.props.handler.receiptValue, null, 2),
+            (receiptValueString) => {
+                let normalizedCurrentValue: {} | undefined;
+                try {
+                    normalizedCurrentValue = JSON.stringify(JSON.parse(this.valueString), null, 2);
+                } catch (err) { }
+
+                // If the handler value changes, and either it doesn't match the existing value here,
+                // or the existing value isn't parseable at all, we reset the editor value:
+                if (receiptValueString !== normalizedCurrentValue) {
+                    runInAction(() => {
+                        this.valueString = receiptValueString;
+                        this.error = undefined;
+                    });
+                }
+            }
+        ));
+    }
+
+    render() {
+        const { valueString, error } = this;
+
+        return <ConfigContainer>
+            <BodyHeader>
+                <SectionLabel>Ethereum Transaction Receipt</SectionLabel>
+                { error && <WarningIcon title={error.message} /> }
+
+                <StandaloneFormatButton
+                    format='json'
+                    content={asBuffer(valueString)}
+                    onFormatted={this.onChange}
+                />
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language='json'
+                    value={valueString}
+                    onChange={this.onChange}
+                />
+            </BodyContainer>
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and this transaction
+                receipt will returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newContent: string) {
+        this.valueString = newContent;
+
+        try {
+            const newValue = JSON.parse(newContent);
+            this.props.onChange(
+                new EthereumReceiptResultHandler(newValue)
+            );
+            this.error = undefined;
+        } catch (e) {
+            if (!isErrorLike(e)) throw e;
+            this.error = e as Error;
+            this.props.onInvalidState();
+        }
     }
 }

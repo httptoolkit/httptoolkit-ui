@@ -106,6 +106,39 @@ export class EthereumHashResultHandler extends HttpHandlerLookup['json-rpc-respo
 
 }
 
+export class EthereumReceiptResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+
+    readonly uiType = 'eth-receipt-result';
+
+    constructor(
+        public readonly receiptValue: object = {
+            // Default value, used to initialize a helpful placeholder
+            status: '0x1',
+            transactionHash: '012345',
+            blockNumber: '0x100',
+            blockHash: '0x1',
+            from: '0x0',
+            to: '0x0',
+            cumulativeGasUsed: '0x1',
+            gasUsed: '0x1',
+            effectiveGasPrice: '0x0',
+            contractAddress: null,
+            logs: [],
+            logsBloom: '0x0',
+            type: '0x0'
+        }
+    ) {
+        super({
+            result: receiptValue
+        });
+    }
+
+    explain() {
+        return `Return a fixed transaction receipt`;
+    }
+
+}
+
 export const EthereumMatcherLookup = {
     'eth-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
 
@@ -130,6 +163,7 @@ export const EthereumHandlerLookup = {
     'eth-call-result': EthereumCallResultHandler,
     'eth-number-result': EthereumNumberResultHandler,
     'eth-hash-result': EthereumHashResultHandler,
+    'eth-receipt-result': EthereumReceiptResultHandler,
 
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],

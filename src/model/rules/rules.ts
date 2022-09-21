@@ -288,6 +288,10 @@ const MatcherLimitedHandlers: {
             'eth_sendRawTransaction',
             'eth_sendTransaction'
         ].includes(matcher.methodName),
+    'eth-receipt-result': (matcher: InitialMatcher | undefined) =>
+        !!matcher &&
+        matcher instanceof EthereumMethodMatcher &&
+        matcher.methodName === 'eth_getTransactionReceipt',
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
