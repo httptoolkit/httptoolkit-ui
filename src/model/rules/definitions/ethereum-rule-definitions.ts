@@ -139,6 +139,48 @@ export class EthereumReceiptResultHandler extends HttpHandlerLookup['json-rpc-re
 
 }
 
+export class EthereumBlockResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+
+    readonly uiType = 'eth-block-result';
+
+    constructor(
+        public readonly blockValue: object = {
+            // Default value, used to initialize a helpful placeholder
+            "difficulty": "0x1",
+            "extraData": "0x0",
+            "gasLimit": "0x1",
+            "gasUsed": "0x1",
+            "hash": "0x1234",
+            "logsBloom": "0x0",
+            "miner": "0x1",
+            "mixHash": "0x0",
+            "nonce": "0x0",
+            "number": "0x0",
+            "parentHash": "0x1",
+            "receiptsRoot": "0x1",
+            "sha3Uncles": "0x1",
+            "size": "0x1",
+            "stateRoot": "0x1",
+            "timestamp": "0x1",
+            "totalDifficulty": "0x1",
+            "transactions": [
+                "0x1234"
+            ],
+            "transactionsRoot": "0x1",
+            "uncles": []
+        }
+    ) {
+        super({
+            result: blockValue
+        });
+    }
+
+    explain() {
+        return `Return fixed block data`;
+    }
+
+}
+
 export const EthereumMatcherLookup = {
     'eth-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
 
@@ -164,6 +206,7 @@ export const EthereumHandlerLookup = {
     'eth-number-result': EthereumNumberResultHandler,
     'eth-hash-result': EthereumHashResultHandler,
     'eth-receipt-result': EthereumReceiptResultHandler,
+    'eth-block-result': EthereumBlockResultHandler,
 
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],

@@ -42,7 +42,8 @@ import {
     EthereumCallResultHandler,
     EthereumNumberResultHandler,
     EthereumHashResultHandler,
-    EthereumReceiptResultHandler
+    EthereumReceiptResultHandler,
+    EthereumBlockResultHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -141,6 +142,8 @@ export function HandlerConfiguration(props: {
             return <EthHashResultHandlerConfig {...configProps} />;
         case 'eth-receipt-result':
             return <EthReceiptResultHandlerConfig {...configProps} />;
+        case 'eth-block-result':
+            return <EthBlockResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1554,6 +1557,85 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
             const newValue = JSON.parse(newContent);
             this.props.onChange(
                 new EthereumReceiptResultHandler(newValue)
+            );
+            this.error = undefined;
+        } catch (e) {
+            if (!isErrorLike(e)) throw e;
+            this.error = e as Error;
+            this.props.onInvalidState();
+        }
+    }
+}
+
+@observer
+class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandler> {
+
+    @observable
+    valueString = JSON.stringify(this.props.handler.blockValue, null, 2);
+
+    @observable
+    error: Error | undefined;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, reaction(
+            () => JSON.stringify(this.props.handler.blockValue, null, 2),
+            (blockValueString) => {
+                let normalizedCurrentValue: {} | undefined;
+                try {
+                    normalizedCurrentValue = JSON.stringify(JSON.parse(this.valueString), null, 2);
+                } catch (err) { }
+
+                // If the handler value changes, and either it doesn't match the existing value here,
+                // or the existing value isn't parseable at all, we reset the editor value:
+                if (blockValueString !== normalizedCurrentValue) {
+                    runInAction(() => {
+                        this.valueString = blockValueString;
+                        this.error = undefined;
+                    });
+                }
+            }
+        ));
+    }
+
+    render() {
+        const { valueString, error } = this;
+
+        return <ConfigContainer>
+            <BodyHeader>
+                <SectionLabel>Ethereum Block Data</SectionLabel>
+                { error && <WarningIcon title={error.message} /> }
+
+                <StandaloneFormatButton
+                    format='json'
+                    content={asBuffer(valueString)}
+                    onFormatted={this.onChange}
+                />
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language='json'
+                    value={valueString}
+                    onChange={this.onChange}
+                />
+            </BodyContainer>
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and this fixed block data
+                will returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newContent: string) {
+        this.valueString = newContent;
+
+        try {
+            const newValue = JSON.parse(newContent);
+            this.props.onChange(
+                new EthereumBlockResultHandler(newValue)
             );
             this.error = undefined;
         } catch (e) {

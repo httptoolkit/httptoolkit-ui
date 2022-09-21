@@ -116,6 +116,8 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Return a fixed value";
         case 'eth-receipt-result':
             return "Return a fixed transaction receipt";
+        case 'eth-block-result':
+            return "Return fixed Ethereum block data";
         case 'json-rpc-response':
         case 'callback':
         case 'stream':

@@ -292,6 +292,13 @@ const MatcherLimitedHandlers: {
         !!matcher &&
         matcher instanceof EthereumMethodMatcher &&
         matcher.methodName === 'eth_getTransactionReceipt',
+    'eth-block-result': (matcher: InitialMatcher | undefined) =>
+        !!matcher &&
+        matcher instanceof EthereumMethodMatcher &&
+        [
+            'eth_getBlockByHash',
+            'eth_getBlockByNumber'
+        ].includes(matcher.methodName),
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
