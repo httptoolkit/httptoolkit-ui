@@ -61,7 +61,11 @@ export class EthereumCallResultHandler extends HttpHandlerLookup['json-rpc-respo
     }
 
     explain() {
-        return `Return a eth_call result of ${this.values.join(', ')}`
+        if (!this.values.length) {
+            return `Return an empty eth_call result`;
+        } else {
+            return `Return an eth_call result of ${this.values.join(', ')}`;
+        }
     }
 
 }
