@@ -110,7 +110,9 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'ws-echo':
             return "Echo all messages";
         case 'eth-call-result':
-            return "Send a fake eth_call response";
+            return "Return a fixed eth_call result";
+        case 'eth-number-result':
+            return "Return a fixed value";
         case 'json-rpc-response':
         case 'callback':
         case 'stream':

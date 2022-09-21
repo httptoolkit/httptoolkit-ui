@@ -38,8 +38,14 @@ import {
     RejectWebSocketHandlerDefinition,
     ListenWebSocketHandlerDefinition
 } from '../../model/rules/definitions/websocket-rule-definitions';
+import {
+    EthereumCallResultHandler,
+    EthereumNumberResultHandler
+} from '../../model/rules/definitions/ethereum-rule-definitions';
+
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
+import { NATIVE_ETH_TYPES } from '../../model/rules/definitions/ethereum-abi';
 import {
     getDefaultMimeType,
     EditableContentType,
@@ -52,9 +58,7 @@ import { TextInput, Select, Button } from '../common/inputs';
 import { EditableHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
 import { FormatButton } from '../common/format-button';
-import { EthereumCallResultHandler } from '../../model/rules/definitions/ethereum-rule-definitions';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
-import { NATIVE_ETH_TYPES } from '../../model/rules/definitions/ethereum-abi';
 import { ContentMonoValue } from '../common/text-content';
 
 type HandlerConfigProps<H extends Handler> = {
@@ -128,6 +132,8 @@ export function HandlerConfiguration(props: {
             return <WebSocketListenHandlerConfig {...configProps} />;
         case 'eth-call-result':
             return <EthCallResultHandlerConfig {...configProps} />;
+        case 'eth-number-result':
+            return <EthNumberResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1364,5 +1370,60 @@ class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler
 
             this.props.onInvalidState();
         }
+    }
+}
+
+@observer
+class EthNumberResultHandlerConfig extends HandlerConfig<EthereumNumberResultHandler> {
+
+    @observable
+    value: number | '' = this.props.handler.value;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { value } = this.props.handler;
+            runInAction(() => {
+                if (value === 0 && this.value === '') return; // Allows clearing the input, making it *implicitly* 0
+                this.value = value;
+            });
+        }));
+    }
+
+    render() {
+        const { value } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Return value</SectionLabel>
+
+            <TextInput
+                type='number'
+                min={0}
+                value={value}
+                onChange={this.onChange}
+            />
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and { this.value } will
+                be returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+
+        const newValue = (inputValue !== '')
+            ? parseInt(inputValue, 10)
+            : '';
+
+        if (_.isNaN(newValue)) return; // I.e. reject the edit
+
+        this.value = newValue;
+
+        this.props.onChange(
+            new EthereumNumberResultHandler(newValue || 0)
+        );
     }
 }

@@ -272,7 +272,15 @@ const MatcherLimitedHandlers: {
     'eth-call-result': (matcher: InitialMatcher | undefined) =>
         !!matcher &&
         matcher instanceof EthereumMethodMatcher &&
-        matcher.methodName === 'eth_call'
+        matcher.methodName === 'eth_call',
+    'eth-number-result': (matcher: InitialMatcher | undefined) =>
+        !!matcher &&
+        matcher instanceof EthereumMethodMatcher &&
+        [
+            'eth_getBalance',
+            'eth_blockNumber',
+            'eth_gasPrice'
+        ].includes(matcher.methodName),
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
