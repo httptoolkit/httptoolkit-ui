@@ -502,12 +502,12 @@ export class RuleRow extends React.Component<{
                 matcher,
                 this.props.rule.matchers // Update from the old matchers
             ) as any[];
-
-            // Reset the rule handler, if incompatible:
-            this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, matcher)
-                ? this.props.rule.handler
-                : this.props.getRuleDefaultHandler(newRuleType);
         }
+
+        // Reset the rule handler, if incompatible:
+        this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, matcher)
+            ? this.props.rule.handler
+            : this.props.getRuleDefaultHandler(newRuleType);
 
         updateRuleAfterInitialMatcherChange(this.props.rule);
     }

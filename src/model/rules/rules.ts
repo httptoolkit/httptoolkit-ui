@@ -173,11 +173,17 @@ export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
 );
 
 export const isCompatibleHandler = (handler: Handler, initialMatcher: InitialMatcher) => {
-    const handlerKey = getRulePartKey(handler);
+    const handlerKey = getRulePartKey(handler) as HandlerClassKey;
 
     const ruleType = getRuleTypeFromInitialMatcher(initialMatcher);
     const handlersForType = HandlersByType[ruleType] as _.Dictionary<HandlerClass>
     const equivalentHandler = handlersForType[handlerKey];
+
+    // Some handlers require a specific initial matcher, or they're not available.
+    // In those cases, we check the initial matcher is valid:
+    const matcherCheck = MatcherLimitedHandlers[handlerKey];
+    if (matcherCheck !== undefined && !matcherCheck(initialMatcher)) return false;
+
     return equivalentHandler !== undefined;
 };
 
