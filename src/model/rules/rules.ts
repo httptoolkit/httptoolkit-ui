@@ -305,7 +305,19 @@ const MatcherLimitedHandlers: {
         matcher.interactionName === 'cat',
     'ipfs-cat-file': (matcher: InitialMatcher) =>
         matcher instanceof IpfsInteractionMatcher &&
-        matcher.interactionName === 'cat'
+        matcher.interactionName === 'cat',
+    'ipns-resolve-result': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        matcher.interactionName === 'name/resolve',
+    'ipns-publish-result': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        matcher.interactionName === 'name/publish',
+    'ipfs-pins-result': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        [
+            'pin/add',
+            'pin/rm'
+        ].includes(matcher.interactionName)
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];

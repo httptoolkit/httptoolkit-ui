@@ -48,7 +48,10 @@ import {
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 import {
     IpfsCatTextHandler,
-    IpfsCatFileHandler
+    IpfsCatFileHandler,
+    IpnsResolveResultHandler,
+    IpnsPublishResultHandler,
+    IpfsPinsResultHandler
 } from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -155,6 +158,12 @@ export function HandlerConfiguration(props: {
             return <IpfsCatTextHandlerConfig {...configProps} />;
         case 'ipfs-cat-file':
             return <IpfsCatFileHandlerConfig {...configProps} />;
+        case 'ipns-resolve-result':
+            return <IpnsResolveResultHandlerConfig {...configProps} />;
+        case 'ipns-publish-result':
+            return <IpnsPublishResultHandlerConfig {...configProps} />;
+        case 'ipfs-pins-result':
+            return <IpfsPinsResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1499,11 +1508,17 @@ class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler
     }
 }
 
+// Base component, used to build the various "JSON input into a JSON-wrapping handler" configs
 @observer
-class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultHandler> {
+class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
+    name: string,
+    explanation: string[],
+    handlerFactory: (body: any) => H,
+    valueGetter: (handler: H) => unknown
+}> {
 
     @observable
-    valueString = JSON.stringify(this.props.handler.receiptValue, null, 2);
+    valueString: string = JSON.stringify(this.props.valueGetter(this.props.handler), null, 2);
 
     @observable
     error: Error | undefined;
@@ -1511,8 +1526,8 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
     componentDidMount() {
         // If the handler changes (or when its set initially), update our data fields
         disposeOnUnmount(this, reaction(
-            () => JSON.stringify(this.props.handler.receiptValue, null, 2),
-            (receiptValueString) => {
+            () => JSON.stringify(this.props.valueGetter(this.props.handler), null, 2),
+            (handlerStringValue) => {
                 let normalizedCurrentValue: {} | undefined;
                 try {
                     normalizedCurrentValue = JSON.stringify(JSON.parse(this.valueString), null, 2);
@@ -1520,9 +1535,9 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
 
                 // If the handler value changes, and either it doesn't match the existing value here,
                 // or the existing value isn't parseable at all, we reset the editor value:
-                if (receiptValueString !== normalizedCurrentValue) {
+                if (handlerStringValue !== normalizedCurrentValue) {
                     runInAction(() => {
-                        this.valueString = receiptValueString;
+                        this.valueString = handlerStringValue;
                         this.error = undefined;
                     });
                 }
@@ -1532,10 +1547,11 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
 
     render() {
         const { valueString, error } = this;
+        const { name, explanation } = this.props;
 
         return <ConfigContainer>
             <BodyHeader>
-                <SectionLabel>Ethereum Transaction Receipt</SectionLabel>
+                <SectionLabel>{ name }</SectionLabel>
                 { error && <WarningIcon title={error.message} /> }
 
                 <StandaloneFormatButton
@@ -1553,10 +1569,11 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
                 />
             </BodyContainer>
 
-            <ConfigExplanation>
-                All matching Ethereum JSON-RPC requests will be intercepted, and this transaction
-                receipt will returned directly, without forwarding the call to the real Ethereum node.
-            </ConfigExplanation>
+            { explanation.map((explanationPart, i) =>
+                <ConfigExplanation key={i}>
+                    { explanationPart }
+                </ConfigExplanation>
+            ) }
         </ConfigContainer>;
     }
 
@@ -1567,7 +1584,7 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
         try {
             const newValue = JSON.parse(newContent);
             this.props.onChange(
-                new EthereumReceiptResultHandler(newValue)
+                this.props.handlerFactory(newValue)
             );
             this.error = undefined;
         } catch (e) {
@@ -1579,82 +1596,39 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
 }
 
 @observer
-class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandler> {
-
-    @observable
-    valueString = JSON.stringify(this.props.handler.blockValue, null, 2);
-
-    @observable
-    error: Error | undefined;
-
-    componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
-        disposeOnUnmount(this, reaction(
-            () => JSON.stringify(this.props.handler.blockValue, null, 2),
-            (blockValueString) => {
-                let normalizedCurrentValue: {} | undefined;
-                try {
-                    normalizedCurrentValue = JSON.stringify(JSON.parse(this.valueString), null, 2);
-                } catch (err) { }
-
-                // If the handler value changes, and either it doesn't match the existing value here,
-                // or the existing value isn't parseable at all, we reset the editor value:
-                if (blockValueString !== normalizedCurrentValue) {
-                    runInAction(() => {
-                        this.valueString = blockValueString;
-                        this.error = undefined;
-                    });
-                }
-            }
-        ));
-    }
+class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultHandler> {
 
     render() {
-        const { valueString, error } = this;
-
-        return <ConfigContainer>
-            <BodyHeader>
-                <SectionLabel>Ethereum Block Data</SectionLabel>
-                { error && <WarningIcon title={error.message} /> }
-
-                <StandaloneFormatButton
-                    format='json'
-                    content={asBuffer(valueString)}
-                    onFormatted={this.onChange}
-                />
-            </BodyHeader>
-            <BodyContainer>
-                <ThemedSelfSizedEditor
-                    contentId={null}
-                    language='json'
-                    value={valueString}
-                    onChange={this.onChange}
-                />
-            </BodyContainer>
-
-            <ConfigExplanation>
-                All matching Ethereum JSON-RPC requests will be intercepted, and this fixed block data
-                will returned directly, without forwarding the call to the real Ethereum node.
-            </ConfigExplanation>
-        </ConfigContainer>;
+        return <JsonBasedHandlerConfig
+            name='Ethereum Transaction Receipt'
+            explanation={[
+                'All matching Ethereum JSON-RPC requests will be intercepted, and this transaction ' +
+                'receipt will returned directly, without forwarding the call to the real Ethereum node.'
+            ]}
+            handlerFactory={(data) => new EthereumReceiptResultHandler(data)}
+            valueGetter={handler => handler.receiptValue}
+            { ...this.props }
+        />;
     }
 
-    @action.bound
-    onChange(newContent: string) {
-        this.valueString = newContent;
+}
 
-        try {
-            const newValue = JSON.parse(newContent);
-            this.props.onChange(
-                new EthereumBlockResultHandler(newValue)
-            );
-            this.error = undefined;
-        } catch (e) {
-            if (!isErrorLike(e)) throw e;
-            this.error = e as Error;
-            this.props.onInvalidState();
-        }
+@observer
+class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='Ethereum Block Data'
+            explanation={[
+                'All matching Ethereum JSON-RPC requests will be intercepted, and this fixed block data ' +
+                'will returned directly, without forwarding the call to the real Ethereum node.'
+            ]}
+            handlerFactory={(data) => new EthereumBlockResultHandler(data)}
+            valueGetter={handler => handler.blockValue}
+            { ...this.props }
+        />;
     }
+
 }
 
 @observer
@@ -1919,4 +1893,55 @@ class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
             );
         }
     }
+}
+
+@observer
+class IpnsResolveResultHandlerConfig extends HandlerConfig<IpnsResolveResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='IPNS Resolve Result'
+            explanation={[
+                'All matching requests will be receive this data as a successful IPNS resolution.'
+            ]}
+            handlerFactory={(data) => new IpnsResolveResultHandler(data)}
+            valueGetter={handler => handler.result}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class IpnsPublishResultHandlerConfig extends HandlerConfig<IpnsPublishResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='IPNS Publish Result'
+            explanation={[
+                'All matching requests will be receive this data as a successful IPNS publish result.'
+            ]}
+            handlerFactory={(data) => new IpnsPublishResultHandler(data)}
+            valueGetter={handler => handler.result}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class IpfsPinsResultHandlerConfig extends HandlerConfig<IpfsPinsResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='IPFS Pinning Result'
+            explanation={[
+                'All matching requests will be receive this data as a successful response.'
+            ]}
+            handlerFactory={(data) => new IpfsPinsResultHandler(data)}
+            valueGetter={handler => handler.result}
+            { ...this.props }
+        />;
+    }
+
 }

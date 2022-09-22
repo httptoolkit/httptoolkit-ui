@@ -126,6 +126,12 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Return fixed IPFS content";
         case 'ipfs-cat-file':
             return "Return IPFS content from a file";
+        case 'ipns-resolve-result':
+            return "Return a fixed IPNS resolved address";
+        case 'ipns-publish-result':
+            return "Return a fixed succesful IPNS result";
+        case 'ipfs-pins-result':
+            return "Return a fixed IPFS pinning result";
         case 'json-rpc-response':
         case 'callback':
         case 'stream':

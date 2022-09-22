@@ -104,18 +104,35 @@ const buildIpfsFixedValueDefaultHeaders = (body?: string | Buffer) => ({
     )
 });
 
+const buildIpfsStreamDefaultHeaders = () => ({
+    'cache-control': 'no-cache',
+    'connection': 'close',
+    'date': new Date().toUTCString(),
+    'content-type': 'application/json; charset=utf-8',
+    'transfer-encoding': 'chunked',
+    // 'trailer': 'X-Stream-Error',
+    // ^ This is normally present but we skip it for now, since it causes issues with Node 18:
+    // https://github.com/nodejs/undici/issues/1418
+    'x-chunked-output': '1'
+});
+
+// When extending simple handlers, we need to provide a schema to avoid this being deserialized using
+// StaticResponseHandler's explicit schema, which is required to handle buffers nicely, but results
+// in the wrong class for the deserialized instances.
+const simpleHandlerSchema = serializr.getDefaultModelSchema(HttpHandlerLookup['simple']);
+
 export class IpfsCatTextHandler extends HttpHandlerLookup['simple'] {
 
     readonly uiType = 'ipfs-cat-text';
 
     constructor(
-        public readonly data: string | Buffer
+        public readonly result: string | Buffer
     ) {
         super(
             200,
             undefined,
-            data,
-            buildIpfsFixedValueDefaultHeaders(data)
+            result,
+            buildIpfsFixedValueDefaultHeaders(result)
         );
     }
 
@@ -124,10 +141,6 @@ export class IpfsCatTextHandler extends HttpHandlerLookup['simple'] {
     }
 
 }
-
-// Need to provide a schema to avoid this being deserialized using StaticResponseHandler's explicit
-// schema, which is required to handle buffers nicely, but results in the wrong class for instances.
-const simpleHandlerSchema = serializr.getDefaultModelSchema(HttpHandlerLookup['simple']);
 serializr.createModelSchema(IpfsCatTextHandler, simpleHandlerSchema.props, () => new IpfsCatTextHandler(''));
 
 export class IpfsCatFileHandler extends HttpHandlerLookup['file'] {
@@ -151,6 +164,84 @@ export class IpfsCatFileHandler extends HttpHandlerLookup['file'] {
 
 }
 
+export class IpnsResolveResultHandler extends HttpHandlerLookup['simple'] {
+
+    readonly uiType = 'ipns-resolve-result';
+
+    constructor(
+        public readonly result: object = {
+            Path: '/ipfs/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco'
+        }
+    ) {
+        super(
+            200,
+            undefined,
+            JSON.stringify(result),
+            buildIpfsFixedValueDefaultHeaders(JSON.stringify(result))
+        )
+    }
+
+    explain() {
+        return `Return a fixed IPNS resolved address`;
+    }
+
+}
+
+serializr.createModelSchema(IpnsResolveResultHandler, simpleHandlerSchema.props, () => new IpnsResolveResultHandler());
+
+export class IpnsPublishResultHandler extends HttpHandlerLookup['simple'] {
+
+    readonly uiType = 'ipns-publish-result';
+
+    constructor(
+        public readonly result: object = {
+            Name: 'QmY7Yh4UquoXHLPFo2XbhXkhBvFoPwmQUSa92pxnxjQuPU',
+            Value: '/ipfs/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco'
+        }
+    ) {
+        super(
+            200,
+            undefined,
+            JSON.stringify(result),
+            buildIpfsFixedValueDefaultHeaders(JSON.stringify(result))
+        )
+    }
+
+    explain() {
+        return `Return a fixed IPNS resolve result`;
+    }
+
+}
+
+serializr.createModelSchema(IpnsPublishResultHandler, simpleHandlerSchema.props, () => new IpnsPublishResultHandler());
+
+export class IpfsPinsResultHandler extends HttpHandlerLookup['simple'] {
+
+    readonly uiType = 'ipfs-pins-result';
+
+    constructor(
+        public readonly result: object = {
+            Pins: [
+                'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco'
+            ]
+        }
+    ) {
+        super(
+            200,
+            undefined,
+            JSON.stringify(result),
+            buildIpfsFixedValueDefaultHeaders(JSON.stringify(result))
+        )
+    }
+
+    explain() {
+        return `Return fixed IPFS pinning results`;
+    }
+
+}
+
+serializr.createModelSchema(IpfsPinsResultHandler, simpleHandlerSchema.props, () => new IpfsPinsResultHandler());
+
 export const IpfsMatcherLookup = {
     'ipfs-interaction': IpfsInteractionMatcher,
     'ipfs-arg': IpfsArgMatcher,
@@ -173,6 +264,9 @@ export const IpfsInitialMatcherClasses = [
 export const IpfsHandlerLookup = {
     'ipfs-cat-text': IpfsCatTextHandler,
     'ipfs-cat-file': IpfsCatFileHandler,
+    'ipns-publish-result': IpnsPublishResultHandler,
+    'ipns-resolve-result': IpnsResolveResultHandler,
+    'ipfs-pins-result': IpfsPinsResultHandler,
 
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],

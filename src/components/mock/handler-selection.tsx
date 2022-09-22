@@ -43,7 +43,10 @@ import {
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 import {
     IpfsCatTextHandler,
-    IpfsCatFileHandler
+    IpfsCatFileHandler,
+    IpnsResolveResultHandler,
+    IpnsPublishResultHandler,
+    IpfsPinsResultHandler
 } from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -115,6 +118,12 @@ const instantiateHandler = (
             return new IpfsCatTextHandler('');
         case 'ipfs-cat-file':
             return new IpfsCatFileHandler('');
+        case 'ipns-resolve-result':
+            return new IpnsResolveResultHandler();
+        case 'ipns-publish-result':
+            return new IpnsPublishResultHandler();
+        case 'ipfs-pins-result':
+            return new IpfsPinsResultHandler();
         default:
             throw new UnreachableCheck(handlerKey);
     }
