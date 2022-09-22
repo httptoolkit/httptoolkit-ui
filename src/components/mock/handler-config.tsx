@@ -46,6 +46,10 @@ import {
     EthereumBlockResultHandler,
     EthereumErrorHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
+import {
+    IpfsCatTextHandler,
+    IpfsCatFileHandler
+} from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
@@ -147,6 +151,10 @@ export function HandlerConfiguration(props: {
             return <EthBlockResultHandlerConfig {...configProps} />;
         case 'eth-error':
             return <EthErrorHandlerConfig {...configProps} />;
+        case 'ipfs-cat-text':
+            return <IpfsCatTextHandlerConfig {...configProps} />;
+        case 'ipfs-cat-file':
+            return <IpfsCatFileHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1773,5 +1781,142 @@ class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
                 this.errorName
             )
         );
+    }
+}
+
+@observer
+class IpfsCatTextHandlerConfig extends HandlerConfig<IpfsCatTextHandler> {
+
+    @observable
+    contentType: EditableContentType = 'text';
+
+    @observable
+    body = asBuffer(this.props.handler.data);
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { data } = this.props.handler;
+            runInAction(() => {
+                this.body = asBuffer(data);
+            });
+        }));
+    }
+
+    @computed
+    private get textEncoding() {
+        // If we're handling text data, we want to show & edit it as UTF8.
+        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
+        return isProbablyUtf8(this.body)
+            ? 'utf8'
+            : 'binary';
+    }
+
+    render() {
+        const { body } = this;
+
+        const bodyAsString = body.toString(this.textEncoding);
+
+        return <ConfigContainer>
+            <BodyHeader>
+                <SectionLabel>IPFS content</SectionLabel>
+                <FormatButton
+                    format={this.contentType}
+                    content={body}
+                    onFormatted={this.setBody}
+                />
+                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                    <option value="text">Plain text</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="javascript">JavaScript</option>
+                </ConfigSelect>
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language={this.contentType}
+                    value={bodyAsString}
+                    onChange={this.setBody}
+                />
+            </BodyContainer>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    setContentType(event: React.ChangeEvent<HTMLSelectElement>) {
+        const value = event.target.value;
+        this.contentType = value as EditableContentType;
+    }
+
+    @action.bound
+    setBody(body: string) {
+        this.body = Buffer.from(body, this.textEncoding);
+        this.props.onChange(
+            new IpfsCatTextHandler(this.body)
+        );
+    }
+}
+
+
+@observer
+class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
+
+    @observable
+    filePath = (this.props.handler.filePath || '').toString();
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { filePath } = this.props.handler;
+            runInAction(() => {
+                this.filePath = filePath;
+            });
+        }));
+    }
+
+    render() {
+        return <ConfigContainer>
+            <SectionLabel>IPFS content</SectionLabel>
+            <BodyFileContainer>
+                <BodyFileButton onClick={this.selectFile}>
+                    { this.filePath
+                        ? 'Change file'
+                        : <>
+                            Select file <WarningIcon />
+                        </>
+                    }
+                </BodyFileButton>
+                { this.filePath && <BodyFilePath>
+                    { this.filePath }
+                </BodyFilePath> }
+            </BodyFileContainer>
+
+            <ConfigExplanation>
+                All matching requests will receive a successful response containing the contents of the
+                selected file.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                This file will be read fresh for each request, so future changes to the file will
+                immediately affect matching requests.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    selectFile = async () => {
+        const result = await uploadFile("path", []);
+        if (result) {
+            runInAction(() => {
+                this.filePath = result;
+            });
+
+            this.props.onChange(
+                new IpfsCatFileHandler(
+                    this.filePath
+                )
+            );
+        }
     }
 }

@@ -45,7 +45,9 @@ import {
     IpfsMockRule,
     IpfsMatcherLookup,
     IpfsInitialMatcherClasses,
-    IpfsHandlerLookup
+    IpfsHandlerLookup,
+    IpfsArgMatcher,
+    IpfsInteractionMatcher
 } from './definitions/ipfs-rule-definitions';
 
 /// --- Part-generic logic ---
@@ -151,7 +153,8 @@ export const HandlerLookup = {
     // These are kept as references to HandlersByType, so the content is always the same:
     ...HandlersByType['http'],
     ...HandlersByType['websocket'],
-    ...HandlersByType['ethereum']
+    ...HandlersByType['ethereum'],
+    ...HandlersByType['ipfs']
 };
 
 // This const isn't used, but the assignment conveniently and clearly checks if
@@ -267,38 +270,42 @@ const HiddenHandlers = [
 ] as const;
 
 const MatcherLimitedHandlers: {
-    [K in HandlerClassKey]?: ((matcher: InitialMatcher | undefined) => boolean)
+    [K in HandlerClassKey]?: ((matcher: InitialMatcher) => boolean)
 } = {
-    'eth-call-result': (matcher: InitialMatcher | undefined) =>
-        !!matcher &&
+    // Ethereum interaction-specific handlers:
+    'eth-call-result': (matcher: InitialMatcher) =>
         matcher instanceof EthereumMethodMatcher &&
         matcher.methodName === 'eth_call',
-    'eth-number-result': (matcher: InitialMatcher | undefined) =>
-        !!matcher &&
+    'eth-number-result': (matcher: InitialMatcher) =>
         matcher instanceof EthereumMethodMatcher &&
         [
             'eth_getBalance',
             'eth_blockNumber',
             'eth_gasPrice'
         ].includes(matcher.methodName),
-    'eth-hash-result': (matcher: InitialMatcher | undefined) =>
-        !!matcher &&
+    'eth-hash-result': (matcher: InitialMatcher) =>
         matcher instanceof EthereumMethodMatcher &&
         [
             'eth_sendRawTransaction',
             'eth_sendTransaction'
         ].includes(matcher.methodName),
-    'eth-receipt-result': (matcher: InitialMatcher | undefined) =>
-        !!matcher &&
+    'eth-receipt-result': (matcher: InitialMatcher) =>
         matcher instanceof EthereumMethodMatcher &&
         matcher.methodName === 'eth_getTransactionReceipt',
-    'eth-block-result': (matcher: InitialMatcher | undefined) =>
-        !!matcher &&
+    'eth-block-result': (matcher: InitialMatcher) =>
         matcher instanceof EthereumMethodMatcher &&
         [
             'eth_getBlockByHash',
             'eth_getBlockByNumber'
         ].includes(matcher.methodName),
+
+    // IPFS interaction-specific handlers:
+    'ipfs-cat-text': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        matcher.interactionName === 'cat',
+    'ipfs-cat-file': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        matcher.interactionName === 'cat'
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
@@ -318,7 +325,10 @@ export const getAvailableHandlers = (
             // Some handlers require a specific initial matcher, or they're not available.
             // In those cases, we check the initial matcher is valid:
             const matcherCheck = MatcherLimitedHandlers[handlerKey];
-            if (matcherCheck !== undefined && !matcherCheck(initialMatcher)) return false;
+            if (
+                matcherCheck !== undefined &&
+                (!initialMatcher || !matcherCheck(initialMatcher))
+            ) return false;
 
             return serverSupports(PartVersionRequirements[handlerKey]);
         });

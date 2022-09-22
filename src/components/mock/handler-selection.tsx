@@ -41,6 +41,10 @@ import {
     EthereumBlockResultHandler,
     EthereumErrorHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
+import {
+    IpfsCatTextHandler,
+    IpfsCatFileHandler
+} from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { Select } from '../common/inputs';
 
@@ -107,6 +111,10 @@ const instantiateHandler = (
             return new EthereumBlockResultHandler(undefined);
         case 'eth-error':
             return new EthereumErrorHandler('Unknown Error');
+        case 'ipfs-cat-text':
+            return new IpfsCatTextHandler('');
+        case 'ipfs-cat-file':
+            return new IpfsCatFileHandler('');
         default:
             throw new UnreachableCheck(handlerKey);
     }

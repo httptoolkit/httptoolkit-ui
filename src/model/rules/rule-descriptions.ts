@@ -122,6 +122,10 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Return fixed Ethereum block data";
         case 'eth-error':
             return "Return an Ethereum error response";
+        case 'ipfs-cat-text':
+            return "Return fixed IPFS content";
+        case 'ipfs-cat-file':
+            return "Return IPFS content from a file";
         case 'json-rpc-response':
         case 'callback':
         case 'stream':

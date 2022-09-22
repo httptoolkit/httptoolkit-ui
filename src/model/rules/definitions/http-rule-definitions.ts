@@ -112,7 +112,7 @@ serializr.createModelSchema(StaticResponseHandler, {
         ),
         { pattern: { test: (key: string) => key !== 'data' } }
     )
-}, (context) => new StaticResponseHandler(context.args.rulesStore));
+}, () => new StaticResponseHandler(200));
 
 
 export class FromFileResponseHandler extends httpHandlers.FileHandlerDefinition {

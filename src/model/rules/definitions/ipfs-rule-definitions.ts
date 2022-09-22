@@ -9,6 +9,9 @@ import {
     completionCheckers,
     RequestRuleData
 } from 'mockttp';
+import * as serializr from 'serializr';
+
+import { byteLength } from '../../../util';
 import {
     HttpHandlerLookup
 } from './http-rule-definitions';
@@ -90,6 +93,64 @@ export class IpfsArgMatcher extends matchers.QueryMatcher {
 
 }
 
+const buildIpfsFixedValueDefaultHeaders = (body?: string | Buffer) => ({
+    'cache-control': 'no-cache',
+    'connection': 'close',
+    'date': new Date().toUTCString(),
+    'content-type': 'application/json; charset=utf-8',
+    ...(body !== undefined
+        ? { 'content-length': byteLength(body).toString() }
+        : {}
+    )
+});
+
+export class IpfsCatTextHandler extends HttpHandlerLookup['simple'] {
+
+    readonly uiType = 'ipfs-cat-text';
+
+    constructor(
+        public readonly data: string | Buffer
+    ) {
+        super(
+            200,
+            undefined,
+            data,
+            buildIpfsFixedValueDefaultHeaders(data)
+        );
+    }
+
+    explain() {
+        return `Return fixed IPFS content`;
+    }
+
+}
+
+// Need to provide a schema to avoid this being deserialized using StaticResponseHandler's explicit
+// schema, which is required to handle buffers nicely, but results in the wrong class for instances.
+const simpleHandlerSchema = serializr.getDefaultModelSchema(HttpHandlerLookup['simple']);
+serializr.createModelSchema(IpfsCatTextHandler, simpleHandlerSchema.props, () => new IpfsCatTextHandler(''));
+
+export class IpfsCatFileHandler extends HttpHandlerLookup['file'] {
+
+    readonly uiType = 'ipfs-cat-file';
+
+    constructor(
+        public readonly path: string
+    ) {
+        super(
+            200,
+            undefined,
+            path,
+            buildIpfsFixedValueDefaultHeaders()
+        );
+    }
+
+    explain() {
+        return `Return IPFS content from ${this.path || 'a file'}`;
+    }
+
+}
+
 export const IpfsMatcherLookup = {
     'ipfs-interaction': IpfsInteractionMatcher,
     'ipfs-arg': IpfsArgMatcher,
@@ -110,6 +171,9 @@ export const IpfsInitialMatcherClasses = [
 ];
 
 export const IpfsHandlerLookup = {
+    'ipfs-cat-text': IpfsCatTextHandler,
+    'ipfs-cat-file': IpfsCatFileHandler,
+
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],
     'timeout': HttpHandlerLookup['timeout'],
