@@ -5,7 +5,6 @@ import { get } from 'typesafe-get';
 
 import { styled } from '../../../styles';
 import {
-    Omit,
     HttpExchange,
     TimingEvents,
     ExchangeMessage
@@ -14,7 +13,7 @@ import { asHeaderArray, joinAnd } from '../../../util';
 import { Icon, WarningIcon, SuggestionIcon } from '../../../icons';
 
 import { AccountStore } from '../../../model/account/account-store';
-import { getReadableSize, testEncodings } from '../../../model/events/bodies';
+import {getReadableDuration, getReadableSize, testEncodings} from '../../../model/events/bodies';
 import {
     explainCacheability,
     explainCacheLifetime,
@@ -41,10 +40,6 @@ interface HttpPerformanceCardProps extends CollapsibleCardProps {
     accountStore?: AccountStore;
 }
 
-function sigFig(num: number, figs: number): number {
-    return parseFloat(num.toFixed(figs));
-}
-
 const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents }) => {
     // We can't show timing info if the request is still going
     const doneTimestamp = p.timingEvents.responseSentTimestamp || p.timingEvents.abortedTimestamp;
@@ -52,12 +47,7 @@ const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents
 
     const durationMs = doneTimestamp - p.timingEvents.startTimestamp;
 
-    return <Pill className={p.className}>{
-        durationMs < 100 ? sigFig(durationMs, 2) + 'ms' : // 22.34ms
-        durationMs < 1000 ? sigFig(durationMs, 1) + 'ms' : // 999.5ms
-        durationMs < 10000 ? sigFig(durationMs / 1000, 3) + ' seconds' : // 3.045 seconds
-        sigFig(durationMs / 1000, 1) + ' seconds' // 11.2 seconds
-    }</Pill>;
+    return <Pill className={p.className}>{getReadableDuration(durationMs)}</Pill>;
 });
 
 export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpPerformanceCardProps) => {
