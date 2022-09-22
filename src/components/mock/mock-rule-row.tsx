@@ -409,6 +409,7 @@ export class RuleRow extends React.Component<{
 
                                 { rule.matchers.length > 0 &&
                                     <NewMatcherRow
+                                        key={rule.type} // Reset when type changes
                                         availableMatchers={availableMatchers}
                                         existingMatchers={rule.matchers}
                                         onAdd={this.addMatcher}
