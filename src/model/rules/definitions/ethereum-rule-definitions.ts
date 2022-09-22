@@ -181,6 +181,35 @@ export class EthereumBlockResultHandler extends HttpHandlerLookup['json-rpc-resp
 
 }
 
+export class EthereumErrorHandler extends HttpHandlerLookup['json-rpc-response'] {
+
+    readonly uiType = 'eth-error';
+
+    constructor(
+        public readonly message: string,
+        public readonly data = '0x',
+        public readonly code = -32099,
+        public readonly name: string | undefined = undefined
+    ) {
+        super({
+            error: {
+                message,
+                data,
+                code,
+                name
+            }
+        });
+    }
+
+    explain() {
+        return `Fail with ${this.message
+            ? `"${this.message}"`
+            : `code ${this.code}`
+        }`;
+    }
+
+}
+
 export const EthereumMatcherLookup = {
     'eth-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
 
@@ -207,6 +236,7 @@ export const EthereumHandlerLookup = {
     'eth-hash-result': EthereumHashResultHandler,
     'eth-receipt-result': EthereumReceiptResultHandler,
     'eth-block-result': EthereumBlockResultHandler,
+    'eth-error': EthereumErrorHandler,
 
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],

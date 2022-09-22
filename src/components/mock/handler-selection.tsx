@@ -38,7 +38,8 @@ import {
     EthereumNumberResultHandler,
     EthereumHashResultHandler,
     EthereumReceiptResultHandler,
-    EthereumBlockResultHandler
+    EthereumBlockResultHandler,
+    EthereumErrorHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -104,6 +105,8 @@ const instantiateHandler = (
             return new EthereumReceiptResultHandler(undefined);
         case 'eth-block-result':
             return new EthereumBlockResultHandler(undefined);
+        case 'eth-error':
+            return new EthereumErrorHandler('Unknown Error');
         default:
             throw new UnreachableCheck(handlerKey);
     }

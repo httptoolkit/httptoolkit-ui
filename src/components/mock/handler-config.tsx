@@ -43,7 +43,8 @@ import {
     EthereumNumberResultHandler,
     EthereumHashResultHandler,
     EthereumReceiptResultHandler,
-    EthereumBlockResultHandler
+    EthereumBlockResultHandler,
+    EthereumErrorHandler
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -144,6 +145,8 @@ export function HandlerConfiguration(props: {
             return <EthReceiptResultHandlerConfig {...configProps} />;
         case 'eth-block-result':
             return <EthBlockResultHandlerConfig {...configProps} />;
+        case 'eth-error':
+            return <EthErrorHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1643,5 +1646,132 @@ class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandl
             this.error = e as Error;
             this.props.onInvalidState();
         }
+    }
+}
+
+@observer
+class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
+
+    @observable
+    inputError: Error | undefined; // A form error - not error data for the handler, unlike the rest
+
+    @observable
+    errorMessage = this.props.handler.message;
+
+    @observable
+    errorCode: '' | number = this.props.handler.code || '';
+
+    @observable
+    errorData = this.props.handler.data;
+
+    @observable
+    errorName = this.props.handler.name;
+
+    componentDidMount() {
+        // If any of our data fields change, rebuild & update the handler
+        disposeOnUnmount(this, reaction(() => (
+            JSON.stringify(_.pick(this, ['errorMessage', 'errorCode', 'errorData', 'errorName']))
+        ), () => this.updateHandler()));
+
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { message, code, data, name } = this.props.handler;
+
+            runInAction(() => {
+                this.errorMessage = message;
+                this.errorData = data;
+                this.errorName = name;
+
+                if (this.errorCode === '' && code === 0) {
+                    // Do nothing - this allows you to clear the field without fuss
+                } else {
+                    this.errorCode = code;
+                }
+            });
+        }));
+    }
+
+    render() {
+        const {
+            errorMessage,
+            errorCode,
+            errorData,
+            errorName
+        } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Error Message</SectionLabel>
+            <TextInput
+                type='text'
+                value={errorMessage}
+                onChange={this.onChangeMessage}
+            />
+
+            <SectionLabel>Error Code</SectionLabel>
+            <TextInput
+                type='number'
+                value={errorCode}
+                onChange={this.onChangeCode}
+            />
+
+            <SectionLabel>Error Data</SectionLabel>
+            <TextInput
+                type='text'
+                value={errorData}
+                onChange={this.onChangeData}
+            />
+
+            <SectionLabel>Error Name</SectionLabel>
+            <TextInput
+                type='text'
+                value={errorName || ''}
+                onChange={this.onChangeName}
+            />
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and this error response
+                will returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChangeMessage(event: React.ChangeEvent<HTMLInputElement>) {
+        this.errorMessage = event.target.value;
+    }
+
+    @action.bound
+    onChangeCode(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        if (!inputValue) {
+            this.errorCode = '';
+            return;
+        }
+
+        const value = parseInt(inputValue, 10);
+        if (!_.isNaN(value)) {
+            this.errorCode = value;
+        }
+    }
+
+    @action.bound
+    onChangeData(event: React.ChangeEvent<HTMLInputElement>) {
+        this.errorData = event.target.value;
+    }
+
+    @action.bound
+    onChangeName(event: React.ChangeEvent<HTMLInputElement>) {
+        this.errorName = event.target.value;
+    }
+
+    updateHandler() {
+        this.props.onChange(
+            new EthereumErrorHandler(
+                this.errorMessage,
+                this.errorData,
+                this.errorCode || 0,
+                this.errorName
+            )
+        );
     }
 }
