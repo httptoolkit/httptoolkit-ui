@@ -28,7 +28,8 @@ import {
 import {
     EthereumMethod,
     EthereumMethodMatcher,
-    EthereumMethods
+    EthereumMethods,
+    EthereumParamsMatcher
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 import {
     IpfsInteraction,
@@ -156,6 +157,8 @@ export function AdditionalMatcherConfiguration(props:
             return <JsonBodyExactMatcherConfig {...configProps} />;
         case 'json-body-matching':
             return <JsonBodyIncludingMatcherConfig {...configProps} />;
+        case 'eth-params':
+            return <EthParamsMatcherConfig {...configProps} />;
         case 'ipfs-arg':
             return <IpfsArgMatcherConfig {...configProps} />;
         default:
@@ -1061,5 +1064,76 @@ class IpfsArgMatcherConfig extends MatcherConfig<IpfsArgMatcher> {
     onChange(event: React.ChangeEvent<HTMLInputElement>) {
         this.arg = event.target.value;
         this.props.onChange(new IpfsArgMatcher(this.interaction, this.arg));
+    }
+}
+
+@observer
+class EthParamsMatcherConfig extends MatcherConfig<EthereumParamsMatcher> {
+
+    @observable
+    private content: string = this.props.matcher?.params
+        ? JSON.stringify(this.props.matcher?.params, null, 2)
+        : '[\n    \n]'; // Set up with a convenient open array body initially
+
+    @observable
+    private error: Error | undefined;
+
+    componentDidMount() {
+        // When the matcher state changes (only that one direction) so that it's out of
+        // sync with the shown content, update the content here to match.
+        disposeOnUnmount(this, reaction(
+            () => this.props.matcher?.params ?? {},
+            (matcherContent) => {
+                const parsedContent = tryParseJson(this.content);
+
+                // If the matcher has changed and the content here either doesn't parse or
+                // doesn't match the matcher, we override the shown content:
+                if (parsedContent === undefined || !_.isEqual(parsedContent, matcherContent)) {
+                    runInAction(() => {
+                        this.content = JSON.stringify(matcherContent, null, 2);
+                    });
+                }
+            }
+        ));
+
+        // Create the matcher immediately, so that this is already valid & addable,
+        // if that's what you want to do.
+        this.onJsonChange(this.content);
+    }
+
+    render() {
+        const { content, error } = this;
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } with Ethereum parameters matching
+                </ConfigLabel>
+            }
+            <BodyContainer error={!!error}>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    value={content}
+                    onChange={this.onJsonChange}
+                    language='json'
+                />
+            </BodyContainer>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onJsonChange(content: string) {
+        this.content = content;
+
+        try {
+            const parsedContent = JSON.parse(content);
+            this.props.onChange(new EthereumParamsMatcher(parsedContent));
+            this.error = undefined;
+        } catch (e) {
+            console.log(e);
+            this.error = asError(e);
+            this.props.onInvalidState();
+        }
     }
 }

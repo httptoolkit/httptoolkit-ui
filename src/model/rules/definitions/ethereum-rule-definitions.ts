@@ -47,6 +47,22 @@ export class EthereumMethodMatcher extends matchers.JsonBodyFlexibleMatcher {
 
 }
 
+export class EthereumParamsMatcher extends matchers.JsonBodyFlexibleMatcher {
+
+    readonly uiType = 'eth-params';
+
+    constructor(
+        public readonly params: any[]
+    ) {
+        super({ params });
+    }
+
+    explain() {
+        return `matching ${JSON.stringify(this.params)}`;
+    }
+
+}
+
 export class EthereumCallResultHandler extends HttpHandlerLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-call-result';
@@ -212,6 +228,7 @@ export class EthereumErrorHandler extends HttpHandlerLookup['json-rpc-response']
 
 export const EthereumMatcherLookup = {
     'eth-method': EthereumMethodMatcher, // N.b. this is JSON-RPC method, not HTTP method
+    'eth-params': EthereumParamsMatcher,
 
     // The subset of relevant HTTP matchers:
     'protocol': matchers.ProtocolMatcher,
