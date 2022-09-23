@@ -31,7 +31,30 @@
 					"default": "API-KEY-REQUIRED"
 				}
 			}
-		}
+		},
+		{
+			"url": "https://${chain}-${provider}.brave.com/${key}",
+			"variables": {
+				"chain": {
+					"default": "mainnet",
+					"enum": [
+						"mainnet",
+						"ropsten",
+						"rinkeby",
+						"kovan",
+						"goerli"
+					]
+				},
+				"provider": {
+					"default": "infura"
+				},
+				"key": {
+					"default": "API-KEY-REQUIRED"
+				}
+			}
+		},
+		{ "url": "https://web3.ens.domains/v1/mainnet" }
+
 	],
 	"externalDocs": {
 		"url": "https://ethereum.org/en/developers/docs/apis/json-rpc/",

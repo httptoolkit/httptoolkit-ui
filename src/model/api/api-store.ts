@@ -51,11 +51,13 @@ const EXTRA_APIS: { [urlPrefix: string]: 'ipfs' | 'ethereum' } = {
     // See the 'servers' field in /extra-apis/ethereum.json:
     'localhost:8545/': 'ethereum',
     '127.0.0.1:8545/': 'ethereum',
-    'mainnet.infura.io/v3/': 'ethereum',
-    'ropsten.infura.io/v3/': 'ethereum',
-    'rinkeby.infura.io/v3/': 'ethereum',
-    'kovan.infura.io/v3/': 'ethereum',
-    'goerli.infura.io/v3/': 'ethereum'
+    'mainnet.': 'ethereum',
+    'ropsten.': 'ethereum',
+    'rinkeby.': 'ethereum',
+    'kovan.': 'ethereum',
+    'goerli.': 'ethereum',
+    'mainnet-': 'ethereum',
+    'web3.ens.domains/v1/mainnet': 'ethereum'
 };
 
 function findPublicApi(url: string) {
