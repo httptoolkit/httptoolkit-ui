@@ -46,6 +46,8 @@ const EXTRA_APIS: { [urlPrefix: string]: 'ipfs' | 'ethereum' } = {
     // See the 'servers' field in /extra-apis/ipfs.json:
     'localhost:5001/api/v0': 'ipfs',
     '127.0.0.1:5001/api/v0': 'ipfs',
+    'localhost:5002/api/v0': 'ipfs',
+    '127.0.0.1:5002/api/v0': 'ipfs',
     'ipfs.infura.io:5001/api/v0': 'ipfs',
 
     // See the 'servers' field in /extra-apis/ethereum.json:
