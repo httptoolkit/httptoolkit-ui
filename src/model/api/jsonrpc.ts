@@ -117,7 +117,7 @@ export class JsonRpcApiExchange implements ApiExchange {
     }
 
     matchedOperation(): boolean {
-        return !!this._rpcMethod;
+        return this._rpcMethod && !isErrorLike(this._rpcMethod);
     }
 
 }
