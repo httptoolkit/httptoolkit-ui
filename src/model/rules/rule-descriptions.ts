@@ -134,6 +134,8 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Return a fixed succesful IPNS result";
         case 'ipfs-pins-result':
             return "Return a fixed IPFS pinning result";
+        case 'ipfs-pin-ls-result':
+            return "Return a fixed list of IPFS pins";
         case 'json-rpc-response':
         case 'callback':
         case 'stream':

@@ -177,7 +177,7 @@ export class IpfsAddResultHandler extends HttpHandlerLookup['simple'] {
         super(
             200,
             undefined,
-            JSON.stringify(result),
+            result.map(json => JSON.stringify(json)).join('\n'),
             buildIpfsStreamDefaultHeaders()
         )
     }
@@ -276,6 +276,31 @@ export class IpfsPinsResultHandler extends HttpHandlerLookup['simple'] {
 
 serializr.createModelSchema(IpfsPinsResultHandler, simpleHandlerSchema.props, () => new IpfsPinsResultHandler());
 
+export class IpfsPinLsResultHandler extends HttpHandlerLookup['simple'] {
+
+    readonly uiType = 'ipfs-pin-ls-result';
+
+    constructor(
+        public readonly result: Array<{ Type: string, Cid: string }> = [
+            { Type: 'direct', Cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco' }
+        ]
+    ) {
+        super(
+            200,
+            undefined,
+            result.map(json => JSON.stringify(json)).join('\n'),
+            buildIpfsStreamDefaultHeaders()
+        )
+    }
+
+    explain() {
+        return `Return fixed list of IPFS pins`;
+    }
+
+}
+
+serializr.createModelSchema(IpfsPinLsResultHandler, simpleHandlerSchema.props, () => new IpfsPinLsResultHandler());
+
 export const IpfsMatcherLookup = {
     'ipfs-interaction': IpfsInteractionMatcher,
     'ipfs-arg': IpfsArgMatcher,
@@ -302,6 +327,7 @@ export const IpfsHandlerLookup = {
     'ipns-publish-result': IpnsPublishResultHandler,
     'ipns-resolve-result': IpnsResolveResultHandler,
     'ipfs-pins-result': IpfsPinsResultHandler,
+    'ipfs-pin-ls-result': IpfsPinLsResultHandler,
 
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],

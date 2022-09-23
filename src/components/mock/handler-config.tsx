@@ -52,7 +52,8 @@ import {
     IpfsAddResultHandler,
     IpnsResolveResultHandler,
     IpnsPublishResultHandler,
-    IpfsPinsResultHandler
+    IpfsPinsResultHandler,
+    IpfsPinLsResultHandler
 } from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -167,6 +168,8 @@ export function HandlerConfiguration(props: {
             return <IpnsPublishResultHandlerConfig {...configProps} />;
         case 'ipfs-pins-result':
             return <IpfsPinsResultHandlerConfig {...configProps} />;
+        case 'ipfs-pin-ls-result':
+            return <IpfsPinLsResultHandlerConfig {...configProps} />;
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1994,6 +1997,55 @@ class IpfsPinsResultHandlerConfig extends HandlerConfig<IpfsPinsResultHandler> {
             valueGetter={handler => handler.result}
             { ...this.props }
         />;
+    }
+
+}
+
+@observer
+class IpfsPinLsResultHandlerConfig extends HandlerConfig<IpfsPinLsResultHandler> {
+
+    @observable
+    resultPairs: PairsArray = [];
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { result } = this.props.handler;
+
+            runInAction(() => {
+                this.resultPairs = result.map(({ Type, Cid }) => ({ key: Type, value: Cid }));
+            });
+        }));
+    }
+
+    render() {
+        const { resultPairs } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>IPFS Pin Ls Results</SectionLabel>
+
+            <EditablePairs
+                pairs={resultPairs}
+                onChange={this.onChange}
+                keyPlaceholder='Type of pin (recursive, direct, indirect)'
+                valuePlaceholder='CID of the pinned content'
+            />
+            <ConfigExplanation>
+                All matching IPFS Pin Ls calls will be intercepted, and the above results will always
+                be returned directly, without forwarding the call to the real IPFS node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newPairs: PairsArray) {
+        this.resultPairs = newPairs;
+
+        this.props.onChange(
+            new IpfsPinLsResultHandler(
+                this.resultPairs.map(({ key, value }) => ({ Type: key, Cid: value }))
+            )
+        );
     }
 
 }

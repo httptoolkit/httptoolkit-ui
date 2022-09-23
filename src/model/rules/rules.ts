@@ -320,7 +320,10 @@ const MatcherLimitedHandlers: {
         [
             'pin/add',
             'pin/rm'
-        ].includes(matcher.interactionName)
+        ].includes(matcher.interactionName),
+    'ipfs-pin-ls-result': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        matcher.interactionName === 'pin/ls',
 };
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];

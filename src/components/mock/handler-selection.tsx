@@ -47,7 +47,8 @@ import {
     IpfsAddResultHandler,
     IpnsResolveResultHandler,
     IpnsPublishResultHandler,
-    IpfsPinsResultHandler
+    IpfsPinsResultHandler,
+    IpfsPinLsResultHandler
 } from '../../model/rules/definitions/ipfs-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -127,6 +128,8 @@ const instantiateHandler = (
             return new IpnsPublishResultHandler();
         case 'ipfs-pins-result':
             return new IpfsPinsResultHandler();
+        case 'ipfs-pin-ls-result':
+            return new IpfsPinLsResultHandler();
         default:
             throw new UnreachableCheck(handlerKey);
     }
