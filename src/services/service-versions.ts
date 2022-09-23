@@ -66,3 +66,4 @@ export const CUSTOM_CA_TRUST_RANGE = '^1.7.0';
 export const MULTIPLE_EXISTING_TERMINAL_RANGE = '^1.8.0';
 export const RAW_BODY_SUPPORTED = '^1.9.0';
 export const WEBSOCKET_MESSAGING_RULES_SUPPORTED = '^1.9.0';
+export const WEBRTC_GLOBALLY_ENABLED = '^1.10.3';

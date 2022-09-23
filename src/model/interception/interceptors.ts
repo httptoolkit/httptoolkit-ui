@@ -4,7 +4,8 @@ import { ServerInterceptor } from "../../services/server-api";
 import {
     versionSatisfies,
     DETAILED_CONFIG_RANGE,
-    DOCKER_INTERCEPTION_RANGE
+    DOCKER_INTERCEPTION_RANGE,
+    WEBRTC_GLOBALLY_ENABLED
 } from "../../services/service-versions";
 import { IconProps, SourceIcons } from "../../icons";
 import { AccountStore } from "../account/account-store";
@@ -32,7 +33,10 @@ interface InterceptorConfig {
         serverVersion?: string
     }) => boolean;
     uiConfig?: InterceptorCustomUiConfig;
-    getActivationOptions?: (options: { accountStore: AccountStore }) => unknown;
+    getActivationOptions?: (options: {
+        accountStore: AccountStore,
+        serverVersion?: string
+    }) => unknown;
     notAvailableHelpUrl?: string;
 }
 
@@ -57,8 +61,12 @@ const recoloured = (icon: IconProps, color: string) => ({ ...icon, color });
 
 export const MANUAL_INTERCEPT_ID = 'manual-setup';
 
-const getChromiumOptions = ({ accountStore }: { accountStore: AccountStore }) => ({
-    webExtensionEnabled: accountStore.featureFlags.includes('webrtc')
+const getChromiumOptions = ({ accountStore, serverVersion }: {
+    accountStore: AccountStore,
+    serverVersion?: string
+}) => ({
+    webExtensionEnabled: accountStore.featureFlags.includes('webrtc') ||
+        versionSatisfies(serverVersion || '', WEBRTC_GLOBALLY_ENABLED)
 });
 
 const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
@@ -324,7 +332,10 @@ export function getInterceptOptions(
                 isActive: false,
                 isActivable: true,
                 activationOptions: option.getActivationOptions
-                    ? option.getActivationOptions({ accountStore })
+                    ? option.getActivationOptions({
+                        accountStore,
+                        serverVersion
+                    })
                     : undefined
             });
         } else {
@@ -336,7 +347,10 @@ export function getInterceptOptions(
                 id,
                 isSupported: true,
                 activationOptions: option.getActivationOptions
-                    ? option.getActivationOptions({ accountStore })
+                    ? option.getActivationOptions({
+                        accountStore,
+                        serverVersion
+                    })
                     : undefined
             });
         }
