@@ -49,6 +49,7 @@ import {
 import {
     IpfsCatTextHandler,
     IpfsCatFileHandler,
+    IpfsAddResultHandler,
     IpnsResolveResultHandler,
     IpnsPublishResultHandler,
     IpfsPinsResultHandler
@@ -158,6 +159,8 @@ export function HandlerConfiguration(props: {
             return <IpfsCatTextHandlerConfig {...configProps} />;
         case 'ipfs-cat-file':
             return <IpfsCatFileHandlerConfig {...configProps} />;
+        case 'ipfs-add-result':
+            return <IpfsAddResultHandlerConfig {...configProps} />;
         case 'ipns-resolve-result':
             return <IpnsResolveResultHandlerConfig {...configProps} />;
         case 'ipns-publish-result':
@@ -1893,6 +1896,55 @@ class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
             );
         }
     }
+}
+
+@observer
+class IpfsAddResultHandlerConfig extends HandlerConfig<IpfsAddResultHandler> {
+
+    @observable
+    resultPairs: PairsArray = [];
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { result } = this.props.handler;
+
+            runInAction(() => {
+                this.resultPairs = result.map(({ Name, Hash }) => ({ key: Name, value: Hash }));
+            });
+        }));
+    }
+
+    render() {
+        const { resultPairs } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>IPFS Add Results</SectionLabel>
+
+            <EditablePairs
+                pairs={resultPairs}
+                onChange={this.onChange}
+                keyPlaceholder='Name of the added file'
+                valuePlaceholder='Hash of the added file'
+            />
+            <ConfigExplanation>
+                All matching IPFS Add calls will be intercepted, and the above results will always
+                be returned directly, without forwarding the call to the real IPFS node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newPairs: PairsArray) {
+        this.resultPairs = newPairs;
+
+        this.props.onChange(
+            new IpfsAddResultHandler(
+                this.resultPairs.map(({ key, value }) => ({ Name: key, Hash: value }))
+            )
+        );
+    }
+
 }
 
 @observer

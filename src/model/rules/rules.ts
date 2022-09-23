@@ -306,6 +306,9 @@ const MatcherLimitedHandlers: {
     'ipfs-cat-file': (matcher: InitialMatcher) =>
         matcher instanceof IpfsInteractionMatcher &&
         matcher.interactionName === 'cat',
+    'ipfs-add-result': (matcher: InitialMatcher) =>
+        matcher instanceof IpfsInteractionMatcher &&
+        matcher.interactionName === 'add',
     'ipns-resolve-result': (matcher: InitialMatcher) =>
         matcher instanceof IpfsInteractionMatcher &&
         matcher.interactionName === 'name/resolve',

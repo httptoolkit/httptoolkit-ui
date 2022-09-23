@@ -164,6 +164,40 @@ export class IpfsCatFileHandler extends HttpHandlerLookup['file'] {
 
 }
 
+export class IpfsAddResultHandler extends HttpHandlerLookup['simple'] {
+
+    readonly uiType = 'ipfs-add-result';
+
+    constructor(
+        public readonly result: Array<{ Name: string, Hash: string }> = [{
+            Name: 'uploaded-file.txt',
+            Hash: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco'
+        }]
+    ) {
+        super(
+            200,
+            undefined,
+            JSON.stringify(result),
+            buildIpfsStreamDefaultHeaders()
+        )
+    }
+
+    explain() {
+        return `Return ${
+            this.result.length === 0
+                ? 'an empty'
+                : 'fixed'
+         } IPFS add result${
+            this.result.length > 1
+                ? 's'
+                : ''
+        }`;
+    }
+
+}
+
+serializr.createModelSchema(IpfsAddResultHandler, simpleHandlerSchema.props, () => new IpfsAddResultHandler());
+
 export class IpnsResolveResultHandler extends HttpHandlerLookup['simple'] {
 
     readonly uiType = 'ipns-resolve-result';
@@ -264,6 +298,7 @@ export const IpfsInitialMatcherClasses = [
 export const IpfsHandlerLookup = {
     'ipfs-cat-text': IpfsCatTextHandler,
     'ipfs-cat-file': IpfsCatFileHandler,
+    'ipfs-add-result': IpfsAddResultHandler,
     'ipns-publish-result': IpnsPublishResultHandler,
     'ipns-resolve-result': IpnsResolveResultHandler,
     'ipfs-pins-result': IpfsPinsResultHandler,

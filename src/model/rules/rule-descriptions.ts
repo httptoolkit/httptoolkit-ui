@@ -126,6 +126,8 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Return fixed IPFS content";
         case 'ipfs-cat-file':
             return "Return IPFS content from a file";
+        case 'ipfs-add-result':
+            return "Return a fixed IPFS add result";
         case 'ipns-resolve-result':
             return "Return a fixed IPNS resolved address";
         case 'ipns-publish-result':

@@ -44,6 +44,7 @@ import {
 import {
     IpfsCatTextHandler,
     IpfsCatFileHandler,
+    IpfsAddResultHandler,
     IpnsResolveResultHandler,
     IpnsPublishResultHandler,
     IpfsPinsResultHandler
@@ -118,6 +119,8 @@ const instantiateHandler = (
             return new IpfsCatTextHandler('');
         case 'ipfs-cat-file':
             return new IpfsCatFileHandler('');
+        case 'ipfs-add-result':
+            return new IpfsAddResultHandler();
         case 'ipns-resolve-result':
             return new IpnsResolveResultHandler();
         case 'ipns-publish-result':
