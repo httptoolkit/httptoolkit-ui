@@ -24,6 +24,7 @@ import { getStatusMessage } from '../http/http-docs';
 import { RulesStore } from './rules-store';
 import {
     Handler,
+    HandlerStep,
     HtkMockRule,
     InitialMatcher,
     Matcher,
@@ -40,6 +41,7 @@ import * as HttpRule from './definitions/http-rule-definitions';
 import * as WsRule from './definitions/websocket-rule-definitions';
 import * as EthRule from './definitions/ethereum-rule-definitions';
 import * as IpfsRule from './definitions/ipfs-rule-definitions';
+import * as RtcRule from './definitions/rtc-rule-definitions';
 
 export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     return observable({
@@ -90,8 +92,10 @@ export function updateRuleAfterInitialMatcherChange(
 export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpMockRule['handler'];
 export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketMockRule['handler'];
 export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumMockRule['handler'];
-export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
-export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
+export function getRuleDefaultHandler(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsMockRule['handler'];
+export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCMockRule['steps'];
+export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler | HandlerStep[];
+export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler | HandlerStep[] {
     switch (type) {
         case 'http':
             return new HttpRule.PassThroughHandler(ruleStore);
@@ -101,6 +105,8 @@ export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Ha
             return new HttpRule.PassThroughHandler(ruleStore);
         case 'ipfs':
             return new HttpRule.PassThroughHandler(ruleStore);
+        case 'webrtc':
+           return [new RtcRule.DynamicProxyStepDefinition()] as RtcRule.RTCStep[];
     }
 };
 

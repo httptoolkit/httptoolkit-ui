@@ -57,7 +57,7 @@ function migrateRule(rule: any) {
 
     const { handler } = rule;
 
-    if (handler.type === 'passthrough') {
+    if (handler?.type === 'passthrough') {
         // Handle the targetHost -> forwarding object change from Mockttp 0.18.1:
         if (handler.forwardToLocation && !handler.forwarding) {
             handler.forwarding = { targetHost: handler.forwardToLocation, updateHostHeader: true };

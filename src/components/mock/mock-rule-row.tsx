@@ -25,7 +25,8 @@ import {
     isCompatibleHandler,
     getAvailableAdditionalMatchers,
     getAvailableHandlers,
-    RuleType
+    RuleType,
+    HandlerStep
 } from '../../model/rules/rules';
 import { ItemPath } from '../../model/rules/rules-structure';
 import {
@@ -36,6 +37,8 @@ import {
     summarizeMatcher,
     summarizeHandler
 } from '../../model/rules/rule-descriptions';
+import { RTCMockRule } from '../../model/rules/definitions/rtc-rule-definitions';
+import { HttpMockRule } from '../../model/rules/definitions/http-rule-definitions';
 import { AccountStore } from '../../model/account/account-store';
 
 import { clickOnEnter, noPropagation } from '../component-utils';
@@ -281,7 +284,7 @@ export class RuleRow extends React.Component<{
     deleteRule: (path: ItemPath) => void;
     cloneRule: (path: ItemPath) => void;
 
-    getRuleDefaultHandler: (type: RuleType) => Handler;
+    getRuleDefaultHandler: (type: RuleType) => Handler | HandlerStep[];
 }> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
@@ -293,7 +296,9 @@ export class RuleRow extends React.Component<{
     componentDidMount() {
         // If the actual handler ever changes, dump our demo handler state:
         disposeOnUnmount(this, reaction(
-            () => this.props.rule.handler,
+            () => 'handler' in this.props.rule
+                ? this.props.rule.handler
+                : this.props.rule.steps,
             () => { this.demoHandler = undefined; }
         ));
     }
@@ -331,6 +336,8 @@ export class RuleRow extends React.Component<{
             ruleColour = getSummaryColour('mutative');
         } else if (ruleType === 'ipfs') {
             ruleColour = getSummaryColour('html');
+        } else if (ruleType === 'webrtc') {
+            ruleColour = getSummaryColour('rtc-data');
         } else {
             throw new UnreachableCheck(ruleType);
         }
@@ -338,13 +345,18 @@ export class RuleRow extends React.Component<{
         const availableMatchers = getAvailableAdditionalMatchers(ruleType);
         const availableHandlers = getAvailableHandlers(ruleType, initialMatcher);
 
+        // For now we support RTC rules with just a single step:
+        const realRuleHandler = 'handler' in rule
+            ? rule.handler
+            : rule.steps[0];
+
         // Handlers are in demo mode (uneditable, behind a 'Get Pro' overlay), either if the rule
         // has a handler you can't use, or you've picked a Pro handler and its been put in demoHandler
-        const isHandlerDemo = !isPaidUser && (this.demoHandler || isPaidHandler(rule.handler));
+        const isHandlerDemo = !isPaidUser && (!!this.demoHandler || isPaidHandler(realRuleHandler));
 
         const ruleHandler = isHandlerDemo
-            ? (this.demoHandler || rule.handler)
-            : rule.handler
+            ? (this.demoHandler || realRuleHandler)
+            : realRuleHandler
 
         return <Draggable
             draggableId={rule.id}
@@ -505,41 +517,62 @@ export class RuleRow extends React.Component<{
             ) as any[];
         }
 
-        // Reset the rule handler, if incompatible:
-        this.props.rule.handler = isCompatibleHandler(this.props.rule.handler, matcher)
-            ? this.props.rule.handler
-            : this.props.getRuleDefaultHandler(newRuleType);
+        // Reset the rule handler/steps, if incompatible:
+        const handlerResetRequired = 'handler' in this.props.rule
+            ? !isCompatibleHandler(this.props.rule.handler, matcher)
+            : !this.props.rule.steps.every(step => isCompatibleHandler(step, matcher));
+
+        if (handlerResetRequired) {
+            const newHandler = this.props.getRuleDefaultHandler(newRuleType);
+            if (Array.isArray(newHandler)) {
+                (this.props.rule as { steps: HandlerStep[] }).steps = newHandler;
+                delete (this.props.rule as any).handler;
+            } else {
+                (this.props.rule as { handler: Handler }).handler = newHandler;
+                delete (this.props.rule as any).steps;
+            }
+        }
 
         updateRuleAfterInitialMatcherChange(this.props.rule);
     }
 
     @action.bound
     addMatcher(matcher: Matcher) {
-        this.props.rule.matchers.push(
-            matcher as any // Matcher must be valid, as availableMatchers is type-based
-        );
+        // TS struggles with complex union types here, so we cast more generally:
+        const rule = this.props.rule as { matchers: Matcher[] };
+        rule.matchers.push(matcher);
     }
 
     @action.bound
     updateMatcher(index: number, ...matchers: Matcher[]) {
-        this.props.rule.matchers.splice(index, 1,
-            ...matchers as any[] // Matchers must be valid, as availableMatchers is type-based
-        );
+        // TS struggles with complex union types here, so we cast more generally:
+        const rule = this.props.rule as { matchers: Matcher[] };
+        rule.matchers.splice(index, 1, ...matchers);
     }
 
     @action.bound
     deleteMatcher(matcher: Matcher) {
-        const { rule } = this.props;
+        // TS struggles with complex union types here, so we cast more generally:
+        const rule = this.props.rule as { matchers: Matcher[] };
         rule.matchers = rule.matchers.filter(m => m !== matcher);
     }
 
     @action.bound
     updateHandler(handler: Handler) {
+        // TS struggles with complex union types here, so we cast more generally:
+        const rule = this.props.rule as
+            | { handler: Handler }
+            | { steps: HandlerStep[] };
+
         const { isPaidUser } = this.props.accountStore!;
 
         if (isPaidUser || !isPaidHandler(handler)) {
             this.demoHandler = undefined;
-            this.props.rule.handler = handler;
+            if ('handler' in rule) {
+                rule.handler = handler;
+            } else {
+                rule.steps[0] = handler as HandlerStep;
+            }
         } else {
             this.demoHandler = handler;
         }

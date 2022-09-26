@@ -50,6 +50,11 @@ import {
     IpfsPinsResultHandler,
     IpfsPinLsResultHandler
 } from '../../model/rules/definitions/ipfs-rule-definitions';
+import {
+    DynamicProxyStepDefinition,
+    EchoStepDefinition,
+    CloseStepDefinition
+} from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select } from '../common/inputs';
 
@@ -98,12 +103,14 @@ const instantiateHandler = (
             return new TimeoutHandler();
         case 'close-connection':
             return new CloseConnectionHandler();
+
         case 'ws-echo':
             return new EchoWebSocketHandlerDefinition();
         case 'ws-reject':
             return new RejectWebSocketHandlerDefinition(400);
         case 'ws-listen':
             return new ListenWebSocketHandlerDefinition();
+
         case 'eth-call-result':
             return new EthereumCallResultHandler([], []);
         case 'eth-number-result':
@@ -116,6 +123,7 @@ const instantiateHandler = (
             return new EthereumBlockResultHandler(undefined);
         case 'eth-error':
             return new EthereumErrorHandler('Unknown Error');
+
         case 'ipfs-cat-text':
             return new IpfsCatTextHandler('');
         case 'ipfs-cat-file':
@@ -130,6 +138,14 @@ const instantiateHandler = (
             return new IpfsPinsResultHandler();
         case 'ipfs-pin-ls-result':
             return new IpfsPinLsResultHandler();
+
+        case 'rtc-dynamic-proxy':
+            return new DynamicProxyStepDefinition();
+        case 'echo-rtc':
+            return new EchoStepDefinition();
+        case 'close-rtc-connection':
+            return new CloseStepDefinition();
+
         default:
             throw new UnreachableCheck(handlerKey);
     }

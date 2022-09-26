@@ -38,11 +38,18 @@ import {
     IpfsInteractions,
     IpfsArgDescription
 } from '../../model/rules/definitions/ipfs-rule-definitions';
+import {
+    HasDataChannelMatcherDefinition,
+    HasVideoTrackMatcherDefinition,
+    HasAudioTrackMatcherDefinition,
+    HasMediaTrackMatcherDefinition
+} from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select, TextInput } from '../common/inputs';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
 import { EditableHeaders } from '../common/editable-headers';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { summarizeMatcherClass } from '../../model/rules/rule-descriptions';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -83,6 +90,7 @@ export function InitialMatcherConfiguration(props: {
         case 'ws-wildcard':
         case 'default-wildcard':
         case 'default-ws-wildcard':
+        case 'rtc-wildcard':
         case 'GET':
         case 'POST':
         case 'PUT':
@@ -104,6 +112,7 @@ export function AdditionalMatcherConfiguration(props:
     }
 ) {
     const { matcher } = props as { matcher?: Matcher };
+    const { matcherClass } = props as { matcherClass?: MatcherClass };
 
     let matcherKey = ('matcher' in props
         ? getRulePartKey(props.matcher)
@@ -161,6 +170,17 @@ export function AdditionalMatcherConfiguration(props:
             return <EthParamsMatcherConfig {...configProps} />;
         case 'ipfs-arg':
             return <IpfsArgMatcherConfig {...configProps} />;
+
+        case 'has-rtc-data-channel':
+        case 'has-rtc-video-track':
+        case 'has-rtc-audio-track':
+        case 'has-rtc-media-track':
+            return <RTCContentMatcherConfig
+                matcherKey={matcherKey}
+                matcherClass={matcherClass as any} // Any because it must be the class for this key
+                {...configProps}
+            />;
+
         default:
             throw new UnreachableCheck(matcherKey);
     }
@@ -1135,5 +1155,37 @@ class EthParamsMatcherConfig extends MatcherConfig<EthereumParamsMatcher> {
             this.error = asError(e);
             this.props.onInvalidState();
         }
+    }
+}
+
+@observer
+class RTCContentMatcherConfig<T extends
+    | typeof HasDataChannelMatcherDefinition
+    | typeof HasVideoTrackMatcherDefinition
+    | typeof HasAudioTrackMatcherDefinition
+    | typeof HasMediaTrackMatcherDefinition
+> extends MatcherConfig<InstanceType<T>, { matcherClass?: T, matcherKey: InstanceType<T>['type'] }> {
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const { matcher, matcherClass, onChange } = this.props;
+
+            // Instantiate the matcher as-is, showing nothing.
+            if (!matcher && matcherClass) onChange(new matcherClass() as InstanceType<T>);
+        }));
+    }
+
+    render() {
+        const { matcherIndex, matcherKey } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } {
+                        summarizeMatcherClass(matcherKey)
+                    }
+                </ConfigLabel>
+            }
+        </MatcherConfigContainer>;
     }
 }

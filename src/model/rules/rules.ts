@@ -7,7 +7,8 @@ import {
     FROM_FILE_HANDLER_SERVER_RANGE,
     PASSTHROUGH_TRANSFORMS_RANGE,
     WEBSOCKET_MESSAGING_RULES_SUPPORTED,
-    JSONRPC_RESPONSE_RULE_SUPPORTED
+    JSONRPC_RESPONSE_RULE_SUPPORTED,
+    RTC_RULES_SUPPORTED
 } from '../../services/service-versions';
 
 import {
@@ -46,9 +47,15 @@ import {
     IpfsMatcherLookup,
     IpfsInitialMatcherClasses,
     IpfsHandlerLookup,
-    IpfsArgMatcher,
     IpfsInteractionMatcher
 } from './definitions/ipfs-rule-definitions';
+
+import {
+    RTCMatcherLookup,
+    RTCStepLookup,
+    RTCMockRule,
+    RTCInitialMatcherClasses
+} from './definitions/rtc-rule-definitions';
 
 /// --- Part-generic logic ---
 
@@ -72,7 +79,9 @@ const PartVersionRequirements: {
     'raw-body-includes': BODY_MATCHING_RANGE,
     'json-body': BODY_MATCHING_RANGE,
     'json-body-matching': BODY_MATCHING_RANGE,
+
     'eth-method': JSONRPC_RESPONSE_RULE_SUPPORTED, // Usable without, but a bit pointless
+    'rtc-wildcard': RTC_RULES_SUPPORTED,
 
     // Handlers:
     'file': FROM_FILE_HANDLER_SERVER_RANGE,
@@ -98,7 +107,8 @@ const MatchersByType = {
     'http': HttpMatcherLookup,
     'websocket': WebSocketMatcherLookup,
     'ethereum': EthereumMatcherLookup,
-    'ipfs': IpfsMatcherLookup
+    'ipfs': IpfsMatcherLookup,
+    'webrtc': RTCMatcherLookup
 };
 
 // Define maps to/from matcher keys to matcher classes, and
@@ -109,7 +119,8 @@ export const MatcherLookup = {
     ...MatchersByType['http'],
     ...MatchersByType['websocket'],
     ...MatchersByType['ethereum'],
-    ...MatchersByType['ipfs']
+    ...MatchersByType['ipfs'],
+    ...MatchersByType['webrtc']
 };
 
 // This const isn't used, but the assignment conveniently and clearly checks if
@@ -143,7 +154,8 @@ export const HandlersByType = {
     'http': HttpHandlerLookup,
     'websocket': WebSocketHandlerLookup,
     'ethereum': EthereumHandlerLookup,
-    'ipfs': IpfsHandlerLookup
+    'ipfs': IpfsHandlerLookup,
+    'webrtc': RTCStepLookup
 };
 
 // Define maps to/from handler keys to handler classes, and
@@ -154,7 +166,8 @@ export const HandlerLookup = {
     ...HandlersByType['http'],
     ...HandlersByType['websocket'],
     ...HandlersByType['ethereum'],
-    ...HandlersByType['ipfs']
+    ...HandlersByType['ipfs'],
+    ...HandlersByType['webrtc']
 };
 
 // This const isn't used, but the assignment conveniently and clearly checks if
@@ -167,6 +180,14 @@ const __HANDLER_KEY_CHECK__: {
 export type HandlerClassKey = keyof typeof HandlerLookup;
 export type HandlerClass = typeof HandlerLookup[HandlerClassKey];
 export type Handler = InstanceType<HandlerClass>;
+
+// Steps are a subset of handlers which are allowed to appear in 'steps' arrays on rules, for rule types
+// that support defining a series of steps to execute.
+const HandlerSteps = [
+    ...Object.values(RTCStepLookup)
+];
+export type HandlerStepClass = typeof HandlerSteps[number];
+export type HandlerStep = InstanceType<HandlerStepClass>;
 
 export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
     Object.entries(HandlerLookup)
@@ -196,7 +217,8 @@ const InitialMatcherClasses = [
     ...HttpInitialMatcherClasses,
     ...WebSocketInitialMatcherClasses,
     ...EthereumInitialMatcherClasses,
-    ...IpfsInitialMatcherClasses
+    ...IpfsInitialMatcherClasses,
+    ...RTCInitialMatcherClasses
 ];
 
 export const getInitialMatchers = () => InitialMatcherClasses.filter((matcherCls) => {
@@ -221,6 +243,8 @@ export const getRuleTypeFromInitialMatcher = (matcher: InitialMatcher): RuleType
         return 'ethereum';
     } else if (IpfsInitialMatcherClasses.includes(matcherClass)) {
         return 'ipfs';
+    } else if (RTCInitialMatcherClasses.includes(matcherClass)) {
+        return 'webrtc';
     } else {
         throw new Error(`Unknown type for initial matcher class: ${matcherClass.name}`);
     }
@@ -239,7 +263,11 @@ const HiddenMatchers = [
     'port',
     'protocol',
     'form-data',
-    'cookie'
+    'cookie',
+
+    'rtc-page-hostname',
+    'rtc-page-regex',
+    'rtc-user-agent-regex'
 ] as const;
 
 type HiddenMatcherKey = typeof HiddenMatchers[number];
@@ -265,8 +293,18 @@ export const isHiddenMatcherKey = (key: MatcherClassKey) =>
 
 const HiddenHandlers = [
     'json-rpc-response', // Only used internally, by Ethereum rules
+    'rtc-peer-proxy', // Not usable interactively
     'callback',
-    'stream'
+    'stream',
+
+    // Not yet implemented:
+    'wait-for-duration',
+    'wait-for-rtc-data-channel',
+    'wait-for-rtc-track',
+    'wait-for-rtc-media',
+    'wait-for-rtc-message',
+    'create-rtc-data-channel',
+    'send-rtc-data-message'
 ] as const;
 
 const MatcherLimitedHandlers: {
@@ -378,7 +416,8 @@ export type HtkMockRule =
     | HttpMockRule
     | WebSocketMockRule
     | EthereumMockRule
-    | IpfsMockRule;
+    | IpfsMockRule
+    | RTCMockRule;
 
 export type RuleType = HtkMockRule['type'];
 

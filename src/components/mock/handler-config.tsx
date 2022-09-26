@@ -55,6 +55,11 @@ import {
     IpfsPinsResultHandler,
     IpfsPinLsResultHandler
 } from '../../model/rules/definitions/ipfs-rule-definitions';
+import {
+    DynamicProxyStepDefinition,
+    EchoStepDefinition,
+    CloseStepDefinition
+} from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
@@ -170,6 +175,14 @@ export function HandlerConfiguration(props: {
             return <IpfsPinsResultHandlerConfig {...configProps} />;
         case 'ipfs-pin-ls-result':
             return <IpfsPinLsResultHandlerConfig {...configProps} />;
+
+        case 'rtc-dynamic-proxy':
+            return <PassThroughHandlerConfig {...configProps} />;
+        case 'echo-rtc':
+            return <RTCEchoHandlerConfig {...configProps} />;
+        case 'close-rtc-connection':
+            return <RTCCloseHandlerConfig {...configProps} />;
+
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -1165,7 +1178,11 @@ const JsonUpdateTransformConfig = (props: {
 };
 
 @observer
-class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler | WebSocketPassThroughHandler> {
+class PassThroughHandlerConfig extends HandlerConfig<
+    | PassThroughHandler
+    | WebSocketPassThroughHandler
+    | DynamicProxyStepDefinition
+> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1174,8 +1191,14 @@ class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler | WebSoc
                         ? 'requests'
                     : this.props.ruleType === 'websocket'
                         ? 'WebSockets'
+                    : this.props.ruleType === 'webrtc'
+                        ? 'data and media'
                     : (() => { throw new UnreachableCheck(this.props.ruleType); })()
-                } will be transparently passed through to the upstream target host.
+                } will be transparently passed through to the upstream {
+                    this.props.ruleType === 'webrtc'
+                        ? 'RTC peer, once one is connected'
+                        : 'target host'
+                }.
             </ConfigExplanation>
         </ConfigContainer>;
     }
@@ -1243,6 +1266,8 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
                         ? 'request'
                     : this.props.ruleType === 'websocket'
                         ? 'WebSocket'
+                    : this.props.ruleType === 'webrtc'
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
                     : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } is received, the server will keep the connection open but do nothing.
                 With no data or response, most clients will time out and abort the
@@ -1262,6 +1287,8 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
                         ? 'request'
                     : this.props.ruleType === 'websocket'
                         ? 'WebSocket'
+                    : this.props.ruleType === 'webrtc'
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
                     : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } is received, the connection will be closed, with no response.
             </ConfigExplanation>
@@ -2046,6 +2073,40 @@ class IpfsPinLsResultHandlerConfig extends HandlerConfig<IpfsPinLsResultHandler>
                 this.resultPairs.map(({ key, value }) => ({ Type: key, Cid: value }))
             )
         );
+    }
+
+}
+
+@observer
+class RTCEchoHandlerConfig extends HandlerConfig<EchoStepDefinition> {
+
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                After the connection is opened, all sent data messages and all
+                streamed video and audio media will be echoed back to the intercepted
+                peer wherever possible, until the connection is closed. No data will be
+                forwarded to any connected remote peer.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                Note that in some cases echoing isn't possible - e.g. if the client opens
+                a one-way video stream - in which case that data will simply be dropped.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+}
+
+@observer
+class RTCCloseHandlerConfig extends HandlerConfig<CloseStepDefinition> {
+
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                After the connection is opened, it will be immediately closed again,
+                with no response and no data forwarded to any connected remote peer.
+            </ConfigExplanation>
+        </ConfigContainer>;
     }
 
 }

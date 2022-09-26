@@ -68,3 +68,4 @@ export const RAW_BODY_SUPPORTED = '^1.9.0';
 export const WEBSOCKET_MESSAGING_RULES_SUPPORTED = '^1.9.0';
 export const WEBRTC_GLOBALLY_ENABLED = '^1.10.3';
 export const JSONRPC_RESPONSE_RULE_SUPPORTED = '^1.11.0';
+export const RTC_RULES_SUPPORTED = '^1.11.0';

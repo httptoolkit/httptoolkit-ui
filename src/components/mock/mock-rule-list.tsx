@@ -18,7 +18,7 @@ import {
     getItemAtPath,
     findItem,
 } from '../../model/rules/rules-structure';
-import { Handler, HtkMockRule, RuleType } from '../../model/rules/rules';
+import { Handler, HandlerStep, HtkMockRule, RuleType } from '../../model/rules/rules';
 
 import { GroupHeader, GroupTail } from './mock-rule-group';
 import { AddRuleRow, RuleRow } from './mock-rule-row';
@@ -113,7 +113,7 @@ export class MockRuleList extends React.Component<{
     deleteItem: (path: ItemPath) => void,
     toggleRuleCollapsed: (id: string) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
-    getRuleDefaultHandler: (ruleType: RuleType) => Handler,
+    getRuleDefaultHandler: (ruleType: RuleType) => Handler | HandlerStep[],
 
     moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
     combineRulesAsGroup: (sourcePath: ItemPath, targetPath: ItemPath) => void,
@@ -272,7 +272,7 @@ function buildRuleRows(
     cloneItem: (path: ItemPath) => void,
     deleteItem: (path: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
-    getRuleDefaultHandler: (ruleType: RuleType) => Handler,
+    getRuleDefaultHandler: (ruleType: RuleType) => Handler | HandlerStep[],
 
     ruleGroup: HtkMockRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
