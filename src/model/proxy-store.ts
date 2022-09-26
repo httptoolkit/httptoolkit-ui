@@ -58,8 +58,8 @@ function startServer(
             // This generally means that some of our config is bad.
 
             if (e.message?.includes('unrecognized plugin: webrtc')) {
-                // We have webrtc enabled, but the server is old and doesn't support it.
-                // Skip that entirely then:
+                // We have webrtc enabled, and the server is new enough to recognize plugins and try to
+                // start them, but too old to actually support the WebRTC plugin. Skip that entirely then:
                 config = {
                     ...config,
                     webrtc: undefined
@@ -184,8 +184,6 @@ export class ProxyStore {
     }
 
     private startIntercepting = flow(function* (this: ProxyStore) {
-        const webRTCEnabled = this.accountStore.featureFlags.includes('webrtc');
-
         this.adminClient = new PluggableAdmin.AdminClient<{
             http: any,
             webrtc: any
@@ -207,9 +205,7 @@ export class ProxyStore {
                 },
                 port: this.portConfig
             },
-            ...(webRTCEnabled ? {
-                webrtc: {}
-            } : {})
+            webrtc: {}
         });
 
         this.mockttpRequestBuilder = new MockttpPluggableAdmin.MockttpAdminRequestBuilder(
