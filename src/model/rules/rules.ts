@@ -434,3 +434,4 @@ const matchRule = <T extends RuleType>(
 export const isHttpCompatibleType = matchRuleType('http', 'ethereum', 'ipfs');
 export const isHttpBasedRule = matchRule(isHttpCompatibleType);
 export const isWebSocketRule = matchRule(matchRuleType('websocket'));
+export const isRTCRule = matchRule(matchRuleType('webrtc'));

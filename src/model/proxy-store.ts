@@ -38,7 +38,7 @@ import { isValidPort } from './network';
 import { serverVersion } from '../services/service-versions';
 
 type HtkAdminClient =
-    // WebRTC is initially behind a feature flag:
+    // WebRTC is only supported for new servers:
     | PluggableAdmin.AdminClient<{ http: MockttpPluggableAdmin.MockttpAdminPlugin, webrtc: MockRTC.MockRTCAdminPlugin }>
     | PluggableAdmin.AdminClient<{ http: MockttpPluggableAdmin.MockttpAdminPlugin }>;
 
@@ -292,6 +292,14 @@ export class ProxyStore {
 
         return this.adminClient.sendQuery(
             this.mockttpRequestBuilder.buildAddWebSocketRulesQuery(rules, true, adminStream)
+        );
+    }
+
+    setRTCRules = (...rules: MockRTC.MockRTCRuleDefinition[]) => {
+        const { adminStream } = this.adminClient;
+
+        return this.adminClient.sendQuery(
+            this.mockRTCRequestBuilder.buildSetRulesQuery(rules, adminStream)
         );
     }
 
