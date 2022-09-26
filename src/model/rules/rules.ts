@@ -402,11 +402,19 @@ const PaidHandlerClasses: HandlerClass[] = [
     ListenWebSocketHandlerDefinition
 ];
 
-export const isPaidHandler = (handler: Handler) => {
+export const isPaidHandler = (
+    ruleType: RuleType,
+    handler: Handler
+) => {
+    if (ruleType !== 'http' && ruleType !== 'websocket') return false;
     return _.some(PaidHandlerClasses, (cls) => handler instanceof cls);
 }
 
-export const isPaidHandlerClass = (handlerClass: HandlerClass) => {
+export const isPaidHandlerClass = (
+    ruleType: RuleType,
+    handlerClass: HandlerClass
+) => {
+    if (ruleType !== 'http' && ruleType !== 'websocket') return false;
     return PaidHandlerClasses.includes(handlerClass);
 }
 

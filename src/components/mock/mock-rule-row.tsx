@@ -352,7 +352,7 @@ export class RuleRow extends React.Component<{
 
         // Handlers are in demo mode (uneditable, behind a 'Get Pro' overlay), either if the rule
         // has a handler you can't use, or you've picked a Pro handler and its been put in demoHandler
-        const isHandlerDemo = !isPaidUser && (!!this.demoHandler || isPaidHandler(realRuleHandler));
+        const isHandlerDemo = !isPaidUser && (!!this.demoHandler || isPaidHandler(ruleType, realRuleHandler));
 
         const ruleHandler = isHandlerDemo
             ? (this.demoHandler || realRuleHandler)
@@ -444,6 +444,7 @@ export class RuleRow extends React.Component<{
                             <div>Then:</div>
                             <HandlerSelector
                                 value={ruleHandler}
+                                ruleType={ruleType}
                                 onChange={this.updateHandler}
                                 availableHandlers={availableHandlers}
                             />
@@ -566,7 +567,7 @@ export class RuleRow extends React.Component<{
 
         const { isPaidUser } = this.props.accountStore!;
 
-        if (isPaidUser || !isPaidHandler(handler)) {
+        if (isPaidUser || !isPaidHandler(this.props.rule.type, handler)) {
             this.demoHandler = undefined;
             if ('handler' in rule) {
                 rule.handler = handler;

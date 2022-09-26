@@ -13,6 +13,7 @@ import {
     AvailableHandlerKey,
     HandlerClassKeyLookup,
     isPaidHandlerClass,
+    RuleType,
 } from '../../model/rules/rules';
 import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
@@ -154,13 +155,14 @@ const instantiateHandler = (
 export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p: {
     rulesStore?: RulesStore,
     accountStore?: AccountStore,
+    ruleType: RuleType,
     availableHandlers: Array<HandlerClass>,
     value: Handler,
     onChange: (handler: Handler) => void
 }) => {
     let [ allowedHandlers, needProHandlers ] = _.partition(
         p.availableHandlers,
-        (handlerClass) => p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
+        (handlerClass) => p.accountStore!.isPaidUser || !isPaidHandlerClass(p.ruleType, handlerClass)
     );
 
     // Pull the breakpoint handlers to the top, since they're kind of separate
