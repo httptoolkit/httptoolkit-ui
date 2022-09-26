@@ -258,7 +258,10 @@ export const EthereumHandlerLookup = {
     'passthrough': HttpHandlerLookup['passthrough'],
     'forward-to-host': HttpHandlerLookup['forward-to-host'],
     'timeout': HttpHandlerLookup['timeout'],
-    'close-connection': HttpHandlerLookup['close-connection']
+    'close-connection': HttpHandlerLookup['close-connection'],
+    'request-breakpoint': HttpHandlerLookup['request-breakpoint'],
+    'response-breakpoint': HttpHandlerLookup['response-breakpoint'],
+    'request-and-response-breakpoint': HttpHandlerLookup['request-and-response-breakpoint']
 };
 
 type EthereumMatcherClass = typeof EthereumMatcherLookup[keyof typeof EthereumMatcherLookup];
