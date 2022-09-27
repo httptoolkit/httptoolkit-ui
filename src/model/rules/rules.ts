@@ -183,10 +183,10 @@ export type Handler = InstanceType<HandlerClass>;
 
 // Steps are a subset of handlers which are allowed to appear in 'steps' arrays on rules, for rule types
 // that support defining a series of steps to execute.
-const HandlerSteps = [
-    ...Object.values(RTCStepLookup)
-];
-export type HandlerStepClass = typeof HandlerSteps[number];
+const HandlerSteps = {
+    ...RTCStepLookup
+};
+export type HandlerStepClass = typeof HandlerSteps[keyof typeof HandlerSteps];
 export type HandlerStep = InstanceType<HandlerStepClass>;
 
 export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
@@ -389,6 +389,22 @@ export const getAvailableHandlers = (
             return serverSupports(PartVersionRequirements[handlerKey]);
         });
 };
+
+const FinalHandlerSteps = [
+    'echo-rtc',
+    'rtc-peer-proxy',
+    'rtc-dynamic-proxy',
+    'close-rtc-connection'
+] as const;
+
+// Handlers are final if a) they're not steps, just normal handlers, or b) if they are steps, but
+// they're final steps that preclude any further interactions (e.g. closing a connection).
+export const isFinalHandler = (handler: Handler) => {
+    const handlerKey = getRulePartKey(handler) as any; // Any -> can't includes() const arrays otherwise
+
+    return !Object.keys(HandlerSteps).includes(handlerKey) ||
+        FinalHandlerSteps.includes(handlerKey);
+}
 
 const PaidHandlerClasses: HandlerClass[] = [
     StaticResponseHandler,
