@@ -58,7 +58,8 @@ import {
 import {
     DynamicProxyStepDefinition,
     EchoStepDefinition,
-    CloseStepDefinition
+    CloseStepDefinition,
+    WaitForMediaStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -182,6 +183,8 @@ export function HandlerConfiguration(props: {
             return <RTCEchoHandlerConfig {...configProps} />;
         case 'close-rtc-connection':
             return <RTCCloseHandlerConfig {...configProps} />;
+        case 'wait-for-rtc-media':
+            return <RTCWaitForMediaConfig {...configProps} />;
 
         default:
             throw new UnreachableCheck(handlerKey);
@@ -2107,6 +2110,19 @@ class RTCCloseHandlerConfig extends HandlerConfig<CloseStepDefinition> {
                 with no response and no data forwarded to any connected remote peer.
             </ConfigExplanation>
         </ConfigContainer>;
+    }
+
+}
+
+@observer
+class RTCWaitForMediaConfig extends HandlerConfig<WaitForMediaStepDefinition> {
+
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                Wait until the next WebRTC media data is sent by the client.
+            </ConfigExplanation>
+        </ConfigContainer>
     }
 
 }

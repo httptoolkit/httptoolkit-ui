@@ -301,7 +301,6 @@ const HiddenHandlers = [
     'wait-for-duration',
     'wait-for-rtc-data-channel',
     'wait-for-rtc-track',
-    'wait-for-rtc-media',
     'wait-for-rtc-message',
     'create-rtc-data-channel',
     'send-rtc-data-message'
@@ -366,7 +365,7 @@ const MatcherLimitedHandlers: {
 
 type HiddenHandlerKey = typeof HiddenHandlers[number];
 export type AvailableHandlerKey = Exclude<HandlerClassKey, HiddenHandlerKey>;
-type AvailableHandler = typeof HandlerLookup[AvailableHandlerKey];
+export type AvailableHandler = typeof HandlerLookup[AvailableHandlerKey];
 
 export const getAvailableHandlers = (
     ruleType: RuleType,
@@ -459,3 +458,5 @@ export const isHttpCompatibleType = matchRuleType('http', 'ethereum', 'ipfs');
 export const isHttpBasedRule = matchRule(isHttpCompatibleType);
 export const isWebSocketRule = matchRule(matchRuleType('websocket'));
 export const isRTCRule = matchRule(matchRuleType('webrtc'));
+
+export const isStepPoweredRule = isRTCRule;

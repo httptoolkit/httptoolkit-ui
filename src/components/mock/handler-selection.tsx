@@ -54,7 +54,8 @@ import {
 import {
     DynamicProxyStepDefinition,
     EchoStepDefinition,
-    CloseStepDefinition
+    CloseStepDefinition,
+    WaitForMediaStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -74,7 +75,7 @@ const HandlerOptions = (p: { handlers: Array<HandlerClass> }) => <>{
 }</>;
 
 const HandlerSelect = styled(Select)`
-    margin-top: 20px;
+    margin-top: 10px;
 `;
 
 const instantiateHandler = (
@@ -146,6 +147,8 @@ const instantiateHandler = (
             return new EchoStepDefinition();
         case 'close-rtc-connection':
             return new CloseStepDefinition();
+        case 'wait-for-rtc-media':
+            return new WaitForMediaStepDefinition();
 
         default:
             throw new UnreachableCheck(handlerKey);

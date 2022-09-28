@@ -93,9 +93,9 @@ export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): Http
 export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketMockRule['handler'];
 export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumMockRule['handler'];
 export function getRuleDefaultHandler(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsMockRule['handler'];
-export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCMockRule['steps'];
-export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler | HandlerStep[];
-export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler | HandlerStep[] {
+export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCMockRule['steps'][0];
+export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
+export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
     switch (type) {
         case 'http':
             return new HttpRule.PassThroughHandler(ruleStore);
@@ -106,7 +106,7 @@ export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Ha
         case 'ipfs':
             return new HttpRule.PassThroughHandler(ruleStore);
         case 'webrtc':
-           return [new RtcRule.DynamicProxyStepDefinition()] as RtcRule.RTCStep[];
+           return new RtcRule.DynamicProxyStepDefinition();
     }
 };
 

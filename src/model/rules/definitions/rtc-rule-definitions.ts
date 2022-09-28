@@ -49,11 +49,13 @@ export const RTCInitialMatcherClasses = [
 export const {
     DynamicProxyStepDefinition,
     EchoStepDefinition,
-    CloseStepDefinition
+    CloseStepDefinition,
+    WaitForMediaStepDefinition
 } = HandlerStepDefinitions;
 export type DynamicProxyStepDefinition = HandlerStepDefinitions.DynamicProxyStepDefinition;
 export type EchoStepDefinition = HandlerStepDefinitions.EchoStepDefinition;
 export type CloseStepDefinition = HandlerStepDefinitions.CloseStepDefinition;
+export type WaitForMediaStepDefinition = HandlerStepDefinitions.WaitForMediaStepDefinition;
 
 export const RTCStepLookup = {
     ...HandlerStepDefinitions.StepDefinitionLookup
