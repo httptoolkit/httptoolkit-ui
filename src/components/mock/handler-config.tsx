@@ -217,6 +217,11 @@ const ConfigSelect = styled(Select)`
     width: auto;
 `;
 
+const WideTextInput = styled(TextInput)`
+    width: 100%;
+    box-sizing: border-box;
+`;
+
 const BodyHeader = styled.div`
     display: flex;
     flex-direction: row;
@@ -1475,7 +1480,7 @@ class EthNumberResultHandlerConfig extends HandlerConfig<EthereumNumberResultHan
         return <ConfigContainer>
             <SectionLabel>Return value</SectionLabel>
 
-            <TextInput
+            <WideTextInput
                 type='number'
                 min={0}
                 value={value}
@@ -1527,7 +1532,7 @@ class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler
         return <ConfigContainer>
             <SectionLabel>Return hash value</SectionLabel>
 
-            <TextInput
+            <WideTextInput
                 type='text'
                 value={value}
                 onChange={this.onChange}
@@ -1732,28 +1737,28 @@ class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
 
         return <ConfigContainer>
             <SectionLabel>Error Message</SectionLabel>
-            <TextInput
+            <WideTextInput
                 type='text'
                 value={errorMessage}
                 onChange={this.onChangeMessage}
             />
 
             <SectionLabel>Error Code</SectionLabel>
-            <TextInput
+            <WideTextInput
                 type='number'
                 value={errorCode}
                 onChange={this.onChangeCode}
             />
 
             <SectionLabel>Error Data</SectionLabel>
-            <TextInput
+            <WideTextInput
                 type='text'
                 value={errorData}
                 onChange={this.onChangeData}
             />
 
             <SectionLabel>Error Name</SectionLabel>
-            <TextInput
+            <WideTextInput
                 type='text'
                 value={errorName || ''}
                 onChange={this.onChangeName}
@@ -2195,7 +2200,7 @@ class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition
 
         return <ConfigContainer>
             <SectionLabel>Channel Label</SectionLabel>
-            <TextInput
+            <WideTextInput
                 placeholder='The channel to wait for, or nothing to wait for any channel'
                 value={channelLabel ?? ''}
                 onChange={this.onChange}
