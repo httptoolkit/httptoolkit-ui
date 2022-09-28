@@ -51,13 +51,15 @@ export const {
     EchoStepDefinition,
     CloseStepDefinition,
     WaitForMediaStepDefinition,
-    WaitForDurationStepDefinition
+    WaitForDurationStepDefinition,
+    WaitForChannelStepDefinition
 } = HandlerStepDefinitions;
 export type DynamicProxyStepDefinition = HandlerStepDefinitions.DynamicProxyStepDefinition;
 export type EchoStepDefinition = HandlerStepDefinitions.EchoStepDefinition;
 export type CloseStepDefinition = HandlerStepDefinitions.CloseStepDefinition;
 export type WaitForMediaStepDefinition = HandlerStepDefinitions.WaitForMediaStepDefinition;
 export type WaitForDurationStepDefinition = HandlerStepDefinitions.WaitForDurationStepDefinition;
+export type WaitForChannelStepDefinition = HandlerStepDefinitions.WaitForChannelStepDefinition;
 
 export const RTCStepLookup = {
     ...HandlerStepDefinitions.StepDefinitionLookup

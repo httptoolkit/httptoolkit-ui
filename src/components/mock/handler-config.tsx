@@ -60,7 +60,8 @@ import {
     EchoStepDefinition,
     CloseStepDefinition,
     WaitForMediaStepDefinition,
-    WaitForDurationStepDefinition
+    WaitForDurationStepDefinition,
+    WaitForChannelStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -192,6 +193,8 @@ export function HandlerConfiguration(props: {
             return <RTCWaitForMediaConfig {...configProps} />;
         case 'wait-for-duration':
             return <RTCWaitForDurationConfig {...configProps} />;
+        case 'wait-for-rtc-data-channel':
+            return <RTCWaitForChannelConfig {...configProps} />;
 
         default:
             throw new UnreachableCheck(handlerKey);
@@ -2180,6 +2183,39 @@ class RTCWaitForDurationConfig extends HandlerConfig<WaitForDurationStepDefiniti
 
         this.duration = newValue;
         this.props.onChange(new WaitForDurationStepDefinition(newValue || 0));
+    }
+
+}
+
+@observer
+class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition> {
+
+    render() {
+        const { channelLabel } = this.props.handler;
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <TextInput
+                placeholder='The channel to wait for, or nothing to wait for any channel'
+                value={channelLabel ?? ''}
+                onChange={this.onChange}
+            />
+            <ConfigExplanation>
+                Wait until the client opens a WebRTC data channel {
+                    channelLabel
+                        ? `with the label "${channelLabel}"`
+                        : 'with any label'
+                }.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.props.onChange(
+            new WaitForChannelStepDefinition(inputValue || '')
+        );
     }
 
 }
