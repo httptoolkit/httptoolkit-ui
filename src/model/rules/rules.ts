@@ -299,7 +299,6 @@ const HiddenHandlers = [
 
     // Not yet implemented:
     'wait-for-rtc-track',
-    'wait-for-rtc-message',
     'create-rtc-data-channel',
     'send-rtc-data-message'
 ] as const;

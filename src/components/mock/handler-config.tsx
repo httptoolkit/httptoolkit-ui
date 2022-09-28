@@ -61,7 +61,8 @@ import {
     CloseStepDefinition,
     WaitForMediaStepDefinition,
     WaitForDurationStepDefinition,
-    WaitForChannelStepDefinition
+    WaitForChannelStepDefinition,
+    WaitForMessageStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -195,6 +196,8 @@ export function HandlerConfiguration(props: {
             return <RTCWaitForDurationConfig {...configProps} />;
         case 'wait-for-rtc-data-channel':
             return <RTCWaitForChannelConfig {...configProps} />;
+        case 'wait-for-rtc-message':
+            return <RTCWaitForDataMessaageConfig {...configProps} />;
 
         default:
             throw new UnreachableCheck(handlerKey);
@@ -2220,6 +2223,39 @@ class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition
         const inputValue = event.target.value;
         this.props.onChange(
             new WaitForChannelStepDefinition(inputValue || '')
+        );
+    }
+
+}
+
+@observer
+class RTCWaitForDataMessaageConfig extends HandlerConfig<WaitForMessageStepDefinition> {
+
+    render() {
+        const { channelLabel } = this.props.handler;
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='The channel to watch for messages, or nothing to watch every channel'
+                value={channelLabel ?? ''}
+                onChange={this.onChange}
+            />
+            <ConfigExplanation>
+                Wait until the client sends a WebRTC data message {
+                    channelLabel
+                        ? `on a channel with the label "${channelLabel}"`
+                        : 'on any data channel'
+                }.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.props.onChange(
+            new WaitForMessageStepDefinition(inputValue || '')
         );
     }
 

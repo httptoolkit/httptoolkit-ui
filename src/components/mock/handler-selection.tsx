@@ -57,7 +57,8 @@ import {
     CloseStepDefinition,
     WaitForMediaStepDefinition,
     WaitForDurationStepDefinition,
-    WaitForChannelStepDefinition
+    WaitForChannelStepDefinition,
+    WaitForMessageStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -157,6 +158,8 @@ const instantiateHandler = (
             return new WaitForDurationStepDefinition(0);
         case 'wait-for-rtc-data-channel':
             return new WaitForChannelStepDefinition();
+        case 'wait-for-rtc-message':
+            return new WaitForMessageStepDefinition();
 
         default:
             throw new UnreachableCheck(handlerKey);
