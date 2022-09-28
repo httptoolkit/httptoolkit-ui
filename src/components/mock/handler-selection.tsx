@@ -55,7 +55,8 @@ import {
     DynamicProxyStepDefinition,
     EchoStepDefinition,
     CloseStepDefinition,
-    WaitForMediaStepDefinition
+    WaitForMediaStepDefinition,
+    WaitForDurationStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select } from '../common/inputs';
@@ -149,6 +150,8 @@ const instantiateHandler = (
             return new CloseStepDefinition();
         case 'wait-for-rtc-media':
             return new WaitForMediaStepDefinition();
+        case 'wait-for-duration':
+            return new WaitForDurationStepDefinition(0);
 
         default:
             throw new UnreachableCheck(handlerKey);

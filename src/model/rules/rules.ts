@@ -298,7 +298,6 @@ const HiddenHandlers = [
     'stream',
 
     // Not yet implemented:
-    'wait-for-duration',
     'wait-for-rtc-data-channel',
     'wait-for-rtc-track',
     'wait-for-rtc-message',

@@ -59,7 +59,8 @@ import {
     DynamicProxyStepDefinition,
     EchoStepDefinition,
     CloseStepDefinition,
-    WaitForMediaStepDefinition
+    WaitForMediaStepDefinition,
+    WaitForDurationStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -185,6 +186,8 @@ export function HandlerConfiguration(props: {
             return <RTCCloseHandlerConfig {...configProps} />;
         case 'wait-for-rtc-media':
             return <RTCWaitForMediaConfig {...configProps} />;
+        case 'wait-for-duration':
+            return <RTCWaitForDurationConfig {...configProps} />;
 
         default:
             throw new UnreachableCheck(handlerKey);
@@ -2123,6 +2126,53 @@ class RTCWaitForMediaConfig extends HandlerConfig<WaitForMediaStepDefinition> {
                 Wait until the next WebRTC media data is sent by the client.
             </ConfigExplanation>
         </ConfigContainer>
+    }
+
+}
+
+@observer
+class RTCWaitForDurationConfig extends HandlerConfig<WaitForDurationStepDefinition> {
+
+    @observable
+    duration: number | '' = this.props.handler.durationMs;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { durationMs } = this.props.handler;
+            runInAction(() => {
+                if (durationMs === 0 && this.duration === '') return; // Allows clearing the input, making it *implicitly* 0
+                this.duration = durationMs;
+            });
+        }));
+    }
+
+    render() {
+        const { duration } = this;
+
+        return <ConfigContainer>
+            Wait for <TextInput
+                type='number'
+                min='0'
+                placeholder='Duration (ms)'
+                value={duration}
+                onChange={this.onChange}
+            /> milliseconds.
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+
+        const newValue = inputValue === ''
+            ? 0
+            : parseInt(inputValue, 10);
+
+        if (_.isNaN(newValue)) return; // I.e. reject the edit
+
+        this.duration = newValue;
+        this.props.onChange(new WaitForDurationStepDefinition(newValue || 0));
     }
 
 }
