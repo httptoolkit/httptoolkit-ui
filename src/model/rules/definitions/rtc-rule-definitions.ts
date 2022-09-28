@@ -54,7 +54,8 @@ export const {
     WaitForDurationStepDefinition,
     WaitForChannelStepDefinition,
     WaitForMessageStepDefinition,
-    CreateChannelStepDefinition
+    CreateChannelStepDefinition,
+    SendStepDefinition
 } = HandlerStepDefinitions;
 export type DynamicProxyStepDefinition = HandlerStepDefinitions.DynamicProxyStepDefinition;
 export type EchoStepDefinition = HandlerStepDefinitions.EchoStepDefinition;
@@ -64,6 +65,7 @@ export type WaitForDurationStepDefinition = HandlerStepDefinitions.WaitForDurati
 export type WaitForChannelStepDefinition = HandlerStepDefinitions.WaitForChannelStepDefinition;
 export type WaitForMessageStepDefinition = HandlerStepDefinitions.WaitForMessageStepDefinition;
 export type CreateChannelStepDefinition = HandlerStepDefinitions.CreateChannelStepDefinition;
+export type SendStepDefinition = HandlerStepDefinitions.SendStepDefinition;
 
 export const RTCStepLookup = {
     ...HandlerStepDefinitions.StepDefinitionLookup

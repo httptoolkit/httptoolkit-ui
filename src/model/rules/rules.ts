@@ -296,10 +296,7 @@ const HiddenHandlers = [
     'rtc-peer-proxy', // Not usable interactively
     'callback',
     'stream',
-
-    // Not yet implemented:
-    'wait-for-rtc-track',
-    'send-rtc-data-message'
+    'wait-for-rtc-track' // Not super useful here I think
 ] as const;
 
 const MatcherLimitedHandlers: {

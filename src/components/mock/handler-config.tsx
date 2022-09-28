@@ -63,7 +63,8 @@ import {
     WaitForDurationStepDefinition,
     WaitForChannelStepDefinition,
     WaitForMessageStepDefinition,
-    CreateChannelStepDefinition
+    CreateChannelStepDefinition,
+    SendStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -201,6 +202,8 @@ export function HandlerConfiguration(props: {
             return <RTCWaitForDataMessaageConfig {...configProps} />;
         case 'create-rtc-data-channel':
             return <RTCCreateChannelStepConfig {...configProps} />;
+        case 'send-rtc-data-message':
+            return <RTCSendMessageStepConfig {...configProps} />;
 
         default:
             throw new UnreachableCheck(handlerKey);
@@ -2290,5 +2293,117 @@ class RTCCreateChannelStepConfig extends HandlerConfig<CreateChannelStepDefiniti
         const inputValue = event.target.value;
         this.props.onChange(new CreateChannelStepDefinition(inputValue));
     }
+
+}
+
+@observer
+class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
+
+    @observable
+    channelLabel: string | undefined = this.props.handler.channelLabel;
+
+    @observable
+    contentType: EditableContentType = 'text';
+
+    @observable
+    message = asBuffer(this.props.handler.message);
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { channelLabel, message } = this.props.handler;
+            runInAction(() => {
+                this.channelLabel = channelLabel;
+                this.message = asBuffer(message);
+            });
+        }));
+    }
+
+    @computed
+    private get textEncoding() {
+        // If we're handling text data, we want to show & edit it as UTF8.
+        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
+        return isProbablyUtf8(this.message)
+            ? 'utf8'
+            : 'binary';
+    }
+
+    render() {
+        const { channelLabel, message } = this;
+
+        const messageAsString = message.toString(this.textEncoding);
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='The channel to send the message to, or nothing to send on all open channels'
+                value={channelLabel ?? ''}
+                onChange={this.setChannelLabel}
+            />
+
+            <BodyHeader>
+                <SectionLabel>Message content</SectionLabel>
+                <FormatButton
+                    format={this.contentType}
+                    content={message}
+                    onFormatted={this.setMessage}
+                />
+                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                    <option value="text">Plain text</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                </ConfigSelect>
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language={this.contentType}
+                    value={messageAsString}
+                    onChange={this.setMessage}
+                />
+            </BodyContainer>
+
+            <ConfigExplanation>
+                Send {
+                    message.length === 0
+                        ? 'an empty'
+                        : 'the above'
+                } message on {
+                    channelLabel
+                        ? `any open channel with the label "${channelLabel}"`
+                        : 'every open data channel'
+                }.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    setContentType(event: React.ChangeEvent<HTMLSelectElement>) {
+        const value = event.target.value;
+        this.contentType = value as EditableContentType;
+    }
+
+    @action.bound
+    setChannelLabel(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.channelLabel = inputValue || undefined;
+        this.updateHandler();
+    }
+
+    @action.bound
+    setMessage(message: string) {
+        this.message = Buffer.from(message, this.textEncoding);
+        this.updateHandler();
+    }
+
+    updateHandler() {
+        this.props.onChange(
+            new SendStepDefinition(
+                this.channelLabel,
+                this.message
+            )
+        );
+    }
+
 
 }
