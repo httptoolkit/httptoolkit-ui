@@ -62,7 +62,8 @@ import {
     WaitForMediaStepDefinition,
     WaitForDurationStepDefinition,
     WaitForChannelStepDefinition,
-    WaitForMessageStepDefinition
+    WaitForMessageStepDefinition,
+    CreateChannelStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
@@ -198,6 +199,8 @@ export function HandlerConfiguration(props: {
             return <RTCWaitForChannelConfig {...configProps} />;
         case 'wait-for-rtc-message':
             return <RTCWaitForDataMessaageConfig {...configProps} />;
+        case 'create-rtc-data-channel':
+            return <RTCCreateChannelStepConfig {...configProps} />;
 
         default:
             throw new UnreachableCheck(handlerKey);
@@ -2257,6 +2260,35 @@ class RTCWaitForDataMessaageConfig extends HandlerConfig<WaitForMessageStepDefin
         this.props.onChange(
             new WaitForMessageStepDefinition(inputValue || '')
         );
+    }
+
+}
+
+@observer
+class RTCCreateChannelStepConfig extends HandlerConfig<CreateChannelStepDefinition> {
+
+    render() {
+        const { channelLabel } = this.props.handler;
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='A label for the channel that will be created'
+                value={channelLabel}
+                onChange={this.onChange}
+            />
+            <ConfigExplanation>
+                Create a data channel on the WebRTC connection labelled "{
+                    channelLabel
+                }".
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.props.onChange(new CreateChannelStepDefinition(inputValue));
     }
 
 }
