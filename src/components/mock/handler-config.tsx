@@ -2113,10 +2113,9 @@ class RTCEchoHandlerConfig extends HandlerConfig<EchoStepDefinition> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                After the connection is opened, all sent data messages and all
-                streamed video and audio media will be echoed back to the intercepted
-                peer wherever possible, until the connection is closed. No data will be
-                forwarded to any connected remote peer.
+                Echo all sent data messages and all streamed video and audio media
+                back to the intercepted peer wherever possible, until the connection is
+                closed. No data will be forwarded to any connected remote peer.
             </ConfigExplanation>
             <ConfigExplanation>
                 Note that in some cases echoing isn't possible - e.g. if the client opens
@@ -2133,8 +2132,8 @@ class RTCCloseHandlerConfig extends HandlerConfig<CloseStepDefinition> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                After the connection is opened, it will be immediately closed again,
-                with no response and no data forwarded to any connected remote peer.
+                Immediately close the WebRTC connection, with no further response and no
+                data forwarded to any connected remote peer.
             </ConfigExplanation>
         </ConfigContainer>;
     }
