@@ -94,6 +94,7 @@ abstract class HandlerConfig<
 > extends React.Component<HandlerConfigProps<H> & P> { }
 
 const ConfigContainer = styled.div`
+    margin-top: 10px;
     font-size: ${p => p.theme.textSize};
 `;
 
@@ -102,8 +103,11 @@ const ConfigExplanation = styled.p`
     line-height: 1.3;
     opacity: ${p => p.theme.lowlightTextOpacity};
     font-style: italic;
-    margin-top: 10px;
     overflow-wrap: break-word;
+
+    &:not(:first-child) {
+        margin-top: 10px;
+    }
 `;
 
 export function HandlerConfiguration(props: {
@@ -195,7 +199,10 @@ export function HandlerConfiguration(props: {
 }
 
 const SectionLabel = styled.h2`
-    margin: 10px 0 5px;
+    margin-bottom: 5px;
+    &:not(:first-child) {
+        margin-top: 10px;
+    }
 
     text-transform: uppercase;
     opacity: ${p => p.theme.lowlightTextOpacity};

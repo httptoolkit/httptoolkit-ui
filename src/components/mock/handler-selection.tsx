@@ -76,7 +76,9 @@ const HandlerOptions = (p: { handlers: Array<HandlerClass> }) => <>{
 }</>;
 
 const HandlerSelect = styled(Select)`
-    margin-top: 10px;
+    &:not(:first-of-type) {
+        margin-top: 10px;
+    }
 `;
 
 const instantiateHandler = (
