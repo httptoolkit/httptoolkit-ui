@@ -152,31 +152,40 @@ export class RulesStore {
         );
 
         // Set the server rules, and subscribe future rule changes to update them later.
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             reaction(
                 () => _.cloneDeep( // Clone to retain the pre-serialization definitions.
                     flattenRules(this.rules)
                     // Drop inactive or never-matching rules
                     .filter(r => r.activated && r.matchers.length),
                 ),
-                (rules) => {
-                    resolve(Promise.all([
-                        setRequestRules(...rules.filter(isHttpBasedRule)),
-                        ...(semver.satisfies(serverVersion, WEBSOCKET_RULE_RANGE)
-                            ? [
-                                setWebSocketRules(...rules.filter(isWebSocketRule))
-                            ] : []
-                        ),
-                        ...(semver.satisfies(serverVersion, RTC_RULES_SUPPORTED)
-                            ? [
-                                setRTCRules(...rules.filter(isRTCRule).map(({ matchers, steps }) => ({
-                                    // We skip the first matcher, which is always an unused wildcard:
-                                    matchers: matchers.slice(1) as MockRTC.MatcherDefinitions.MatcherDefinition[],
-                                    steps
-                                })))
-                            ] : []
-                        )
-                    ]))
+                async (rules) => {
+                    try {
+                        await Promise.all([
+                            setRequestRules(...rules.filter(isHttpBasedRule)),
+                            ...(semver.satisfies(serverVersion, WEBSOCKET_RULE_RANGE)
+                                ? [
+                                    setWebSocketRules(...rules.filter(isWebSocketRule))
+                                ] : []
+                            ),
+                            ...(semver.satisfies(serverVersion, RTC_RULES_SUPPORTED)
+                                ? [
+                                    setRTCRules(...rules.filter(isRTCRule).map(({ matchers, steps }) => ({
+                                        // We skip the first matcher, which is always an unused wildcard:
+                                        matchers: matchers.slice(1) as MockRTC.MatcherDefinitions.MatcherDefinition[],
+                                        steps
+                                    })))
+                                ] : []
+                            )
+                        ]);
+                        resolve();
+                    } catch (e) {
+                        console.log('Failed to activate stored rules', e, JSON.stringify(rules));
+                        reportError('Failed to activate configured ruleset');
+                        alert(`Configured rules could not be activated, so were reset to default.`);
+
+                        this.resetRulesToDefault(); // Should trigger the reaction above again, and thereby resolve().
+                    }
                 },
                 { fireImmediately: true }
             )
