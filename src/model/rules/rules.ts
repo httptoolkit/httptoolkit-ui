@@ -232,8 +232,10 @@ export type InitialMatcherKey = {
     [K in MatcherClassKey]: typeof MatcherLookup[K] extends InitialMatcherClass ? K : never
 }[MatcherClassKey];
 
-export const getRuleTypeFromInitialMatcher = (matcher: InitialMatcher): RuleType => {
-    const matcherClass = matcher.constructor as any;
+export const getRuleTypeFromInitialMatcher = (matcher: InitialMatcher | MatcherClassKey): RuleType => {
+    const matcherClass = _.isString(matcher)
+        ? MatcherLookup[matcher]
+        : matcher.constructor as any;
 
     if (HttpInitialMatcherClasses.includes(matcherClass)) {
         return 'http';

@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import { action, observable } from 'mobx';
@@ -14,7 +15,8 @@ import {
     MatcherClassKey,
     InitialMatcher,
     InitialMatcherClass,
-    getInitialMatchers
+    getInitialMatchers,
+    getRuleTypeFromInitialMatcher
 } from '../../model/rules/rules';
 import {
     summarizeMatcherClass
@@ -72,6 +74,10 @@ export const InitialMatcherRow = React.forwardRef((p: {
 }, ref: React.Ref<HTMLSelectElement>) => {
     const availableInitialMatchers = getInitialMatchers();
 
+    const [httpMatchers, otherMatchers] = _.partition(availableInitialMatchers, m =>
+        getRuleTypeFromInitialMatcher(getMatcherKey(m)!) === 'http'
+    );
+
     return <MatcherRow>
         <MatcherInputsContainer>
             <Select
@@ -91,7 +97,13 @@ export const InitialMatcherRow = React.forwardRef((p: {
                     </option>
                 }
 
-                <MatcherOptions matchers={availableInitialMatchers} />
+                <MatcherOptions matchers={httpMatchers} />
+
+                { otherMatchers.length > 0 &&
+                    <optgroup label='Experimental'>
+                        <MatcherOptions matchers={otherMatchers} />
+                    </optgroup>
+                }
             </Select>
 
             <InitialMatcherConfigContainer>
