@@ -743,7 +743,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
 }
 
 const TransformSectionLabel = styled(SectionLabel)`
-    margin-top: 20px;
+    margin-top: 10px;
 `;
 
 const TransformSectionSeparator = styled.hr`
