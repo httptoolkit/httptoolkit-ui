@@ -2189,7 +2189,7 @@ class RTCWaitForDurationConfig extends HandlerConfig<WaitForDurationStepDefiniti
         const inputValue = event.target.value;
 
         const newValue = inputValue === ''
-            ? 0
+            ? ''
             : parseInt(inputValue, 10);
 
         if (_.isNaN(newValue)) return; // I.e. reject the edit
