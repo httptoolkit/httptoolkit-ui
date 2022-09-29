@@ -2399,7 +2399,7 @@ class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
         this.props.onChange(
             new SendStepDefinition(
                 this.channelLabel,
-                this.message
+                this.message.toString(this.textEncoding) // MockRTC currently (0.3.0) has a bug with sending buffer data
             )
         );
     }
