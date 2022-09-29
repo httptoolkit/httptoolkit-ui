@@ -155,15 +155,15 @@ export function mapRules<R>(
     }, []);
 };
 
-export function cloneItem(item: HtkMockItem) {
+export function cloneItem<I extends HtkMockRuleGroup | HtkMockRule>(item: I): I {
     if (isRuleGroup(item)) {
-        return cloneRuleGroup(item);
+        return cloneRuleGroup<I & HtkMockRuleGroup>(item);
     } else {
-        return cloneRule(item);
+        return cloneRule(item as I & HtkMockRule);
     }
 }
 
-export function cloneRule(rule: HtkMockRule) {
+export function cloneRule<R extends HtkMockRule>(rule: R): R {
     return observable({
         ...rule, // All handler/matcher/checker state is immutable
         matchers: [...rule.matchers], // Except the matcher array itself
@@ -171,13 +171,13 @@ export function cloneRule(rule: HtkMockRule) {
     });
 };
 
-export function cloneRuleGroup(group: HtkMockRuleGroup): HtkMockRuleGroup {
+export function cloneRuleGroup<G extends HtkMockRuleGroup>(group: HtkMockRuleGroup): G {
     return {
         ...group,
         items: group.items.map(i => cloneItem(i)),
         collapsed: true,
         id: uuid()
-    };
+    } as G;
 }
 
 export const areItemsEqual = (a: HtkMockItem | undefined, b: HtkMockItem | undefined) => {

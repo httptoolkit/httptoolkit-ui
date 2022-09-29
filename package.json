@@ -30,6 +30,7 @@
     "httptoolkit-server": "^0.1.18 || ^1.0.0"
   },
   "dependencies": {
+    "@ethersproject/abi": "^5.7.0",
     "@fortawesome/fontawesome-svg-core": "^1.2.27",
     "@fortawesome/free-brands-svg-icons": "^5.12.1",
     "@fortawesome/free-regular-svg-icons": "^5.12.1",
@@ -99,8 +100,8 @@
     "mobx-react-lite": "^2.2.2",
     "mobx-shallow-undo": "^1.0.0",
     "mobx-utils": "^5.1.0",
-    "mockrtc": "^0.2.0",
-    "mockttp": "^3.2.2",
+    "mockrtc": "^0.3.0",
+    "mockttp": "^3.4.0",
     "monaco-editor": "^0.27.0",
     "node-forge": "^1.3.0",
     "openapi-directory": "^1.1.4",

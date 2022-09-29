@@ -13,6 +13,7 @@ import {
     AvailableHandlerKey,
     HandlerClassKeyLookup,
     isPaidHandlerClass,
+    RuleType,
 } from '../../model/rules/rules';
 import { summarizeHandlerClass } from '../../model/rules/rule-descriptions';
 import {
@@ -33,6 +34,34 @@ import {
     RejectWebSocketHandlerDefinition,
     ListenWebSocketHandlerDefinition
 } from '../../model/rules/definitions/websocket-rule-definitions';
+import {
+    EthereumCallResultHandler,
+    EthereumNumberResultHandler,
+    EthereumHashResultHandler,
+    EthereumReceiptResultHandler,
+    EthereumBlockResultHandler,
+    EthereumErrorHandler
+} from '../../model/rules/definitions/ethereum-rule-definitions';
+import {
+    IpfsCatTextHandler,
+    IpfsCatFileHandler,
+    IpfsAddResultHandler,
+    IpnsResolveResultHandler,
+    IpnsPublishResultHandler,
+    IpfsPinsResultHandler,
+    IpfsPinLsResultHandler
+} from '../../model/rules/definitions/ipfs-rule-definitions';
+import {
+    DynamicProxyStepDefinition,
+    EchoStepDefinition,
+    CloseStepDefinition,
+    WaitForMediaStepDefinition,
+    WaitForDurationStepDefinition,
+    WaitForChannelStepDefinition,
+    WaitForMessageStepDefinition,
+    CreateChannelStepDefinition,
+    SendStepDefinition
+} from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select } from '../common/inputs';
 
@@ -51,7 +80,9 @@ const HandlerOptions = (p: { handlers: Array<HandlerClass> }) => <>{
 }</>;
 
 const HandlerSelect = styled(Select)`
-    margin-top: 20px;
+    &:not(:first-of-type) {
+        margin-top: 10px;
+    }
 `;
 
 const instantiateHandler = (
@@ -81,12 +112,61 @@ const instantiateHandler = (
             return new TimeoutHandler();
         case 'close-connection':
             return new CloseConnectionHandler();
+
         case 'ws-echo':
             return new EchoWebSocketHandlerDefinition();
         case 'ws-reject':
             return new RejectWebSocketHandlerDefinition(400);
         case 'ws-listen':
             return new ListenWebSocketHandlerDefinition();
+
+        case 'eth-call-result':
+            return new EthereumCallResultHandler([], []);
+        case 'eth-number-result':
+            return new EthereumNumberResultHandler(0);
+        case 'eth-hash-result':
+            return new EthereumHashResultHandler('0x0');
+        case 'eth-receipt-result':
+            return new EthereumReceiptResultHandler(undefined);
+        case 'eth-block-result':
+            return new EthereumBlockResultHandler(undefined);
+        case 'eth-error':
+            return new EthereumErrorHandler('Unknown Error');
+
+        case 'ipfs-cat-text':
+            return new IpfsCatTextHandler('');
+        case 'ipfs-cat-file':
+            return new IpfsCatFileHandler('');
+        case 'ipfs-add-result':
+            return new IpfsAddResultHandler();
+        case 'ipns-resolve-result':
+            return new IpnsResolveResultHandler();
+        case 'ipns-publish-result':
+            return new IpnsPublishResultHandler();
+        case 'ipfs-pins-result':
+            return new IpfsPinsResultHandler();
+        case 'ipfs-pin-ls-result':
+            return new IpfsPinLsResultHandler();
+
+        case 'rtc-dynamic-proxy':
+            return new DynamicProxyStepDefinition();
+        case 'echo-rtc':
+            return new EchoStepDefinition();
+        case 'close-rtc-connection':
+            return new CloseStepDefinition();
+        case 'wait-for-rtc-media':
+            return new WaitForMediaStepDefinition();
+        case 'wait-for-duration':
+            return new WaitForDurationStepDefinition(0);
+        case 'wait-for-rtc-data-channel':
+            return new WaitForChannelStepDefinition();
+        case 'wait-for-rtc-message':
+            return new WaitForMessageStepDefinition();
+        case 'create-rtc-data-channel':
+            return new CreateChannelStepDefinition('mock-channel');
+        case 'send-rtc-data-message':
+            return new SendStepDefinition(undefined, '');
+
         default:
             throw new UnreachableCheck(handlerKey);
     }
@@ -95,13 +175,14 @@ const instantiateHandler = (
 export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p: {
     rulesStore?: RulesStore,
     accountStore?: AccountStore,
+    ruleType: RuleType,
     availableHandlers: Array<HandlerClass>,
     value: Handler,
     onChange: (handler: Handler) => void
 }) => {
     let [ allowedHandlers, needProHandlers ] = _.partition(
         p.availableHandlers,
-        (handlerClass) => p.accountStore!.isPaidUser || !isPaidHandlerClass(handlerClass)
+        (handlerClass) => p.accountStore!.isPaidUser || !isPaidHandlerClass(p.ruleType, handlerClass)
     );
 
     // Pull the breakpoint handlers to the top, since they're kind of separate

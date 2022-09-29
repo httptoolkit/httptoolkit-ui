@@ -18,7 +18,7 @@ import {
     getItemAtPath,
     findItem,
 } from '../../model/rules/rules-structure';
-import { Handler, HtkMockRule, RuleType } from '../../model/rules/rules';
+import { Handler, HandlerStep, HtkMockRule, RuleType } from '../../model/rules/rules';
 
 import { GroupHeader, GroupTail } from './mock-rule-group';
 import { AddRuleRow, RuleRow } from './mock-rule-row';

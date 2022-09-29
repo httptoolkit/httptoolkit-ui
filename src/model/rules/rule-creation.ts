@@ -22,7 +22,16 @@ import { MethodName } from '../http/methods';
 import { getStatusMessage } from '../http/http-docs';
 
 import { RulesStore } from './rules-store';
-import { Handler, HtkMockRule, RuleType } from './rules';
+import {
+    Handler,
+    HandlerStep,
+    HtkMockRule,
+    InitialMatcher,
+    Matcher,
+    RuleType,
+    isCompatibleMatcher,
+    getRulePartKey
+} from './rules';
 import {
     HtkMockItem,
     HtkMockRuleGroup,
@@ -30,6 +39,9 @@ import {
 } from './rules-structure';
 import * as HttpRule from './definitions/http-rule-definitions';
 import * as WsRule from './definitions/websocket-rule-definitions';
+import * as EthRule from './definitions/ethereum-rule-definitions';
+import * as IpfsRule from './definitions/ipfs-rule-definitions';
+import * as RtcRule from './definitions/rtc-rule-definitions';
 
 export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     return observable({
@@ -42,8 +54,46 @@ export function getNewRule(rulesStore: RulesStore): HtkMockRule {
     });
 }
 
+export function getRuleDefaultMatchers(
+    type: RuleType,
+    initialMatcher: InitialMatcher,
+    existingMatchers?: Matcher[]
+) {
+    return [
+        initialMatcher, // No need to check type - this must match by definition
+        ...(existingMatchers || [])
+            .slice(1)
+            .filter(m => isCompatibleMatcher(m, type))
+    ];
+}
+
+export function updateRuleAfterInitialMatcherChange(
+    rule: HtkMockRule
+) {
+    if (rule.type !== 'ipfs') return;
+
+    const ipfsInteraction = rule.matchers[0]?.interactionName;
+    if (!ipfsInteraction) return;
+
+    const argMatcherIndex = rule.matchers.findIndex(m => getRulePartKey(m) === 'ipfs-arg');
+
+    if (IpfsRule.shouldSuggestArgMatcher(ipfsInteraction)) {
+        const newArgMatcher = new IpfsRule.IpfsArgMatcher(ipfsInteraction, undefined);
+        if (argMatcherIndex === -1) {
+            rule.matchers.splice(1, 0, newArgMatcher);
+        } else {
+            rule.matchers.splice(argMatcherIndex, 1, newArgMatcher);
+        }
+    } else if (argMatcherIndex !== -1) {
+        rule.matchers.splice(argMatcherIndex, 1); // Remove the unnecessary arg matcher
+    }
+}
+
 export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpMockRule['handler'];
 export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketMockRule['handler'];
+export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumMockRule['handler'];
+export function getRuleDefaultHandler(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsMockRule['handler'];
+export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCMockRule['steps'][0];
 export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
 export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
     switch (type) {
@@ -51,6 +101,12 @@ export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Ha
             return new HttpRule.PassThroughHandler(ruleStore);
         case 'websocket':
             return new WsRule.WebSocketPassThroughHandler(ruleStore);
+        case 'ethereum':
+            return new HttpRule.PassThroughHandler(ruleStore);
+        case 'ipfs':
+            return new HttpRule.PassThroughHandler(ruleStore);
+        case 'webrtc':
+           return new RtcRule.DynamicProxyStepDefinition();
     }
 };
 

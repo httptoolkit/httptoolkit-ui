@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, autorun, runInAction, reaction } from 'mobx';
+import { observable, action, autorun, runInAction, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as Randexp from 'randexp';
 
@@ -16,16 +16,40 @@ import {
     Matcher,
     MatcherClass,
     MatcherClassKeyLookup,
-    AdditionalMatcherKey
+    InitialMatcher,
+    InitialMatcherKey,
+    AdditionalMatcherKey,
+    getRulePartKey,
+    isHiddenMatcherKey
 } from "../../model/rules/rules";
 import {
     WebSocketMethodMatcher
 } from '../../model/rules/definitions/websocket-rule-definitions';
+import {
+    EthereumMethod,
+    EthereumMethodMatcher,
+    EthereumMethods,
+    EthereumParamsMatcher
+} from '../../model/rules/definitions/ethereum-rule-definitions';
+import {
+    IpfsInteraction,
+    IpfsInteractionMatcher,
+    IpfsArgMatcher,
+    IpfsInteractions,
+    IpfsArgDescription
+} from '../../model/rules/definitions/ipfs-rule-definitions';
+import {
+    HasDataChannelMatcherDefinition,
+    HasVideoTrackMatcherDefinition,
+    HasAudioTrackMatcherDefinition,
+    HasMediaTrackMatcherDefinition
+} from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select, TextInput } from '../common/inputs';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
 import { EditableHeaders } from '../common/editable-headers';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { summarizeMatcherClass } from '../../model/rules/rule-descriptions';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -37,7 +61,50 @@ type MatcherConfigProps<M extends Matcher> = {
 abstract class MatcherConfig<M extends Matcher, P = {}> extends
     React.Component<MatcherConfigProps<M> & P> { }
 
-export function MatcherConfiguration(props:
+export function InitialMatcherConfiguration(props: {
+        matcher?: InitialMatcher,
+        onChange: (matcher: InitialMatcher) => void
+    }
+) {
+    const { matcher } = props;
+
+    // If no there's matcher class selected, we have no config to show:
+    if (!matcher) return null;
+
+    const matcherKey = getRulePartKey(matcher) as InitialMatcherKey;
+
+    const configProps = {
+        matcher: matcher as any,
+        matcherIndex: 0,
+        onChange: props.onChange,
+        onInvalidState: _.noop
+    };
+
+    switch (matcherKey) {
+        case 'eth-method':
+            return <EthereumMethodMatcherConfig {...configProps} />;
+        case 'ipfs-interaction':
+            return <IpfsInteractionMatcherConfig {...configProps} />;
+        // All the other initial matchers need no configuration:
+        case 'wildcard':
+        case 'ws-wildcard':
+        case 'default-wildcard':
+        case 'default-ws-wildcard':
+        case 'rtc-wildcard':
+        case 'GET':
+        case 'POST':
+        case 'PUT':
+        case 'PATCH':
+        case 'DELETE':
+        case 'HEAD':
+        case 'OPTIONS':
+            return null;
+        default:
+            throw new UnreachableCheck(matcherKey);
+    }
+}
+
+export function AdditionalMatcherConfiguration(props:
     ({ matcher: Matcher } | { matcherClass?: MatcherClass }) & {
         matcherIndex: number | undefined,
         onChange: (...matchers: Matcher[]) => void,
@@ -45,14 +112,29 @@ export function MatcherConfiguration(props:
     }
 ) {
     const { matcher } = props as { matcher?: Matcher };
+    const { matcherClass } = props as { matcherClass?: MatcherClass };
 
-    const matcherKey = ('matcher' in props
-        ? props.matcher.type
+    let matcherKey = ('matcher' in props
+        ? getRulePartKey(props.matcher)
         : MatcherClassKeyLookup.get(props.matcherClass!)
     ) as AdditionalMatcherKey | undefined;
 
     // If no there's matcher class selected, we have no config to show:
     if (!matcherKey) return null;
+
+    if (isHiddenMatcherKey(matcherKey)) {
+        // This only happens, when we load a rule from elsewhere (defaults or file), and then
+        // you try to configure it. Notably case: the am-i-using matcher.
+
+        if (matcher && !isHiddenMatcherKey(matcher.type)) {
+            // For special cases like these, we show and allow reconfiguring the rule as its non-hidden
+            // base type, if there is one. I.e. we give some matchers a special display, which isn't selectable
+            // but we allow modifying them as a normal selectable format if you want to mess around.
+            matcherKey = matcher.type as AdditionalMatcherKey;
+        } else {
+            throw new Error(`Cannot configure hidden matcher type ${matcherKey}`);
+        }
+    }
 
     const configProps = {
         matcher: matcher as any,
@@ -84,6 +166,21 @@ export function MatcherConfiguration(props:
             return <JsonBodyExactMatcherConfig {...configProps} />;
         case 'json-body-matching':
             return <JsonBodyIncludingMatcherConfig {...configProps} />;
+        case 'eth-params':
+            return <EthParamsMatcherConfig {...configProps} />;
+        case 'ipfs-arg':
+            return <IpfsArgMatcherConfig {...configProps} />;
+
+        case 'has-rtc-data-channel':
+        case 'has-rtc-video-track':
+        case 'has-rtc-audio-track':
+        case 'has-rtc-media-track':
+            return <RTCContentMatcherConfig
+                matcherKey={matcherKey}
+                matcherClass={matcherClass as any} // Any because it must be the class for this key
+                {...configProps}
+            />;
+
         default:
             throw new UnreachableCheck(matcherKey);
     }
@@ -162,6 +259,120 @@ class WsMethodMatcherConfig extends MatcherConfig<WebSocketMethodMatcher> {
     onChange(event: React.ChangeEvent<HTMLSelectElement>) {
         this.method = parseInt(event.currentTarget.value, 10);
         this.props.onChange(new WebSocketMethodMatcher(this.method));
+    }
+}
+
+@observer
+class EthereumMethodMatcherConfig extends React.Component<{
+    matcher?: EthereumMethodMatcher;
+    matcherIndex: number | undefined,
+    onChange: (matcher: InitialMatcher) => void;
+}> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private method: EthereumMethod = 'eth_call';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const method = this.props.matcher?.methodName ?? 'eth_call';
+            runInAction(() => { this.method = method });
+        }));
+
+        // The matcher is valid by default, so immediately announce that (making the
+        // add button enabled) if this is a new matcher that we're adding:
+        if (!this.props.matcher) {
+            this.props.onChange(new EthereumMethodMatcher(this.method));
+        }
+    }
+
+    render() {
+        const { method } = this;
+
+        return <MatcherConfigContainer title={
+            `Match ${
+                method
+            } requests to Ethereum nodes`
+        }>
+            <ConfigLabel htmlFor={this.fieldId}>
+                Requesting a node to
+            </ConfigLabel>
+            <Select
+                id={this.fieldId}
+                value={method}
+                onChange={this.onChange}
+            >
+                { (Object.keys(EthereumMethods) as EthereumMethod[]).map((method) =>
+                    <option value={method} key={method}>
+                        { EthereumMethods[method] }
+                    </option>
+                )}
+            </Select>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLSelectElement>) {
+        this.method = event.currentTarget.value as EthereumMethod;
+        this.props.onChange(new EthereumMethodMatcher(this.method));
+    }
+}
+
+@observer
+class IpfsInteractionMatcherConfig extends React.Component<{
+    matcher?: IpfsInteractionMatcher;
+    matcherIndex: number | undefined,
+    onChange: (matcher: InitialMatcher) => void;
+}> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private interaction: IpfsInteraction = 'cat';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const interaction = this.props.matcher?.interactionName ?? 'cat';
+            runInAction(() => { this.interaction = interaction });
+        }));
+
+        // The matcher is valid by default, so immediately announce that (making the
+        // add button enabled) if this is a new matcher that we're adding:
+        if (!this.props.matcher) {
+            this.props.onChange(new IpfsInteractionMatcher(this.interaction));
+        }
+    }
+
+    render() {
+        const { interaction } = this;
+
+        return <MatcherConfigContainer title={
+            `Match ${
+                interaction
+            } IPFS interactions`
+        }>
+            <ConfigLabel htmlFor={this.fieldId}>
+                Requesting an IPFS node to
+            </ConfigLabel>
+            <Select
+                id={this.fieldId}
+                value={interaction}
+                onChange={this.onChange}
+            >
+                { (Object.keys(IpfsInteractions) as IpfsInteraction[]).map((interaction) =>
+                    <option value={interaction} key={interaction}>
+                        { IpfsInteractions[interaction] }
+                    </option>
+                )}
+            </Select>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLSelectElement>) {
+        this.interaction = event.currentTarget.value as IpfsInteraction;
+        this.props.onChange(new IpfsInteractionMatcher(this.interaction));
     }
 }
 
@@ -825,5 +1036,156 @@ class JsonMatcherConfig<
             this.error = asError(e);
             this.props.onInvalidState();
         }
+    }
+}
+
+@observer
+class IpfsArgMatcherConfig extends MatcherConfig<IpfsArgMatcher> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private arg: string | undefined;
+
+    @computed get interaction(): IpfsInteraction {
+        return this.props.matcher?.interaction || 'cat';
+    }
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const arg = this.props.matcher?.argValue || undefined;
+            runInAction(() => { this.arg = arg });
+        }));
+    }
+
+    render() {
+        const { matcherIndex } = this.props;
+
+        const { placeholder, argType } = IpfsArgDescription[this.interaction]
+            ?? { placeholder: '', argType: 'IPFS argument' };
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel htmlFor={this.fieldId}>
+                    { matcherIndex !== 0 && 'and ' } for { argType }
+                </ConfigLabel>
+            }
+            <TextInput
+                id={this.fieldId}
+                spellCheck={false}
+                value={this.arg || ''}
+                onChange={this.onChange}
+                placeholder={placeholder}
+            />
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.arg = event.target.value;
+        this.props.onChange(new IpfsArgMatcher(this.interaction, this.arg));
+    }
+}
+
+@observer
+class EthParamsMatcherConfig extends MatcherConfig<EthereumParamsMatcher> {
+
+    @observable
+    private content: string = this.props.matcher?.params
+        ? JSON.stringify(this.props.matcher?.params, null, 2)
+        : '[\n    \n]'; // Set up with a convenient open array body initially
+
+    @observable
+    private error: Error | undefined;
+
+    componentDidMount() {
+        // When the matcher state changes (only that one direction) so that it's out of
+        // sync with the shown content, update the content here to match.
+        disposeOnUnmount(this, reaction(
+            () => this.props.matcher?.params ?? {},
+            (matcherContent) => {
+                const parsedContent = tryParseJson(this.content);
+
+                // If the matcher has changed and the content here either doesn't parse or
+                // doesn't match the matcher, we override the shown content:
+                if (parsedContent === undefined || !_.isEqual(parsedContent, matcherContent)) {
+                    runInAction(() => {
+                        this.content = JSON.stringify(matcherContent, null, 2);
+                    });
+                }
+            }
+        ));
+
+        // Create the matcher immediately, so that this is already valid & addable,
+        // if that's what you want to do.
+        this.onJsonChange(this.content);
+    }
+
+    render() {
+        const { content, error } = this;
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } with Ethereum parameters matching
+                </ConfigLabel>
+            }
+            <BodyContainer error={!!error}>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    value={content}
+                    onChange={this.onJsonChange}
+                    language='json'
+                />
+            </BodyContainer>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onJsonChange(content: string) {
+        this.content = content;
+
+        try {
+            const parsedContent = JSON.parse(content);
+            this.props.onChange(new EthereumParamsMatcher(parsedContent));
+            this.error = undefined;
+        } catch (e) {
+            console.log(e);
+            this.error = asError(e);
+            this.props.onInvalidState();
+        }
+    }
+}
+
+@observer
+class RTCContentMatcherConfig<T extends
+    | typeof HasDataChannelMatcherDefinition
+    | typeof HasVideoTrackMatcherDefinition
+    | typeof HasAudioTrackMatcherDefinition
+    | typeof HasMediaTrackMatcherDefinition
+> extends MatcherConfig<InstanceType<T>, { matcherClass?: T, matcherKey: InstanceType<T>['type'] }> {
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const { matcher, matcherClass, onChange } = this.props;
+
+            // Instantiate the matcher as-is, showing nothing.
+            if (!matcher && matcherClass) onChange(new matcherClass() as InstanceType<T>);
+        }));
+    }
+
+    render() {
+        const { matcherIndex, matcherKey } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel>
+                    { matcherIndex !== 0 && 'and ' } {
+                        summarizeMatcherClass(matcherKey)
+                    }
+                </ConfigLabel>
+            }
+        </MatcherConfigContainer>;
     }
 }

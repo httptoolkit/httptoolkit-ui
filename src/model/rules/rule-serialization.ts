@@ -49,12 +49,22 @@ const MockRuleSerializer = serializr.custom(
             }
         });
 
-        if (hasSerializrSchema(data.handler)) {
-            data.handler = serializr.serialize(data.handler);
-        }
+        if ('steps' in data) {
+            data.steps = data.steps.map((step) => {
+                if (hasSerializrSchema(step)) {
+                    return serializr.serialize(step);
+                } else {
+                    return step;
+                }
+            });
+        } else {
+            if (hasSerializrSchema(data.handler)) {
+                data.handler = serializr.serialize(data.handler);
+            }
 
-        if (data.completionChecker && hasSerializrSchema(data.completionChecker)) {
-            data.completionChecker = serializr.serialize(data.completionChecker);
+            if ('completionChecker' in data && hasSerializrSchema(data.completionChecker)) {
+                data.completionChecker = serializr.serialize(data.completionChecker);
+            }
         }
 
         return data;
@@ -67,8 +77,15 @@ const MockRuleSerializer = serializr.custom(
             matchers: data.matchers.map((m) =>
                 deserializeByType(m, MatcherLookup, context.args)
             ),
-            handler: deserializeByType(data.handler, HandlerLookup, context.args),
-            completionChecker: data.completionChecker &&
+            ...('steps' in data
+                ? {
+                    steps: data.steps.map((s) => deserializeByType(s, HandlerLookup, context.args))
+                }
+                : {
+                    handler: deserializeByType(data.handler, HandlerLookup, context.args),
+                }
+            ),
+            completionChecker: 'completionChecker' in data &&
                 deserializeByType(
                     data.completionChecker,
                     completionCheckers.CompletionCheckerLookup,

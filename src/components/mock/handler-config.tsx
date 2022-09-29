@@ -8,14 +8,15 @@ import { Headers } from '../../types';
 import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
-import { asError, UnreachableCheck } from '../../util/error';
+import { asError, isErrorLike, UnreachableCheck } from '../../util/error';
 import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
 
 import {
     Handler,
     RuleType,
     getRulePartKey,
-    AvailableHandlerKey
+    AvailableHandlerKey,
+    isHttpCompatibleType
 } from '../../model/rules/rules';
 import {
     StaticResponseHandler,
@@ -37,8 +38,38 @@ import {
     RejectWebSocketHandlerDefinition,
     ListenWebSocketHandlerDefinition
 } from '../../model/rules/definitions/websocket-rule-definitions';
+import {
+    EthereumCallResultHandler,
+    EthereumNumberResultHandler,
+    EthereumHashResultHandler,
+    EthereumReceiptResultHandler,
+    EthereumBlockResultHandler,
+    EthereumErrorHandler
+} from '../../model/rules/definitions/ethereum-rule-definitions';
+import {
+    IpfsCatTextHandler,
+    IpfsCatFileHandler,
+    IpfsAddResultHandler,
+    IpnsResolveResultHandler,
+    IpnsPublishResultHandler,
+    IpfsPinsResultHandler,
+    IpfsPinLsResultHandler
+} from '../../model/rules/definitions/ipfs-rule-definitions';
+import {
+    DynamicProxyStepDefinition,
+    EchoStepDefinition,
+    CloseStepDefinition,
+    WaitForMediaStepDefinition,
+    WaitForDurationStepDefinition,
+    WaitForChannelStepDefinition,
+    WaitForMessageStepDefinition,
+    CreateChannelStepDefinition,
+    SendStepDefinition
+} from '../../model/rules/definitions/rtc-rule-definitions';
+
 import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
+import { NATIVE_ETH_TYPES } from '../../model/rules/definitions/ethereum-abi';
 import {
     getDefaultMimeType,
     EditableContentType,
@@ -51,6 +82,8 @@ import { TextInput, Select, Button } from '../common/inputs';
 import { EditableHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
 import { FormatButton } from '../common/format-button';
+import { EditablePairs, PairsArray } from '../common/editable-pairs';
+import { ContentMonoValue } from '../common/text-content';
 
 type HandlerConfigProps<H extends Handler> = {
     ruleType: RuleType;
@@ -65,6 +98,7 @@ abstract class HandlerConfig<
 > extends React.Component<HandlerConfigProps<H> & P> { }
 
 const ConfigContainer = styled.div`
+    margin-top: 10px;
     font-size: ${p => p.theme.textSize};
 `;
 
@@ -73,7 +107,11 @@ const ConfigExplanation = styled.p`
     line-height: 1.3;
     opacity: ${p => p.theme.lowlightTextOpacity};
     font-style: italic;
-    margin-top: 10px;
+    overflow-wrap: break-word;
+
+    &:not(:first-child) {
+        margin-top: 10px;
+    }
 `;
 
 export function HandlerConfiguration(props: {
@@ -121,13 +159,62 @@ export function HandlerConfiguration(props: {
             return <StaticResponseHandlerConfig {...configProps} />;
         case 'ws-listen':
             return <WebSocketListenHandlerConfig {...configProps} />;
+        case 'eth-call-result':
+            return <EthCallResultHandlerConfig {...configProps} />;
+        case 'eth-number-result':
+            return <EthNumberResultHandlerConfig {...configProps} />;
+        case 'eth-hash-result':
+            return <EthHashResultHandlerConfig {...configProps} />;
+        case 'eth-receipt-result':
+            return <EthReceiptResultHandlerConfig {...configProps} />;
+        case 'eth-block-result':
+            return <EthBlockResultHandlerConfig {...configProps} />;
+        case 'eth-error':
+            return <EthErrorHandlerConfig {...configProps} />;
+        case 'ipfs-cat-text':
+            return <IpfsCatTextHandlerConfig {...configProps} />;
+        case 'ipfs-cat-file':
+            return <IpfsCatFileHandlerConfig {...configProps} />;
+        case 'ipfs-add-result':
+            return <IpfsAddResultHandlerConfig {...configProps} />;
+        case 'ipns-resolve-result':
+            return <IpnsResolveResultHandlerConfig {...configProps} />;
+        case 'ipns-publish-result':
+            return <IpnsPublishResultHandlerConfig {...configProps} />;
+        case 'ipfs-pins-result':
+            return <IpfsPinsResultHandlerConfig {...configProps} />;
+        case 'ipfs-pin-ls-result':
+            return <IpfsPinLsResultHandlerConfig {...configProps} />;
+
+        case 'rtc-dynamic-proxy':
+            return <PassThroughHandlerConfig {...configProps} />;
+        case 'echo-rtc':
+            return <RTCEchoHandlerConfig {...configProps} />;
+        case 'close-rtc-connection':
+            return <RTCCloseHandlerConfig {...configProps} />;
+        case 'wait-for-rtc-media':
+            return <RTCWaitForMediaConfig {...configProps} />;
+        case 'wait-for-duration':
+            return <RTCWaitForDurationConfig {...configProps} />;
+        case 'wait-for-rtc-data-channel':
+            return <RTCWaitForChannelConfig {...configProps} />;
+        case 'wait-for-rtc-message':
+            return <RTCWaitForDataMessaageConfig {...configProps} />;
+        case 'create-rtc-data-channel':
+            return <RTCCreateChannelStepConfig {...configProps} />;
+        case 'send-rtc-data-message':
+            return <RTCSendMessageStepConfig {...configProps} />;
+
         default:
             throw new UnreachableCheck(handlerKey);
     }
 }
 
 const SectionLabel = styled.h2`
-    margin: 10px 0 5px;
+    margin-bottom: 5px;
+    &:not(:first-child) {
+        margin-top: 10px;
+    }
 
     text-transform: uppercase;
     opacity: ${p => p.theme.lowlightTextOpacity};
@@ -137,6 +224,11 @@ const SectionLabel = styled.h2`
 const ConfigSelect = styled(Select)`
     font-size: ${p => p.theme.textSize};
     width: auto;
+`;
+
+const WideTextInput = styled(TextInput)`
+    width: 100%;
+    box-sizing: border-box;
 `;
 
 const BodyHeader = styled.div`
@@ -651,7 +743,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
 }
 
 const TransformSectionLabel = styled(SectionLabel)`
-    margin-top: 20px;
+    margin-top: 10px;
 `;
 
 const TransformSectionSeparator = styled.hr`
@@ -691,7 +783,7 @@ const SelectTransform = styled(Select)`
         color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.mainBackground};
     `}
-`
+`;
 
 @inject('rulesStore')
 @observer
@@ -1116,16 +1208,27 @@ const JsonUpdateTransformConfig = (props: {
 };
 
 @observer
-class PassThroughHandlerConfig extends HandlerConfig<PassThroughHandler | WebSocketPassThroughHandler> {
+class PassThroughHandlerConfig extends HandlerConfig<
+    | PassThroughHandler
+    | WebSocketPassThroughHandler
+    | DynamicProxyStepDefinition
+> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
                 All matching {
-                    this.props.ruleType === 'http'
+                    isHttpCompatibleType(this.props.ruleType)
                         ? 'requests'
-                    // ruleType === 'websocket'
-                        : 'WebSockets'
-                } will be transparently passed through to the upstream target host.
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSockets'
+                    : this.props.ruleType === 'webrtc'
+                        ? 'data and media'
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
+                } will be transparently passed through to the upstream {
+                    this.props.ruleType === 'webrtc'
+                        ? 'RTC peer, once one is connected'
+                        : 'target host'
+                }.
             </ConfigExplanation>
         </ConfigContainer>;
     }
@@ -1189,10 +1292,13 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
         return <ConfigContainer>
             <ConfigExplanation>
                 When a matching {
-                    this.props.ruleType === 'http'
+                    isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
-                    // ruleType === 'websocket'
-                        : 'WebSocket'
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSocket'
+                    : this.props.ruleType === 'webrtc'
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } is received, the server will keep the connection open but do nothing.
                 With no data or response, most clients will time out and abort the
                 request after sufficient time has passed.
@@ -1207,10 +1313,13 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
         return <ConfigContainer>
             <ConfigExplanation>
                 As soon as a matching {
-                    this.props.ruleType === 'http'
+                    isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
-                    // ruleType === 'websocket'
-                        : 'WebSocket'
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSocket'
+                    : this.props.ruleType === 'webrtc'
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
                 } is received, the connection will be closed, with no response.
             </ConfigExplanation>
         </ConfigContainer>;
@@ -1240,4 +1349,1060 @@ class WebSocketListenHandlerConfig extends HandlerConfig<ListenWebSocketHandlerD
             </ConfigExplanation>
         </ConfigContainer>;
     }
+}
+
+const NATIVE_ETH_TYPES_PATTERN = `(${NATIVE_ETH_TYPES.join('|')})(\\[\\])?`;
+
+@observer
+class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler> {
+
+    @observable
+    typeValuePairs: PairsArray = [];
+
+    @observable error: Error | undefined;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { outputTypes, values } = this.props.handler;
+
+            const stringValues = values.map(v => {
+                if (Array.isArray(v)) return v.join(', ');
+                else return (v as any)?.toString();
+            });
+
+            runInAction(() => {
+                this.typeValuePairs = _.zip(outputTypes, stringValues)
+                    .map(([key, value]) => ({ key, value })) as PairsArray;
+            });
+        }));
+    }
+
+    render() {
+        const { typeValuePairs } = this;
+        const encodedData = this.props.handler.result.result;
+
+        return <ConfigContainer>
+            <SectionLabel>Eth_Call return values</SectionLabel>
+
+            <EditablePairs
+                pairs={typeValuePairs}
+                onChange={this.onChange}
+                keyPlaceholder='Return value type (e.g. string, int256, etc)'
+                keyPattern={NATIVE_ETH_TYPES_PATTERN}
+                valuePlaceholder='Return value'
+                allowEmptyValues={true}
+            />
+
+            { this.error
+                ? <>
+                    <ConfigExplanation>
+                        <WarningIcon /> Could not encode data. { this.error.message }
+                    </ConfigExplanation>
+                </>
+                : <>
+                    <ConfigExplanation>
+                        Encoded return value:
+                    </ConfigExplanation>
+                    <ContentMonoValue>
+                        { encodedData }
+                    </ContentMonoValue>
+                </>
+            }
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC calls will be intercepted, and the encoded output
+                above returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newPairs: PairsArray) {
+        this.typeValuePairs = newPairs;
+
+        // Allow array values, separated by commas:
+        const parsedValues = this.typeValuePairs.map(({ key, value }) => {
+            if (key === 'string[]') {
+                return { key, value: value.split(/,\s?/g) };
+            } else if (key.startsWith('bytes') || key.endsWith('[]')) {
+                return { key, value: value.split(/,\s?/g).map(x => parseInt(x, 10)) };
+            } else {
+                return { key, value };
+            }
+        });
+
+        try {
+            this.props.onChange(
+                new EthereumCallResultHandler(
+                    parsedValues.map(({ key }) => key),
+                    parsedValues.map(({ value }) => value)
+                )
+            );
+            this.error = undefined;
+        } catch (err) {
+            if (!isErrorLike(err)) throw err;
+
+            if (err.code === 'INVALID_ARGUMENT') {
+                const { argument, value, reason } = err as {
+                    argument: string,
+                    value: string,
+                    reason: string
+                };
+
+                if (argument === 'type' || argument === 'param') {
+                    this.error = new Error(`Invalid type: ${value}`);
+                } else if (argument === 'value') {
+                    this.error = new Error(`Invalid value: '${value}' (${reason})`);
+                } else {
+                    this.error = err as Error;
+                }
+            } else {
+                this.error = err as Error;
+            }
+
+            this.props.onInvalidState();
+        }
+    }
+}
+
+@observer
+class EthNumberResultHandlerConfig extends HandlerConfig<EthereumNumberResultHandler> {
+
+    @observable
+    value: number | '' = this.props.handler.value;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { value } = this.props.handler;
+            runInAction(() => {
+                if (value === 0 && this.value === '') return; // Allows clearing the input, making it *implicitly* 0
+                this.value = value;
+            });
+        }));
+    }
+
+    render() {
+        const { value } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Return value</SectionLabel>
+
+            <WideTextInput
+                type='number'
+                min={0}
+                value={value}
+                onChange={this.onChange}
+            />
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and { this.value } will
+                be returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+
+        const newValue = (inputValue !== '')
+            ? parseInt(inputValue, 10)
+            : '';
+
+        if (_.isNaN(newValue)) return; // I.e. reject the edit
+
+        this.value = newValue;
+
+        this.props.onChange(
+            new EthereumNumberResultHandler(newValue || 0)
+        );
+    }
+}
+
+@observer
+class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler> {
+
+    @observable
+    value = this.props.handler.value;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { value } = this.props.handler;
+            runInAction(() => { this.value = value; });
+        }));
+    }
+
+    render() {
+        const { value } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Return hash value</SectionLabel>
+
+            <WideTextInput
+                type='text'
+                value={value}
+                onChange={this.onChange}
+            />
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and { this.value } will
+                be returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+
+            <ConfigExplanation>
+                <WarningIcon /> In most cases, you will also want to add a rule for transaction receipts
+                matching this value, to mock subsequent queries for the transaction's result.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const newValue = event.target.value;
+
+        if (!/^0x[0-9a-fA-F]*$/.test(newValue)) return; // Ignore anything that's not a valid hash
+
+        this.props.onChange(
+            new EthereumHashResultHandler(event.target.value)
+        );
+    }
+}
+
+// Base component, used to build the various "JSON input into a JSON-wrapping handler" configs
+@observer
+class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
+    name: string,
+    explanation: string[],
+    handlerFactory: (body: any) => H,
+    valueGetter: (handler: H) => unknown
+}> {
+
+    @observable
+    valueString: string = JSON.stringify(this.props.valueGetter(this.props.handler), null, 2);
+
+    @observable
+    error: Error | undefined;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, reaction(
+            () => JSON.stringify(this.props.valueGetter(this.props.handler), null, 2),
+            (handlerStringValue) => {
+                let normalizedCurrentValue: {} | undefined;
+                try {
+                    normalizedCurrentValue = JSON.stringify(JSON.parse(this.valueString), null, 2);
+                } catch (err) { }
+
+                // If the handler value changes, and either it doesn't match the existing value here,
+                // or the existing value isn't parseable at all, we reset the editor value:
+                if (handlerStringValue !== normalizedCurrentValue) {
+                    runInAction(() => {
+                        this.valueString = handlerStringValue;
+                        this.error = undefined;
+                    });
+                }
+            }
+        ));
+    }
+
+    render() {
+        const { valueString, error } = this;
+        const { name, explanation } = this.props;
+
+        return <ConfigContainer>
+            <BodyHeader>
+                <SectionLabel>{ name }</SectionLabel>
+                { error && <WarningIcon title={error.message} /> }
+
+                <StandaloneFormatButton
+                    format='json'
+                    content={asBuffer(valueString)}
+                    onFormatted={this.onChange}
+                />
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language='json'
+                    value={valueString}
+                    onChange={this.onChange}
+                />
+            </BodyContainer>
+
+            { explanation.map((explanationPart, i) =>
+                <ConfigExplanation key={i}>
+                    { explanationPart }
+                </ConfigExplanation>
+            ) }
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newContent: string) {
+        this.valueString = newContent;
+
+        try {
+            const newValue = JSON.parse(newContent);
+            this.props.onChange(
+                this.props.handlerFactory(newValue)
+            );
+            this.error = undefined;
+        } catch (e) {
+            if (!isErrorLike(e)) throw e;
+            this.error = e as Error;
+            this.props.onInvalidState();
+        }
+    }
+}
+
+@observer
+class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='Ethereum Transaction Receipt'
+            explanation={[
+                'All matching Ethereum JSON-RPC requests will be intercepted, and this transaction ' +
+                'receipt will returned directly, without forwarding the call to the real Ethereum node.'
+            ]}
+            handlerFactory={(data) => new EthereumReceiptResultHandler(data)}
+            valueGetter={handler => handler.receiptValue}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='Ethereum Block Data'
+            explanation={[
+                'All matching Ethereum JSON-RPC requests will be intercepted, and this fixed block data ' +
+                'will returned directly, without forwarding the call to the real Ethereum node.'
+            ]}
+            handlerFactory={(data) => new EthereumBlockResultHandler(data)}
+            valueGetter={handler => handler.blockValue}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
+
+    @observable
+    inputError: Error | undefined; // A form error - not error data for the handler, unlike the rest
+
+    @observable
+    errorMessage = this.props.handler.message;
+
+    @observable
+    errorCode: '' | number = this.props.handler.code || '';
+
+    @observable
+    errorData = this.props.handler.data;
+
+    @observable
+    errorName = this.props.handler.name;
+
+    componentDidMount() {
+        // If any of our data fields change, rebuild & update the handler
+        disposeOnUnmount(this, reaction(() => (
+            JSON.stringify(_.pick(this, ['errorMessage', 'errorCode', 'errorData', 'errorName']))
+        ), () => this.updateHandler()));
+
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { message, code, data, name } = this.props.handler;
+
+            runInAction(() => {
+                this.errorMessage = message;
+                this.errorData = data;
+                this.errorName = name;
+
+                if (this.errorCode === '' && code === 0) {
+                    // Do nothing - this allows you to clear the field without fuss
+                } else {
+                    this.errorCode = code;
+                }
+            });
+        }));
+    }
+
+    render() {
+        const {
+            errorMessage,
+            errorCode,
+            errorData,
+            errorName
+        } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>Error Message</SectionLabel>
+            <WideTextInput
+                type='text'
+                value={errorMessage}
+                onChange={this.onChangeMessage}
+            />
+
+            <SectionLabel>Error Code</SectionLabel>
+            <WideTextInput
+                type='number'
+                value={errorCode}
+                onChange={this.onChangeCode}
+            />
+
+            <SectionLabel>Error Data</SectionLabel>
+            <WideTextInput
+                type='text'
+                value={errorData}
+                onChange={this.onChangeData}
+            />
+
+            <SectionLabel>Error Name</SectionLabel>
+            <WideTextInput
+                type='text'
+                value={errorName || ''}
+                onChange={this.onChangeName}
+            />
+
+            <ConfigExplanation>
+                All matching Ethereum JSON-RPC requests will be intercepted, and this error response
+                will returned directly, without forwarding the call to the real Ethereum node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChangeMessage(event: React.ChangeEvent<HTMLInputElement>) {
+        this.errorMessage = event.target.value;
+    }
+
+    @action.bound
+    onChangeCode(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        if (!inputValue) {
+            this.errorCode = '';
+            return;
+        }
+
+        const value = parseInt(inputValue, 10);
+        if (!_.isNaN(value)) {
+            this.errorCode = value;
+        }
+    }
+
+    @action.bound
+    onChangeData(event: React.ChangeEvent<HTMLInputElement>) {
+        this.errorData = event.target.value;
+    }
+
+    @action.bound
+    onChangeName(event: React.ChangeEvent<HTMLInputElement>) {
+        this.errorName = event.target.value;
+    }
+
+    updateHandler() {
+        this.props.onChange(
+            new EthereumErrorHandler(
+                this.errorMessage,
+                this.errorData,
+                this.errorCode || 0,
+                this.errorName
+            )
+        );
+    }
+}
+
+@observer
+class IpfsCatTextHandlerConfig extends HandlerConfig<IpfsCatTextHandler> {
+
+    @observable
+    contentType: EditableContentType = 'text';
+
+    @observable
+    body = asBuffer(this.props.handler.data);
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { data } = this.props.handler;
+            runInAction(() => {
+                this.body = asBuffer(data);
+            });
+        }));
+    }
+
+    @computed
+    private get textEncoding() {
+        // If we're handling text data, we want to show & edit it as UTF8.
+        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
+        return isProbablyUtf8(this.body)
+            ? 'utf8'
+            : 'binary';
+    }
+
+    render() {
+        const { body } = this;
+
+        const bodyAsString = body.toString(this.textEncoding);
+
+        return <ConfigContainer>
+            <BodyHeader>
+                <SectionLabel>IPFS content</SectionLabel>
+                <FormatButton
+                    format={this.contentType}
+                    content={body}
+                    onFormatted={this.setBody}
+                />
+                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                    <option value="text">Plain text</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="javascript">JavaScript</option>
+                </ConfigSelect>
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language={this.contentType}
+                    value={bodyAsString}
+                    onChange={this.setBody}
+                />
+            </BodyContainer>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    setContentType(event: React.ChangeEvent<HTMLSelectElement>) {
+        const value = event.target.value;
+        this.contentType = value as EditableContentType;
+    }
+
+    @action.bound
+    setBody(body: string) {
+        this.body = Buffer.from(body, this.textEncoding);
+        this.props.onChange(
+            new IpfsCatTextHandler(this.body)
+        );
+    }
+}
+
+
+@observer
+class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
+
+    @observable
+    filePath = (this.props.handler.filePath || '').toString();
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { filePath } = this.props.handler;
+            runInAction(() => {
+                this.filePath = filePath;
+            });
+        }));
+    }
+
+    render() {
+        return <ConfigContainer>
+            <SectionLabel>IPFS content</SectionLabel>
+            <BodyFileContainer>
+                <BodyFileButton onClick={this.selectFile}>
+                    { this.filePath
+                        ? 'Change file'
+                        : <>
+                            Select file <WarningIcon />
+                        </>
+                    }
+                </BodyFileButton>
+                { this.filePath && <BodyFilePath>
+                    { this.filePath }
+                </BodyFilePath> }
+            </BodyFileContainer>
+
+            <ConfigExplanation>
+                All matching requests will receive a successful response containing the contents of the
+                selected file.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                This file will be read fresh for each request, so future changes to the file will
+                immediately affect matching requests.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    selectFile = async () => {
+        const result = await uploadFile("path", []);
+        if (result) {
+            runInAction(() => {
+                this.filePath = result;
+            });
+
+            this.props.onChange(
+                new IpfsCatFileHandler(
+                    this.filePath
+                )
+            );
+        }
+    }
+}
+
+@observer
+class IpfsAddResultHandlerConfig extends HandlerConfig<IpfsAddResultHandler> {
+
+    @observable
+    resultPairs: PairsArray = [];
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { result } = this.props.handler;
+
+            runInAction(() => {
+                this.resultPairs = result.map(({ Name, Hash }) => ({ key: Name, value: Hash }));
+            });
+        }));
+    }
+
+    render() {
+        const { resultPairs } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>IPFS Add Results</SectionLabel>
+
+            <EditablePairs
+                pairs={resultPairs}
+                onChange={this.onChange}
+                keyPlaceholder='Name of the added file'
+                valuePlaceholder='Hash of the added file'
+            />
+            <ConfigExplanation>
+                All matching IPFS Add calls will be intercepted, and the above results will always
+                be returned directly, without forwarding the call to the real IPFS node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newPairs: PairsArray) {
+        this.resultPairs = newPairs;
+
+        this.props.onChange(
+            new IpfsAddResultHandler(
+                this.resultPairs.map(({ key, value }) => ({ Name: key, Hash: value }))
+            )
+        );
+    }
+
+}
+
+@observer
+class IpnsResolveResultHandlerConfig extends HandlerConfig<IpnsResolveResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='IPNS Resolve Result'
+            explanation={[
+                'All matching requests will be receive this data as a successful IPNS resolution.'
+            ]}
+            handlerFactory={(data) => new IpnsResolveResultHandler(data)}
+            valueGetter={handler => handler.result}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class IpnsPublishResultHandlerConfig extends HandlerConfig<IpnsPublishResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='IPNS Publish Result'
+            explanation={[
+                'All matching requests will be receive this data as a successful IPNS publish result.'
+            ]}
+            handlerFactory={(data) => new IpnsPublishResultHandler(data)}
+            valueGetter={handler => handler.result}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class IpfsPinsResultHandlerConfig extends HandlerConfig<IpfsPinsResultHandler> {
+
+    render() {
+        return <JsonBasedHandlerConfig
+            name='IPFS Pinning Result'
+            explanation={[
+                'All matching requests will be receive this data as a successful response.'
+            ]}
+            handlerFactory={(data) => new IpfsPinsResultHandler(data)}
+            valueGetter={handler => handler.result}
+            { ...this.props }
+        />;
+    }
+
+}
+
+@observer
+class IpfsPinLsResultHandlerConfig extends HandlerConfig<IpfsPinLsResultHandler> {
+
+    @observable
+    resultPairs: PairsArray = [];
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { result } = this.props.handler;
+
+            runInAction(() => {
+                this.resultPairs = result.map(({ Type, Cid }) => ({ key: Type, value: Cid }));
+            });
+        }));
+    }
+
+    render() {
+        const { resultPairs } = this;
+
+        return <ConfigContainer>
+            <SectionLabel>IPFS Pin Ls Results</SectionLabel>
+
+            <EditablePairs
+                pairs={resultPairs}
+                onChange={this.onChange}
+                keyPlaceholder='Type of pin (recursive, direct, indirect)'
+                valuePlaceholder='CID of the pinned content'
+            />
+            <ConfigExplanation>
+                All matching IPFS Pin Ls calls will be intercepted, and the above results will always
+                be returned directly, without forwarding the call to the real IPFS node.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onChange(newPairs: PairsArray) {
+        this.resultPairs = newPairs;
+
+        this.props.onChange(
+            new IpfsPinLsResultHandler(
+                this.resultPairs.map(({ key, value }) => ({ Type: key, Cid: value }))
+            )
+        );
+    }
+
+}
+
+@observer
+class RTCEchoHandlerConfig extends HandlerConfig<EchoStepDefinition> {
+
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                Echo all sent data messages and all streamed video and audio media
+                back to the intercepted peer wherever possible, until the connection is
+                closed. No data will be forwarded to any connected remote peer.
+            </ConfigExplanation>
+            <ConfigExplanation>
+                Note that in some cases echoing isn't possible - e.g. if the client opens
+                a one-way video stream - in which case that data will simply be dropped.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+}
+
+@observer
+class RTCCloseHandlerConfig extends HandlerConfig<CloseStepDefinition> {
+
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                Immediately close the WebRTC connection, with no further response and no
+                data forwarded to any connected remote peer.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+
+}
+
+@observer
+class RTCWaitForMediaConfig extends HandlerConfig<WaitForMediaStepDefinition> {
+
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                Wait until the next WebRTC media data is sent by the client.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+}
+
+@observer
+class RTCWaitForDurationConfig extends HandlerConfig<WaitForDurationStepDefinition> {
+
+    @observable
+    duration: number | '' = this.props.handler.durationMs;
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { durationMs } = this.props.handler;
+            runInAction(() => {
+                if (durationMs === 0 && this.duration === '') return; // Allows clearing the input, making it *implicitly* 0
+                this.duration = durationMs;
+            });
+        }));
+    }
+
+    render() {
+        const { duration } = this;
+
+        return <ConfigContainer>
+            Wait for <TextInput
+                type='number'
+                min='0'
+                placeholder='Duration (ms)'
+                value={duration}
+                onChange={this.onChange}
+            /> milliseconds.
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+
+        const newValue = inputValue === ''
+            ? ''
+            : parseInt(inputValue, 10);
+
+        if (_.isNaN(newValue)) return; // I.e. reject the edit
+
+        this.duration = newValue;
+        this.props.onChange(new WaitForDurationStepDefinition(newValue || 0));
+    }
+
+}
+
+@observer
+class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition> {
+
+    render() {
+        const { channelLabel } = this.props.handler;
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='The channel to wait for, or nothing to wait for any channel'
+                value={channelLabel ?? ''}
+                onChange={this.onChange}
+            />
+            <ConfigExplanation>
+                Wait until the client opens a WebRTC data channel {
+                    channelLabel
+                        ? `with the label "${channelLabel}"`
+                        : 'with any label'
+                }.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.props.onChange(
+            new WaitForChannelStepDefinition(inputValue || '')
+        );
+    }
+
+}
+
+@observer
+class RTCWaitForDataMessaageConfig extends HandlerConfig<WaitForMessageStepDefinition> {
+
+    render() {
+        const { channelLabel } = this.props.handler;
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='The channel to watch for messages, or nothing to watch every channel'
+                value={channelLabel ?? ''}
+                onChange={this.onChange}
+            />
+            <ConfigExplanation>
+                Wait until the client sends a WebRTC data message {
+                    channelLabel
+                        ? `on a channel with the label "${channelLabel}"`
+                        : 'on any data channel'
+                }.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.props.onChange(
+            new WaitForMessageStepDefinition(inputValue || '')
+        );
+    }
+
+}
+
+@observer
+class RTCCreateChannelStepConfig extends HandlerConfig<CreateChannelStepDefinition> {
+
+    render() {
+        const { channelLabel } = this.props.handler;
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='A label for the channel that will be created'
+                value={channelLabel}
+                onChange={this.onChange}
+            />
+            <ConfigExplanation>
+                Create a data channel on the WebRTC connection labelled "{
+                    channelLabel
+                }".
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    onChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.props.onChange(new CreateChannelStepDefinition(inputValue));
+    }
+
+}
+
+@observer
+class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
+
+    @observable
+    channelLabel: string | undefined = this.props.handler.channelLabel;
+
+    @observable
+    contentType: EditableContentType = 'text';
+
+    @observable
+    message = asBuffer(this.props.handler.message);
+
+    componentDidMount() {
+        // If the handler changes (or when its set initially), update our data fields
+        disposeOnUnmount(this, autorun(() => {
+            const { channelLabel, message } = this.props.handler;
+            runInAction(() => {
+                this.channelLabel = channelLabel;
+                this.message = asBuffer(message);
+            });
+        }));
+    }
+
+    @computed
+    private get textEncoding() {
+        // If we're handling text data, we want to show & edit it as UTF8.
+        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
+        return isProbablyUtf8(this.message)
+            ? 'utf8'
+            : 'binary';
+    }
+
+    render() {
+        const { channelLabel, message } = this;
+
+        const messageAsString = message.toString(this.textEncoding);
+
+        return <ConfigContainer>
+            <SectionLabel>Channel Label</SectionLabel>
+            <WideTextInput
+                placeholder='The channel to send the message to, or nothing to send on all open channels'
+                value={channelLabel ?? ''}
+                onChange={this.setChannelLabel}
+            />
+
+            <BodyHeader>
+                <SectionLabel>Message content</SectionLabel>
+                <FormatButton
+                    format={this.contentType}
+                    content={message}
+                    onFormatted={this.setMessage}
+                />
+                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                    <option value="text">Plain text</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                </ConfigSelect>
+            </BodyHeader>
+            <BodyContainer>
+                <ThemedSelfSizedEditor
+                    contentId={null}
+                    language={this.contentType}
+                    value={messageAsString}
+                    onChange={this.setMessage}
+                />
+            </BodyContainer>
+
+            <ConfigExplanation>
+                Send {
+                    message.length === 0
+                        ? 'an empty'
+                        : 'the above'
+                } message on {
+                    channelLabel
+                        ? `any open channel with the label "${channelLabel}"`
+                        : 'every open data channel'
+                }.
+            </ConfigExplanation>
+        </ConfigContainer>
+    }
+
+    @action.bound
+    setContentType(event: React.ChangeEvent<HTMLSelectElement>) {
+        const value = event.target.value;
+        this.contentType = value as EditableContentType;
+    }
+
+    @action.bound
+    setChannelLabel(event: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = event.target.value;
+        this.channelLabel = inputValue || undefined;
+        this.updateHandler();
+    }
+
+    @action.bound
+    setMessage(message: string) {
+        this.message = Buffer.from(message, this.textEncoding);
+        this.updateHandler();
+    }
+
+    updateHandler() {
+        this.props.onChange(
+            new SendStepDefinition(
+                this.channelLabel,
+                this.message.toString(this.textEncoding) // MockRTC currently (0.3.0) has a bug with sending buffer data
+            )
+        );
+    }
+
+
 }

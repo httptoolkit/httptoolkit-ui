@@ -17,6 +17,7 @@ import {
     WildcardMatcher
 } from './http-rule-definitions';
 
+// Convenient re-export for various built-in handler definitions:
 export const {
     EchoWebSocketHandlerDefinition,
     RejectWebSocketHandlerDefinition,

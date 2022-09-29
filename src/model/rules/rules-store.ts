@@ -6,6 +6,7 @@ import {
     ProxyConfig,
     ProxySetting
 } from 'mockttp';
+import * as MockRTC from 'mockrtc';
 
 import {
     observable,
@@ -35,12 +36,13 @@ import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';
 import { EventsStore } from '../events/events-store';
 import { getDesktopInjectedValue } from '../../services/desktop-api';
-import { WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
+import { RTC_RULES_SUPPORTED, WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 
 import {
     HtkMockRule,
-    isHttpRule,
-    isWebSocketRule
+    isHttpBasedRule,
+    isWebSocketRule,
+    isRTCRule
 } from './rules';
 import {
     HtkMockRuleGroup,
@@ -123,6 +125,7 @@ export class RulesStore {
         const {
             setRequestRules,
             setWebSocketRules,
+            setRTCRules,
             serverVersion
         } = this.proxyStore;
 
@@ -158,10 +161,19 @@ export class RulesStore {
                 ),
                 (rules) => {
                     resolve(Promise.all([
-                        setRequestRules(...rules.filter(isHttpRule)),
+                        setRequestRules(...rules.filter(isHttpBasedRule)),
                         ...(semver.satisfies(serverVersion, WEBSOCKET_RULE_RANGE)
                             ? [
                                 setWebSocketRules(...rules.filter(isWebSocketRule))
+                            ] : []
+                        ),
+                        ...(semver.satisfies(serverVersion, RTC_RULES_SUPPORTED)
+                            ? [
+                                setRTCRules(...rules.filter(isRTCRule).map(({ matchers, steps }) => ({
+                                    // We skip the first matcher, which is always an unused wildcard:
+                                    matchers: matchers.slice(1) as MockRTC.MatcherDefinitions.MatcherDefinition[],
+                                    steps
+                                })))
                             ] : []
                         )
                     ]))
