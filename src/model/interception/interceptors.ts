@@ -153,6 +153,18 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             return versionSatisfies(interceptorVersion, "^1.1.0")
         },
     },
+    'existing-arc': {
+        name: 'Global Arc Browser',
+        description: [
+            "Intercept Arc Browser globally on this machine",
+            "This captures all Arc traffic, so may interfere with normal usage"
+        ],
+        iconProps: SourceIcons.Arc,
+        tags: BROWSER_TAGS,
+        getActivationOptions: getChromiumOptions,
+        checkRequirements: ({ accountStore }) =>
+            accountStore.featureFlags.includes('arc-browser')
+    },
     'fresh-safari': {
         name: 'Safari',
         description: ["Intercept a fresh independent Safari window"],

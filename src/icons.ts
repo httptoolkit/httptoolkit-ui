@@ -83,7 +83,8 @@ import { faGlobe } from '@fortawesome/free-solid-svg-icons/faGlobe';
 import { faJava } from '@fortawesome/free-brands-svg-icons/faJava';
 
 import { customSpinnerArc } from './images/custom-spinner';
-import { braveBrowser } from './images/brave-browser';
+import { braveBrowser } from './images/brave-browser-logo';
+import { arcBrowser } from './images/arc-browser-logo';
 
 library.add(
     customSpinnerArc,
@@ -149,6 +150,7 @@ library.add(
     faInternetExplorer,
     faOpera,
     braveBrowser,
+    arcBrowser,
     faCodeBranch,
     faNpm,
     faNodeJs,
@@ -176,6 +178,7 @@ export const SourceIcons = {
     IE: { icon: ['fab', 'internet-explorer'], color: '#00baf0' },
     Opera: { icon: ['fab', 'opera'], color: '#cb0b1e' },
     Brave: { icon: ['fac', 'brave-browser'], color: '#fb542b' },
+    Arc: { icon: ['fac', 'arc-browser'], color: '#ff536a' },
     Git: { icon: ['fas', 'code-branch'], color: '#f05033' },
     Php: { icon: ['fab', 'php'], color: '#8892bf' },
 
