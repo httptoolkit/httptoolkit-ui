@@ -467,16 +467,11 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 function cleanRawHarData(harContents: any) {
     const entries = harContents?.log?.entries ?? [];
 
-    // Some HAR exports include invalid serverIPAddresses, which fail validation.
-    // Somebody is wrong here, but we don't really care - just drop it entirely.
     entries.forEach((entry: any) => {
-        if (entry.serverIPAddress === "") {
-            delete entry.serverIPAddress;
-        }
-
-        if (entry.serverIPAddress === "[::1]") {
-            entry.serverIPAddress = "::1";
-        }
+        // Some HAR exports include invalid serverIPAddresses, which fail validation.
+        // Somebody is wrong here, but we don't really care, we never use this data;
+        // just drop it entirely instead.
+        delete entry.serverIPAddress;
 
         // FF fails to write headersSize or writes null for req/res that has no headers.
         // We don't use it anyway - set it to -1 if it's missing
