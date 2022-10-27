@@ -186,6 +186,7 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'rtc-peer-proxy':
         case 'callback':
         case 'stream':
+        case 'reset-connection':
             throw new Error(`${key} handler should not be used directly`);
         default:
             throw new UnreachableCheck(key);

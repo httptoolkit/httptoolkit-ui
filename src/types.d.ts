@@ -6,14 +6,12 @@ import type {
     CompletedResponse as MockttpResponse,
     WebSocketMessage as MockttpWebSocketMessage,
     WebSocketClose as MockttpWebSocketClose,
-    SubscribableEvent as MockttpEvent
-} from 'mockttp';
-import type {
+    SubscribableEvent as MockttpEvent,
     Headers,
     TimingEvents,
     TlsRequest as TLSRequest,
     ClientError
-} from 'mockttp/dist/types';
+} from 'mockttp';
 import type { PortRange } from 'mockttp/dist/mockttp';
 import type {
     PassThroughResponse as MockttpBreakpointedResponse,

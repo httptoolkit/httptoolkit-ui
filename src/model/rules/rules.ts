@@ -298,6 +298,7 @@ const HiddenHandlers = [
     'rtc-peer-proxy', // Not usable interactively
     'callback',
     'stream',
+    'reset-connection', // Not supported in Node version used by current server
     'wait-for-rtc-track' // Not super useful here I think
 ] as const;
 
