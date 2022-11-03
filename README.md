@@ -21,11 +21,8 @@ To get started:
 
 * Clone this repo.
 * `npm install`
-* For pure UI development
-    * Run `npm start` to start the UI along with a backing [httptoolkit server](https://github.com/httptoolkit/httptoolkit-server).
-    * Open [`local.httptoolkit.tech:8080`](http://local.httptoolkit.tech:8080) to view the UI
-* To develop the UI & server together
+* Launch a local UI instance:
     * Start [a server](https://github.com/httptoolkit/httptoolkit-server) locally
-    * Run `npm run start:web` to start the UI without running a separate HTTP Toolkit server
-    * Open [`local.httptoolkit.tech:8080`](http://local.httptoolkit.tech:8080) to view the UI
+    * Run `npm run start` to start the UI locally
+    * Open [`local.httptoolkit.tech:8080`](http://local.httptoolkit.tech:8080) to view the UI, which will connect to the server in the background
 * `npm test` - run the tests (not many yet, but more are very welcome!)
