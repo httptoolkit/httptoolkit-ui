@@ -6,7 +6,7 @@ jobs:
   build:
     name: Build & test
     runs-on: ubuntu-latest
-    container: httptoolkit/act-build-base
+    container: httptoolkit/act-build-base:v2.0.0
     steps:
       - uses: actions/checkout@v2
 

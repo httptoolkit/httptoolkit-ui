@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { runHTK } from 'httptoolkit-server';
+import { spawn, ChildProcess } from 'child_process';
 import * as StaticServer from 'static-server';
 import * as puppeteer from 'puppeteer';
 
@@ -14,26 +14,44 @@ function startWebServer() {
     });
 }
 
+async function startServer() {
+    process.env.OCLIF_TS_NODE = '0';
+    const serverPath = path.join('.httptoolkit-server', 'httptoolkit-server', 'bin', 'run');
+    const serverProcess = spawn(serverPath, ['start'], {
+        stdio: 'inherit'
+    });
+    serverProcess.on('error', (error) => console.error('Server start failed', error));
+    serverProcess.on('exit', (code, signal) => {
+        console.log(`Server exited with ${code ?? signal}`);
+    });
+
+    return serverProcess;
+}
+
 describe('Smoke test', function () {
     this.timeout(10000);
 
     let browser: puppeteer.Browser;
+    let server: ChildProcess;
 
     beforeEach(async () => {
-        [ browser ] = await Promise.all([
+        [ browser, server ] = await Promise.all([
             puppeteer.launch({
                 headless: true,
                 slowMo: 0,
                 timeout: 10000,
                 args: ['--no-sandbox']
             }),
-            runHTK({}),
+            startServer(),
             startWebServer()
         ]);
     });
 
-    afterEach(() => {
-        browser.close();
+    afterEach(async () => {
+        await Promise.all([
+            browser.close(),
+            server.kill()
+        ]);
     });
 
     it('can load the app', async () => {
