@@ -22,3 +22,17 @@ export const noPropagation = <E extends React.BaseSyntheticEvent>(
     event.stopPropagation();
     callback(event);
 }
+
+export const inputValidation = (
+    checkFn: (input: string) => boolean,
+    errorMessage: string
+) => (input: HTMLInputElement) => {
+    const inputValue = input.value;
+    if (!inputValue || checkFn(inputValue)) {
+        input.setCustomValidity('');
+    } else {
+        input.setCustomValidity(errorMessage);
+    }
+    input.reportValidity();
+    return input.validity.valid;
+}

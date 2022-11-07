@@ -5,6 +5,10 @@ export function isValidPort(port: number): boolean {
     return port > 0 && port <= 65535;
 }
 
+export function isValidHost(host: string | undefined): boolean {
+    return !!host?.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
+}
+
 function isIPv6(ip: ipaddr.IPv4 | ipaddr.IPv6): ip is ipaddr.IPv6 {
     return ip.kind() === 'ipv6';
 }

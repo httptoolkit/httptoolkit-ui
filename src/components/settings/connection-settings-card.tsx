@@ -12,6 +12,7 @@ import { asError } from '../../util/error';
 
 import { UpstreamProxyType, RulesStore } from '../../model/rules/rules-store';
 import { ParsedCertificate, ValidationResult } from '../../model/crypto';
+import { isValidHost } from '../../model/network';
 import { parseCert, validatePKCS } from '../../services/ui-worker-api';
 import {
     serverVersion,
@@ -21,6 +22,7 @@ import {
     CUSTOM_CA_TRUST_RANGE
 } from '../../services/service-versions';
 
+import { inputValidation } from '../component-utils';
 import {
     CollapsibleCardProps,
     CollapsibleCard,
@@ -29,6 +31,7 @@ import {
 import { ContentLabel } from '../common/text-content';
 import { Select, TextInput } from '../common/inputs';
 import { SettingsButton, SettingsExplanation } from './settings-components';
+import { HostList, HostConfigRow } from './host-list-config';
 
 const SpacedContentLabel = styled(ContentLabel)`
     margin-top: 40px;
@@ -66,57 +69,15 @@ const UpstreamProxyDropdown = styled(Select)`
     margin-right: 10px;
 `;
 
-const HostList = styled.div`
-    width: 100%;
-
-    display: grid;
-    grid-template-columns: auto min-content;
-    grid-gap: 10px;
-    margin: 10px 0;
-
-    align-items: baseline;
-
-    ${TextInput} {
-        align-self: stretch;
-    }
-`;
-
-const Host = styled.div`
-    min-width: 300px;
-    font-family: ${p => p.theme.monoFontFamily};
-`;
-
-const isValidHost = (host: string | undefined): boolean =>
-    !!host?.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
-
-function validateHost(input: HTMLInputElement) {
-    const host = input.value;
-    if (!host || isValidHost(host)) {
-        input.setCustomValidity('');
-    } else {
-        input.setCustomValidity(
-            "Should be a plain hostname, optionally with a specific port"
-        );
-    }
-    input.reportValidity();
-    return input.validity.valid;
-}
+const validateHost = inputValidation(isValidHost,
+    "Should be a plain hostname, optionally with a specific port"
+);
 
 const isValidProxyHost = (host: string | undefined): boolean =>
     !!host?.match(/^([^/@]*@)?[A-Za-z0-9\-.]+(:\d+)?$/);
-
-function validateProxyHost(input: HTMLInputElement) {
-    const host = input.value;
-    if (!host || isValidProxyHost(host)) {
-        input.setCustomValidity('');
-    } else {
-        input.setCustomValidity(
-            "Should be a plain hostname, optionally with a specific port and/or username:password"
-        );
-    }
-    input.reportValidity();
-    return input.validity.valid;
-}
+const validateProxyHost = inputValidation(isValidProxyHost,
+    "Should be a plain hostname, optionally with a specific port and/or username:password"
+);
 
 @observer
 class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
@@ -160,26 +121,16 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         rulesStore.upstreamProxyHost = this.proxyHostInput;
     }
 
-    @observable
-    private noProxyInput = "";
-
     @action.bound
-    setNoProxyInput(event: React.ChangeEvent<HTMLInputElement>) {
-        validateHost(event.target);
-        this.noProxyInput = event.target.value;
+    addNoProxyHost(hostname: string) {
+        const { rulesStore } = this.props;
+        rulesStore.upstreamNoProxyHosts = [...rulesStore.upstreamNoProxyHosts, hostname];
     }
 
     @action.bound
-    addNoProxyHost() {
+    removeNoProxyHost(hostname: string) {
         const { rulesStore } = this.props;
-        rulesStore.upstreamNoProxyHosts = [...rulesStore.upstreamNoProxyHosts, this.noProxyInput];
-        this.noProxyInput = '';
-    }
-
-    @action.bound
-    removeNoProxyHost(noProxyHost: string) {
-        const { rulesStore } = this.props;
-        rulesStore.upstreamNoProxyHosts = _.without(rulesStore.upstreamNoProxyHosts, noProxyHost);
+        rulesStore.upstreamNoProxyHosts = _.without(rulesStore.upstreamNoProxyHosts, hostname);
     }
 
     render() {
@@ -193,12 +144,10 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         const {
             proxyType,
             proxyHostInput,
-            noProxyInput,
 
             setProxyType,
             setProxyHostInput,
             saveProxyHost,
-            setNoProxyInput,
             addNoProxyHost,
             removeNoProxyHost
         } = this;
@@ -273,34 +222,13 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
                     Non-proxied hosts
                 </SpacedContentLabel>
 
-                <HostList>
-                    { noProxyHosts.map((host) => [
-                        <Host key={`host-${host}`}>
-                            { host }
-                        </Host>,
-                        <SettingsButton
-                            key={`delete-${host}`}
-                            onClick={() => removeNoProxyHost(host)}
-                        >
-                            <Icon icon={['far', 'trash-alt']} />
-                        </SettingsButton>
-                    ]) }
-
-                    <TextInput
-                        placeholder='A host whose traffic should not be sent via the proxy'
-                        value={noProxyInput}
-                        onChange={setNoProxyInput}
-                    />
-                    <SettingsButton
-                        disabled={
-                            !isValidHost(noProxyInput) ||
-                            noProxyHosts.includes(noProxyInput)
-                        }
-                        onClick={addNoProxyHost}
-                    >
-                        <Icon icon={['fas', 'plus']} />
-                    </SettingsButton>
-                </HostList>
+                <StringSettingsList
+                    placeholder='A host whose traffic should not be sent via the proxy'
+                    onAdd={addNoProxyHost}
+                    onDelete={removeNoProxyHost}
+                    values={noProxyHosts}
+                    validationFn={validateHost}
+                />
                 <SettingsExplanation>
                     Requests to these hosts will always be sent directly, not via the configured proxy.
                 </SettingsExplanation>
@@ -467,9 +395,9 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
             </SpacedContentLabel>
             <ClientCertificatesList>
                 { Object.entries(clientCertificateHostMap).map(([host, cert]) => [
-                    <Host key={`host-${host}`}>
+                    <ConfigValueRow key={`host-${host}`}>
                         { host }
-                    </Host>,
+                    </ConfigValueRow>,
 
                     <CertificateFilename key={`filename-${host}`}>
                         { cert.filename }
@@ -681,9 +609,6 @@ export class ConnectionSettingsCard extends React.Component<
     }
 > {
 
-    @observable
-    whitelistHostInput = '';
-
     @action.bound
     unwhitelistHost(host: string) {
         const { whitelistedCertificateHosts } = this.props.rulesStore!;
@@ -694,10 +619,9 @@ export class ConnectionSettingsCard extends React.Component<
     }
 
     @action.bound
-    addHostToWhitelist() {
-        this.props.rulesStore!.whitelistedCertificateHosts.push(this.whitelistHostInput);
+    addHostToWhitelist(hostname: string) {
+        this.props.rulesStore!.whitelistedCertificateHosts.push(hostname);
         trackEvent({ category: "Config", action: "Whitelist Host" });
-        this.whitelistHostInput = '';
     }
 
     render() {
@@ -741,37 +665,14 @@ export class ConnectionSettingsCard extends React.Component<
                 Host HTTPS Whitelist
             </SpacedContentLabel>
 
-            <HostList>
-                { whitelistedCertificateHosts.map((host) => [
-                    <Host key={`host-${host}`}>
-                        { host }
-                    </Host>,
-                    <SettingsButton
-                        key={`delete-${host}`}
-                        onClick={() => this.unwhitelistHost(host)}
-                    >
-                        <Icon icon={['far', 'trash-alt']} />
-                    </SettingsButton>
-                ]) }
+            <StringSettingsList
+                placeholder='A host to exclude from strict HTTPS checks'
+                onAdd={this.addHostToWhitelist}
+                onDelete={this.unwhitelistHost}
+                values={whitelistedCertificateHosts}
 
-                <TextInput
-                    placeholder='A host to exclude from strict HTTPS checks'
-                    value={this.whitelistHostInput}
-                    onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
-                        this.whitelistHostInput = e.target.value;
-                        validateHost(e.target);
-                    })}
-                />
-                <SettingsButton
-                    disabled={
-                        !isValidHost(this.whitelistHostInput) ||
-                        whitelistedCertificateHosts.includes(this.whitelistHostInput)
-                    }
-                    onClick={this.addHostToWhitelist}
-                >
-                    <Icon icon={['fas', 'plus']} />
-                </SettingsButton>
-            </HostList>
+                validationFn={validateHost}
+            />
             <SettingsExplanation>
                 Requests to these hosts will skip certificate validation and/or may use older TLS
                 versions, back to TLSv1. These requests will be successful regardless of any
