@@ -1,5 +1,7 @@
 import { styled, css } from '../../styles';
+
 import { Button, ButtonLink } from '../common/inputs';
+import { ContentLabel } from '../common/text-content';
 
 const SettingsButtonCss = css`
     font-size: ${p => p.theme.textSize};
@@ -24,4 +26,10 @@ export const SettingsExplanation = styled.p`
     font-style: italic;
     margin-top: 10px;
     line-height: 1.3;
+`;
+
+export const SettingsSubheading = styled(ContentLabel)`
+    &:not(header + &) {
+        margin-top: 40px;
+    }
 `;

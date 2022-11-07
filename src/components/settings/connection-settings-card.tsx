@@ -28,14 +28,14 @@ import {
     CollapsibleCard,
     CollapsibleCardHeading
 } from '../common/card';
-import { ContentLabel } from '../common/text-content';
 import { Select, TextInput } from '../common/inputs';
-import { SettingsButton, SettingsExplanation } from './settings-components';
-import { HostList, HostConfigRow } from './host-list-config';
+import {
+    SettingsSubheading,
+    SettingsButton,
+    SettingsExplanation
+} from './settings-components';
+import { StringSettingsList, ConfigValueRow } from './string-settings-list';
 
-const SpacedContentLabel = styled(ContentLabel)`
-    margin-top: 40px;
-`;
 
 const UpstreamProxySettings = styled.div`
     margin-top: 10px;
@@ -44,7 +44,7 @@ const UpstreamProxySettings = styled.div`
     flex-direction: row;
     flex-wrap: wrap;
 
-    > ${SpacedContentLabel}, > ${SettingsExplanation} {
+    > ${SettingsSubheading}, > ${SettingsExplanation} {
         flex-basis: 100%;
     }
 
@@ -153,7 +153,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         } = this;
 
         return <>
-            <ContentLabel>Upstream Proxy</ContentLabel>
+            <SettingsSubheading>Upstream Proxy</SettingsSubheading>
 
             <UpstreamProxySettings>
                 <UpstreamProxyDropdown
@@ -218,9 +218,9 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
             </UpstreamProxySettings>
 
             { proxyType !== 'direct' && proxyType !== 'system' && <>
-                <SpacedContentLabel>
+                <SettingsSubheading>
                     Non-proxied hosts
-                </SpacedContentLabel>
+                </SettingsSubheading>
 
                 <StringSettingsList
                     placeholder='A host whose traffic should not be sent via the proxy'
@@ -390,9 +390,9 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
         const { clientCertificateHostMap } = this.props.rulesStore!;
 
         return <>
-            <SpacedContentLabel>
+            <SettingsSubheading>
                 Client Certificates
-            </SpacedContentLabel>
+            </SettingsSubheading>
             <ClientCertificatesList>
                 { Object.entries(clientCertificateHostMap).map(([host, cert]) => [
                     <ConfigValueRow key={`host-${host}`}>
@@ -556,9 +556,9 @@ class AdditionalCAConfig extends React.Component<{ rulesStore: RulesStore }> {
         const { additionalCaCertificates } = this.props.rulesStore;
 
         return <>
-            <SpacedContentLabel>
+            <SettingsSubheading>
                 Trusted CA Certificates
-            </SpacedContentLabel>
+            </SettingsSubheading>
             <AdditionalCertificateList>
                 { additionalCaCertificates.map((cert) => {
                     const { subject: { org, name }, serial } = cert;
@@ -661,9 +661,9 @@ export class ConnectionSettingsCard extends React.Component<
                 />
             </> }
 
-            <SpacedContentLabel>
+            <SettingsSubheading>
                 Host HTTPS Whitelist
-            </SpacedContentLabel>
+            </SettingsSubheading>
 
             <StringSettingsList
                 placeholder='A host to exclude from strict HTTPS checks'
