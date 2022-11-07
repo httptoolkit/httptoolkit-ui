@@ -73,7 +73,7 @@ export class AccountStore {
         reportErrorsAsUser(this.user.email);
 
         if (this.user.banned) {
-            alert('Your account has been blocked for abuse. Please contact help@httptoolkit.tech.');
+            alert('Your account has been blocked for abuse. Please contact help@httptoolkit.com.');
             window.close();
         }
     }.bind(this));
@@ -117,7 +117,7 @@ export class AccountStore {
         // and I can't do that if it doesn't pay my bills!
         //
         // Fund open source - if you want Pro, help pay for its development.
-        // Can't afford it? Get in touch: tim@httptoolkit.tech.
+        // Can't afford it? Get in touch: tim@httptoolkit.com.
         // ------------------------------------------------------------------
 
         // If you're before the last expiry date, your subscription is valid,
@@ -181,7 +181,7 @@ export class AccountStore {
                 alert(
                     "Unfortunately, due to high levels of recent chargebacks & fraud, subscriptions for new accounts "+
                     "will temporarily require manual validation & processing before setup.\n\n" +
-                    "Please email purchase@httptoolkit.tech to begin this process."
+                    "Please email purchase@httptoolkit.com to begin this process."
                 );
 
                 return;
@@ -193,7 +193,7 @@ export class AccountStore {
             reportError(error);
             alert(`${
                 error.message || error.code || 'Error'
-            }\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.tech.`);
+            }\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.com.`);
             this.modal = undefined;
         }
     }.bind(this));

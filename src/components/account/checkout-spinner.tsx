@@ -14,8 +14,8 @@ export const CheckoutSpinner = styled((p: { className?: string, onCancel: () => 
         </p>
         <p>
             Have questions? Take a look at <a
-                href="https://httptoolkit.tech/docs/guides/subscription-faq"
-            >the FAQ</a> or email <strong>billing@httptoolkit.tech</strong>.
+                href="https://httptoolkit.com/docs/guides/subscription-faq"
+            >the FAQ</a> or email <strong>billing@httptoolkit.com</strong>.
         </p>
         <Icon
             icon={['fac', 'spinner-arc']}

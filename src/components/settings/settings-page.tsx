@@ -234,7 +234,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     </AccountControls>
 
                     <AccountContactFooter>
-                        Questions? Email <strong>billing@httptoolkit.tech</strong>
+                        Questions? Email <strong>billing@httptoolkit.com</strong>
                     </AccountContactFooter>
                 </CollapsibleCard>
 

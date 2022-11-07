@@ -69,7 +69,7 @@ const auth0Lock = new Auth0LockPasswordless(AUTH0_CLIENT_ID, AUTH0_DOMAIN, {
     allowAutocomplete: true,
     theme: {
         primaryColor: lightTheme.popColor,
-        logo: 'https://httptoolkit.tech/icon-600.png'
+        logo: 'https://httptoolkit.com/icon-600.png'
     },
     languageDictionary: Object.assign(auth0Dictionary, {
         title: 'Log in / Sign up',

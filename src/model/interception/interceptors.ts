@@ -241,7 +241,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             'Intercept an Android device or emulator connected to ADB',
             'Automatically injects system HTTPS certificates into rooted devices & most emulators'
         ],
-        notAvailableHelpUrl: 'https://httptoolkit.tech/docs/guides/android/#android-device-via-adb-interception-option-is-not-available',
+        notAvailableHelpUrl: 'https://httptoolkit.com/docs/guides/android/#android-device-via-adb-interception-option-is-not-available',
         iconProps: androidInterceptIconProps,
         checkRequirements: ({ serverVersion }) => {
             return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);

@@ -204,7 +204,7 @@ class AndroidConfig extends React.Component<{
             <p>
                 <strong>This won't work immediately for all apps.</strong> Some may need changes
                 to trust HTTP Toolkit for HTTPS traffic. <a
-                    href="https://httptoolkit.tech/docs/guides/android"
+                    href="https://httptoolkit.com/docs/guides/android"
                     target='_blank'
                     rel='noreferrer noopener'
                 >
