@@ -24,7 +24,6 @@ export const SettingsButtonLink = styled(ButtonLink)<{
 
 export const SettingsExplanation = styled.p`
     font-style: italic;
-    margin-top: 10px;
     line-height: 1.3;
 `;
 

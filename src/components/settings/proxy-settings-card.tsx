@@ -3,16 +3,19 @@ import * as React from 'react';
 import { observable, action, computed } from 'mobx';
 import { observer, inject } from "mobx-react";
 
-import { styled, warningColor } from '../../styles';
+import { styled } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
 
 import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
+import { isValidHostname } from '../../model/network';
 import {
     serverVersion,
     versionSatisfies,
-    INITIAL_HTTP2_RANGE
+    INITIAL_HTTP2_RANGE,
+    TLS_PASSTHROUGH_SUPPORTED
 } from '../../services/service-versions';
 
+import { inputValidation } from '../component-utils';
 import {
     CollapsibleCardProps,
     CollapsibleCard,
@@ -20,8 +23,12 @@ import {
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
 import { Select } from '../common/inputs';
-import { Pill } from '../common/pill';
-import { SettingsButton, SettingsExplanation } from './settings-components';
+import {
+    SettingsButton,
+    SettingsExplanation,
+    SettingsSubheading
+} from './settings-components';
+import { StringSettingsList } from './string-settings-list';
 
 const RestartApp = styled(SettingsButton).attrs(() => ({
     children: 'Restart app to activate',
@@ -80,22 +87,15 @@ const ProxyPortStateExplanation = styled.p`
     margin-bottom: 10px;
 `;
 
-const Http2SettingsContainer = styled.div`
-    margin-top: 40px;
-
-    ${Pill} {
-        display: inline-block;
-        margin-left: 5px;
-    }
-
-    ${Select} {
-        display: inline-block;
-        margin-top: 10px;
-        width: auto;
-        font-size: ${p => p.theme.textSize};
-        padding: 3px;
-    }
+const Http2Select = styled(Select)`
+    display: inline-block;
+    margin-top: 10px;
+    width: auto;
+    font-size: ${p => p.theme.textSize};
+    padding: 3px;
 `;
+
+const hostnameValidation = inputValidation(isValidHostname, "Should be a valid hostname");
 
 @inject('proxyStore')
 @observer
@@ -152,9 +152,35 @@ export class ProxySettingsCard extends React.Component<
         else this.props.proxyStore!.setPortConfig(this.portConfig);
     }
 
+    @action.bound
+    addTlsPassthroughHostname(hostname: string) {
+        const { tlsPassthroughConfig } = this.props.proxyStore!;
+        tlsPassthroughConfig.push({ hostname });
+    }
+
+    @action.bound
+    removeTlsPassthroughHostname(hostname: string) {
+        const { tlsPassthroughConfig } = this.props.proxyStore!;
+        const hostnameIndex = _.findIndex(tlsPassthroughConfig, (passthroughItem) =>
+            passthroughItem.hostname === hostname
+        );
+
+        if (hostnameIndex === -1) return;
+
+        tlsPassthroughConfig.splice(hostnameIndex, 1);
+    }
+
     render() {
         const { proxyStore, ...cardProps } = this.props;
-        const { httpProxyPort, http2Enabled, http2CurrentlyEnabled } = proxyStore!;
+        const {
+            httpProxyPort,
+
+            http2Enabled,
+            http2CurrentlyEnabled,
+
+            tlsPassthroughConfig,
+            currentTlsPassthroughConfig
+        } = proxyStore!;
 
         return <CollapsibleCard {...cardProps}>
             <header>
@@ -167,7 +193,8 @@ export class ProxySettingsCard extends React.Component<
             <RestartApp
                 visible={
                     (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
-                    http2Enabled !== http2CurrentlyEnabled
+                    http2Enabled !== http2CurrentlyEnabled ||
+                    !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig)
                 }
             />
 
@@ -214,15 +241,39 @@ export class ProxySettingsCard extends React.Component<
             </SettingsExplanation>
 
             {
-                _.isString(serverVersion.value) &&
-                versionSatisfies(serverVersion.value, INITIAL_HTTP2_RANGE) &&
-                <Http2SettingsContainer>
-                    <div>
-                        <ContentLabel>HTTP/2 Support</ContentLabel>
-                        <Pill color={warningColor}>Experimental</Pill>
-                    </div>
+                versionSatisfies(serverVersion.value, TLS_PASSTHROUGH_SUPPORTED) && <>
+                    <SettingsSubheading>
+                        TLS Passthrough { !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig) &&
+                            <UnsavedIcon />
+                        }
+                    </SettingsSubheading>
 
-                    <Select
+                    <StringSettingsList
+                        values={tlsPassthroughConfig.map(c => c.hostname)}
+                        onAdd={this.addTlsPassthroughHostname}
+                        onDelete={this.removeTlsPassthroughHostname}
+                        placeholder='A hostname whose TLS connections should not be intercepted'
+                        validationFn={hostnameValidation}
+                    />
+
+                    <SettingsExplanation>
+                        Incoming TLS connections to these hostnames will bypass HTTP Toolkit, and will
+                        be forwarded upstream untouched instead of being intercepted. Clients will not see
+                        HTTP Toolkit's certificate, which may solve some connection issues, but traffic
+                        within these TLS connections will not be accessible.
+                    </SettingsExplanation>
+                </>
+            }
+
+            {
+                versionSatisfies(serverVersion.value, INITIAL_HTTP2_RANGE) && <>
+                    <SettingsSubheading>
+                        HTTP/2 Support { http2Enabled !== http2CurrentlyEnabled &&
+                            <UnsavedIcon />
+                        }
+                    </SettingsSubheading>
+
+                    <Http2Select
                         value={JSON.stringify(http2Enabled)}
                         onChange={action((event: React.ChangeEvent<HTMLSelectElement>) => {
                             const value = event.currentTarget.value;
@@ -232,14 +283,12 @@ export class ProxySettingsCard extends React.Component<
                         })}
                     >
                         <option value={'true'}>Enabled for all clients</option>
-                        <option value={'"fallback"'}>Disabled, except for HTTP/2-only clients</option>
+                        <option value={'"fallback"'}>Enabled only for HTTP/2-only clients</option>
                         <option value={'false'}>Disabled for all clients</option>
-                    </Select>
-                    { http2Enabled !== http2CurrentlyEnabled &&
-                        <UnsavedIcon />
-                    }
-                </Http2SettingsContainer>
+                    </Http2Select>
+                </>
             }
         </CollapsibleCard>
     }
+
 }

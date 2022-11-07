@@ -13,7 +13,8 @@ import {
     MockttpPluggableAdmin,
     ProxySetting,
     RequestRuleData,
-    WebSocketRuleData
+    WebSocketRuleData,
+    MockttpHttpsOptions
 } from 'mockttp';
 import * as MockRTC from 'mockrtc';
 
@@ -192,6 +193,7 @@ export class ProxyStore {
         });
 
         this._http2CurrentlyEnabled = this.http2Enabled;
+        this._currentTlsPassthroughConfig = _.cloneDeep(this.tlsPassthroughConfig);
 
         this.monitorRemoteClientConnection(this.adminClient);
 
@@ -201,7 +203,10 @@ export class ProxyStore {
                     cors: false,
                     suggestChanges: false,
                     // User configurable settings:
-                    http2: this.http2Enabled,
+                    http2: this._http2CurrentlyEnabled,
+                    https: {
+                        tlsPassthrough: this._currentTlsPassthroughConfig
+                    } as MockttpHttpsOptions // Cert/Key options are set by the server
                 },
                 port: this.portConfig
             },
@@ -277,6 +282,13 @@ export class ProxyStore {
     private _http2CurrentlyEnabled = this.http2Enabled;
     get http2CurrentlyEnabled() {
         return this._http2CurrentlyEnabled;
+    }
+
+    @persist('list') @observable
+    tlsPassthroughConfig: Array<{ hostname: string }> = [];
+    private _currentTlsPassthroughConfig: Array<{ hostname: string }> = [];
+    get currentTlsPassthroughConfig() {
+        return this._currentTlsPassthroughConfig;
     }
 
     setRequestRules = (...rules: RequestRuleData[]) => {

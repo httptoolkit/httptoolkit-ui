@@ -9,6 +9,10 @@ export function isValidHost(host: string | undefined): boolean {
     return !!host?.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 }
 
+export function isValidHostname(hostname: string | undefined): boolean {
+    return !!hostname?.match(/^[A-Za-z0-9\-.]+$/);
+}
+
 function isIPv6(ip: ipaddr.IPv4 | ipaddr.IPv6): ip is ipaddr.IPv6 {
     return ip.kind() === 'ipv6';
 }
