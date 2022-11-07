@@ -1,7 +1,7 @@
 import * as dateFns from 'date-fns';
 import { SourceIcons } from '../../src/icons';
 import { HttpExchange, HttpBody } from '../../src/model/http/exchange';
-import { FailedTLSConnection } from '../../src/model/events/failed-tls-connection';
+import { FailedTlsConnection } from '../../src/model/tls/failed-tls-connection';
 import { HtkRequest, HtkResponse } from '../../src/types';
 
 export const getExchangeData = ({
@@ -85,11 +85,11 @@ export const getExchangeData = ({
 export const getFailedTls = ({
     remoteIpAddress = "10.0.0.1",
     failureCause = 'cert-rejected'
-} = {}) => Object.assign(Object.create(FailedTLSConnection.prototype), {
+} = {}) => Object.assign(Object.create(FailedTlsConnection.prototype), {
     remoteIpAddress,
     failureCause,
     tags: [] as string[]
-}) as FailedTLSConnection;
+}) as FailedTlsConnection;
 
 export function httpDate(date: Date) {
     const utcDate = dateFns.addMinutes(date, date.getTimezoneOffset());

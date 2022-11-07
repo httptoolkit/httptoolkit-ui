@@ -1,30 +1,30 @@
 import * as uuid from 'uuid/v4';
 
-import { InputTLSRequest } from '../../types';
-import { HTKEventBase } from './event-base';
+import { InputTlsFailure } from '../../types';
+import { HTKEventBase } from '../events/event-base';
 
-export class FailedTLSConnection extends HTKEventBase {
+export class FailedTlsConnection extends HTKEventBase {
 
     constructor(
-        private failureEvent: InputTLSRequest
+        private failureEvent: InputTlsFailure
     ) {
         super();
 
         this.searchIndex = [failureEvent.hostname, failureEvent.remoteIpAddress]
             .filter((x): x is string => !!x)
-            .join('\n')
+            .join('\n');
     }
 
     readonly id = uuid();
 
-    readonly hostname = this.failureEvent.hostname;
+    readonly upstreamHostname = this.failureEvent.hostname;
     readonly remoteIpAddress = this.failureEvent.remoteIpAddress;
     readonly remotePort = this.failureEvent.remotePort;
     readonly failureCause = this.failureEvent.failureCause;
     readonly tags = this.failureEvent.tags;
     readonly timingEvents = this.failureEvent.timingEvents;
 
-    isTLSFailure(): this is FailedTLSConnection {
+    isTlsFailure(): this is FailedTlsConnection {
         return true;
     }
 

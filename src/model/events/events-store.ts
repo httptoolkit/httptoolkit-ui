@@ -8,7 +8,8 @@ import { HarParseError } from 'har-validator';
 
 import {
     InputResponse,
-    InputTLSRequest,
+    InputTlsFailure,
+    InputTlsPassthrough,
     InputInitiatedRequest,
     InputCompletedRequest,
     InputClientError,
@@ -37,7 +38,8 @@ import { ApiStore } from '../api/api-store';
 import { parseSource } from '../http/sources';
 import { parseHar } from '../http/har';
 
-import { FailedTLSConnection } from './failed-tls-connection';
+import { FailedTlsConnection } from '../tls/failed-tls-connection';
+import { TlsTunnel } from '../tls/tls-tunnel';
 import { HttpExchange } from '../http/exchange';
 import { WebSocketStream } from '../websockets/websocket-stream';
 import { RTCConnection } from '../webrtc/rtc-connection';
@@ -58,8 +60,10 @@ type EventTypesMap = {
     'websocket-message-sent': InputWebSocketMessage,
     'websocket-close': InputWebSocketClose,
     // Mockttp misc:
-    'abort': InputInitiatedRequest
-    'tls-client-error': InputTLSRequest,
+    'abort': InputInitiatedRequest,
+    'tls-client-error': InputTlsFailure,
+    'tls-passthrough-opened': InputTlsPassthrough,
+    'tls-passthrough-closed': InputTlsPassthrough,
     'client-error': InputClientError,
 } & {
     // MockRTC:
@@ -77,6 +81,8 @@ const mockttpEventTypes = [
     'websocket-close',
     'abort',
     'tls-client-error',
+    'tls-passthrough-opened',
+    'tls-passthrough-closed',
     'client-error'
 ] as const;
 
@@ -120,6 +126,7 @@ type OrphanableQueuedEvent<T extends
     | 'media-track-opened'
     | 'media-track-stats'
     | 'media-track-closed'
+    | 'tls-passthrough-closed'
 > = { type: T, event: EventTypesMap[T] };
 
 export class EventsStore {
@@ -240,6 +247,11 @@ export class EventsStore {
                     return this.markWebSocketClosed(queuedEvent.event);
                 case 'abort':
                     return this.markRequestAborted(queuedEvent.event);
+                case 'tls-passthrough-opened':
+                    this.addTlsTunnel(queuedEvent.event);
+                    return this.checkForOrphan(queuedEvent.event.id);
+                case 'tls-passthrough-closed':
+                    return this.markTlsTunnelClosed(queuedEvent.event);
                 case 'tls-client-error':
                     return this.addFailedTlsRequest(queuedEvent.event);
                 case 'client-error':
@@ -383,7 +395,9 @@ export class EventsStore {
 
         if (!stream) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[close.streamId] = { type: 'websocket-close', event: close };
+            this.orphanedEvents[close.streamId] = {
+                type: 'websocket-close', event: close
+            };
             return;
         }
 
@@ -391,14 +405,34 @@ export class EventsStore {
     }
 
     @action
-    private addFailedTlsRequest(request: InputTLSRequest) {
+    private addTlsTunnel(openEvent: InputTlsPassthrough) {
+        this.events.push(new TlsTunnel(openEvent));
+    }
+
+    @action
+    private markTlsTunnelClosed(closeEvent: InputTlsPassthrough) {
+        const tunnel = _.find(this.events, { id: closeEvent.id }) as TlsTunnel | undefined;
+
+        if (!tunnel) {
+            // Handle this later, once the tunnel open event has arrived
+            this.orphanedEvents[closeEvent.id] = {
+                type: 'tls-passthrough-closed', event: close
+            };
+            return;
+        }
+
+        tunnel.markClosed(closeEvent);
+    }
+
+    @action
+    private addFailedTlsRequest(request: InputTlsFailure) {
         if (_.some(this.events, (event) =>
-            'hostname' in event &&
-            event.hostname === request.hostname &&
+            event.isTlsFailure() &&
+            event.upstreamHostname === request.hostname &&
             event.remoteIpAddress === request.remoteIpAddress
         )) return; // Drop duplicate TLS failures
 
-        this.events.push(new FailedTLSConnection(request));
+        this.events.push(new FailedTlsConnection(request));
     }
 
     @action

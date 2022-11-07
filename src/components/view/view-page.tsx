@@ -32,7 +32,8 @@ import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
 import { HttpDetailsPane } from './http/http-details-pane';
-import { TlsFailureDetailsPane } from './tls-failure-details-pane';
+import { TlsFailureDetailsPane } from './tls/tls-failure-details-pane';
+import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
@@ -240,10 +241,14 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onDelete={this.onDelete}
                 onScrollToEvent={this.onScrollToCenterEvent}
             />;
-        } else if (this.selectedEvent.isTLSFailure()) {
+        } else if (this.selectedEvent.isTlsFailure()) {
             rightPane = <TlsFailureDetailsPane
                 failure={this.selectedEvent}
                 certPath={certPath}
+            />;
+        } else if (this.selectedEvent.isTlsTunnel()) {
+            rightPane = <TlsTunnelDetailsPane
+                tunnel={this.selectedEvent}
             />;
         } else if (this.selectedEvent.isRTCDataChannel()) {
             rightPane = <RTCDataChannelDetailsPane

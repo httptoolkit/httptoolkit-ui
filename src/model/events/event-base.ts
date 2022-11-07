@@ -1,7 +1,8 @@
 import { observable, computed } from 'mobx';
 
 import {
-    FailedTLSConnection,
+    FailedTlsConnection,
+    TlsTunnel,
     HttpExchange,
     RTCConnection,
     RTCDataChannel,
@@ -18,7 +19,9 @@ export abstract class HTKEventBase {
     // These can be overriden by subclasses to allow easy type narrowing:
     isHttp(): this is HttpExchange { return false; }
     isWebSocket(): this is WebSocketStream { return false; }
-    isTLSFailure(): this is FailedTLSConnection { return false; }
+
+    isTlsFailure(): this is FailedTlsConnection { return false; }
+    isTlsTunnel(): this is TlsTunnel { return false; }
 
     isRTCConnection(): this is RTCConnection { return false; }
     isRTCDataChannel(): this is RTCDataChannel { return false; }

@@ -14,8 +14,8 @@ import {
     HttpExchange,
     CollectedEvent,
     TimingEvents,
-    InputTLSRequest,
-    FailedTLSConnection
+    InputTlsFailure,
+    FailedTlsConnection
 } from '../../types';
 
 import { UI_VERSION } from '../../services/service-versions';
@@ -60,7 +60,7 @@ export type HarTlsErrorEntry = {
     startedDateTime: string;
     time: number; // Floating-point high-resolution duration, in ms
     hostname?: string; // Undefined if connection fails before hostname received
-    cause: FailedTLSConnection['failureCause'];
+    cause: FailedTlsConnection['failureCause'];
 
     clientIPAddress: string;
     clientPort: number;
@@ -71,7 +71,7 @@ export async function generateHar(events: CollectedEvent[]): Promise<Har> {
         HttpExchange[], CollectedEvent[]
     ];
 
-    const errors = otherEvents.filter(e => e.isTLSFailure()) as FailedTLSConnection[];
+    const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
 
     const sourcePages = getSourcesAsHarPages(exchanges);
     const entries = await Promise.all(exchanges.map(generateHarEntry));
@@ -356,7 +356,7 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
     };
 }
 
-function generateHarTlsError(event: FailedTLSConnection): HarTlsErrorEntry {
+function generateHarTlsError(event: FailedTlsConnection): HarTlsErrorEntry {
     const timingEvents = event.timingEvents ?? {};
 
     const startTime = 'startTime' in timingEvents
@@ -371,7 +371,7 @@ function generateHarTlsError(event: FailedTLSConnection): HarTlsErrorEntry {
         startedDateTime: dateFns.format(startTime),
         time: failureDuration,
         cause: event.failureCause,
-        hostname: event.hostname,
+        hostname: event.upstreamHostname,
         clientIPAddress: event.remoteIpAddress,
         clientPort: event.remotePort
     };
@@ -381,7 +381,7 @@ export type ParsedHar = {
     requests: HarRequest[],
     responses: HarResponse[],
     aborts: HarRequest[],
-    tlsErrors: InputTLSRequest[]
+    tlsErrors: InputTlsFailure[]
     pinnedIds: string[]
 };
 
@@ -403,7 +403,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
     const requests: HarRequest[] = [];
     const responses: HarResponse[] = [];
     const aborts: HarRequest[] = [];
-    const tlsErrors: InputTLSRequest[] = [];
+    const tlsErrors: InputTlsFailure[] = [];
     const pinnedIds: string[] = []
 
     har.log.entries.forEach((entry, i) => {

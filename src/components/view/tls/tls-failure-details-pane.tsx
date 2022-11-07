@@ -1,15 +1,15 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { styled } from '../../styles';
-import { Icon, SourceIcons } from '../../icons';
+import { styled } from '../../../styles';
+import { Icon, SourceIcons } from '../../../icons';
 
-import { getReadableIP } from '../../model/network';
-import { FailedTLSConnection } from '../../model/events/failed-tls-connection';
+import { getReadableIP } from '../../../model/network';
+import { FailedTlsConnection } from '../../../model/tls/failed-tls-connection';
 
-import { MediumCard } from '../common/card';
-import { ContentLabelBlock, Content, CopyableMonoValue } from '../common/text-content';
-import { PaneOuterContainer, PaneScrollContainer } from './view-details-pane';
+import { MediumCard } from '../../common/card';
+import { ContentLabelBlock, Content, CopyableMonoValue } from '../../common/text-content';
+import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
 
 const AndroidIcon = styled(Icon).attrs({
     icon: SourceIcons.Android.icon
@@ -21,7 +21,7 @@ const AndroidIcon = styled(Icon).attrs({
 `;
 
 export class TlsFailureDetailsPane extends React.Component<{
-    failure: FailedTLSConnection,
+    failure: FailedTlsConnection,
     certPath: string
 }> {
     render() {

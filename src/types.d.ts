@@ -9,7 +9,8 @@ import type {
     SubscribableEvent as MockttpEvent,
     Headers,
     TimingEvents,
-    TlsRequest as TLSRequest,
+    TlsHandshakeFailure,
+    TlsPassthroughEvent,
     ClientError
 } from 'mockttp';
 import type { PortRange } from 'mockttp/dist/mockttp';
@@ -26,7 +27,8 @@ import * as MockRTC from 'mockrtc';
 
 import type { ObservablePromise } from './util/observable';
 
-import type { FailedTLSConnection } from './model/events/failed-tls-connection';
+import type { FailedTlsConnection } from './model/tls/failed-tls-connection';
+import type { TlsTunnel } from './model/tls/tls-tunnel';
 import type { HttpExchange } from './model/http/exchange';
 import type { WebSocketStream } from './model/websockets/websocket-stream';
 import type { RTCConnection } from './model/webrtc/rtc-connection';
@@ -44,7 +46,8 @@ export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
 
 export type InputHTTPEvent = MockttpEvent;
 export type InputClientError = ClientError;
-export type InputTLSRequest = TLSRequest;
+export type InputTlsFailure = TlsHandshakeFailure;
+export type InputTlsPassthrough = TlsPassthroughEvent;
 export type InputInitiatedRequest = MockttpInitiatedRequest;
 export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
@@ -128,7 +131,8 @@ export type MessageBody = {
 };
 
 export type {
-    FailedTLSConnection,
+    FailedTlsConnection,
+    TlsTunnel,
     HttpExchange,
     WebSocketStream,
     RTCConnection,
@@ -136,7 +140,8 @@ export type {
     RTCMediaTrack
 };
 export type CollectedEvent =
-    | FailedTLSConnection
+    | FailedTlsConnection
+    | TlsTunnel
     | HttpExchange
     | WebSocketStream
     | RTCConnection

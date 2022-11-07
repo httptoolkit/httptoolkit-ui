@@ -12,8 +12,9 @@ import {
     CollectedEvent,
     HttpExchange,
     RTCStream,
-    FailedTLSConnection,
-    RTCConnection
+    FailedTlsConnection,
+    RTCConnection,
+    TlsTunnel
 } from '../../types';
 
 import {
@@ -247,7 +248,7 @@ const TrafficEventListRow = styled(EventListRow)`
     }
 `;
 
-const FailedRequestListRow = styled(EventListRow)`
+const TlsListRow = styled(EventListRow)`
     height: 28px !important; /* Important required to override react-window's style attr */
     margin: 2px 0;
 
@@ -312,12 +313,12 @@ const EventRow = observer((props: EventRowProps) => {
 
     const isSelected = (selectedEvent === event);
 
-    if (event.isTLSFailure()) {
-        return <FailedRequestRow
+    if (event.isTlsFailure() || event.isTlsTunnel()) {
+        return <TlsRow
             index={index}
             isSelected={isSelected}
             style={style}
-            failure={event}
+            tlsEvent={event}
         />;
     } else if (event.isHttp()) {
         if (event.api?.isBuiltInApi && event.api.matchedOperation()) {
@@ -423,7 +424,7 @@ const ExchangeRow = observer(({
     </TrafficEventListRow>;
 });
 
-const RTCConnectedIcon = styled(Icon).attrs(() => ({
+const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'spinner'],
     spin: true,
     title: 'Connected'
@@ -457,7 +458,7 @@ const RTCConnectionRow = observer(({
         <RowPin pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
         <EventTypeColumn>
-            { !event.closeState && <RTCConnectedIcon /> } WebRTC
+            { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC
         </EventTypeColumn>
         <Source title={event.source.summary}>
             <Icon
@@ -501,7 +502,7 @@ const RTCStreamRow = observer(({
         <RowPin pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
         <EventTypeColumn>
-            { !event.closeState && <RTCConnectedIcon /> } WebRTC {
+            { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC {
                 event.isRTCDataChannel()
                     ? 'Data'
                 : // RTCMediaTrack:
@@ -591,34 +592,43 @@ const BuiltInApiRow = observer((p: {
     </TrafficEventListRow>
 });
 
-const FailedRequestRow = observer((p: {
+const TlsRow = observer((p: {
     index: number,
-    failure: FailedTLSConnection,
+    tlsEvent: FailedTlsConnection | TlsTunnel,
     isSelected: boolean,
     style: {}
-}) =>
-    <FailedRequestListRow
+}) => {
+    const { tlsEvent } = p;
+
+    const description = tlsEvent.isTlsTunnel()
+        ? 'Tunnelled TLS '
+        : ({
+            'closed': 'Aborted ',
+            'reset': 'Aborted ',
+            'unknown': 'Aborted ',
+            'cert-rejected': 'Certificate rejected for ',
+            'no-shared-cipher': 'HTTPS setup failed for ',
+        } as _.Dictionary<string>)[tlsEvent.failureCause]
+
+    return <TlsListRow
         role="row"
         aria-label='row'
         aria-rowindex={p.index + 1}
-        data-event-id={p.failure.id}
+        data-event-id={tlsEvent.id}
         tabIndex={p.isSelected ? 0 : -1}
 
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
     >
         {
-            ({
-                'closed': 'Aborted ',
-                'reset': 'Aborted ',
-                'unknown': 'Aborted ',
-                'cert-rejected': 'Certificate rejected for ',
-                'no-shared-cipher': 'HTTPS setup failed for ',
-            } as _.Dictionary<string>)[p.failure.failureCause]
-        }
-        connection to { p.failure.hostname || 'unknown domain' }
-    </FailedRequestListRow>
-);
+            tlsEvent.isTlsTunnel() &&
+            tlsEvent.isOpen() &&
+                <ConnectedSpinnerIcon />
+        } {
+            description
+        } connection to { tlsEvent.upstreamHostname || 'unknown domain' }
+    </TlsListRow>
+});
 
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
