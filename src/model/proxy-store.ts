@@ -155,6 +155,7 @@ export class ProxyStore {
             if (!accountStore.isPaidUser) {
                 this.setPortConfig(undefined);
                 this.http2Enabled = 'fallback';
+                this.tlsPassthroughConfig = [];
             }
         });
 
