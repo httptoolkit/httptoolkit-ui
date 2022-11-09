@@ -302,7 +302,8 @@ export class RulesStore {
             proxyConfig: this.proxyConfig,
             lookupOptions: this.accountStore.featureFlags.includes('docker') && this.proxyStore.dnsServers.length
                 ? { servers: this.proxyStore.dnsServers }
-                : undefined
+                : undefined,
+            simulateConnectionErrors: true
         };
 
         // Clone to ensure we touch & subscribe to everything here
