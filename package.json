@@ -27,7 +27,7 @@
     "test:unit": "env-cmd -f ./automation/ts-node.env karma start ./test/unit/karma.conf.js",
     "test:unit:dev": "npm run test:unit -- --single-run=false --auto-watch",
     "test:unit:debug": "npm run test:unit -- --single-run=false --browsers Chrome",
-    "test:integration": "npm-all build test:integration:run",
+    "test:integration": "npm-run-all build test:integration:run",
     "test:integration:run": "env-cmd -f ./test/integration/ts-node.env mocha --exit -r ts-node/register 'test/integration/**/*.spec.ts'"
   },
   "author": "Tim Perry <tim@httptoolkit.com>",
