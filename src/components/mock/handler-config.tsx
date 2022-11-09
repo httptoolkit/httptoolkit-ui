@@ -30,6 +30,7 @@ import {
     RequestAndResponseBreakpointHandler,
     TimeoutHandler,
     CloseConnectionHandler,
+    ResetConnectionHandler,
     FromFileResponseHandler
 } from '../../model/rules/definitions/http-rule-definitions';
 import {
@@ -153,6 +154,9 @@ export function HandlerConfiguration(props: {
             return <TimeoutHandlerConfig {...configProps} />;
         case 'close-connection':
             return <CloseConnectionHandlerConfig {...configProps} />;
+        case 'reset-connection':
+            return <ResetConnectionHandlerConfig {...configProps} />;
+
         case 'ws-echo':
             return <WebSocketEchoHandlerConfig {...configProps} />;
         case 'ws-reject':
@@ -1320,7 +1324,27 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
                     : this.props.ruleType === 'webrtc'
                         ? (() => { throw new Error('Not compatible with WebRTC rules') })
                     : (() => { throw new UnreachableCheck(this.props.ruleType); })()
-                } is received, the connection will be closed, with no response.
+                } is received, the connection will be cleanly closed, with no response.
+            </ConfigExplanation>
+        </ConfigContainer>;
+    }
+}
+
+@observer
+class ResetConnectionHandlerConfig extends HandlerConfig<ResetConnectionHandler> {
+    render() {
+        return <ConfigContainer>
+            <ConfigExplanation>
+                As soon as a matching {
+                    isHttpCompatibleType(this.props.ruleType)
+                        ? 'request'
+                    : this.props.ruleType === 'websocket'
+                        ? 'WebSocket'
+                    : this.props.ruleType === 'webrtc'
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
+                    : (() => { throw new UnreachableCheck(this.props.ruleType); })()
+                } is received, the connection will be killed with a TCP RST packet (or a
+                RST_STREAM frame, for HTTP/2 requests).
             </ConfigExplanation>
         </ConfigContainer>;
     }

@@ -301,6 +301,8 @@ export type TimeoutHandler = httpHandlers.TimeoutHandlerDefinition;
 export const TimeoutHandler = httpHandlers.TimeoutHandlerDefinition;
 export type CloseConnectionHandler = httpHandlers.CloseConnectionHandlerDefinition;
 export const CloseConnectionHandler = httpHandlers.CloseConnectionHandlerDefinition;
+export type ResetConnectionHandler = httpHandlers.ResetConnectionHandlerDefinition;
+export const ResetConnectionHandler = httpHandlers.ResetConnectionHandlerDefinition;
 
 export const HttpMatcherLookup = {
     ..._.omit(httpMatchers.MatcherLookup, ['method']), // We skip method to use per-method matchers instead

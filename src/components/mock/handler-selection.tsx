@@ -26,6 +26,7 @@ import {
     PassThroughHandler,
     TimeoutHandler,
     CloseConnectionHandler,
+    ResetConnectionHandler,
     FromFileResponseHandler
 } from '../../model/rules/definitions/http-rule-definitions';
 import {
@@ -112,6 +113,8 @@ const instantiateHandler = (
             return new TimeoutHandler();
         case 'close-connection':
             return new CloseConnectionHandler();
+        case 'reset-connection':
+            return new ResetConnectionHandler();
 
         case 'ws-echo':
             return new EchoWebSocketHandlerDefinition();
