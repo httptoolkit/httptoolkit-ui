@@ -98,7 +98,7 @@ describe("Search filter model integration test:", () => {
                 "exchanges by body size",
                 "requests that have received a response",
                 "requests that are still waiting for a response",
-                "requests that aborted before receiving a response",
+                "requests whose connection failed before receiving a response",
                 "requests that weren't transmitted successfully",
                 "exchanges that are pinned",
                 "exchanges by their general category",

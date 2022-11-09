@@ -3,6 +3,7 @@ import type { ComponentClass } from 'react';
 import type {
     InitiatedRequest as MockttpInitiatedRequest,
     CompletedRequest as MockttpCompletedRequest,
+    AbortedRequest as MockttpAbortedRequest,
     CompletedResponse as MockttpResponse,
     WebSocketMessage as MockttpWebSocketMessage,
     WebSocketClose as MockttpWebSocketClose,
@@ -51,6 +52,7 @@ export type InputTlsPassthrough = TlsPassthroughEvent;
 export type InputInitiatedRequest = MockttpInitiatedRequest;
 export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
+export type InputFailedRequest = MockttpAbortedRequest | ClientError['request'];
 export type InputResponse = MockttpResponse | HarResponse;
 export type InputMessage = InputRequest | InputResponse;
 

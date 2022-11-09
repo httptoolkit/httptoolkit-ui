@@ -6,7 +6,8 @@ import {
     InputRequest,
     InputResponse,
     InputWebSocketMessage,
-    InputWebSocketClose
+    InputWebSocketClose,
+    InputFailedRequest
 } from '../../types';
 
 import { ApiStore } from '../api/api-store';
@@ -68,7 +69,7 @@ export class WebSocketStream extends HttpExchange {
         return this.closeData;
     }
 
-    markAborted(request: Pick<InputInitiatedRequest, 'timingEvents' | 'tags'>) {
+    markAborted(request: InputFailedRequest) {
         if (!this.wasAccepted()) {
             // An abort before accept acts exactly as in normal HTTP
             return super.markAborted(request);

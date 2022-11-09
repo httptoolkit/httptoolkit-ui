@@ -6,9 +6,9 @@ import {
     HtkResponse,
     Headers,
     MessageBody,
-    InputInitiatedRequest,
     InputRequest,
     InputResponse,
+    InputFailedRequest,
     TimingEvents,
     InputMessage,
     MockttpBreakpointedRequest,
@@ -249,6 +249,9 @@ export class HttpExchange extends HTKEventBase {
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;
 
+    @observable
+    public abortMessage: string | undefined;
+
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new HttpBody(request, request.headers);
         this.matchedRuleId = request.matchedRuleId || "?";
@@ -257,12 +260,16 @@ export class HttpExchange extends HTKEventBase {
         this.tags = _.union(this.tags, request.tags);
     }
 
-    markAborted(request: Pick<InputInitiatedRequest, 'timingEvents' | 'tags'>) {
+    markAborted(request: InputFailedRequest) {
         this.response = 'aborted';
         this.searchIndex += '\naborted';
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);
+
+        if ('error' in request && request.error?.message) {
+            this.abortMessage = request.error.message;
+        }
 
         if (this.requestBreakpoint) {
             this.requestBreakpoint.reject(

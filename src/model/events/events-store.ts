@@ -12,6 +12,7 @@ import {
     InputTlsPassthrough,
     InputInitiatedRequest,
     InputCompletedRequest,
+    InputFailedRequest,
     InputClientError,
     CollectedEvent,
     InputWebSocketMessage,
@@ -329,7 +330,7 @@ export class EventsStore {
     }
 
     @action
-    private markRequestAborted(request: InputInitiatedRequest) {
+    private markRequestAborted(request: InputFailedRequest) {
         const exchange = _.find(this.exchanges, { id: request.id });
 
         if (!exchange) {

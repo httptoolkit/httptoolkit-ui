@@ -356,7 +356,7 @@ class AbortedFilter extends Filter {
     static filterName = "aborted";
 
     static filterDescription(value: string) {
-        return "requests that aborted before receiving a response";
+        return "requests whose connection failed before receiving a response";
     }
 
     matches(event: CollectedEvent): boolean {

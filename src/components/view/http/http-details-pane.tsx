@@ -11,13 +11,9 @@ import { reportError } from '../../../errors';
 import { UiStore } from '../../../model/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
-import { getStatusColor } from '../../../model/events/categorization';
 import { ApiExchange } from '../../../model/api/api-interfaces';
 import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
-
-import { Pill } from '../../common/pill';
-import { CollapsibleCard, CollapsibleCardHeading } from '../../common/card';
 
 import {
     PaneOuterContainer,
@@ -31,6 +27,7 @@ import { HttpBodyCard } from './http-body-card';
 import { HttpApiCard, HttpApiPlaceholderCard } from './http-api-card';
 import { HttpRequestCard } from './http-request-card';
 import { HttpResponseCard } from './http-response-card';
+import { HttpAbortedResponseCard } from './http-aborted-card';
 import { HttpPerformanceCard } from './http-performance-card';
 import { HttpExportCard } from './http-export-card';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
@@ -301,17 +298,10 @@ export class HttpDetailsPane extends React.Component<{
         }
 
         if (response === 'aborted') {
-            cards.push(<CollapsibleCard {...this.cardProps.response} direction='left'>
-                <header>
-                    <Pill color={getStatusColor(response, uiStore!.theme)}>Aborted</Pill>
-                    <CollapsibleCardHeading onCollapseToggled={this.cardProps.response.onCollapseToggled}>
-                        Response
-                    </CollapsibleCardHeading>
-                </header>
-                <div>
-                    The request was aborted before the response was completed.
-                </div>
-            </CollapsibleCard>);
+            cards.push(<HttpAbortedResponseCard
+                cardProps={this.cardProps.response}
+                exchange={exchange}
+            />);
         } else if (!!response) {
             cards.push(<HttpResponseCard
                 {...this.cardProps.response}
