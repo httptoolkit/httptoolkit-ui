@@ -1135,8 +1135,8 @@ class BodyFilter extends Filter {
     }
 
     matches(event: CollectedEvent): boolean {
-        if (!(event.isHttp())) return false;
-        if (!event.isCompletedRequest()) return false; // No body yet, no match
+        if (!event.isHttp()) return false;
+        if (!event.hasRequestBody() && !event.hasResponseBody()) return false; // No body, no match
 
         const requestBody = event.request.body.decoded;
         const responseBody = event.isSuccessfulExchange()
