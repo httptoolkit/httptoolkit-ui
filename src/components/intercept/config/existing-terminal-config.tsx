@@ -94,7 +94,7 @@ type ShellDefinition = { command: string, description: string };
 @observer
 class ExistingTerminalConfig extends React.Component<{
     interceptor: Interceptor,
-    activateInterceptor: (options: { dockerEnabled: boolean }) => Promise<{
+    activateInterceptor: () => Promise<{
         port: number,
         commands?: {
             [shellName: string]: ShellDefinition
@@ -159,9 +159,7 @@ class ExistingTerminalConfig extends React.Component<{
     }
 
     async componentDidMount() {
-        const { port, commands } = await this.props.activateInterceptor({
-            dockerEnabled: this.props.accountStore!.featureFlags.includes('docker')
-        });
+        const { port, commands } = await this.props.activateInterceptor();
 
         runInAction(() => {
             if (!commands) {

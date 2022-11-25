@@ -300,7 +300,7 @@ export class RulesStore {
                 passphrase: cert.passphrase
             })),
             proxyConfig: this.proxyConfig,
-            lookupOptions: this.accountStore.featureFlags.includes('docker') && this.proxyStore.dnsServers.length
+            lookupOptions: this.proxyStore.dnsServers.length
                 ? { servers: this.proxyStore.dnsServers }
                 : undefined,
             simulateConnectionErrors: true

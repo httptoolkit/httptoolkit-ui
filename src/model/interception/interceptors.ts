@@ -75,10 +75,6 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         description: ["Intercept all traffic from running Docker containers"],
         uiConfig: DockerAttachCustomUi,
         iconProps: SourceIcons.Docker,
-        checkRequirements: ({ accountStore, serverVersion }) => {
-            return accountStore.featureFlags.includes('docker') &&
-                versionSatisfies(serverVersion || '', DOCKER_INTERCEPTION_RANGE);
-        },
         tags: DOCKER_TAGS
     },
     'fresh-chrome': {
@@ -222,11 +218,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         name: 'Fresh Terminal',
         description: ["Open a new terminal that intercepts all processes & Docker containers"],
         iconProps: SourceIcons.Terminal,
-        tags: TERMINAL_TAGS,
-        getActivationOptions: ({ accountStore }) =>
-            accountStore.featureFlags.includes('docker')
-            ? { dockerEnabled: true }
-            : {}
+        tags: TERMINAL_TAGS
     },
     'existing-terminal': {
         name: 'Existing Terminal',
