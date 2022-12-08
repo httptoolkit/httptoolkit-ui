@@ -133,15 +133,15 @@ export function getCompatibleTypes(
     }
 
     // Examine the first char of the body, assuming it's ascii
-    let firstChar = body && body.slice(0, 1).toString('ascii');
+    const firstChar = body && body.slice(0, 1).toString('ascii');
 
-    // Allow formatting non-JSON text as JSON, if it looks like it might be
-    if (contentType === 'text' && (firstChar === '{' || firstChar === '[')) {
+    // Allow optionally formatting non-JSON as JSON, if it looks like it might be
+    if (firstChar === '{' || firstChar === '[') {
         types.push('json');
     }
 
-    // Allow formatting non-XML plain text as XML, if it looks like it might be
-    if (contentType === 'text' && firstChar === '<') {
+    // Allow optionally formatting non-XML as XML, if it looks like it might be
+    if (firstChar === '<') {
         types.push('xml');
     }
 
@@ -150,7 +150,7 @@ export function getCompatibleTypes(
         types.push('text');
     }
 
-    // SVGs can be shown as XML
+    // SVGs can always be shown as XML
     if (rawContentType && rawContentType.startsWith('image/svg')) {
         types.push('xml');
     }
