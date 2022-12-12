@@ -28,6 +28,10 @@ const PlanPickerModal = styled.dialog`
 
     background-color: transparent;
     border: none;
+
+    min-width: 850px;
+    max-width: 980px;
+    width: 90%;
 `;
 
 const PlanPickerDetails = styled.section`
