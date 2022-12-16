@@ -328,7 +328,7 @@ async function requestUserData(): Promise<string> {
     const token = await getToken();
     if (!token) return '';
 
-    const appDataResponse = await fetch('https://accounts.httptoolkit.tech/.netlify/functions/get-app-data', {
+    const appDataResponse = await fetch('https://accounts.httptoolkit.tech/api/get-app-data', {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`
