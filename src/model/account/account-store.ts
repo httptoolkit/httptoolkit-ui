@@ -17,7 +17,7 @@ import {
 } from './auth';
 import {
     SubscriptionPlans,
-    SubscriptionPlanCode,
+    SKU,
     openCheckout
 } from './subscriptions';
 
@@ -84,7 +84,7 @@ export class AccountStore {
     modal: 'login' | 'pick-a-plan' | 'post-checkout' | undefined;
 
     @observable
-    private selectedPlan: SubscriptionPlanCode | undefined;
+    private selectedPlan: SKU | undefined;
 
     @computed get isLoggedIn() {
         return !!this.user.email;
@@ -154,7 +154,7 @@ export class AccountStore {
         try {
             trackEvent({ category: 'Account', action: 'Get Pro', label: source });
 
-            const selectedPlan: SubscriptionPlanCode | undefined = yield this.pickPlan();
+            const selectedPlan: SKU | undefined = yield this.pickPlan();
             if (!selectedPlan) return;
 
             if (!this.isLoggedIn) yield this.logIn();
@@ -249,7 +249,7 @@ export class AccountStore {
     });
 
     @action.bound
-    setSelectedPlan(plan: SubscriptionPlanCode | undefined) {
+    setSelectedPlan(plan: SKU | undefined) {
         if (plan) {
             this.selectedPlan = plan;
         } else {
@@ -257,8 +257,8 @@ export class AccountStore {
         }
     }
 
-    private purchasePlan = flow(function * (this: AccountStore, email: string, planCode: SubscriptionPlanCode) {
-        openCheckout(email, planCode);
+    private purchasePlan = flow(function * (this: AccountStore, email: string, sku: SKU) {
+        openCheckout(email, sku);
         this.modal = 'post-checkout';
 
         let focused = true;
@@ -297,7 +297,7 @@ export class AccountStore {
         trackEvent({
             category: 'Account',
             action: this.isPaidUser ? 'Checkout complete' : 'Checkout cancelled',
-            label: planCode
+            label: sku
         });
 
         this.modal = undefined;

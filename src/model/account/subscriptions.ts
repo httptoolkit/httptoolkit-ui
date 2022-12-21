@@ -3,7 +3,7 @@ import { reportError } from '../../errors';
 import { delay, doWhile } from '../../util/promise';
 
 export interface SubscriptionPlan {
-    id: number;
+    paddleId: number;
     name: string;
     prices?: {
         currency: string;
@@ -13,17 +13,17 @@ export interface SubscriptionPlan {
 }
 
 export const SubscriptionPlans = {
-    'pro-monthly': { id: 550380, name: 'Pro (monthly)' } as SubscriptionPlan,
-    'pro-annual': { id: 550382, name: 'Pro (annual)' } as SubscriptionPlan,
-    'pro-perpetual': { id: 599788, name: 'Pro (perpetual)' } as SubscriptionPlan,
-    'team-monthly': { id: 550789, name: 'Team (monthly)' } as SubscriptionPlan,
-    'team-annual': { id: 550788, name: 'Team (annual)' } as SubscriptionPlan,
+    'pro-monthly': { paddleId: 550380, name: 'Pro (monthly)' } as SubscriptionPlan,
+    'pro-annual': { paddleId: 550382, name: 'Pro (annual)' } as SubscriptionPlan,
+    'pro-perpetual': { paddleId: 599788, name: 'Pro (perpetual)' } as SubscriptionPlan,
+    'team-monthly': { paddleId: 550789, name: 'Team (monthly)' } as SubscriptionPlan,
+    'team-annual': { paddleId: 550788, name: 'Team (annual)' } as SubscriptionPlan,
 };
 
 async function loadPlanPrices() {
     const response = await fetch(
         `https://accounts.httptoolkit.tech/api/get-prices?product_ids=${
-            Object.values(SubscriptionPlans).map(plan => plan.id).join(',')
+            Object.values(SubscriptionPlans).map(plan => plan.paddleId).join(',')
         }`
     );
 
@@ -48,7 +48,7 @@ async function loadPlanPrices() {
 
     productPrices.forEach((productPrice) => {
         const plan = _.find(SubscriptionPlans,
-            { id: productPrice.product_id }
+            { paddleId: productPrice.product_id }
         ) as SubscriptionPlan | undefined;
 
         if (!plan) return;
@@ -89,18 +89,18 @@ function formatPrice(currency: string, price: number) {
     })
 }
 
-export type SubscriptionPlanCode = keyof typeof SubscriptionPlans;
+export type SKU = keyof typeof SubscriptionPlans;
 
-export const getSubscriptionPlanCode = (id: number | undefined) =>
-    _.findKey(SubscriptionPlans, { id: id }) as SubscriptionPlanCode | undefined;
+export const getSKU = (paddleId: number | undefined) =>
+    _.findKey(SubscriptionPlans, { paddleId: paddleId }) as SKU | undefined;
 
-export const openCheckout = async (email: string, planCode: SubscriptionPlanCode) => {
+export const openCheckout = async (email: string, sku: SKU) => {
     window.open(
-        `https://pay.paddle.com/checkout/${
-            SubscriptionPlans[planCode].id
-        }?guest_email=${
+        `https://accounts.httptoolkit.tech/api/redirect-to-checkout?email=${
             encodeURIComponent(email)
-        }&referring_domain=app.httptoolkit.tech`,
+        }&sku=${
+            sku
+        }&source=app.httptoolkit.tech`,
         '_blank'
     );
 }

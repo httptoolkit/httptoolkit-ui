@@ -6,7 +6,7 @@ import { observable, action } from "mobx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { styled, css } from "../../styles";
-import { SubscriptionPlanCode, SubscriptionPlan } from "../../model/account/subscriptions";
+import { SKU, SubscriptionPlan } from "../../model/account/subscriptions";
 import { Button, UnstyledButton, ButtonLink, SecondaryButton } from "../common/inputs";
 
 const PlanPickerModal = styled.dialog`
@@ -275,7 +275,7 @@ type PlanCycle = 'monthly' | 'annual';
 interface PlanPickerProps {
     email?: string;
     plans: _.Dictionary<SubscriptionPlan>;
-    onPlanPicked: (plan: SubscriptionPlanCode | undefined) => void;
+    onPlanPicked: (sku: SKU | undefined) => void;
     logOut: () => void;
     logIn: () => void;
 }
@@ -435,17 +435,17 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
     }
 
     getPlanMonthlyPrice = (tierCode: string): string => {
-        const planCode = this.getPlanCode(tierCode);
-        const plan = this.props.plans[planCode];
+        const sku = this.getSKU(tierCode);
+        const plan = this.props.plans[sku];
         return plan.prices!.monthly;
     };
 
-    getPlanCode = (tierCode: string) => {
-        return `${tierCode}-${this.planCycle}` as SubscriptionPlanCode;
+    getSKU = (tierCode: string) => {
+        return `${tierCode}-${this.planCycle}` as SKU;
     }
 
     buyPlan = (tierCode: string) => {
-        this.props.onPlanPicked(this.getPlanCode(tierCode));
+        this.props.onPlanPicked(this.getSKU(tierCode));
     }
 
     closePicker = () => {
