@@ -126,7 +126,7 @@ export function getCompatibleTypes(
     rawContentType: string | undefined,
     body: MessageBody | Buffer | undefined
 ): ViewableContentType[] {
-    let types = [contentType];
+    let types = new Set([contentType]);
 
     if (body && !Buffer.isBuffer(body)) {
         body = body.decoded;
@@ -137,26 +137,18 @@ export function getCompatibleTypes(
 
     // Allow optionally formatting non-JSON as JSON, if it looks like it might be
     if (firstChar === '{' || firstChar === '[') {
-        types.push('json');
+        types.add('json');
     }
 
     // Allow optionally formatting non-XML as XML, if it looks like it might be
     if (firstChar === '<') {
-        types.push('xml');
-    }
-
-    // Pretty much anything can be shown as plain text, if you like
-    if (!_.includes(['text'], contentType)) {
-        types.push('text');
+        types.add('xml');
     }
 
     // SVGs can always be shown as XML
     if (rawContentType && rawContentType.startsWith('image/svg')) {
-        types.push('xml');
+        types.add('xml');
     }
-
-    // Anything can be shown raw
-    if (contentType !== 'raw') types.push('raw');
 
     if (
         body &&
@@ -165,8 +157,12 @@ export function getCompatibleTypes(
         body.length < 1000 * 100 && // < 100 KB of content
         body.every(isValidBase64Byte)
     ) {
-        types.push('base64');
+        types.add('base64');
     }
 
-    return types;
+    // Lastly, anything can be shown raw or as text, if you like:
+    types.add('text');
+    types.add('raw');
+
+    return Array.from(types);
 }
