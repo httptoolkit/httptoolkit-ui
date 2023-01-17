@@ -847,6 +847,24 @@ describe("Search filter model integration test:", () => {
             ]);
         });
 
+        it("should suggest seen header values from duplicate headers", () => {
+            let input = "header[set-cookie]*=";
+
+            const suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({
+                    responseHeaders: {
+                        'set-cookie': ['a', 'b']
+                    }
+                })
+            ]);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 18, showAs: "*={header value}" },
+                { index: 18, showAs: "*=a" },
+                { index: 18, showAs: "*=b" }
+            ]);
+        });
+
         it("should show descriptions for various suggestions", () => {
             [
                 ["header", "exchanges by header"],

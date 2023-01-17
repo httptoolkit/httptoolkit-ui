@@ -924,15 +924,20 @@ class HeaderFilter extends Filter {
 
                     return _(events)
                         .map(e =>
-                            getAllHeaders(e)
+                            _(getAllHeaders(e))
                             .filter(([headerName]): boolean =>
                                 headerName.toLowerCase() === expectedHeaderName
                             )
-                            .map(([_hn, headerValue]) => headerValue)
+                            .map(([_hn, headerValue]) => Array.isArray(headerValue)
+                                ? headerValue
+                                : [headerValue]
+                            )
+                            .flatten()
+                            .valueOf()
                         )
                         .flatten()
                         .uniq()
-                        .valueOf() as string[];
+                        .valueOf();
                 }
             }),
             // [] should be required/suggested only if value contains a space
