@@ -132,6 +132,11 @@
                 }
             });
         }, 0);
+
+        // Tiny polyfill for the only backward compat issue so far with old Electron:
+        if (!window.globalThis) {
+            window.globalThis = window;
+        }
     </script>
   </body>
 </html>
