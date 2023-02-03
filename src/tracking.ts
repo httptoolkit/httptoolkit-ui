@@ -69,15 +69,22 @@ let lastUrl: string | undefined;
 export function trackPage(location: Window['location']) {
     if (!enabled) return;
 
-    const currentUrl = location.href;
+    const currentUrl = location.href
+        .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
+        .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
+        .replace(/\?.*/, ''); // Strip any query & hash params
+
+    // That path is the part after the first slash, after the protocol:
+    const currentPath = currentUrl.slice(currentUrl.indexOf('/', 'https://'.length));
+
     if (currentUrl === lastUrl) return;
     lastUrl = currentUrl;
 
     ReactGA.set({
-        location: location.href,
-        page: window.location.pathname
+        location: currentUrl,
+        page: currentPath
     });
-    ReactGA.pageview(window.location.pathname);
+    ReactGA.pageview(currentPath);
 }
 
 export function trackEvent(event: ReactGA.EventArgs) {
