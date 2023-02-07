@@ -3,7 +3,7 @@ import * as React from 'react';
 import * as Autosuggest from 'react-autosuggest';
 
 import { styled } from '../../../styles';
-import { trackEvent } from '../../../tracking';
+import { trackEvent } from '../../../metrics';
 
 import {
     Filter,

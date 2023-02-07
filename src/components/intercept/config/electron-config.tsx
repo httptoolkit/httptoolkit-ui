@@ -5,7 +5,7 @@ import { action } from 'mobx';
 
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { trackEvent } from '../../../tracking';
+import { trackEvent } from '../../../metrics';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { UiStore } from '../../../model/ui-store';

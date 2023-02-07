@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { observable, action, flow, computed, when } from 'mobx';
 
 import { reportError, reportErrorsAsUser } from '../../errors';
-import { trackEvent } from '../../tracking';
+import { trackEvent } from '../../metrics';
 import { delay } from '../../util/promise';
 import { lazyObservablePromise } from '../../util/observable';
 

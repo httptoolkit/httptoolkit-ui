@@ -5,7 +5,7 @@ import { observer, inject } from "mobx-react";
 
 import { styled } from '../../styles';
 import { WarningIcon, Icon } from '../../icons';
-import { trackEvent } from '../../tracking';
+import { trackEvent } from '../../metrics';
 
 import { uploadFile } from '../../util/ui';
 import { asError } from '../../util/error';

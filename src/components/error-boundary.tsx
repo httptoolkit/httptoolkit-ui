@@ -4,7 +4,7 @@ import { observable, action } from 'mobx';
 
 import { styled } from '../styles';
 import { Sentry, isSentryInitialized } from '../errors';
-import { trackEvent } from '../tracking';
+import { trackEvent } from '../metrics';
 
 const ErrorOverlay = styled((props: {
     className?: string,

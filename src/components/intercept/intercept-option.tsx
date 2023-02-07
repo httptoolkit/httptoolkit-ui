@@ -5,7 +5,7 @@ import { observer, inject } from 'mobx-react';
 
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
-import { trackEvent } from '../../tracking';
+import { trackEvent } from '../../metrics';
 import { reportError } from '../../errors';
 import { Interceptor } from '../../model/interception/interceptors';
 import { InterceptorStore } from '../../model/interception/interceptor-store';

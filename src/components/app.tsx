@@ -11,7 +11,7 @@ import {
 
 import { styled } from '../styles';
 import { WithInjected } from '../types';
-import { trackPage } from '../tracking';
+import { trackPage } from '../metrics';
 import { appHistory } from '../routing';
 import { useHotkeys, Ctrl } from '../util/ui';
 

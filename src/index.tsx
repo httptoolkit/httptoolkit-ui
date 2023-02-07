@@ -17,7 +17,7 @@ import { Provider } from 'mobx-react';
 
 import { GlobalStyles } from './styles';
 import { delay } from './util/promise';
-import { initTracking } from './tracking';
+import { initMetrics } from './metrics';
 import { appHistory } from './routing';
 
 import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./services/update-worker';
@@ -96,7 +96,7 @@ const stores = {
 const appStartupPromise = Promise.all(
     Object.values(stores).map(store => store.initialized)
 );
-initTracking();
+initMetrics();
 
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
