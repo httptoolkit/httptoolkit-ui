@@ -154,6 +154,7 @@ export default <Webpack.Configuration>{
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null,
             'GA_ID': null,
+            'POSTHOG_KEY': null,
             'UI_VERSION': null
         })
     ],

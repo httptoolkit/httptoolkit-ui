@@ -33,6 +33,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GA_ID: ${{ secrets.GA_ID }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_ORG: http-toolkit
           SENTRY_PROJECT: httptoolkit-ui
