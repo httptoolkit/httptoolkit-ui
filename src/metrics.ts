@@ -29,7 +29,12 @@ export function initMetrics() {
         posthog.init(POSTHOG_KEY, {
             api_host: 'https://events.httptoolkit.tech',
             autocapture: false, // No automatic event capture please
+
             capture_pageview: false, // We manually capture pageview (to sanitize & dedupe URLs)
+
+            advanced_disable_decide: true, // We don't need dynamic features, skip checking
+            disable_session_recording: false, // Disabled server-side, but disable explicitly here too
+
             persistence: 'memory' // No cookies/local storage tracking - just anon session metrics
         });
 
