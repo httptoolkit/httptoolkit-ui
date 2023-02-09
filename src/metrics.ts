@@ -40,12 +40,13 @@ export function initMetrics() {
             persistence: 'memory' // No cookies/local storage tracking - just anon session metrics
         });
 
-        // Normalize initial_current_url before anything gets sent:
-        posthog.people.set_once({ $initial_current_url: normalizeUrl(location.href) });
-
         ReactGA.set({ anonymizeIp: true });
 
-        Promise.race([delay(10000), serverVersion, desktopVersion]).then(() => {
+        // Set session properties once all are available, or after 10 seconds:
+        Promise.race([
+            delay(20000),
+            Promise.all([serverVersion, desktopVersion])
+        ]).then(() => {
             const sessionProperties: any = {};
 
             ([
