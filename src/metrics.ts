@@ -42,37 +42,7 @@ export function initMetrics() {
 
         ReactGA.set({ anonymizeIp: true });
 
-        // Set session properties once all are available, or after 10 seconds:
-        Promise.race([
-            delay(20000),
-            Promise.all([serverVersion, desktopVersion])
-        ]).then(() => {
-            // Log metrics against the various component versions, to spot regressions:
-            const sessionProperties: any = {
-                // UI version is just the latest commit hash:
-                'ui-version': UI_VERSION
-            };
-
-            // Server/desktop versions are available async once everything is up & running:
-            ([
-                ['server-version', serverVersion],
-                ['desktop-version', desktopVersion]
-            ] as const).forEach(([key, valuePromise]) => {
-                if (valuePromise.state === 'fulfilled') {
-                    sessionProperties[key] = valuePromise.value;
-                } else {
-                    // If still not available, just log later once they are:
-                    valuePromise.then((value) => {
-                        posthog.people.set({ [key]: value });
-                    }).catch(() => {});
-                }
-            });
-
-            // Set version properties in a batch if possible, to avoid too much back & forth:
-            posthog.people.set(sessionProperties);
-        }).catch(() => {}); // Ignore errors in version retrieval
-
-        // GA metadata works different, so we handle separately here:
+        // GA metadata needs to be handled separately here:
         serverVersion.then((version) => ReactGA.set({ 'dimension1': version }));
         desktopVersion.then((version) => ReactGA.set({ 'dimension2': version }));
         ReactGA.set({ 'dimension3': UI_VERSION });
@@ -86,6 +56,15 @@ const normalizeUrl = (url: string) =>
     .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
     .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
     .replace(/\?.*/, ''); // Strip any query & hash params
+
+// This is passed via $set_once on all Posthog events, and the session collects metadata once it's
+// available. These values never change as all metrics are anonymous - there's no connection between
+// sessions, so the desktop/server version is always fixed.
+const sessionData = () => ({
+    'ui-version': UI_VERSION,
+    'server-version': serverVersion.state === 'fulfilled' ? serverVersion.value : undefined,
+    'desktop-version': desktopVersion.state === 'fulfilled' ? desktopVersion.value : undefined,
+});
 
 let lastUrl: string | undefined;
 export function trackPage(location: Window['location']) {
@@ -104,7 +83,10 @@ export function trackPage(location: Window['location']) {
         page: currentPath
     });
     ReactGA.pageview(currentPath);
-    posthog.capture('$pageview', { $current_url: currentUrl });
+    posthog.capture('$pageview', {
+        $current_url: currentUrl,
+        $set_once: { ...sessionData() }
+    });
 }
 
 export function trackEvent(event: ReactGA.EventArgs) {
@@ -115,6 +97,7 @@ export function trackEvent(event: ReactGA.EventArgs) {
     ReactGA.event(event);
     posthog.capture(`${event.category}:${event.action}`, {
         value: event.label,
-        $current_url: currentUrl
+        $current_url: currentUrl,
+        $set_once: { ...sessionData() }
     });
 }
