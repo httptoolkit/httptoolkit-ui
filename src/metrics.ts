@@ -45,53 +45,35 @@ export function initMetrics() {
 
         ReactGA.set({ anonymizeIp: true });
 
-        // dimension1 is version:server (so we can work out how many users have updated to which server version)
-        serverVersion.then((version) => {
-            ReactGA.set({ 'dimension1': version });
-            posthog.people.set({ 'server-version': version });
-        });
+        Promise.race([delay(10000), serverVersion, desktopVersion]).then(() => {
+            const sessionProperties: any = {};
 
-        // dimension2 is version:desktop (so we can work out how many users are using which desktop shell version)
-        desktopVersion.then((version) => {
-            ReactGA.set({ 'dimension2': version });
-            posthog.people.set({ 'desktop-version': version });
-        });
+            ([
+                // Log metrics against the various component versions, to spot regressions:
+                ['server-version', serverVersion],
+                ['desktop-version', desktopVersion],
+                // UI version is just the latest commit hash:
+                ['ui-version', observablePromise(Promise.resolve(UI_VERSION))]
+            ] as const).forEach(([key, valuePromise]) => {
+                if (valuePromise.state === 'fulfilled') {
+                    sessionProperties[key] = valuePromise.value;
+                } else {
+                    valuePromise.then((value) => {
+                        posthog.people.set({ [key]: value });
+                    }).catch(() => {});
+                }
+            });
 
-        // dimension3 is version:ui. We don't version the UI, so it's just the current commit hash
+            // Set version properties in a batch if possible, to avoid too much back & forth:
+            posthog.people.set(sessionProperties);
+        }).catch(() => {}); // Ignore errors in version retrieval
+
+        // GA metadata works different, so we handle separately here:
+        serverVersion.then((version) => ReactGA.set({ 'dimension1': version }));
+        desktopVersion.then((version) => ReactGA.set({ 'dimension2': version }));
         ReactGA.set({ 'dimension3': UI_VERSION });
-        posthog.people.set({ 'ui-version': UI_VERSION });
-
-        ReactGA.timing({
-            category: 'Initial load',
-            variable: 'tracking-initialize',
-            value: performance.now()
-        });
 
         trackPage(window.location);
-
-        window.addEventListener('DOMContentLoaded', () => {
-            ReactGA.timing({
-                category: 'Initial load',
-                variable: 'page-load',
-                value: performance.now()
-            });
-        });
-
-        document.addEventListener('load:rendering', () => {
-            ReactGA.timing({
-                category: 'Initial load',
-                variable: 'app-load',
-                value: performance.now()
-            });
-        });
-
-        window.addEventListener('load', () => {
-            ReactGA.timing({
-                category: 'Initial load',
-                variable: 'load-event',
-                value: performance.now()
-            });
-        });
     }
 }
 
