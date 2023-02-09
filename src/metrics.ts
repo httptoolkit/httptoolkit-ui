@@ -47,18 +47,21 @@ export function initMetrics() {
             delay(20000),
             Promise.all([serverVersion, desktopVersion])
         ]).then(() => {
-            const sessionProperties: any = {};
-
-            ([
-                // Log metrics against the various component versions, to spot regressions:
-                ['server-version', serverVersion],
-                ['desktop-version', desktopVersion],
+            // Log metrics against the various component versions, to spot regressions:
+            const sessionProperties: any = {
                 // UI version is just the latest commit hash:
-                ['ui-version', observablePromise(Promise.resolve(UI_VERSION))]
+                'ui-version': UI_VERSION
+            };
+
+            // Server/desktop versions are available async once everything is up & running:
+            ([
+                ['server-version', serverVersion],
+                ['desktop-version', desktopVersion]
             ] as const).forEach(([key, valuePromise]) => {
                 if (valuePromise.state === 'fulfilled') {
                     sessionProperties[key] = valuePromise.value;
                 } else {
+                    // If still not available, just log later once they are:
                     valuePromise.then((value) => {
                         posthog.people.set({ [key]: value });
                     }).catch(() => {});
