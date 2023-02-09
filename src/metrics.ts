@@ -2,6 +2,8 @@ import * as ReactGA from 'react-ga';
 import { posthog } from 'posthog-js';
 
 import { serverVersion, desktopVersion, UI_VERSION } from './services/service-versions';
+import { observablePromise } from './util/observable';
+import { delay } from './util/promise';
 
 const GA_ID = process.env.GA_ID;
 const POSTHOG_KEY = process.env.POSTHOG_KEY;
@@ -37,6 +39,9 @@ export function initMetrics() {
 
             persistence: 'memory' // No cookies/local storage tracking - just anon session metrics
         });
+
+        // Normalize initial_current_url before anything gets sent:
+        posthog.people.set_once({ $initial_current_url: normalizeUrl(location.href) });
 
         ReactGA.set({ anonymizeIp: true });
 
@@ -90,14 +95,17 @@ export function initMetrics() {
     }
 }
 
+const normalizeUrl = (url: string) =>
+    url
+    .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
+    .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
+    .replace(/\?.*/, ''); // Strip any query & hash params
+
 let lastUrl: string | undefined;
 export function trackPage(location: Window['location']) {
     if (!enabled) return;
 
-    const currentUrl = location.href
-        .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
-        .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
-        .replace(/\?.*/, ''); // Strip any query & hash params
+    const currentUrl = normalizeUrl(location.href);
 
     if (currentUrl === lastUrl) return;
     lastUrl = currentUrl;
@@ -116,8 +124,11 @@ export function trackPage(location: Window['location']) {
 export function trackEvent(event: ReactGA.EventArgs) {
     if (!enabled) return;
 
+    const currentUrl = normalizeUrl(location.href);
+
     ReactGA.event(event);
     posthog.capture(`${event.category}:${event.action}`, {
-        value: event.label
+        value: event.label,
+        $current_url: currentUrl
     });
 }
