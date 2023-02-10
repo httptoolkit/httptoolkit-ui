@@ -51,15 +51,20 @@ export function initMetrics() {
 }
 
 // Log the first run date for users, which gives us just enough data to count new vs existing installs, and overall
-// retention (do people keep using the tool) but just at day resolution so it's not actually identifiable:
+// retention (do people keep using the tool) and user stats, but at day resolution so it's not actually identifiable:
+const today = formatDate(new Date(), 'YYYY-MM-DD');
 const isFirstRun = localStorage.getItem('first-run-date') === null &&
     localStorage.getItem('theme-background-color') === null; // Extra check, for people who pre-date first-run-date
 
 const storedFirstRunDate = localStorage.getItem('first-run-date');
-const firstRunDate = storedFirstRunDate ?? formatDate(new Date(), 'YYYY-MM-DD');
+const firstRunDate = storedFirstRunDate ?? today;
 if (!storedFirstRunDate) {
     localStorage.setItem('first-run-date', firstRunDate);
 }
+
+// Track last run too, which gives us some idea of how many users use HTTP Toolkit per day.
+const isFirstRunToday = localStorage.getItem('last-run-date') !== today;
+if (isFirstRunToday) localStorage.setItem('last-run-date', today);
 
 // (Of course, Posthog does have retention tools to track this kind of thing in depth, but we avoid using them here
 // as they require tracking individual users & storing persistent ids etc - rough & anon is good enough).
@@ -69,6 +74,7 @@ if (!storedFirstRunDate) {
 // sessions, so the desktop/server version is always fixed.
 const sessionData = () => ({
     'first-run': isFirstRun,
+    'first-run-today': isFirstRunToday,
     'ui-version': UI_VERSION,
     'server-version': serverVersion.state === 'fulfilled' ? serverVersion.value : undefined,
     'desktop-version': desktopVersion.state === 'fulfilled' ? desktopVersion.value : undefined,
