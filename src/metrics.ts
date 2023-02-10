@@ -1,9 +1,8 @@
 import * as ReactGA from 'react-ga';
 import { posthog } from 'posthog-js';
+import { format as formatDate } from 'date-fns';
 
 import { serverVersion, desktopVersion, UI_VERSION } from './services/service-versions';
-import { observablePromise } from './util/observable';
-import { delay } from './util/promise';
 
 const GA_ID = process.env.GA_ID;
 const POSTHOG_KEY = process.env.POSTHOG_KEY;
@@ -51,20 +50,35 @@ export function initMetrics() {
     }
 }
 
-const normalizeUrl = (url: string) =>
-    url
-    .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
-    .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
-    .replace(/\?.*/, ''); // Strip any query & hash params
+// Log the first run date for users, which gives us just enough data to count new vs existing installs, and overall
+// retention (do people keep using the tool) but just at day resolution so it's not actually identifiable:
+const isFirstRun = localStorage.getItem('first-run-date') === null &&
+    localStorage.getItem('theme-background-color') === null; // Extra check, for people who pre-date first-run-date
+
+const storedFirstRunDate = localStorage.getItem('first-run-date');
+const firstRunDate = storedFirstRunDate ?? formatDate(new Date(), 'YYYY-MM-DD');
+if (!storedFirstRunDate) {
+    localStorage.setItem('first-run-date', firstRunDate);
+}
+
+// (Of course, Posthog does have retention tools to track this kind of thing in depth, but we avoid using them here
+// as they require tracking individual users & storing persistent ids etc - rough & anon is good enough).
 
 // This is passed via $set_once on all Posthog events, and the session collects metadata once it's
 // available. These values never change as all metrics are anonymous - there's no connection between
 // sessions, so the desktop/server version is always fixed.
 const sessionData = () => ({
+    'first-run': isFirstRun,
     'ui-version': UI_VERSION,
     'server-version': serverVersion.state === 'fulfilled' ? serverVersion.value : undefined,
     'desktop-version': desktopVersion.state === 'fulfilled' ? desktopVersion.value : undefined,
 });
+
+const normalizeUrl = (url: string) =>
+    url
+    .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
+    .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
+    .replace(/\?.*/, ''); // Strip any query & hash params
 
 let lastUrl: string | undefined;
 export function trackPage(location: Window['location']) {
