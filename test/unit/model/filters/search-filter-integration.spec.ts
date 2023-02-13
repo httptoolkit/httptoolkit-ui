@@ -67,6 +67,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "header" },
                 { index: 0, showAs: "body" },
                 { index: 0, showAs: "bodySize" },
+                { index: 0, showAs: "contains" },
                 { index: 0, showAs: "completed" },
                 { index: 0, showAs: "pending" },
                 { index: 0, showAs: "aborted" },
@@ -96,6 +97,7 @@ describe("Search filter model integration test:", () => {
                 "exchanges by header",
                 "exchanges by body content",
                 "exchanges by body size",
+                "exchanges that contain a given value anywhere",
                 "requests that have received a response",
                 "requests that are still waiting for a response",
                 "requests whose connection failed before receiving a response",
@@ -1157,6 +1159,51 @@ describe("Search filter model integration test:", () => {
         });
     });
 
+    describe("Contains() filters", () => {
+        it("should correctly filter across all properties", async () => {
+            const filter = createFilter("contains(Match)");
+
+            const exampleEvents = [
+                getFailedTls({ upstreamHostname: 'match.test' }),
+                getFailedTls({ upstreamHostname: 'other.test' }), // Not a match
+                getExchangeData({ requestHeaders: { 'header': 'MATCH' } }),
+                getExchangeData({ requestHeaders: { 'MATCH': 'header' }, responseState: 'aborted' }),
+                getExchangeData({ requestHeaders: { 'header': 'other' } }), // Not a match
+                getExchangeData({ statusMessage: 'MATCH status code' }),
+                getExchangeData({ requestBody: 'match', responseBody: 'other' }),
+                getExchangeData({ requestBody: 'other', responseBody: 'match' }),
+                getExchangeData({ requestBody: 'other', responseBody: 'other' }), // Not a match
+                getExchangeData({ path: '/path/matching/filter/', responseState: 'pending' })
+            ];
+
+            // First filter triggers async body decoding:
+            exampleEvents.forEach(e => filter.matches(e));
+            await delay(100);
+
+            // Then filter again, including bodies, and check we exclude the events we expect:
+            const nonMatchedEvents = exampleEvents.filter(e =>
+                !filter.matches(e)
+            ).map(e => e.id);
+
+            expect(nonMatchedEvents).to.deep.equal([
+                exampleEvents[1].id,
+                exampleEvents[4].id,
+                exampleEvents[8].id,
+            ]);
+        });
+
+        it("should correctly format descriptions", () => {
+            [
+                ["contains", "exchanges that contain a given value anywhere"],
+                ["contains(", "exchanges that contain a given value anywhere"],
+                ["contains(Test)", "exchanges that contain 'test' anywhere"]
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.deep.equal(expectedOutput);
+            });
+        });
+    });
+
     describe("Or() filters", () => {
         it("should list all filters initially", () => {
             let input = "or(";
@@ -1171,6 +1218,7 @@ describe("Search filter model integration test:", () => {
                 { index: 3, showAs: "header" },
                 { index: 3, showAs: "body" },
                 { index: 3, showAs: "bodySize" },
+                { index: 3, showAs: "contains" },
                 { index: 3, showAs: "completed" },
                 { index: 3, showAs: "pending" },
                 { index: 3, showAs: "aborted" },
@@ -1224,6 +1272,7 @@ describe("Search filter model integration test:", () => {
                 { index: 14, showAs: "header" },
                 { index: 14, showAs: "body" },
                 { index: 14, showAs: "bodySize" },
+                { index: 14, showAs: "contains" },
                 { index: 14, showAs: "completed)" },
                 { index: 14, showAs: "pending)" },
                 { index: 14, showAs: "aborted)" },
@@ -1353,6 +1402,7 @@ describe("Search filter model integration test:", () => {
                 { index: 4, showAs: "header" },
                 { index: 4, showAs: "body" },
                 { index: 4, showAs: "bodySize" },
+                { index: 4, showAs: "contains" },
                 { index: 4, showAs: "completed)" },
                 { index: 4, showAs: "pending)" },
                 { index: 4, showAs: "aborted)" },

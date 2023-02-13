@@ -4,6 +4,8 @@ import { HttpExchange, HttpBody } from '../../src/model/http/exchange';
 import { FailedTlsConnection } from '../../src/model/tls/failed-tls-connection';
 import { HtkRequest, HtkResponse } from '../../src/types';
 
+let nextId = 0;
+
 export const getExchangeData = ({
     hostname = 'example.com',
     protocol = 'https:',
@@ -21,7 +23,7 @@ export const getExchangeData = ({
     responseState = 'completed',
     responseTags = [] as string[],
 } = {}) => Object.assign(Object.create(HttpExchange.prototype), {
-    id: '',
+    id: (nextId++).toString(),
     matchedRuleId: '?',
     request: {
         id: '',
@@ -36,7 +38,7 @@ export const getExchangeData = ({
         hostname,
         path,
         headers: requestHeaders as { host: string },
-        rawHeaders: [], // Ignore for now
+        rawHeaders: Object.entries(requestHeaders), // Technically wrong for dupes, but close enough
         body: new HttpBody({
                 body: {
                     buffer: Buffer.isBuffer(requestBody)
@@ -84,10 +86,13 @@ export const getExchangeData = ({
 
 export const getFailedTls = ({
     remoteIpAddress = "10.0.0.1",
-    failureCause = 'cert-rejected'
+    failureCause = 'cert-rejected',
+    upstreamHostname = "example.com"
 } = {}) => Object.assign(Object.create(FailedTlsConnection.prototype), {
+    id: (nextId++).toString(),
     remoteIpAddress,
     failureCause,
+    upstreamHostname,
     tags: [] as string[]
 }) as FailedTlsConnection;
 

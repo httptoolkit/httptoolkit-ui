@@ -3,7 +3,6 @@ import * as _ from 'lodash';
 import { CollectedEvent } from '../../types';
 import { joinAnd } from '../../util';
 
-import { HttpExchange } from '../http/exchange';
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../events/bodies';
 import { EventCategories } from '../events/categorization';
@@ -1143,6 +1142,7 @@ class BodyFilter extends Filter {
         if (!event.isHttp()) return false;
         if (!event.hasRequestBody() && !event.hasResponseBody()) return false; // No body, no match
 
+        // Accessing .decoded on both of these touches a lazy promise, starting decoding for all bodies:
         const requestBody = event.request.body.decoded;
         const responseBody = event.isSuccessfulExchange()
             ? event.response.body.decoded
@@ -1162,6 +1162,108 @@ class BodyFilter extends Filter {
     }
 }
 
+class ContainsFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("contains"),
+        new SyntaxWrapperSyntax(
+            ['(', ')'],
+            new StringSyntax("content", {
+                allowedChars: [[0, Infinity]] // Match all characters, all unicode included
+            })
+        )
+    ] as const;
+
+    static filterName = "contains";
+
+    static filterDescription(value: string) {
+        const [, content] = tryParseFilter(ContainsFilter, value);
+
+        return `exchanges that contain ${
+            content
+            ? `'${content.toLowerCase()}'`
+            : 'a given value'
+        } anywhere`;
+    }
+
+    private expectedContent: string;
+
+    constructor(filter: string) {
+        super(filter);
+        const [, expectedContent] = parseFilter(ContainsFilter, filter);
+
+        this.expectedContent = expectedContent.toLowerCase();
+    }
+
+    matches(event: CollectedEvent): boolean {
+        let content: Array<string | Buffer | number | undefined>;
+
+        if (event.isHttp()) {
+            content = [
+                event.request.method,
+                event.request.url,
+                ...Object.entries(
+                    event.request.rawHeaders
+                ).map(([key, value]) => `${key}: ${value}`),
+                // Accessing .decoded touches a lazy promise, starting decoding:
+                event.request.body.decoded,
+
+                ...(event.isSuccessfulExchange()
+                    ? [
+                        event.response.statusCode,
+                        event.response.statusMessage,
+                        ...Object.entries(
+                            event.response.rawHeaders
+                        ).map(([key, value]) => `${key}: ${value}`),
+                        // Accessing .decoded touches a lazy promise, starting decoding:
+                        event.response.body.decoded
+                    ] : []
+                ),
+
+                ...(event.isWebSocket()
+                    ? event.messages.map(msg => msg.content)
+                    : []
+                )
+            ];
+        } else if (event.isRTCConnection()) {
+            content = [
+                event.clientURL,
+                event.remoteURL
+            ];
+        } else if (event.isRTCDataChannel()) {
+            content = [
+                ...event.messages.map(msg => msg.content),
+                event.label,
+                event.protocol
+            ]
+        } else if (event.isTlsTunnel()) {
+            content = [
+                event.upstreamHostname,
+                event.upstreamPort
+            ];
+        } else if (event.isTlsFailure()) {
+            content = [
+                event.upstreamHostname
+            ];
+        } else {
+            content = [];
+        }
+
+        return content.some(content => {
+            if (!content) return false;
+            if ((content as string | Buffer).length === 0) return false;
+            return content
+                .toString()
+                .toLowerCase() // Case insensitive (expectedContent lowercased in constructor)
+                .includes(this.expectedContent);
+        });
+    }
+
+    toString() {
+        return `Contains(${this.expectedContent})`;
+    }
+}
+
 const BaseSearchFilterClasses: FilterClass[] = [
     MethodFilter,
     HostnameFilter,
@@ -1171,6 +1273,7 @@ const BaseSearchFilterClasses: FilterClass[] = [
     HeaderFilter,
     BodyFilter,
     BodySizeFilter,
+    ContainsFilter,
     CompletedFilter,
     PendingFilter,
     AbortedFilter,
