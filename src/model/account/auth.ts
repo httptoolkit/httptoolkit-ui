@@ -12,7 +12,7 @@ import * as dedent from 'dedent';
 import { lightTheme } from '../../styles';
 import { reportError } from '../../errors';
 
-import { SKU, getSKU } from './subscriptions';
+import { SKU, getSKU, ACCOUNTS_API } from './subscriptions';
 import { attempt } from '../../util/promise';
 
 const AUTH0_CLIENT_ID = 'KAJyF1Pq9nfBrv5l3LHjT9CrSQIleujj';
@@ -328,7 +328,7 @@ async function requestUserData(): Promise<string> {
     const token = await getToken();
     if (!token) return '';
 
-    const appDataResponse = await fetch('https://accounts.httptoolkit.tech/api/get-app-data', {
+    const appDataResponse = await fetch(`${ACCOUNTS_API}/get-app-data`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`

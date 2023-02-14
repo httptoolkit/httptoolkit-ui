@@ -2,6 +2,9 @@ import * as _ from 'lodash';
 import { reportError } from '../../errors';
 import { delay, doWhile } from '../../util/promise';
 
+export const ACCOUNTS_API = process.env.ACCOUNTS_API ??
+    `https://accounts.httptoolkit.tech/api`;
+
 export interface SubscriptionPlan {
     paddleId: number;
     name: string;
@@ -22,7 +25,7 @@ export const SubscriptionPlans = {
 
 async function loadPlanPrices() {
     const response = await fetch(
-        `https://accounts.httptoolkit.tech/api/get-prices?product_ids=${
+        `${ACCOUNTS_API}/get-prices?product_ids=${
             Object.values(SubscriptionPlans).map(plan => plan.paddleId).join(',')
         }`
     );
@@ -96,7 +99,7 @@ export const getSKU = (paddleId: number | undefined) =>
 
 export const openCheckout = async (email: string, sku: SKU) => {
     window.open(
-        `https://accounts.httptoolkit.tech/api/redirect-to-checkout?email=${
+        `${ACCOUNTS_API}/redirect-to-checkout?email=${
             encodeURIComponent(email)
         }&sku=${
             sku
