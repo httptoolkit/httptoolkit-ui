@@ -279,10 +279,10 @@ export class AccountStore {
         yield this.updateUser();
         let ticksSinceCheck = 0;
         while (!this.isPaidUser && this.modal) {
-            yield delay(500);
+            yield delay(1000);
             ticksSinceCheck += 1;
 
-            if (focused || ticksSinceCheck > 20) {
+            if (focused || ticksSinceCheck > 10) {
                 // Every 10s while blurred or 500ms while focused, check the user data:
                 ticksSinceCheck = 0;
                 yield this.updateUser();
