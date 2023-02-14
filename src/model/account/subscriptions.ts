@@ -12,13 +12,13 @@ export interface SubscriptionPlan {
         currency: string;
         monthly: string;
         total: string;
-    };
+    } | 'priceless';
 }
 
 export const SubscriptionPlans = {
     'pro-monthly': { paddleId: 550380, name: 'Pro (monthly)' } as SubscriptionPlan,
     'pro-annual': { paddleId: 550382, name: 'Pro (annual)' } as SubscriptionPlan,
-    'pro-perpetual': { paddleId: 599788, name: 'Pro (perpetual)' } as SubscriptionPlan,
+    'pro-perpetual': { paddleId: 599788, name: 'Pro (perpetual)', prices: 'priceless' } as SubscriptionPlan,
     'team-monthly': { paddleId: 550789, name: 'Team (monthly)' } as SubscriptionPlan,
     'team-annual': { paddleId: 550788, name: 'Team (annual)' } as SubscriptionPlan,
 };
@@ -26,7 +26,10 @@ export const SubscriptionPlans = {
 async function loadPlanPrices() {
     const response = await fetch(
         `${ACCOUNTS_API}/get-prices?product_ids=${
-            Object.values(SubscriptionPlans).map(plan => plan.paddleId).join(',')
+            Object.values(SubscriptionPlans)
+            .filter(plan => !plan.prices)
+            .map(plan => plan.paddleId)
+            .join(',')
         }`
     );
 

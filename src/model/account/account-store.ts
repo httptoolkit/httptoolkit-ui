@@ -165,7 +165,8 @@ export class AccountStore {
                 return;
             }
 
-            const isRiskyPayment = this.subscriptionPlans[selectedPlan].prices?.currency === 'BRL' &&
+            const planCurrency = (this.subscriptionPlans[selectedPlan].prices as any).currency;
+            const isRiskyPayment = planCurrency === 'BRL' &&
                 this.userEmail?.endsWith('@gmail.com'); // So far, all chargebacks have been from gmail accounts
 
             const newUser = !this.user.subscription; // Even cancelled users will have an expired subscription left

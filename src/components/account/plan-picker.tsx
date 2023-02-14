@@ -437,6 +437,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
     getPlanMonthlyPrice = (tierCode: string): string => {
         const sku = this.getSKU(tierCode);
         const plan = this.props.plans[sku];
+        if (plan.prices === 'priceless') throw new Error("Can't show price for non-priced plan");
         return plan.prices!.monthly;
     };
 
