@@ -39,6 +39,7 @@ const InterceptPageContainer = styled.section`
         order: -1;
         grid-column: 3 / span 2;
         overflow-y: auto;
+        margin-bottom: 0;
     }
 `;
 
