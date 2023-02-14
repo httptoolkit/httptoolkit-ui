@@ -18,7 +18,8 @@ import {
 import {
     SubscriptionPlans,
     SKU,
-    openCheckout
+    openCheckout,
+    getCheckoutUrl
 } from './subscriptions';
 
 export class AccountStore {
@@ -29,7 +30,17 @@ export class AccountStore {
 
     readonly initialized = lazyObservablePromise(async () => {
         // Update account data automatically on login, logout & every 10 mins
-        loginEvents.on('authenticated', async () => {
+        loginEvents.on('authenticated', async (authResult) => {
+            // If a user logs in after picking a plan, they're going to go to the
+            // checkout imminently. The API has to query Paddle to build that checkout,
+            // so we ping here early to kick that process off ASAP:
+            const initialEmailResult = authResult?.idTokenPayload?.email;
+            if (initialEmailResult && this.selectedPlan) {
+                fetch(getCheckoutUrl(initialEmailResult, this.selectedPlan), {
+                    redirect: 'manual' // We just prime the API cache, we don't navigate
+                }).catch(() => {}); // Just an optimization
+            }
+
             await this.updateUser();
             loginEvents.emit('user_data_loaded');
         });
@@ -196,6 +207,8 @@ export class AccountStore {
                 error.message || error.code || 'Error'
             }\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.com.`);
             this.modal = undefined;
+        } finally {
+            this.selectedPlan = undefined;
         }
     }.bind(this));
 
@@ -230,23 +243,22 @@ export class AccountStore {
     }
 
     private pickPlan = flow(function * (this: AccountStore) {
+        this.selectedPlan = undefined;
         this.modal = 'pick-a-plan';
 
         yield when(() => this.modal === undefined || !!this.selectedPlan);
 
-        const selectedPlan = this.selectedPlan;
-        this.selectedPlan = undefined;
         this.modal = undefined;
 
-        if (selectedPlan) {
-            trackEvent({ category: 'Account', action: 'Plan selected', label: selectedPlan });
+        if (this.selectedPlan) {
+            trackEvent({ category: 'Account', action: 'Plan selected', label: this.selectedPlan });
         } else if (!this.isPaidUser) {
             // If you don't pick a plan via any route other than already having
             // bought them, then you're pretty clearly rejecting them.
             trackEvent({ category: 'Account', action: 'Plans rejected' });
         }
 
-        return selectedPlan;
+        return this.selectedPlan;
     });
 
     @action.bound

@@ -100,13 +100,13 @@ export type SKU = keyof typeof SubscriptionPlans;
 export const getSKU = (paddleId: number | undefined) =>
     _.findKey(SubscriptionPlans, { paddleId: paddleId }) as SKU | undefined;
 
+export const getCheckoutUrl = (email: string, sku: SKU) =>
+    `${ACCOUNTS_API}/redirect-to-checkout?email=${
+        encodeURIComponent(email)
+    }&sku=${
+        sku
+    }&source=app.httptoolkit.tech`;
+
 export const openCheckout = async (email: string, sku: SKU) => {
-    window.open(
-        `${ACCOUNTS_API}/redirect-to-checkout?email=${
-            encodeURIComponent(email)
-        }&sku=${
-            sku
-        }&source=app.httptoolkit.tech`,
-        '_blank'
-    );
+    window.open(getCheckoutUrl(email, sku), '_blank');
 }
