@@ -64,6 +64,7 @@ describe("Search filter model integration test:", () => {
                 { index: 0, showAs: "path" },
                 { index: 0, showAs: "query" },
                 { index: 0, showAs: "status" },
+                { index: 0, showAs: "headers" },
                 { index: 0, showAs: "header" },
                 { index: 0, showAs: "body" },
                 { index: 0, showAs: "bodySize" },
@@ -94,7 +95,8 @@ describe("Search filter model integration test:", () => {
                 "requests sent to a given path",
                 "requests with a given query string",
                 "responses with a given status code",
-                "exchanges by header",
+                "exchanges by all header values",
+                "exchanges by a specific header",
                 "exchanges by body content",
                 "exchanges by body size",
                 "exchanges that contain a given value anywhere",
@@ -753,9 +755,117 @@ describe("Search filter model integration test:", () => {
         });
     });
 
-    describe("Header filters", () => {
-        it("should suggest header[...] in one step, once unambiguous", () => {
+    describe("Headers filters", () => {
+        it("should suggest both header & headers initially", () => {
             let input = "head";
+
+            let suggestions = getFilterSuggestions(FilterClasses, input);
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 0, showAs: "headers" },
+                { index: 0, showAs: "header" }
+            ]);
+        });
+
+        it("should suggest seen header values from context, if available", () => {
+            let input = "headers=";
+
+            const suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({
+                    responseState: 'pending',
+                    requestHeaders: {
+                        'another-header': 'other values',
+                        'Content-Type': 'application/xml'
+                    }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'content-type': 'application/json' },
+                    responseHeaders: { 'content-type': 'application/problem+json' },
+                }),
+            ]);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 7, showAs: "={header value}" },
+                { index: 7, showAs: "=[other values]" },
+                { index: 7, showAs: "=application/xml" },
+                { index: 7, showAs: "=application/json" },
+                { index: 7, showAs: "=application/problem+json" },
+            ]);
+        });
+
+        it("should suggest seen header values from duplicate headers", () => {
+            let input = "headers*=";
+
+            const suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({
+                    responseHeaders: {
+                        'set-cookie': ['a', 'b']
+                    }
+                })
+            ]);
+
+            expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
+                { index: 7, showAs: "*={header value}" },
+                { index: 7, showAs: "*=a" },
+                { index: 7, showAs: "*=b" }
+            ]);
+        });
+
+        it("should show descriptions for various suggestions", () => {
+            [
+                ["headers", "exchanges by all header values"],
+                ["headers*=", "exchanges with any header value containing a given string"],
+                ["headers*=[json; charset=utf-8]",
+                    "exchanges with any header value containing 'json; charset=utf-8'"]
+            ].forEach(([input, expectedOutput]) => {
+                const description = getSuggestionDescriptions(input)[0];
+                expect(description).to.equal(expectedOutput);
+            });
+        });
+
+        it("should correctly filter the value of a header", () => {
+            const filter = createFilter("headers=match");
+
+            const exampleEvents = [
+                getExchangeData({ responseState: 'aborted' }),
+                getExchangeData({
+                    requestHeaders: { 'my-header': 'wrong-value' }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'My-Header': ['match', 'def'] }
+                }),
+                getExchangeData({
+                    requestHeaders: { 'MY-HEADER': 'match' }
+                }),
+                getExchangeData({
+                    responseHeaders: { 'my-header': 'MATCH' }
+                }),
+                getExchangeData({ requestHeaders: { 'another-header-name': 'match' } }),
+                getFailedTls()
+            ];
+
+            const matchedEvents = exampleEvents.filter(e => filter.matches(e));
+
+            const matchedHeaders = (matchedEvents as HttpExchange[]).map((event) => ({
+                ...event.request.headers,
+                ...(event.isSuccessfulExchange()
+                    ? event.response.headers
+                    : []
+                )
+            }));
+
+            expect(matchedHeaders).to.deep.equal([
+                { 'My-Header': ['match', 'def'] },
+                { 'MY-HEADER': 'match' },
+                { 'my-header': 'MATCH' },
+                { 'another-header-name': 'match' }
+            ]);
+        });
+    });
+
+    describe("Header filters", () => {
+
+        it("should suggest header[...] in one step, once unambiguous", () => {
+            let input = "header";
 
             let suggestions = getFilterSuggestions(FilterClasses, input);
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
@@ -869,7 +979,7 @@ describe("Search filter model integration test:", () => {
 
         it("should show descriptions for various suggestions", () => {
             [
-                ["header", "exchanges by header"],
+                ["header", "exchanges by a specific header"],
                 ["header[date]", "exchanges with a 'date' header"],
                 ["header[date]=",
                     "exchanges with a 'date' header equal to a given value"],
@@ -1215,6 +1325,7 @@ describe("Search filter model integration test:", () => {
                 { index: 3, showAs: "path" },
                 { index: 3, showAs: "query" },
                 { index: 3, showAs: "status" },
+                { index: 3, showAs: "headers" },
                 { index: 3, showAs: "header" },
                 { index: 3, showAs: "body" },
                 { index: 3, showAs: "bodySize" },
@@ -1269,6 +1380,7 @@ describe("Search filter model integration test:", () => {
                 { index: 14, showAs: "path" },
                 { index: 14, showAs: "query" },
                 { index: 14, showAs: "status" },
+                { index: 14, showAs: "headers" },
                 { index: 14, showAs: "header" },
                 { index: 14, showAs: "body" },
                 { index: 14, showAs: "bodySize" },
@@ -1306,7 +1418,7 @@ describe("Search filter model integration test:", () => {
         });
 
         it("should use context in suggestions", () => {
-            let input = "or(header";
+            let input = "or(header[";
 
             let suggestions = getFilterSuggestions(FilterClasses, input, [
                 getExchangeData({
@@ -1318,9 +1430,9 @@ describe("Search filter model integration test:", () => {
                 }),
             ]);
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 3, showAs: "header[{header name}])" },
-                { index: 3, showAs: "header[another-header]" },
-                { index: 3, showAs: "header[content-type]" }
+                { index: 10, showAs: "{header name}])" },
+                { index: 10, showAs: "another-header]" },
+                { index: 10, showAs: "content-type]" }
             ]);
         });
 
@@ -1399,6 +1511,7 @@ describe("Search filter model integration test:", () => {
                 { index: 4, showAs: "path" },
                 { index: 4, showAs: "query" },
                 { index: 4, showAs: "status" },
+                { index: 4, showAs: "headers" },
                 { index: 4, showAs: "header" },
                 { index: 4, showAs: "body" },
                 { index: 4, showAs: "bodySize" },
@@ -1445,7 +1558,7 @@ describe("Search filter model integration test:", () => {
         });
 
         it("should use context in suggestions", () => {
-            let input = "not(header";
+            let input = "not(header[";
 
             let suggestions = getFilterSuggestions(FilterClasses, input, [
                 getExchangeData({
@@ -1457,9 +1570,9 @@ describe("Search filter model integration test:", () => {
                 }),
             ]);
             expect(suggestions.map(s => _.pick(s, 'showAs', 'index'))).to.deep.equal([
-                { index: 4, showAs: "header[{header name}])" },
-                { index: 4, showAs: "header[another-header]" },
-                { index: 4, showAs: "header[content-type]" }
+                { index: 11, showAs: "{header name}])" },
+                { index: 11, showAs: "another-header]" },
+                { index: 11, showAs: "content-type]" }
             ]);
         });
 
@@ -1467,7 +1580,7 @@ describe("Search filter model integration test:", () => {
             [
                 ["not(", "exchanges that do not match a given condition"],
                 ["not(error", "excluding requests that weren't transmitted successfully"],
-                ["not(head", "excluding exchanges by header"],
+                ["not(head", "excluding exchanges by all header values"],
                 ["not(query^=?abc)", "excluding requests with a query string starting with ?abc"],
                 ["not(method=POST)", "excluding POST requests"]
             ].forEach(([input, expectedOutput]) => {

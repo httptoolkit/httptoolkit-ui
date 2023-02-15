@@ -897,6 +897,86 @@ const getAllHeaders = (e: CollectedEvent): [string, string | string[]][] => {
     ] as [string, string | string[]][];
 }
 
+class HeadersFilter extends Filter {
+
+    static filterSyntax = [
+        new FixedStringSyntax("headers"),
+        new StringOptionsSyntax([
+            "=",
+            "*=",
+            "^=",
+            "$="
+        ]),
+        // N.b. this is v similar to but not the same as HeaderFilter below!
+        new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("header value", {
+                allowedChars: [[0, 255]], // Any ASCII! Wrapper guards against spaces for us.
+                suggestionGenerator: (value, index, events: CollectedEvent[]) => {
+                    return _(events)
+                        .map(e =>
+                            _(getAllHeaders(e))
+                            .map(([_hn, headerValue]) => Array.isArray(headerValue)
+                                ? headerValue
+                                : [headerValue]
+                            )
+                            .flatten()
+                            .valueOf()
+                        )
+                        .flatten()
+                        .uniq()
+                        .valueOf();
+                }
+            }),
+            // [] should be required/suggested only if value contains a space
+            { optional: true }
+        )
+    ] as const;
+
+    static filterName = "headers";
+
+    static filterDescription(value: string): string {
+        const [, op, headerValue] = tryParseFilter(HeadersFilter, value);
+
+        if (!op) {
+            return "exchanges by all header values";
+        } else {
+            return `exchanges with any header value ${
+                operationDescriptions[op]
+            } ${headerValue ? `'${headerValue}'` : 'a given string'}`;
+        }
+    }
+
+    private expectedHeaderValue: string;
+    private op: StringOperation;
+    private predicate: ((headerValue: string, expectedValue: string) => boolean);
+
+    constructor(filter: string) {
+        super(filter);
+        const [, op, headerValue] = parseFilter(HeadersFilter, filter);
+
+        this.op = op;
+        this.predicate = stringOperations[op];
+        this.expectedHeaderValue = headerValue.toLowerCase();
+    }
+
+    matches(event: CollectedEvent): boolean {
+        if (!(event.isHttp())) return false;
+
+        const headers = getAllHeaders(event);
+
+        const { predicate, expectedHeaderValue } = this;
+
+        return _(headers)
+            .flatMap(([_k, value]) => value ?? []) // Flatten our array/undefined values
+            .some((value) => predicate(value.toLowerCase(), expectedHeaderValue));
+    }
+
+    toString() {
+        return `Any header ${this.op} ${this.expectedHeaderValue!}`;
+    }
+}
+
 class HeaderFilter extends Filter {
 
     // Separated out so we can do subparsing here ourselves
@@ -977,7 +1057,7 @@ class HeaderFilter extends Filter {
         );
 
         if (!headerName) {
-            return "exchanges by header";
+            return "exchanges by a specific header";
         } else if (!op) {
             return `exchanges with a '${headerName}' header`;
         } else {
@@ -1270,6 +1350,7 @@ const BaseSearchFilterClasses: FilterClass[] = [
     PathFilter,
     QueryFilter,
     StatusFilter,
+    HeadersFilter,
     HeaderFilter,
     BodyFilter,
     BodySizeFilter,
