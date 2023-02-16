@@ -4,7 +4,7 @@ import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import { action, computed, observable } from 'mobx';
 import { trackUndo } from 'mobx-shallow-undo';
 
-import { styled } from '../../../styles';
+import { css, styled } from '../../../styles';
 import { isCmdCtrlPressed } from '../../../util/ui';
 
 import {
@@ -22,7 +22,7 @@ import {
 import { UiStore } from '../../../model/ui-store';
 import { AccountStore } from '../../../model/account/account-store';
 
-import { IconButton } from '../../common/icon-button';
+import { IconButton, IconButtonLink } from '../../common/icon-button';
 import { FilterTag } from './filter-tag';
 import { FilterInput } from './filter-input';
 
@@ -62,15 +62,25 @@ const SearchFilterBox = styled.div<{ hasContents: boolean }>`
     }
 `;
 
-const ClearSearchButton = styled(IconButton)`
+const FloatingSearchButtonStyles = css`
     width: ${CLEAR_BUTTON_WIDTH};
     padding: 4px 10px;
     box-sizing: border-box;
+
+    /* This isn't needed for button, but is for buttonlink - unclear why but it works */
+    display: flex;
+    align-items: center;
 
     position: absolute;
     top: 0;
     right: 0;
     bottom: 0;
+`
+
+const FloatingClearFiltersButton = styled(IconButton)`${FloatingSearchButtonStyles}`;
+const FloatingFilterDocsButtonLink = styled(IconButtonLink)`
+    ${FloatingSearchButtonStyles}
+    opacity: 0.8;
 `;
 
 const deleteFilter = (filters: FilterSet, filter: Filter): FilterSet => {
@@ -555,11 +565,19 @@ export class SearchFilter<T> extends React.Component<{
                 isPaidUser={accountStore!.isPaidUser}
                 getPro={accountStore!.getPro}
             />
-            { hasContents &&
-                <ClearSearchButton
+            { hasContents
+                ? <FloatingClearFiltersButton
                     title="Clear all search filters"
                     icon={['fas', 'times']}
                     onClick={onFiltersCleared}
+                />
+                : <FloatingFilterDocsButtonLink
+                    icon={['fas', 'question']}
+                    title="Open filtering docs"
+
+                    href="https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic"
+                    target='_blank'
+                    rel='noreferrer noopener'
                 />
             }
         </SearchFilterBox>;

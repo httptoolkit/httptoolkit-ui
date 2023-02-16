@@ -37,6 +37,7 @@ export const UnstyledButton = styled.button.attrs(() => ({
         cursor: pointer;
     }
 ` as StyledComponent<"button", Theme>;
+export const UnstyledButtonLink = UnstyledButton.withComponent('a');
 
 const BaseButtonStyles = css`
     -webkit-appearance: none;
