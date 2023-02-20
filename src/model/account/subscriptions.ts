@@ -105,7 +105,9 @@ export const getCheckoutUrl = (email: string, sku: SKU) =>
         encodeURIComponent(email)
     }&sku=${
         sku
-    }&source=app.httptoolkit.tech`;
+    }&source=app.httptoolkit.tech&returnUrl=${
+        encodeURIComponent('https://httptoolkit.com/app-purchase-thank-you/')
+    }`;
 
 export const openCheckout = async (email: string, sku: SKU) => {
     window.open(getCheckoutUrl(email, sku), '_blank');
