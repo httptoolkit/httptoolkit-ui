@@ -206,7 +206,6 @@ const ExportHarPill = styled(observer((p: {
     </PillButton>
 ))`
     margin-right: auto;
-    padding: 2px 8px 3px;
 `;
 
 @inject('accountStore')
