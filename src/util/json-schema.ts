@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as traverse from 'traverse';
 import * as Ajv from 'ajv';
 
-import { joinAnd, truncate } from './index';
+import { joinAnd, truncate } from './text';
 
 type Ref = { $ref: string };
 

@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
 import { CollectedEvent } from '../../types';
-import { joinAnd } from '../../util';
+import { joinAnd } from '../../util/text';
 
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../events/bodies';

@@ -10,7 +10,8 @@ import {
     TimingEvents,
     ExchangeMessage
 } from '../../../types';
-import { asHeaderArray, joinAnd } from '../../../util';
+import { asHeaderArray } from '../../../util';
+import { joinAnd } from '../../../util/text';
 import { Icon, WarningIcon, SuggestionIcon } from '../../../icons';
 
 import { AccountStore } from '../../../model/account/account-store';

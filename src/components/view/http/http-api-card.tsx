@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { Omit, Html } from '../../../types';
+import { Html } from '../../../types';
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { joinAnd } from '../../../util';
+import { joinAnd } from '../../../util/text';
 
 import { ApiExchange, ApiParameter } from '../../../model/api/api-interfaces';
 
