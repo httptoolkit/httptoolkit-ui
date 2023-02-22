@@ -22,6 +22,7 @@ import {
     EventCategory,
     describeEventCategory
 } from '../../model/events/categorization';
+import { nameHandlerClass } from '../../model/rules/rule-descriptions';
 
 import { UnreachableCheck } from '../../util/error';
 import { getReadableSize } from '../../model/events/bodies';
@@ -409,11 +410,28 @@ const ExchangeRow = observer(({
                 />
             }
         </Status>
-        <Source title={request.source.summary}>
+        <Source>
             <Icon
+                title={request.source.summary}
                 {...request.source.icon}
                 fixedWidth={true}
             />
+            {
+                exchange.matchedRule &&
+                exchange.matchedRule.handlerStepTypes.some(t =>
+                    t !== 'passthrough' && t !== 'ws-passthrough' && t !== 'rtc-dynamic-proxy'
+                ) &&
+                <Icon
+                    title={`Handled by ${
+                        exchange.matchedRule.handlerStepTypes.length === 1
+                        ? nameHandlerClass(exchange.matchedRule.handlerStepTypes[0])
+                        : 'multi-step'
+                    } rule`}
+                    icon={['fas', 'theater-masks']}
+                    color={getSummaryColour('mutative')}
+                    fixedWidth={true}
+                />
+            }
         </Source>
         <Host title={ request.parsedUrl.host }>
             { request.parsedUrl.host }

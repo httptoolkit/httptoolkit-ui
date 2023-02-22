@@ -68,7 +68,7 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
                 : ''
             }.${
                 p.ruleData.status !== 'deleted'
-                    ? ' Click here to jump to the rule on the Mock page.'
+                    ? '\nClick here to jump to the rule on the Mock page.'
                     : ''
             }`
         }
