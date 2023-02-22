@@ -102,6 +102,78 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
     }
 };
 
+export function nameHandlerClass(key: HandlerClassKey): string {
+    switch (key) {
+        case 'simple':
+            return "fixed response";
+        case 'file':
+            return "file response";
+        case 'forward-to-host':
+            return "forwarding";
+        case 'passthrough':
+        case 'ws-passthrough':
+            return "passthrough";
+        case 'req-res-transformer':
+            return "transform";
+        case 'request-breakpoint':
+        case 'response-breakpoint':
+        case 'request-and-response-breakpoint':
+            return "breakpoint";
+        case 'timeout':
+            return "timeout";
+        case 'close-connection':
+            return "connection close";
+        case 'reset-connection':
+            return "connection reset";
+
+        case 'ws-reject':
+            return "reject";
+        case 'ws-listen':
+            return "listen";
+        case 'ws-echo':
+            return "echo";
+
+        case 'eth-call-result':
+        case 'eth-number-result':
+        case 'eth-hash-result':
+        case 'eth-receipt-result':
+        case 'eth-block-result':
+            return "fixed result";
+        case 'eth-error':
+            return "error";
+
+        case 'ipfs-cat-text':
+        case 'ipfs-add-result':
+        case 'ipns-resolve-result':
+        case 'ipns-publish-result':
+        case 'ipfs-pins-result':
+        case 'ipfs-pin-ls-result':
+            return "fixed result";
+        case 'ipfs-cat-file':
+            return "file";
+
+        case 'wait-for-duration':
+        case 'wait-for-rtc-data-channel':
+        case 'wait-for-rtc-track':
+        case 'wait-for-rtc-media':
+        case 'wait-for-rtc-message':
+        case 'create-rtc-data-channel':
+        case 'send-rtc-data-message':
+        case 'close-rtc-connection':
+        case 'echo-rtc':
+        case 'rtc-dynamic-proxy':
+            return 'WebRTC';
+
+        case 'json-rpc-response':
+        case 'rtc-peer-proxy':
+        case 'callback':
+        case 'stream':
+            throw new Error(`${key} handler should not be used directly`);
+        default:
+            throw new UnreachableCheck(key);
+    }
+}
+
 export function summarizeHandlerClass(key: HandlerClassKey): string {
     switch (key) {
         case 'simple':

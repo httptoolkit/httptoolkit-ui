@@ -24,7 +24,7 @@ export const getExchangeData = ({
     responseTags = [] as string[],
 } = {}) => Object.assign(Object.create(HttpExchange.prototype), {
     id: (nextId++).toString(),
-    matchedRuleId: '?',
+    matchedRule: false,
     request: {
         id: '',
         httpVersion: httpVersion,

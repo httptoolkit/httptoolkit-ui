@@ -34,7 +34,6 @@ import { reportError } from '../../errors';
 
 import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';
-import { EventsStore } from '../events/events-store';
 import { getDesktopInjectedValue } from '../../services/desktop-api';
 import { RTC_RULES_SUPPORTED, WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 
@@ -109,15 +108,13 @@ export class RulesStore {
     constructor(
         private readonly accountStore: AccountStore,
         private readonly proxyStore: ProxyStore,
-        private readonly eventsStore: EventsStore,
-        private readonly jumpToExchange: (exchangeId: string) => void
+        private readonly jumpToExchange: (exchangeId: string) => Promise<HttpExchange>
     ) { }
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
             this.accountStore.initialized,
-            this.proxyStore.initialized,
-            this.eventsStore.initialized
+            this.proxyStore.initialized
         ]);
 
         await this.loadSettings();
@@ -771,18 +768,8 @@ export class RulesStore {
         eventId: string,
         getEditedEvent: (exchange: HttpExchange) => Promise<T>
     ) {
-        let exchange: HttpExchange | undefined;
-
-        // Wait until the event itself has arrived in the UI:
-        yield when(() => {
-            exchange = _.find(this.eventsStore.exchanges, { id: eventId });
-
-            // Completed -> doesn't fire for initial requests -> no completed/initial req race
-            return !!exchange && exchange.isCompletedRequest();
-        });
-
-        // Jump to the exchange:
-        this.jumpToExchange(eventId);
+        // Jump to the exchange, once the request is completed:
+        const exchange: HttpExchange = yield this.jumpToExchange(eventId);
 
         // Mark the exchange as breakpointed, and wait for an edited version.
         // UI will make it editable, add a save button, save will resolve this promise

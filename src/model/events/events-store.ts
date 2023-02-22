@@ -35,6 +35,8 @@ import { reportError } from '../../errors';
 
 import { ProxyStore } from "../proxy-store";
 import { ApiStore } from '../api/api-store';
+import { RulesStore } from '../rules/rules-store';
+import { findItem, isRuleGroup } from '../rules/rules-structure';
 
 import { parseSource } from '../http/sources';
 import { parseHar } from '../http/har';
@@ -134,13 +136,15 @@ export class EventsStore {
 
     constructor(
         private proxyStore: ProxyStore,
-        private apiStore: ApiStore
+        private apiStore: ApiStore,
+        private rulesStore: RulesStore
     ) { }
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
             this.proxyStore.initialized,
-            this.apiStore.initialized
+            this.apiStore.initialized,
+            this.rulesStore.initialized
         ]);
 
         mockttpEventTypes.forEach(<T extends MockttpEventType>(eventName: T) => {
@@ -315,6 +319,20 @@ export class EventsStore {
         }
     }
 
+    private getMatchedRule(request: InputCompletedRequest) {
+        if (!request.matchedRuleId) return false;
+
+        const matchedItem = findItem(this.rulesStore.rules, { id: request.matchedRuleId });
+
+        // This shouldn't really happen, but could in race conditions with rule editing:
+        if (!matchedItem) return false;
+
+        // This should never happen, but it's good to check:
+        if (isRuleGroup(matchedItem)) throw new Error('Request event unexpectedly matched rule group');
+
+        return matchedItem;
+    }
+
     @action
     private addCompletedRequest(request: InputCompletedRequest) {
         // The request should already exist: we get an event when the initial path & headers
@@ -322,11 +340,16 @@ export class EventsStore {
         // We add the request from scratch if it's somehow missing, which can happen given
         // races or if the server doesn't support request-initiated events.
         const existingEventIndex = _.findIndex(this.events, { id: request.id });
+
+        let event: HttpExchange;
         if (existingEventIndex >= 0) {
-            (this.events[existingEventIndex] as HttpExchange).updateFromCompletedRequest(request);
+            event = this.events[existingEventIndex] as HttpExchange;
         } else {
-            this.events.push(new HttpExchange(this.apiStore, request));
+            event = new HttpExchange(this.apiStore, request);
+            this.events.push(event);
         }
+
+        event.updateFromCompletedRequest(request, this.getMatchedRule(request));
     }
 
     @action
@@ -357,7 +380,9 @@ export class EventsStore {
 
     @action
     private addWebSocketRequest(request: InputCompletedRequest) {
-        this.events.push(new WebSocketStream(this.apiStore, request));
+        const stream = new WebSocketStream(this.apiStore, request);
+        stream.updateFromCompletedRequest(request, this.getMatchedRule(request));
+        this.events.push(stream);
     }
 
     @action

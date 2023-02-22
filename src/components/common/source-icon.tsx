@@ -1,9 +1,11 @@
 import * as React from 'react';
 
+import { styled } from '../../styles';
 import { SourceIcons, Icon } from '../../icons';
+
 import { TrafficSource } from '../../model/http/sources';
 
-export const SourceIcon = ({ source, className }: {
+export const SourceIcon = styled(({ source, className }: {
     source: TrafficSource,
     className?: string
 }) => source.icon !== SourceIcons.Unknown
@@ -12,4 +14,7 @@ export const SourceIcon = ({ source, className }: {
         title={source.summary}
         {...source.icon}
     />
-    : null;
+    : null
+)`
+    margin-left: 8px;
+`;

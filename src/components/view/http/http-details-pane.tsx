@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action } from 'mobx';
+import { action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -13,6 +13,8 @@ import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { ApiExchange } from '../../../model/api/api-interfaces';
 import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
+import { findItem } from '../../../model/rules/rules-structure';
+import { HtkMockRule, getRulePartKey } from '../../../model/rules/rules';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 
 import {
@@ -256,6 +258,8 @@ export class HttpDetailsPane extends React.Component<{
             cards.push(this.renderApiCard(apiName, apiExchange));
             cards.push(<HttpRequestCard
                 {...this.cardProps.request}
+                matchedRuleData={this.matchedRuleData}
+                onRuleClicked={this.jumpToRule}
                 exchange={exchange}
             />);
 
@@ -290,6 +294,8 @@ export class HttpDetailsPane extends React.Component<{
 
         cards.push(<HttpRequestCard
             {...this.cardProps.request}
+            matchedRuleData={this.matchedRuleData}
+            onRuleClicked={this.jumpToRule}
             exchange={exchange}
         />);
 
@@ -437,6 +443,38 @@ export class HttpDetailsPane extends React.Component<{
         const rule = buildRuleFromRequest(rulesStore!, exchange.request);
         rulesStore!.draftRules.items.unshift(rule);
         navigate(`/mock/${rule.id}`);
+    }
+
+    @computed
+    private get matchedRuleData() {
+        const { exchange, rulesStore } = this.props;
+
+        const { matchedRule } = exchange;
+        if (!matchedRule) return;
+
+        const currentRuleDraft = findItem(rulesStore!.draftRules, { id: matchedRule.id }) as HtkMockRule | undefined;
+        if (!currentRuleDraft) {
+            return { stepTypes: matchedRule.handlerStepTypes, status: 'deleted' } as const;
+        }
+
+        const currentStepTypes = ('handler' in currentRuleDraft
+            ? [currentRuleDraft.handler]
+            : currentRuleDraft.steps
+        ).map(s => getRulePartKey(s));
+
+        if (!_.isEqual(currentStepTypes, matchedRule.handlerStepTypes)) {
+            return { stepTypes: matchedRule.handlerStepTypes, status: 'modified-types' } as const;
+        }
+
+        return { stepTypes: matchedRule.handlerStepTypes, status: 'unchanged' } as const;
+    }
+
+    @action.bound
+    private jumpToRule() {
+        const { navigate, exchange } = this.props;
+        const { matchedRule } = exchange;
+        if (!matchedRule) return;
+        navigate(`/mock/${matchedRule.id}`);
     }
 
     @action.bound

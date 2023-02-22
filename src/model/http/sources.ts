@@ -117,10 +117,10 @@ const getIcon = (useragent: IUAParser.IResult) => {
 
     const uaStrings = useragent.ua.match(/[A-Za-z]+/g) || [];
 
-    const recognizedUaPart = <SourceIconName> _.find(
+    const recognizedUaPart = _.find(
         uaStrings.map((s) => _.upperFirst(s.toLowerCase())),
         (s) => isValidIconName(s)
-    );
+    ) as SourceIconName;
 
     if (recognizedUaPart) {
         return SourceIcons[recognizedUaPart];
