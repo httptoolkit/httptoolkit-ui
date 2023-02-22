@@ -41,7 +41,7 @@ import type { ViewableContentType } from './model/events/content-types';
 
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &
-    { body: HarBody; timingEvents: TimingEvents, matchedRuleId: "?" };
+    { body: HarBody; timingEvents: TimingEvents, matchedRuleId: false };
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
@@ -49,7 +49,7 @@ export type InputHTTPEvent = MockttpEvent;
 export type InputClientError = ClientError;
 export type InputTlsFailure = TlsHandshakeFailure;
 export type InputTlsPassthrough = TlsPassthroughEvent;
-export type InputInitiatedRequest = MockttpInitiatedRequest;
+export type InputInitiatedRequest = MockttpInitiatedRequest | HarRequest;
 export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
 export type InputFailedRequest = MockttpAbortedRequest | ClientError['request'];

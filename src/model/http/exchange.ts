@@ -162,7 +162,7 @@ export class HttpBody implements MessageBody {
 }
 
 export type CompletedRequest = Omit<HttpExchange, 'request'> & {
-    matchedRuleId: string
+    matchedRuleId: string | false
 };
 export type CompletedExchange = Omit<HttpExchange, 'response'> & {
     response: HtkResponse | 'aborted'
@@ -208,7 +208,8 @@ export class HttpExchange extends HTKEventBase {
     public readonly id: string;
 
     @observable
-    public matchedRuleId: string | '?' | undefined; // Undefined initially, defined for completed requests
+    // Undefined initially, defined for completed requests, false for 'not available'
+    public matchedRuleId: string | false | undefined;
 
     @observable
     public tags: string[];
@@ -223,7 +224,7 @@ export class HttpExchange extends HTKEventBase {
     }
 
     isCompletedRequest(): this is CompletedRequest {
-        return !!this.matchedRuleId;
+        return this.matchedRuleId !== undefined;
     }
 
     isCompletedExchange(): this is CompletedExchange {
@@ -254,7 +255,7 @@ export class HttpExchange extends HTKEventBase {
 
     updateFromCompletedRequest(request: InputCompletedRequest) {
         this.request.body = new HttpBody(request, request.headers);
-        this.matchedRuleId = request.matchedRuleId || "?";
+        this.matchedRuleId = request.matchedRuleId || false;
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);

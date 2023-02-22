@@ -561,7 +561,7 @@ function parseHarRequest(
         id,
         timingEvents,
         tags: [],
-        matchedRuleId: "?",
+        matchedRuleId: false,
         protocol: request.url.split(':')[0],
         method: request.method,
         url: request.url,
