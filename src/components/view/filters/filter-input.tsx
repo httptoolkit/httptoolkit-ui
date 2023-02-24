@@ -200,7 +200,7 @@ export const FilterInput = <T extends unknown>(props: {
                 category: 'Filters',
                 action: 'Create',
                 // Track most used filter types, *not* input or params
-                label: data.suggestion.filterClass.filterName
+                value: data.suggestion.filterClass.filterName
             });
         }
         props.onFiltersChanged(updatedFilters);

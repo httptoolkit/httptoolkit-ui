@@ -90,7 +90,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         const value = event.currentTarget.value;
         this.proxyType = value as UpstreamProxyType;
 
-        trackEvent({ category: "Config", action: "Set Proxy", label: this.proxyType });
+        trackEvent({ category: "Config", action: "Set Proxy", value: this.proxyType });
 
         if (value === 'direct' || value === 'system') {
             // Only update immediately when switching to a type that doesn't need a host input.

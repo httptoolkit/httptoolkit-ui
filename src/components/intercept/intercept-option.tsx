@@ -259,7 +259,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         trackEvent({
             category: 'Interceptors',
             action: 'Activated',
-            label: this.props.interceptor.id
+            value: this.props.interceptor.id
         });
     };
 
@@ -274,7 +274,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         trackEvent({
             category: 'Interceptors',
             action: 'Successfully Activated',
-            label: this.props.interceptor.id
+            value: this.props.interceptor.id
         });
 
         // Some interceptors don't switch to show the requests, e.g. if the UI shows a list

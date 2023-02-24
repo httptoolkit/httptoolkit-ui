@@ -163,7 +163,7 @@ export class AccountStore {
 
     getPro = flow(function * (this: AccountStore, source: string) {
         try {
-            trackEvent({ category: 'Account', action: 'Get Pro', label: source });
+            trackEvent({ category: 'Account', action: 'Get Pro', value: source });
 
             const selectedPlan: SKU | undefined = yield this.pickPlan();
             if (!selectedPlan) return;
@@ -188,7 +188,7 @@ export class AccountStore {
                 // from using a VPN to work around it. We do still allow this for existing customers, who are already
                 // logged in - we're attempting to just block the creation of new accounts here.
 
-                trackEvent({ category: 'Account', action: 'Blocked purchase', label: selectedPlan });
+                trackEvent({ category: 'Account', action: 'Blocked purchase', value: selectedPlan });
 
                 alert(
                     "Unfortunately, due to high levels of recent chargebacks & fraud, subscriptions for new accounts "+
@@ -251,7 +251,7 @@ export class AccountStore {
         this.modal = undefined;
 
         if (this.selectedPlan) {
-            trackEvent({ category: 'Account', action: 'Plan selected', label: this.selectedPlan });
+            trackEvent({ category: 'Account', action: 'Plan selected', value: this.selectedPlan });
         } else if (!this.isPaidUser) {
             // If you don't pick a plan via any route other than already having
             // bought them, then you're pretty clearly rejecting them.
@@ -310,7 +310,7 @@ export class AccountStore {
         trackEvent({
             category: 'Account',
             action: this.isPaidUser ? 'Checkout complete' : 'Checkout cancelled',
-            label: sku
+            value: sku
         });
 
         this.modal = undefined;

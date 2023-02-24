@@ -1,12 +1,10 @@
-import * as ReactGA from 'react-ga';
 import { posthog } from 'posthog-js';
 import { format as formatDate } from 'date-fns';
 
 import { serverVersion, desktopVersion, UI_VERSION } from './services/service-versions';
 
-const GA_ID = process.env.GA_ID;
 const POSTHOG_KEY = process.env.POSTHOG_KEY;
-const enabled = !!GA_ID && !!POSTHOG_KEY && navigator.doNotTrack !== "1";
+const enabled = !!POSTHOG_KEY && navigator.doNotTrack !== "1";
 
 // Note that all metrics here are fully anonymous.
 // No user information is tracked, no events are
@@ -21,12 +19,6 @@ const enabled = !!GA_ID && !!POSTHOG_KEY && navigator.doNotTrack !== "1";
 
 export function initMetrics() {
     if (enabled) {
-        ReactGA.initialize(GA_ID!, {
-            gaOptions: {
-                siteSpeedSampleRate: 100
-            }
-        });
-
         posthog.init(POSTHOG_KEY, {
             api_host: 'https://events.httptoolkit.tech',
             autocapture: false, // No automatic event capture please
@@ -38,15 +30,6 @@ export function initMetrics() {
 
             persistence: 'memory' // No cookies/local storage tracking - just anon session metrics
         });
-
-        ReactGA.set({ anonymizeIp: true });
-
-        // GA metadata needs to be handled separately here:
-        serverVersion.then((version) => ReactGA.set({ 'dimension1': version }));
-        desktopVersion.then((version) => ReactGA.set({ 'dimension2': version }));
-        ReactGA.set({ 'dimension3': UI_VERSION });
-
-        trackPage(window.location);
     }
 }
 
@@ -95,28 +78,23 @@ export function trackPage(location: Window['location']) {
     if (currentUrl === lastUrl) return;
     lastUrl = currentUrl;
 
-    // That path is the part after the first slash, after the protocol:
-    const currentPath = currentUrl.slice(currentUrl.indexOf('/', 'https://'.length));
-
-    ReactGA.set({
-        location: currentUrl,
-        page: currentPath
-    });
-    ReactGA.pageview(currentPath);
     posthog.capture('$pageview', {
         $current_url: currentUrl,
         $set_once: { ...sessionData() }
     });
 }
 
-export function trackEvent(event: ReactGA.EventArgs) {
+export function trackEvent(event: {
+    category: string,
+    action: string,
+    value?: string
+}) {
     if (!enabled) return;
 
     const currentUrl = normalizeUrl(location.href);
 
-    ReactGA.event(event);
     posthog.capture(`${event.category}:${event.action}`, {
-        value: event.label,
+        value: event.value,
         $current_url: currentUrl,
         $set_once: { ...sessionData() }
     });
