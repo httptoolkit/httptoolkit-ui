@@ -256,6 +256,12 @@ export class HttpExchange extends HTKEventBase {
     public abortMessage: string | undefined;
 
     updateFromCompletedRequest(request: InputCompletedRequest, matchedRule: HtkMockRule | false) {
+        if (request.body instanceof HttpBody) {
+            // If this request was used in new HttpExchange, it's mutated in some ways, and this
+            // will cause problems. Shouldn't happen, but we check against it here just in case:
+            throw new Error("Can't update from already-processed request");
+        }
+
         this.request.body = new HttpBody(request, request.headers);
 
         this.matchedRule = !matchedRule

@@ -345,7 +345,8 @@ export class EventsStore {
         if (existingEventIndex >= 0) {
             event = this.events[existingEventIndex] as HttpExchange;
         } else {
-            event = new HttpExchange(this.apiStore, request);
+            event = new HttpExchange(this.apiStore, { ...request });
+            // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
             this.events.push(event);
         }
 
