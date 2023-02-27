@@ -381,7 +381,9 @@ export class EventsStore {
 
     @action
     private addWebSocketRequest(request: InputCompletedRequest) {
-        const stream = new WebSocketStream(this.apiStore, request);
+        const stream = new WebSocketStream(this.apiStore, { ...request });
+        // ^ This mutates request to use it, so we have to shallow-clone to use it below too
+
         stream.updateFromCompletedRequest(request, this.getMatchedRule(request));
         this.events.push(stream);
     }
