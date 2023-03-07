@@ -3,7 +3,7 @@ import * as querystring from 'querystring';
 
 import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import { MethodObject } from '@open-rpc/meta-schema';
-import * as Ajv from 'ajv';
+import Ajv from 'ajv';
 
 import { openApiSchema } from './openapi-schema';
 import { dereference } from '../../util/json-schema';
@@ -27,7 +27,12 @@ interface Path {
 }
 
 const filterSpec = new Ajv({
-    removeAdditional: 'failing'
+    // This is the main goal: strip out weird extensions
+    removeAdditional: 'failing',
+
+    // Otherwise, we're *only* doing basic validation, minor oddness is fine
+    strict: false,
+    validateFormats: false
 }).compile(openApiSchema);
 
 // Note that OpenAPI template strings are not the same as JSON template language templates,

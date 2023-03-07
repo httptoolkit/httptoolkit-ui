@@ -10,7 +10,8 @@ import type {
     RequestBodyObject,
     SchemaObject
 } from 'openapi-directory';
-import * as Ajv from 'ajv';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
 import {
     HttpExchange,
@@ -35,8 +36,17 @@ import { fromMarkdown } from '../markdown';
 
 const paramValidator = new Ajv({
     coerceTypes: 'array',
-    unknownFormats: 'ignore' // OpenAPI uses some non-standard formats
+    strict: false,
+    strictSchema: false,
+    formats: new Proxy({}, {
+        // Return 'true' (ignore) for all undefined formats:
+        get(target: any, name: string) {
+            if (name in target) return target[name];
+            else return true;
+        }
+    })
 });
+addFormats(paramValidator);
 
 function getPath(api: OpenApiMetadata, request: HtkRequest): {
     pathSpec: PathObject,
@@ -202,7 +212,7 @@ export function getParameters(
                 if (!validated && paramValidator.errors) {
                     param.warnings.push(
                         ...paramValidator.errors.map(e =>
-                            formatAjvError(valueWrapper, e, (path) => path.replace(/^\.value/, param.name))
+                            formatAjvError(valueWrapper, e, (path) => path.replace(/^\/value/, param.name))
                         )
                     );
                 }

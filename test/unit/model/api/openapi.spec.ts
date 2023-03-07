@@ -491,7 +491,7 @@ describe('OpenAPI support', () => {
                     description: { __html: '<p>A number.</p>' },
                     name: 'num',
                     value: 'abc',
-                    warnings: [`num ("abc") should be number.`]
+                    warnings: [`num ("abc") must be number.`]
                 }
             ]);
         });
