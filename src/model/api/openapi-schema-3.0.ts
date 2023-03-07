@@ -2159,4 +2159,4 @@ export const openApiSchema = {
       "additionalProperties": false
     }
   }
-}
+};

@@ -5,7 +5,8 @@ import { OpenAPIObject, PathItemObject } from 'openapi-directory';
 import { MethodObject } from '@open-rpc/meta-schema';
 import Ajv from 'ajv';
 
-import { openApiSchema } from './openapi-schema';
+import { openApiSchema as openApiV30Schema } from './openapi-schema-3.0';
+import { openApiSchema as openApiV31Schema } from './openapi-schema-3.1';
 import { dereference } from '../../util/json-schema';
 import { OpenRpcDocument, OpenRpcMetadata } from './jsonrpc';
 
@@ -26,14 +27,39 @@ interface Path {
     pathSpec: PathItemObject;
 }
 
-const filterSpec = new Ajv({
+const filterV30Spec = new Ajv({
     // This is the main goal: strip out weird extensions
     removeAdditional: 'failing',
 
     // Otherwise, we're *only* doing basic validation, minor oddness is fine
     strict: false,
     validateFormats: false
-}).compile(openApiSchema);
+}).compile(openApiV30Schema);
+
+const filterV31Spec = new Ajv({
+    strict: false,
+    validateFormats: false,
+
+    // v3.1 uses unevaluated, not additional, and removal isn't supported yet. See:
+    // https://github.com/ajv-validator/ajv/issues/1346
+    // For now, for 3.1 we _only_ validate, without any filtering. Fortunately there
+    // aren't many 3.1 specs (only Adyen + Vercel) and none appear to have problems
+    // that would make this necessary (unlike Stripe's expansion refs).
+}).compile(openApiV31Schema);
+
+const validateAndFilterSpec = (spec: OpenAPIObject) => {
+    let filter = spec.openapi.startsWith('3.0')
+            ? filterV30Spec
+        : spec.openapi.startsWith('3.1')
+            ? filterV31Spec
+        : null;
+
+    if (!filter) throw new Error(`Unrecognized OpenAPI version: ${spec.openapi}`);
+
+    const result = filter(spec);
+    if (result) return { success: true, result };
+    else return { success: false, errors: filter.errors };
+};
 
 // Note that OpenAPI template strings are not the same as JSON template language templates,
 // which use ${...} instead of {...}.
@@ -59,12 +85,12 @@ export async function buildOpenApiMetadata(
 
     // This mutates the spec to drop unknown fields. Mainly useful to limit spec size. Stripe
     // particularly includes huge recursive refs in its x-expansion* extension fields.
-    const isValid = filterSpec(spec);
+    const specFilterResult = validateAndFilterSpec(spec);
 
-    if (!isValid) {
+    if (!specFilterResult.success) {
         console.warn(
             'Errors filtering spec',
-            JSON.stringify(filterSpec.errors, null, 2)
+            JSON.stringify(specFilterResult.errors, null, 2)
         );
         throw new Error(`Failed to filter spec: ${specId}`);
     }
