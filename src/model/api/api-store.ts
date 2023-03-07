@@ -241,5 +241,5 @@ export function findBestMatchingApi(
     reportError('Overlapping APIs', matchingApis);
 
     // Return our guess of the most popular service, from the matching services only
-    return _.maxBy(matchingApis, a => a.spec.paths.length)!;
+    return _.maxBy(matchingApis, a => Object.keys(a.spec.paths).length)!;
 }
