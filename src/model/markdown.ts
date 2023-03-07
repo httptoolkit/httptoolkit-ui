@@ -12,22 +12,31 @@ const md = new Remarkable({
 // Add an extra hook to DOMPurify to enforce link target. Without this, DOMPurify strips
 // every link target entirely.
 DOMPurify.addHook('afterSanitizeAttributes', function (node: Element | HTMLElement) {
-    // Closed based on example from https://github.com/cure53/DOMPurify/tree/main/demos#hook-to-open-all-links-in-a-new-window-link
+    // Closely based on example from https://github.com/cure53/DOMPurify/tree/main/demos#hook-to-open-all-links-in-a-new-window-link
 
     // Set all elements owning target to target=_blank
     if (node.hasAttribute('target') || 'target' in node) {
-      node.setAttribute('target', '_blank');
-      node.setAttribute('rel', 'noreferrer'); // Disables both referrer & opener
+        node.setAttribute('target', '_blank');
+        node.setAttribute('rel', 'noreferrer'); // Disables both referrer & opener
     }
 
     // set non-HTML/MathML links to xlink:show=new
     if (
-      !node.hasAttribute('target') &&
-      (node.hasAttribute('xlink:href') || node.hasAttribute('href'))
+        !node.hasAttribute('target') &&
+        (node.hasAttribute('xlink:href') || node.hasAttribute('href'))
     ) {
-      node.setAttribute('xlink:show', 'new');
+        node.setAttribute('xlink:show', 'new');
     }
-  });
+});
+
+// Add an extra hook to strip relative URLs (markdown largely comes from external sources,
+// and so should never include relative paths!)
+DOMPurify.addHook('afterSanitizeAttributes', function (node: Element | HTMLElement) {
+    if (node.hasAttribute('href')) {
+        const target = node.getAttribute('href');
+        if (target?.startsWith('/')) node.removeAttribute('href');
+    }
+});
 
 export function fromMarkdown(input: string): Html;
 export function fromMarkdown(input: string | undefined): Html | undefined;
