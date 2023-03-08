@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, disposeOnUnmount } from 'mobx-react';
-import { observable, action, autorun, reaction } from 'mobx';
+import { observable, action, autorun, reaction, runInAction, comparer } from 'mobx';
 import { withTheme } from 'styled-components';
 import type { SchemaObject } from 'openapi-directory';
 
@@ -29,6 +29,21 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
         const monacoEditorModule = await import(/* webpackChunkName: "react-monaco-editor" */ 'monaco-editor/esm/vs/editor/editor.api');
 
         defineMonacoThemes(monacoEditorModule);
+
+        // Track the currently visible markers per model:
+        monacoEditorModule.editor.onDidChangeMarkers((modelUris) => {
+            const markers = monacoEditorModule.editor.getModelMarkers({});
+
+            runInAction(() => {
+                modelsMarkers.clear();
+                markers.forEach((marker) => {
+                    const modelUri = marker.resource;
+                    const markersSoFar = modelsMarkers.get(modelUri) ?? [];
+                    markersSoFar.push(marker);
+                    modelsMarkers.set(modelUri, markersSoFar);
+                });
+            });
+        });
         MonacoEditor = rmeModule.default;
     } catch (err) {
         console.log('Monaco load failed', asError(err).message);
@@ -40,6 +55,10 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
         return loadMonacoEditor(retries - 1);
     }
 }
+
+// We keep a single global observable linking model URIs to their current error marker data,
+// updated via a global listener set up in loadMonacoEditor above.
+const modelsMarkers = observable.map<monacoTypes.Uri, monacoTypes.editor.IMarker[]>();
 
 export interface EditorProps extends MonacoEditorProps {
     onContentSizeChange?: (contentUpdate: monacoTypes.editor.IContentSizeChangedEvent) => void;
@@ -160,9 +179,9 @@ export class BaseEditor extends React.Component<EditorProps> {
     monacoEditorLoaded = !!MonacoEditor;
 
     @observable
-    modelUri: string | null = null;
+    modelUri: monacoTypes.Uri | undefined = undefined;
 
-    registeredSchemaUri: string | null = null;
+    registeredSchemaUri: string | undefined = undefined;
 
     constructor(props: EditorProps) {
         super(props);
@@ -195,20 +214,40 @@ export class BaseEditor extends React.Component<EditorProps> {
         }
     }
 
+    private getMarkerController() {
+        return this.editor?.getContribution('editor.contrib.markerController') as unknown as {
+            showAtMarker(marker: monacoTypes.editor.IMarker): void;
+            close(focus: boolean): void;
+        };
+    }
+
+    private withoutFocusingEditor(cb: () => void) {
+        if (!this.editor) return;
+        const originalFocusMethod = this.editor.focus;
+        this.editor.focus = () => {};
+        cb();
+        this.editor.focus = originalFocusMethod;
+    }
+
     private async resetUIState() {
         if (this.editor && this.monaco) {
             this.editor.setSelection(
                 new this.monaco.Selection(0, 0, 0, 0)
             );
-            requestAnimationFrame(() => {
-                // Sometimes, if the value updates immediately, the above results in us
-                // selecting *all* content. We reset again after a frame to avoid that.
-                if (this.editor && this.monaco) {
-                    this.editor.setSelection(new this.monaco.Selection(0, 0, 0, 0));
-                }
-            });
 
             this.relayout();
+
+            requestAnimationFrame(() => {
+                if (this.editor && this.monaco) {
+                    // Sometimes, if the value updates immediately, the above results in us
+                    // selecting *all* content. We reset again after a frame to avoid that.
+                    this.editor.setSelection(new this.monaco.Selection(0, 0, 0, 0));
+                }
+
+                // Clear open problems - without this, expanded markers (squiggly line -> View Problem)
+                // will persist even though the marker itself no longer exists in the content.
+                this.getMarkerController()?.close(false);
+            });
         }
     }
 
@@ -218,14 +257,32 @@ export class BaseEditor extends React.Component<EditorProps> {
         this.monaco = monaco;
 
         const model = editor.getModel();
-        this.modelUri = model && model.uri.toString();
+        this.modelUri = model?.uri;
 
         this.editor.onDidChangeModel(action((e: monacoTypes.editor.IModelChangedEvent) => {
-            this.modelUri = e.newModelUrl && e.newModelUrl.toString()
+            this.modelUri = e.newModelUrl ?? undefined;
         }));
 
         if (this.props.onContentSizeChange) {
             this.editor.onDidContentSizeChange(this.props.onContentSizeChange);
+        }
+
+        // For read-only editors, we want to manually highlight the inline errors, if there are
+        // any. Mostly relevant to OpenAPI body validation issues. We can't do this in reset or
+        // elsewhere, as markers update slightly asynchronously from content changes, so this is
+        // only visible by observing modelMarkers.
+        if (this.props.options?.readOnly) {
+            disposeOnUnmount(this, reaction(() => ({
+                markers: (this.modelUri && modelsMarkers.get(this.modelUri)) ?? []
+            }), ({ markers }) => {
+                if (markers.length) {
+                    requestAnimationFrame(() => { // Run after the reset marker.close() update
+                        this.withoutFocusingEditor(() => {
+                            this.getMarkerController().showAtMarker(markers[0]);
+                        });
+                    });
+                }
+            }, { equals: comparer.structural }));
         }
     }
 
@@ -240,18 +297,20 @@ export class BaseEditor extends React.Component<EditorProps> {
             const existingOptions = this.monaco.languages.json.jsonDefaults.diagnosticsOptions;
             let newSchemaMappings: SchemaMapping[] = existingOptions.schemas || [];
 
-            if (this.modelUri) {
+            const uriString = this.modelUri?.toString();
+
+            if (uriString) {
                 const newSchema = this.props.schema;
 
                 const existingMapping = _.find(existingOptions.schemas || [],
-                    (sm: SchemaMapping) => sm.uri === this.modelUri
+                    (sm: SchemaMapping) => sm.uri === uriString
                 ) as SchemaMapping | undefined;
 
                 if (newSchema && (!existingMapping || existingMapping.schema !== newSchema)) {
                     // If we have a replacement/new schema for this file, replace/add it.
                     newSchemaMappings = newSchemaMappings
                         .filter((sm) => sm !== existingMapping)
-                        .concat({ uri: this.modelUri, fileMatch: [this.modelUri], schema: newSchema });
+                        .concat({ uri: uriString, fileMatch: [uriString], schema: newSchema });
                 } else if (!newSchema) {
                     // If we have no schema for this file, drop the schema
                     newSchemaMappings = newSchemaMappings
@@ -259,7 +318,7 @@ export class BaseEditor extends React.Component<EditorProps> {
                 }
             }
 
-            if (this.registeredSchemaUri && this.modelUri != this.registeredSchemaUri) {
+            if (this.registeredSchemaUri && uriString != this.registeredSchemaUri) {
                 // If we registered a previous schema for a different model, clear it up.
                 newSchemaMappings = newSchemaMappings
                     .filter((sm) => sm.uri !== this.registeredSchemaUri);
@@ -275,7 +334,7 @@ export class BaseEditor extends React.Component<EditorProps> {
                 this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(options);
             }
 
-            this.registeredSchemaUri = this.modelUri;
+            this.registeredSchemaUri = uriString;
         }));
     }
 
@@ -295,7 +354,7 @@ export class BaseEditor extends React.Component<EditorProps> {
                 this.monaco.languages.json.jsonDefaults.setDiagnosticsOptions(newOptions);
             }
 
-            this.registeredSchemaUri = null;
+            this.registeredSchemaUri = undefined;
         }
     }
 
