@@ -257,5 +257,13 @@ export const GlobalStyles = createGlobalStyle`
         }
     }
 
+    /* Override some Monaco CSS internals */
+    .monaco-editor {
+        /* Our editors don't have real filenames, so hide that from error popups: */
+        .zone-widget .filename {
+            display: none;
+        }
+    }
+
     ${p => p.theme.globalCss}
 `;
