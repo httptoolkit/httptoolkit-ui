@@ -91,7 +91,7 @@ describe('OpenAPI support', () => {
                     await stripeApi,
                     getExchangeData({
                         hostname: 'api.stripe.com',
-                        path: '/v1/account',
+                        path: '/v1/accounts',
                         query: '?account=abc',
                         requestHeaders: {
                             'x-http-method-override': 'POST'
@@ -100,7 +100,7 @@ describe('OpenAPI support', () => {
                 )
             ).to.deep.match({
                 operation: {
-                    name: 'PostAccount',
+                    name: 'PostAccounts',
                 }
             });
         });
@@ -111,16 +111,16 @@ describe('OpenAPI support', () => {
                     await stripeApi,
                     getExchangeData({
                         hostname: 'api.stripe.com',
-                        path: '/v1/bitcoin/transactions',
+                        path: '/v1/customers/123/bank_accounts',
                     }),
                 )
             ).to.deep.match({
                 operation: {
-                    name: 'GetBitcoinTransactions',
+                    name: 'GetCustomersCustomerBankAccounts',
                     description: {
-                        __html: '<p>List bitcoin transacitons for a given receiver.</p>'
+                        __html: "<p>You can see a list of the bank accounts belonging to a Customer. Note that the 10 most recent sources are always available by default on the Customer. If you need more than those 10, you can use this API method and the <code>limit</code> and <code>starting_after</code> parameters to page through additional bank accounts.</p>"
                     },
-                    warnings: [`The 'GetBitcoinTransactions' operation is deprecated.`]
+                    warnings: [`The 'GetCustomersCustomerBankAccounts' operation is deprecated.`]
                 }
             });
         });
