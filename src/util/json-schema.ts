@@ -24,7 +24,10 @@ function derefRef(root: any, node: Ref) {
     let refTarget: any = root;
 
     while (refParts.length) {
-        const nextPart = refParts.shift() as any;
+        const nextPart = refParts.shift()!
+            // Handle JSON pointer escape chars:
+            .replace(/~1/g, '/')
+            .replace(/~0/g, '~');
         refTarget = refTarget[nextPart];
         if (!refTarget) {
             throw new Error(`Could not follow ref ${ref}, failed at ${nextPart}`);
