@@ -364,7 +364,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             <strong>Advanced HTTP debugging & inspection tools</strong>, including compression & caching performance analysis.
                         </Feature>
                         <Feature>
-                            <strong>Validation & documentation for 1400+ APIs</strong>,
+                            <strong>Validation & documentation for 2600+ APIs</strong>,
                             from AWS to GitHub to Stripe, powered by OpenAPI.
                         </Feature>
                         <Feature>
