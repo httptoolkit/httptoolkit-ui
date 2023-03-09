@@ -67,6 +67,8 @@ export function uploadFile(type: 'arraybuffer', acceptedMimeTypes?: string[]): P
 export function uploadFile(type: 'text', acceptedMimeTypes?: string[]): Promise<string | null>;
 // Ask the user for a file of one of the given types, and get the file path itself (electron only)
 export function uploadFile(type: 'path', acceptedMimeTypes?: string[]): Promise<string | null>;
+// Note that in general, in most cases this will not resolve when the picker is cancelled (instead,
+// it'll only resolve as null after a 10 minute time out) so handle accordingly!
 export function uploadFile(
     type: FileReaderType = 'arraybuffer',
     acceptedMimeTypes: string[] = []
@@ -99,7 +101,11 @@ export function uploadFile(
 
     fileInput.addEventListener('change', () => {
         if (!fileInput.files || !fileInput.files.length) {
-            return Promise.resolve(null);
+            // This remains as a backup for cases where this could happen (unclear) but
+            // in modern browsers it seems we don't get a change event at all for cancel,
+            // and there are no reliable workarounds (monitoring focus doesn't help -
+            // pickers are seemingly no longer modal). Assume cancel never resolves.
+            return result.resolve(null);
         }
 
         const file = fileInput.files[0];
