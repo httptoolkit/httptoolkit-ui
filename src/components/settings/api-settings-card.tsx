@@ -29,7 +29,7 @@ import { ApiMetadata } from '../../model/api/api-interfaces';
 const UploadSpecButton = styled(SettingsButton).attrs(() => ({
     type: 'submit'
 }))`
-    grid-column: 1 / span 2;
+    grid-column: 1 / span 3;
 `;
 
 const BaseUrlInput = styled(TextInput)`
@@ -82,7 +82,7 @@ export class ApiSettingsCard extends React.Component<
     private uploadSpecButtonRef = React.createRef<HTMLButtonElement>();
 
     @observable
-    private specUploadInProgress = false;
+    private specProcessingInProgress = false;
 
     @observable
     private enteredBaseUrl = "";
@@ -127,12 +127,12 @@ export class ApiSettingsCard extends React.Component<
                 { !this.selectedSpec
                     ? <UploadSpecButton
                         type='submit' // Ensures we can show validation messages here
-                        onClick={this.specUploadInProgress ? undefined : this.uploadSpec}
+                        onClick={this.specProcessingInProgress ? undefined : this.uploadSpec}
                         ref={this.uploadSpecButtonRef}
                     >
-                        { this.specUploadInProgress
+                        { this.specProcessingInProgress
                             ? <Icon icon={['fas', 'spinner']} spin />
-                            : "Load an OpenAPI spec"
+                            : "Load an OpenAPI or Swagger spec"
                         }
                     </UploadSpecButton>
                     : <>
@@ -148,20 +148,19 @@ export class ApiSettingsCard extends React.Component<
                                 <Icon icon={['fas', 'undo']} />
                             </UndoButton>
                         </Spec>
+                        <AddButton
+                            disabled={!this.selectedSpec || !this.enteredBaseUrl || !!this.baseUrlError}
+                            onClick={this.saveApi}
+                        >
+                            <Icon icon={['fas', 'save']} />
+                        </AddButton>
                     </>
                 }
-
-                <AddButton
-                    disabled={!this.selectedSpec || !this.enteredBaseUrl || !!this.baseUrlError}
-                    onClick={this.saveApi}
-                >
-                    <Icon icon={['fas', 'plus']} />
-                </AddButton>
             </ApiRows>
 
             <SettingsExplanation>
-                APIs added here will provide documentation and validation for all requests within their
-                base URL.
+                APIs added here will provide documentation and validation for all matching
+                requests within their base URL.
             </SettingsExplanation>
             <SettingsExplanation>
                 HTTP Toolkit also includes built-in specifications for 2600+ popular public APIs.
@@ -170,18 +169,21 @@ export class ApiSettingsCard extends React.Component<
     }
 
     uploadSpec = flow(function * (this: ApiSettingsCard) {
-        this.specUploadInProgress = true;
         updateValidationMessage(this.uploadSpecButtonRef.current!);
 
         try {
             const file: string = yield uploadFile('text', ['.json', '.yaml']);
             if (!file) return;
 
+            this.specProcessingInProgress = true;
             let content: any = yield attempt(() =>
                 JSON.parse(file)
             ).catch(() =>
                 yaml.parse(file)
-            );
+            ).catch((e) => {
+                console.warn('OpenAPI spec parsing error:', e);
+                throw new Error('File could not be parsed as either YAML or JSON')
+            });
 
             let openApiSpec: OpenAPIObject;
 
@@ -208,7 +210,9 @@ export class ApiSettingsCard extends React.Component<
             }
 
             // Build the API just to test that we *can* (we'll rebuild with the base URL later)
-            yield buildApiMetadataAsync(openApiSpec);
+            yield buildApiMetadataAsync(openApiSpec, [
+                'api.build.example' // Need a default base here in case the spec has no servers
+            ]);
 
             this.selectedSpec = openApiSpec;
 
@@ -229,7 +233,7 @@ export class ApiSettingsCard extends React.Component<
             console.log(e);
             updateValidationMessage(this.uploadSpecButtonRef.current!, asError(e).message);
         } finally {
-            this.specUploadInProgress = false;
+            this.specProcessingInProgress = false;
         }
     }).bind(this);
 
