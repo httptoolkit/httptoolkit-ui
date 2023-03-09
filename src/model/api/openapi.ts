@@ -246,8 +246,8 @@ export function getBodySchema(
 
     const schemaKey = _.find<string>(mediaTypeKeys, (key) =>
         new RegExp('^' + // Must match at the start
-            key.replace('*', '.*') // Wildcards to regex wildcard
-                .replace(/;.*/, '') // Ignore charset etc
+            key.replace(/\*/g, '.*') // Wildcards to regex wildcard
+                .replace(/;.*/g, '') // Ignore charset etc
         ).exec(contentType) !== null
     );
 

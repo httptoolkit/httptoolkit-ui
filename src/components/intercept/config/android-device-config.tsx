@@ -62,8 +62,8 @@ const Spacer = styled.div`
 
 function urlSafeBase64(content: string) {
     return Buffer.from(content, 'utf8').toString('base64')
-        .replace('+', '-')
-        .replace('/', '_');
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
 }
 
 function getConfigRequestIds(eventsStore: EventsStore) {
