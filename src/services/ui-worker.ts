@@ -175,11 +175,22 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
     try {
         switch (event.data.type) {
             case 'decode':
-                const decodeResult = await decodeRequest(event.data);
-                ctx.postMessage(decodeResult, [
-                    decodeResult.inputBuffer,
-                    decodeResult.decodedBuffer
-                ]);
+                try {
+                    const decodeResult = await decodeRequest(event.data);
+                    ctx.postMessage(decodeResult, [
+                        decodeResult.inputBuffer,
+                        decodeResult.decodedBuffer
+                    ]);
+                } catch (e: any) {
+                    // Special case for decoding errors: we send the encoded data back with the error, so the user can debug it:
+                    ctx.postMessage({
+                        id: event.data.id,
+                        error: Object.assign(serializeError(e), {
+                            inputBuffer: event.data.buffer
+                        })
+                    }, [event.data.buffer]);
+                    return;
+                }
                 break;
 
             case 'encode':

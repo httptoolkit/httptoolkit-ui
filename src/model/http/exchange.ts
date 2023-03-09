@@ -127,6 +127,9 @@ export class HttpBody implements MessageBody {
 
     private _decoded: Buffer | undefined;
 
+    @observable
+    decodingError: Error | undefined;
+
     decodedPromise: ObservablePromise<Buffer | undefined> = lazyObservablePromise(async () => {
         // Exactly one of _encoded & _decoded is a buffer, never neither/both.
         if (this._decoded) return this._decoded;
@@ -140,8 +143,17 @@ export class HttpBody implements MessageBody {
             const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
             this._encoded = encoded;
             return decoded;
-        } catch (e) {
+        } catch (e: any) {
             reportError(e);
+
+            // In most cases, we get the encoded data back regardless, so recapture it here:
+            if (e.inputBuffer) {
+                this._encoded = e.inputBuffer;
+            }
+            runInAction(() => {
+                this.decodingError = e;
+            });
+
             return undefined;
         }
     });
@@ -160,6 +172,7 @@ export class HttpBody implements MessageBody {
         // Set to a valid state for an un-decoded but totally empty body.
         this._decoded = undefined;
         this._encoded = emptyBuffer;
+        this.decodingError = undefined;
         this.decodedPromise = observablePromise(Promise.resolve(emptyBuffer));
     }
 }

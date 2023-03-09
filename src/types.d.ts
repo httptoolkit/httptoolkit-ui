@@ -129,6 +129,7 @@ export type MessageBody = {
     encoded: { byteLength: number } | Buffer,
     decoded: Buffer | undefined,
     decodedPromise: ObservablePromise<Buffer | undefined>,
+    decodingError: Error | undefined,
     cleanup(): void
 };
 

@@ -78,16 +78,25 @@ export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
         return { encoded: encodedBuffer, decoded: encodedBuffer };
     }
 
-    const result = await callApi<DecodeRequest, DecodeResponse>({
-        type: 'decode',
-        buffer: encodedBuffer.buffer as ArrayBuffer,
-        encodings
-    }, [encodedBuffer.buffer]);
+    try {
+        const result = await callApi<DecodeRequest, DecodeResponse>({
+            type: 'decode',
+            buffer: encodedBuffer.buffer as ArrayBuffer,
+            encodings
+        }, [encodedBuffer.buffer]);
 
-    return {
-        encoded: Buffer.from(result.inputBuffer),
-        decoded: Buffer.from(result.decodedBuffer)
-    };
+        return {
+            encoded: Buffer.from(result.inputBuffer),
+            decoded: Buffer.from(result.decodedBuffer)
+        };
+    } catch (e: any) {
+        // In general, the worker should return the original encoded buffer to us, so we can
+        // show it to the user to help them debug encoding issues:
+        if (e.inputBuffer) {
+            e.inputBuffer = Buffer.from(e.inputBuffer);
+        }
+        throw e;
+    }
 }
 
 export async function encodeBody(decodedBuffer: Buffer, encodings: string[]) {
