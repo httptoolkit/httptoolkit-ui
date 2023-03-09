@@ -7,8 +7,11 @@ import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage, HtkResponse, HtkRequest } from '../../../types';
 import { styled } from '../../../styles';
+import { WarningIcon } from '../../../icons';
+
 import { lastHeader } from '../../../util';
 import { saveFile } from '../../../util/ui';
+import { ErrorLike } from '../../../util/error';
 
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../../model/events/content-types';
 import { getReadableSize } from '../../../model/events/bodies';
@@ -21,6 +24,7 @@ import { CollapsingButtons } from '../../common/collapsing-buttons';
 import { Pill, PillSelector } from '../../common/pill';
 import { ExpandShrinkButton } from '../../common/expand-shrink-button';
 import { IconButton } from '../../common/icon-button';
+import { Content, ContentMonoValue } from '../../common/text-content';
 
 import { LoadingCard } from '../loading-card';
 import { ContentViewer } from '../../editor/content-viewer';
@@ -58,6 +62,32 @@ function getFilename(url: string, message: HtkResponse | HtkRequest): string | u
     const urlBaseName = _.last(url.split('/'));
     if (urlBaseName?.includes(".")) return urlBaseName;
 }
+
+const ErrorBanner = styled(Content)<{ direction: 'left' | 'right' }>`
+    ${p => p.direction === 'left'
+        ? 'margin: 0 -20px 0 -15px;'
+        : 'margin: 0 -15px 0 -20px;'
+    }
+
+    padding: 10px 30px 0;
+
+    font-size: ${p => p.theme.textSize};
+    color: ${p => p.theme.mainColor};
+    background-color: ${p => p.theme.warningBackground};
+    border-top: solid 1px ${p => p.theme.containerBorder};
+
+    svg {
+        margin-left: 0;
+    }
+`;
+
+const ErrorMessage = styled(ContentMonoValue)`
+    padding: 0;
+    margin: 10px 0;
+`;
+
+// A selection of content types you might want to try out, to explore your encoded data:
+const ENCODED_DATA_CONTENT_TYPES = ['text', 'raw', 'base64', 'image'] as const;
 
 @observer
 export class HttpBodyCard extends React.Component<{
@@ -117,13 +147,15 @@ export class HttpBodyCard extends React.Component<{
             lastHeader(message.headers['content-type']),
             message.body
         );
-        const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
-            this.selectedContentType! : message.contentType;
+        const decodedContentType = _.includes(compatibleContentTypes, this.selectedContentType)
+            ? this.selectedContentType!
+            : message.contentType;
 
         const decodedBody = message.body.decoded;
 
-        return decodedBody ?
-            <CollapsibleCard
+        if (decodedBody) {
+            // We have successfully decoded the body content, show it:
+            return <CollapsibleCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -154,7 +186,7 @@ export class HttpBodyCard extends React.Component<{
                     <Pill>{ getReadableSize(decodedBody.byteLength) }</Pill>
                     <PillSelector<ViewableContentType>
                         onChange={this.setContentType}
-                        value={contentType}
+                        value={decodedContentType}
                         options={compatibleContentTypes}
                         nameFormatter={getContentEditorName}
                     />
@@ -167,7 +199,7 @@ export class HttpBodyCard extends React.Component<{
                         contentId={`${message.id}-${direction}`}
                         editorNode={this.props.editorNode}
                         rawContentType={lastHeader(message.headers['content-type'])}
-                        contentType={contentType}
+                        contentType={decodedContentType}
                         schema={apiBodySchema}
                         expanded={expanded}
                         cache={message.cache}
@@ -175,9 +207,86 @@ export class HttpBodyCard extends React.Component<{
                         {decodedBody}
                     </ContentViewer>
                 </EditorCardContent>
-            </CollapsibleCard>
-        :
-            <LoadingCard
+            </CollapsibleCard>;
+        } else if (!decodedBody && message.body.decodingError) {
+            // We have failed to decode the body content! Show the error & raw encoded data instead:
+            const error = message.body.decodingError as ErrorLike;
+            const encodedBody = Buffer.isBuffer(message.body.encoded)
+                ? message.body.encoded
+                : undefined;
+
+            const encodedDataContentType = _.includes(ENCODED_DATA_CONTENT_TYPES, this.selectedContentType)
+                ? this.selectedContentType!
+                : 'text';
+
+            return <CollapsibleCard
+                direction={direction}
+                collapsed={collapsed}
+                onCollapseToggled={onCollapseToggled}
+                expanded={expanded}
+            >
+                <header>
+                    { encodedBody && <>
+                        <CollapsingButtons>
+                            <ExpandShrinkButton
+                                expanded={expanded}
+                                onClick={onExpandToggled}
+                            />
+                            <IconButton
+                                icon={['fas', 'download']}
+                                title={
+                                    isPaidUser
+                                        ? "Save this body as a file"
+                                        : "With Pro: Save this body as a file"
+                                }
+                                disabled={!isPaidUser}
+                                onClick={() => saveFile(
+                                    getFilename(url, message) || "",
+                                    'application/octet-stream', // Ignore content type, as it's encoded
+                                    encodedBody
+                                )}
+                            />
+                        </CollapsingButtons>
+                        <Pill>{ getReadableSize(encodedBody.byteLength) }</Pill>
+                    </> }
+                    <PillSelector<ViewableContentType>
+                        onChange={this.setContentType}
+                        value={encodedDataContentType}
+                        // A selection of maybe-useful decodings you can try out regardless:
+                        options={ENCODED_DATA_CONTENT_TYPES}
+                        nameFormatter={getContentEditorName}
+                    />
+                    <CollapsibleCardHeading onCollapseToggled={onCollapseToggled}>
+                        { title }
+                    </CollapsibleCardHeading>
+                </header>
+                <ErrorBanner direction={this.props.direction}>
+                    <p>
+                        <WarningIcon/> Body decoding failed for encoding '{message.headers['content-encoding']}' due to:
+                    </p>
+                    <ErrorMessage>{ error.code ? `${error.code}: ` : '' }{ error.message || error.toString() }</ErrorMessage>
+                    <p>
+                        This typically means either the <code>content-encoding</code> header is incorrect or unsupported, or the body
+                        was corrupted. The raw content (not decoded) is shown below.
+                    </p>
+                </ErrorBanner>
+                { encodedBody &&
+                    <EditorCardContent>
+                        <ContentViewer
+                            contentId={`${message.id}-${direction}`}
+                            editorNode={this.props.editorNode}
+                            contentType={encodedDataContentType}
+                            expanded={expanded}
+                            cache={message.cache}
+                        >
+                            { encodedBody }
+                        </ContentViewer>
+                    </EditorCardContent>
+                }
+            </CollapsibleCard>;
+        } else {
+            // No body content, but no error yet, show a loading spinner:
+            return <LoadingCard
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -187,7 +296,7 @@ export class HttpBodyCard extends React.Component<{
                 <header>
                     <PillSelector<ViewableContentType>
                         onChange={this.setContentType}
-                        value={contentType}
+                        value={decodedContentType}
                         options={compatibleContentTypes}
                         nameFormatter={getContentEditorName}
                     />
@@ -196,6 +305,7 @@ export class HttpBodyCard extends React.Component<{
                     </CollapsibleCardHeading>
                 </header>
             </LoadingCard>;
+        }
     }
 
 }
