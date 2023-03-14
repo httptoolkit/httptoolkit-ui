@@ -238,9 +238,8 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     </AccountContactFooter>
                 </CollapsibleCard>
 
-
                 {/*
-                    This above shows for both active paid users, and recently paid users whose most recent
+                    The above shows for both active paid users, and recently paid users whose most recent
                     payments failed. For those users, we drop other Pro features, but keep the settings
                     UI so they can easily log out, update billing details or cancel fully.
 
@@ -256,10 +255,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         </>
                     }
 
-                    {
-                        this.props.accountStore!.featureFlags.includes('openapi') &&
-                        <ApiSettingsCard {...cardProps.api} />
-                    }
+                    <ApiSettingsCard {...cardProps.api} />
 
                     <CollapsibleCard {...cardProps.themes}>
                         <header>

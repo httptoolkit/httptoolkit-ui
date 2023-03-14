@@ -364,8 +364,12 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                             <strong>Advanced HTTP debugging & inspection tools</strong>, including compression & caching performance analysis.
                         </Feature>
                         <Feature>
-                            <strong>Validation & documentation for 2600+ APIs</strong>,
-                            from AWS to GitHub to Stripe, powered by OpenAPI.
+                            <strong>Validation &amp; API documentation for 2600+ built-in APIs</strong>,
+                            from AWS to GitHub to Stripe, plus your own custom <a
+                                href="https://swagger.io/docs/specification/about/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >OpenAPI</a> specs.
                         </Feature>
                         <Feature>
                             <strong>Advanced customization</strong>, including UI themes,
