@@ -434,12 +434,15 @@ export const isPaidHandlerClass = (
 
 /// --- Rules ---
 
-export type HtkMockRule =
+export type HtkMockRule = (
     | HttpMockRule
     | WebSocketMockRule
     | EthereumMockRule
     | IpfsMockRule
-    | RTCMockRule;
+    | RTCMockRule
+) & {
+    title?: string;
+};
 
 export type RuleType = HtkMockRule['type'];
 

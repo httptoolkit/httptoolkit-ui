@@ -13,6 +13,7 @@ import {
 
 import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
+import { UnreachableCheck } from '../../util/error';
 
 import { getMethodColor, getSummaryColour } from '../../model/events/categorization';
 import {
@@ -54,7 +55,7 @@ import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
 import { DragHandle } from './mock-drag-handle';
 import { IconMenu, IconMenuButton } from './mock-item-menu';
-import { UnreachableCheck } from '../../util/error';
+import { RuleTitle, EditableRuleTitle } from './mock-rule-title';
 
 const RowContainer = styled(LittleCard)<{
     deactivated?: boolean,
@@ -73,6 +74,7 @@ const RowContainer = styled(LittleCard)<{
     }
 
     display: flex;
+    flex-wrap: wrap;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -196,13 +198,15 @@ const RuleMenu = (p: {
     isCollapsed: boolean,
     isNewRule: boolean,
     hasUnsavedChanges: boolean,
-    onToggleCollapse: (event: React.MouseEvent) => void,
-    onSave: (event: React.MouseEvent) => void,
-    onReset: (event: React.MouseEvent) => void,
-    onClone: (event: React.MouseEvent) => void,
+    isEditingTitle: boolean,
+    onSetCustomTitle: (event: React.UIEvent) => void,
+    onToggleCollapse: (event: React.UIEvent) => void,
+    onSave: (event: React.UIEvent) => void,
+    onReset: (event: React.UIEvent) => void,
+    onClone: (event: React.UIEvent) => void,
     toggleState: boolean,
-    onToggleActivation: (event: React.MouseEvent) => void,
-    onDelete: (event: React.MouseEvent) => void,
+    onToggleActivation: (event: React.UIEvent) => void,
+    onDelete: (event: React.UIEvent) => void,
 }) => <RuleMenuContainer topOffset={7}>
         <IconMenuButton
             title='Delete this rule'
@@ -218,6 +222,12 @@ const RuleMenu = (p: {
             title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
             icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
             onClick={p.onToggleActivation}
+        />
+        <IconMenuButton
+            title='Give this rule a custom name'
+            icon={['fas', 'edit']}
+            disabled={p.isEditingTitle}
+            onClick={p.onSetCustomTitle}
         />
         <IconMenuButton
             title='Revert this rule to the last saved version'
@@ -291,6 +301,9 @@ export class RuleRow extends React.Component<{
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
     containerRef: HTMLElement | null = null;
 
+    @observable
+    private titleEditState: undefined | { originalTitle?: string };
+
     render() {
         const {
             index,
@@ -337,6 +350,10 @@ export class RuleRow extends React.Component<{
             ? [rule.handler]
             : rule.steps;
 
+        // We show the summary by default, but if you set a custom title, we only show it when expanded:
+        const shouldShowSummary = !collapsed || (!rule.title && !this.titleEditState);
+        const isEditingTitle = !!this.titleEditState && !collapsed;
+
         return <Draggable
             draggableId={rule.id}
             index={index}
@@ -369,13 +386,36 @@ export class RuleRow extends React.Component<{
                     onToggleActivation={this.toggleActivation}
                     onClone={this.cloneRule}
                     onDelete={this.deleteRule}
+                    isEditingTitle={isEditingTitle}
+                    onSetCustomTitle={this.startEnteringCustomTitle}
                 />
                 <DragHandle {...provided.dragHandleProps} />
 
+                { rule.title && !isEditingTitle &&
+                    <RuleTitle>
+                        { rule.title }
+                    </RuleTitle>
+                }
+
+                { isEditingTitle &&
+                    <EditableRuleTitle
+                        value={rule.title || ''}
+                        onEditTitle={this.editTitle}
+                        onSave={this.saveRule}
+                        onCancel={
+                            this.titleEditState!.originalTitle !== this.props.rule.title
+                            ? this.cancelEditingTitle
+                            : undefined
+                        }
+                    />
+                }
+
                 <MatcherOrHandler>
-                    <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
-                        { summarizeMatcher(rule) }
-                    </Summary>
+                    { shouldShowSummary &&
+                        <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
+                            { summarizeMatcher(rule) }
+                        </Summary>
+                    }
 
                     {
                         !collapsed && <Details>
@@ -411,12 +451,17 @@ export class RuleRow extends React.Component<{
                     }
                 </MatcherOrHandler>
 
-                <ArrowIcon />
+
+                { shouldShowSummary &&
+                    <ArrowIcon />
+                }
 
                 <MatcherOrHandler>
-                    <Summary collapsed={collapsed} title={ summarizeHandler(rule) }>
-                        { summarizeHandler(rule) }
-                    </Summary>
+                    { shouldShowSummary &&
+                        <Summary collapsed={collapsed} title={ summarizeHandler(rule) }>
+                            { summarizeHandler(rule) }
+                        </Summary>
+                    }
 
                     {
                         !collapsed && <Details>
@@ -443,13 +488,19 @@ export class RuleRow extends React.Component<{
         }</Observer>}</Draggable>;
     }
 
-    saveRule = noPropagation(() => this.props.saveRule(this.props.path));
-    resetRule = noPropagation(() => this.props.resetRule(this.props.path));
+    saveRule = noPropagation(() => {
+        this.stopEditingTitle();
+        this.props.saveRule(this.props.path);
+    });
+    resetRule = noPropagation(() => {
+        this.stopEditingTitle();
+        this.props.resetRule(this.props.path);
+    });
     deleteRule = noPropagation(() => this.props.deleteRule(this.props.path));
     cloneRule = noPropagation(() => this.props.cloneRule(this.props.path));
 
     @action.bound
-    toggleActivation(event: React.MouseEvent) {
+    toggleActivation(event: React.UIEvent) {
         const { rule } = this.props;
         rule.activated = !rule.activated;
         event.stopPropagation();
@@ -466,10 +517,13 @@ export class RuleRow extends React.Component<{
             }
             if (this.initialMatcherSelect.current) {
                 this.initialMatcherSelect.current.focus();
+                // Clear selection too (sometimes clicking fast selects the rule title)
+                getSelection()?.empty();
             }
         });
 
         this.props.toggleRuleCollapsed(this.props.rule.id);
+        this.stopEditingTitle();
     });
 
     @action.bound
@@ -554,6 +608,40 @@ export class RuleRow extends React.Component<{
             }
         }
     }
+
+    @action.bound
+    startEnteringCustomTitle(event: React.UIEvent) {
+        this.titleEditState = { originalTitle: this.props.rule.title };
+        // We expand the row, but not with toggleCollapsed, because we don't want
+        // to auto-focus the matcher like normal:
+        if (this.props.collapsed) this.props.toggleRuleCollapsed(this.props.rule.id);
+        event.stopPropagation();
+    }
+
+    @action.bound
+    editTitle(newTitle: string | undefined) {
+        this.props.rule.title = newTitle || undefined;
+    }
+
+    @action.bound
+    cancelEditingTitle() {
+        if (!this.titleEditState) return;
+        this.editTitle(this.titleEditState.originalTitle);
+        this.titleEditState = undefined;
+    }
+
+    @action.bound
+    stopEditingTitle() {
+        if (!this.titleEditState) return;
+
+        // Trim titles on save, so that e.g. space-only titles are dropped:
+        if (this.props.rule.title !== this.titleEditState.originalTitle) {
+            this.props.rule.title = this.props.rule.title?.trim() || undefined;
+        }
+
+        this.titleEditState = undefined;
+    }
+
 }
 
 @observer

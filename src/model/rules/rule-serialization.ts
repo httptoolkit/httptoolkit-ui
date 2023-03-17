@@ -73,6 +73,7 @@ const MockRuleSerializer = serializr.custom(
         return {
             id: data.id,
             type: data.type,
+            title: data.title,
             activated: data.activated,
             matchers: data.matchers.map((m) =>
                 deserializeByType(m, MatcherLookup, context.args)
