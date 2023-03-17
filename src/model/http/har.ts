@@ -271,11 +271,15 @@ async function generateHarResponse(
 
     const decoded = await response.body.decodedPromise;
 
-    let responseContent: { text: string, encoding?: string } | {};
+    let responseContent: { text: string, encoding?: string } | { comment: string};
     try {
         if (!decoded || decoded.byteLength > options.bodySizeLimit) {
             // If no body or the body is too large, don't include it
-            responseContent = {};
+            responseContent = {
+                comment: `Body discarded during HAR generation: longer than limit of ${
+                    options.bodySizeLimit
+                } bytes`
+            };
         } else {
             // If body decodes as text, keep it as text
             responseContent = { text: UTF8Decoder.decode(decoded) };
