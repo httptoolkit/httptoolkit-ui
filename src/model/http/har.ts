@@ -29,6 +29,10 @@ export interface Har extends HarFormat.Har {
     log: HarLog;
 }
 
+export interface HarGenerationOptions {
+    bodySizeLimit: number;
+}
+
 interface HarLog extends HarFormat.Log {
     // Custom field to expose failed TLS connections
     _tlsErrors: HarTlsErrorEntry[];
@@ -66,7 +70,10 @@ export type HarTlsErrorEntry = {
     clientPort: number;
 }
 
-export async function generateHar(events: CollectedEvent[]): Promise<Har> {
+export async function generateHar(
+    events: CollectedEvent[],
+    options: HarGenerationOptions = { bodySizeLimit: HAR_BODY_SIZE_LIMIT }
+): Promise<Har> {
     const [exchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [
         HttpExchange[], CollectedEvent[]
     ];
@@ -74,7 +81,7 @@ export async function generateHar(events: CollectedEvent[]): Promise<Har> {
     const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
 
     const sourcePages = getSourcesAsHarPages(exchanges);
-    const entries = await Promise.all(exchanges.map(generateHarEntry));
+    const entries = await Promise.all(exchanges.map(e => generateHarEntry(e, options)));
     const errorEntries = errors.map(generateHarTlsError);
 
     return {
@@ -110,21 +117,26 @@ function asHtkHeaders(headers: HarFormat.Header[]) {
 
 export function generateHarRequest(
     request: HtkRequest,
-    waitForDecoding?: false
+    waitForDecoding: false,
+    options: HarGenerationOptions
 ): ExtendedHarRequest;
 export function generateHarRequest(
     request: HtkRequest,
-    waitForDecoding: true
+    waitForDecoding: true,
+    options: HarGenerationOptions
 ): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest>;
 export function generateHarRequest(
     request: HtkRequest,
-    waitForDecoding = false
+    waitForDecoding: boolean,
+    options: HarGenerationOptions
 ): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest> {
     if (waitForDecoding && (
         !request.body.decodedPromise.state ||
         request.body.decodedPromise.state === 'pending'
     )) {
-        return request.body.decodedPromise.then(() => generateHarRequest(request));
+        return request.body.decodedPromise.then(() =>
+            generateHarRequest(request, false, options)
+        );
     }
 
     const requestEntry: ExtendedHarRequest = {
@@ -144,9 +156,11 @@ export function generateHarRequest(
     };
 
     if (request.body.decoded) {
-        if (request.body.decoded.byteLength > HAR_BODY_SIZE_LIMIT) {
+        if (request.body.decoded.byteLength > options.bodySizeLimit) {
             requestEntry._requestBodyStatus = 'discarded:too-large';
-            requestEntry.comment = `Body discarded during HAR generation: longer than limit of ${HAR_BODY_SIZE_LIMIT} bytes`;
+            requestEntry.comment = `Body discarded during HAR generation: longer than limit of ${
+                options.bodySizeLimit
+            } bytes`;
         } else {
             try {
                 requestEntry.postData = generateHarPostBody(
@@ -235,7 +249,10 @@ function generateHarParamsFromParsedQuery(query: querystring.ParsedUrlQuery): Ha
     }));
 }
 
-async function generateHarResponse(exchange: HttpExchange): Promise<HarFormat.Response> {
+async function generateHarResponse(
+    exchange: HttpExchange,
+    options: HarGenerationOptions
+): Promise<HarFormat.Response> {
     const { request, response } = exchange;
 
     if (!response || response === 'aborted') {
@@ -256,7 +273,7 @@ async function generateHarResponse(exchange: HttpExchange): Promise<HarFormat.Re
 
     let responseContent: { text: string, encoding?: string } | {};
     try {
-        if (!decoded || decoded.byteLength > HAR_BODY_SIZE_LIMIT) {
+        if (!decoded || decoded.byteLength > options.bodySizeLimit) {
             // If no body or the body is too large, don't include it
             responseContent = {};
         } else {
@@ -312,7 +329,10 @@ function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
     });
 }
 
-async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
+async function generateHarEntry(
+    exchange: HttpExchange,
+    options: HarGenerationOptions
+): Promise<HarEntry> {
     const { timingEvents } = exchange;
 
     const startTime = 'startTime' in timingEvents
@@ -336,8 +356,8 @@ async function generateHarEntry(exchange: HttpExchange): Promise<HarEntry> {
         pageref: exchange.request.source.summary,
         startedDateTime: dateFns.format(startTime),
         time: totalDuration,
-        request: await generateHarRequest(exchange.request, true),
-        response: await generateHarResponse(exchange),
+        request: await generateHarRequest(exchange.request, true, options),
+        response: await generateHarResponse(exchange, options),
         cache: {},
         timings: {
             blocked: -1,

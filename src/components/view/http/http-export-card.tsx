@@ -132,7 +132,9 @@ const ExportSnippetEditor = observer((p: {
     exportOption: SnippetOption
 }) => {
     const { target, client, link, description } = p.exportOption;
-    const harRequest = generateHarRequest(p.exchange.request);
+    const harRequest = generateHarRequest(p.exchange.request, false, {
+        bodySizeLimit: Infinity
+    });
     const harSnippetBase = simplifyHarForSnippetExport(harRequest);
 
     let snippet: string;
@@ -182,7 +184,9 @@ const ExportSnippetEditor = observer((p: {
 
 const exportHar = async (exchange: HttpExchange) => {
     const harContent = JSON.stringify(
-        await generateHar([exchange])
+        await generateHar([exchange], {
+            bodySizeLimit: Infinity
+        })
     );
     const filename = `${
         exchange.request.method
