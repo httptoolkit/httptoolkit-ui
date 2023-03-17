@@ -19,7 +19,7 @@ export const RuleTitle = styled.h2`
     padding: 5px;
     margin: -5px;
 
-    font-weight: bold;
+    font-style: italic;
 `;
 
 const EditableTitleContainer = styled.div`
