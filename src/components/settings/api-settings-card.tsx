@@ -12,6 +12,7 @@ import { Icon } from '../../icons';
 import { uploadFile } from '../../util/ui';
 import { attempt } from '../../util/promise';
 import { asError } from '../../util/error';
+import { trackEvent } from '../../metrics';
 
 import { buildApiMetadataAsync } from '../../services/ui-worker-api';
 
@@ -288,6 +289,7 @@ export class ApiSettingsCard extends React.Component<
             ['http://' + baseUrl, 'https://' + baseUrl]
         );
         this.props.apiStore!.addCustomApi(baseUrl, api);
+        trackEvent({ category: "Config", action: "Add API spec" });
 
         this.enteredBaseUrl = "";
         this.selectedSpec = undefined;
