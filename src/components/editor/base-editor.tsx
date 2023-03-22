@@ -271,19 +271,17 @@ export class BaseEditor extends React.Component<EditorProps> {
         // any. Mostly relevant to OpenAPI body validation issues. We can't do this in reset or
         // elsewhere, as markers update slightly asynchronously from content changes, so this is
         // only visible by observing modelMarkers.
-        if (this.props.options?.readOnly) {
-            disposeOnUnmount(this, reaction(() => ({
-                markers: (this.modelUri && modelsMarkers.get(this.modelUri)) ?? []
-            }), ({ markers }) => {
-                if (markers.length) {
-                    requestAnimationFrame(() => { // Run after the reset marker.close() update
-                        this.withoutFocusingEditor(() => {
-                            this.getMarkerController().showAtMarker(markers[0]);
-                        });
+        disposeOnUnmount(this, reaction(() => ({
+            markers: (this.modelUri && modelsMarkers.get(this.modelUri)) ?? []
+        }), ({ markers }) => {
+            if (markers.length && this.props.options?.readOnly) {
+                requestAnimationFrame(() => { // Run after the reset marker.close() update
+                    this.withoutFocusingEditor(() => {
+                        this.getMarkerController().showAtMarker(markers[0]);
                     });
-                }
-            }, { equals: comparer.structural }));
-        }
+                });
+            }
+        }, { equals: comparer.structural }));
     }
 
     componentDidMount() {
