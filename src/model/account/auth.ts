@@ -216,6 +216,7 @@ export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'deleted';
 type AppData = {
     email: string;
     subscription_status?: SubscriptionStatus;
+    subscription_sku?: SKU;
     subscription_plan_id?: number;
     subscription_expiry?: number;
     update_url?: string;
@@ -291,7 +292,8 @@ function parseUserData(userJwt: string | null): User {
 
     const subscription = {
         status: appData.subscription_status,
-        plan: getSKU(appData.subscription_plan_id),
+        plan: appData.subscription_sku
+            ?? getSKU(appData.subscription_plan_id),
         expiry: appData.subscription_expiry ? new Date(appData.subscription_expiry) : undefined,
         updateBillingDetailsUrl: appData.update_url,
         cancelSubscriptionUrl: appData.cancel_url,
