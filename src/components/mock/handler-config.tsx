@@ -9,7 +9,13 @@ import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
 import { asError, isErrorLike, UnreachableCheck } from '../../util/error';
-import { byteLength, asBuffer, isProbablyUtf8 } from '../../util';
+import {
+    byteLength,
+    asBuffer,
+    isProbablyUtf8,
+    stringToBuffer,
+    bufferToString
+} from '../../util';
 
 import {
     Handler,
@@ -446,7 +452,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
 
     @action.bound
     setBody(body: string) {
-        this.body = Buffer.from(body, this.textEncoding);
+        this.body = stringToBuffer(body, this.textEncoding);
     }
 
     updateHandler() {
@@ -1158,7 +1164,7 @@ const RawBodyTransfomConfig = (props: {
             <ThemedSelfSizedEditor
                 contentId={null}
                 language={contentType}
-                value={props.body.toString('utf8')}
+                value={bufferToString(props.body)}
                 onChange={props.updateBody}
             />
         </BodyContainer>
@@ -1914,7 +1920,7 @@ class IpfsCatTextHandlerConfig extends HandlerConfig<IpfsCatTextHandler> {
 
     @action.bound
     setBody(body: string) {
-        this.body = Buffer.from(body, this.textEncoding);
+        this.body = stringToBuffer(body, this.textEncoding);
         this.props.onChange(
             new IpfsCatTextHandler(this.body)
         );
@@ -2415,7 +2421,7 @@ class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
 
     @action.bound
     setMessage(message: string) {
-        this.message = Buffer.from(message, this.textEncoding);
+        this.message = stringToBuffer(message, this.textEncoding);
         this.updateHandler();
     }
 

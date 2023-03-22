@@ -8,6 +8,7 @@ import * as portals from 'react-reverse-portal';
 import { css, styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
 import { asError } from '../../util/error';
+import { stringToBuffer } from '../../util';
 
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
@@ -70,7 +71,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
     @computed
     private get contentBuffer() {
         return _.isString(this.props.children)
-            ? Buffer.from(this.props.children)
+            ? stringToBuffer(this.props.children)
             : this.props.children;
     }
 

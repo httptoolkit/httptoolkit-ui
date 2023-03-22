@@ -4,7 +4,7 @@ import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
 import * as querystring from 'querystring';
 
-import { lastHeader } from '../../util';
+import { lastHeader, stringToBuffer } from '../../util';
 import { ObservablePromise } from '../../util/observable';
 import {
     Headers,
@@ -615,10 +615,10 @@ function parseHarRequestContents(data: RequestContentData): Buffer {
 function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
     if (data?.text) {
         // Prefer raw exported 'text' data, when available
-        return Buffer.from(data.text, 'utf8');
+        return stringToBuffer(data.text, 'utf8');
     } else if (data?.params) {
         // If only 'params' is available, stringify and use that.
-        return Buffer.from(
+        return stringToBuffer(
             // Go from array of key-value objects to object of key -> value array:
             querystring.stringify(_(data.params)
                 .groupBy(({ name }) => name)
@@ -627,7 +627,7 @@ function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
             )
         );
     } else {
-        return Buffer.from('');
+        return stringToBuffer('');
     }
 }
 

@@ -12,7 +12,7 @@ import {
     BreakpointBody,
     MockttpBreakpointResponseResult,
 } from "../../types";
-import { asHeaderArray } from "../../util";
+import { asHeaderArray, stringToBuffer } from "../../util";
 import { getDeferred, Deferred } from "../../util/promise";
 import { reportError } from "../../errors";
 
@@ -36,8 +36,8 @@ function getBody(message: MockttpBreakpointedRequest | MockttpBreakpointedRespon
             check content-encoding
         `;
         return {
-            encoded: Buffer.from(error),
-            decoded: Buffer.from(error)
+            encoded: stringToBuffer(error),
+            decoded: stringToBuffer(error)
         };
     });
 }
@@ -68,8 +68,8 @@ export function getDummyResponseBreakpoint(httpVersion: 1 | 2) {
             statusMessage: undefined,
             headers: httpVersion === 2 ? { ':status': '200' } : {},
         },
-        Buffer.from(''),
-        Buffer.from('')
+        stringToBuffer(''),
+        stringToBuffer('')
     );
 
     return breakpoint;

@@ -21,6 +21,7 @@ import {
     FakeBuffer,
     asHeaderArray,
     lastHeader,
+    stringToBuffer,
 } from '../../util';
 import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
@@ -108,7 +109,7 @@ export class HttpBody implements MessageBody {
         headers: Headers
     ) {
         if (!('body' in message) || !message.body) {
-            this._encoded = Buffer.from("");
+            this._encoded = stringToBuffer("");
         } else if ('buffer' in message.body) {
             this._encoded = message.body.buffer;
         } else {

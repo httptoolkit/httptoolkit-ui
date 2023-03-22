@@ -9,6 +9,7 @@ import {
 } from 'mockttp';
 
 import { styled } from '../../../styles';
+import { stringToBuffer } from '../../../util';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
@@ -61,7 +62,8 @@ const Spacer = styled.div`
 `;
 
 function urlSafeBase64(content: string) {
-    return Buffer.from(content, 'utf8').toString('base64')
+    return stringToBuffer(content)
+        .toString('base64')
         .replace(/\+/g, '-')
         .replace(/\//g, '_');
 }

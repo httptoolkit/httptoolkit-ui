@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 
 import { CollectedEvent } from '../../types';
 import { joinAnd } from '../../util/text';
+import { stringToBuffer } from '../../util';
 
 import { getStatusDocs } from '../http/http-docs';
 import { getReadableSize } from '../events/bodies';
@@ -1214,7 +1215,7 @@ class BodyFilter extends Filter {
         const [, op, expectedBody] = parseFilter(BodyFilter, filter);
         this.op = op;
 
-        this.expectedBody = Buffer.from(expectedBody);
+        this.expectedBody = stringToBuffer(expectedBody);
         this.predicate = bufferOperations[this.op];
     }
 

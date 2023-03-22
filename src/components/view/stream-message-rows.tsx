@@ -5,7 +5,7 @@ import { disposeOnUnmount, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { styled, warningColor } from '../../styles';
-import { asBuffer } from '../../util';
+import { asBuffer, bufferToString } from '../../util';
 import { ArrowIcon } from '../../icons';
 
 import {
@@ -57,12 +57,12 @@ export const StreamMessageCollapsedRow = React.memo((p: {
     <MessageArrow selected={false} messageDirection={visualDirection(p.message)} />
     <CollapsedStreamContent>
         {
-            p.message.content
-            // Limit the length - no point showing huge messages here. On a typical UI, we show about
-            // 100 chars here, so this should give us a good bit of buffer
-            .slice(0, 200)
-            // Show everything as UTF-8 - binary data can be viewed up close instead.
-            .toString('utf8')
+            bufferToString( // Show everything as UTF-8 - binary data can be viewed up close instead.
+                p.message.content
+                // Limit the length - no point showing huge messages here. On a typical UI, we show about
+                // 100 chars here, so this should give us a good bit of buffer
+                .slice(0, 200)
+            )
         }
     </CollapsedStreamContent>
     {

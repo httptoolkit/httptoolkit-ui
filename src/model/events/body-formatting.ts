@@ -2,6 +2,7 @@ import { styled } from '../../styles';
 
 import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
+import { bufferToString } from '../../util';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
@@ -64,7 +65,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         language: 'text',
         cacheKey: Symbol('text'),
         render: (input: Buffer) => {
-            return input.toString('utf8');
+            return bufferToString(input);
         }
     },
     base64: {
@@ -96,8 +97,8 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         language: 'json',
         cacheKey: Symbol('json'),
         render: (input: Buffer) => {
-            if (input.byteLength < 2000) {
-                const inputAsString = input.toString('utf8')
+            if (input.byteLength < 10000) {
+                const inputAsString = bufferToString(input);
 
                 try {
                     // For short-ish inputs, we return synchronously - conveniently this avoids
@@ -130,7 +131,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     'url-encoded': {
         scrollable: true,
         Component: styled(ReadOnlyParams).attrs((p: FormatComponentProps) => ({
-            content: p.content.toString('utf8')
+            content: bufferToString(p.content)
         }))`
             padding: 5px;
         ` as FormatComponent

@@ -5,7 +5,12 @@ import { observer, disposeOnUnmount } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { Headers } from '../../../types';
-import { lastHeader, isProbablyUtf8 } from '../../../util';
+import {
+    lastHeader,
+    isProbablyUtf8,
+    bufferToString,
+    stringToBuffer
+} from '../../../util';
 import {
     EditableContentType,
     EditableContentTypes,
@@ -75,7 +80,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
             onExpandToggled
         } = this.props;
 
-        const bodyString = body.toString(this.textEncoding);
+        const bodyString = bufferToString(body, this.textEncoding);
 
         return <CollapsibleCard
             direction={direction}
@@ -121,7 +126,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
     }
 
     private onBodyChange = (body: string) => {
-        this.props.onChange(Buffer.from(body, this.textEncoding));
+        this.props.onChange(stringToBuffer(body, this.textEncoding));
     }
 
 }
