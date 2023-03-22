@@ -76,12 +76,10 @@ export class EditableBody implements BreakpointBody {
         return this._encodedBody?.byteLength || 0;
     }
 
-    @computed.struct
     get encoded() {
         return this._encodingPromise;
     }
 
-    @computed.struct
     get decoded() {
         return this._decodedBody;
     }
