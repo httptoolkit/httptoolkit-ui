@@ -408,11 +408,6 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                         </Feature>
                         <Feature>Licensed to your team, rather than individuals</Feature>
                         <Feature><strong>Centralized control</strong> to easily manage your team members and subscription</Feature>
-                        <Feature>
-                            <strong>Team workspaces</strong> for low-friction collaboration <Nowrap>
-                                (<em>coming soon</em>)
-                            </Nowrap>
-                        </Feature>
                         <FeatureHeading>
                             Options available on request:
                         </FeatureHeading>

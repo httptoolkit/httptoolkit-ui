@@ -135,7 +135,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                             (option.isActive || option.isActivable ? 50 : 0) +
                             (option.isSupported ? 25 : 0)
                         );
-                    })
+                    }).filter((inex) => inex.isActivable)
                     .map((option, index) =>
                         <InterceptOption
                             key={option.id}

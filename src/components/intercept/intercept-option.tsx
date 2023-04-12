@@ -151,23 +151,8 @@ function getStatusPill(interceptor: Interceptor) {
         return <StatusPill color='#4caf7d'>
             Activated
         </StatusPill>;
-    } else if (!interceptor.isActivable) {
-        if (interceptor.isSupported) {
-            return <StatusPill>
-                Not available{
-                    interceptor.notAvailableHelpUrl
-                    ? <DocsLink href={interceptor.notAvailableHelpUrl} />
-                    : null
-                }
-            </StatusPill>;
-        } else {
-            return <StatusPill color='#e1421f'>
-                Coming soon
-            </StatusPill>;
-        }
-    } else {
-        return null;
-    }
+    } 
+    return null
 }
 
 @inject('interceptorStore')
