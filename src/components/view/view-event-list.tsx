@@ -221,6 +221,10 @@ const EventListRow = styled.div`
     user-select: none;
     cursor: pointer;
 
+    &.malicious {
+        background-color: red;
+    }
+
     &.selected {
         background-color: ${p => p.theme.highlightBackground};
         font-weight: bold;
@@ -229,6 +233,7 @@ const EventListRow = styled.div`
     &:focus {
         outline: thin dotted ${p => p.theme.popColor};
     }
+
 `;
 
 const TrafficEventListRow = styled(EventListRow)`
@@ -239,6 +244,10 @@ const TrafficEventListRow = styled(EventListRow)`
     border-color: transparent;
     background-clip: padding-box;
     box-sizing: border-box;
+
+    &.malicious {
+        background-color: red;
+    }
 
     &:hover ${RowMarker}, &.selected ${RowMarker} {
         border-color: currentColor;
@@ -261,6 +270,10 @@ const TlsListRow = styled(EventListRow)`
 
     &:hover {
         opacity: 1;
+    }
+
+   &.malicious {
+        background-color: red;
     }
 
     &.selected {
@@ -304,14 +317,14 @@ interface EventRowProps extends ListChildComponentProps {
     data: {
         selectedEvent: CollectedEvent | undefined;
         events: CollectedEvent[];
+        isMalicious: boolean | undefined;
     }
 }
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent } = props.data;
+    const { events, selectedEvent, isMalicious = false } = props.data;
     const event = events[index];
-
     const isSelected = (selectedEvent === event);
 
     if (event.isTlsFailure() || event.isTlsTunnel()) {
@@ -320,6 +333,7 @@ const EventRow = observer((props: EventRowProps) => {
             isSelected={isSelected}
             style={style}
             tlsEvent={event}
+            isMalicious={isMalicious}
         />;
     } else if (event.isHttp()) {
         if (event.api?.isBuiltInApi && event.api.matchedOperation()) {
@@ -328,6 +342,7 @@ const EventRow = observer((props: EventRowProps) => {
                 isSelected={isSelected}
                 style={style}
                 exchange={event}
+                isMalicious={isMalicious}
             />
         } else {
             return <ExchangeRow
@@ -335,6 +350,7 @@ const EventRow = observer((props: EventRowProps) => {
                 isSelected={isSelected}
                 style={style}
                 exchange={event}
+                isMalicious={isMalicious}
             />;
         }
     } else if (event.isRTCConnection()) {
@@ -343,6 +359,7 @@ const EventRow = observer((props: EventRowProps) => {
             isSelected={isSelected}
             style={style}
             event={event}
+            isMalicious={isMalicious}
         />;
     } else if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
         return <RTCStreamRow
@@ -350,6 +367,7 @@ const EventRow = observer((props: EventRowProps) => {
             isSelected={isSelected}
             style={style}
             event={event}
+            isMalicious={isMalicious}
         />;
     } else {
         throw new UnreachableCheck(event);
@@ -360,12 +378,14 @@ const ExchangeRow = observer(({
     index,
     isSelected,
     style,
-    exchange
+    exchange,
+    isMalicious
 }: {
     index: number,
     isSelected: boolean,
     style: {},
-    exchange: HttpExchange
+    exchange: HttpExchange,
+    isMalicious: boolean
 }) => {
     const {
         request,
@@ -381,7 +401,7 @@ const ExchangeRow = observer(({
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={isMalicious ? 'malicious' : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -454,12 +474,14 @@ const RTCConnectionRow = observer(({
     index,
     isSelected,
     style,
-    event
+    event,
+    isMalicious
 }: {
     index: number,
     isSelected: boolean,
     style: {},
-    event: RTCConnection
+    event: RTCConnection,
+    isMalicious: boolean
 }) => {
     const { category, pinned } = event;
 
@@ -470,7 +492,7 @@ const RTCConnectionRow = observer(({
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={isMalicious ? 'malicious' : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -498,12 +520,14 @@ const RTCStreamRow = observer(({
     index,
     isSelected,
     style,
-    event
+    event,
+    isMalicious
 }: {
     index: number,
     isSelected: boolean,
     style: {},
-    event: RTCStream
+    event: RTCStream,
+    isMalicious: boolean
 }) => {
     const { category, pinned } = event;
 
@@ -514,7 +538,7 @@ const RTCStreamRow = observer(({
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={isMalicious ? 'malicious' : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -564,7 +588,8 @@ const BuiltInApiRow = observer((p: {
     index: number,
     exchange: HttpExchange,
     isSelected: boolean,
-    style: {}
+    style: {},
+    isMalicious: boolean
 }) => {
     const {
         request,
@@ -580,7 +605,7 @@ const BuiltInApiRow = observer((p: {
         data-event-id={p.exchange.id}
         tabIndex={p.isSelected ? 0 : -1}
 
-        className={p.isSelected ? 'selected' : ''}
+        className={p.isMalicious ? 'malicious' : ''}
         style={p.style}
     >
         <RowPin pinned={pinned}/>
@@ -614,7 +639,8 @@ const TlsRow = observer((p: {
     index: number,
     tlsEvent: FailedTlsConnection | TlsTunnel,
     isSelected: boolean,
-    style: {}
+    style: {},
+    isMalicious: boolean
 }) => {
     const { tlsEvent } = p;
 
@@ -635,7 +661,7 @@ const TlsRow = observer((p: {
         data-event-id={tlsEvent.id}
         tabIndex={p.isSelected ? 0 : -1}
 
-        className={p.isSelected ? 'selected' : ''}
+        className={p.isMalicious ? 'malicious' : ''}
         style={p.style}
     >
         {
@@ -661,7 +687,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     @computed get listItemData(): EventRowProps['data'] {
         return {
             selectedEvent: this.props.selectedEvent,
-            events: this.props.filteredEvents
+            events: this.props.filteredEvents,
+            isMalicious: false
         };
     }
 

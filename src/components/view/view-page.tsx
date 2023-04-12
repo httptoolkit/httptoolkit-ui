@@ -156,6 +156,13 @@ class ViewPage extends React.Component<ViewPageProps> {
         });
     }
 
+    // @computed
+    // get isMalicious() {
+    //     return _.find(this.props.eventsStore.events, {
+    //         id: this.props.eventId
+    //     });
+    // }
+
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
             if (!this.props.eventId) return;
@@ -303,6 +310,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                         filteredEvents={filteredEvents}
                         selectedEvent={this.selectedEvent}
                         isPaused={isPaused}
+                        // isMalicious={isMalicious}
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
