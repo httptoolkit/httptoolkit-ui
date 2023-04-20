@@ -17,10 +17,7 @@ const SettingsButtonCss = css`
 export const SettingsButton = styled(Button)`${SettingsButtonCss}`;
 export const SettingsButtonLink = styled(ButtonLink)<{
     highlight?: boolean
-}>`
-    ${SettingsButtonCss}
-    margin-right: 10px;
-`;
+}>`${SettingsButtonCss}`;
 
 export const SettingsExplanation = styled.p`
     font-style: italic;

@@ -72,8 +72,11 @@ const AccountDetailsContainer = styled.div`
 
 const AccountControls = styled.div`
     margin-top: 30px;
+
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
 `;
 
 const AccountContactFooter = styled.div`
