@@ -13,7 +13,8 @@ import {
     User,
     getLatestUserData,
     getLastUserData,
-    RefreshRejectedError
+    RefreshRejectedError,
+    cancelSubscription
 } from './auth';
 import {
     SubscriptionPlans,
@@ -64,6 +65,10 @@ export class AccountStore {
 
     @observable
     accountDataLastUpdated = 0;
+
+    // Set when we know a checkout/cancel is processing elsewhere:
+    @observable
+    isAccountUpdateInProcess = false;
 
     @computed get userEmail() {
         return this.user.email;
@@ -272,8 +277,24 @@ export class AccountStore {
 
     private purchasePlan = flow(function * (this: AccountStore, email: string, sku: SKU) {
         openCheckout(email, sku);
-        this.modal = 'post-checkout';
 
+        this.modal = 'post-checkout';
+        this.isAccountUpdateInProcess = true;
+        yield this.waitForUserUpdate(() => this.isPaidUser || !this.modal);
+        this.isAccountUpdateInProcess = false;
+        this.modal = undefined;
+
+        trackEvent({
+            category: 'Account',
+            action: this.isPaidUser ? 'Checkout complete' : 'Checkout cancelled',
+            value: sku
+        });
+    });
+
+    private waitForUserUpdate = flow(function * (
+        this: AccountStore,
+        completedCheck: () => boolean
+    ) {
         let focused = true;
 
         const setFocused = () => {
@@ -288,10 +309,11 @@ export class AccountStore {
         window.addEventListener('focus', setFocused);
         window.addEventListener('blur', setUnfocused);
 
-        // Keep checking the user's subscription data whilst they check out in their browser...
+        // Keep checking the user's subscription data at intervals, whilst other processes
+        // (browser checkout, update from payment provider) complete elsewhere...
         yield this.updateUser();
         let ticksSinceCheck = 0;
-        while (!this.isPaidUser && this.modal) {
+        while (!completedCheck()) {
             yield delay(1000);
             ticksSinceCheck += 1;
 
@@ -302,23 +324,33 @@ export class AccountStore {
             }
         }
 
-        if (this.isPaidUser && !focused) window.focus(); // Jump back to the front after checkout
+        if (completedCheck() && !focused) window.focus(); // Jump back to the front after update
 
         window.removeEventListener('focus', setFocused);
         window.removeEventListener('blur', setUnfocused);
 
-        trackEvent({
-            category: 'Account',
-            action: this.isPaidUser ? 'Checkout complete' : 'Checkout cancelled',
-            value: sku
-        });
-
-        this.modal = undefined;
     });
 
     @action.bound
     cancelCheckout() {
         this.modal = this.selectedPlan = undefined;
     }
+
+    get canManageSubscription() {
+        return !!this.userSubscription?.canManageSubscription;
+    }
+
+    cancelSubscription = flow(function * (this: AccountStore) {
+        yield cancelSubscription();
+
+        console.log('Subscription cancel requested');
+        this.isAccountUpdateInProcess = true;
+        yield this.waitForUserUpdate(() =>
+            !this.user.subscription ||
+            this.user.subscription.status === 'deleted'
+        );
+        this.isAccountUpdateInProcess = false;
+        console.log('Subscription cancellation confirmed');
+    });
 
 }

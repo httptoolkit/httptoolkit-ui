@@ -222,6 +222,7 @@ type AppData = {
     update_url?: string;
     cancel_url?: string;
     last_receipt_url?: string;
+    can_manage_subscription?: boolean;
     feature_flags?: string[];
     banned?: boolean;
 }
@@ -233,6 +234,7 @@ type SubscriptionData = {
     updateBillingDetailsUrl?: string;
     cancelSubscriptionUrl?: string;
     lastReceiptUrl?: string;
+    canManageSubscription: boolean;
 };
 
 export type User = {
@@ -297,7 +299,8 @@ function parseUserData(userJwt: string | null): User {
         expiry: appData.subscription_expiry ? new Date(appData.subscription_expiry) : undefined,
         updateBillingDetailsUrl: appData.update_url,
         cancelSubscriptionUrl: appData.cancel_url,
-        lastReceiptUrl: appData.last_receipt_url
+        lastReceiptUrl: appData.last_receipt_url,
+        canManageSubscription: !!appData.can_manage_subscription
     };
 
     if (_.some(subscription) && !subscription.plan) {
@@ -312,10 +315,15 @@ function parseUserData(userJwt: string | null): User {
         'cancelSubscriptionUrl'
     ];
 
+    const isCompleteSubscriptionData = _.every(
+        _.omit(subscription, ...optionalFields),
+        v => !_.isNil(v) // Not just truthy: canManageSubscription can be false on valid sub
+    );
+
     return {
         email: appData.email,
         // Use undefined rather than {} when there's any missing required sub fields
-        subscription: _.every(_.omit(subscription, ...optionalFields))
+        subscription: isCompleteSubscriptionData
             ? subscription as SubscriptionData
             : undefined,
         featureFlags: appData.feature_flags || [],
@@ -327,12 +335,32 @@ async function requestUserData(): Promise<string> {
     const token = await getToken();
     if (!token) return '';
 
-    const appDataResponse = await fetch(`${ACCOUNTS_API}/get-app-data`, {
+    const response = await fetch(`${ACCOUNTS_API}/get-app-data`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`
         }
     });
 
-    return appDataResponse.text();
+    if (!response.ok) {
+        throw new Error(`Unexpected ${response.status} response for app data`);
+    }
+
+    return response.text();
+}
+
+export async function cancelSubscription() {
+    const token = await getToken();
+    if (!token) throw new Error("Can't cancel account without an auth token");
+
+    const response = await fetch(`${ACCOUNTS_API}/cancel-subscription`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Unexpected ${response.status} response cancelling subscription`);
+    }
 }

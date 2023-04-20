@@ -1,18 +1,17 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, inject } from "mobx-react";
-import { action, computed } from 'mobx';
 import * as dedent from 'dedent';
 import {
-    distanceInWordsStrict, format
+    distanceInWordsStrict, distanceInWordsToNow, format
 } from 'date-fns';
-import { get } from 'typesafe-get';
 
 import { WithInjected } from '../../types';
 import { styled, Theme, ThemeName } from '../../styles';
-import { WarningIcon } from '../../icons';
+import { Icon, WarningIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
+import { SubscriptionPlans } from '../../model/account/subscriptions';
 import { UiStore } from '../../model/ui-store';
 import { serverVersion, versionSatisfies, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
@@ -106,6 +105,13 @@ const EditorContainer = styled.div`
     flex-grow: 1;
 `;
 
+const AccountUpdateSpinner = styled(Icon).attrs(() => ({
+    icon: ['fas', 'spinner'],
+    spin: true
+}))`
+    margin: 0 0 0 10px;
+`;
+
 @inject('accountStore')
 @inject('uiStore')
 @observer
@@ -119,7 +125,9 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             userEmail,
             userSubscription,
             subscriptionPlans,
+            isAccountUpdateInProcess,
             getPro,
+            canManageSubscription,
             logOut
         } = this.props.accountStore;
 
@@ -172,13 +180,16 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                     'deleted': 'Cancelled'
                                 }[sub.status]) || 'Unknown'
                             }
+                            { isAccountUpdateInProcess &&
+                                <AccountUpdateSpinner />
+                            }
                         </ContentValue>
 
                         <ContentLabel>
                             Subscription plan
                         </ContentLabel>
                         <ContentValue>
-                            { get(subscriptionPlans, sub.plan, 'name') || 'Unknown' }
+                            { subscriptionPlans[sub.plan]?.name ?? 'Unknown' }
                         </ContentValue>
 
                         <ContentLabel>
@@ -212,27 +223,23 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 View latest invoice
                             </SettingsButtonLink>
                         }
-                        { sub.status !== 'deleted' &&
-                          sub.updateBillingDetailsUrl &&
-                            <SettingsButtonLink
-                                href={ sub.updateBillingDetailsUrl }
-                                target='_blank'
-                                rel='noreferrer noopener'
-                                highlight={sub.status === 'past_due'}
-                            >
-                                Update billing details
-                            </SettingsButtonLink>
-                        }
-                        { sub.status !== 'deleted' &&
-                          sub.cancelSubscriptionUrl &&
-                            <SettingsButtonLink
-                                href={ sub.cancelSubscriptionUrl }
-                                target='_blank'
-                                rel='noreferrer noopener'
+                        { canManageSubscription && <>
+                            { sub.updateBillingDetailsUrl &&
+                                <SettingsButtonLink
+                                    href={sub.updateBillingDetailsUrl}
+                                    target='_blank'
+                                    rel='noreferrer noopener'
+                                    highlight={sub.status === 'past_due'}
+                                >
+                                    Update billing details
+                                </SettingsButtonLink>
+                            }
+                            <SettingsButton
+                                onClick={this.confirmSubscriptionCancellation}
                             >
                                 Cancel subscription
-                            </SettingsButtonLink>
-                        }
+                            </SettingsButton>
+                        </> }
                         <SettingsButton onClick={logOut}>Log out</SettingsButton>
                     </AccountControls>
 
@@ -325,6 +332,40 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             </SettingPageContainer>
         </SettingsPageScrollContainer>;
     }
+
+    confirmSubscriptionCancellation = () => {
+        const subscription = this.props.accountStore.userSubscription;
+        if (!subscription) {
+            throw new Error("Can't cancel without a subscription");
+        }
+
+        const planName = SubscriptionPlans[subscription.plan].name;
+
+        let cancelEffect: string;
+
+        if (subscription.status === 'active') {
+            cancelEffect = `It will remain usable until it expires in ${
+                distanceInWordsToNow(subscription.expiry)
+            } but will not renew.`;
+        } else if (subscription.status === 'past_due') {
+            cancelEffect = 'No more renewals will be attempted and it will deactivate immediately.';
+        } else {
+            throw new Error(`Cannot cancel subscription with status ${subscription.status}`);
+        }
+
+        const confirmed = confirm([
+            `This will cancel your HTTP Toolkit ${planName} subscription.`,
+            cancelEffect,
+            "Are you sure?"
+        ].join('\n\n'));
+
+        if (!confirmed) return;
+
+        this.props.accountStore.cancelSubscription().catch((e) => {
+            alert(e.message);
+            reportError(e);
+        });
+    };
 }
 
 // Annoying cast required to handle the store prop nicely in our types
