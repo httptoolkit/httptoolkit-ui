@@ -57,7 +57,7 @@ export class AccountStore {
         setInterval(this.updateUser, 1000 * 60 * 10);
         this.updateUser();
 
-        console.log('Account store created');
+        console.log('Account store initialized');
     });
 
     @observable
@@ -328,7 +328,6 @@ export class AccountStore {
 
         window.removeEventListener('focus', setFocused);
         window.removeEventListener('blur', setUnfocused);
-
     });
 
     @action.bound
