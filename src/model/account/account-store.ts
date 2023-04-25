@@ -181,30 +181,7 @@ export class AccountStore {
                 return;
             }
 
-            const planCurrency = (this.subscriptionPlans[selectedPlan].prices as any).currency;
-            const isRiskyPayment = planCurrency === 'BRL' &&
-                this.userEmail?.endsWith('@gmail.com'); // So far, all chargebacks have been from gmail accounts
-
-            const newUser = !this.user.subscription; // Even cancelled users will have an expired subscription left
-            if (newUser && isRiskyPayment) {
-                // This is annoying, I wish we didn't have to do this, but fraudulent BRL payments are now 80% of chargebacks,
-                // and we need to tighten this up and block that somehow or payment platforms will eventually block
-                // HTTP Toolkit globally. This error message is left intentionally vague to try and discourage fraudsters
-                // from using a VPN to work around it. We do still allow this for existing customers, who are already
-                // logged in - we're attempting to just block the creation of new accounts here.
-
-                trackEvent({ category: 'Account', action: 'Blocked purchase', value: selectedPlan });
-
-                alert(
-                    "Unfortunately, due to high levels of recent chargebacks & fraud, subscriptions for new accounts "+
-                    "will temporarily require manual validation & processing before setup.\n\n" +
-                    "Please email purchase@httptoolkit.com to begin this process."
-                );
-
-                return;
-            }
-
-            // Otherwise, it's checkout time, and the rest is in the hands of Paddle
+            // It's checkout time, and the rest is in the hands of Paddle/PayPro
             yield this.purchasePlan(this.user.email!, selectedPlan);
         } catch (error: any) {
             reportError(error);
