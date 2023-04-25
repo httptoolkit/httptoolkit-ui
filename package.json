@@ -144,7 +144,7 @@
     "ua-parser-js": "^0.7.33",
     "uuid": "^3.3.2",
     "xml-beautifier": "^0.4.0",
-    "yaml": "^1.7.2"
+    "yaml": "^2.2.2"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
