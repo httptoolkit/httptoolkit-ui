@@ -205,7 +205,8 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         <ContentValue>
                             {
                                 distanceInWordsStrict(new Date(), sub.expiry, {
-                                    addSuffix: true
+                                    addSuffix: true,
+                                    partialMethod: 'round'
                                 })
                             } ({
                                 format(sub.expiry.toString(), 'Do [of] MMMM YYYY')
