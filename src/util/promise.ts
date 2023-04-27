@@ -2,15 +2,6 @@ export function delay(numberMs: number) {
     return new Promise((resolve) => setTimeout(resolve, numberMs));
 }
 
-export async function doWhile<T>(
-    doFn: () => Promise<T>,
-    whileFn: () => Promise<boolean> | boolean
-) {
-    do {
-        await doFn();
-    } while (await whileFn());
-}
-
 export function attempt<T>(fn: () => T): Promise<T> {
     try {
         const result = fn();

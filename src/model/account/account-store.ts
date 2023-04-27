@@ -4,24 +4,26 @@ import { observable, action, flow, computed, when } from 'mobx';
 import { reportError, reportErrorsAsUser } from '../../errors';
 import { trackEvent } from '../../metrics';
 import { delay } from '../../util/promise';
-import { lazyObservablePromise } from '../../util/observable';
+import { ObservablePromise, lazyObservablePromise, observablePromise } from '../../util/observable';
 
 import {
+    initializeAuthUi,
     loginEvents,
     showLoginDialog,
     logOut,
+
     User,
     getLatestUserData,
     getLastUserData,
     RefreshRejectedError,
-    cancelSubscription
-} from './auth';
-import {
-    SubscriptionPlans,
+
     SKU,
-    openCheckout,
-    getCheckoutUrl
-} from './subscriptions';
+    SubscriptionPlans,
+    prepareCheckout,
+    openNewCheckoutWindow,
+    cancelSubscription,
+    loadPlanPricesUntilSuccess
+} from '@httptoolkit/accounts';
 
 export class AccountStore {
 
@@ -30,6 +32,23 @@ export class AccountStore {
     ) {}
 
     readonly initialized = lazyObservablePromise(async () => {
+        // All async auth-related errors at any stage (bad tokens, invalid subscription data,
+        // misc failures) will come through here, so we can log & debug later.
+        loginEvents.on('app_error', reportError);
+
+        initializeAuthUi({
+            // Proper indefinitely persistent session via refreshable token please
+            refreshToken: true,
+
+            // Don't persist logins for auto-login later. That makes sense for apps you log into
+            // every day, but it's weird otherwise (e.g. after logout -> one-click login? Very odd).
+            rememberLastLogin: false
+        });
+
+        this.subscriptionPlans = observablePromise(
+            loadPlanPricesUntilSuccess()
+        );
+
         // Update account data automatically on login, logout & every 10 mins
         loginEvents.on('authenticated', async (authResult) => {
             // If a user logs in after picking a plan, they're going to go to the
@@ -37,14 +56,13 @@ export class AccountStore {
             // so we ping here early to kick that process off ASAP:
             const initialEmailResult = authResult?.idTokenPayload?.email;
             if (initialEmailResult && this.selectedPlan) {
-                fetch(getCheckoutUrl(initialEmailResult, this.selectedPlan), {
-                    redirect: 'manual' // We just prime the API cache, we don't navigate
-                }).catch(() => {}); // Just an optimization
+                prepareCheckout(initialEmailResult, this.selectedPlan, 'app');
             }
 
             await this.updateUser();
             loginEvents.emit('user_data_loaded');
         });
+
         loginEvents.on('authorization_error', (error) => {
             if (error instanceof RefreshRejectedError) {
                 // If our refresh token ever becomes invalid (caused once by an Auth0 regression,
@@ -53,9 +71,10 @@ export class AccountStore {
                 this.logIn();
             }
         });
-        loginEvents.on('logout', this.updateUser);
-        setInterval(this.updateUser, 1000 * 60 * 10);
+
         this.updateUser();
+        setInterval(this.updateUser, 1000 * 60 * 10);
+        loginEvents.on('logout', this.updateUser);
 
         console.log('Account store initialized');
     });
@@ -94,7 +113,7 @@ export class AccountStore {
         }
     }.bind(this));
 
-    readonly subscriptionPlans = SubscriptionPlans;
+    subscriptionPlans!: ObservablePromise<SubscriptionPlans>;
 
     @observable
     modal: 'login' | 'pick-a-plan' | 'post-checkout' | undefined;
@@ -253,7 +272,7 @@ export class AccountStore {
     }
 
     private purchasePlan = flow(function * (this: AccountStore, email: string, sku: SKU) {
-        openCheckout(email, sku);
+        openNewCheckoutWindow(email, sku, 'app');
 
         this.modal = 'post-checkout';
         this.isAccountUpdateInProcess = true;

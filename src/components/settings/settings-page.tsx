@@ -5,13 +5,13 @@ import * as dedent from 'dedent';
 import {
     distanceInWordsStrict, distanceInWordsToNow, format
 } from 'date-fns';
+import { SubscriptionPlans } from '@httptoolkit/accounts';
 
 import { WithInjected } from '../../types';
 import { styled, Theme, ThemeName } from '../../styles';
 import { Icon, WarningIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
-import { SubscriptionPlans } from '../../model/account/subscriptions';
 import { UiStore } from '../../model/ui-store';
 import { serverVersion, versionSatisfies, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
@@ -189,7 +189,13 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             Subscription plan
                         </ContentLabel>
                         <ContentValue>
-                            { subscriptionPlans[sub.plan]?.name ?? 'Unknown' }
+                            {
+                                subscriptionPlans.state === 'fulfilled'
+                                ? (subscriptionPlans.value as SubscriptionPlans)[sub.plan]?.name
+                                // If the accounts API is unavailable for plan metadata for some reason, we can just
+                                // format the raw SKU to get something workable, no worries:
+                                : _.startCase(sub.plan)
+                            }
                         </ContentValue>
 
                         <ContentLabel>

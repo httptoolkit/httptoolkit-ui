@@ -1,13 +1,17 @@
 import * as _ from "lodash";
 import * as React from "react";
 import { observer } from "mobx-react";
-import { observable, action } from "mobx";
-
+import { observable, action, computed } from "mobx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import type { SKU, SubscriptionPlans } from "@httptoolkit/accounts";
+
 import { styled, css } from "../../styles";
-import { SKU, SubscriptionPlan } from "../../model/account/subscriptions";
+import { Icon } from "../../icons";
+import { ObservablePromise } from "../../util/observable";
+
 import { Button, UnstyledButton, ButtonLink, SecondaryButton } from "../common/inputs";
+import { ModalButton } from "./modal-overlay";
 
 const PlanPickerModal = styled.dialog`
     position: absolute;
@@ -270,11 +274,39 @@ const PlanSmallPrint = styled.div`
     }
 `;
 
+const SpinnerModal = styled.div`
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%) scale(2);
+    z-index: 99;
+
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+
+    > p {
+        max-width: 500px;
+        line-height: 1.2;
+    }
+
+    > p, > svg {
+        color: #fff;
+        margin: 20px auto;
+    }
+
+    a[href] {
+        color: #6e8ff4;
+    }
+`;
+
 type PlanCycle = 'monthly' | 'annual';
 
 interface PlanPickerProps {
     email?: string;
-    plans: _.Dictionary<SubscriptionPlan>;
+    plans: ObservablePromise<SubscriptionPlans>;
     onPlanPicked: (sku: SKU | undefined) => void;
     logOut: () => void;
     logIn: () => void;
@@ -287,8 +319,36 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
     planCycle: PlanCycle = 'monthly';
 
     render() {
-        const { planCycle, toggleCycle, buyPlan, closePicker, getPlanMonthlyPrice } = this;
+        const {
+            isPricingAvailable,
+            planCycle,
+            toggleCycle,
+            buyPlan,
+            closePicker,
+            getPlanMonthlyPrice
+        } = this;
         const { email, logOut, logIn } = this.props;
+
+        if (!isPricingAvailable) {
+            return <SpinnerModal>
+                <p>
+                    Unable to connect to HTTP Toolkit account servers...
+                </p>
+                <p>
+                    Having problems? Open an issue <a
+                        href="https://github.com/httptoolkit/httptoolkit/issues/new/choose"
+                    >on GitHub</a> or email <strong>billing@httptoolkit.com</strong> to ask for help.
+                </p>
+                <Icon
+                    icon={['fac', 'spinner-arc']}
+                    spin
+                    size='10x'
+                />
+                <ModalButton onClick={closePicker}>
+                    Cancel
+                </ModalButton>
+            </SpinnerModal>
+        }
 
         return <PlanPickerModal open>
             <PlanPickerDetails>
@@ -438,9 +498,18 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
         this.planCycle = this.planCycle === 'annual' ? 'monthly' : 'annual';
     }
 
+    @computed
+    get isPricingAvailable() {
+        const plans = this.props.plans;
+        return plans.state === 'fulfilled';
+    }
+
     getPlanMonthlyPrice = (tierCode: string): string => {
+        if (!this.isPricingAvailable) throw new Error("Can't query prices if pricing is not available");
+        const plans = this.props.plans.value as SubscriptionPlans; // Always true once pricing is available
+
         const sku = this.getSKU(tierCode);
-        const plan = this.props.plans[sku];
+        const plan = plans[sku];
         if (plan.prices === 'priceless') throw new Error("Can't show price for non-priced plan");
         return plan.prices!.monthly;
     };
