@@ -368,7 +368,6 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
         this.props.accountStore.cancelSubscription().catch((e) => {
             alert(e.message);
-            reportError(e);
         });
     };
 }

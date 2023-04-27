@@ -317,16 +317,21 @@ export class AccountStore {
     }
 
     cancelSubscription = flow(function * (this: AccountStore) {
-        yield cancelSubscription();
-
-        console.log('Subscription cancel requested');
-        this.isAccountUpdateInProcess = true;
-        yield this.waitForUserUpdate(() =>
-            !this.user.subscription ||
-            this.user.subscription.status === 'deleted'
-        );
-        this.isAccountUpdateInProcess = false;
-        console.log('Subscription cancellation confirmed');
+        try {
+            this.isAccountUpdateInProcess = true;
+            yield cancelSubscription();
+            yield this.waitForUserUpdate(() =>
+                !this.user.subscription ||
+                this.user.subscription.status === 'deleted'
+            );
+            console.log('Subscription cancellation confirmed');
+        } catch (e: any) {
+            console.log(e);
+            reportError(`Subscription cancellation failed: ${e.message || e}`);
+            throw e;
+        } finally {
+            this.isAccountUpdateInProcess = false;
+        }
     });
 
 }
