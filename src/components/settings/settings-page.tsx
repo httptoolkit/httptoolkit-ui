@@ -237,8 +237,12 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             }
                             <SettingsButton
                                 onClick={this.confirmSubscriptionCancellation}
+                                disabled={isAccountUpdateInProcess}
                             >
                                 Cancel subscription
+                                { isAccountUpdateInProcess &&
+                                    <AccountUpdateSpinner />
+                                }
                             </SettingsButton>
                         </> }
                         <SettingsButton onClick={logOut}>Log out</SettingsButton>
