@@ -75,8 +75,8 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         timeout-minutes: 1
 
-  publish-hidora:
-    name: Deploy to Docker Hub & Hidora
+  publish-scaleway:
+    name: Deploy to Docker Hub & Scaleway
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
@@ -108,7 +108,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
 
-      - name: Deploy to Docker Hub
+      - name: Publish to Docker Hub
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -116,20 +116,19 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Redeploy site
+      - name: Redeploy container
+        uses: thibaultchazal/scaleway-serverless-container-deploy-action@0d290edda0c3359e51442bd8bf730eafef4e290f
+        with:
+          container_id: ${{ vars.SCW_API_CONTAINER_ID }}
+          secret_key: ${{ secrets.SCW_SECRET_KEY }}
+          registry_image_url: "registry.hub.docker.com/httptoolkit/ui:prod"
+
+      - name: Flush CDN cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          sleep 30 # Wait for Docker Hub to fully publish
-
-          # Trigger a container redeploy:
-          curl "https://app.hidora.com/1.0/environment/control/rest/redeploycontainersbygroup?session=$HIDORA_API_TOKEN&envName=htk-ui&nodeGroup=cp&tag=prod&useExistingVolumes=true" | \
-             tee /dev/stderr | \
-             grep -q 'Node has been successfully updated'
-
           # Clear CDN cache to re-request content:
           curl -f --request POST \
             --url https://api.bunny.net/pullzone/1110200/purgeCache \
             --header "AccessKey: $BUNNY_SITE_API_KEY"
         env:
-          HIDORA_API_TOKEN: ${{ secrets.HIDORA_API_TOKEN }}
           BUNNY_SITE_API_KEY: ${{ secrets.BUNNY_SITE_API_KEY }}
