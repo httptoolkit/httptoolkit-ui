@@ -27,6 +27,8 @@ jobs:
       - name: Build & test
         run: npm run test:integration
         if: github.ref != 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
       # Build with secrets & run integrations tests, on main only:
       - name: Build & test for production release
@@ -38,6 +40,7 @@ jobs:
           SENTRY_ORG: http-toolkit
           SENTRY_PROJECT: httptoolkit-ui
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
       - uses: actions/upload-artifact@v3
         with:
