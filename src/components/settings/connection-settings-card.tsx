@@ -674,9 +674,9 @@ export class ConnectionSettingsCard extends React.Component<
                 validationFn={validateHost}
             />
             <SettingsExplanation>
-                Requests to these hosts will skip certificate validation and/or may use older TLS
-                versions, back to TLSv1. These requests will be successful regardless of any
-                self-signed, expired or invalid HTTPS configurations.
+                Requests to these hosts will skip certificate validation and accept some older
+                TLS configurations. These requests will be successful regardless of any self-signed,
+                expired or otherwise invalid HTTPS configurations.
             </SettingsExplanation>
         </CollapsibleCard>
     }

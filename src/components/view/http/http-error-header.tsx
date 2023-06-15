@@ -234,7 +234,7 @@ export const HttpErrorHeader = (p: {
                         </>
                         : <>
                             Pro users can relax HTTPS requirements for configured hosts to
-                            accept older TLS versions and self-signed/invalid certificates, and
+                            accept older TLS configurations and self-signed/invalid certificates, and
                             configure per-host client certificates for authentication.
                         </>
                     }
