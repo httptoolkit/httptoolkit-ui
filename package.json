@@ -44,7 +44,7 @@
     "@fortawesome/free-regular-svg-icons": "^5.12.1",
     "@fortawesome/free-solid-svg-icons": "^5.12.1",
     "@fortawesome/react-fontawesome": "^0.1.8",
-    "@httptoolkit/accounts": "^1.0.0",
+    "@httptoolkit/accounts": "^1.0.1",
     "@httptoolkit/auth0-lock": "^11.26.3",
     "@httptoolkit/httpsnippet": "^2.1.1",
     "@open-rpc/meta-schema": "^1.14.2",
