@@ -121,6 +121,12 @@ function getReadablePath(path: string) {
     }
 }
 
+declare global {
+    interface Window {
+        nativeFile: { open: () => Promise<string | undefined> };
+    }
+}
+
 @inject('uiStore')
 @observer
 class ElectronConfig extends React.Component<{
@@ -142,7 +148,12 @@ class ElectronConfig extends React.Component<{
     }
 
     selectApplication = async () => {
-        const pathToApplication = await uploadFile('path');
+        const useNativePicker =
+            platform == 'win' && window.nativeFile.open;
+
+        const pathToApplication = await (useNativePicker
+            ? window.nativeFile.open()
+            : uploadFile('path'));
 
         if (!pathToApplication) {
             this.props.closeSelf();
