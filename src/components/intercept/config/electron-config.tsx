@@ -149,7 +149,7 @@ class ElectronConfig extends React.Component<{
 
     selectApplication = async () => {
         const useNativePicker =
-            platform == 'win' && window.nativeFile?.open;
+            platform == 'mac' && window.nativeFile?.open;
 
         const pathToApplication = await (useNativePicker
             ? window.nativeFile?.open()
