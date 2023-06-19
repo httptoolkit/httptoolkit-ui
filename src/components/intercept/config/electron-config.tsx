@@ -123,7 +123,7 @@ function getReadablePath(path: string) {
 
 declare global {
     interface Window {
-        nativeFile: { open: () => Promise<string | undefined> };
+        nativeFile?: { open: () => Promise<string | undefined> };
     }
 }
 
@@ -149,10 +149,10 @@ class ElectronConfig extends React.Component<{
 
     selectApplication = async () => {
         const useNativePicker =
-            platform == 'win' && window.nativeFile.open;
+            platform == 'win' && window.nativeFile?.open;
 
         const pathToApplication = await (useNativePicker
-            ? window.nativeFile.open()
+            ? window.nativeFile?.open()
             : uploadFile('path'));
 
         if (!pathToApplication) {
