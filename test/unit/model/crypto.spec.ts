@@ -1,6 +1,6 @@
 import { expect } from '../../test-setup';
 
-import { validatePKCS12 } from "../../../src/model/crypto";
+import { validatePKCS12, parseCert } from "../../../src/model/crypto";
 
 // A manually generated PFX (using the Mockttp test cert+key)
 import * as goodPfxData from 'arraybuffer-loader!../../fixtures/test.pfx';
@@ -10,6 +10,9 @@ import * as corruptPfxData from 'arraybuffer-loader!../../fixtures/corrupt.pfx';
 
 // The published p12 from badssl.com
 import * as badSslPfxData from 'arraybuffer-loader!../../fixtures/badssl.p12';
+
+import * as rsaCaCert from 'arraybuffer-loader!../../fixtures/ca-cert-rsa.pem';
+import * as ecdsaCaCert from 'arraybuffer-loader!../../fixtures/ca-cert-ecdsa.pem';
 
 describe("validatePfx", () => {
 
@@ -41,5 +44,25 @@ describe("validatePfx", () => {
         expect(
             validatePKCS12(badSslPfxData, 'badssl.com')
         ).to.equal('valid');
+    });
+});
+
+describe("parseCert", () => {
+    it("can parse an X509 RSA CA certification", () => {
+        const cert = parseCert(rsaCaCert);
+
+        expect(cert.subject.name).to.equal('HtkRsaTestCert');
+        expect(cert.subject.org).to.equal('HtkTestOrg');
+        expect(cert.serial).to.equal('6fad40ea0ea0c11e52d8e8654bb22c5ba940421c');
+        expect(cert.rawPEM).to.match(/^-----BEGIN CERTIFICATE-----/);
+    });
+
+    it("can parse an X509 ECDSA CA certificate", () => {
+        const cert = parseCert(ecdsaCaCert);
+
+        expect(cert.subject.name).to.equal('HtkEcdsaTestCert');
+        expect(cert.subject.org).to.equal('HtkTestOrg');
+        expect(cert.serial).to.equal('57c1772f855d85c6fbfb06c1c20d24460ce25f0d');
+        expect(cert.rawPEM).to.match(/^-----BEGIN CERTIFICATE-----/);
     });
 });
