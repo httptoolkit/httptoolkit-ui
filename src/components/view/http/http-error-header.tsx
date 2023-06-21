@@ -16,6 +16,7 @@ import {
 type ErrorType =
     | 'untrusted'
     | 'expired'
+    | 'not-yet-valid'
     | 'wrong-host'
     | 'tls-error'
     | 'host-not-found'
@@ -38,19 +39,14 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
         tags.includes("passthrough-error:SELF_SIGNED_CERT_IN_CHAIN") ||
         tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
         tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
-        tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY") ||
-        tags.includes("passthrough-error:CERT_NOT_YET_VALID")
+        tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY")
     ) {
         return 'untrusted';
     }
 
-    if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) {
-        return 'expired';
-    }
-
-    if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) {
-        return 'wrong-host';
-    }
+    if (tags.includes("passthrough-error:CERT_HAS_EXPIRED")) return 'expired';
+    if (tags.includes("passthrough-error:CERT_NOT_YET_VALID")) return 'not-yet-valid';
+    if (tags.includes("passthrough-error:ERR_TLS_CERT_ALTNAME_INVALID")) return 'wrong-host';
 
     if (
         tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
@@ -126,6 +122,7 @@ const isClientBug = typeCheck([
 const wasNotForwarded = typeCheck([
     'untrusted',
     'expired',
+    'not-yet-valid',
     'wrong-host',
     'tls-error',
     'host-not-found',
@@ -142,6 +139,7 @@ const wasTimeout = typeCheck([
 const isWhitelistable = typeCheck([
     'untrusted',
     'expired',
+    'not-yet-valid',
     'wrong-host',
     'tls-error'
 ]);
@@ -205,6 +203,8 @@ export const HttpErrorHeader = (p: {
                             ? 'responded with an HTTPS certificate for the wrong hostname'
                         : p.type === 'expired'
                             ? 'has an expired HTTPS certificate'
+                        : p.type === 'not-yet-valid'
+                            ? 'has an HTTPS certificate with a start date in the future'
                         : p.type === 'untrusted'
                             ? 'has an untrusted HTTPS certificate'
                         : p.type === 'tls-error'
