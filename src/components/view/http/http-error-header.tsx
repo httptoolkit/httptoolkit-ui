@@ -38,7 +38,8 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
         tags.includes("passthrough-error:SELF_SIGNED_CERT_IN_CHAIN") ||
         tags.includes("passthrough-error:DEPTH_ZERO_SELF_SIGNED_CERT") ||
         tags.includes("passthrough-error:UNABLE_TO_VERIFY_LEAF_SIGNATURE") ||
-        tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY")
+        tags.includes("passthrough-error:UNABLE_TO_GET_ISSUER_CERT_LOCALLY") ||
+        tags.includes("passthrough-error:CERT_NOT_YET_VALID")
     ) {
         return 'untrusted';
     }
@@ -54,7 +55,11 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     if (
         tags.filter(t => t.startsWith("passthrough-tls-error:")).length > 0 ||
         tags.includes("passthrough-error:EPROTO") ||
-        tags.includes("passthrough-error:ERR_SSL_WRONG_VERSION_NUMBER")
+        tags.includes("passthrough-error:ERR_SSL_WRONG_VERSION_NUMBER") ||
+        tags.includes("passthrough-error:ERR_SSL_DECRYPTION_FAILED_OR_BAD_RECORD_MAC") ||
+        tags.includes("passthrough-error:ERR_SSL_CIPHER_OPERATION_FAILED") ||
+        tags.includes("passthrough-error:ERR_SSL_BAD_RECORD_TYPE") ||
+        tags.includes("passthrough-error:ERR_SSL_INTERNAL_ERROR")
     ) {
         return 'tls-error';
     }
