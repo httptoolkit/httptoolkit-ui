@@ -23,7 +23,8 @@ type ErrorType =
     | 'dns-error'
     | 'connection-refused'
     | 'connection-reset'
-    | 'timeout'
+    | 'server-timeout'
+    | 'client-timeout'
     | 'invalid-http-version'
     | 'invalid-method'
     | 'unparseable-url'
@@ -66,7 +67,7 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     if (tags.includes("passthrough-error:EAI_AGAIN")) return 'dns-error';
     if (tags.includes("passthrough-error:ECONNREFUSED")) return 'connection-refused';
     if (tags.includes("passthrough-error:ECONNRESET")) return 'connection-reset';
-    if (tags.includes("passthrough-error:ETIMEDOUT")) return 'timeout';
+    if (tags.includes("passthrough-error:ETIMEDOUT")) return 'server-timeout';
 
     if (tags.includes("http-2") || tags.includes("client-error:HPE_INVALID_VERSION")) {
         return 'invalid-http-version';
@@ -86,6 +87,8 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
         tags.includes("client-error:HPE_UNEXPECTED_CONTENT_LENGTH") || // T-E with C-L
         tags.includes("passthrough-error:HPE_INVALID_HEADER_TOKEN") // Invalid headers upstream, e.g. after breakpoint
     ) return 'invalid-headers';
+
+    if (tags.includes("client-error:ERR_HTTP_REQUEST_TIMEOUT")) return 'client-timeout';
 
     if (
         tags.filter(t => t.startsWith("passthrough-error:")).length > 0 ||
@@ -126,6 +129,11 @@ const wasNotForwarded = typeCheck([
     'connection-refused'
 ]);
 
+const wasTimeout = typeCheck([
+    'client-timeout',
+    'server-timeout'
+]);
+
 const isWhitelistable = typeCheck([
     'untrusted',
     'expired',
@@ -139,7 +147,7 @@ const isMockable = typeCheck([
     'dns-error',
     'connection-refused',
     'connection-reset',
-    'timeout'
+    'server-timeout'
 ]);
 
 export const HttpErrorHeader = (p: {
@@ -204,13 +212,20 @@ export const HttpErrorHeader = (p: {
                             'refused the connection'
                     }, so HTTP Toolkit did not forward the request.
                 </>
+            : wasTimeout(p.type)
+                ? <>
+                    The request timed out {
+                        p.type === 'client-timeout'
+                            ? 'waiting for the client to send the complete request'
+                        : // server-timeout:
+                            'waiting for a response from the server'
+                    }
+                </>
             : // Unknown/upstream issue:
                 <>
                     The request failed because {
                         p.type === 'connection-reset'
                             ? 'the connection to the server was reset'
-                        : p.type === 'timeout'
-                            ? 'the connection to the server timed out'
                         : // unknown
                             'of an unknown error'
                     }, so HTTP Toolkit could not return a response.
@@ -307,7 +322,13 @@ export const HttpErrorHeader = (p: {
                 the request. You can also mock requests like this, to avoid sending them upstream
                 at all.
             </HeaderText>
-        : p.type === 'timeout'
+        : p.type === 'client-timeout'
+            ? <HeaderText>
+                This could be due to connection issues, general problems in the client, or delays
+                generating the complete body of the request. This might be resolved by retrying
+                the request, or sending a simpler request with a smaller or easier to generate body.
+            </HeaderText>
+        : p.type === 'server-timeout'
             ? <HeaderText>
                 This could be due to connection issues, general issues on the server, or issues
                 with handling this request specifically. This might be resolved by retrying
