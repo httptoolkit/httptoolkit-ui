@@ -129,7 +129,7 @@
     "react-virtualized-auto-sizer": "^1.0.2",
     "react-window": "^1.8.5",
     "remarkable": "^1.7.4",
-    "semver": "^7.3.2",
+    "semver": "^7.5.2",
     "serialize-error": "^3.0.0",
     "serializr": "^1.5.4",
     "set-cookie-parser": "^2.3.5",
