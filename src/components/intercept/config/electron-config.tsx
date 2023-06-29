@@ -123,7 +123,7 @@ function getReadablePath(path: string) {
 
 declare global {
     interface Window {
-        nativeFile?: { open: () => Promise<string | undefined> };
+        desktopApi?: { selectApplication: () => Promise<string | undefined> };
     }
 }
 
@@ -149,11 +149,13 @@ class ElectronConfig extends React.Component<{
 
     selectApplication = async () => {
         const useNativePicker =
-            platform == 'mac' && window.nativeFile?.open;
+            platform == 'mac' && window.desktopApi?.selectApplication;
 
-        const pathToApplication = await (useNativePicker
-            ? window.nativeFile?.open()
-            : uploadFile('path'));
+        const pathToApplication = await(
+            useNativePicker
+                ? window.desktopApi?.selectApplication()
+                : uploadFile('path')
+        );
 
         if (!pathToApplication) {
             this.props.closeSelf();
