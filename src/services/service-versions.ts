@@ -71,3 +71,4 @@ export const JSONRPC_RESPONSE_RULE_SUPPORTED = '^1.11.0';
 export const RTC_RULES_SUPPORTED = '^1.11.0';
 export const TLS_PASSTHROUGH_SUPPORTED = '^1.12.0';
 export const CONNECTION_RESET_SUPPORTED = '^1.12.0';
+export const REST_API_SUPPORTED = '^1.13.0';

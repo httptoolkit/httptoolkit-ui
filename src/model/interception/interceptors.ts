@@ -4,7 +4,6 @@ import { ServerInterceptor } from "../../services/server-api";
 import {
     versionSatisfies,
     DETAILED_CONFIG_RANGE,
-    DOCKER_INTERCEPTION_RANGE,
     WEBRTC_GLOBALLY_ENABLED
 } from "../../services/service-versions";
 import { IconProps, SourceIcons } from "../../icons";
