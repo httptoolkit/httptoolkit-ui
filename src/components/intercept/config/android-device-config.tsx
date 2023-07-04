@@ -10,6 +10,7 @@ import {
 
 import { styled } from '../../../styles';
 import { stringToBuffer } from '../../../util';
+import { reportError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
@@ -138,6 +139,21 @@ class AndroidConfig extends React.Component<{
 
         const { reportStarted, reportSuccess } = this.props;
 
+        // Just in case the network addresses have changed:
+        proxyStore.refreshNetworkAddresses().then(() => {
+            // This should never happen, but plausibly could in some edge cases, in which case we need
+            // to clearly tell the user what's going on here:
+            if (proxyStore.externalNetworkAddresses.length === 0) {
+                alert(
+                    "Cannot activate Android interception as no network addresses could be detected." +
+                    "\n\n" +
+                    "Please open an issue at github.com/httptoolkit/httptoolkit"
+                );
+                reportError("Android QR activation failed - no network addresses");
+                this.props.closeSelf();
+            }
+        });
+
         setUpAndroidCertificateRule(
             proxyStore!.certContent!,
             rulesStore,
@@ -148,9 +164,6 @@ class AndroidConfig extends React.Component<{
                 ? reportSuccess
                 : () => reportSuccess({ showRequests: false })
         );
-
-        // Just in case the network addresses have changed:
-        proxyStore.refreshNetworkAddresses();
 
         // We consider activate attempted once you show the QR code
         reportStarted();
