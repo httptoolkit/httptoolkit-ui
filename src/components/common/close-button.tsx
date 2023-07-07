@@ -29,7 +29,7 @@ export const CloseButton = styled(
         p.theme!.mainBackground : p.theme!.mainColor
     };
 
-    top: ${p => p.top || '15px'};
+    top: ${p => p.top || '10px'};
     right: ${p => p.right || '15px'};
 
     &:hover {
