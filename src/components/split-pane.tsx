@@ -3,12 +3,14 @@ import { default as ReactSplitPane } from 'react-split-pane';
 
 import { styled } from '../styles';
 
-// Styles taken directly from
+// Styles original taken from
 // https://github.com/tomkp/react-split-pane/blob/master/README.md#example-styling
-export const SplitPane = styled(ReactSplitPane)`
+export const SplitPane = styled(ReactSplitPane)<{
+    hiddenPane?: '1' | '2'
+}>`
     .Resizer {
         background: #000;
-        opacity: .2;
+        opacity: .3;
         z-index: 1;
         -moz-box-sizing: border-box;
         -webkit-box-sizing: border-box;
@@ -19,8 +21,9 @@ export const SplitPane = styled(ReactSplitPane)`
     }
 
     .Resizer:hover {
-        -webkit-transition: all 2s ease;
-        transition: all 2s ease;
+        -webkit-transition: all 1s ease;
+        transition: all 1s ease;
+        opacity: 0.9;
     }
 
     .Resizer.horizontal {
@@ -33,8 +36,8 @@ export const SplitPane = styled(ReactSplitPane)`
     }
 
     .Resizer.horizontal:hover {
-        border-top: 5px solid rgba(0, 0, 0, 0.5);
-        border-bottom: 5px solid rgba(0, 0, 0, 0.5);
+        border-top: 5px solid rgba(0, 0, 0, 0.2);
+        border-bottom: 5px solid rgba(0, 0, 0, 0.2);
     }
 
     .Resizer.vertical {
@@ -46,8 +49,8 @@ export const SplitPane = styled(ReactSplitPane)`
     }
 
     .Resizer.vertical:hover {
-        border-left: 5px solid rgba(0, 0, 0, 0.5);
-        border-right: 5px solid rgba(0, 0, 0, 0.5);
+        border-left: 5px solid rgba(0, 0, 0, 0.2);
+        border-right: 5px solid rgba(0, 0, 0, 0.2);
     }
 
     .Resizer.disabled {
@@ -61,4 +64,17 @@ export const SplitPane = styled(ReactSplitPane)`
     .Pane {
         min-width: 0; /* Don't let flexbox force panes to expand */
     }
+
+    ${({ hiddenPane }) => {
+        if (!hiddenPane) return '';
+        else return `
+            .Resizer {
+                display: none !important;
+            }
+
+            .Pane${hiddenPane} {
+                display: none !important;
+            }
+        `;
+    }}
 `;

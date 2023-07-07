@@ -38,6 +38,8 @@ import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
 
+const MIN_VERTICAL_SPLIT_WIDTH = 1100;
+
 interface ViewPageProps {
     className?: string;
     eventsStore: EventsStore;
@@ -106,6 +108,15 @@ type EditorKey = typeof EDITOR_KEYS[number];
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
+    @observable.shallow
+    private containerRef = React.createRef<HTMLDivElement>();
+    private readonly containerResizeObserver = new ResizeObserver(this.onResize);
+
+    @observable
+    private splitDirection: 'vertical' | 'horizontal' = (window.innerWidth >= MIN_VERTICAL_SPLIT_WIDTH)
+        ? 'vertical'
+        : 'horizontal';
+
     private readonly editors = EDITOR_KEYS.reduce((v, key) => ({
         ...v,
         [key]: portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>()
@@ -158,8 +169,33 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            if (!this.props.eventId) return;
+            const container = this.containerRef.current;
+            const resizeObserver = this.containerResizeObserver;
 
+            resizeObserver.disconnect();
+            if (!container) return;
+
+            resizeObserver.observe(container);
+        }));
+
+        disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
+            if (this.splitDirection !== 'horizontal') return;
+
+            // In horizontal mode, the details pane appears and disappears, so we need to do some
+            // tricks to stop the scroll position in the list doing confusing things.
+
+            if (!oldValue && newValue) {
+                // If we're bringing the details pane into view, we want to jump to where we were
+                // but then shift slightly to make sure the selected row is visible too.
+                setTimeout(() => {
+                    if (!this.selectedEvent) return;
+                    this.listRef.current?.scrollToEvent(this.selectedEvent);
+                }, 50); // We need to delay slightly to let DOM and then UI state catch up
+            }
+        }));
+
+        disposeOnUnmount(this, autorun(() => {
+            if (!this.props.eventId) return;
             const selectedEvent = this.selectedEvent;
 
             // If you somehow have a non-existent event selected, unselect it
@@ -224,11 +260,15 @@ class ViewPage extends React.Component<ViewPageProps> {
 
         const { filteredEvents, filteredEventCount } = this.filteredEventState;
 
-        let rightPane: JSX.Element;
+        let rightPane: JSX.Element | null;
         if (!this.selectedEvent) {
-            rightPane = <EmptyState icon={['fas', 'arrow-left']}>
-                Select an exchange to see the full details.
-            </EmptyState>;
+            if (this.splitDirection === 'vertical') {
+                rightPane = <EmptyState key='details' icon={['fas', 'arrow-left']}>
+                    Select an exchange to see the full details.
+                </EmptyState>;
+            } else {
+                rightPane = null;
+            }
         } else if (this.selectedEvent.isHttp()) {
             rightPane = <HttpDetailsPane
                 exchange={this.selectedEvent}
@@ -272,7 +312,14 @@ class ViewPage extends React.Component<ViewPageProps> {
             throw new UnreachableCheck(this.selectedEvent);
         }
 
-        return <div className={this.props.className}>
+        const minSize = this.splitDirection === 'vertical'
+            ? 300
+            : 200;
+
+        return <div
+            ref={this.containerRef}
+            className={this.props.className}
+        >
             <ViewPageKeyboardShortcuts
                 selectedEvent={this.selectedEvent}
                 moveSelection={this.moveSelection}
@@ -281,12 +328,14 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onClear={this.onForceClear}
                 onStartSearch={this.onStartSearch}
             />
+
             <SplitPane
-                split='vertical'
+                split={this.splitDirection}
                 primary='second'
                 defaultSize='50%'
-                minSize={300}
-                maxSize={-300}
+                minSize={minSize}
+                maxSize={-minSize}
+                hiddenPane={rightPane === null ? '2' : undefined}
             >
                 <LeftPane>
                     <ViewEventListFooter // Footer above the list to ensure correct tab order
@@ -439,6 +488,17 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onScrollToEnd() {
         this.listRef.current?.scrollToEnd();
+    }
+
+    @action.bound
+    onResize() {
+        const width = window.innerWidth;
+
+        const newSplitDirection = (width >= MIN_VERTICAL_SPLIT_WIDTH)
+            ? 'vertical'
+            : 'horizontal';
+
+        this.splitDirection = newSplitDirection;
     }
 }
 
