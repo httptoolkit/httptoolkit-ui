@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useHotkeys as rawUseHotkeys } from "react-hotkeys-hook";
+import { action, observable } from 'mobx';
 
 import { desktopVersion } from '../services/service-versions';
 import { getDeferred, delay } from './promise';
@@ -8,6 +9,15 @@ import { reportError } from '../errors';
 export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
 }
+
+export const windowSize = observable({
+    height: window.innerHeight,
+    width: window.innerWidth
+});
+window.addEventListener('resize', action(() => {
+    windowSize.height = window.innerHeight;
+    windowSize.width = window.innerWidth;
+}));
 
 export const Ctrl = navigator.platform.startsWith('Mac')
     ? '⌘'

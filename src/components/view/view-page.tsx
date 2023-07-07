@@ -15,7 +15,7 @@ import * as portals from 'react-reverse-portal';
 
 import { WithInjected, CollectedEvent } from '../../types';
 import { styled } from '../../styles';
-import { useHotkeys, isEditable } from '../../util/ui';
+import { useHotkeys, isEditable, windowSize } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 import { UnreachableCheck } from '../../util/error';
 
@@ -108,14 +108,14 @@ type EditorKey = typeof EDITOR_KEYS[number];
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
-    @observable.shallow
-    private containerRef = React.createRef<HTMLDivElement>();
-    private readonly containerResizeObserver = new ResizeObserver(this.onResize);
-
-    @observable
-    private splitDirection: 'vertical' | 'horizontal' = (window.innerWidth >= MIN_VERTICAL_SPLIT_WIDTH)
-        ? 'vertical'
-        : 'horizontal';
+    @computed
+    private get splitDirection(): 'vertical' | 'horizontal' {
+        if (windowSize.width >= MIN_VERTICAL_SPLIT_WIDTH) {
+            return 'vertical';
+        } else {
+            return 'horizontal';
+        }
+    }
 
     private readonly editors = EDITOR_KEYS.reduce((v, key) => ({
         ...v,
@@ -168,16 +168,6 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     componentDidMount() {
-        disposeOnUnmount(this, autorun(() => {
-            const container = this.containerRef.current;
-            const resizeObserver = this.containerResizeObserver;
-
-            resizeObserver.disconnect();
-            if (!container) return;
-
-            resizeObserver.observe(container);
-        }));
-
         disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
             if (this.splitDirection !== 'horizontal') return;
 
@@ -316,10 +306,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             ? 300
             : 200;
 
-        return <div
-            ref={this.containerRef}
-            className={this.props.className}
-        >
+        return <div className={this.props.className}>
             <ViewPageKeyboardShortcuts
                 selectedEvent={this.selectedEvent}
                 moveSelection={this.moveSelection}
@@ -488,17 +475,6 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onScrollToEnd() {
         this.listRef.current?.scrollToEnd();
-    }
-
-    @action.bound
-    onResize() {
-        const width = window.innerWidth;
-
-        const newSplitDirection = (width >= MIN_VERTICAL_SPLIT_WIDTH)
-            ? 'vertical'
-            : 'horizontal';
-
-        this.splitDirection = newSplitDirection;
     }
 }
 
