@@ -14,7 +14,7 @@ import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { WithInjected, CollectedEvent } from '../../types';
-import { styled } from '../../styles';
+import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 import { useHotkeys, isEditable, windowSize } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 import { UnreachableCheck } from '../../util/error';
@@ -37,8 +37,6 @@ import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
-
-const MIN_VERTICAL_SPLIT_WIDTH = 1100;
 
 interface ViewPageProps {
     className?: string;
@@ -110,7 +108,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @computed
     private get splitDirection(): 'vertical' | 'horizontal' {
-        if (windowSize.width >= MIN_VERTICAL_SPLIT_WIDTH) {
+        if (windowSize.width >= NARROW_LAYOUT_BREAKPOINT) {
             return 'vertical';
         } else {
             return 'horizontal';

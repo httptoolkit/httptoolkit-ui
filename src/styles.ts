@@ -14,6 +14,8 @@ const fontSizes = {
     loudHeadingSize: '38px',
 };
 
+export const NARROW_LAYOUT_BREAKPOINT = 1100;
+
 export const warningColor = '#f1971f';
 
 export const lightTheme = {

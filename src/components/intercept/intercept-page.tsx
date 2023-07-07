@@ -5,7 +5,7 @@ import { observable, action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { WithInjected } from '../../types';
-import { styled } from '../../styles';
+import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 
 import { InterceptorStore } from '../../model/interception/interceptor-store';
 import { EventsStore } from '../../model/events/events-store';
@@ -25,17 +25,30 @@ interface InterceptPageProps {
 const InterceptPageContainer = styled.section`
     display: grid;
 
-    grid-gap: 60px;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 310px;
+    @media (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
+        grid-gap: 40px;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-rows: 320px;
+        padding: 60px 40px;
+    }
+
+    @media not (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
+        grid-gap: 20px;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 40px;
+    }
+
     grid-auto-rows: minmax(200px, auto);
     grid-auto-flow: row dense;
 
     max-width: 1200px;
     margin: 0 auto 20px;
-    padding: 60px 40px;
 
     > ${ConnectedSources} {
+        @media not (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
+            display: none;
+        }
+
         order: -1;
         grid-column: 3 / span 2;
         overflow-y: auto;
@@ -45,7 +58,14 @@ const InterceptPageContainer = styled.section`
 
 const InterceptInstructions = styled.div`
     order: -1;
-    grid-column: 1 / span 2;
+
+    @media (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
+        grid-column: 1 / span 2;
+    }
+
+    @media not (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
+        grid-column: 1 / -1;
+    }
 
     display: flex;
     flex-direction: column;
@@ -71,7 +91,9 @@ const InterceptSearchBox = styled(SearchBox).attrs(() => ({
     placeholder: 'Browsers, mobile, docker...',
     iconSize: '2x'
 }))`
-    margin: 20px 0 0;
+    @media (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
+        margin: 20px 0 0;
+    }
 `;
 
 @inject('interceptorStore')
