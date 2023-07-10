@@ -6,6 +6,7 @@ import { reportError } from '../../../errors';
 
 import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../../services/service-versions';
 
+import { UnreachableCheck } from '../../../util/error';
 import { clickOnEnter } from '../../component-utils';
 import {
     HeaderCard,
@@ -172,9 +173,12 @@ export const HttpErrorHeader = (p: {
     return <HeaderCard>
         <HeaderText>
             <WarningIcon /> {
-                isInitialRequestError(p.type) || p.type === 'unknown'
-                ? <strong>This request could not be handled</strong>
-                : <strong>This request was not forwarded successfully</strong>
+                isInitialRequestError(p.type)
+                    ? <strong>This request could not be handled</strong>
+                : wasNotForwarded(p.type)
+                    ? <strong>This request was not forwarded successfully</strong>
+                : // Forwarded but failed later, or unknown:
+                    <strong>This exchange was not completed successfully</strong>
             }
         </HeaderText>
 
@@ -192,8 +196,9 @@ export const HttpErrorHeader = (p: {
                             ? 'included an unparseable URL'
                         : p.type === 'header-overflow'
                             ? 'headers were too large to be processed'
-                        : // unparseable
-                            'could not be parsed'
+                        : p.type === 'unparseable'
+                            ? 'could not be parsed'
+                        : new UnreachableCheck(p.type)
                     }, so HTTP Toolkit did not handle this request.
                 </>
             : wasNotForwarded(p.type)
@@ -213,8 +218,9 @@ export const HttpErrorHeader = (p: {
                             ? 'was not reachable on your network connection'
                         : p.type === 'host-not-found' || p.type === 'dns-error'
                             ? 'hostname could be not found'
-                        : // connection-refused
-                            'refused the connection'
+                        : p.type === 'connection-refused'
+                            ? 'refused the connection'
+                        : new UnreachableCheck(p.type)
                     }, so HTTP Toolkit did not forward the request.
                 </>
             : wasTimeout(p.type)
@@ -222,20 +228,23 @@ export const HttpErrorHeader = (p: {
                     The request timed out {
                         p.type === 'client-timeout'
                             ? 'waiting for the client to send the complete request'
-                        : // server-timeout:
-                            'waiting for a response from the server'
+                        : p.type === 'server-timeout'
+                            ? 'waiting for a response from the server'
+                        : new UnreachableCheck(p.type)
                     }
                 </>
-            : // Unknown/upstream issue:
-                <>
+            : p.type === 'unknown' || p.type === 'connection-reset'
+                ? <>
                     The request failed because {
                         p.type === 'connection-reset'
                             ? 'the connection to the server was reset'
-                        : // unknown
-                            'of an unknown error'
+                        : p.type === 'unknown'
+                            ? 'of an unknown error'
+                        : new UnreachableCheck(p.type)
                     }, so HTTP Toolkit could not return a response.
                 </>
-            }
+            : new UnreachableCheck(p.type)
+        }
         </HeaderText>
 
         { p.type === 'tls-error'
@@ -387,14 +396,14 @@ export const HttpErrorHeader = (p: {
                     get in touch
                 </a>.
             </HeaderText>
-        : // 'unknown':
-            <HeaderText>
+        : p.type === 'unknown'
+            ? <HeaderText>
                 It's not clear what's gone wrong here, but for some reason HTTP Toolkit
                 couldn't successfully and/or securely complete this request.
                 This might be an intermittent issue, and may be resolved by retrying
                 the request.
             </HeaderText>
-        }
+        : new UnreachableCheck(p.type)}
 
         { isInitialRequestError(p.type) && <HeaderText>
             The data shown below is a best guess from the data that was available
