@@ -278,6 +278,9 @@ class MockPage extends React.Component<MockPageProps> {
 
     @action.bound
     resetToDefaults() {
+        const confirmResult = confirm("Reset all rules?");
+        if (!confirmResult) return;
+
         this.props.rulesStore.resetRulesToDefault();
         this.collapseAll();
     }
