@@ -11,7 +11,12 @@ import {
     DNS_AND_RULE_PARAM_CONFIG_RANGE
 } from './service-versions';
 
-import { ServerConfig, NetworkInterfaces, ServerInterceptor } from './server-api-types';
+import {
+    ServerConfig,
+    NetworkInterfaces,
+    ServerInterceptor,
+    ApiError
+} from './server-api-types';
 
 interface GraphQLError {
     locations: Array<{ line: number, column: number }>;
@@ -39,12 +44,16 @@ export class GraphQLApiClient {
                 query,
                 variables
             })
+        }).catch((e) => {
+            throw new ApiError(`fetch failed with '${e.message ?? e}'`, operationName);
         });
 
         if (!response.ok) {
             console.error(response);
-            throw new Error(
-                `Server XHR error during ${operationName}, status ${response.status} ${response.statusText}`
+            throw new ApiError(
+                `unexpected status ${response.status} ${response.statusText}`,
+                operationName,
+                response.status
             );
         }
 
@@ -55,10 +64,11 @@ export class GraphQLApiClient {
 
             const errorCount = errors.length > 1 ? `s (${errors.length})` : '';
 
-            throw new Error(
-                `Server error${errorCount} during ${operationName}: ${errors.map(e =>
+            throw new ApiError(
+                `GraphQL error${errorCount}: ${errors.map(e =>
                     `${e.message} at ${e.path.join('.')}`
-                ).join(', ')}`
+                ).join(', ')}`,
+                operationName
             );
         }
 

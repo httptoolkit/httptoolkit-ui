@@ -1,6 +1,11 @@
 import * as _ from 'lodash';
 
-import { ServerConfig, NetworkInterfaces, ServerInterceptor } from './server-api-types';
+import {
+    ServerConfig,
+    NetworkInterfaces,
+    ServerInterceptor,
+    ApiError
+} from './server-api-types';
 
 export class RestApiClient {
 
@@ -14,6 +19,8 @@ export class RestApiClient {
         query: Record<string, number | string> = {},
         body?: object
     ): Promise<T> {
+        const operationName = `${method} ${path}`;
+
         const response = await fetch(`http://127.0.0.1:45457${path}${
             Object.keys(query).length
                 ? '?' + new URLSearchParams(_.mapValues(query, (v) => v.toString())).toString()
@@ -29,6 +36,8 @@ export class RestApiClient {
             body: body ?
                 JSON.stringify(body)
                 : undefined
+        }).catch((e) => {
+            throw new ApiError(`fetch failed with '${e.message ?? e}'`, operationName);
         });
 
         if (!response.ok) {
@@ -41,13 +50,17 @@ export class RestApiClient {
 
             console.error(response.status, errorBody);
 
-            throw new Error(`${response.status} response for ${path}: ${
-                errorBody?.error?.code
-                    ? `${errorBody?.error?.code} -`
-                    : ''
-            }${
-                errorBody?.error?.message ?? '[unknown]'
-            }`);
+            throw new ApiError(
+                `unexpected ${response.status} ${response.statusText} - ${
+                    errorBody?.error?.code
+                        ? `${errorBody?.error?.code} -`
+                        : ''
+                }${
+                    errorBody?.error?.message ?? '[unknown]'
+                }`,
+                operationName,
+                response.status
+            );
         }
 
         return await response.json() as T;

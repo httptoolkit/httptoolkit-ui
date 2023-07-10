@@ -7,7 +7,7 @@ import {
     REST_API_SUPPORTED
 } from './service-versions';
 
-import type { ServerConfig, NetworkInterfaces, ServerInterceptor } from './server-api-types';
+import { type ServerConfig, type NetworkInterfaces, type ServerInterceptor, ApiError } from './server-api-types';
 export { ServerConfig, NetworkInterfaces, ServerInterceptor };
 
 import { GraphQLApiClient } from './server-graphql-api';
@@ -78,7 +78,7 @@ export async function activateInterceptor(id: string, proxyPort: number, options
         console.log('Activation result', JSON.stringify(result));
 
         const error = Object.assign(
-            new Error(`Failed to activate interceptor ${id}`),
+            new ApiError(`failed to activate interceptor ${id}`, `activate-interceptor-${id}`),
             result
         );
 

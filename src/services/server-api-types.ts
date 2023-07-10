@@ -22,3 +22,15 @@ export interface ServerConfig {
     dnsServers: string[];
     ruleParameterKeys: string[];
 }
+
+export class ApiError extends Error {
+
+    constructor(
+        message: string,
+        readonly operationName: string,
+        readonly errorCode?: string | number
+    ) {
+        super(`API error during ${operationName}: ${message}`);
+    }
+
+}

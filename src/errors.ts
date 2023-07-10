@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/browser';
 
 import { UI_VERSION, serverVersion, desktopVersion } from './services/service-versions';
+import { ApiError } from './services/server-api-types';
 
 let sentryInitialized = false;
 
@@ -17,7 +18,21 @@ export function initSentry(dsn: string | undefined) {
             release: UI_VERSION,
             ignoreErrors: [
                 'ResizeObserver loop limit exceeded', // No visible effect: https://stackoverflow.com/a/50387233/68051
-            ]
+            ],
+            beforeSend: function (event, hint) {
+                const exception = hint?.originalException;
+                if (exception instanceof ApiError) {
+                    event.fingerprint = [
+                        "{{ default }}",
+                        exception.operationName,
+                        ...(exception.errorCode
+                            ? [exception.errorCode.toString()]
+                            : []
+                        )
+                    ];
+                }
+                return event;
+            }
         });
         sentryInitialized = true;
 
