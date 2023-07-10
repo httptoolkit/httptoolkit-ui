@@ -305,6 +305,7 @@ export class HttpDetailsPane extends React.Component<{
 
         if (response === 'aborted') {
             cards.push(<HttpAbortedResponseCard
+                key={this.cardProps.response.key}
                 cardProps={this.cardProps.response}
                 exchange={exchange}
             />);

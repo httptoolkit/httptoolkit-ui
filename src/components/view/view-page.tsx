@@ -344,7 +344,11 @@ class ViewPage extends React.Component<ViewPageProps> {
                         ref={this.listRef}
                     />
                 </LeftPane>
-                { rightPane }
+                {
+                    rightPane ?? <div />
+                    // The <div/> is hidden by hiddenPane, so does nothing, but avoids
+                    // a React error in react-split-pane for undefined children
+                }
             </SplitPane>
 
             {Object.values(this.editors).map((node, i) =>
