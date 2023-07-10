@@ -163,8 +163,9 @@ class ElectronConfig extends React.Component<{
         activateInterceptor({ pathToApplication })
         .then(() => {
             reportSuccess();
-        }).catch(() => {
+        }).catch((e) => {
             this.props.uiStore!.forgetElectronPath(pathToApplication);
+            reportError(e);
         });
     }
 
