@@ -25,12 +25,14 @@ type ErrorType =
     | 'dns-error'
     | 'connection-refused'
     | 'connection-reset'
+    | 'client-abort'
     | 'server-timeout'
     | 'client-timeout'
     | 'invalid-http-version'
     | 'invalid-method'
-    | 'unparseable-url'
-    | 'unparseable'
+    | 'client-unparseable-url'
+    | 'client-unparseable'
+    | 'server-unparseable'
     | 'header-overflow'
     | 'invalid-headers'
     | 'unknown';
@@ -70,17 +72,25 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     if (tags.includes("passthrough-error:ECONNREFUSED")) return 'connection-refused';
     if (tags.includes("passthrough-error:ECONNRESET")) return 'connection-reset';
     if (tags.includes("passthrough-error:ETIMEDOUT")) return 'server-timeout';
+    if (
+        tags.includes("passthrough-error:HPE_INVALID_CONSTANT") ||
+        tags.includes("passthrough-error:ERR_INVALID_HTTP_TOKEN") ||
+        tags.includes("passthrough-error:ERR_HTTP_INVALID_STATUS_CODE") ||
+        tags.includes("passthrough-error:ERR_INVALID_CHAR")
+    ) {
+        return 'server-unparseable';
+    }
 
     if (tags.includes("http-2") || tags.includes("client-error:HPE_INVALID_VERSION")) {
         return 'invalid-http-version';
     }
 
     if (tags.includes("client-error:HPE_INVALID_METHOD")) return 'invalid-method'; // QWE / HTTP/1.1
-    if (tags.includes("client-error:HPE_INVALID_URL")) return 'unparseable-url'; // http://<unicode>
+    if (tags.includes("client-error:HPE_INVALID_URL")) return 'client-unparseable-url'; // http://<unicode>
     if (
         tags.includes("client-error:HPE_INVALID_CONSTANT") || // GET / HTTQ <- incorrect constant char
         tags.includes("client-error:HPE_INVALID_EOF_STATE") // Unexpected 0-length packet in parser
-    ) return 'unparseable'; // ABC/1.1
+    ) return 'client-unparseable'; // ABC/1.1
     if (tags.includes("client-error:HPE_HEADER_OVERFLOW")) return 'header-overflow'; // More than ~80KB of headers
     if (
         tags.includes("client-error:HPE_INVALID_CONTENT_LENGTH") ||
@@ -91,6 +101,10 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
     ) return 'invalid-headers';
 
     if (tags.includes("client-error:ERR_HTTP_REQUEST_TIMEOUT")) return 'client-timeout';
+    if (
+        tags.includes("client-error:ECONNABORTED") ||
+        tags.includes("client-error:EPIPE")
+    ) return 'client-abort';
 
     if (
         tags.filter(t => t.startsWith("passthrough-error:")).length > 0 ||
@@ -108,15 +122,15 @@ function typeCheck<T extends string>(types: readonly T[]) {
 const isInitialRequestError = typeCheck([
     'invalid-http-version',
     'invalid-method',
-    'unparseable',
-    'unparseable-url',
+    'client-unparseable',
+    'client-unparseable-url',
     'header-overflow',
     'invalid-headers'
 ]);
 
 const isClientBug = typeCheck([
-    'unparseable',
-    'unparseable-url',
+    'client-unparseable',
+    'client-unparseable-url',
     'invalid-headers'
 ]);
 
@@ -130,6 +144,11 @@ const wasNotForwarded = typeCheck([
     'host-unreachable',
     'dns-error',
     'connection-refused'
+]);
+
+const wasResponseIssue = typeCheck([
+    'server-unparseable',
+    'connection-reset'
 ]);
 
 const wasTimeout = typeCheck([
@@ -192,11 +211,11 @@ export const HttpErrorHeader = (p: {
                             ? 'used an unsupported HTTP version'
                         : p.type === 'invalid-headers'
                             ? 'included an invalid or unparseable header'
-                        : p.type === 'unparseable-url'
+                        : p.type === 'client-unparseable-url'
                             ? 'included an unparseable URL'
                         : p.type === 'header-overflow'
                             ? 'headers were too large to be processed'
-                        : p.type === 'unparseable'
+                        : p.type === 'client-unparseable'
                             ? 'could not be parsed'
                         : new UnreachableCheck(p.type)
                     }, so HTTP Toolkit did not handle this request.
@@ -233,15 +252,25 @@ export const HttpErrorHeader = (p: {
                         : new UnreachableCheck(p.type)
                     }
                 </>
-            : p.type === 'unknown' || p.type === 'connection-reset'
+            : p.type === 'client-abort'
                 ? <>
-                    The request failed because {
+                    The client unexpectedly disconnected during the request, so
+                    the response could not be completed.
+                </>
+            : wasResponseIssue(p.type)
+                ? <>
+                    The upstream request failed because {
                         p.type === 'connection-reset'
                             ? 'the connection to the server was reset'
-                        : p.type === 'unknown'
-                            ? 'of an unknown error'
+                        : p.type === 'server-unparseable'
+                            ? 'the response from the server was unparseable'
                         : new UnreachableCheck(p.type)
-                    }, so HTTP Toolkit could not return a response.
+                    }, so HTTP Toolkit could not return a response to the client.
+                </>
+            : p.type === 'unknown'
+                ? <>
+                    The request failed because of an unknown error,
+                    so HTTP Toolkit could not return a response.
                 </>
             : new UnreachableCheck(p.type)
         }
@@ -336,6 +365,12 @@ export const HttpErrorHeader = (p: {
                 the request. You can also mock requests like this, to avoid sending them upstream
                 at all.
             </HeaderText>
+        : p.type === 'client-abort'
+            ? <HeaderText>
+                This could be due to connection issues, general problems in the client, or that
+                the client simply no longer wanted to receive the response and closed the
+                connection intentionally.
+            </HeaderText>
         : p.type === 'client-timeout'
             ? <HeaderText>
                 This could be due to connection issues, general problems in the client, or delays
@@ -353,6 +388,12 @@ export const HttpErrorHeader = (p: {
             ? <HeaderText>
                 This means the client sent HTTP Toolkit some fundamentally invalid data that does
                 not follow the HTTP spec. That suggests either a major bug in the client, or that
+                they're not sending HTTP at all.
+            </HeaderText>
+        : p.type === 'server-unparseable'
+            ? <HeaderText>
+                This means the server sent HTTP Toolkit some fundamentally invalid data that does
+                not follow the HTTP spec. That suggests either a major bug in the server, or that
                 they're not sending HTTP at all.
             </HeaderText>
         : p.type === 'header-overflow'
