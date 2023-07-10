@@ -79,9 +79,9 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         timeout-minutes: 1
 
-  publish-scaleway:
-    name: Deploy to Docker Hub & Scaleway
-    if: github.event_name != 'pull_request'
+  publish-docker:
+    name: Build & publish container to Docker Hub
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/')
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: build
@@ -95,7 +95,6 @@ jobs:
 
       - uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -112,14 +111,21 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
 
-      - name: Publish to Docker Hub
+      - name: Build and publish to Docker Hub
         uses: docker/build-push-action@v4
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  publish-scaleway:
+    name: Deploy to Scaleway
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container: httptoolkit/act-build-base
+    needs: publish-docker
+    steps:
       - name: Redeploy container
         uses: thibaultchazal/scaleway-serverless-container-deploy-action@0d290edda0c3359e51442bd8bf730eafef4e290f
         with:
@@ -128,7 +134,6 @@ jobs:
           registry_image_url: "registry.hub.docker.com/httptoolkit/ui:prod"
 
       - name: Flush CDN cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           # Clear CDN cache to re-request content:
           curl -f --request POST \
