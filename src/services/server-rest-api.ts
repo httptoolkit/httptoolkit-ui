@@ -108,7 +108,7 @@ export class RestApiClient {
     async activateInterceptor(id: string, proxyPort: number, options?: any) {
         const response = await this.apiRequest<{
             result: { success: boolean, metadata: unknown }
-        }>('POST', `/interceptors/${id}/activate/${proxyPort}`, options);
+        }>('POST', `/interceptors/${id}/activate/${proxyPort}`, {}, options);
 
         return response.result;
     }
