@@ -1,11 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, inject } from 'mobx-react';
-import { action } from 'mobx';
 
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { trackEvent } from '../../../metrics';
+import { reportError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { UiStore } from '../../../model/ui-store';
