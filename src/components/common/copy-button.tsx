@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { Icon } from "../../icons";
 import { styled } from '../../styles';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 
 import { clickOnEnter } from '../component-utils';
 import { PillButton } from './pill';
@@ -92,6 +92,6 @@ async function copyToClipboard(content: string) {
         await navigator.clipboard!.writeText(content);
     } catch (e) {
         console.log('Failed to copy to the clipboard');
-        reportError(e);
+        logError(e);
     }
 }

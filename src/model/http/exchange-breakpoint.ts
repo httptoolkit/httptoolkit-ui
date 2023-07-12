@@ -14,7 +14,7 @@ import {
 } from "../../types";
 import { asHeaderArray, stringToBuffer } from "../../util";
 import { getDeferred, Deferred } from "../../util/promise";
-import { reportError } from "../../errors";
+import { logError } from "../../errors";
 
 import {
     RAW_BODY_SUPPORTED,
@@ -30,7 +30,7 @@ function getBody(message: MockttpBreakpointedRequest | MockttpBreakpointedRespon
         message.body.buffer,
         asHeaderArray(message.headers['content-encoding'])
     ).catch((e) => {
-        reportError(e);
+        logError(e);
         const error = dedent`
             HTTP TOOLKIT ERROR: Could not decode body, \
             check content-encoding

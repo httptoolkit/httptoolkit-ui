@@ -10,7 +10,7 @@ import { saveFile, uploadFile, Ctrl } from '../../util/ui';
 import { AccountStore } from '../../model/account/account-store';
 import { EventsStore } from '../../model/events/events-store';
 import { generateHar } from '../../model/http/har';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 import { formatAjvError } from '../../util/json-schema';
 
 import { IconButton } from '../common/icon-button';
@@ -83,7 +83,7 @@ export const ImportHarButton = inject('eventsStore', 'accountStore')(
                         data = JSON.parse(uploadedFile);
                         await props.eventsStore!.loadFromHar(data);
                     } catch (error: any) {
-                        reportError(error);
+                        logError(error);
 
                         if (error.name === 'HARError' && error.errors) {
                             alert(dedent`

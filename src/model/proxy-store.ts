@@ -32,7 +32,7 @@ import {
 import { AccountStore } from './account/account-store';
 
 import { delay } from '../util/promise';
-import { reportError } from '../errors';
+import { logError } from '../errors';
 import { lazyObservablePromise } from '../util/observable';
 import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
@@ -243,14 +243,14 @@ export class ProxyStore {
     private monitorRemoteClientConnection(client: PluggableAdmin.AdminClient<{}>) {
         client.on('admin-client:stream-error', (err) => {
             console.log('Admin client stream error');
-            reportError(err.message ? err : new Error('Client stream error'), { cause: err });
+            logError(err.message ? err : new Error('Client stream error'), { cause: err });
         });
         client.on('admin-client:subscription-error', (err) => {
             console.log('Admin client subscription error');
-            reportError(err.message ? err : new Error('Client subscription error'), { cause: err });
+            logError(err.message ? err : new Error('Client subscription error'), { cause: err });
         });
         client.on('admin-client:stream-reconnect-failed', (err) => {
-            reportError(err.message ? err : new Error('Client reconnect error'), { cause: err });
+            logError(err.message ? err : new Error('Client reconnect error'), { cause: err });
         });
     }
 

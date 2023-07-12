@@ -7,7 +7,7 @@ import * as dateFns from 'date-fns';
 import { styled } from '../../styles';
 import { WithInjected } from '../../types';
 import { Icon } from '../../icons';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 import { uploadFile, saveFile } from '../../util/ui';
 
 import { RulesStore } from '../../model/rules/rules-store';
@@ -332,7 +332,7 @@ class MockPage extends React.Component<MockPageProps> {
                     JSON.parse(uploadedFile)
                 );
             } catch (e) {
-                reportError(e);
+                logError(e);
                 alert(`Rules could not be imported: ${e}`);
             }
         }

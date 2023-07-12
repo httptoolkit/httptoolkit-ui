@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as semver from 'semver';
 
 import { WarningIcon } from '../../../icons';
-import { reportError } from '../../../errors';
+import { logError } from '../../../errors';
 
 import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../../services/service-versions';
 
@@ -110,7 +110,7 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
         tags.filter(t => t.startsWith("passthrough-error:")).length > 0 ||
         tags.filter(t => t.startsWith("client-error:")).length > 0
     ) {
-        reportError(`Unrecognized error tag ${JSON.stringify(tags)}`);
+        logError(`Unrecognized error tag ${JSON.stringify(tags)}`);
         return 'unknown';
     }
 }

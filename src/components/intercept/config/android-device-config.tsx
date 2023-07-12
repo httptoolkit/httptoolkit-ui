@@ -10,7 +10,7 @@ import {
 
 import { styled } from '../../../styles';
 import { stringToBuffer } from '../../../util';
-import { reportError } from '../../../errors';
+import { logError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
@@ -149,7 +149,7 @@ class AndroidConfig extends React.Component<{
                     "\n\n" +
                     "Please open an issue at github.com/httptoolkit/httptoolkit"
                 );
-                reportError("Android QR activation failed - no network addresses");
+                logError("Android QR activation failed - no network addresses");
                 this.props.closeSelf();
             }
         });

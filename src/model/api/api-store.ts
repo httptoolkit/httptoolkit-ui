@@ -5,7 +5,7 @@ import * as serializr from 'serializr';
 import { findApi as findPublicOpenApi } from 'openapi-directory';
 
 import { HtkRequest } from '../../types';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 import { lazyObservablePromise } from "../../util/observable";
 import { hydrate, persist } from "../../util/mobx-persist/persist";
 
@@ -168,7 +168,7 @@ export class ApiStore {
                 .then(buildApiMetadataAsync)
                 .catch((e) => {
                     console.log(`Failed to build API ${specId}`);
-                    reportError(e, {
+                    logError(e, {
                         apiSpecId: specId
                     });
                     throw e;
@@ -238,7 +238,7 @@ export function findBestMatchingApi(
     // could be this one request. Does exist right now (e.g. AWS RDS vs DocumentDB)
 
     // Report this so we can try to improve & avoid in future.
-    reportError('Overlapping APIs', matchingApis);
+    logError('Overlapping APIs', matchingApis);
 
     // Return our guess of the most popular service, from the matching services only
     return _.maxBy(matchingApis, a => Object.keys(a.spec.paths).length)!;

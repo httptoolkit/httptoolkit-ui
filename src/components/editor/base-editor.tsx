@@ -8,7 +8,7 @@ import type { SchemaObject } from 'openapi-directory';
 import type * as monacoTypes from 'monaco-editor';
 import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-editor';
 
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
 import { Omit } from '../../types';
@@ -358,7 +358,7 @@ export class BaseEditor extends React.Component<EditorProps> {
 
     render() {
         if (!this.monacoEditorLoaded || !MonacoEditor) {
-            reportError('Monaco editor failed to load');
+            logError('Monaco editor failed to load');
             return null;
         }
 

@@ -1,5 +1,5 @@
 import * as ipaddr from 'ipaddr.js';
-import { reportError } from '../errors';
+import { logError } from '../errors';
 
 export function isValidPort(port: number): boolean {
     return port > 0 && port <= 65535;
@@ -31,7 +31,7 @@ export function getReadableIP(ip: string) {
     try {
         parsedIp = ipaddr.parse(ip);
     } catch (e) {
-        reportError('Failed to parse IP', { ip: ip });
+        logError('Failed to parse IP', { ip: ip });
         return ip;
     }
 

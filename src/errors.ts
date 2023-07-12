@@ -50,7 +50,7 @@ export function initSentry(dsn: string | undefined) {
     }
 }
 
-export function reportErrorsAsUser(email: string | undefined) {
+export function logErrorsAsUser(email: string | undefined) {
     if (!sentryInitialized) return;
 
     Sentry.configureScope((scope) => {
@@ -66,7 +66,7 @@ function addErrorTag(key: string, value: string) {
     });
 }
 
-export function reportError(error: Error | string | unknown, metadata: object = {}) {
+export function logError(error: Error | string | unknown, metadata: object = {}) {
     console.log('Reporting error:', error, metadata);
     if (!sentryInitialized) return;
 

@@ -30,7 +30,7 @@ import {
 } from '../../types';
 import { lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 
 import { AccountStore } from '../account/account-store';
 import { ProxyStore } from '../proxy-store';
@@ -178,7 +178,7 @@ export class RulesStore {
                         resolve();
                     } catch (e) {
                         console.log('Failed to activate stored rules', e, JSON.stringify(rules));
-                        reportError('Failed to activate configured ruleset');
+                        logError('Failed to activate configured ruleset');
                         alert(`Configured rules could not be activated, so were reset to default.`);
 
                         this.resetRulesToDefault(); // Should trigger the reaction above again, and thereby resolve().
@@ -213,7 +213,7 @@ export class RulesStore {
                 }
             });
         } catch (e) {
-            reportError(e);
+            logError(e);
         }
 
         if (accountStore.mightBePaidUser) {
@@ -232,7 +232,7 @@ export class RulesStore {
                     JSON.parse(localStorage.getItem('rules-store') ?? '{}')?.rules
                 );
 
-                reportError(err);
+                logError(err);
                 alert(`Could not load rules from last run.\n\n${err}`);
                 // We then continue, which resets the rules exactly as if this was the user's first run.
             });
@@ -334,7 +334,7 @@ export class RulesStore {
             }
         } catch (e) {
             console.log("Could not parse proxy", proxyUrl);
-            reportError(e);
+            logError(e);
             return 'unparseable';
         }
     }

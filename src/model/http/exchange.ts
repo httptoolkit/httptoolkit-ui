@@ -26,7 +26,7 @@ import {
 import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 
 import { parseSource } from './sources';
 import { getContentType } from '../events/content-types';
@@ -145,7 +145,7 @@ export class HttpBody implements MessageBody {
             this._encoded = encoded;
             return decoded;
         } catch (e: any) {
-            reportError(e);
+            logError(e);
 
             // In most cases, we get the encoded data back regardless, so recapture it here:
             if (e.inputBuffer) {
@@ -382,7 +382,7 @@ export class HttpExchange extends HTKEventBase {
                     throw new UnreachableCheck(apiMetadata, m => m.type);
                 }
             } catch (e) {
-                reportError(e);
+                logError(e);
                 throw e;
             }
         } else {

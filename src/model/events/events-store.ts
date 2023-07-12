@@ -31,7 +31,7 @@ import {
 } from '../../types';
 
 import { lazyObservablePromise } from '../../util/observable';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 
 import { ProxyStore } from "../proxy-store";
 import { ApiStore } from '../api/api-store';
@@ -285,7 +285,7 @@ export class EventsStore {
         } catch (e) {
             // It's possible we might fail to parse an input event. This shouldn't happen, but if it
             // does it's better to drop that one event and continue instead of breaking completely.
-            reportError(e);
+            logError(e);
         }
     }
 

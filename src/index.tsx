@@ -7,7 +7,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const authToken = urlParams.get('authToken');
 localForage.setItem('latest-auth-token', authToken);
 
-import { initSentry, reportError } from './errors';
+import { initSentry, logError } from './errors';
 initSentry(process.env.SENTRY_DSN);
 
 import * as _ from 'lodash';
@@ -155,12 +155,12 @@ Promise.race([
         { error: e }
     );
     document.dispatchEvent(failureEvent);
-    reportError(e);
+    logError(e);
 
     appStartupPromise.then(() => {
         serverVersion.then(async (currentVersion) => {
             console.log('Server version was', await lastServerVersion, 'now started late with', currentVersion);
-            reportError('Successfully initialized application, but after timeout');
+            logError('Successfully initialized application, but after timeout');
         });
     });
 });

@@ -4,7 +4,7 @@ import { observer, inject } from 'mobx-react';
 
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { reportError } from '../../../errors';
+import { logError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { UiStore } from '../../../model/ui-store';
@@ -176,7 +176,7 @@ class ElectronConfig extends React.Component<{
             reportSuccess();
         }).catch((e) => {
             this.props.uiStore!.forgetElectronPath(pathToApplication);
-            reportError(e);
+            logError(e);
         });
     }
 

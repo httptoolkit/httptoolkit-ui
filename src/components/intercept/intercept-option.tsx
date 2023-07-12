@@ -6,7 +6,7 @@ import { observer, inject } from 'mobx-react';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 import { Icon } from '../../icons';
 import { trackEvent } from '../../metrics';
-import { reportError } from '../../errors';
+import { logError } from '../../errors';
 import { windowSize } from '../../util/ui';
 
 import { Interceptor } from '../../model/interception/interceptors';
@@ -324,7 +324,7 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             onActivationStarted();
             activateInterceptor(interceptor.activationOptions)
             .then(() => onActivationSuccessful())
-            .catch((e) => reportError(e));
+            .catch((e) => logError(e));
         }
     }
 

@@ -10,7 +10,7 @@ import { Omit, HttpExchange } from '../../../types';
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 import { saveFile } from '../../../util/ui';
-import { reportError } from '../../../errors';
+import { logError } from '../../../errors';
 
 import { AccountStore } from '../../../model/account/account-store';
 import { UiStore } from '../../../model/ui-store';
@@ -142,7 +142,7 @@ const ExportSnippetEditor = observer((p: {
         snippet = new HTTPSnippet(harSnippetBase).convert(target, client);
     } catch (e) {
         console.log(`Failed to export request for ${target}--${client}`);
-        reportError(e);
+        logError(e);
         snippet = dedent`
             Could not generate a snippet for this request
 

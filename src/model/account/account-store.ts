@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { observable, action, flow, computed, when } from 'mobx';
 
-import { reportError, reportErrorsAsUser } from '../../errors';
+import { logError, logErrorsAsUser } from '../../errors';
 import { trackEvent } from '../../metrics';
 import { delay } from '../../util/promise';
 import { ObservablePromise, lazyObservablePromise, observablePromise } from '../../util/observable';
@@ -34,7 +34,7 @@ export class AccountStore {
     readonly initialized = lazyObservablePromise(async () => {
         // All async auth-related errors at any stage (bad tokens, invalid subscription data,
         // misc failures) will come through here, so we can log & debug later.
-        loginEvents.on('app_error', reportError);
+        loginEvents.on('app_error', logError);
 
         initializeAuthUi({
             // Proper indefinitely persistent session via refreshable token please
@@ -105,7 +105,7 @@ export class AccountStore {
 
         // Include the user email in error reports whilst they're logged in.
         // Useful generally, but especially for checkout/subscription issues.
-        reportErrorsAsUser(this.user.email);
+        logErrorsAsUser(this.user.email);
 
         if (this.user.banned) {
             alert('Your account has been blocked for abuse. Please contact help@httptoolkit.com.');
@@ -203,7 +203,7 @@ export class AccountStore {
             // It's checkout time, and the rest is in the hands of Paddle/PayPro
             yield this.purchasePlan(this.user.email!, selectedPlan);
         } catch (error: any) {
-            reportError(error);
+            logError(error);
             alert(`${
                 error.message || error.code || 'Error'
             }\n\nPlease check your email for details.\nIf you need help, get in touch at billing@httptoolkit.com.`);
@@ -346,7 +346,7 @@ export class AccountStore {
             console.log('Subscription cancellation confirmed');
         } catch (e: any) {
             console.log(e);
-            reportError(`Subscription cancellation failed: ${e.message || e}`);
+            logError(`Subscription cancellation failed: ${e.message || e}`);
             throw e;
         } finally {
             this.isAccountUpdateInProcess = false;

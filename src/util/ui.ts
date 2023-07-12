@@ -4,7 +4,7 @@ import { action, observable } from 'mobx';
 
 import { desktopVersion } from '../services/service-versions';
 import { getDeferred, delay } from './promise';
-import { reportError } from '../errors';
+import { logError } from '../errors';
 
 export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
@@ -166,14 +166,14 @@ export function useSize(ref: React.RefObject<HTMLElement>, defaultValue: number)
             if (container) {
                 setSpaceAvailable(container.clientWidth);
             } else {
-                reportError("Element resized, but no ref available");
+                logError("Element resized, but no ref available");
             }
         });
 
         if (ref.current) {
             resizeObserver.observe(ref.current);
         } else {
-            reportError("No element to observe for resizing!");
+            logError("No element to observe for resizing!");
         }
 
         return () => resizeObserver.disconnect();

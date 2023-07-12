@@ -6,7 +6,7 @@ import * as portals from 'react-reverse-portal';
 
 import { CollectedEvent, HtkResponse, HttpExchange } from '../../../types';
 import { styled } from '../../../styles';
-import { reportError } from '../../../errors';
+import { logError } from '../../../errors';
 
 import { UiStore } from '../../../model/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
@@ -229,7 +229,7 @@ export class HttpDetailsPane extends React.Component<{
         ) {
             return this.renderWebSocketMessages(exchange);
         } else {
-            reportError(`Expanded ${expandedCard}, but can't show anything`);
+            logError(`Expanded ${expandedCard}, but can't show anything`);
             return null; // Shouldn't ever happen, unless we get into a funky broken state
         }
     }

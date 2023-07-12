@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { computed, observable, action, runInAction, reaction } from 'mobx';
 
 import { BreakpointBody } from '../../types';
-import { reportError } from "../../errors";
+import { logError } from "../../errors";
 import { asHeaderArray } from "../../util";
 import { observablePromise, ObservablePromise } from '../../util/observable';
 
@@ -54,7 +54,7 @@ export class EditableBody implements BreakpointBody {
 
             const encodedBody = await encodeBody(this._decodedBody, encodings)
                 .catch((e) => {
-                    reportError(e, { encodings });
+                    logError(e, { encodings });
                     return this._decodedBody; // If encoding fails, we send raw data instead
                 });
 
