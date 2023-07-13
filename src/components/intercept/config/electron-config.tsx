@@ -120,6 +120,12 @@ function getReadablePath(path: string) {
     }
 }
 
+declare global {
+    interface Window {
+        desktopApi?: { selectApplication: () => Promise<string | undefined> };
+    }
+}
+
 @inject('uiStore')
 @observer
 class ElectronConfig extends React.Component<{
@@ -141,7 +147,13 @@ class ElectronConfig extends React.Component<{
     }
 
     selectApplication = async () => {
-        const pathToApplication = await uploadFile('path');
+        const useNativePicker = window.desktopApi?.selectApplication;
+
+        const pathToApplication = await(
+            useNativePicker
+                ? window.desktopApi?.selectApplication()
+                : uploadFile('path')
+        );
 
         if (!pathToApplication) {
             this.props.closeSelf();
@@ -182,9 +194,9 @@ class ElectronConfig extends React.Component<{
             </p>
             {
                 platform === 'mac' && previousElectronAppPaths.length < 2 && <p>
-                    For .app bundles, enter either the bundle name (with or without .app)
-                    or the full path to the executable itself, typically stored in
-                    Contents/MacOS inside the bundle.
+                    For .app bundles, you can intercept either the bundle
+                    (the .app directory) or the executable itself,
+                    typically stored in Contents/MacOS inside the bundle.
                 </p>
             }
             <p>
