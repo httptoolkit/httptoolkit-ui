@@ -3,7 +3,7 @@ import { computed, observable, action, runInAction, reaction } from 'mobx';
 
 import { BreakpointBody } from '../../types';
 import { logError } from "../../errors";
-import { asHeaderArray } from "../../util";
+import { asHeaderArray } from "../../util/headers";
 import { observablePromise, ObservablePromise } from '../../util/observable';
 
 import { encodeBody } from "../../services/ui-worker-api";

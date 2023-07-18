@@ -19,12 +19,14 @@ import {
 import {
     fakeBuffer,
     FakeBuffer,
-    asHeaderArray,
-    lastHeader,
     stringToBuffer,
 } from '../../util';
 import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
+import {
+    asHeaderArray,
+    lastHeader
+} from '../../util/headers';
 
 import { logError } from '../../errors';
 

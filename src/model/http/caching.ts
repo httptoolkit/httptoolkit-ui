@@ -8,7 +8,7 @@ import {
 } from 'date-fns';
 
 import { HttpExchange, ExchangeMessage } from '../../types';
-import { lastHeader, asHeaderArray } from '../../util';
+import { lastHeader, asHeaderArray } from '../../util/headers';
 import { joinAnd } from '../../util/text';
 
 // https://tools.ietf.org/html/draft-ietf-httpbis-semantics-04#section-7.2.3

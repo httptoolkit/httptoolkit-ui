@@ -12,8 +12,9 @@ import {
     BreakpointBody,
     MockttpBreakpointResponseResult,
 } from "../../types";
-import { asHeaderArray, stringToBuffer } from "../../util";
+import { stringToBuffer } from '../../util';
 import { getDeferred, Deferred } from "../../util/promise";
+import { asHeaderArray } from '../../util/headers';
 import { logError } from "../../errors";
 
 import {

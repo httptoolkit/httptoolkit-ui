@@ -4,7 +4,8 @@ import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
 import * as querystring from 'querystring';
 
-import { lastHeader, stringToBuffer } from '../../util';
+import { stringToBuffer } from '../../util';
+import { lastHeader } from '../../util/headers';
 import { ObservablePromise } from '../../util/observable';
 import {
     Headers,

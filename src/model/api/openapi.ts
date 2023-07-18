@@ -20,7 +20,8 @@ import {
     HtkResponse,
     Html
 } from "../../types";
-import { firstMatch, empty, lastHeader } from '../../util';
+import { firstMatch, empty } from '../../util';
+import { lastHeader } from '../../util/headers';
 import { formatAjvError } from '../../util/json-schema';
 
 import {

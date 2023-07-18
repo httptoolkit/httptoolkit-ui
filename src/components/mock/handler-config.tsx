@@ -16,6 +16,7 @@ import {
     stringToBuffer,
     bufferToString
 } from '../../util';
+import { HEADER_NAME_REGEX } from '../../util/headers';
 
 import {
     Handler,
@@ -74,7 +75,7 @@ import {
     SendStepDefinition
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
-import { getStatusMessage, HEADER_NAME_REGEX } from '../../model/http/http-docs';
+import { getStatusMessage } from '../../model/http/http-docs';
 import { MethodName, MethodNames } from '../../model/http/methods';
 import { NATIVE_ETH_TYPES } from '../../model/rules/definitions/ethereum-abi';
 import {

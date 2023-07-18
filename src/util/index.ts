@@ -22,28 +22,6 @@ export function firstMatch<R>(...tests: Array<Case<R> | R | undefined>): R | und
     }
 }
 
-// This fairly meaningless override combo seems to be
-// required to make it ok to use this when T = X | undefined.
-export function lastHeader<T>(val: T | T[]): T;
-export function lastHeader<T>(val: T | T[] | undefined): T | undefined;
-export function lastHeader<T>(val: T | T[] | undefined): T | undefined {
-    if (_.isArray(val)) return val[val.length - 1];
-    else return val;
-}
-
-export function asHeaderArray(val: string | string[] | undefined, sep = ','): string[] {
-    if (_.isArray(val)) {
-        // Split individual values, as multiple headers can still have multiple values
-        return _.flatMap(val, header =>
-            header.split(sep).map(value => value.trim())
-        );
-    } else if (!val) {
-        return [];
-    } else {
-        return val.split(sep).map(value => value.trim());
-    }
-}
-
 export function longestPrefix(baseString: string, ...strings: string[]) {
     let prefix = "";
     const shortestLength = Math.min(

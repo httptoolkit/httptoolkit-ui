@@ -11,6 +11,7 @@ import { css, styled } from '../../styles';
 
 import { tryParseJson } from '../../util';
 import { asError, UnreachableCheck } from '../../util/error';
+import { headersToFlatHeaders } from '../../util/headers';
 
 import {
     Matcher,
@@ -22,6 +23,7 @@ import {
     getRulePartKey,
     isHiddenMatcherKey
 } from "../../model/rules/rules";
+import { summarizeMatcherClass } from '../../model/rules/rule-descriptions';
 import {
     WebSocketMethodMatcher
 } from '../../model/rules/definitions/websocket-rule-definitions';
@@ -49,7 +51,6 @@ import { Select, TextInput } from '../common/inputs';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
 import { EditableHeaders } from '../common/editable-headers';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
-import { summarizeMatcherClass } from '../../model/rules/rule-descriptions';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -777,18 +778,6 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
         event.target.reportValidity();
     }
 }
-
-type FlatHeaders = { [key: string]: string };
-
-const headersToFlatHeaders = (headers: Headers): FlatHeaders =>
-    _.mapValues(
-        _.pickBy(headers, (key, value) => key && value),
-        (value) =>
-            _.isArray(value)
-                ? value.join(', ')
-                : value! // We know this is set because of filter above
-    );
-
 
 @observer
 class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {

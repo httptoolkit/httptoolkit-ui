@@ -6,11 +6,11 @@ import * as portals from 'react-reverse-portal';
 
 import { Headers } from '../../../types';
 import {
-    lastHeader,
     isProbablyUtf8,
     bufferToString,
     stringToBuffer
 } from '../../../util';
+import { lastHeader } from '../../../util/headers';
 import {
     EditableContentType,
     EditableContentTypes,

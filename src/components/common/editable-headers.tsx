@@ -3,7 +3,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import { Headers } from '../../types';
-import { HEADER_NAME_PATTERN } from '../../model/http/http-docs';
+import { HEADER_NAME_PATTERN } from '../../util/headers';
 
 import { EditablePairs, Pair, PairsArray } from './editable-pairs';
 

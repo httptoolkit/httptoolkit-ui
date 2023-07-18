@@ -10,7 +10,7 @@ import {
     TimingEvents,
     ExchangeMessage
 } from '../../../types';
-import { asHeaderArray } from '../../../util';
+import { asHeaderArray } from '../../../util/headers';
 import { joinAnd } from '../../../util/text';
 import { Icon, WarningIcon, SuggestionIcon } from '../../../icons';
 

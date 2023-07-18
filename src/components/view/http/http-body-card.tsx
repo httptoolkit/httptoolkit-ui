@@ -9,9 +9,9 @@ import { ExchangeMessage, HtkResponse, HtkRequest } from '../../../types';
 import { styled } from '../../../styles';
 import { WarningIcon } from '../../../icons';
 
-import { lastHeader } from '../../../util';
-import { saveFile } from '../../../util/ui';
 import { ErrorLike } from '../../../util/error';
+import { lastHeader } from '../../../util/headers';
+import { saveFile } from '../../../util/ui';
 
 import { ViewableContentType, getCompatibleTypes, getContentEditorName } from '../../../model/events/content-types';
 import { getReadableSize } from '../../../model/events/bodies';
