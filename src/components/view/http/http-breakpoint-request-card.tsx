@@ -43,7 +43,7 @@ const MethodSelect = styled(Select)`
     display: inline-block;
 
     width: auto;
-    margin-left: 10px;
+    margin-left: 8px;
     margin-bottom: 5px;
 `;
 
@@ -73,22 +73,24 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
                 </CollapsibleCardHeading>
             </header>
 
-            <ContentLabel>Method:</ContentLabel>
-            <MethodSelect value={method} onChange={this.onMethodChanged}>
-                { !validMethods.includes(method as MethodName) &&
-                    <option key={method} value={undefined}>
-                        { method }
-                    </option>
-                }
-                { validMethods.map((methodOption) =>
-                    <option
-                        key={methodOption}
-                        value={methodOption}
-                    >
-                        { methodOption }
-                    </option>
-                ) }
-            </MethodSelect>
+            <div>
+                <ContentLabel>Method:</ContentLabel>
+                <MethodSelect value={method} onChange={this.onMethodChanged}>
+                    { !validMethods.includes(method as MethodName) &&
+                        <option key={method} value={undefined}>
+                            { method }
+                        </option>
+                    }
+                    { validMethods.map((methodOption) =>
+                        <option
+                            key={methodOption}
+                            value={methodOption}
+                        >
+                            { methodOption }
+                        </option>
+                    ) }
+                </MethodSelect>
+            </div>
 
             <ContentLabelBlock>URL</ContentLabelBlock>
             <UrlInput value={url} onChange={this.onUrlChanged} />
