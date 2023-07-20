@@ -363,11 +363,12 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
             newValue: newContentType
         }) => {
             const contentTypeHeader = getHeaderValue(this.rawHeaders, 'content-type');
+            const expectedContentType = getDefaultMimeType(newContentType);
 
             if (!contentTypeHeader) {
                 // If you pick a body content type with no header set, we add one
                 runInAction(() => {
-                    this.rawHeaders.push(['content-type', getDefaultMimeType(newContentType)]);
+                    this.rawHeaders.push(['content-type', expectedContentType]);
                 });
             } else {
                 const headerContentType = getEditableContentType(contentTypeHeader);
@@ -375,7 +376,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
                 // If the body type changes, and the old header matched the old type, update the header
                 if (previousContentType === headerContentType) {
                     runInAction(() => {
-                        setHeaderValue(this.rawHeaders, 'content-type', getDefaultMimeType(newContentType));
+                        setHeaderValue(this.rawHeaders, 'content-type', expectedContentType);
                     });
                 }
                 // If there is a header, but it didn't match the body, leave it as-is
@@ -427,7 +428,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
 
             <SectionLabel>Headers</SectionLabel>
             <EditableRawHeaders
-                input={rawHeaders}
+                headers={rawHeaders}
                 onChange={this.onHeadersChanged}
             />
 
@@ -577,9 +578,9 @@ class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandle
 
             <SectionLabel>Headers</SectionLabel>
             <EditableHeaders
-                input={headers}
-                convertInput={headersToRawHeaders}
-                convertResult={rawHeadersToHeaders}
+                headers={headers}
+                convertToRawHeaders={headersToRawHeaders}
+                convertFromRawHeaders={rawHeadersToHeaders}
                 onChange={this.onHeadersChanged}
             />
 
@@ -990,7 +991,7 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
         const { type } = this.props;
         const {
             selected,
-            convertHeaderResult,
+            convertResultFromRawHeaders,
             onTransformTypeChange,
             setHeadersValue
         } = this;
@@ -1007,9 +1008,9 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
             {
                 selected !== 'none' && <TransformDetails>
                     <EditableHeaders
-                        input={this.headers}
-                        convertInput={headersToRawHeaders}
-                        convertResult={convertHeaderResult}
+                        headers={this.headers}
+                        convertToRawHeaders={headersToRawHeaders}
+                        convertFromRawHeaders={convertResultFromRawHeaders}
                         onChange={setHeadersValue}
                         allowEmptyValues={selected === 'updateHeaders'}
                     />
@@ -1018,7 +1019,7 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
         </TransformConfig>;
     }
 
-    convertHeaderResult = (headers: RawHeaders): Headers => {
+    convertResultFromRawHeaders = (headers: RawHeaders): Headers => {
         if (this.selected === 'updateHeaders') {
             return rawHeadersToHeaders(
                 headers.map(([key, value]) =>

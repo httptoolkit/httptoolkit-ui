@@ -46,7 +46,7 @@ const stripPseudoHeadersAndLowercase = (headers: PairsArray): PairsArray =>
     }));
 
 interface EditableRawHeadersProps {
-    input: RawHeaders;
+    headers: RawHeaders;
     onChange: (headers: RawHeaders) => void;
 
     // It's unclear whether you're strictly allowed completely empty header values, but it's definitely
@@ -63,7 +63,7 @@ interface EditableRawHeadersProps {
 export const EditableRawHeaders = observer((
     props: EditableRawHeadersProps
 ) => {
-    const { input: headers, onChange, allowEmptyValues, preserveKeyCase } = props;
+    const { headers, onChange, allowEmptyValues, preserveKeyCase } = props;
 
     return <EditablePairs<RawHeaders>
         pairs={rawHeadersAsEditablePairs(headers)}
@@ -86,10 +86,10 @@ export const EditableRawHeaders = observer((
 });
 
 interface EditableHeadersProps<T> {
-    input: T,
+    headers: T;
 
-    convertInput: (input: T) => RawHeaders,
-    convertResult: (headers: RawHeaders) => T,
+    convertToRawHeaders: (input: T) => RawHeaders;
+    convertFromRawHeaders: (headers: RawHeaders) => T;
 
     onChange: (headers: T) => void;
     onInvalidState?: () => void;
@@ -108,18 +108,18 @@ interface EditableHeadersProps<T> {
 export class EditableHeaders<T> extends React.Component<EditableHeadersProps<T>> {
 
     @observable
-    private rawHeaders: RawHeaders = this.props.convertInput(this.props.input);
+    private rawHeaders: RawHeaders = this.props.convertToRawHeaders(this.props.headers);
 
-    private output: T = this.props.input;
+    private output: T = this.props.headers;
 
     componentDidMount() {
         // Watch the input, but only update our state if its materially different
         // to the last output we returned.
         disposeOnUnmount(this, reaction(
-            () => this.props.input,
+            () => this.props.headers,
             (input) => {
                 if (!_.isEqual(input, this.output)) {
-                    const newInput = this.props.convertInput(input);
+                    const newInput = this.props.convertToRawHeaders(input);
                     runInAction(() => {
                         this.rawHeaders = newInput;
                     });
@@ -132,16 +132,16 @@ export class EditableHeaders<T> extends React.Component<EditableHeadersProps<T>>
     onChangeRawHeaders(rawHeaders: RawHeaders) {
         this.rawHeaders = rawHeaders;
 
-        const { allowEmptyValues, convertResult, onChange, onInvalidState } = this.props;
+        const { allowEmptyValues, convertFromRawHeaders, onChange, onInvalidState } = this.props;
 
         if (allowEmptyValues) {
-            this.output = convertResult(rawHeaders);
+            this.output = convertFromRawHeaders(rawHeaders);
             onChange(this.output);
         } else {
             if (rawHeaders.some((([_, value]) => !value))) return onInvalidState?.();
             if (rawHeaders.some(([key]) => !key)) return onInvalidState?.();
 
-            this.output = convertResult(rawHeaders);
+            this.output = convertFromRawHeaders(rawHeaders);
             onChange(this.output);
         }
     }
@@ -151,7 +151,7 @@ export class EditableHeaders<T> extends React.Component<EditableHeadersProps<T>>
         const { rawHeaders, onChangeRawHeaders } = this;
 
         return <EditableRawHeaders
-            input={rawHeaders}
+            headers={rawHeaders}
             onChange={onChangeRawHeaders}
             allowEmptyValues={allowEmptyValues}
         />;

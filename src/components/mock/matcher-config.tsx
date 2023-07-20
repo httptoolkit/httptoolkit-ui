@@ -798,9 +798,9 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
                 </ConfigLabel>
             }
             <EditableHeaders<FlatHeaders>
-                input={headers}
-                convertInput={this.convertInput}
-                convertResult={this.convertResult}
+                headers={headers}
+                convertToRawHeaders={this.convertInput}
+                convertFromRawHeaders={this.convertResult}
                 onChange={this.onChange}
                 onInvalidState={this.props.onInvalidState}
             />

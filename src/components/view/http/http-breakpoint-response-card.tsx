@@ -67,7 +67,7 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
             <EditableRawHeaders
-                input={headers}
+                headers={headers}
                 onChange={this.onHeadersChanged}
                 preserveKeyCase={true}
             />
