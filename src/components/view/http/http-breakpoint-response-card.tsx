@@ -1,11 +1,13 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { action } from 'mobx';
 import { observer } from 'mobx-react';
 
-import { Omit, BreakpointResponseResult, HttpExchange, Headers } from '../../../types';
+import { BreakpointResponseResult, HttpExchange, RawHeaders } from '../../../types';
 import { styled, Theme } from '../../../styles';
 
 import { getStatusColor } from '../../../model/events/categorization';
+import { withHeaderValue } from '../../../util/headers';
 
 import {
     CollapsibleCardHeading,
@@ -14,7 +16,7 @@ import {
 } from '../../common/card';
 import { Pill } from '../../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
-import { EditableHeaders } from '../../common/editable-headers';
+import { EditableRawHeaders } from '../../common/editable-headers';
 import { EditableStatus } from '../../common/editable-status';
 
 interface ResponseBreakpointCardProps extends CollapsibleCardProps {
@@ -42,7 +44,7 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
         const { exchange, onChange, theme, ...cardProps } = this.props;
 
         const { inProgressResult } = exchange.responseBreakpoint!;
-        const headers = inProgressResult.headers || {};
+        const headers = inProgressResult.rawHeaders || [];
         const { statusCode, statusMessage } = inProgressResult;
 
         return <CollapsibleCard {...cardProps} direction='left'>
@@ -64,26 +66,30 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
             </StatusContainer>
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
-            <EditableHeaders
-                headers={headers}
+            <EditableRawHeaders
+                input={headers}
                 onChange={this.onHeadersChanged}
+                preserveKeyCase={true}
             />
         </CollapsibleCard>;
     }
 
     @action.bound
-    onHeadersChanged(headers: Headers) {
-        this.props.onChange({ headers });
+    onHeadersChanged(rawHeaders: RawHeaders) {
+        this.props.onChange({ rawHeaders });
     }
 
     @action.bound
     onStatusChange(statusCode: number | undefined, statusMessage: string | undefined) {
         if (this.props.exchange.httpVersion === 2) {
-            const headers = Object.assign({},
-                this.props.exchange.responseBreakpoint!.inProgressResult.headers,
-                { ':status': statusCode?.toString() ?? '' }
-            );
-            this.props.onChange({ statusCode: statusCode || NaN, statusMessage, headers });
+            const { rawHeaders } = this.props.exchange.responseBreakpoint!.inProgressResult;
+            this.props.onChange({
+                statusCode: statusCode || NaN,
+                statusMessage,
+                rawHeaders: withHeaderValue(rawHeaders, {
+                    ':status': statusCode?.toString() ?? ''
+                })
+            });
         } else {
             this.props.onChange({ statusCode: statusCode || NaN, statusMessage });
         }

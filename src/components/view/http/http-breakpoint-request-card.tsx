@@ -1,12 +1,14 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { action, computed } from 'mobx';
 import { observer } from 'mobx-react';
 import { Method } from 'mockttp';
 
-import { BreakpointRequestResult, HttpExchange, Headers } from '../../../types';
+import { BreakpointRequestResult, HttpExchange, RawHeaders } from '../../../types';
 import { styled } from '../../../styles';
 
 import { getSummaryColour } from '../../../model/events/categorization';
+import { withHeaderValue } from '../../../util/headers';
 
 import {
     CollapsibleCardHeading,
@@ -15,7 +17,7 @@ import {
 } from '../../common/card';
 import { Pill } from '../../common/pill';
 import { ContentLabelBlock, ContentLabel } from '../../common/text-content';
-import { EditableHeaders } from '../../common/editable-headers';
+import { EditableRawHeaders } from '../../common/editable-headers';
 import { TextInput, Select } from '../../common/inputs';
 import { SourceIcon } from '../../common/source-icon';
 
@@ -53,7 +55,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
         const { request } = exchange;
 
         const { inProgressResult } = this.props.exchange.requestBreakpoint!;
-        const headers = inProgressResult.headers || {};
+        const headers = inProgressResult.rawHeaders || [];
         const { method, url } = inProgressResult;
 
         return <CollapsibleCard {...cardProps} direction='right'>
@@ -92,9 +94,10 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
             <UrlInput value={url} onChange={this.onUrlChanged} />
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
-            <EditableHeaders
-                headers={headers}
+            <EditableRawHeaders
+                input={headers}
                 onChange={this.onHeadersChanged}
+                preserveKeyCase={true}
             />
         </CollapsibleCard>;
     }
@@ -112,10 +115,10 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
         if (method === inProgressResult.method) return;
 
         if (this.isHttp2) {
-            const headers = Object.assign({}, inProgressResult.headers, {
-                ':method': method
+            this.props.onChange({
+                method,
+                rawHeaders: withHeaderValue(inProgressResult.rawHeaders, { ':method': method })
             });
-            this.props.onChange({ method, headers });
         } else {
             this.props.onChange({ method });
         }
@@ -126,28 +129,29 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
         const url = event.target.value;
         const { inProgressResult } = this.props.exchange.requestBreakpoint!;
 
-        let headers = inProgressResult.headers;
+        let rawHeaders = inProgressResult.rawHeaders;
 
         try {
             // Automatically update the host/H2 headers to match, if we can:
             const parsedUrl = new URL(url);
 
             if (this.isHttp2) {
-                headers = Object.assign({}, headers);
-                if (parsedUrl.host) headers[':authority'] = parsedUrl.host;
-                if (parsedUrl.pathname) headers[':path'] = parsedUrl.pathname + (parsedUrl.search);
-                if (parsedUrl.protocol) headers[':scheme'] = parsedUrl.protocol.slice(0, -1);
-            } else if (parsedUrl.host) {
-                headers = Object.assign({}, headers, { 'host': parsedUrl.host });
+                rawHeaders = withHeaderValue(rawHeaders, {
+                    ':authority': parsedUrl.host,
+                    ':path': parsedUrl.pathname + parsedUrl.search,
+                    ':scheme':  parsedUrl.protocol.slice(0, -1)
+                });
+            } else {
+                rawHeaders = withHeaderValue(rawHeaders, { host: parsedUrl.host });
             }
         } catch (e) { }
 
-        this.props.onChange({ url: event.target.value, headers });
+        this.props.onChange({ url: event.target.value, rawHeaders });
     }
 
     @action.bound
-    onHeadersChanged(headers: Headers) {
-        this.props.onChange({ headers });
+    onHeadersChanged(rawHeaders: RawHeaders) {
+        this.props.onChange({ rawHeaders });
     }
 
 }

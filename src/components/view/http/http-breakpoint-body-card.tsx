@@ -4,13 +4,17 @@ import { observable, action, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { Headers } from '../../../types';
+import { RawHeaders } from '../../../types';
 import {
     isProbablyUtf8,
     bufferToString,
     stringToBuffer
 } from '../../../util';
-import { lastHeader } from '../../../util/headers';
+import {
+    getHeaderValue,
+    getHeaderValues,
+    lastHeader
+} from '../../../util/headers';
 import {
     EditableContentType,
     EditableContentTypes,
@@ -38,7 +42,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
 
     exchangeId: string,
     body: Buffer,
-    headers: Headers,
+    rawHeaders: RawHeaders,
     onChange: (result: Buffer) => void,
     editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
 }> {
@@ -54,9 +58,13 @@ export class HttpBreakpointBodyCard extends React.Component<{
     componentDidMount() {
         // If the content header is changed (manually, or when switching requests), update the
         // selected editor content type to match:
-        disposeOnUnmount(this, reaction(() => lastHeader(this.props.headers['content-type']), (contentTypeHeader) => {
-            this.contentType = getEditableContentType(contentTypeHeader) || 'text';
-        }, { fireImmediately: true }));
+        disposeOnUnmount(this, reaction(
+            () => getHeaderValue(this.props.rawHeaders, 'content-type'),
+            (contentTypeHeader) => {
+                this.contentType = getEditableContentType(contentTypeHeader) || 'text';
+            },
+            { fireImmediately: true }
+        ));
     }
 
     @computed

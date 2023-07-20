@@ -4,7 +4,7 @@ import { action, observable, reaction, autorun, observe, runInAction, computed }
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as dedent from 'dedent';
 
-import { Headers } from '../../types';
+import { Headers, RawHeaders } from '../../types';
 import { css, styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 import { uploadFile } from '../../util/ui';
@@ -16,7 +16,13 @@ import {
     stringToBuffer,
     bufferToString
 } from '../../util';
-import { HEADER_NAME_REGEX } from '../../util/headers';
+import {
+    getHeaderValue,
+    headersToRawHeaders,
+    rawHeadersToHeaders,
+    HEADER_NAME_REGEX,
+    setHeaderValue
+} from '../../util/headers';
 
 import {
     Handler,
@@ -87,7 +93,7 @@ import { RulesStore } from '../../model/rules/rules-store';
 
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
-import { EditableHeaders } from '../common/editable-headers';
+import { EditableHeaders, EditableRawHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
 import { FormatButton } from '../common/format-button';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
@@ -273,16 +279,6 @@ const BodyContainer = styled.div`
     }
 `;
 
-function getHeaderValue(headers: Headers, headerName: string): string | undefined {
-    const headerValue = headers[headerName];
-
-    if (_.isArray(headerValue)) {
-        return headerValue[0];
-    } else {
-        return headerValue;
-    }
-}
-
 @observer
 class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | RejectWebSocketHandlerDefinition> {
 
@@ -294,8 +290,20 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
     @observable
     statusMessage = this.props.handler.statusMessage;
 
+    // We have to model raw header data here (even though handlers use header objects) because want to mutate
+    // the headers (e.g. appending content-type) without losing object-unrepresentable (e.g. dupe key order) UI state.
     @observable
-    headers = this.props.handler.headers || {};
+    rawHeaders = headersToRawHeaders(this.props.handler.headers || {});
+
+    @computed
+    get headers(): Headers {
+        return rawHeadersToHeaders(this.rawHeaders);
+    }
+    set headers(headers: Headers | undefined) {
+        if (_.isEqual(headers, this.headers)) return;
+        if (headers === undefined && Object.keys(this.headers).length === 0) return;
+        this.rawHeaders = headersToRawHeaders(headers || {});
+    }
 
     @observable
     contentType: EditableContentType = 'text';
@@ -308,27 +316,41 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
 
     componentDidMount() {
         // If any of our data fields change, rebuild & update the handler
-        disposeOnUnmount(this, reaction(() => (
-            JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'body']))
-        ), () => this.updateHandler()));
+        disposeOnUnmount(this, reaction(() => {
+            return JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'body']));
+        }, () => this.updateHandler()));
 
         // If the handler changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { status, statusMessage, headers, data } = this.props.handler instanceof StaticResponseHandler
+            const { status, statusMessage } = this.props.handler instanceof StaticResponseHandler
                 ? this.props.handler
-                : { ...this.props.handler, status: this.props.handler.statusCode, data: this.props.handler.body };
+                : { ...this.props.handler, status: this.props.handler.statusCode };
 
             runInAction(() => {
                 this.statusCode = status;
                 this.statusMessage = statusMessage;
-                this.headers = headers || {};
-                this.body = asBuffer(data);
+            });
+        }));
+        disposeOnUnmount(this, autorun(() => {
+            const { data } = this.props.handler instanceof StaticResponseHandler
+                ? this.props.handler
+                : { data: this.props.handler.body };
+
+            runInAction(() => {
+                this.body = asBuffer(data); // Usually returns data directly, since we set it as a buffer anyway
+            });
+        }));
+        disposeOnUnmount(this, autorun(() => {
+            const { headers } = this.props.handler;
+
+            runInAction(() => {
+                this.headers = headers;
             });
         }));
 
         // If you enter a relevant content-type header, consider updating the editor content type:
         disposeOnUnmount(this, autorun(() => {
-            const detectedContentType = getEditableContentType(getHeaderValue(this.headers, 'content-type'));
+            const detectedContentType = getEditableContentType(getHeaderValue(this.rawHeaders, 'content-type'));
             if (detectedContentType) runInAction(() => {
                 this.contentType = detectedContentType;
             });
@@ -340,12 +362,12 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
             oldValue: previousContentType,
             newValue: newContentType
         }) => {
-            const contentTypeHeader = getHeaderValue(this.headers, 'content-type');
+            const contentTypeHeader = getHeaderValue(this.rawHeaders, 'content-type');
 
             if (!contentTypeHeader) {
                 // If you pick a body content type with no header set, we add one
                 runInAction(() => {
-                    this.headers['content-type'] = getDefaultMimeType(newContentType);
+                    this.rawHeaders.push(['content-type', getDefaultMimeType(newContentType)]);
                 });
             } else {
                 const headerContentType = getEditableContentType(contentTypeHeader);
@@ -353,7 +375,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
                 // If the body type changes, and the old header matched the old type, update the header
                 if (previousContentType === headerContentType) {
                     runInAction(() => {
-                        this.headers['content-type'] = getDefaultMimeType(newContentType);
+                        setHeaderValue(this.rawHeaders, 'content-type', getDefaultMimeType(newContentType));
                     });
                 }
                 // If there is a header, but it didn't match the body, leave it as-is
@@ -365,14 +387,16 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
             oldValue: previousBody,
             newValue: newBody
         }) => {
-            const lengthHeader = getHeaderValue(this.headers, 'content-length');
+            const lengthHeader = getHeaderValue(this.rawHeaders, 'content-length');
 
             if (!lengthHeader) return;
 
             if (parseInt(lengthHeader || '', 10) === byteLength(previousBody)) {
                 runInAction(() => {
                     // If the content-length was previously correct, keep it correct:
-                    this.headers['content-length'] = byteLength(newBody).toString();
+                    runInAction(() => {
+                        setHeaderValue(this.rawHeaders, 'content-length', byteLength(newBody).toString());
+                    });
                 });
             }
         }));
@@ -388,7 +412,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
     }
 
     render() {
-        const { statusCode, statusMessage, headers, body } = this;
+        const { statusCode, statusMessage, rawHeaders, body } = this;
 
         const bodyAsString = body.toString(this.textEncoding);
 
@@ -402,8 +426,8 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
             />
 
             <SectionLabel>Headers</SectionLabel>
-            <EditableHeaders
-                headers={headers}
+            <EditableRawHeaders
+                input={rawHeaders}
                 onChange={this.onHeadersChanged}
             />
 
@@ -441,8 +465,8 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
     }
 
     @action.bound
-    onHeadersChanged(headers: Headers) {
-        this.headers = headers;
+    onHeadersChanged(rawHeaders: RawHeaders) {
+        this.rawHeaders = rawHeaders;
     }
 
     @action.bound
@@ -461,7 +485,8 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
             !this.statusCode ||
             this.statusCode < 100 ||
             this.statusCode >= 1000 ||
-            _.some(Object.keys(this.headers), (key) => !key.match(HEADER_NAME_REGEX))
+            this.rawHeaders.some(([key]) => !key.match(HEADER_NAME_REGEX)) ||
+            this.rawHeaders.some(([_, value]) => !value)
         ) return this.props.onInvalidState();
 
         this.props.onChange(
@@ -514,7 +539,6 @@ class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandle
     @observable
     statusMessage = this.props.handler.statusMessage;
 
-    // Headers, as an array of { key, value }, with multiple values flattened.
     @observable
     headers = this.props.handler.headers || {};
 
@@ -553,7 +577,9 @@ class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandle
 
             <SectionLabel>Headers</SectionLabel>
             <EditableHeaders
-                headers={headers}
+                input={headers}
+                convertInput={headersToRawHeaders}
+                convertResult={rawHeadersToHeaders}
                 onChange={this.onHeadersChanged}
             />
 
@@ -954,8 +980,14 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
         ) ?? 'none';
     }
 
+    @computed
+    get headers() {
+        if (this.selected === 'none') return {};
+        return this.props.transform[this.selected] || {};
+    }
+
     render() {
-        const { type, transform } = this.props;
+        const { type } = this.props;
         const {
             selected,
             convertHeaderResult,
@@ -975,7 +1007,8 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
             {
                 selected !== 'none' && <TransformDetails>
                     <EditableHeaders
-                        headers={transform[selected] || {}}
+                        input={this.headers}
+                        convertInput={headersToRawHeaders}
                         convertResult={convertHeaderResult}
                         onChange={setHeadersValue}
                         allowEmptyValues={selected === 'updateHeaders'}
@@ -983,6 +1016,25 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
                 </TransformDetails>
             }
         </TransformConfig>;
+    }
+
+    convertHeaderResult = (headers: RawHeaders): Headers => {
+        if (this.selected === 'updateHeaders') {
+            return rawHeadersToHeaders(
+                headers.map(([key, value]) =>
+                    [key, value === '' ? undefined as any : value] // => undefined to explicitly remove headers
+            ));
+        } else {
+            return rawHeadersToHeaders(headers);
+        }
+    };
+
+    @action.bound
+    setHeadersValue(value: Headers) {
+        this.clearValues();
+        if (this.selected !== 'none') {
+            this.props.onChange(this.selected)(value);
+        }
     }
 
     @action.bound
@@ -998,22 +1050,6 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
         HeadersTransformConfig.FIELDS.forEach((field) =>
             this.props.onChange(field)(undefined)
         );
-    }
-
-    convertHeaderResult = (headers: Headers): Headers => {
-        if (this.selected === 'updateHeaders') {
-            return _.mapValues(headers, (header) => header === '' ? undefined : header) as Headers;
-        } else {
-            return headers;
-        }
-    };
-
-    @action.bound
-    setHeadersValue(value: Headers) {
-        this.clearValues();
-        if (this.selected !== 'none') {
-            this.props.onChange(this.selected)(value);
-        }
     }
 };
 

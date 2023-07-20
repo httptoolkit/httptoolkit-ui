@@ -9,6 +9,7 @@ import type {
     WebSocketClose as MockttpWebSocketClose,
     SubscribableEvent as MockttpEvent,
     Headers,
+    RawHeaders,
     TimingEvents,
     TlsHandshakeFailure,
     TlsPassthroughEvent,
@@ -87,7 +88,7 @@ export interface BreakpointBody {
 export type BreakpointRequestResult = {
     method: string,
     url: string,
-    headers: Headers,
+    rawHeaders: RawHeaders,
     body: BreakpointBody
 };
 
@@ -102,7 +103,7 @@ export {
 export type BreakpointResponseResult = {
     statusCode: number,
     statusMessage?: string,
-    headers: Headers,
+    rawHeaders: RawHeaders,
     body: BreakpointBody
 };
 
@@ -156,6 +157,7 @@ export type RTCStream = RTCDataChannel | RTCMediaTrack;
 
 export {
     Headers,
+    RawHeaders,
     PortRange,
     TimingEvents
 };

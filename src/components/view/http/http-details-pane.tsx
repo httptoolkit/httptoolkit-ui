@@ -361,7 +361,7 @@ export class HttpDetailsPane extends React.Component<{
                 {...this.requestBodyParams()}
                 exchangeId={exchange.id}
                 body={requestBreakpoint.inProgressResult.body.decoded}
-                headers={requestBreakpoint.inProgressResult.headers}
+                rawHeaders={requestBreakpoint.inProgressResult.rawHeaders}
                 onChange={requestBreakpoint.updateBody}
             />
             : <HttpBodyCard
@@ -381,7 +381,7 @@ export class HttpDetailsPane extends React.Component<{
                 {...this.responseBodyParams()}
                 exchangeId={exchange.id}
                 body={responseBreakpoint.inProgressResult.body.decoded}
-                headers={responseBreakpoint.inProgressResult.headers}
+                rawHeaders={responseBreakpoint.inProgressResult.rawHeaders}
                 onChange={responseBreakpoint.updateBody}
             />
             : <HttpBodyCard

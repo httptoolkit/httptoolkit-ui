@@ -1,79 +1,79 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer } from 'mobx-react';
+import { action, observable, reaction, runInAction } from 'mobx';
+import { disposeOnUnmount, observer } from 'mobx-react';
 
-import { Headers } from '../../types';
+import { RawHeaders } from '../../types';
 import { HEADER_NAME_PATTERN } from '../../util/headers';
 
-import { EditablePairs, Pair, PairsArray } from './editable-pairs';
+import { EditablePairs, PairsArray } from './editable-pairs';
 
-export type HeadersArray = Array<Pick<Pair, 'key' | 'value'>>;
+const tupleArrayToPairsArray = (headers: RawHeaders): PairsArray =>
+    headers.map(([key, value]) => ({ key, value }));
 
-const headersToHeadersArray = (headers: Headers): HeadersArray =>
-    Object.entries(headers || {}).reduce(
-        (acc: HeadersArray, [key, value]) => {
-            if (_.isArray(value)) {
-                acc = acc.concat(value.map(value => ({ key, value })))
-            } else {
-                acc.push({ key, value: value || '' });
-            }
-            return acc;
-        }, []
-    );
-
-const headersArrayToHeaders = (headers: HeadersArray): Headers =>
-    headers.reduce((headersObj: { [k: string]: string | string[] }, { key, value }) => {
-        const headerName = key.toLowerCase();
-
-        const existingValue = headersObj[headerName];
-        if (existingValue === undefined) {
-            headersObj[headerName] = value;
-        } else if (_.isString(existingValue)) {
-            headersObj[headerName] = [existingValue, value];
-        } else {
-            existingValue.push(value);
-        }
-        return headersObj;
-    }, {});
-
-const withH2HeadersDisabled = (headers: HeadersArray): PairsArray =>
+const withH2HeadersDisabled = (headers: PairsArray): PairsArray =>
     headers.map(({ key, value }) =>
         key.startsWith(':')
         ? { key, value, disabled: true }
         : { key, value }
     );
 
-const normalizeHeaderInput = (headers: PairsArray): HeadersArray =>
+const rawHeadersAsEditablePairs = (rawHeaders: RawHeaders) => {
+    return withH2HeadersDisabled(tupleArrayToPairsArray(rawHeaders));
+};
+
+const outputToRawHeaders = (output: PairsArray): RawHeaders =>
+    output.map(({ key, value }) => [key, value]);
+
+const stripPseudoHeaders = (headers: PairsArray): PairsArray =>
+    // Strip leading colons - HTTP/2 headers should never be entered raw (but don't lower case)
+    headers.map(({ key, value, disabled }) => ({
+        key: !disabled && key.startsWith(':')
+            ? key.slice(1)
+            : key,
+        value,
+        disabled
+    }));
+
+const stripPseudoHeadersAndLowercase = (headers: PairsArray): PairsArray =>
     // Lowercase header keys, and strip any leading colons - HTTP/2 headers should never be entered raw
     headers.map(({ key, value, disabled }) => ({
         key: !disabled && key.startsWith(':')
             ? key.slice(1).toLowerCase()
             : key.toLowerCase(),
-        value
+        value,
+        disabled
     }));
 
-interface EditableHeadersProps<R = Headers> {
-    headers: Headers;
-    onChange: (headers: R) => void;
-    convertResult?: (headers: Headers) => R;
+interface EditableRawHeadersProps {
+    input: RawHeaders;
+    onChange: (headers: RawHeaders) => void;
 
     // It's unclear whether you're strictly allowed completely empty header values, but it's definitely
     // not recommended and poorly supported. By default we disable it except for special use cases.
     allowEmptyValues?: boolean;
+
+    // By default, we lowercase headers. This isn't strictly required, but it's generally clearer,
+    // simpler, and semantically meaningless. HTTP/2 is actually even forced lowercase on the wire.
+    // Nonetheless, sometimes (breakpoints) you want to ignore that and edit with case regardless
+    // because the real raw headers have existing cases and otherwise it's weird:
+    preserveKeyCase?: boolean;
 }
 
-export const EditableHeaders = observer(<R extends unknown>(props: EditableHeadersProps<R>) => {
-    const { headers, onChange, allowEmptyValues, convertResult } = props;
+export const EditableRawHeaders = observer((
+    props: EditableRawHeadersProps
+) => {
+    const { input: headers, onChange, allowEmptyValues, preserveKeyCase } = props;
 
-    return <EditablePairs<R>
-        pairs={withH2HeadersDisabled(headersToHeadersArray(headers))}
+    return <EditablePairs<RawHeaders>
+        pairs={rawHeadersAsEditablePairs(headers)}
         onChange={onChange}
-        transformInput={normalizeHeaderInput}
-        convertResult={(pairs: PairsArray) =>
-            convertResult
-            ? convertResult(headersArrayToHeaders(pairs))
-            : headersArrayToHeaders(pairs) as unknown as R
+        transformInput={
+            preserveKeyCase
+            ? stripPseudoHeaders
+            : stripPseudoHeadersAndLowercase
         }
+        convertResult={outputToRawHeaders}
 
         allowEmptyValues={allowEmptyValues}
 
@@ -84,3 +84,77 @@ export const EditableHeaders = observer(<R extends unknown>(props: EditableHeade
         valuePlaceholder='Header value'
     />;
 });
+
+interface EditableHeadersProps<T> {
+    input: T,
+
+    convertInput: (input: T) => RawHeaders,
+    convertResult: (headers: RawHeaders) => T,
+
+    onChange: (headers: T) => void;
+    onInvalidState?: () => void;
+
+    // It's unclear whether you're strictly allowed completely empty header values, but it's definitely
+    // not recommended and poorly supported. By default we disable it except for special use cases.
+    allowEmptyValues?: boolean;
+}
+
+// Editable headers acts as a wrapper around the raw header pair modification, converting to and from other
+// formats (most commonly header objects, rather than arrays) whilst avoiding unnecessary updates that
+// cause churn in the UI due to unrepresentable states in that format (e.g. duplicate headers that aren't
+// directly next to each other). This allows you to edit as if the data was in raw header format, but
+// get different data live as it changes, without collapsing to that state until later.
+@observer
+export class EditableHeaders<T> extends React.Component<EditableHeadersProps<T>> {
+
+    @observable
+    private rawHeaders: RawHeaders = this.props.convertInput(this.props.input);
+
+    private output: T = this.props.input;
+
+    componentDidMount() {
+        // Watch the input, but only update our state if its materially different
+        // to the last output we returned.
+        disposeOnUnmount(this, reaction(
+            () => this.props.input,
+            (input) => {
+                if (!_.isEqual(input, this.output)) {
+                    const newInput = this.props.convertInput(input);
+                    runInAction(() => {
+                        this.rawHeaders = newInput;
+                    });
+                }
+            }
+        ));
+    }
+
+    @action.bound
+    onChangeRawHeaders(rawHeaders: RawHeaders) {
+        this.rawHeaders = rawHeaders;
+
+        const { allowEmptyValues, convertResult, onChange, onInvalidState } = this.props;
+
+        if (allowEmptyValues) {
+            this.output = convertResult(rawHeaders);
+            onChange(this.output);
+        } else {
+            if (rawHeaders.some((([_, value]) => !value))) return onInvalidState?.();
+            if (rawHeaders.some(([key]) => !key)) return onInvalidState?.();
+
+            this.output = convertResult(rawHeaders);
+            onChange(this.output);
+        }
+    }
+
+    render() {
+        const { allowEmptyValues } = this.props;
+        const { rawHeaders, onChangeRawHeaders } = this;
+
+        return <EditableRawHeaders
+            input={rawHeaders}
+            onChange={onChangeRawHeaders}
+            allowEmptyValues={allowEmptyValues}
+        />;
+    }
+
+}
