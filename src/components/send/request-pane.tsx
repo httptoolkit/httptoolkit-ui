@@ -16,11 +16,12 @@ import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util';
 import { sendRequest } from '../../services/server-api';
 import { RulesStore } from '../../model/rules/rules-store';
 import { SendStore } from '../../model/send/send-store';
+import { UiStore } from '../../model/ui/ui-store';
 import { ClientProxyConfig, RULE_PARAM_REF_KEY } from '../../model/send/send-data-model';
 
-import { EditableRawHeaders } from '../common/editable-headers';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
 import { Button, TextInput } from '../common/inputs';
+import { SendRequestHeadersCard } from './send-request-headers-card';
+import { SendRequestBodyCard } from './send-request-body-card';
 
 const RequestPaneContainer = styled.section`
     display: flex;
@@ -42,10 +43,12 @@ export const getEffectivePort = (url: { protocol: string | null, port: string | 
 
 @inject('rulesStore')
 @inject('sendStore')
+@inject('uiStore')
 @observer
 export class RequestPane extends React.Component<{
     rulesStore?: RulesStore,
-    sendStore?: SendStore
+    sendStore?: SendStore,
+    uiStore?: UiStore
 }> {
 
     @computed
@@ -69,6 +72,10 @@ export class RequestPane extends React.Component<{
         return this.props.sendStore!.requestInput.rawBody;
     }
 
+    get cardProps() {
+        return this.props.uiStore!.sendCardProps;
+    }
+
     @computed
     private get bodyTextEncoding() {
         // If we're handling text data, we want to show & edit it as UTF8.
@@ -87,15 +94,15 @@ export class RequestPane extends React.Component<{
                 value={this.url}
                 onChange={this.updateUrl}
             />
-            <EditableRawHeaders
+            <SendRequestHeadersCard
+                {...this.cardProps.requestHeaders}
                 headers={this.headers}
-                onChange={this.updateHeaders}
+                updateHeaders={this.updateHeaders}
             />
-            <ThemedSelfSizedEditor
-                contentId='request'
-                language={'text'}
-                value={bodyString}
-                onChange={this.updateBody}
+            <SendRequestBodyCard
+                {...this.cardProps.requestBody}
+                body={bodyString}
+                updateBody={this.updateBody}
             />
             <Button
                 onClick={this.sendRequest}

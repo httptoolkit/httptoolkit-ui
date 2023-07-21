@@ -96,7 +96,7 @@ export class HttpDetailsPane extends React.Component<{
 
         const { isPaidUser } = accountStore!;
         const {
-            expandedCard,
+            expandedViewCard,
             expandCompleted
         } = uiStore!;
         const { requestBreakpoint, responseBreakpoint } = exchange;
@@ -117,10 +117,10 @@ export class HttpDetailsPane extends React.Component<{
 
         const headerCard = this.renderHeaderCard(exchange);
 
-        if (expandedCard) {
+        if (expandedViewCard) {
             return <ExpandedPaneContentContainer expandCompleted={expandCompleted}>
                 { headerCard }
-                { this.renderExpandedCard(expandedCard, exchange, apiExchange) }
+                { this.renderExpandedCard(expandedViewCard, exchange, apiExchange) }
             </ExpandedPaneContentContainer>;
         }
 

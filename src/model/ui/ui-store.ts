@@ -36,15 +36,34 @@ const VIEW_CARD_KEYS = [
 ] as const;
 type ViewCardKey = typeof VIEW_CARD_KEYS[number];
 
-const EXPANDABLE_CARD_KEYS = [
+const EXPANDABLE_VIEW_CARD_KEYS = [
     'requestBody',
     'responseBody',
     'webSocketMessages'
 ] as const;
-type ExpandableCardKey = typeof EXPANDABLE_CARD_KEYS[number];
+type ExpandableViewCardKey = typeof EXPANDABLE_VIEW_CARD_KEYS[number];
 
-const isExpandableCard = (key: any): key is ExpandableCardKey =>
-    EXPANDABLE_CARD_KEYS.includes(key);
+const isExpandableViewCard = (key: any): key is ExpandableViewCardKey =>
+    EXPANDABLE_VIEW_CARD_KEYS.includes(key);
+
+const SEND_CARD_KEYS = [
+    'requestHeaders',
+    'requestBody',
+    'response',
+    'responseBody'
+] as const;
+type SendCardKey = typeof SEND_CARD_KEYS[number];
+
+const EXPANDABLE_SEND_CARD_KEYS = [
+    'requestHeaders',
+    'requestBody',
+    'response',
+    'responseBody'
+] as const;
+type ExpandableSendCardKey = typeof EXPANDABLE_SEND_CARD_KEYS[number];
+
+const isExpandableSendCard = (key: any): key is ExpandableSendCardKey =>
+EXPANDABLE_SEND_CARD_KEYS.includes(key);
 
 const SETTINGS_CARD_KEYS =[
     'account',
@@ -119,6 +138,9 @@ export class UiStore {
         }
     }
 
+    @observable
+    expandCompleted = true; // Used to trigger animations during expand process
+
     // Store the view details cards state here, so that they persist
     // when moving away from the page or deselecting all traffic.
     @observable
@@ -142,19 +164,16 @@ export class UiStore {
     };
 
     @observable
-    expandedCard: ExpandableCardKey | undefined;
-
-    @observable
-    expandCompleted = true; // Used to trigger animations during expand process
+    expandedViewCard: ExpandableViewCardKey | undefined;
 
     @computed
     get viewCardProps() {
         return _.mapValues(this.viewCardStates, (state, key) => ({
             key,
-            expanded: key === this.expandedCard,
-            collapsed: state.collapsed && key !== this.expandedCard,
+            expanded: key === this.expandedViewCard,
+            collapsed: state.collapsed && key !== this.expandedViewCard,
             onCollapseToggled: this.toggleViewCardCollapsed.bind(this, key as ViewCardKey),
-            onExpandToggled: isExpandableCard(key)
+            onExpandToggled: isExpandableViewCard(key)
                 ? this.toggleViewCardExpanded.bind(this, key)
                 : _.noop
         }));
@@ -164,16 +183,63 @@ export class UiStore {
     toggleViewCardCollapsed(key: ViewCardKey) {
         const cardState = this.viewCardStates[key];
         cardState.collapsed = !cardState.collapsed;
-        this.expandedCard = undefined;
+        this.expandedViewCard = undefined;
     }
 
     @action
-    private toggleViewCardExpanded(key: ExpandableCardKey) {
-        if (this.expandedCard === key) {
-            this.expandedCard = undefined;
-        } else if (isExpandableCard(key)) {
+    private toggleViewCardExpanded(key: ExpandableViewCardKey) {
+        if (this.expandedViewCard === key) {
+            this.expandedViewCard = undefined;
+        } else if (isExpandableViewCard(key)) {
             this.viewCardStates[key].collapsed = false;
-            this.expandedCard = key;
+            this.expandedViewCard = key;
+
+            this.expandCompleted = false;
+            requestAnimationFrame(action(() => {
+                this.expandCompleted = true;
+            }));
+        }
+    }
+
+    // Store the send details cards state here
+    @observable
+    private readonly sendCardStates = {
+        'requestHeaders': { collapsed: false },
+        'requestBody': { collapsed: false },
+        'response': { collapsed: false },
+        'responseBody': { collapsed: false }
+    };
+
+    @observable
+    expandedSendCard: ExpandableSendCardKey | undefined;
+
+    @computed
+    get sendCardProps() {
+        return _.mapValues(this.sendCardStates, (state, key) => ({
+            key,
+            expanded: key === this.expandedSendCard,
+            collapsed: state.collapsed && key !== this.expandedSendCard,
+            onCollapseToggled: this.toggleSendCardCollapsed.bind(this, key as SendCardKey),
+            onExpandToggled: isExpandableSendCard(key)
+                ? this.toggleSendCardExpanded.bind(this, key)
+                : _.noop
+        }));
+    }
+
+    @action
+    toggleSendCardCollapsed(key: SendCardKey) {
+        const cardState = this.sendCardStates[key];
+        cardState.collapsed = !cardState.collapsed;
+        this.expandedSendCard = undefined;
+    }
+
+    @action
+    private toggleSendCardExpanded(key: ExpandableSendCardKey) {
+        if (this.expandedSendCard === key) {
+            this.expandedSendCard = undefined;
+        } else if (isExpandableSendCard(key)) {
+            this.sendCardStates[key].collapsed = false;
+            this.expandedSendCard = key;
 
             this.expandCompleted = false;
             requestAnimationFrame(action(() => {
@@ -204,7 +270,7 @@ export class UiStore {
     toggleSettingsCardCollapsed(key: SettingsCardKey) {
         const cardState = this.settingsCardStates[key];
         cardState.collapsed = !cardState.collapsed;
-        this.expandedCard = undefined;
+        this.expandedViewCard = undefined;
     }
 
     @action.bound

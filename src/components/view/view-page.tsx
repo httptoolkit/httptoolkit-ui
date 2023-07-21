@@ -208,31 +208,31 @@ class ViewPage extends React.Component<ViewPageProps> {
                 return;
             }
 
-            const { expandedCard } = this.props.uiStore;
+            const { expandedViewCard } = this.props.uiStore;
 
-            if (!expandedCard) return;
+            if (!expandedViewCard) return;
 
             // If you have a pane expanded, and select an event with no data
             // for that pane, then disable the expansion
             if (
                 !(selectedEvent.isHttp()) ||
                 (
-                    expandedCard === 'requestBody' &&
+                    expandedViewCard === 'requestBody' &&
                     !selectedEvent.hasRequestBody() &&
                     !selectedEvent.requestBreakpoint
                 ) ||
                 (
-                    expandedCard === 'responseBody' &&
+                    expandedViewCard === 'responseBody' &&
                     !selectedEvent.hasResponseBody() &&
                     !selectedEvent.responseBreakpoint
                 ) ||
                 (
-                    expandedCard === 'webSocketMessages' &&
+                    expandedViewCard === 'webSocketMessages' &&
                     !selectedEvent.isWebSocket()
                 )
             ) {
                 runInAction(() => {
-                    this.props.uiStore.expandedCard = undefined;
+                    this.props.uiStore.expandedViewCard = undefined;
                 });
                 return;
             }
