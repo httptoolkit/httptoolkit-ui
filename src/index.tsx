@@ -32,12 +32,14 @@ import { EventsStore } from './model/events/events-store';
 import { RulesStore } from './model/rules/rules-store';
 import { InterceptorStore } from './model/interception/interceptor-store';
 import { ApiStore } from './model/api/api-store';
+import { SendStore } from './model/send/send-store';
+
 import { triggerServerUpdate } from './services/server-api';
+import { serverVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
 
 import { App } from './components/app';
 import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
 import { ErrorBoundary } from './components/error-boundary';
-import { serverVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
 
 console.log(`Initialising UI (version ${UI_VERSION})`);
 
@@ -78,6 +80,7 @@ const apiStore = new ApiStore(accountStore);
 const uiStore = new UiStore(accountStore);
 const proxyStore = new ProxyStore(accountStore);
 const interceptorStore = new InterceptorStore(proxyStore, accountStore);
+const sendStore = new SendStore();
 
 // Some non-trivial interactions between rules & events stores here. Rules need to use events to
 // handle breakpoints (where rule logic reads from received event data), while events need to use
@@ -106,7 +109,8 @@ const stores = {
     proxyStore,
     eventsStore,
     interceptorStore,
-    rulesStore
+    rulesStore,
+    sendStore
 };
 
 const appStartupPromise = Promise.all(

@@ -4,7 +4,7 @@ import { RUNNING_IN_WORKER } from '../util';
 import { getDeferred } from '../util/promise';
 import {
     versionSatisfies,
-    REST_API_SUPPORTED
+    SERVER_REST_API_SUPPORTED
 } from './service-versions';
 
 import { type ServerConfig, type NetworkInterfaces, type ServerInterceptor, ApiError } from './server-api-types';
@@ -12,6 +12,7 @@ export { ServerConfig, NetworkInterfaces, ServerInterceptor };
 
 import { GraphQLApiClient } from './server-graphql-api';
 import { RestApiClient } from './server-rest-api';
+import { RequestDefinition, RequestOptions } from '../model/send/send-data-model';
 
 const authTokenPromise = !RUNNING_IN_WORKER
     // Main UI gets given the auth token directly in its URL:
@@ -44,7 +45,7 @@ export async function getServerVersion(): Promise<string> {
     const version = await client.getServerVersion();
 
     // Swap to the REST client if we receive a version where it's supported:
-    if (versionSatisfies(version, REST_API_SUPPORTED) && client instanceof GraphQLApiClient) {
+    if (versionSatisfies(version, SERVER_REST_API_SUPPORTED) && client instanceof GraphQLApiClient) {
         apiClient = authTokenPromise
             .then((authToken) => new RestApiClient(authToken));
     }
@@ -84,6 +85,18 @@ export async function activateInterceptor(id: string, proxyPort: number, options
 
         throw error;
     }
+}
+
+export async function sendRequest(
+    requestDefinition: RequestDefinition,
+    requestOptions: RequestOptions
+) {
+    const client = (await apiClient);
+    if (!(client instanceof RestApiClient)) {
+        throw new Error("Requests cannot be sent via the GraphQL API client");
+    }
+
+    return client.sendRequest(requestDefinition, requestOptions);
 }
 
 export async function triggerServerUpdate() {

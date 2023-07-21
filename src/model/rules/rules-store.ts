@@ -4,7 +4,9 @@ import {
     requestHandlers,
     MOCKTTP_PARAM_REF,
     ProxyConfig,
-    ProxySetting
+    ProxySetting,
+    RuleParameterReference,
+    ProxySettingSource
 } from 'mockttp';
 import * as MockRTC from 'mockrtc';
 
@@ -357,7 +359,12 @@ export class RulesStore {
     }
 
     @computed.struct
-    get proxyConfig(): ProxyConfig {
+    get proxyConfig():
+        | ProxySetting
+        | RuleParameterReference<ProxySettingSource>
+        | Array<ProxySetting | RuleParameterReference<ProxySettingSource>>
+        | undefined
+    {
         const { userProxyConfig } = this;
         const { httpProxyPort } = this.proxyStore;
 

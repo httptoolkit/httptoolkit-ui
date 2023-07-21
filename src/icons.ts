@@ -63,6 +63,7 @@ import { faAlignLeft } from '@fortawesome/free-solid-svg-icons/faAlignLeft';
 import { faClone } from '@fortawesome/free-regular-svg-icons/faClone';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import { faLevelDownAlt } from '@fortawesome/free-solid-svg-icons/faLevelDownAlt';
+import { faPaperPlane } from '@fortawesome/free-regular-svg-icons/faPaperPlane';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -139,6 +140,7 @@ library.add(
     faClone,
     faCheck,
     faLevelDownAlt,
+    faPaperPlane,
 
     faChrome,
     faFirefox,

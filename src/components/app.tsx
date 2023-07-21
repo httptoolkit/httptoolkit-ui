@@ -16,13 +16,20 @@ import { appHistory } from '../routing';
 import { useHotkeys, Ctrl } from '../util/ui';
 
 import { AccountStore } from '../model/account/account-store';
-import { serverVersion, versionSatisfies, MOCK_SERVER_RANGE } from '../services/service-versions';
+import {
+    serverVersion,
+    versionSatisfies,
+    MOCK_SERVER_RANGE,
+    SERVER_SEND_API_SUPPORTED
+} from '../services/service-versions';
 
 import { Sidebar, SidebarItem, SIDEBAR_WIDTH } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
 import { MockPage } from './mock/mock-page';
+import { SendPage } from './send/send-page';
 import { SettingsPage } from './settings/settings-page';
+
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
 import { CheckoutSpinner } from './account/checkout-spinner';
@@ -84,6 +91,16 @@ class App extends React.Component<{ accountStore: AccountStore }> {
     }
 
     @computed
+    get canVisitSend() {
+        return this.props.accountStore.featureFlags.includes('send') && (
+            // Hide Send option if the server is too old for proper support.
+            // We show by default to avoid flicker in the most common case
+            serverVersion.state !== 'fulfilled' ||
+            versionSatisfies(serverVersion.value as string, SERVER_SEND_API_SUPPORTED)
+        );
+    }
+
+    @computed
     get menuItems() {
         return [
             {
@@ -117,6 +134,18 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     position: 'top',
                     type: 'router',
                     url: '/mock'
+                }]
+                : []
+            ),
+
+            ...(this.canVisitSend
+                ? [{
+                    name: 'Send',
+                    title: `Send HTTP requests directly (${Ctrl}+4)`,
+                    icon: ['far', 'paper-plane'],
+                    position: 'top',
+                    type: 'router',
+                    url: '/send'
                 }]
                 : []
             ),
@@ -191,6 +220,7 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     <Route path={'/view/:eventId'} pageComponent={ViewPage} />
                     <Route path={'/mock'} pageComponent={MockPage} />
                     <Route path={'/mock/:initialRuleId'} pageComponent={MockPage} />
+                    <Route path={'/send'} pageComponent={SendPage} />
                     <Route path={'/settings'} pageComponent={SettingsPage} />
                 </Router>
             </AppContainer>
