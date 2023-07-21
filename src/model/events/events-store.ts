@@ -664,4 +664,14 @@ export class EventsStore {
         }
     }
 
+    @action
+    recordSentRequest(request: InputCompletedRequest): HttpExchange {
+        const exchange = new HttpExchange(this.apiStore, { ...request });
+        // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
+        exchange.updateFromCompletedRequest(request, false);
+
+        this.events.push(exchange);
+        return exchange;
+    }
+
 }

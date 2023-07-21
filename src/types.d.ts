@@ -46,15 +46,27 @@ export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' |
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
+export type SentRequest = Omit<MockttpInitiatedRequest, 'matchedRuleId' | 'body'> &
+    { matchedRuleId: false, body: { buffer: Buffer } };
+export type SentRequestResponse = Omit<MockttpResponse, 'body'> &
+    { body: { buffer: Buffer } };
+export type SentRequestError = Pick<MockttpAbortedRequest, 'id' | 'timingEvents' | 'tags'> & {
+    error: {
+        code?: string;
+        message?: string;
+        stack?: string;
+    };
+}
+
 export type InputHTTPEvent = MockttpEvent;
 export type InputClientError = ClientError;
 export type InputTlsFailure = TlsHandshakeFailure;
 export type InputTlsPassthrough = TlsPassthroughEvent;
 export type InputInitiatedRequest = MockttpInitiatedRequest | HarRequest;
-export type InputCompletedRequest = MockttpCompletedRequest | HarRequest;
+export type InputCompletedRequest = MockttpCompletedRequest | HarRequest | SentRequest;
 export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
-export type InputFailedRequest = MockttpAbortedRequest | ClientError['request'];
-export type InputResponse = MockttpResponse | HarResponse;
+export type InputFailedRequest = MockttpAbortedRequest | ClientError['request'] | SentRequestError;
+export type InputResponse = MockttpResponse | HarResponse | SentRequestResponse;
 export type InputMessage = InputRequest | InputResponse;
 
 export type InputWebSocketMessage = MockttpWebSocketMessage;

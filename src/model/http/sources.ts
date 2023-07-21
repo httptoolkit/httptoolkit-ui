@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import { UAParser } from 'ua-parser-js';
 import { get } from 'typesafe-get';
 
+import { popColor } from '../../styles';
 import { SourceIcons, IconProps, SourceIconName } from '../../icons';
 
 export interface TrafficSource {
@@ -148,6 +149,15 @@ export const UNKNOWN_SOURCE = {
     ua: '',
     summary: 'Unknown client',
     icon: SourceIcons.Unknown
+};
+
+export const MANUALLY_SENT_SOURCE = {
+    ua: '',
+    summary: 'Sent by HTTP Toolkit',
+    icon: {
+        icon: ['far', 'paper-plane'],
+        color: popColor
+    }
 };
 
 export const parseSource = (userAgentHeader: string | undefined): TrafficSource => {

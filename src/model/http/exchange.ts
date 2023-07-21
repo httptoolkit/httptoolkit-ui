@@ -30,7 +30,7 @@ import {
 
 import { logError } from '../../errors';
 
-import { parseSource } from './sources';
+import { MANUALLY_SENT_SOURCE, parseSource } from './sources';
 import { getContentType } from '../events/content-types';
 import { HTKEventBase } from '../events/event-base';
 
@@ -82,7 +82,9 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
     try {
         return Object.assign(request, {
             parsedUrl: tryParseUrl(request) || getFallbackUrl(request),
-            source: parseSource(request.headers['user-agent']),
+            source: request.tags.includes('httptoolkit:manually-sent-request')
+                ? MANUALLY_SENT_SOURCE
+                : parseSource(request.headers['user-agent']),
             body: new HttpBody(request, request.headers),
             contentType: getContentType(lastHeader(request.headers['content-type'])) || 'text',
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })

@@ -1,19 +1,26 @@
 import * as _ from 'lodash';
-import { observable } from 'mobx';
+import { action, flow, observable } from 'mobx';
+import * as uuid from 'uuid/v4';
 import {
     MOCKTTP_PARAM_REF,
     ProxySetting,
     ProxySettingSource,
-    RuleParameterReference
+    RuleParameterReference,
+    TimingEvents
 } from 'mockttp';
 
+import { logError } from '../../errors';
 import { lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
+import { ErrorLike, UnreachableCheck } from '../../util/error';
+import { rawHeadersToHeaders } from '../../util/headers';
 
 import { EventsStore } from '../events/events-store';
 import { RulesStore } from '../rules/rules-store';
 import * as ServerApi from '../../services/server-api';
 
+import { HttpExchange } from '../http/exchange';
+import { ResponseHeadEvent, ResponseStreamEvent } from './send-response-model';
 import {
     ClientProxyConfig,
     RequestInput,
@@ -24,11 +31,13 @@ import {
 export class SendStore {
 
     constructor(
+        private eventStore: EventsStore,
         private rulesStore: RulesStore
     ) {}
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
+            this.eventStore.initialized,
             this.rulesStore.initialized
         ]);
 
@@ -50,6 +59,8 @@ export class SendStore {
     };
 
     readonly sendRequest = async (requestInput: RequestInput) => {
+        const exchangeId = uuid();
+
         const passthroughOptions = this.rulesStore.activePassthroughOptions;
 
         const url = new URL(requestInput.url);
@@ -76,15 +87,104 @@ export class SendStore {
             rawBody: requestInput.rawBody
         }, requestOptions);
 
-        const reader = responseStream.getReader();
-        while(true) {
-            const { done, value } = await reader.read();
-            if (done) return;
-            else console.log(value);
-        }
+        const exchange = this.eventStore.recordSentRequest({
+            id: exchangeId,
+            matchedRuleId: false,
+            method: requestInput.method,
+            url: requestInput.url,
+            protocol: url.protocol.slice(0, -1),
+            path: url.pathname,
+            hostname: url.hostname,
+            headers: rawHeadersToHeaders(requestInput.headers),
+            rawHeaders: requestInput.headers,
+            body: { buffer: requestInput.rawBody },
+            timingEvents: {} as TimingEvents,
+            tags: ['httptoolkit:manually-sent-request']
+        });
+
+        // Keep the exchange up to date as response data arrives:
+        trackResponseEvents(responseStream, exchange)
+        .catch(action((error: ErrorLike) => {
+            exchange.markAborted({
+                id: exchange.id,
+                error: error,
+                timingEvents: {
+                    ...exchange.timingEvents as TimingEvents,
+                    abortedTimestamp: performance.now()
+                },
+                tags: error.code ? [`passthrough-error:${error.code}`] : []
+            });
+        }));
+
+        return exchange;
     }
 
 }
+
+const trackResponseEvents = flow(function * (
+    responseStream: ReadableStream<ResponseStreamEvent>,
+    exchange: HttpExchange
+) {
+    const reader = responseStream.getReader();
+
+    const timingEvents = { ...exchange.timingEvents } as TimingEvents;
+
+    let responseHead: ResponseHeadEvent | undefined;
+    let responseBodyParts: Buffer[] = [];
+
+    while (true) {
+        const { done, value } = (
+            yield reader.read()
+        ) as ReadableStreamDefaultReadResult<ResponseStreamEvent>;
+        if (done) return;
+
+        const messageType = value.type;
+        switch (messageType) {
+            case 'request-start':
+                timingEvents.startTime = Date.now();
+                timingEvents.startTimestamp = value.timestamp;
+                timingEvents.bodyReceivedTimestamp = value.timestamp;
+                break;
+            case 'response-head':
+                responseHead = value;
+                timingEvents.headersSentTimestamp = value.timestamp;
+                break;
+            case 'response-body-part':
+                responseBodyParts.push(value.rawBody);
+                break;
+            case 'response-end':
+                if (!responseHead) throw new Error(`Received response-end before response-head!`);
+
+                timingEvents.responseSentTimestamp = value.timestamp;
+
+                exchange.setResponse({
+                    id: exchange.id,
+                    statusCode: responseHead.statusCode,
+                    statusMessage: responseHead.statusMessage ?? '',
+                    headers: rawHeadersToHeaders(responseHead.headers),
+                    rawHeaders: responseHead.headers,
+                    body: { buffer: Buffer.concat(responseBodyParts) },
+                    tags: [],
+                    timingEvents
+                });
+
+                break;
+            case 'error':
+                if (value.error.message) {
+                    throw new Error(value.error.message + (
+                        value.error.code ? ` (${value.error.code})` : ''
+                    ));
+                } else {
+                    logError(`Unknown response error for sent request: ${
+                        JSON.stringify(value.error)
+                    }`);
+                    throw new Error('Unknown response error');
+                }
+            default:
+                throw new UnreachableCheck(messageType);
+        }
+    }
+});
 
 export const getEffectivePort = (url: { protocol: string | null, port: string | null }) => {
     if (url.port) {

@@ -100,7 +100,7 @@ const rulesStore = new RulesStore(accountStore, proxyStore,
     }
 );
 const eventsStore = new EventsStore(proxyStore, apiStore, rulesStore);
-const sendStore = new SendStore(rulesStore);
+const sendStore = new SendStore(eventsStore, rulesStore);
 
 const stores = {
     accountStore,
