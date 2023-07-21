@@ -2,16 +2,18 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { action, computed } from 'mobx';
 import { inject, observer } from 'mobx-react';
+import { Method } from 'mockttp';
 
 import { RawHeaders } from '../../types';
 import { styled } from '../../styles';
+import { Icon } from '../../icons';
 import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
 
-import { Button, TextInput } from '../common/inputs';
+import { Button, Select, TextInput } from '../common/inputs';
 import { SendRequestHeadersCard } from './send-request-headers-card';
 import { SendRequestBodyCard } from './send-request-body-card';
 
@@ -20,9 +22,20 @@ const RequestPaneContainer = styled.section`
     flex-direction: column;
 `;
 
-const UrlInput = styled(TextInput)`
+type MethodName = keyof typeof Method;
+const validMethods = Object.values(Method)
+    .filter(
+        value => typeof value === 'string'
+    ) as Array<MethodName>;
+
+const MethodSelect = styled(Select)`
+    font-size: ${p => p.theme.textSize};
+    display: inline-block;
+    width: auto;
 `;
 
+const UrlInput = styled(TextInput)`
+`;
 
 @inject('rulesStore')
 @inject('uiStore')
@@ -57,6 +70,16 @@ export class RequestPane extends React.Component<{
         );
 
         return <RequestPaneContainer>
+            <MethodSelect value={requestInput.method} onChange={this.updateMethod}>
+                { validMethods.map((methodOption) =>
+                    <option
+                        key={methodOption}
+                        value={methodOption}
+                    >
+                        { methodOption }
+                    </option>
+                ) }
+            </MethodSelect>
             <UrlInput
                 placeholder='https://example.com/hello?name=world'
                 value={requestInput.url}
@@ -74,8 +97,16 @@ export class RequestPane extends React.Component<{
             />
             <Button
                 onClick={this.sendRequest}
-            />
+            >
+                Send <Icon icon={['far', 'paper-plane']} />
+            </Button>
         </RequestPaneContainer>;
+    }
+
+    @action.bound
+    updateMethod(event: React.ChangeEvent<HTMLSelectElement>) {
+        const { requestInput } = this.props;
+        requestInput.method = event.target.value;
     }
 
     @action.bound
