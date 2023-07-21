@@ -12,7 +12,7 @@ export { ServerConfig, NetworkInterfaces, ServerInterceptor };
 
 import { GraphQLApiClient } from './server-graphql-api';
 import { RestApiClient } from './server-rest-api';
-import { RequestDefinition, RequestOptions } from '../model/send/send-data-model';
+import { RequestDefinition, RequestOptions } from '../model/send/send-request-model';
 
 const authTokenPromise = !RUNNING_IN_WORKER
     // Main UI gets given the auth token directly in its URL:

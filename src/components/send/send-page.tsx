@@ -1,7 +1,9 @@
 import * as React from 'react';
-import { observer } from 'mobx-react';
+import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../styles';
+
+import { SendStore } from '../../model/send/send-store';
 
 import { SplitPane } from '../split-pane';
 import { RequestPane } from './request-pane';
@@ -12,10 +14,15 @@ const SendPageContainer = styled.div`
     position: relative;
 `;
 
+@inject('sendStore')
 @observer
-export class SendPage extends React.Component<{}> {
+export class SendPage extends React.Component<{
+    sendStore?: SendStore
+}> {
 
     render() {
+        const { requestInput, sendRequest } = this.props.sendStore!;
+
         return <SendPageContainer>
             <SplitPane
                 split='vertical'
@@ -24,8 +31,12 @@ export class SendPage extends React.Component<{}> {
                 minSize={300}
                 maxSize={-300}
             >
-                <RequestPane />
-                <ResponsePane />
+                <RequestPane
+                    requestInput={requestInput}
+                    sendRequest={sendRequest}
+                />
+                <ResponsePane
+                />
             </SplitPane>
         </SendPageContainer>;
     }

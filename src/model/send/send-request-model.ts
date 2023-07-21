@@ -63,34 +63,3 @@ export type ClientProxyConfig =
     | Mockttp.ProxySetting // User or system proxy
     | ClientProxyRuleParamReference // Docker proxy (must be dereferenced)
     | Array<Mockttp.ProxySetting | ClientProxyRuleParamReference> // Both, ordered
-
-export type ResponseStreamEvent =
-    | ResponseHeadEvent
-    | ResponseBodyPartEvent
-    | ResponseEndEvent
-    | ErrorEvent;
-
-interface ResponseHeadEvent {
-    type: 'response-head';
-    statusCode: number;
-    statusMessage?: string;
-    headers: RawHeaders;
-}
-
-interface ResponseBodyPartEvent {
-    type: 'response-body-part';
-    rawBody: Buffer;
-}
-
-interface ResponseEndEvent {
-    type: 'response-end';
-}
-
-interface ErrorEvent {
-    type: 'error';
-    error: {
-        code?: string,
-        message?: string,
-        stack?: string
-    }
-}

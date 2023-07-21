@@ -80,7 +80,6 @@ const apiStore = new ApiStore(accountStore);
 const uiStore = new UiStore(accountStore);
 const proxyStore = new ProxyStore(accountStore);
 const interceptorStore = new InterceptorStore(proxyStore, accountStore);
-const sendStore = new SendStore();
 
 // Some non-trivial interactions between rules & events stores here. Rules need to use events to
 // handle breakpoints (where rule logic reads from received event data), while events need to use
@@ -101,6 +100,7 @@ const rulesStore = new RulesStore(accountStore, proxyStore,
     }
 );
 const eventsStore = new EventsStore(proxyStore, apiStore, rulesStore);
+const sendStore = new SendStore(rulesStore);
 
 const stores = {
     accountStore,

@@ -16,9 +16,11 @@ import {
 
 import {
     RequestDefinition,
-    RequestOptions,
+    RequestOptions
+} from '../model/send/send-request-model';
+import {
     ResponseStreamEvent
-} from '../model/send/send-data-model';
+} from '../model/send/send-response-model';
 
 export class RestApiClient {
 
@@ -205,23 +207,33 @@ export class RestApiClient {
 }
 
 type ResponseStreamEventData =
+    | RequestStartData
     | ResponseHeadData
     | ResponseBodyPartData
     | ResponseEndData;
+
+interface RequestStartData {
+    type: 'request-start';
+    startTime: number;
+    timestamp: number;
+}
 
 interface ResponseHeadData {
     type: 'response-head';
     statusCode: number;
     statusMessage?: string;
     headers: RawHeaders;
+    timestamp: number;
 }
 
 interface ResponseBodyPartData {
     type: 'response-body-part';
     rawBody: string; // base64
+    timestamp: number;
 }
 
 interface ResponseEndData {
     type: 'response-end';
+    timestamp: number;
 }
 
