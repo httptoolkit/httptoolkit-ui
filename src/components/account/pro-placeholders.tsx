@@ -1,7 +1,7 @@
 import React from "react";
 import { inject, observer } from "mobx-react";
 
-import { styled } from "../../styles";
+import { styled, popColor } from "../../styles";
 import { Icon } from "../../icons";
 
 import { UiStore } from "../../model/ui/ui-store";
@@ -15,7 +15,7 @@ export const ProPill = styled(inject('uiStore')((p: { uiStore?: UiStore, classNa
 ))`
     font-size: ${p => p.theme.textSize};
 
-    color: #e1421f;
+    color: ${popColor};
     background-color: rgba(225,66,31,0.2);
 `;
 

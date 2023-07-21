@@ -3,7 +3,7 @@ import * as React from 'react';
 import { action, observable } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
+import { NARROW_LAYOUT_BREAKPOINT, styled, popColor } from '../../styles';
 import { Icon } from '../../icons';
 import { trackEvent } from '../../metrics';
 import { logError } from '../../errors';
@@ -167,7 +167,7 @@ function getStatusPill(interceptor: Interceptor) {
                 }
             </StatusPill>;
         } else {
-            return <StatusPill color='#e1421f'>
+            return <StatusPill color={popColor}>
                 Coming soon
             </StatusPill>;
         }
