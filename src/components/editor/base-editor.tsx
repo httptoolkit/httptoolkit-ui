@@ -163,6 +163,80 @@ export const ThemedSelfSizedEditor = withTheme(
     )
 );
 
+// As opposed to self-sized - when not expanded, the container-sized
+const ContainerSizedEditorContainer = styled.div`
+    ${(p: { expanded: boolean }) => p.expanded
+        ? `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: auto !important;
+        `
+        : `
+            height: 100%;
+        `
+    }
+`;
+
+@observer
+export class ContainerSizedBaseEditor extends React.Component<
+    Omit<EditorProps, 'onContentSizeChange'> & {
+        expanded?: boolean
+    }
+> {
+
+    container = React.createRef<HTMLDivElement>();
+    editor = React.createRef<BaseEditor>();
+
+    onResize = _.throttle(() => {
+        if (this.editor.current) this.editor.current.relayout();
+    }, 50, { leading: true, trailing: true });
+
+    componentDidUpdate() {
+        // Relayout after update, to ensure the editor is always using the full available
+        // size even as the editor content changes
+        if (this.editor.current) this.editor.current.relayout();
+    }
+
+    resizeObserver = new ResizeObserver(this.onResize);
+
+    componentDidMount() {
+        if (this.container.current) {
+            this.resizeObserver.observe(this.container.current);
+        }
+    }
+
+    componentWillUnmount() {
+        this.resizeObserver.disconnect();
+    }
+
+    render() {
+        return <ContainerSizedEditorContainer
+            ref={this.container}
+            expanded={!!this.props.expanded}
+        >
+            <BaseEditor
+                {...this.props}
+                ref={this.editor}
+            />
+        </ContainerSizedEditorContainer>
+    }
+}
+
+export const ThemedContainerSizedBaseEditor = withTheme(
+    React.forwardRef(
+        (
+            { theme, ...otherProps }: {
+                theme?: Theme,
+                expanded?: boolean
+            } & Omit<EditorProps, 'onContentSizeChange' | 'theme'>,
+            ref: React.Ref<ContainerSizedBaseEditor>
+        ) => <ContainerSizedBaseEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
+    )
+);
+
 const EditorFocusWrapper = styled(FocusWrapper)`
     height: 100%;
     width: 100%;
