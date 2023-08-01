@@ -13,6 +13,7 @@ const fontSizes = {
     largeHeadingSize: '24px',
     loudHeadingSize: '38px',
 };
+import "react-contexify/dist/ReactContexify.css";
 
 export const NARROW_LAYOUT_BREAKPOINT = 1100;
 

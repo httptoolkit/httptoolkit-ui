@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, Observer } from 'mobx-react';
-import { action, computed } from 'mobx';
+import { action, computed, runInAction } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
@@ -33,6 +33,22 @@ import { StatusCode } from '../common/status-code';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 
+import {
+    Menu,
+    Item,
+    Separator,
+    Submenu,
+    useContextMenu,
+    ItemProps,
+    ItemParams,
+  } from "react-contexify";
+  const MENU_VIEW_EVENT_ID = "MENU_VIEW_EVENT_LIST";
+
+
+  const { show } = useContextMenu({
+    id: MENU_VIEW_EVENT_ID
+});
+type ItemData = any;
 const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
 
 const EmptyStateOverlay = styled(EmptyState)`
@@ -380,7 +396,7 @@ const ExchangeRow = observer(({
         aria-rowindex={index + 1}
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
-
+        onContextMenu={e => displayMenu(e,exchange)}
         className={isSelected ? 'selected' : ''}
         style={style}
     >
@@ -647,7 +663,47 @@ const TlsRow = observer((p: {
         } connection to { tlsEvent.upstreamHostname || 'unknown domain' }
     </TlsListRow>
 });
+const UTF8Decoder = new TextDecoder('utf8', { fatal: true });
 
+async function copyToClipboard(textToCopy: string) {
+    try {
+        if (navigator.clipboard && window.isSecureContext)
+            await navigator.clipboard.writeText(textToCopy);
+        else {
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "absolute";
+            textArea.style.left = "-9999px";
+            document.body.prepend(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (error) {
+                console.error(error);
+            } finally {
+                textArea.remove();
+            }
+        };
+    } catch (error) {
+        console.error("Clipboard copy failure", error);
+    }
+}
+const ContextMenuItemClicked = ( { id, event, props, data, triggerEvent }: ItemParams<ItemProps, ItemData> ) => {
+    let exchange = (props as any).exchange as HttpExchange;
+    switch(id) {
+        case "TogglePin":
+            runInAction(() => exchange.pinned = ! exchange.pinned );
+        break;
+        case "DecodedBody":
+            if (exchange && exchange.hasResponseBody() && exchange.response.body )
+                exchange.response.body.decodedPromise.then( val => { copyToClipboard(UTF8Decoder.decode(val))  });
+        break;
+    }
+
+};
+function displayMenu(e: React.MouseEvent, exchange : HttpExchange) {
+    show({event: e, props: { exchange: exchange } });
+}
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
 
@@ -734,6 +790,14 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                     }</Observer>
                 }</AutoSizer>
             }
+            
+<Menu id={MENU_VIEW_EVENT_ID}>
+  <Item id="TogglePin" onClick={ContextMenuItemClicked}>Toggle Pinned</Item>
+  <Separator />
+  <Submenu label="Copy">
+    <Item id="DecodedBody" onClick={ContextMenuItemClicked}>Decoded Body</Item>
+  </Submenu>
+</Menu>
         </ListContainer>;
     }
 
