@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { action, computed } from 'mobx';
 import { inject, observer } from 'mobx-react';
+import * as portals from 'react-reverse-portal';
 import { Method } from 'mockttp';
 
 import { RawHeaders } from '../../types';
@@ -14,6 +15,7 @@ import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
 
 import { Button, Select, TextInput } from '../common/inputs';
+import { ThemedContainerSizedEditor } from '../editor/base-editor';
 import { SendRequestHeadersCard } from './send-request-headers-card';
 import { SendRequestBodyCard } from './send-request-body-card';
 
@@ -22,6 +24,17 @@ const RequestPaneContainer = styled.section`
     flex-direction: column;
     height: 100%;
 `;
+
+// Layout here is tricky. Current setup seems to work (flex grow & shrink everywhere,
+// card basis: auto & min-height: 0, with editor 50% + min-height, and then
+// overflow-y: auto and basis: auto on the actual card contents too).
+//
+// It's worth reiterating the UI goals here explicitly for reference
+// - When multiple areas are open & full+, the area is split even-ish with scrolling
+//   in any areas required
+// - When areas are closed, remaining areas expand to the space, even if unused
+// - When multiple areas are open, if there is spare space (e.g. few headers), the
+//   other areas that need it (body editor) expand and use the space.
 
 type MethodName = keyof typeof Method;
 const validMethods = Object.values(Method)
@@ -45,6 +58,8 @@ export class RequestPane extends React.Component<{
     rulesStore?: RulesStore,
     uiStore?: UiStore,
 
+    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>,
+
     requestInput: RequestInput,
     sendRequest: (requestInput: RequestInput) => void
 }> {
@@ -64,7 +79,7 @@ export class RequestPane extends React.Component<{
     }
 
     render() {
-        const { requestInput } = this.props;
+        const { requestInput, editorNode } = this.props;
         const bodyString = bufferToString(
             requestInput.rawBody,
             this.bodyTextEncoding
@@ -86,6 +101,11 @@ export class RequestPane extends React.Component<{
                 value={requestInput.url}
                 onChange={this.updateUrl}
             />
+            <Button
+                onClick={this.sendRequest}
+            >
+                Send <Icon icon={['far', 'paper-plane']} />
+            </Button>
             <SendRequestHeadersCard
                 {...this.cardProps.requestHeaders}
                 headers={requestInput.headers}
@@ -95,12 +115,8 @@ export class RequestPane extends React.Component<{
                 {...this.cardProps.requestBody}
                 body={bodyString}
                 updateBody={this.updateBody}
+                editorNode={editorNode}
             />
-            <Button
-                onClick={this.sendRequest}
-            >
-                Send <Icon icon={['far', 'paper-plane']} />
-            </Button>
         </RequestPaneContainer>;
     }
 

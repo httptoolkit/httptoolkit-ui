@@ -1,9 +1,15 @@
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
+import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 
 import { SendStore } from '../../model/send/send-store';
+
+import {
+    ThemedSelfSizedEditor,
+    ThemedContainerSizedEditor
+} from '../editor/base-editor';
 
 import { SplitPane } from '../split-pane';
 import { RequestPane } from './request-pane';
@@ -20,6 +26,12 @@ export class SendPage extends React.Component<{
     sendStore?: SendStore
 }> {
 
+    private requestEditorNode = portals.createHtmlPortalNode<typeof ThemedContainerSizedEditor>({
+        attributes: {
+            'style': 'height: 100%'
+        }
+    });
+
     render() {
         const { requestInput, sendRequest } = this.props.sendStore!;
 
@@ -34,10 +46,17 @@ export class SendPage extends React.Component<{
                 <RequestPane
                     requestInput={requestInput}
                     sendRequest={sendRequest}
+                    editorNode={this.requestEditorNode}
                 />
                 <ResponsePane
                 />
             </SplitPane>
+
+            <portals.InPortal node={this.requestEditorNode}>
+                <ThemedContainerSizedEditor
+                    contentId={null}
+                />
+            </portals.InPortal>
         </SendPageContainer>;
     }
 

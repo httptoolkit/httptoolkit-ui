@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
+import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 
@@ -17,6 +18,7 @@ import {
 export interface SendRequestHeadersProps extends CollapsibleCardProps {
     body: string;
     updateBody: (body: string) => void;
+    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>;
 }
 
 export const EditorContentSection = styled.div`
@@ -34,8 +36,8 @@ export const EditorContentSection = styled.div`
     flex-shrink: 1;
 
     /*
-    Allows shrinking smaller than content, to allow scrolling overflow e.g. for
-    scrollable URL param content
+    Allows shrinking smaller than content, to ensure scrolling overflow e.g. when
+    expanding headers while body is already full height.
     */
     min-height: 0;
 `;
@@ -45,8 +47,16 @@ const SendBodyCardSection = styled(SendCardSection)`
        beyond the limits of the column when other item is expanded and pushes it down */
     overflow-y: hidden;
 
-    ${p => !p.collapsed &&
-        `flex-basis: 50%;` // Fixed size required to avoid editor resize thrashing
+    ${p => !p.collapsed && `
+        /* When we're open, we want space more than any siblings */
+        flex-grow: 9999999;
+
+        /* If we're open, never let us get squeezed to nothing: */
+        min-height: 25vh;
+
+        /* Fixed size required to avoid editor resize thrashing */
+        flex-basis: 50%;
+    `
     }
 `;
 
@@ -61,7 +71,9 @@ export const SendRequestBodyCard = observer((props: SendRequestHeadersProps) => 
             </CollapsibleCardHeading>
         </header>
         <EditorContentSection>
-            <ThemedContainerSizedEditor
+            <portals.OutPortal<typeof ThemedContainerSizedEditor>
+                node={props.editorNode}
+
                 contentId='request'
                 language={'text'}
                 value={props.body}
