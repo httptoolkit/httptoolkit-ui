@@ -86,7 +86,7 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
             </CollapsibleSection>
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
-            <HeaderDetails headers={response.headers} requestUrl={requestUrl} />
+            <HeaderDetails headers={response.rawHeaders} requestUrl={requestUrl} />
         </div>
     </CollapsibleCard>;
 });

@@ -3,7 +3,7 @@ import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../../styles';
-import { Headers } from '../../../types';
+import { RawHeaders } from '../../../types';
 
 import { getHeaderDocs } from '../../../model/http/http-docs';
 import { AccountStore } from '../../../model/account/account-store';
@@ -55,6 +55,8 @@ const getHeaderDescription = (
     requestUrl: URL,
     isPaidUser: boolean
 ) => {
+    name = name.toLowerCase();
+
     if (isPaidUser) {
         if (name === 'set-cookie') {
             return <CookieHeaderDescription
@@ -76,52 +78,37 @@ const getHeaderDescription = (
 };
 
 export const HeaderDetails = inject('accountStore')(observer((props: {
-    headers: Headers,
+    headers: RawHeaders,
     requestUrl: URL,
     accountStore?: AccountStore
 }) => {
-    const headerNames = Object.keys(props.headers).sort();
+    const sortedHeaders = _.sortBy(props.headers, ([key]) => key.toLowerCase());
 
-    return headerNames.length === 0 ?
+    return sortedHeaders.length === 0 ?
         <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
     :
         <HeadersGrid>
-            { _.flatMap(headerNames, (name) => {
-                const headerValue = props.headers[name]!;
-                if (typeof headerValue === 'string') {
-                    return {
-                        name,
-                        value: headerValue,
-                        key: name
-                    };
-                } else {
-                    return headerValue.map((value, i) => ({
-                        name,
-                        value,
-                        key: name + i
-                    }));
-                }
-            }).map(({ name, value, key }) => {
-                const docs = getHeaderDocs(name);
+            { _.flatMap(sortedHeaders, ([key, value], i) => {
+                const docs = getHeaderDocs(key);
                 const description = getHeaderDescription(
-                    name,
+                    key,
                     value,
                     props.requestUrl,
                     props.accountStore!.isPaidUser
                 )
 
-                return <CollapsibleSection withinGrid={true} key={key}>
-                        <HeaderKeyValue>
-                            <HeaderName>{ name }: </HeaderName>
-                            <span>{ value }</span>
-                        </HeaderKeyValue>
+                return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
+                    <HeaderKeyValue>
+                        <HeaderName>{ key }: </HeaderName>
+                        <span>{ value }</span>
+                    </HeaderKeyValue>
 
-                        { description && <HeaderDescriptionContainer>
-                            { description }
-                            { docs && <HeaderDocsLink href={docs.url}>
-                                Find out more
-                            </HeaderDocsLink> }
-                        </HeaderDescriptionContainer> }
+                    { description && <HeaderDescriptionContainer>
+                        { description }
+                        { docs && <HeaderDocsLink href={docs.url}>
+                            Find out more
+                        </HeaderDocsLink> }
+                    </HeaderDescriptionContainer> }
                 </CollapsibleSection>
             }) }
         </HeadersGrid>;

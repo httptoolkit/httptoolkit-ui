@@ -133,7 +133,7 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
         </CollapsibleSection>
 
         <ContentLabelBlock>Headers</ContentLabelBlock>
-        <HeaderDetails headers={p.request.headers} requestUrl={p.request.parsedUrl} />
+        <HeaderDetails headers={p.request.rawHeaders} requestUrl={p.request.parsedUrl} />
     </div>;
 }
 
