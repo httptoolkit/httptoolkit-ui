@@ -15,13 +15,13 @@ describe('Set-Cookie header description', () => {
 
         expect(
             description.find('p').map(p => p.text())
-        ).to.deep.match([
+        ).to.deep.equal([
             `Set cookie 'a' to 'b'`,
             'This cookie will be sent in future secure and insecure requests ' +
                 'to example.com, but not its subdomains.',
             'The cookie is accessible from client-side scripts running on matching ' +
                 'pages. Matching requests triggered from other origins will also include ' +
-                'this cookie.',
+                'this cookie, if they are top-level navigations (not subresources).',
             'The cookie expires at the end of the current session.'
         ]);
     });
@@ -94,7 +94,8 @@ describe('Set-Cookie header description', () => {
             description.find('p').at(2).text()
         ).to.equal(
             'The cookie is not accessible from client-side scripts. ' +
-                'Matching requests triggered from other origins will however include this cookie.'
+                'Matching requests triggered from other origins will however include this cookie, ' +
+                'if they are top-level navigations (not subresources).'
         );
     });
 
@@ -147,7 +148,7 @@ describe('Set-Cookie header description', () => {
             description.find('p').at(2).text()
         ).to.equal(
             'The cookie is accessible from client-side scripts running on matching pages, ' +
-                'but matching requests triggered from other origins will not include this cookie.'
+                'but will not be sent in requests triggered from other origins.'
         );
     });
 
@@ -161,8 +162,37 @@ describe('Set-Cookie header description', () => {
             description.find('p').at(2).text()
         ).to.equal(
             'The cookie is accessible from client-side scripts running on matching pages. ' +
-                'Matching requests triggered from other origins will include this cookie, ' +
-                'but only if they are top-level navigations using safe HTTP methods.'
+                'Matching requests triggered from other origins will also include this cookie, ' +
+                'if they are top-level navigations (not subresources).'
         );
+    });
+
+    it('should explain None SameSite cookies', () => {
+        const description = shallow(<CookieHeaderDescription
+            value='a=b; Secure; SameSite=None'
+            requestUrl={new URL('http://example.com')}
+        />);
+
+        expect(
+            description.find('p').at(2).text()
+        ).to.equal(
+            'The cookie is accessible from client-side scripts running on matching pages. ' +
+                'Matching requests triggered from other origins will also include this cookie.'
+        );
+    });
+
+    it('should clearly reject insecure None SameSite cookies', () => {
+        const description = shallow(<CookieHeaderDescription
+            value='a=b; SameSite=None'
+            requestUrl={new URL('http://example.com')}
+        />);
+
+        expect(
+            description.find('p').map(p => p.text())
+        ).to.deep.equal([
+            `This attempts to set cookie 'a' to 'b'`,
+            'This will fail so this cookie will not be set, because SameSite=None can ' +
+                'only be used for cookies with the Secure flag.'
+        ]);
     });
 });
