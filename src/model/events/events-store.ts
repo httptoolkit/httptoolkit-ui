@@ -210,9 +210,7 @@ export class EventsStore {
     @computed.struct
     get activeSources() {
         return _(this.exchanges)
-            .map(e => e.request.headers['user-agent'])
-            .uniq()
-            .map(parseSource)
+            .map(e => e.request.source)
             .uniqBy(s => s.summary)
             .value();
     }
