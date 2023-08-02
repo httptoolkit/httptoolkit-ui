@@ -8,12 +8,16 @@ import { Icon } from '../../icons';
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
     disabled?: boolean;
+
+    // The header alignment - defaults to right if not set
+    headerAlignment?: 'left' | 'right';
 }
 
 const Card = styled.section.attrs((p: CardProps) => ({
     onClick: !p.disabled ? p.onClick : undefined,
     onKeyDown: !p.disabled ? p.onKeyDown : undefined,
-    tabIndex: !p.disabled ? p.tabIndex : undefined
+    tabIndex: !p.disabled ? p.tabIndex : undefined,
+    headerAlignment: p.headerAlignment ?? 'right'
 }))`
     box-sizing: border-box;
 
@@ -48,6 +52,10 @@ const Card = styled.section.attrs((p: CardProps) => ({
         display: flex;
         align-items: center;
         justify-content: flex-end;
+
+        ${p => p.headerAlignment === 'left' && `
+            flex-direction: row-reverse;
+        `}
     }
 `;
 
@@ -88,7 +96,13 @@ export const BigCard = styled(MediumCard)`
 export interface CollapsibleCardProps {
     collapsed: boolean;
     expanded?: boolean;
+
+    // The highlighted content direction - shows a border on the
+    // left or right of the whole card to indicate up/downstream
     direction?: 'left' | 'right';
+
+    // The header alignment - defaults to right if not set
+    headerAlignment?: 'left' | 'right';
 
     className?: string;
 
@@ -108,6 +122,7 @@ export class CollapsibleCard extends React.Component<
             collapsed={this.props.collapsed}
             expanded={this.props.expanded ?? false}
             direction={this.props.direction}
+            headerAlignment={this.props.headerAlignment ?? 'right'}
 
             tabIndex={0}
             ref={this.cardRef}
@@ -118,7 +133,7 @@ export class CollapsibleCard extends React.Component<
     }
 
     renderChildren() {
-        const { children, collapsed } = this.props;
+        const { children, collapsed, headerAlignment } = this.props;
 
         const showCollapseIcon = !!this.props.onCollapseToggled;
 
@@ -132,6 +147,7 @@ export class CollapsibleCard extends React.Component<
                             key='collapse-icon'
                             collapsed={collapsed}
                             onClick={this.toggleCollapse}
+                            headerAlignment={headerAlignment ?? 'right'}
                         />
                     )
                 )
@@ -176,6 +192,7 @@ interface CollapseIconProps extends ThemeProps<Theme> {
     className?: string;
     onClick: () => void;
     collapsed: boolean;
+    headerAlignment: 'left' | 'right';
 }
 
 const CollapseIcon = styled((props: CollapseIconProps) =>
@@ -189,7 +206,11 @@ const CollapseIcon = styled((props: CollapseIconProps) =>
     user-select: none;
 
     padding: 4px 10px;
-    margin: 0 -10px 0 5px;
+
+    ${p => p.headerAlignment === 'right'
+        ? 'margin: 0 -10px 0 5px;'
+        : 'margin: 0 5px 0 -10px;'
+    }
 
     &:hover {
         color: ${p => p.theme.popColor};
