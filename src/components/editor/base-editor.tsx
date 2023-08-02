@@ -98,7 +98,7 @@ const EditorMaxHeightContainer = styled.div`
 `;
 
 @observer
-export class SelfSizedBaseEditor extends React.Component<
+export class SelfSizedEditor extends React.Component<
     Omit<EditorProps, 'onContentSizeChange'> & {
         expanded?: boolean
     }
@@ -158,8 +158,8 @@ export const ThemedSelfSizedEditor = withTheme(
                 theme?: Theme,
                 expanded?: boolean
             } & Omit<EditorProps, 'onContentSizeChange' | 'theme'>,
-            ref: React.Ref<SelfSizedBaseEditor>
-        ) => <SelfSizedBaseEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
+            ref: React.Ref<SelfSizedEditor>
+        ) => <SelfSizedEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
     )
 );
 
@@ -181,7 +181,7 @@ const ContainerSizedEditorContainer = styled.div`
 `;
 
 @observer
-export class ContainerSizedBaseEditor extends React.Component<
+export class ContainerSizedEditor extends React.Component<
     Omit<EditorProps, 'onContentSizeChange'> & {
         expanded?: boolean
     }
@@ -192,7 +192,7 @@ export class ContainerSizedBaseEditor extends React.Component<
 
     onResize = _.throttle(() => {
         if (this.editor.current) this.editor.current.relayout();
-    }, 50, { leading: true, trailing: true });
+    }, 25, { leading: true, trailing: true });
 
     componentDidUpdate() {
         // Relayout after update, to ensure the editor is always using the full available
@@ -225,15 +225,15 @@ export class ContainerSizedBaseEditor extends React.Component<
     }
 }
 
-export const ThemedContainerSizedBaseEditor = withTheme(
+export const ThemedContainerSizedEditor = withTheme(
     React.forwardRef(
         (
             { theme, ...otherProps }: {
                 theme?: Theme,
                 expanded?: boolean
             } & Omit<EditorProps, 'onContentSizeChange' | 'theme'>,
-            ref: React.Ref<ContainerSizedBaseEditor>
-        ) => <ContainerSizedBaseEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
+            ref: React.Ref<ContainerSizedEditor>
+        ) => <ContainerSizedEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
     )
 );
 

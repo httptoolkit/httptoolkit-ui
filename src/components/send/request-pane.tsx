@@ -20,6 +20,7 @@ import { SendRequestBodyCard } from './send-request-body-card';
 const RequestPaneContainer = styled.section`
     display: flex;
     flex-direction: column;
+    height: 100%;
 `;
 
 type MethodName = keyof typeof Method;
