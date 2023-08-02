@@ -135,7 +135,7 @@ const trackResponseEvents = flow(function * (
     while (true) {
         const { done, value } = (
             yield reader.read()
-        ) as ReadableStreamDefaultReadResult<ResponseStreamEvent>;
+        ) as ReadableStreamReadResult<ResponseStreamEvent>;
         if (done) return;
 
         const messageType = value.type;
