@@ -88,8 +88,14 @@ export class ReadOnlyPairs extends React.Component<{
 @observer
 export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
 
+    private containerRef = React.createRef<HTMLDivElement>();
+
     @observable
     private values: PairsArray = _.cloneDeep(this.props.pairs);
+
+    // Track the last value length. This is used to detect manually added new rows, and
+    // manage the UX around that.
+    private lastValuesLength = this.values.length;
 
     componentDidMount() {
         disposeOnUnmount(this, reaction(
@@ -101,6 +107,7 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
                     // this avoids reordering due to conversion elsewhere, e.g. when entering
                     // duplicate header keys in EditableHeaders.
                     this.values = _.cloneDeep(pairs);
+                    this.lastValuesLength = this.values.length;
                 }
             }
         ));
@@ -123,6 +130,21 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
             this.values = pairs;
         }
 
+        // If we've just manually added a new row, make sure the parent scrolls
+        // to show it (note we ignore this for external updates).
+        const addedNewRow = this.values.length === this.lastValuesLength + 1;
+        this.lastValuesLength = this.values.length;
+        if (addedNewRow) {
+            requestAnimationFrame(() => {
+                const container = this.containerRef.current;
+                const lastInput = container?.querySelector<HTMLElement>('input:last-child');
+                lastInput?.scrollIntoView({
+                    block: 'nearest',
+                    behavior: 'smooth'
+                });
+            });
+        }
+
         onChange(convert(this.values));
     };
 
@@ -135,9 +157,11 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
             allowEmptyValues
         } = this.props;
 
-        const { values, onChangeValues } = this;
+        const { values, onChangeValues, containerRef } = this;
 
-        return <EditablePairsContainer>
+        return <EditablePairsContainer
+            ref={containerRef}
+        >
             { _.flatMap(values, ({ key, value, disabled }, i) => [
                 <TextInput
                     value={key}
