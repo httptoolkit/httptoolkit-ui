@@ -1,7 +1,10 @@
-let env_vars = {
-	TS_NODE_PROJECT:'./automation/tsconfig.json',
-	TS_NODE_FILES:true
+module.exports = {
+    TS_NODE_PROJECT: './automation/tsconfig.json',
+    TS_NODE_FILES: true
 };
-if (process.version.match(/^v(\d+)/)[1]>16)
-	env_vars['NODE_OPTIONS']='--openssl-legacy-provider';
-module.exports = env_vars;
+
+// WebPack 4 and some other details require old OpenSSL providers when
+// running in Node v17+:
+if (process.version.match(/^v(\d+)/)[1] > 16) {
+    module.exports['NODE_OPTIONS'] = '--openssl-legacy-provider';
+}
