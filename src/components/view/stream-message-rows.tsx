@@ -22,6 +22,7 @@ import { IconButton } from '../common/icon-button';
 
 import { ContentViewer } from '../editor/content-viewer';
 import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { EditorCardContent } from '../editor/body-card-components';
 
 const visualDirection = (message: StreamMessage) =>
     message.direction === 'sent'
@@ -281,7 +282,7 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
                 />
                 <Pill>{ getReadableSize(message.content.byteLength) }</Pill>
             </EditorRowHeader>
-            <EditorCardContent>
+            <RowEditorContent>
                 <ContentViewer
                     contentId={`ws-${streamId}-${message.messageIndex}`}
                     editorNode={editorNode}
@@ -292,7 +293,7 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
                 >
                     {message.content}
                 </ContentViewer>
-            </EditorCardContent>
+            </RowEditorContent>
         </EditorRowContainer>;
     }
 
@@ -339,20 +340,8 @@ const EditorRowHeader = styled.div<{ messageDirection: 'left' | 'right' }>`
     }
 `;
 
-export const EditorCardContent = styled.div`
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
-
-    .monaco-editor-overlaymessage {
-        display: none;
-    }
-
-    position: relative;
-    flex-grow: 1;
-
-    /*
-    Allows shrinking smaller than content, to allow scrolling overflow e.g. for
-    scrollable URL param content
-    */
-    min-height: 0;
+const RowEditorContent = styled(EditorCardContent)`
+    /* Undo the whole-card specific bits of styling */
+    border-top: none;
+    margin: 0;
 `;

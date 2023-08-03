@@ -9,14 +9,13 @@ import { observer } from 'mobx-react';
 import { MockRTCSessionDescription } from 'mockrtc';
 import * as portals from 'react-reverse-portal';
 
-import { styled } from '../../../styles';
-
 import {
     CollapsibleCard,
     CollapsibleCardHeading
 } from '../../common/card';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
 import { ContentViewer } from '../../editor/content-viewer';
+import { EditorCardContent } from '../../editor/body-card-components';
 
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
 
@@ -31,26 +30,6 @@ interface RtcSdpCardProps {
     onExpandToggled: () => void;
     onCollapseToggled?: () => void;
 };
-
-export const EditorCardContent = styled.div`
-    margin: 0 -20px -20px -20px;
-    border-top: solid 1px ${p => p.theme.containerBorder};
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
-
-    .monaco-editor-overlaymessage {
-        display: none;
-    }
-
-    position: relative;
-    flex-grow: 1;
-
-    /*
-    Allows shrinking smaller than content, to allow scrolling overflow e.g. for
-    scrollable URL param content
-    */
-    min-height: 0;
-`;
 
 @observer
 export class SDPCard extends React.Component<RtcSdpCardProps> {

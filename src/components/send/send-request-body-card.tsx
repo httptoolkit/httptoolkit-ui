@@ -14,32 +14,16 @@ import {
 import {
     ThemedContainerSizedEditor
 } from '../editor/base-editor';
+import { EditorCardContent } from '../editor/body-card-components';
 
-export interface SendRequestHeadersProps extends CollapsibleCardProps {
+export interface SendRequestBodyProps extends CollapsibleCardProps {
     body: string;
     updateBody: (body: string) => void;
     editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>;
 }
 
-export const EditorContentSection = styled.div`
-    margin: 0 -20px -20px -20px;
-    border-top: solid 1px ${p => p.theme.containerBorder};
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
-
-    .monaco-editor-overlaymessage {
-        display: none;
-    }
-
-    position: relative;
-    flex-grow: 1;
+export const SendRequestEditorContent = styled(EditorCardContent)`
     flex-shrink: 1;
-
-    /*
-    Allows shrinking smaller than content, to ensure scrolling overflow e.g. when
-    expanding headers while body is already full height.
-    */
-    min-height: 0;
 `;
 
 const SendBodyCardSection = styled(SendCardSection)`
@@ -60,7 +44,7 @@ const SendBodyCardSection = styled(SendCardSection)`
     }
 `;
 
-export const SendRequestBodyCard = observer((props: SendRequestHeadersProps) => {
+export const SendRequestBodyCard = observer((props: SendRequestBodyProps) => {
     return <SendBodyCardSection
         {...props}
         headerAlignment='left'
@@ -70,7 +54,7 @@ export const SendRequestBodyCard = observer((props: SendRequestHeadersProps) => 
                 Body
             </CollapsibleCardHeading>
         </header>
-        <EditorContentSection>
+        <SendRequestEditorContent>
             <portals.OutPortal<typeof ThemedContainerSizedEditor>
                 node={props.editorNode}
 
@@ -79,6 +63,6 @@ export const SendRequestBodyCard = observer((props: SendRequestHeadersProps) => 
                 value={props.body}
                 onChange={props.updateBody}
             />
-        </EditorContentSection>
+        </SendRequestEditorContent>
     </SendBodyCardSection>;
 });

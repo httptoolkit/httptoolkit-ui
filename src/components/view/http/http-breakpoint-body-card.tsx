@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import * as React from 'react';
 import { observable, action, reaction, computed } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
@@ -10,11 +9,7 @@ import {
     bufferToString,
     stringToBuffer
 } from '../../../util';
-import {
-    getHeaderValue,
-    getHeaderValues,
-    lastHeader
-} from '../../../util/headers';
+import { getHeaderValue } from '../../../util/headers';
 import {
     EditableContentType,
     EditableContentTypes,
@@ -29,7 +24,7 @@ import { Pill, PillSelector } from '../../common/pill';
 import { ExpandShrinkButton } from '../../common/expand-shrink-button';
 import { FormatButton } from '../../common/format-button';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
-import { EditorCardContent } from './http-body-card';
+import { EditorCardContent } from '../../editor/body-card-components';
 
 @observer
 export class HttpBreakpointBodyCard extends React.Component<{

@@ -6,7 +6,7 @@ import { Icon } from '../../icons';
 import {
     CollapsibleCard,
     CollapsibleCardProps
-} from '../common/card'
+} from './card'
 
 export const LoadingCardContent = styled((props: { height?: string, className?: string }) =>
     <div className={props.className}>
@@ -24,8 +24,18 @@ export const LoadingCardContent = styled((props: { height?: string, className?: 
 `;
 
 export const LoadingCard = (props:
-    CollapsibleCardProps & { height?: string, children?: React.ReactNode }
+    CollapsibleCardProps & {
+        height?: string,
+        children?: React.ReactNode
+    }
 ) => <CollapsibleCard {...props}>
     { props.children }
-    <LoadingCardContent height={props.height} />
+    <LoadingCardContent height={
+        props.height
+            ? props.height
+        : props.expanded
+            ? 'auto'
+        // Not expanded, no explicit height, set a default size (matches body editor max):
+            : '550px'
+    } />
 </CollapsibleCard>;

@@ -14,7 +14,7 @@ import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
 
 import { ThemedSelfSizedEditor } from './base-editor';
-import { LoadingCardContent } from '../view/loading-card';
+import { LoadingCardContent } from '../common/loading-card';
 
 interface ContentViewerProps {
     children: Buffer | string;
