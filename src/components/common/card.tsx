@@ -137,26 +137,38 @@ export class CollapsibleCard extends React.Component<
 
         const showCollapseIcon = !!this.props.onCollapseToggled;
 
-        return React.Children.map(children as React.ReactElement<any>[], (child, i) =>
-            (i === 0 && showCollapseIcon)
-                // If we have a collapse handler, inject a collapse button as the
-                // last child of our first child:
-                ? React.cloneElement(child, { },
-                    React.Children.toArray(child.props.children).concat(
-                        <CollapseIcon
-                            key='collapse-icon'
-                            collapsed={collapsed}
-                            onClick={this.toggleCollapse}
-                            headerAlignment={headerAlignment ?? 'right'}
-                        />
-                    )
+        return React.Children.map(children as React.ReactElement<any>[], (child, i) => {
+            if (i !== 0) {
+                if (collapsed) return null; // When collapsed, we drop all but the first child
+                else return child;
+            }
+
+            if (!showCollapseIcon) return child;
+
+            // Otherwise: it's the first child and we want to inject a collapse icon.
+
+            if (child.type !== 'header') {
+                throw new Error(`First child of collapsible card must be a header but was ${
+                    typeof child.type === 'string'
+                    ? child.type
+                    : child.type.name
+                }`);
+            }
+
+            // If we have a collapse handler, inject a collapse button as the
+            // last child of our first child:
+            return  React.cloneElement(child, { },
+                React.Children.toArray(child.props.children).concat(
+                    <CollapseIcon
+                        key='collapse-icon'
+                        collapsed={collapsed}
+                        onClick={this.toggleCollapse}
+                        headerAlignment={headerAlignment ?? 'right'}
+                    />
                 )
-            : (i === 0 && !showCollapseIcon)
-                ? child
-            : !collapsed
-                ? child
-            : null // When collapsed, skip all but the first child
-        );
+            );
+
+        });
     }
 
     toggleCollapse = () => {
