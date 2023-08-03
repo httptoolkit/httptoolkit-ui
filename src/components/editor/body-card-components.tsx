@@ -3,11 +3,17 @@ import * as React from 'react';
 
 import { Headers, RawHeaders } from '../../types';
 import { styled } from '../../styles';
+import { WarningIcon } from '../../icons';
 
 import { getHeaderValue } from '../../util/headers';
 import { saveFile } from '../../util/ui';
+import { ErrorLike } from '../../util/error';
 
-import { ViewableContentType, getContentEditorName } from '../../model/events/content-types';
+import {
+    EditableContentType,
+    ViewableContentType,
+    getContentEditorName
+} from '../../model/events/content-types';
 import { getReadableSize } from '../../model/events/bodies';
 
 import { CollapsibleCardHeading } from '../common/card';
@@ -16,9 +22,8 @@ import { Pill, PillSelector } from '../common/pill';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { IconButton } from '../common/icon-button';
 import { CardErrorBanner } from '../common/card-error-banner';
-import { WarningIcon } from '../../icons';
 import { ContentMonoValue } from '../common/text-content';
-import { ErrorLike } from '../../util/error';
+import { FormatButton } from '../common/format-button';
 
 // This contains all the components of a card that shows a body viewer (typically for
 // HTTP, but not always) but exported individually so they can be recombined & tweaked
@@ -57,7 +62,7 @@ export function getBodyDownloadFilename(url: string, headers: Headers | RawHeade
     if (urlBaseName?.includes(".")) return urlBaseName;
 }
 
-export const BodyCardHeader = (props: {
+export const ReadonlyBodyCardHeader = (props: {
     body: Buffer | undefined,
     mimeType?: string,
     downloadFilename?: string,
@@ -105,6 +110,48 @@ export const BodyCardHeader = (props: {
             options={props.contentTypeOptions}
             nameFormatter={getContentEditorName}
         />
+        <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
+            { props.title }
+        </CollapsibleCardHeading>
+    </>;
+};
+
+export const EditableBodyCardHeader = (props: {
+    body: Buffer,
+    onBodyFormatted: (bodyString: string) => void,
+
+    title: string,
+    expanded: boolean,
+    onExpandToggled: () => void,
+    onCollapseToggled: () => void,
+
+    selectedContentType: EditableContentType,
+    contentTypeOptions: readonly EditableContentType[],
+    onChangeContentType: (contentType: EditableContentType) => void
+}) => {
+    const { body } = props;
+
+    return <>
+        <CollapsingButtons>
+            <ExpandShrinkButton
+                expanded={props.expanded}
+                onClick={props.onExpandToggled}
+            />
+            <FormatButton
+                format={props.selectedContentType}
+                content={body}
+                onFormatted={props.onBodyFormatted}
+            />
+        </CollapsingButtons>
+
+        <Pill>{ getReadableSize(body) }</Pill>
+        <PillSelector<EditableContentType>
+            onChange={props.onChangeContentType}
+            value={props.selectedContentType}
+            options={props.contentTypeOptions}
+            nameFormatter={getContentEditorName}
+        />
+
         <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
             { props.title }
         </CollapsibleCardHeading>

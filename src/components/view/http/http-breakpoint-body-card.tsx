@@ -13,18 +13,12 @@ import { getHeaderValue } from '../../../util/headers';
 import {
     EditableContentType,
     EditableContentTypes,
-    getEditableContentType,
-    getContentEditorName
+    getEditableContentType
 } from '../../../model/events/content-types';
-import { getReadableSize } from '../../../model/events/bodies';
 
-import { CollapsibleCard, CollapsibleCardHeading } from '../../common/card';
-import { CollapsingButtons } from '../../common/collapsing-buttons';
-import { Pill, PillSelector } from '../../common/pill';
-import { ExpandShrinkButton } from '../../common/expand-shrink-button';
-import { FormatButton } from '../../common/format-button';
+import { CollapsibleCard } from '../../common/card';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
-import { EditorCardContent } from '../../editor/body-card-components';
+import { EditableBodyCardHeader, EditorCardContent } from '../../editor/body-card-components';
 
 @observer
 export class HttpBreakpointBodyCard extends React.Component<{
@@ -46,7 +40,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
     private contentType: EditableContentType = 'text';
 
     @action.bound
-    setContentType(value: string) {
+    onChangeContentType(value: string) {
         this.contentType = value as EditableContentType;
     }
 
@@ -92,28 +86,19 @@ export class HttpBreakpointBodyCard extends React.Component<{
             expanded={expanded}
         >
             <header>
-                <CollapsingButtons>
-                    <ExpandShrinkButton
-                        expanded={expanded}
-                        onClick={onExpandToggled}
-                    />
-                    <FormatButton
-                        format={this.contentType}
-                        content={body}
-                        onFormatted={this.onBodyChange}
-                    />
-                </CollapsingButtons>
+                <EditableBodyCardHeader
+                    body={body}
+                    onBodyFormatted={this.onBodyChange}
 
-                <Pill>{ getReadableSize(body.byteLength) }</Pill>
-                <PillSelector<EditableContentType>
-                    onChange={this.setContentType}
-                    value={this.contentType}
-                    options={EditableContentTypes}
-                    nameFormatter={getContentEditorName}
+                    title={title}
+                    expanded={expanded}
+                    onExpandToggled={onExpandToggled}
+                    onCollapseToggled={onCollapseToggled}
+
+                    selectedContentType={this.contentType}
+                    contentTypeOptions={EditableContentTypes}
+                    onChangeContentType={this.onChangeContentType}
                 />
-                <CollapsibleCardHeading onCollapseToggled={onCollapseToggled}>
-                    { title }
-                </CollapsibleCardHeading>
             </header>
             <EditorCardContent>
                 <portals.OutPortal<typeof ThemedSelfSizedEditor>

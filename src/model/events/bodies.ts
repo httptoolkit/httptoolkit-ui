@@ -3,7 +3,13 @@ import { IObservableValue, observable, action } from 'mobx';
 import { testEncodingsAsync } from '../../services/ui-worker-api';
 import { ExchangeMessage } from '../../types';
 
-export function getReadableSize(bytes: number, siUnits = true) {
+export function getReadableSize(input: number | Buffer | string, siUnits = true) {
+    const bytes = Buffer.isBuffer(input)
+            ? input.byteLength
+        : typeof input === 'string'
+            ? input.length
+        : input;
+
     let thresh = siUnits ? 1000 : 1024;
 
     let units = siUnits
