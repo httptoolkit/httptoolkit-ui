@@ -49,7 +49,7 @@ const isExpandableViewCard = (key: any): key is ExpandableViewCardKey =>
 const SEND_CARD_KEYS = [
     'requestHeaders',
     'requestBody',
-    'response',
+    'responseHeaders',
     'responseBody'
 ] as const;
 type SendCardKey = typeof SEND_CARD_KEYS[number];
@@ -57,7 +57,7 @@ type SendCardKey = typeof SEND_CARD_KEYS[number];
 const EXPANDABLE_SEND_CARD_KEYS = [
     'requestHeaders',
     'requestBody',
-    'response',
+    'responseHeaders',
     'responseBody'
 ] as const;
 type ExpandableSendCardKey = typeof EXPANDABLE_SEND_CARD_KEYS[number];
@@ -206,7 +206,7 @@ export class UiStore {
     private readonly sendCardStates = {
         'requestHeaders': { collapsed: false },
         'requestBody': { collapsed: false },
-        'response': { collapsed: false },
+        'responseHeaders': { collapsed: false },
         'responseBody': { collapsed: false }
     };
 

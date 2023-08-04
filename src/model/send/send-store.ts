@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { action, flow, observable } from 'mobx';
+import { action, flow, observable, runInAction } from 'mobx';
 import * as uuid from 'uuid/v4';
 import {
     MOCKTTP_PARAM_REF,
@@ -57,6 +57,9 @@ export class SendStore {
         requestContentType: 'text',
         rawBody: Buffer.from([])
     };
+
+    @observable
+    sentExchange: HttpExchange | undefined;
 
     readonly sendRequest = async (requestInput: RequestInput) => {
         const exchangeId = uuid();
@@ -116,7 +119,9 @@ export class SendStore {
             });
         }));
 
-        return exchange;
+        runInAction(() => {
+            this.sentExchange = exchange;
+        });
     }
 
 }

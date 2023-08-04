@@ -13,7 +13,7 @@ import { stringToBuffer } from '../../util';
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
 
-import { ThemedSelfSizedEditor } from './base-editor';
+import { ThemedContainerSizedEditor, ThemedSelfSizedEditor } from './base-editor';
 import { LoadingCardContent } from '../common/loading-card';
 
 interface ContentViewerProps {
@@ -22,7 +22,7 @@ interface ContentViewerProps {
     expanded: boolean;
     rawContentType?: string;
     contentType: ViewableContentType;
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor | typeof ThemedContainerSizedEditor>;
     cache: Map<Symbol, unknown>;
 
     // See BaseEditor.props.contentid

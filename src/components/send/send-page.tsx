@@ -6,10 +6,7 @@ import { styled } from '../../styles';
 
 import { SendStore } from '../../model/send/send-store';
 
-import {
-    ThemedSelfSizedEditor,
-    ThemedContainerSizedEditor
-} from '../editor/base-editor';
+import { ThemedContainerSizedEditor } from '../editor/base-editor';
 
 import { SplitPane } from '../split-pane';
 import { RequestPane } from './request-pane';
@@ -27,13 +24,18 @@ export class SendPage extends React.Component<{
 }> {
 
     private requestEditorNode = portals.createHtmlPortalNode<typeof ThemedContainerSizedEditor>({
-        attributes: {
-            'style': 'height: 100%'
-        }
+        attributes: { 'style': 'height: 100%' }
+    });
+    private responseEditorNode = portals.createHtmlPortalNode<typeof ThemedContainerSizedEditor>({
+        attributes: { 'style': 'height: 100%' }
     });
 
     render() {
-        const { requestInput, sendRequest } = this.props.sendStore!;
+        const {
+            requestInput,
+            sendRequest,
+            sentExchange
+        } = this.props.sendStore!;
 
         return <SendPageContainer>
             <SplitPane
@@ -49,13 +51,16 @@ export class SendPage extends React.Component<{
                     editorNode={this.requestEditorNode}
                 />
                 <ResponsePane
+                    exchange={sentExchange}
+                    editorNode={this.responseEditorNode}
                 />
             </SplitPane>
 
             <portals.InPortal node={this.requestEditorNode}>
-                <ThemedContainerSizedEditor
-                    contentId={null}
-                />
+                <ThemedContainerSizedEditor contentId={null} />
+            </portals.InPortal>
+            <portals.InPortal node={this.responseEditorNode}>
+                <ThemedContainerSizedEditor contentId={null} />
             </portals.InPortal>
         </SendPageContainer>;
     }
