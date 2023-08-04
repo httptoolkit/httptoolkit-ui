@@ -5,7 +5,6 @@ import { get } from 'typesafe-get';
 
 import { styled } from '../../../styles';
 import {
-    Omit,
     HttpExchange,
     TimingEvents,
     ExchangeMessage
@@ -29,6 +28,7 @@ import {
     CollapsibleCardProps
 } from '../../common/card';
 import { Pill } from '../../common/pill';
+import { DurationPill } from '../../common/duration-pill';
 import {
     CollapsibleSection,
     CollapsibleSectionSummary,
@@ -42,25 +42,6 @@ interface HttpPerformanceCardProps extends CollapsibleCardProps {
     accountStore?: AccountStore;
 }
 
-function sigFig(num: number, figs: number): number {
-    return parseFloat(num.toFixed(figs));
-}
-
-const TimingPill = observer((p: { className?: string, timingEvents: TimingEvents }) => {
-    // We can't show timing info if the request is still going
-    const doneTimestamp = p.timingEvents.responseSentTimestamp || p.timingEvents.abortedTimestamp;
-    if (!doneTimestamp) return null;
-
-    const durationMs = doneTimestamp - p.timingEvents.startTimestamp;
-
-    return <Pill className={p.className}>{
-        durationMs < 100 ? sigFig(durationMs, 2) + 'ms' : // 22.34ms
-        durationMs < 1000 ? sigFig(durationMs, 1) + 'ms' : // 999.5ms
-        durationMs < 10000 ? sigFig(durationMs / 1000, 3) + ' seconds' : // 3.045 seconds
-        sigFig(durationMs / 1000, 1) + ' seconds' // 11.2 seconds
-    }</Pill>;
-});
-
 export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpPerformanceCardProps) => {
     const { exchange, accountStore } = props;
     const { isPaidUser } = accountStore!;
@@ -68,9 +49,7 @@ export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpP
     return <CollapsibleCard {...props}>
         <header>
             { isPaidUser
-                ? ('startTime' in exchange.timingEvents
-                    ? <TimingPill timingEvents={exchange.timingEvents} />
-                    : null)
+                ? <DurationPill timingEvents={exchange.timingEvents} />
                 : <ProHeaderPill />
             }
             <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
