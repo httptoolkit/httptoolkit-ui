@@ -18,6 +18,17 @@ export function getReadableSize(bytes: number, siUnits = true) {
     return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
 }
 
+function sigFig(num: number, figs: number): number {
+    return parseFloat(num.toFixed(figs));
+}
+
+export function getReadableDuration(durationMs: number): string {
+    return (durationMs < 100) ? (sigFig(durationMs, 2) + 'ms') // 22.34ms
+        : (durationMs < 1000 ? sigFig(durationMs, 1) + 'ms' // 999.5ms
+            : (durationMs < 10000 ? sigFig(durationMs / 1000, 3) + ' s' // 3.045 seconds
+                : sigFig(durationMs / 1000, 1) + ' s')) // 11.2 seconds
+}
+
 const EncodedSizesCacheKey = Symbol('encoded-body-test');
 type EncodedBodySizes = { [encoding: string]: number };
 type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,

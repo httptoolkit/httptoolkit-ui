@@ -25,7 +25,11 @@ import {
 import { nameHandlerClass } from '../../model/rules/rule-descriptions';
 
 import { UnreachableCheck } from '../../util/error';
-import { getReadableSize } from '../../model/events/bodies';
+import {
+    getReadableSize,
+    getReadableDuration
+} from '../../model/events/bodies';
+
 import { filterProps } from '../component-utils';
 
 import { EmptyState } from '../common/empty-state';
@@ -166,6 +170,18 @@ const PathAndQuery = styled(Column)`
     flex-shrink: 1;
     flex-grow: 0;
     flex-basis: 1000px;
+`;
+
+const Duration = styled(Column)`
+  flex-basis: 80px;
+  flex-shrink: 0;
+  flex-grow: 0;
+`;
+
+const Size = styled(Column)`
+  flex-basis: 80px;
+  flex-shrink: 0;
+  flex-grow: 0;
 `;
 
 // Match Method + Status, but shrink right margin slightly so that
@@ -374,6 +390,10 @@ const ExchangeRow = observer(({
         category
     } = exchange;
 
+    let durationMs = ('startTime' in exchange.timingEvents) ? (
+        (exchange.timingEvents.responseSentTimestamp || exchange.timingEvents.abortedTimestamp || 0) - exchange.timingEvents.startTimestamp
+    ) : 0;
+
     return <TrafficEventListRow
         role="row"
         aria-label='row'
@@ -439,6 +459,12 @@ const ExchangeRow = observer(({
         <PathAndQuery title={ request.parsedUrl.pathname + request.parsedUrl.search }>
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
+        <Duration>
+            {durationMs > 0 ? getReadableDuration(durationMs) : ''}
+        </Duration>
+        <Size>
+            { exchange.isSuccessfulExchange() ? getReadableSize(exchange.response.body.encoded.byteLength) : ''}
+        </Size>
     </TrafficEventListRow>;
 });
 
@@ -694,6 +720,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 <Source>Source</Source>
                 <Host>Host</Host>
                 <PathAndQuery>Path and query</PathAndQuery>
+                <Duration>Duration</Duration>
+                <Size>Size</Size>
             </TableHeader>
 
             {
