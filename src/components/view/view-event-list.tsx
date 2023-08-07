@@ -9,7 +9,10 @@ import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import { styled } from '../../styles'
 import { ArrowIcon, Icon, WarningIcon } from '../../icons';
 
-import { ContextMenuItem, ClickEventType, BaseContextMenuItem, SubMenuItem, GetNewContextMenu } from './context-menu';
+import { GetNewContextMenu } from './context-menu';
+import {HTMLContextMenu,noop} from './html-context-menu';
+
+noop();
 
 import {
     CollectedEvent,
@@ -359,32 +362,18 @@ const EventRow = observer((props: EventRowProps) => {
     }
 });
 
-interface ExchangeOnClickFunc {
-    (e: ClickEventType, props: object, exchange: HttpExchange): void;
+interface EventClickedData {
+    exchange : HttpExchange;
 }
-function getExchangeOnClick(func: ExchangeOnClickFunc) {
-    return (e: ClickEventType, props: object) => func(e, props, (props as any).exchange as HttpExchange);
-
-}
-let aMenu = GetNewContextMenu();
+let aMenu = GetNewContextMenu<EventClickedData>();
 let cntr = 0;
-let arr: BaseContextMenuItem[] = [
-    new ContextMenuItem({ title: "Toggle Pin", disabled: () => (cntr++ % 2) == 0 , onClick: getExchangeOnClick((e, props, exchange) => runInAction(() => exchange.pinned = !exchange.pinned)) }),
-    new SubMenuItem({
-        title: "Copy",
-        sub_items: [new ContextMenuItem(
-            {
-                title: "Decoded Body", onClick: getExchangeOnClick( (e, props, exchange) => {
-                        if (exchange && exchange.hasResponseBody() && exchange.response.body)
-                            exchange.response.body.decodedPromise.then(val => { copyToClipboard(UTF8Decoder.decode(val)) });
-                        }
-                )
-    
-            }) ]
-    })
-
-];
-let addItem = aMenu.CreateContextMenu(arr);
+aMenu.AppendContextMenuItem(aMenu.NewMenuItem ({ title: "Toggle Pin", disabled: () => (cntr++ % 2) == 0 , onClick: (e, props) => runInAction(() => props.exchange.pinned = !props.exchange.pinned)}));
+aMenu.AppendContextMenuItem(aMenu.NewSubMenuItem({title: "Copy",sub_items: [ aMenu.NewMenuItem( {
+    title: "Decoded Body", onClick: (e, props) => {
+            if (props.exchange && props.exchange.hasResponseBody() && props.exchange.response.body)
+                props.exchange.response.body.decodedPromise.then(val => { copyToClipboard(UTF8Decoder.decode(val)) });
+            }
+        })] }) );
 
 const ExchangeRow = observer(({
     index,
@@ -789,7 +778,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                     }</Observer>
                 }</AutoSizer>
             }
-            {aMenu.menu}
+            {aMenu.GetMenuComponent()}
         </ListContainer>;
     }
 
