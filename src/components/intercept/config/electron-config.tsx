@@ -8,6 +8,7 @@ import { logError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { UiStore } from '../../../model/ui-store';
+import { DesktopApi } from '../../../services/desktop-api';
 
 import { uploadFile } from '../../../util/ui';
 import { Button, SecondaryButton, UnstyledButton } from '../../common/inputs';
@@ -120,12 +121,6 @@ function getReadablePath(path: string) {
     }
 }
 
-declare global {
-    interface Window {
-        desktopApi?: { selectApplication: () => Promise<string | undefined> };
-    }
-}
-
 @inject('uiStore')
 @observer
 class ElectronConfig extends React.Component<{
@@ -147,13 +142,9 @@ class ElectronConfig extends React.Component<{
     }
 
     selectApplication = async () => {
-        const useNativePicker = window.desktopApi?.selectApplication;
+        const appPicker = DesktopApi.selectApplication ?? (() => uploadFile('path'));
 
-        const pathToApplication = await(
-            useNativePicker
-                ? window.desktopApi?.selectApplication()
-                : uploadFile('path')
-        );
+        const pathToApplication = await(appPicker());
 
         if (!pathToApplication) {
             this.props.closeSelf();

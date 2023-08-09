@@ -20,3 +20,15 @@ export async function getDesktopInjectedValue(key: DesktopInjectedKey): Promise<
     }
     // Note that if we're running in a browser, not the desktop shell, this _never_ resolves.
 }
+
+declare global {
+    interface Window {
+        desktopApi?: DesktopApi;
+    }
+}
+
+interface DesktopApi {
+    selectApplication?: () => Promise<string | undefined>
+}
+
+export const DesktopApi: DesktopApi = window.desktopApi ?? {};
