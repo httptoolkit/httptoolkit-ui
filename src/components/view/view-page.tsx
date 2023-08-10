@@ -23,6 +23,7 @@ import { UiStore } from '../../model/ui/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
 import { RulesStore } from '../../model/rules/rules-store';
+import { AccountStore } from '../../model/account/account-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
@@ -33,6 +34,7 @@ import { ThemedSelfSizedEditor } from '../editor/base-editor';
 
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
+import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
 import { HttpDetailsPane } from './http/http-details-pane';
 import { TlsFailureDetailsPane } from './tls/tls-failure-details-pane';
 import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
@@ -45,7 +47,8 @@ interface ViewPageProps {
     eventsStore: EventsStore;
     proxyStore: ProxyStore;
     uiStore: UiStore;
-    rulesStore: RulesStore,
+    accountStore: AccountStore;
+    rulesStore: RulesStore;
     navigate: (path: string) => void;
     eventId?: string;
 }
@@ -106,6 +109,7 @@ type EditorKey = typeof EDITOR_KEYS[number];
 @inject('eventsStore')
 @inject('proxyStore')
 @inject('uiStore')
+@inject('accountStore')
 @inject('rulesStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
@@ -168,6 +172,14 @@ class ViewPage extends React.Component<ViewPageProps> {
             id: this.props.eventId
         });
     }
+
+    private readonly contextMenuBuilder = new ViewEventContextMenuBuilder(
+        this.props.accountStore,
+        this.props.uiStore,
+        this.onPin,
+        this.onDelete,
+        this.onBuildRuleFromExchange
+    );
 
     componentDidMount() {
         disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
@@ -346,6 +358,8 @@ class ViewPage extends React.Component<ViewPageProps> {
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
 
+                        contextMenuBuilder={this.contextMenuBuilder}
+
                         ref={this.listRef}
                     />
                 </LeftPane>
@@ -403,7 +417,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onPin(event: HttpExchange) {
+    onPin(event: CollectedEvent) {
         event.pinned = !event.pinned;
     }
 
@@ -507,7 +521,7 @@ const LeftPane = styled.div`
 const StyledViewPage = styled(
     // Exclude stores etc from the external props, as they're injected
     ViewPage as unknown as WithInjected<typeof ViewPage,
-        'uiStore' | 'proxyStore' | 'eventsStore' | 'rulesStore' | 'navigate'
+        'uiStore' | 'proxyStore' | 'eventsStore' | 'rulesStore' | 'accountStore' | 'navigate'
     >
 )`
     height: 100vh;

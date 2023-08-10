@@ -1,18 +1,13 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer, Observer } from 'mobx-react';
-import { action, computed, runInAction } from 'mobx';
+import { inject, observer, Observer } from 'mobx-react';
+import { action, computed } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
 import { ArrowIcon, Icon, WarningIcon } from '../../icons';
-
-import { GetNewContextMenu } from './context-menu';
-import {HTMLContextMenu,noop} from './html-context-menu';
-
-noop();
 
 import {
     CollectedEvent,
@@ -29,15 +24,16 @@ import {
     describeEventCategory
 } from '../../model/events/categorization';
 import { nameHandlerClass } from '../../model/rules/rule-descriptions';
+import { getReadableSize } from '../../model/events/bodies';
 
 import { UnreachableCheck } from '../../util/error';
-import { getReadableSize } from '../../model/events/bodies';
 import { filterProps } from '../component-utils';
 
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
+import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
 
 const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
 
@@ -56,6 +52,8 @@ interface ViewEventListProps {
     filteredEvents: CollectedEvent[];
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
+
+    contextMenuBuilder: ViewEventContextMenuBuilder;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
@@ -310,12 +308,13 @@ interface EventRowProps extends ListChildComponentProps {
     data: {
         selectedEvent: CollectedEvent | undefined;
         events: CollectedEvent[];
+        contextMenuBuilder: ViewEventContextMenuBuilder;
     }
 }
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent } = props.data;
+    const { events, selectedEvent, contextMenuBuilder } = props.data;
     const event = events[index];
 
     const isSelected = (selectedEvent === event);
@@ -334,6 +333,7 @@ const EventRow = observer((props: EventRowProps) => {
                 isSelected={isSelected}
                 style={style}
                 exchange={event}
+                contextMenuBuilder={contextMenuBuilder}
             />
         } else {
             return <ExchangeRow
@@ -341,6 +341,7 @@ const EventRow = observer((props: EventRowProps) => {
                 isSelected={isSelected}
                 style={style}
                 exchange={event}
+                contextMenuBuilder={contextMenuBuilder}
             />;
         }
     } else if (event.isRTCConnection()) {
@@ -362,29 +363,18 @@ const EventRow = observer((props: EventRowProps) => {
     }
 });
 
-interface EventClickedData {
-    exchange : HttpExchange;
-}
-let aMenu = GetNewContextMenu<EventClickedData>();
-let cntr = 0;
-aMenu.AppendContextMenuItem(aMenu.NewMenuItem ({ title: "Toggle Pin", disabled: () => (cntr++ % 2) == 0 , onClick: (e, props) => runInAction(() => props.exchange.pinned = !props.exchange.pinned)}));
-aMenu.AppendContextMenuItem(aMenu.NewSubMenuItem({title: "Copy",sub_items: [ aMenu.NewMenuItem( {
-    title: "Decoded Body", onClick: (e, props) => {
-            if (props.exchange && props.exchange.hasResponseBody() && props.exchange.response.body)
-                props.exchange.response.body.decodedPromise.then(val => { copyToClipboard(UTF8Decoder.decode(val)) });
-            }
-        })] }) );
-
-const ExchangeRow = observer(({
+const ExchangeRow = inject('uiStore')(observer(({
     index,
     isSelected,
     style,
-    exchange
+    exchange,
+    contextMenuBuilder
 }: {
     index: number,
     isSelected: boolean,
     style: {},
-    exchange: HttpExchange
+    exchange: HttpExchange,
+    contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
     const {
         request,
@@ -399,7 +389,7 @@ const ExchangeRow = observer(({
         aria-rowindex={index + 1}
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
-        onContextMenu={aMenu.GetContextMenuHandler({ exchange: exchange })}
+        onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
         className={isSelected ? 'selected' : ''}
         style={style}
     >
@@ -459,7 +449,7 @@ const ExchangeRow = observer(({
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
     </TrafficEventListRow>;
-});
+}));
 
 const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'spinner'],
@@ -583,7 +573,8 @@ const BuiltInApiRow = observer((p: {
     index: number,
     exchange: HttpExchange,
     isSelected: boolean,
-    style: {}
+    style: {},
+    contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
     const {
         request,
@@ -599,6 +590,7 @@ const BuiltInApiRow = observer((p: {
         data-event-id={p.exchange.id}
         tabIndex={p.isSelected ? 0 : -1}
 
+        onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
     >
@@ -666,31 +658,6 @@ const TlsRow = observer((p: {
         } connection to { tlsEvent.upstreamHostname || 'unknown domain' }
     </TlsListRow>
 });
-const UTF8Decoder = new TextDecoder('utf8', { fatal: true });
-
-async function copyToClipboard(textToCopy: string) {
-    try {
-        if (navigator.clipboard && window.isSecureContext)
-            await navigator.clipboard.writeText(textToCopy);
-        else {
-            const textArea = document.createElement("textarea");
-            textArea.value = textToCopy;
-            textArea.style.position = "absolute";
-            textArea.style.left = "-9999px";
-            document.body.prepend(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-            } catch (error) {
-                console.error(error);
-            } finally {
-                textArea.remove();
-            }
-        };
-    } catch (error) {
-        console.error("Clipboard copy failure", error);
-    }
-}
 
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
@@ -705,7 +672,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     @computed get listItemData(): EventRowProps['data'] {
         return {
             selectedEvent: this.props.selectedEvent,
-            events: this.props.filteredEvents
+            events: this.props.filteredEvents,
+            contextMenuBuilder: this.props.contextMenuBuilder
         };
     }
 
@@ -778,7 +746,6 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                     }</Observer>
                 }</AutoSizer>
             }
-            {aMenu.GetMenuComponent()}
         </ListContainer>;
     }
 

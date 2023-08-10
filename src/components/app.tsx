@@ -16,6 +16,7 @@ import { appHistory } from '../routing';
 import { useHotkeys, Ctrl } from '../util/ui';
 
 import { AccountStore } from '../model/account/account-store';
+import { UiStore } from '../model/ui/ui-store';
 import {
     serverVersion,
     versionSatisfies,
@@ -33,6 +34,7 @@ import { SettingsPage } from './settings/settings-page';
 import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
 import { CheckoutSpinner } from './account/checkout-spinner';
+import { HtmlContextMenu } from './html-context-menu';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -82,8 +84,12 @@ const AppKeyboardShortcuts = (props: {
 };
 
 @inject('accountStore')
+@inject('uiStore')
 @observer
-class App extends React.Component<{ accountStore: AccountStore }> {
+class App extends React.Component<{
+    accountStore: AccountStore,
+    uiStore: UiStore
+}> {
 
     @computed
     get canVisitSettings() {
@@ -198,6 +204,11 @@ class App extends React.Component<{ accountStore: AccountStore }> {
             cancelCheckout
         } = this.props.accountStore;
 
+        const {
+            contextMenuState,
+            clearHtmlContextMenu
+        } = this.props.uiStore;
+
         return <LocationProvider history={appHistory}>
             <AppKeyboardShortcuts
                 navigate={appHistory.navigate}
@@ -242,13 +253,21 @@ class App extends React.Component<{ accountStore: AccountStore }> {
                     onCancel={cancelCheckout}
                 />
             }
+
+            {
+                contextMenuState &&
+                    <HtmlContextMenu
+                        menuState={contextMenuState}
+                        onHidden={clearHtmlContextMenu}
+                    />
+            }
         </LocationProvider>;
     }
 }
 
 // Annoying cast required to handle the store prop nicely in our types
 const AppWithStoreInjected = (
-    App as unknown as WithInjected<typeof App, 'accountStore'>
+    App as unknown as WithInjected<typeof App, 'accountStore' | 'uiStore'>
 );
 
 export { AppWithStoreInjected as App };
