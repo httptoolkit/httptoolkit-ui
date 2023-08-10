@@ -107,6 +107,10 @@ const RowPin = styled(
             padding: 8px 0;
             width: 0 !important;
             margin: 0 !important;
+
+            > path {
+                display: none;
+            }
         `
     }
 `;
