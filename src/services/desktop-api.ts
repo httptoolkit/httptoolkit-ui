@@ -28,7 +28,32 @@ declare global {
 }
 
 interface DesktopApi {
-    selectApplication?: () => Promise<string | undefined>
+    selectApplication?: () => Promise<string | undefined>;
+    openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
+}
+
+interface NativeContextMenuDefinition {
+    position: { x: number; y: number };
+    items: readonly NativeContextMenuItem[];
+}
+
+export type NativeContextMenuItem =
+    | NativeContextMenuOption
+    | NativeContextMenuSubmenu
+    | { type: 'separator' };
+
+interface NativeContextMenuOption {
+    type: 'option';
+    id: string;
+    label: string;
+    enabled?: boolean;
+}
+
+interface NativeContextMenuSubmenu {
+    type: 'submenu';
+    label: string;
+    enabled?: boolean;
+    items: readonly NativeContextMenuItem[];
 }
 
 export const DesktopApi: DesktopApi = window.desktopApi ?? {};
