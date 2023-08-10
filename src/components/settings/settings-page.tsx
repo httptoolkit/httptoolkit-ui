@@ -12,7 +12,7 @@ import { styled, Theme, ThemeName } from '../../styles';
 import { Icon, WarningIcon } from '../../icons';
 
 import { AccountStore } from '../../model/account/account-store';
-import { UiStore } from '../../model/ui-store';
+import { UiStore } from '../../model/ui/ui-store';
 import { serverVersion, versionSatisfies, PORT_RANGE_SERVER_RANGE } from '../../services/service-versions';
 
 import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';

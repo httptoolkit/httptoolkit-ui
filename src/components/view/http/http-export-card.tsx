@@ -1,20 +1,25 @@
-import * as _ from 'lodash';
 import React from "react";
 import { action, computed } from "mobx";
 import { inject, observer } from "mobx-react";
-import * as HarFormat from 'har-format';
-import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 import dedent from 'dedent';
 
-import { Omit, HttpExchange } from '../../../types';
+import { HttpExchange } from '../../../types';
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
-import { saveFile } from '../../../util/ui';
 import { logError } from '../../../errors';
 
 import { AccountStore } from '../../../model/account/account-store';
-import { UiStore } from '../../../model/ui-store';
-import { generateHarRequest, generateHar, ExtendedHarRequest } from '../../../model/http/har';
+import { UiStore } from '../../../model/ui/ui-store';
+import {
+    exportHar,
+    generateCodeSnippet,
+    getCodeSnippetFormatKey,
+    getCodeSnippetFormatName,
+    getCodeSnippetOptionFromKey,
+    DEFAULT_SNIPPET_FORMAT_KEY,
+    snippetExportOptions,
+    SnippetOption
+} from '../../../model/ui/export';
 
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 import {
@@ -26,39 +31,6 @@ import { PillSelector, PillButton } from '../../common/pill';
 import { CopyButtonPill } from '../../common/copy-button';
 import { DocsLink } from '../../common/docs-link';
 import { ThemedSelfSizedEditor } from '../../editor/base-editor';
-
-interface SnippetOption {
-    target: HTTPSnippet.Target,
-    client: HTTPSnippet.Client,
-    name: string,
-    description: string,
-    link: string
-}
-
-const snippetExportOptions: _.Dictionary<SnippetOption[]> = _(HTTPSnippet.availableTargets())
-    .keyBy(target => target.title)
-    .mapValues(target =>
-        target.clients.map((client) => ({
-            target: target.key,
-            client: client.key,
-            name: client.title,
-            description: client.description,
-            link: client.link
-        }))
-    ).value();
-
-const KEY_SEPARATOR = '~~';
-
-const getExportOptionKey = (option: SnippetOption) =>
-    option.target + KEY_SEPARATOR + option.client;
-
-// Show the client name, or an overridden name in some ambiguous cases
-const getExportOptionName = (option: SnippetOption) => ({
-    'php~~curl': 'PHP ext-cURL',
-    'php~~http1': 'PHP HTTP v1',
-    'php~~http2': 'PHP HTTP v2',
-    'node~~native': 'Node.js HTTP'
-} as _.Dictionary<string>)[getExportOptionKey(option)] || option.name;
 
 interface ExportCardProps extends CollapsibleCardProps  {
     exchange: HttpExchange;
@@ -84,62 +56,15 @@ const snippetEditorOptions = {
     hover: { enabled: false }
 };
 
-const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
-    const postData = !!harRequest.postData
-            ? harRequest.postData
-        : harRequest._requestBodyStatus === 'discarded:not-representable'
-            ? {
-                mimeType: 'text/plain',
-                text: "!!! UNREPRESENTABLE BINARY REQUEST BODY - BODY MUST BE EXPORTED SEPARATELY !!!"
-            }
-        : harRequest._requestBodyStatus === 'discarded:too-large'
-            ? {
-                mimeType: 'text/plain',
-                text: "!!! VERY LARGE REQUEST BODY - BODY MUST BE EXPORTED & INCLUDED SEPARATELY !!!"
-            }
-        : harRequest._requestBodyStatus === 'discarded:not-decodable'
-            ? {
-                mimeType: 'text/plain',
-                text: "!!! REQUEST BODY COULD NOT BE DECODED !!!"
-            }
-        : undefined;
-
-    // When exporting code snippets the primary goal is to generate convenient code to send the
-    // request that's *sematantically* equivalent to the original request, not to force every
-    // tool to produce byte-for-byte identical requests (that's effectively impossible). To do
-    // this, we drop headers that tools can produce automatically for themselves:
-    return {
-        ...harRequest,
-        postData,
-        headers: _.filter(harRequest.headers, (header) => {
-            // All clients should be able to automatically generate the correct content-length
-            // headers as required for a request where it's unspecified. If we override this,
-            // it can cause problems if tools change the body length (due to encoding/compression).
-            if (header.name.toLowerCase() === 'content-length') return false;
-
-            // HTTP/2 headers should never be included in snippets - they're implicitly part of
-            // the other request data (the method etc).
-            // We can drop this after fixing https://github.com/Kong/httpsnippet/issues/298
-            if (header.name.startsWith(':')) return false;
-
-            return true;
-        })
-    };
-};
-
 const ExportSnippetEditor = observer((p: {
     exchange: HttpExchange
     exportOption: SnippetOption
 }) => {
     const { target, client, link, description } = p.exportOption;
-    const harRequest = generateHarRequest(p.exchange.request, false, {
-        bodySizeLimit: Infinity
-    });
-    const harSnippetBase = simplifyHarForSnippetExport(harRequest);
 
     let snippet: string;
     try {
-        snippet = new HTTPSnippet(harSnippetBase).convert(target, client);
+        snippet = generateCodeSnippet(p.exchange, p.exportOption);
     } catch (e) {
         console.log(`Failed to export request for ${target}--${client}`);
         logError(e);
@@ -154,7 +79,7 @@ const ExportSnippetEditor = observer((p: {
         <SnippetDescriptionContainer>
             <p>
                 <strong>{
-                    getExportOptionName(p.exportOption)
+                    getCodeSnippetFormatName(p.exportOption)
                 }</strong>: { description }
             </p>
             <p>
@@ -174,28 +99,13 @@ const ExportSnippetEditor = observer((p: {
                         'javascript': 'javascript',
                         'node': 'javascript',
                         'shell': 'shell',
-                    } as _.Dictionary<string>)[target] || 'text'
+                    } as Record<string, string>)[target] || 'text'
                 }
                 options={snippetEditorOptions}
             />
         </SnippetEditorContainer>
     </>;
 });
-
-const exportHar = async (exchange: HttpExchange) => {
-    const harContent = JSON.stringify(
-        await generateHar([exchange], {
-            bodySizeLimit: Infinity
-        })
-    );
-    const filename = `${
-        exchange.request.method
-    } ${
-        exchange.request.parsedUrl.hostname
-    }.har`;
-
-    saveFile(filename, 'application/har+json;charset=utf-8', harContent);
-};
 
 const ExportHarPill = styled(observer((p: {
     className?: string,
@@ -232,8 +142,8 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
                     onChange={this.setSnippetOption}
                     value={this.snippetOption}
                     optGroups={snippetExportOptions}
-                    keyFormatter={getExportOptionKey}
-                    nameFormatter={getExportOptionName}
+                    keyFormatter={getCodeSnippetFormatKey}
+                    nameFormatter={getCodeSnippetFormatName}
                 />
 
                 <CollapsibleCardHeading onCollapseToggled={this.props.onCollapseToggled}>
@@ -268,15 +178,8 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
     @computed
     private get snippetOption(): SnippetOption {
         let exportSnippetFormat = this.props.uiStore!.exportSnippetFormat ||
-            `shell${KEY_SEPARATOR}curl`;
-
-        const [target, client] = exportSnippetFormat.split(KEY_SEPARATOR) as
-            [HTTPSnippet.Target, HTTPSnippet.Client];
-
-        return _(snippetExportOptions)
-            .values()
-            .flatten()
-            .find({ target, client }) as SnippetOption;
+            DEFAULT_SNIPPET_FORMAT_KEY;
+        return getCodeSnippetOptionFromKey(exportSnippetFormat);
     }
 
     @action.bound

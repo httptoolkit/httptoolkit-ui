@@ -7,7 +7,7 @@ import { Icon } from '../../../icons';
 import { logError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { DesktopApi } from '../../../services/desktop-api';
 
 import { uploadFile } from '../../../util/ui';

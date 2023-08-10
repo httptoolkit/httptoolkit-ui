@@ -1,11 +1,11 @@
 import * as _ from 'lodash';
 import { observable, action, autorun, computed, observe } from 'mobx';
 
-import { Theme, ThemeName, Themes } from '../styles';
-import { lazyObservablePromise } from '../util/observable';
-import { persist, hydrate } from '../util/mobx-persist/persist';
-import { AccountStore } from './account/account-store';
-import { emptyFilterSet, FilterSet } from './filters/search-filters';
+import { Theme, ThemeName, Themes } from '../../styles';
+import { lazyObservablePromise } from '../../util/observable';
+import { persist, hydrate } from '../../util/mobx-persist/persist';
+import { AccountStore } from '../account/account-store';
+import { emptyFilterSet, FilterSet } from '../filters/search-filters';
 
 const VIEW_CARD_KEYS = [
     'api',

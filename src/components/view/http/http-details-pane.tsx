@@ -8,7 +8,7 @@ import { CollectedEvent, HtkResponse, HttpExchange } from '../../../types';
 import { styled } from '../../../styles';
 import { logError } from '../../../errors';
 
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { ApiExchange } from '../../../model/api/api-interfaces';

@@ -4,7 +4,7 @@ import { observer, inject } from 'mobx-react';
 import { HttpExchange } from '../../../types';
 import { styled } from '../../../styles';
 
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { getStatusColor } from '../../../model/events/categorization';
 
 import { Pill } from '../../common/pill';

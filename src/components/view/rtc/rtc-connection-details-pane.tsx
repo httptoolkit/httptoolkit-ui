@@ -8,7 +8,7 @@ import { action, computed, observable } from 'mobx';
 import { inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
 import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';

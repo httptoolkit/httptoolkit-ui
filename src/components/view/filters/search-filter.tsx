@@ -19,7 +19,7 @@ import {
     buildCustomFilter,
     CustomFilterClass
 } from '../../../model/filters/filter-matching';
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { AccountStore } from '../../../model/account/account-store';
 
 import { IconButton, IconButtonLink } from '../../common/icon-button';

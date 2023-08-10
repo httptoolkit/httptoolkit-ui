@@ -11,7 +11,7 @@ import {
 } from '../../../services/service-versions';
 
 import { AccountStore } from '../../../model/account/account-store';
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { InterceptorStore } from '../../../model/interception/interceptor-store';
 import { Interceptor } from '../../../model/interception/interceptors';
 

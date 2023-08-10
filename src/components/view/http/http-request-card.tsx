@@ -7,7 +7,7 @@ import { Icon } from '../../../icons';
 
 import { aOrAn, uppercaseFirst } from '../../../util/text';
 
-import { UiStore } from '../../../model/ui-store';
+import { UiStore } from '../../../model/ui/ui-store';
 import { getSummaryColour } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
 import { nameHandlerClass } from '../../../model/rules/rule-descriptions';
