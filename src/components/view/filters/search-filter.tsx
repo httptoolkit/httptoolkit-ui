@@ -5,7 +5,7 @@ import { action, computed, observable } from 'mobx';
 import { trackUndo } from 'mobx-shallow-undo';
 
 import { css, styled } from '../../../styles';
-import { isCmdCtrlPressed } from '../../../util/ui';
+import { copyToClipboard, isCmdCtrlPressed } from '../../../util/ui';
 
 import {
     Filter,
@@ -390,16 +390,14 @@ export class SearchFilter<T> extends React.Component<{
             activeFilters.indexOf(f),
         ['desc']);
 
-        if (filtersToCopy.length > 0 && !!navigator.clipboard) {
+        if (filtersToCopy.length > 0) {
             const serialization = filtersToCopy.map(t => t.serialize()).join(' ');
-            navigator.clipboard.writeText(serialization);
+            copyToClipboard(serialization);
             e.preventDefault();
         }
     }
 
     private onCut = (e: React.ClipboardEvent) => {
-        if (!navigator.clipboard) return;
-
         this.onCopy(e);
         this.deleteSelectedFilters();
     }
