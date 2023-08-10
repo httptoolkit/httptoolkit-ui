@@ -94,6 +94,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
             event: CollectedEvent,
             onDelete: (event: CollectedEvent) => void,
             onScrollToEvent: (event: CollectedEvent) => void,
+            onBuildRuleFromExchange: (event: HttpExchange) => void,
             isPaidUser: boolean,
             navigate: (url: string) => void
         }) => {
@@ -117,15 +118,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
                 <MockButton
                     isExchange={event.isHttp()}
                     isPaidUser={props.isPaidUser}
-                    onClick={() => {
-                        const rule = buildRuleFromExchange(
-                            event as HttpExchange
-                        );
-                        runInAction(() => {
-                            props.rulesStore!.draftRules.items.unshift(rule);
-                        });
-                        props.navigate(`/mock/${rule.id}`);
-                    }}
+                    onClick={() => props.onBuildRuleFromExchange(props.event as HttpExchange)}
                 />
             </ButtonsContainer>;
         }

@@ -22,8 +22,10 @@ import { UnreachableCheck } from '../../util/error';
 import { UiStore } from '../../model/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
+import { RulesStore } from '../../model/rules/rules-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
+import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -43,6 +45,7 @@ interface ViewPageProps {
     eventsStore: EventsStore;
     proxyStore: ProxyStore;
     uiStore: UiStore;
+    rulesStore: RulesStore,
     navigate: (path: string) => void;
     eventId?: string;
 }
@@ -103,6 +106,7 @@ type EditorKey = typeof EDITOR_KEYS[number];
 @inject('eventsStore')
 @inject('proxyStore')
 @inject('uiStore')
+@inject('rulesStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
@@ -268,6 +272,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
                 onScrollToEvent={this.onScrollToCenterEvent}
+                onBuildRuleFromExchange={this.onBuildRuleFromExchange}
             />;
         } else if (this.selectedEvent.isTlsFailure()) {
             rightPane = <TlsFailureDetailsPane
@@ -403,6 +408,15 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
+    onBuildRuleFromExchange(exchange: HttpExchange) {
+        const { rulesStore, navigate } = this.props;
+
+        const rule = buildRuleFromExchange(exchange);
+        rulesStore!.draftRules.items.unshift(rule);
+        navigate(`/mock/${rule.id}`);
+    }
+
+    @action.bound
     onDelete(event: CollectedEvent) {
         const { filteredEvents } = this.filteredEventState;
 
@@ -492,7 +506,9 @@ const LeftPane = styled.div`
 
 const StyledViewPage = styled(
     // Exclude stores etc from the external props, as they're injected
-    ViewPage as unknown as WithInjected<typeof ViewPage, 'uiStore' | 'proxyStore' | 'eventsStore' | 'navigate'>
+    ViewPage as unknown as WithInjected<typeof ViewPage,
+        'uiStore' | 'proxyStore' | 'eventsStore' | 'rulesStore' | 'navigate'
+    >
 )`
     height: 100vh;
     position: relative;
