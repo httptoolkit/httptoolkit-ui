@@ -27,8 +27,6 @@ export class RTCConnection extends HTKEventBase {
 
     readonly id = this.connectionEvent.sessionId;
 
-    public readonly cache = observable.map(new Map<symbol, unknown>(), { deep: false });
-
     isRTCConnection(): this is RTCConnection  {
         return true;
     }

@@ -217,11 +217,6 @@ export class HttpExchange extends HTKEventBase {
         this._apiMetadataPromise = apiStore.getApi(this.request);
     }
 
-    // Logic elsewhere can put values into these caches to cache calculations
-    // about this exchange weakly, so they GC with the exchange.
-    // Keyed by symbols only, so we know we never have conflicts.
-    public cache = observable.map(new Map<symbol, unknown>(), { deep: false });
-
     public readonly request: HtkRequest;
     public readonly id: string;
 
