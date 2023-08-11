@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer, Observer } from 'mobx-react';
+import { inject, observer, Observer } from 'mobx-react';
 import { action, computed } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -8,6 +8,7 @@ import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
 import { ArrowIcon, Icon, WarningIcon } from '../../icons';
+
 import {
     CollectedEvent,
     HttpExchange,
@@ -23,15 +24,16 @@ import {
     describeEventCategory
 } from '../../model/events/categorization';
 import { nameHandlerClass } from '../../model/rules/rule-descriptions';
+import { getReadableSize } from '../../model/events/bodies';
 
 import { UnreachableCheck } from '../../util/error';
-import { getReadableSize } from '../../model/events/bodies';
 import { filterProps } from '../component-utils';
 
 import { EmptyState } from '../common/empty-state';
 import { StatusCode } from '../common/status-code';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
+import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
 
 const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
 
@@ -50,6 +52,8 @@ interface ViewEventListProps {
     filteredEvents: CollectedEvent[];
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
+
+    contextMenuBuilder: ViewEventContextMenuBuilder;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
@@ -308,12 +312,13 @@ interface EventRowProps extends ListChildComponentProps {
     data: {
         selectedEvent: CollectedEvent | undefined;
         events: CollectedEvent[];
+        contextMenuBuilder: ViewEventContextMenuBuilder;
     }
 }
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent } = props.data;
+    const { events, selectedEvent, contextMenuBuilder } = props.data;
     const event = events[index];
 
     const isSelected = (selectedEvent === event);
@@ -332,6 +337,7 @@ const EventRow = observer((props: EventRowProps) => {
                 isSelected={isSelected}
                 style={style}
                 exchange={event}
+                contextMenuBuilder={contextMenuBuilder}
             />
         } else {
             return <ExchangeRow
@@ -339,6 +345,7 @@ const EventRow = observer((props: EventRowProps) => {
                 isSelected={isSelected}
                 style={style}
                 exchange={event}
+                contextMenuBuilder={contextMenuBuilder}
             />;
         }
     } else if (event.isRTCConnection()) {
@@ -360,16 +367,18 @@ const EventRow = observer((props: EventRowProps) => {
     }
 });
 
-const ExchangeRow = observer(({
+const ExchangeRow = inject('uiStore')(observer(({
     index,
     isSelected,
     style,
-    exchange
+    exchange,
+    contextMenuBuilder
 }: {
     index: number,
     isSelected: boolean,
     style: {},
-    exchange: HttpExchange
+    exchange: HttpExchange,
+    contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
     const {
         request,
@@ -384,7 +393,7 @@ const ExchangeRow = observer(({
         aria-rowindex={index + 1}
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
-
+        onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
         className={isSelected ? 'selected' : ''}
         style={style}
     >
@@ -444,7 +453,7 @@ const ExchangeRow = observer(({
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
     </TrafficEventListRow>;
-});
+}));
 
 const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'spinner'],
@@ -568,7 +577,8 @@ const BuiltInApiRow = observer((p: {
     index: number,
     exchange: HttpExchange,
     isSelected: boolean,
-    style: {}
+    style: {},
+    contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
     const {
         request,
@@ -584,6 +594,7 @@ const BuiltInApiRow = observer((p: {
         data-event-id={p.exchange.id}
         tabIndex={p.isSelected ? 0 : -1}
 
+        onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
     >
@@ -665,7 +676,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     @computed get listItemData(): EventRowProps['data'] {
         return {
             selectedEvent: this.props.selectedEvent,
-            events: this.props.filteredEvents
+            events: this.props.filteredEvents,
+            contextMenuBuilder: this.props.contextMenuBuilder
         };
     }
 

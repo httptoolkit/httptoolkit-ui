@@ -5,7 +5,7 @@ import { styled } from "../../styles";
 import { Html } from '../../types';
 import { suggestionIconHtml, warningIconHtml } from '../../icons';
 
-import { fromMarkdown } from '../../model/markdown';
+import { fromMarkdown } from '../../model/ui/markdown';
 
 export const ContentLabel = styled.h2`
     text-transform: uppercase;

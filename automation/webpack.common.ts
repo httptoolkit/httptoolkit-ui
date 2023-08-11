@@ -72,6 +72,10 @@ export default <Webpack.Configuration>{
             test: /\.(woff2|ttf|png|svg)$/,
             loader: 'file-loader'
         }, {
+            test: /\.mjs$/,
+            include: /node_modules/,
+            type: "javascript/auto"
+        }, {
             test: /\.css$/,
             use: ['style-loader', 'css-loader']
         }, {

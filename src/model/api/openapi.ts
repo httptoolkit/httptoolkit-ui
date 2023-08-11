@@ -33,7 +33,7 @@ import {
     ApiParameter
 } from './api-interfaces';
 import { OpenApiMetadata } from './build-api-metadata';
-import { fromMarkdown } from '../markdown';
+import { fromMarkdown } from '../ui/markdown';
 
 const paramValidator = new Ajv({
     coerceTypes: 'array',

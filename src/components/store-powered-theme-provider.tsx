@@ -4,7 +4,7 @@ import { inject, observer } from 'mobx-react';
 import { ThemeProvider } from '../styles';
 import { WithInjected } from '../types';
 
-import { UiStore } from '../model/ui-store';
+import { UiStore } from '../model/ui/ui-store';
 
 const StorePoweredThemeProvider = inject('uiStore')(observer((p: {
     uiStore: UiStore,

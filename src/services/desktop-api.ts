@@ -20,3 +20,40 @@ export async function getDesktopInjectedValue(key: DesktopInjectedKey): Promise<
     }
     // Note that if we're running in a browser, not the desktop shell, this _never_ resolves.
 }
+
+declare global {
+    interface Window {
+        desktopApi?: DesktopApi;
+    }
+}
+
+interface DesktopApi {
+    selectApplication?: () => Promise<string | undefined>;
+    openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
+}
+
+interface NativeContextMenuDefinition {
+    position: { x: number; y: number };
+    items: readonly NativeContextMenuItem[];
+}
+
+export type NativeContextMenuItem =
+    | NativeContextMenuOption
+    | NativeContextMenuSubmenu
+    | { type: 'separator' };
+
+interface NativeContextMenuOption {
+    type: 'option';
+    id: string;
+    label: string;
+    enabled?: boolean;
+}
+
+interface NativeContextMenuSubmenu {
+    type: 'submenu';
+    label: string;
+    enabled?: boolean;
+    items: readonly NativeContextMenuItem[];
+}
+
+export const DesktopApi: DesktopApi = window.desktopApi ?? {};

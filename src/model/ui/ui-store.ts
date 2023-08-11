@@ -1,11 +1,20 @@
 import * as _ from 'lodash';
+import * as React from 'react';
 import { observable, action, autorun, computed, observe } from 'mobx';
 
-import { Theme, ThemeName, Themes } from '../styles';
-import { lazyObservablePromise } from '../util/observable';
-import { persist, hydrate } from '../util/mobx-persist/persist';
-import { AccountStore } from './account/account-store';
-import { emptyFilterSet, FilterSet } from './filters/search-filters';
+import { Theme, ThemeName, Themes } from '../../styles';
+import { lazyObservablePromise } from '../../util/observable';
+import { persist, hydrate } from '../../util/mobx-persist/persist';
+
+import { AccountStore } from '../account/account-store';
+import { emptyFilterSet, FilterSet } from '../filters/search-filters';
+import { DesktopApi } from '../../services/desktop-api';
+import {
+    ContextMenuState,
+    ContextMenuItem,
+    ContextMenuOption,
+    buildNativeContextMenuItems
+} from './context-menu';
 
 const VIEW_CARD_KEYS = [
     'api',
@@ -236,5 +245,51 @@ export class UiStore {
 
     @persist @observable
     exportSnippetFormat: string | undefined;
+
+    /**
+     * This tracks the context menu state *only if it's not handled natively*. This state
+     * is rendered by React as a fallback when DesktopApi.openContextMenu is not available.
+     */
+    @observable.ref // This shouldn't be mutated
+    contextMenuState: ContextMenuState<any> | undefined;
+
+    @action.bound
+    handleContextMenuEvent<T>(
+        event: React.MouseEvent,
+        data: T,
+        items: readonly ContextMenuItem<T>[]
+    ) {
+        event.preventDefault();
+
+        if (DesktopApi.openContextMenu) {
+            const position = { x: event.pageX, y: event.pageY };
+            this.contextMenuState = undefined; // Should be set already, but let's be explicit
+
+            DesktopApi.openContextMenu({
+                position,
+                items: buildNativeContextMenuItems(items)
+            }).then((result) => {
+                if (result) {
+                    const selectedItem = _.get(items, result) as ContextMenuOption<T>;
+                    selectedItem.callback(data);
+                }
+            }).catch((error) => {
+                console.log(error);
+                throw new Error('Error opening context menu');
+            });
+        } else {
+            event.persist();
+            this.contextMenuState = {
+                data,
+                event,
+                items
+            };
+        }
+    }
+
+    @action.bound
+    clearHtmlContextMenu() {
+        this.contextMenuState = undefined;
+    }
 
 }

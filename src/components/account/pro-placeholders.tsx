@@ -4,7 +4,7 @@ import { inject, observer } from "mobx-react";
 import { styled } from "../../styles";
 import { Icon } from "../../icons";
 
-import { UiStore } from "../../model/ui-store";
+import { UiStore } from "../../model/ui/ui-store";
 
 import { Pill } from "../common/pill";
 import { UnstyledButton } from "../common/inputs";

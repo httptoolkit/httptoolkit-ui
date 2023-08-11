@@ -181,3 +181,36 @@ export function useSize(ref: React.RefObject<HTMLElement>, defaultValue: number)
 
     return spaceAvailable;
 }
+
+export async function copyToClipboard(textToCopy: string) {
+    if (navigator.clipboard) {
+        // This will be available on secure domains in supported browsers. It requires
+        // permissions, but not during Electron usage. We ignore permissions here -
+        // if this fails (on secure web usage outside Electron) we'll use the fallback.
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            return; // If this succeeds, we're done
+        } catch (e) {
+            console.warn('Copy to clipboard with navigator.clipboard failed', e);
+            // Didn't succeed - keep going
+        }
+    }
+
+    // This should work everywhere, as long as this method is called from an
+    // event handler:
+    const textArea = document.createElement("textarea");
+    try {
+        textArea.value = textToCopy;
+        textArea.style.position = "absolute";
+        textArea.style.left = "-9999px";
+
+        document.body.prepend(textArea);
+        textArea.select();
+        document.execCommand('copy');
+    } catch (e) {
+        console.warn('Copy to clipboard fallback failed', e);
+        throw e;
+    } finally {
+        textArea.remove();
+    }
+}

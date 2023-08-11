@@ -1,7 +1,7 @@
 import * as Remarkable from 'remarkable';
 import * as DOMPurify from 'dompurify';
 
-import { Html } from '../types';
+import { Html } from '../../types';
 
 const md = new Remarkable({
     html: true,

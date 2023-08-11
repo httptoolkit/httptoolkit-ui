@@ -29,7 +29,7 @@ export class UnreachableCheck extends Error {
     // getValue is used to allow logging properties (e.g. v.type) on expected-unreachable
     // values, instead of just logging [object Object].
     constructor(value: never, getValue: (v: any) => any = (x => x)) {
-        super(`Unhandled switch value: ${getValue(value)}`);
+        super(`Unhandled case value: ${getValue(value)}`);
     }
 
 }

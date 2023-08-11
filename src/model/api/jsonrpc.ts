@@ -12,7 +12,7 @@ import {
 import { SchemaObject } from "openapi-directory";
 import { HtkResponse, Html, HttpExchange } from "../../types";
 import { ErrorLike, isErrorLike } from "../../util/error";
-import { fromMarkdown } from "../markdown";
+import { fromMarkdown } from "../ui/markdown";
 import {
     ApiExchange,
     ApiOperation,
