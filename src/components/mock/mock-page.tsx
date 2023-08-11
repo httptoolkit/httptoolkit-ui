@@ -22,7 +22,7 @@ import {
     ItemPath,
     mapRules
 } from '../../model/rules/rules-structure';
-import { serializeRules } from '../../model/rules/rule-serialization';
+import { SERIALIZED_RULES_MIME_TYPE, serializeRules } from '../../model/rules/rule-serialization';
 
 import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
@@ -347,7 +347,7 @@ class MockPage extends React.Component<MockPageProps> {
             dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
         }.htkrules`;
 
-        saveFile(filename, 'application/htkrules+json;charset=utf-8', rulesetContent);
+        saveFile(filename, SERIALIZED_RULES_MIME_TYPE, rulesetContent);
     }
 }
 

@@ -142,3 +142,5 @@ export const deserializeRules = (data: any, args: DeserializationArgs): HtkMockR
         serializr.deserialize(MockRulesetSchema, migrateRuleData(data), undefined, args)
     ) as HtkMockRuleRoot;
 }
+
+export const SERIALIZED_RULES_MIME_TYPE = 'application/htkrules+json;charset=utf-8';
