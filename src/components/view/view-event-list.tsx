@@ -6,7 +6,7 @@ import { action, computed } from 'mobx';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
-import { styled } from '../../styles'
+import { css, highContrastTheme, styled } from '../../styles'
 import { ArrowIcon, Icon, WarningIcon } from '../../icons';
 
 import {
@@ -231,7 +231,16 @@ const EventListRow = styled.div`
 
     &.selected {
         background-color: ${p => p.theme.highlightBackground};
+        color: ${p => p.theme.highlightColor};
         font-weight: bold;
+
+        ${(p): any => p.theme === highContrastTheme &&
+            css`
+                ${StatusCode} {
+                    color: ${p => p.theme.highlightColor};
+                }
+            `
+        }
     }
 
     &:focus {
