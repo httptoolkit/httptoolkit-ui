@@ -109,6 +109,7 @@ export function nameHandlerClass(key: HandlerClassKey): string {
         case 'file':
             return "file response";
         case 'forward-to-host':
+        case 'ws-forward-to-host':
             return "forwarding";
         case 'passthrough':
         case 'ws-passthrough':
@@ -184,8 +185,6 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Forward the request to a different host";
         case 'passthrough':
             return "Pass the request on to its destination";
-        case 'ws-passthrough':
-            return "Pass the WebSocket through to its destination";
         case 'req-res-transformer':
             return "Transform the real request or response automatically";
         case 'request-breakpoint':
@@ -201,6 +200,10 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'reset-connection':
             return "Forcibly reset the connection";
 
+        case 'ws-passthrough':
+            return "Pass the WebSocket through to its destination";
+        case 'ws-forward-to-host':
+            return "Forward the WebSocket to a different host";
         case 'ws-reject':
             return "Reject the WebSocket setup request";
         case 'ws-listen':

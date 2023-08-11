@@ -50,7 +50,8 @@ import {
     WebSocketPassThroughHandler,
     EchoWebSocketHandlerDefinition,
     RejectWebSocketHandlerDefinition,
-    ListenWebSocketHandlerDefinition
+    ListenWebSocketHandlerDefinition,
+    WebSocketForwardToHostHandler
 } from '../../model/rules/definitions/websocket-rule-definitions';
 import {
     EthereumCallResultHandler,
@@ -151,7 +152,11 @@ export function HandlerConfiguration(props: {
         case 'file':
             return <FromFileResponseHandlerConfig {...configProps} />;
         case 'forward-to-host':
-            return <ForwardToHostHandlerConfig {...configProps} />;
+        case 'ws-forward-to-host':
+            return <ForwardToHostHandlerConfig
+                {...configProps}
+                handlerKey={handlerKey}
+            />;
         case 'passthrough':
         case 'ws-passthrough':
             return <PassThroughHandlerConfig {...configProps} />;
@@ -657,9 +662,14 @@ const UrlInput = styled(TextInput)`
 
 @inject('rulesStore')
 @observer
-class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
-    rulesStore?: RulesStore
-}> {
+class ForwardToHostHandlerConfig extends HandlerConfig<
+    | ForwardToHostHandler
+    | WebSocketForwardToHostHandler,
+    {
+        rulesStore?: RulesStore,
+        handlerKey: 'forward-to-host' | 'ws-forward-to-host'
+    }
+> {
 
     @observable
     private error: Error | undefined;
@@ -682,8 +692,18 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
     }
 
     render() {
-        const { targetHost, updateHostHeader, error, onTargetChange, onUpdateHeaderChange } = this;
+        const {
+            targetHost,
+            updateHostHeader,
+            error,
+            onTargetChange,
+            onUpdateHeaderChange
+        } = this;
         const { targetHost: savedTargetHost } = this.props.handler.forwarding!;
+
+        const messageType = this.props.handlerKey === 'ws-forward-to-host'
+            ? 'WebSocket'
+            : 'request';
 
         return <ConfigContainer>
             <SectionLabel>Replacement host</SectionLabel>
@@ -699,7 +719,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
                 value={updateHostHeader.toString()}
                 onChange={onUpdateHeaderChange}
                 title={dedent`
-                    Most servers will not accept requests that arrive
+                    Most servers will not accept ${messageType}s that arrive
                     with the wrong host header, so it's typically useful
                     to automatically change it to match the new host
                 `}
@@ -709,7 +729,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
             </ConfigSelect>
             { savedTargetHost &&
                 <ConfigExplanation>
-                    All matching requests will be forwarded to {savedTargetHost},
+                    All matching {messageType}s will be forwarded to {savedTargetHost},
                     keeping their existing path{
                         !savedTargetHost.includes('://') ? ', protocol,' : ''
                     } and query string.{
@@ -726,26 +746,47 @@ class ForwardToHostHandlerConfig extends HandlerConfig<ForwardToHostHandler, {
         try {
             if (!this.targetHost) throw new Error('A target host is required');
 
-            const protocolMatch = this.targetHost.match(/^\w+:\/\//);
-            if (protocolMatch) {
-                const pathWithoutProtocol = this.targetHost.slice(protocolMatch[0].length);
+            let urlWithoutProtocol: string;
 
-                if (pathWithoutProtocol.includes('/')) {
-                    throw new Error('The replacement host shouldn\'t include a path, since it won\'t be used');
+            const protocolMatch = this.targetHost.match(/^(\w+):\/\//);
+            if (protocolMatch) {
+                const validProtocols = this.props.handlerKey === 'ws-forward-to-host'
+                    ? ['ws', 'wss']
+                    : ['http', 'https'];
+
+                if (!validProtocols.includes(protocolMatch[1].toLowerCase())) {
+                    throw new Error(
+                        `The protocol must be either ${validProtocols[0]} or ${validProtocols[1]}`
+                    );
                 }
-                if (pathWithoutProtocol.includes('?')) {
-                    throw new Error('The replacement host shouldn\'t include a query string, since it won\'t be used');
-                }
+
+                urlWithoutProtocol = this.targetHost.slice(protocolMatch[0].length);
             } else {
-                if (this.targetHost.includes('/')) {
-                    throw new Error('The replacement host shouldn\'t include a path, since it won\'t be used');
-                }
-                if (this.targetHost.includes('?')) {
-                    throw new Error('The replacement host shouldn\'t include a query string, since it won\'t be used');
-                }
+                urlWithoutProtocol = this.targetHost;
             }
 
-            this.props.onChange(new ForwardToHostHandler(this.targetHost, this.updateHostHeader, this.props.rulesStore!));
+            if (urlWithoutProtocol.includes('/')) {
+                throw new Error(
+                    'The replacement host shouldn\'t include a path, since it won\'t be used'
+                );
+            }
+            if (urlWithoutProtocol.includes('?')) {
+                throw new Error(
+                    'The replacement host shouldn\'t include a query string, since it won\'t be used'
+                );
+            }
+
+            const HandlerClass = this.props.handlerKey === 'ws-forward-to-host'
+                ? WebSocketForwardToHostHandler
+                : ForwardToHostHandler;
+
+            this.props.onChange(
+                new HandlerClass(
+                    this.targetHost,
+                    this.updateHostHeader,
+                    this.props.rulesStore!
+                )
+            );
             this.error = undefined;
         } catch (e) {
             console.log(e);

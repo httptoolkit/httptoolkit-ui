@@ -11,6 +11,7 @@ import * as serializr from 'serializr';
 import { RulesStore } from '../rules-store';
 
 import { MethodNames } from '../../http/methods';
+import { serializeAsTag } from '../../serialization';
 import {
     HttpMatcherLookup,
     HttpMatcher,
@@ -66,6 +67,35 @@ serializr.createModelSchema(WebSocketPassThroughHandler, {
     type: serializr.primitive()
 }, (context) => new WebSocketPassThroughHandler(context.args.rulesStore));
 
+export class WebSocketForwardToHostHandler extends wsHandlers.PassThroughWebSocketHandlerDefinition {
+
+    readonly uiType = 'ws-forward-to-host';
+
+    constructor(forwardToLocation: string, updateHostHeader: boolean, rulesStore: RulesStore) {
+        super({
+            ...rulesStore.activePassthroughOptions,
+            forwarding: {
+                targetHost: forwardToLocation,
+                updateHostHeader: updateHostHeader
+            }
+        });
+    }
+
+}
+
+serializr.createModelSchema(WebSocketForwardToHostHandler, {
+    uiType: serializeAsTag(() => 'ws-forward-to-host'),
+    type: serializr.primitive(),
+    forwarding: serializr.map(serializr.primitive())
+}, (context) => {
+    const data = context.json;
+    return new WebSocketForwardToHostHandler(
+        data.forwarding.targetHost,
+        data.forwarding.updateHostHeader,
+        context.args.rulesStore
+    );
+});
+
 export const WebSocketMatcherLookup = {
     ..._.omit(HttpMatcherLookup, MethodNames),
     'method': WebSocketMethodMatcher, // Unlike HTTP rules, WS uses a single method matcher
@@ -81,7 +111,8 @@ export const WebSocketInitialMatcherClasses = [
 
 export const WebSocketHandlerLookup = {
     ...wsHandlers.WsHandlerDefinitionLookup,
-    'ws-passthrough': WebSocketPassThroughHandler
+    'ws-passthrough': WebSocketPassThroughHandler,
+    'ws-forward-to-host': WebSocketForwardToHostHandler
 };
 
 type WebSocketHandlerClass = typeof WebSocketHandlerLookup[keyof typeof WebSocketHandlerLookup];

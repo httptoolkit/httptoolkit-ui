@@ -33,7 +33,8 @@ import {
     WebSocketPassThroughHandler,
     EchoWebSocketHandlerDefinition,
     RejectWebSocketHandlerDefinition,
-    ListenWebSocketHandlerDefinition
+    ListenWebSocketHandlerDefinition,
+    WebSocketForwardToHostHandler
 } from '../../model/rules/definitions/websocket-rule-definitions';
 import {
     EthereumCallResultHandler,
@@ -97,8 +98,6 @@ const instantiateHandler = (
             return new FromFileResponseHandler(200, undefined, '');
         case 'passthrough':
             return new PassThroughHandler(rulesStore);
-        case 'ws-passthrough':
-            return new WebSocketPassThroughHandler(rulesStore);
         case 'forward-to-host':
             return new ForwardToHostHandler('', true, rulesStore);
         case 'req-res-transformer':
@@ -116,6 +115,10 @@ const instantiateHandler = (
         case 'reset-connection':
             return new ResetConnectionHandler();
 
+        case 'ws-passthrough':
+            return new WebSocketPassThroughHandler(rulesStore);
+        case 'ws-forward-to-host':
+            return new WebSocketForwardToHostHandler('', true, rulesStore);
         case 'ws-echo':
             return new EchoWebSocketHandlerDefinition();
         case 'ws-reject':
