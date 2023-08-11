@@ -10,8 +10,11 @@ import {
     contextMenu
 } from 'react-contexify';
 
-import { ContextMenuItem, ContextMenuState } from '../model/ui/context-menu';
+import { styled } from '../styles';
+
 import { UnreachableCheck } from '../util/error';
+
+import { ContextMenuItem, ContextMenuState } from '../model/ui/context-menu';
 
 @observer
 export class HtmlContextMenu<T> extends React.Component<{
@@ -36,12 +39,12 @@ export class HtmlContextMenu<T> extends React.Component<{
     }
 
     render() {
-        return <Menu
+        return <ThemedMenu
             id='menu'
             onVisibilityChange={this.onVisibilityChange}
         >
             { this.props.menuState.items.map(this.renderItem) }
-        </Menu>
+        </ThemedMenu>
     }
 
     renderItem = (item: ContextMenuItem<T>, i: number) => {
@@ -71,3 +74,18 @@ export class HtmlContextMenu<T> extends React.Component<{
     };
 
 }
+
+const ThemedMenu = styled(Menu)`
+    --contexify-menu-bgColor: ${p => p.theme.mainLowlightBackground};
+    --contexify-item-color: ${p => p.theme.mainColor};
+    --contexify-separator-color: ${p => p.theme.containerBorder};
+
+    --contexify-rightSlot-color: ${p => p.theme.containerWatermark};
+    --contexify-activeRightSlot-color: ${p => p.theme.mainColor};
+
+    --contexify-arrow-color: ${p => p.theme.containerWatermark};
+    --contexify-activeArrow-color: ${p => p.theme.mainColor};
+
+    --contexify-activeItem-color: #fff;
+    --contexify-activeItem-bgColor: #3498db;
+`;
