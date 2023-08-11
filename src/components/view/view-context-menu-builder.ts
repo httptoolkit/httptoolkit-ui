@@ -30,7 +30,7 @@ export class ViewEventContextMenuBuilder {
     private readonly BaseOptions = {
         Pin: {
             type: 'option',
-            label: 'Toggle pinning',
+            label: 'Toggle Pinning',
             callback: this.onPin
         },
         Delete: {
@@ -53,7 +53,7 @@ export class ViewEventContextMenuBuilder {
                     this.BaseOptions.Pin,
                     {
                         type: 'option',
-                        label: 'Copy request URL',
+                        label: 'Copy Request URL',
                         callback: (data: HttpExchange) => copyToClipboard(data.request.url)
                     },
                     this.BaseOptions.Delete,
@@ -64,19 +64,19 @@ export class ViewEventContextMenuBuilder {
                     {
                         type: 'option',
                         enabled: isPaidUser,
-                        label: `Create matching mock rule`,
+                        label: `Create Matching Mock Rule`,
                         callback: this.onBuildRuleFromExchange
                     },
                     {
                         type: 'option',
                         enabled: isPaidUser,
-                        label: `Export exchange as HAR`,
+                        label: `Export Exchange as HAR`,
                         callback: exportHar
                     },
                     // If you have a preferred default format, we show that option at the top level:
                     ...(preferredExportFormat && isPaidUser ? [{
                         type: 'option',
-                        label: `Copy as ${getCodeSnippetFormatName(preferredExportFormat)} snippet`,
+                        label: `Copy as ${getCodeSnippetFormatName(preferredExportFormat)} Snippet`,
                         callback: (data: HttpExchange) =>
                             copyToClipboard(
                                 generateCodeSnippet(data, preferredExportFormat)
@@ -85,7 +85,7 @@ export class ViewEventContextMenuBuilder {
                     {
                         type: 'submenu',
                         enabled: isPaidUser,
-                        label: `Copy as code snippet`,
+                        label: `Copy as Code Snippet`,
                         items: Object.keys(snippetExportOptions).map((snippetGroupName) => ({
                             type: 'submenu',
                             label: snippetGroupName,
