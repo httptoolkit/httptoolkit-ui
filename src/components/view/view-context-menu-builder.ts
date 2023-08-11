@@ -1,4 +1,4 @@
-import { action } from 'mobx';
+import { action, runInAction } from 'mobx';
 
 import { CollectedEvent } from '../../types';
 
@@ -77,10 +77,13 @@ export class ViewEventContextMenuBuilder {
                     ...(preferredExportFormat && isPaidUser ? [{
                         type: 'option',
                         label: `Copy as ${getCodeSnippetFormatName(preferredExportFormat)} Snippet`,
-                        callback: (data: HttpExchange) =>
+                        callback: async (data: HttpExchange) => {
                             copyToClipboard(
-                                generateCodeSnippet(data, preferredExportFormat)
-                            )
+                                await generateCodeSnippet(data, preferredExportFormat, {
+                                    waitForBodyDecoding: true
+                                })
+                            );
+                        }
                     }] as const : []),
                     {
                         type: 'submenu',
@@ -92,13 +95,18 @@ export class ViewEventContextMenuBuilder {
                             items: snippetExportOptions[snippetGroupName].map((snippetOption) => ({
                                 type: 'option',
                                 label: getCodeSnippetFormatName(snippetOption),
-                                callback: action((data: HttpExchange) => {
+                                callback: async (data: HttpExchange) => {
                                     // When you pick an option here, it updates your preferred default option
-                                    this.uiStore.exportSnippetFormat = getCodeSnippetFormatKey(snippetOption);
+                                    runInAction(() => {
+                                        this.uiStore.exportSnippetFormat = getCodeSnippetFormatKey(snippetOption);
+                                    });
+
                                     copyToClipboard(
-                                        generateCodeSnippet(data, snippetOption)
+                                        await generateCodeSnippet(data, snippetOption, {
+                                            waitForBodyDecoding: true
+                                        })
                                     );
-                                })
+                                }
                             }))
                         }))
                     },

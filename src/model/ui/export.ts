@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 
 import { saveFile } from "../../util/ui";
+import { ObservablePromise } from '../../util/observable';
 
 import { HttpExchange } from "../http/exchange";
 import { generateHarRequest, generateHar, ExtendedHarRequest } from '../http/har';
@@ -21,7 +22,31 @@ export const exportHar = async (exchange: HttpExchange) => {
     saveFile(filename, 'application/har+json;charset=utf-8', harContent);
 };
 
-export const generateCodeSnippet = (exchange: HttpExchange, snippetFormat: SnippetOption) => {
+export function generateCodeSnippet(
+    exchange: HttpExchange,
+    snippetFormat: SnippetOption,
+    options: { waitForBodyDecoding: true }
+): ObservablePromise<string>;
+export function generateCodeSnippet(
+    exchange: HttpExchange,
+    snippetFormat: SnippetOption,
+    options?: { waitForBodyDecoding?: boolean }
+): string;
+export function generateCodeSnippet(
+    exchange: HttpExchange,
+    snippetFormat: SnippetOption,
+    options: { waitForBodyDecoding?: boolean } = {}
+): string | ObservablePromise<string> {
+    // If the body isn't decoded yet, and it should be, wait for that decoding first.
+    if (options.waitForBodyDecoding && (
+        exchange.request.body.decodedPromise.state === 'pending' ||
+        exchange.request.body.decodedPromise.state === undefined
+    )) {
+        // Doesn't matter if this errors - we'll make that explicit in the export later.
+        return exchange.request.body.decodedPromise.catch(() => {})
+            .then(() => generateCodeSnippet(exchange, snippetFormat, options));
+    }
+
     // First, we need to get a HAR that appropriately represents this request as we
     // want to export it:
     const harRequest = generateHarRequest(exchange.request, false, {
