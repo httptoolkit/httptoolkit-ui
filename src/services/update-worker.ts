@@ -56,6 +56,9 @@ const __precacheManifest = self.__WB_MANIFEST; // This is injected by webpack's 
 
 function getPrecacheController() {
     const controller = new PrecacheController();
+    // Errors will appear here if running from 'localhost' in dev mode - that's fine, we
+    // don't inject this in dev mode, nothing to worry about. If you want to test this, use
+    // a prod build instead (npm run start:prod)
     controller.addToCacheList(__precacheManifest);
     return controller;
 }
