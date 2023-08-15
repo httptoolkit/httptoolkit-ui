@@ -56,4 +56,12 @@ interface NativeContextMenuSubmenu {
     items: readonly NativeContextMenuItem[];
 }
 
-export const DesktopApi: DesktopApi = window.desktopApi ?? {};
+// Quick fix to avoid this file crashing the update SW which doesn't have 'window' available, without
+// also breaking old Electron that doesn't have globalThis:
+const global = typeof globalThis !== 'undefined'
+        ? globalThis as unknown as Window
+    : typeof window !== 'undefined'
+        ? window
+    : {} as Window;
+
+export const DesktopApi: DesktopApi = global.desktopApi ?? {};
