@@ -8,7 +8,6 @@ import { Method } from 'mockttp';
 import { RawHeaders } from '../../types';
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
-import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
@@ -68,22 +67,8 @@ export class RequestPane extends React.Component<{
         return this.props.uiStore!.sendCardProps;
     }
 
-    @computed
-    private get bodyTextEncoding() {
-        // If we're handling text data, we want to show & edit it as UTF8.
-        // If it's binary, that's a lossy operation, so we use binary (latin1) instead.
-        const { requestInput } = this.props;
-        return isProbablyUtf8(requestInput.rawBody)
-            ? 'utf8'
-            : 'binary';
-    }
-
     render() {
         const { requestInput, editorNode } = this.props;
-        const bodyString = bufferToString(
-            requestInput.rawBody,
-            this.bodyTextEncoding
-        );
 
         return <RequestPaneContainer>
             <MethodSelect value={requestInput.method} onChange={this.updateMethod}>
@@ -113,8 +98,8 @@ export class RequestPane extends React.Component<{
             />
             <SendRequestBodyCard
                 {...this.cardProps.requestBody}
-                body={bodyString}
-                updateBody={this.updateBody}
+                body={requestInput.rawBody}
+                onBodyUpdated={this.updateBody}
                 editorNode={editorNode}
             />
         </RequestPaneContainer>;
@@ -139,9 +124,9 @@ export class RequestPane extends React.Component<{
     }
 
     @action.bound
-    updateBody(input: string) {
+    updateBody(input: Buffer) {
         const { requestInput } = this.props;
-        requestInput.rawBody = stringToBuffer(input, this.bodyTextEncoding);
+        requestInput.rawBody = input;
     }
 
     @action.bound

@@ -32,7 +32,7 @@ export const SendRequestHeadersCard = observer((props: SendRequestHeadersProps) 
     return <SendCardSection {...props} headerAlignment='left'>
         <header>
             <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
-                Headers
+                Request Headers
             </CollapsibleCardHeading>
         </header>
         <HeaderFieldsContainer>

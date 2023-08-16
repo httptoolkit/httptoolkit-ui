@@ -1,24 +1,26 @@
 import * as React from 'react';
+import { action, computed, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 
-import {
-    CollapsibleCardHeading,
-    CollapsibleCardProps
-} from '../common/card';
-import {
-    SendCardSection
-} from './send-card-section';
-import {
-    ThemedContainerSizedEditor
-} from '../editor/base-editor';
-import { EditorCardContent } from '../editor/body-card-components';
+import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util';
+
+import { EditableContentType, EditableContentTypes } from '../../model/events/content-types';
+
+import { CollapsibleCardProps } from '../common/card';
+import { SendBodyCardSection } from './send-card-section';
+import { ThemedContainerSizedEditor } from '../editor/base-editor';
+import { EditableBodyCardHeader, EditorCardContent } from '../editor/body-card-components';
 
 export interface SendRequestBodyProps extends CollapsibleCardProps {
-    body: string;
-    updateBody: (body: string) => void;
+    body: Buffer;
+    onBodyUpdated: (body: Buffer) => void;
+    expanded: boolean;
+    onCollapseToggled: () => void;
+    onExpandToggled: () => void;
+
     editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>;
 }
 
@@ -26,43 +28,70 @@ export const SendRequestEditorContent = styled(EditorCardContent)`
     flex-shrink: 1;
 `;
 
-const SendBodyCardSection = styled(SendCardSection)`
-    /* This is required to force the editor to shrink to fit, instead of going
-       beyond the limits of the column when other item is expanded and pushes it down */
-    overflow-y: hidden;
+@observer
+export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
 
-    ${p => !p.collapsed && `
-        /* When we're open, we want space more than any siblings */
-        flex-grow: 9999999;
+    @observable
+    private contentType: EditableContentType = 'text';
 
-        /* If we're open, never let us get squeezed to nothing: */
-        min-height: 25vh;
-
-        /* Fixed size required to avoid editor resize thrashing */
-        flex-basis: 50%;
-    `
+    @action.bound
+    onChangeContentType(value: string) {
+        this.contentType = value as EditableContentType;
     }
-`;
 
-export const SendRequestBodyCard = observer((props: SendRequestBodyProps) => {
-    return <SendBodyCardSection
-        {...props}
-        headerAlignment='left'
-    >
-        <header>
-            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
-                Body
-            </CollapsibleCardHeading>
-        </header>
-        <SendRequestEditorContent>
-            <portals.OutPortal<typeof ThemedContainerSizedEditor>
-                node={props.editorNode}
+    @computed
+    get textEncoding() {
+        return isProbablyUtf8(this.props.body)
+            ? 'utf8'
+            : 'binary';
+    }
 
-                contentId='request'
-                language={'text'}
-                value={props.body}
-                onChange={props.updateBody}
-            />
-        </SendRequestEditorContent>
-    </SendBodyCardSection>;
-});
+    updateBody = (input: string) => {
+        this.props.onBodyUpdated(
+            stringToBuffer(input, this.textEncoding)
+        );
+    }
+
+    render() {
+        const {
+            editorNode,
+            expanded,
+            onExpandToggled,
+            onCollapseToggled,
+            body
+        } = this.props;
+
+        const bodyString = bufferToString(body, this.textEncoding);
+
+        return <SendBodyCardSection
+            {...this.props}
+            headerAlignment='left'
+        >
+            <header>
+                <EditableBodyCardHeader
+                    body={body}
+                    onBodyFormatted={this.updateBody}
+
+                    title='Request body'
+                    expanded={expanded}
+                    onExpandToggled={onExpandToggled}
+                    onCollapseToggled={onCollapseToggled}
+
+                    selectedContentType={this.contentType}
+                    contentTypeOptions={EditableContentTypes}
+                    onChangeContentType={this.onChangeContentType}
+                />
+            </header>
+            <SendRequestEditorContent>
+                <portals.OutPortal<typeof ThemedContainerSizedEditor>
+                    node={editorNode}
+
+                    contentId='request'
+                    language={this.contentType}
+                    value={bodyString}
+                    onChange={this.updateBody}
+                />
+            </SendRequestEditorContent>
+        </SendBodyCardSection>;
+    }
+}
