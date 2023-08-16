@@ -7,18 +7,19 @@ export const SendCardSection = styled(CollapsibleCard)`
 
     flex-basis: auto;
     flex-shrink: 1;
+    flex-grow: 0; /* Overridden below, so only the bodies expand */
     min-height: 0;
-
-    flex-grow: ${p =>
-        // Collapsed cards should not expand into unused space
-        p.collapsed ? '0' : '1'
-    };
 `;
 
 export const SendBodyCardSection = styled(SendCardSection)`
     /* This is required to force the editor to shrink to fit, instead of going
        beyond the limits of the column when other item is expanded and pushes it down */
     overflow-y: hidden;
+
+    flex-grow: ${p =>
+        // Collapsed cards should not expand into unused space
+        p.collapsed ? '0' : '1'
+    };
 
     ${p => !p.collapsed && `
         /* When we're open, we want space more than any siblings */

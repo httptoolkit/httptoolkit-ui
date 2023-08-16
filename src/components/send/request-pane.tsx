@@ -25,14 +25,14 @@ const RequestPaneContainer = styled.section`
     height: 100%;
 `;
 
-// Layout here is tricky. Current setup seems to work (flex grow & shrink everywhere,
-// card basis: auto & min-height: 0, with editor 50% + min-height, and then
-// overflow-y: auto and basis: auto on the actual card contents too).
+// Layout here is tricky. Current setup seems to work (flex hrink everywhere, grow bodies,
+// card basis: auto, and min-height: 0, with editor 50% + min-height, and then
+// overflow-y: auto and basis: auto on the card contents too).
 //
 // It's worth reiterating the UI goals here explicitly for reference
 // - When multiple areas are open & full+, the area is split even-ish with scrolling
 //   in any areas required
-// - When areas are closed, remaining areas expand to the space, even if unused
+// - When areas are closed, body areas expand to the space, otherwise it collapses upwards
 // - When multiple areas are open, if there is spare space (e.g. few headers), the
 //   other areas that need it (body editor) expand and use the space.
 
