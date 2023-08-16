@@ -7,6 +7,7 @@ import { bufferToString } from '../../util';
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
 import { ReadOnlyParams } from '../../components/common/editable-params';
+import { ImageViewer } from '../../components/editor/image-viewer';
 
 export interface EditorFormatter {
     language: string;
@@ -15,15 +16,14 @@ export interface EditorFormatter {
 }
 
 type FormatComponentProps = {
-    expanded: boolean,
-    content: Buffer,
-    rawContentType: string | undefined
+    content: Buffer;
+    rawContentType: string | undefined;
 };
 
-type FormatComponent = React.ComponentType<FormatComponentProps>;;
+type FormatComponent = React.ComponentType<FormatComponentProps>;
 
 type FormatComponentConfig = {
-    scrollable?: true;
+    layout: 'scrollable' | 'centered';
     Component: FormatComponent;
 };
 
@@ -129,7 +129,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         render: buildAsyncRenderer('css')
     },
     'url-encoded': {
-        scrollable: true,
+        layout: 'scrollable',
         Component: styled(ReadOnlyParams).attrs((p: FormatComponentProps) => ({
             content: bufferToString(p.content)
         }))`
@@ -137,20 +137,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         ` as FormatComponent
     },
     image: {
-        Component: styled.img.attrs((p: FormatComponentProps) => ({
-            src: `data:${p.rawContentType || ''};base64,${p.content.toString('base64')}`
-        }))`
-            display: block;
-            max-width: 100%;
-            margin: 0 auto;
-
-            ${(p: FormatComponentProps) => p.expanded && `
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                max-height: 100%;
-            `}
-        `
+        layout: 'centered',
+        Component: ImageViewer
     }
 };
