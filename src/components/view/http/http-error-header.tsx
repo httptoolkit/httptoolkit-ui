@@ -4,9 +4,13 @@ import * as semver from 'semver';
 import { WarningIcon } from '../../../icons';
 import { logError } from '../../../errors';
 
-import { desktopVersion, versionSatisfies, DESKTOP_HEADER_LIMIT_CONFIGURABLE } from '../../../services/service-versions';
+import {
+    desktopVersion,
+    versionSatisfies,
+    DESKTOP_HEADER_LIMIT_CONFIGURABLE
+} from '../../../services/service-versions';
 
-import { UnreachableCheck } from '../../../util/error';
+import { unreachableCheck } from '../../../util/error';
 import { clickOnEnter } from '../../component-utils';
 import {
     HeaderCard,
@@ -217,7 +221,7 @@ export const HttpErrorHeader = (p: {
                             ? 'headers were too large to be processed'
                         : p.type === 'client-unparseable'
                             ? 'could not be parsed'
-                        : new UnreachableCheck(p.type)
+                        : unreachableCheck(p.type)
                     }, so HTTP Toolkit did not handle this request.
                 </>
             : wasNotForwarded(p.type)
@@ -239,7 +243,7 @@ export const HttpErrorHeader = (p: {
                             ? 'hostname could be not found'
                         : p.type === 'connection-refused'
                             ? 'refused the connection'
-                        : new UnreachableCheck(p.type)
+                        : unreachableCheck(p.type)
                     }, so HTTP Toolkit did not forward the request.
                 </>
             : wasTimeout(p.type)
@@ -249,7 +253,7 @@ export const HttpErrorHeader = (p: {
                             ? 'waiting for the client to send the complete request'
                         : p.type === 'server-timeout'
                             ? 'waiting for a response from the server'
-                        : new UnreachableCheck(p.type)
+                        : unreachableCheck(p.type)
                     }
                 </>
             : p.type === 'client-abort'
@@ -264,7 +268,7 @@ export const HttpErrorHeader = (p: {
                             ? 'the connection to the server was reset'
                         : p.type === 'server-unparseable'
                             ? 'the response from the server was unparseable'
-                        : new UnreachableCheck(p.type)
+                        : unreachableCheck(p.type)
                     }, so HTTP Toolkit could not return a response to the client.
                 </>
             : p.type === 'unknown'
@@ -272,7 +276,7 @@ export const HttpErrorHeader = (p: {
                     The request failed because of an unknown error,
                     so HTTP Toolkit could not return a response.
                 </>
-            : new UnreachableCheck(p.type)
+            : unreachableCheck(p.type)
         }
         </HeaderText>
 
@@ -444,7 +448,7 @@ export const HttpErrorHeader = (p: {
                 This might be an intermittent issue, and may be resolved by retrying
                 the request.
             </HeaderText>
-        : new UnreachableCheck(p.type)}
+        : unreachableCheck(p.type)}
 
         { isInitialRequestError(p.type) && <HeaderText>
             The data shown below is a best guess from the data that was available

@@ -33,3 +33,8 @@ export class UnreachableCheck extends Error {
     }
 
 }
+
+// Sometimes useful when you need an expression (when you can't use a 'throws' statement):
+export const unreachableCheck = (value: never, getValue: (v: any) => any = (x => x)): never => {
+    throw new UnreachableCheck(value, getValue);
+}
