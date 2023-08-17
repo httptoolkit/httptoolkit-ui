@@ -4,9 +4,6 @@ import * as HarFormat from 'har-format';
 import * as HarValidator from 'har-validator';
 import * as querystring from 'querystring';
 
-import { stringToBuffer } from '../../util';
-import { lastHeader } from '../../util/headers';
-import { ObservablePromise } from '../../util/observable';
 import {
     Headers,
     HtkRequest,
@@ -19,10 +16,15 @@ import {
     FailedTlsConnection
 } from '../../types';
 
+import { stringToBuffer } from '../../util';
+import { lastHeader } from '../../util/headers';
+import { ObservablePromise } from '../../util/observable';
+import { unreachableCheck } from '../../util/error';
+
 import { UI_VERSION } from '../../services/service-versions';
 import { getStatusMessage } from './http-docs';
 import { StreamMessage } from '../events/stream-message';
-import { unreachableCheck } from '../../util/error';
+import { QueuedEvent } from '../events/events-store';
 
 // We only include request/response bodies that are under 500KB
 const HAR_BODY_SIZE_LIMIT = 500000;
@@ -431,12 +433,9 @@ function generateHarTlsError(event: FailedTlsConnection): HarTlsErrorEntry {
     };
 }
 
-export type ParsedHar = {
-    requests: HarRequest[],
-    responses: HarResponse[],
-    aborts: HarRequest[],
-    tlsErrors: InputTlsFailure[]
-    pinnedIds: string[]
+export interface ParsedHar {
+    events: QueuedEvent[];
+    pinnedIds: string[];
 };
 
 const sumTimings = (
@@ -454,10 +453,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 
     const baseId = _.random(1_000_000) + '-';
 
-    const requests: HarRequest[] = [];
-    const responses: HarResponse[] = [];
-    const aborts: HarRequest[] = [];
-    const tlsErrors: InputTlsFailure[] = [];
+    const events: QueuedEvent[] = [];
     const pinnedIds: string[] = []
 
     har.log.entries.forEach((entry, i) => {
@@ -485,35 +481,41 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
         );
 
         const request = parseHarRequest(id, entry.request, timingEvents);
-        requests.push(request);
+        events.push({ type: 'request', event: request });
 
         if (entry.response.status !== 0) {
-            responses.push(parseHarResponse(id, entry.response, timingEvents));
+            events.push({
+                type: 'response',
+                event: parseHarResponse(id, entry.response, timingEvents)
+            });
         } else {
-            aborts.push(request);
+            events.push({ type: 'abort', event: request });
         }
 
         if (entry._pinned) pinnedIds.push(id);
     });
 
     if (har.log._tlsErrors) {
-        har.log._tlsErrors.forEach((entry, i) => {
-            tlsErrors.push({
-                failureCause: entry.cause,
-                hostname: entry.hostname,
-                remoteIpAddress: entry.clientIPAddress,
-                remotePort: entry.clientPort,
-                tags: [],
-                timingEvents: {
-                    startTime: dateFns.parse(entry.startedDateTime).getTime(),
-                    connectTimestamp: 0,
-                    failureTimestamp: entry.time
+        har.log._tlsErrors.forEach((entry) => {
+            events.push({
+                type: 'tls-client-error',
+                event: {
+                    failureCause: entry.cause,
+                    hostname: entry.hostname,
+                    remoteIpAddress: entry.clientIPAddress,
+                    remotePort: entry.clientPort,
+                    tags: [],
+                    timingEvents: {
+                        startTime: dateFns.parse(entry.startedDateTime).getTime(),
+                        connectTimestamp: 0,
+                        failureTimestamp: entry.time
+                    }
                 }
             });
         });
     }
 
-    return { requests, responses, aborts, tlsErrors, pinnedIds };
+    return { events, pinnedIds };
 }
 
 // Mutatively cleans & returns the HAR, to tidy up irrelevant but potentially
