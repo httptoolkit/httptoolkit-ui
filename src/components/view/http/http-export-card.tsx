@@ -30,7 +30,7 @@ import {
 import { PillSelector, PillButton } from '../../common/pill';
 import { CopyButtonPill } from '../../common/copy-button';
 import { DocsLink } from '../../common/docs-link';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { SelfSizedEditor } from '../../editor/base-editor';
 
 interface ExportCardProps extends CollapsibleCardProps  {
     exchange: HttpExchange;
@@ -91,7 +91,7 @@ const ExportSnippetEditor = observer((p: {
             </p>
         </SnippetDescriptionContainer>
         <SnippetEditorContainer>
-            <ThemedSelfSizedEditor
+            <SelfSizedEditor
                 contentId={null}
                 value={snippet}
                 language={

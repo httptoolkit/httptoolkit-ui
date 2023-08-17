@@ -14,7 +14,7 @@ import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
 
 import { Button, Select, TextInput } from '../common/inputs';
-import { ThemedContainerSizedEditor } from '../editor/base-editor';
+import { ContainerSizedEditor } from '../editor/base-editor';
 import { SendRequestHeadersCard } from './send-request-headers-card';
 import { SendRequestBodyCard } from './send-request-body-card';
 
@@ -57,7 +57,7 @@ export class RequestPane extends React.Component<{
     rulesStore?: RulesStore,
     uiStore?: UiStore,
 
-    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>,
+    editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>,
 
     requestInput: RequestInput,
     sendRequest: (requestInput: RequestInput) => void

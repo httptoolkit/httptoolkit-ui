@@ -23,7 +23,7 @@ import {
 
 import { LoadingCard } from '../../common/loading-card';
 import { ContentViewer } from '../../editor/content-viewer';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { SelfSizedEditor } from '../../editor/base-editor';
 
 // A selection of content types you might want to try out, to explore your encoded data:
 const ENCODED_DATA_CONTENT_TYPES = ['text', 'raw', 'base64', 'image'] as Array<ViewableContentType>;
@@ -41,7 +41,7 @@ export class HttpBodyCard extends React.Component<{
     url: string,
     message: ExchangeMessage,
     apiBodySchema?: SchemaObject,
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
+    editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
 }> {
 
     @observable

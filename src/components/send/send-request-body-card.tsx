@@ -11,7 +11,7 @@ import { EditableContentType, EditableContentTypes } from '../../model/events/co
 
 import { CollapsibleCardProps } from '../common/card';
 import { SendBodyCardSection } from './send-card-section';
-import { ThemedContainerSizedEditor } from '../editor/base-editor';
+import { ContainerSizedEditor } from '../editor/base-editor';
 import { EditableBodyCardHeader, EditorCardContent } from '../editor/body-card-components';
 
 export interface SendRequestBodyProps extends CollapsibleCardProps {
@@ -21,7 +21,7 @@ export interface SendRequestBodyProps extends CollapsibleCardProps {
     onCollapseToggled: () => void;
     onExpandToggled: () => void;
 
-    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
 }
 
 export const SendRequestEditorContent = styled(EditorCardContent)`
@@ -83,7 +83,7 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                 />
             </header>
             <SendRequestEditorContent>
-                <portals.OutPortal<typeof ThemedContainerSizedEditor>
+                <portals.OutPortal<typeof ContainerSizedEditor>
                     node={editorNode}
 
                     contentId='request'

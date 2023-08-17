@@ -21,7 +21,7 @@ import { Pill, PillSelector } from '../common/pill';
 import { IconButton } from '../common/icon-button';
 
 import { ContentViewer } from '../editor/content-viewer';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { SelfSizedEditor } from '../editor/base-editor';
 import { EditorCardContent } from '../editor/body-card-components';
 
 const visualDirection = (message: StreamMessage) =>
@@ -144,7 +144,7 @@ const CollapsedStreamContent = styled(ContentMonoValue)`
 interface MessageEditorRowProps {
     streamId: string,
     message: StreamMessage,
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
+    editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>,
     isPaidUser: boolean,
     onExportMessage: (message: StreamMessage) => void
 }

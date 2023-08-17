@@ -32,7 +32,7 @@ import { HttpResponseCard } from './http-response-card';
 import { HttpAbortedResponseCard } from './http-aborted-card';
 import { HttpPerformanceCard } from './http-performance-card';
 import { HttpExportCard } from './http-export-card';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { SelfSizedEditor } from '../../editor/base-editor';
 import { HttpErrorHeader, tagsToErrorType } from './http-error-header';
 import { HttpDetailsFooter } from './http-details-footer';
 import { HttpRequestBreakpointHeader, HttpResponseBreakpointHeader } from './http-breakpoint-header';
@@ -64,9 +64,9 @@ const makeFriendlyApiName = (rawName: string) => {
 export class HttpDetailsPane extends React.Component<{
     exchange: HttpExchange,
 
-    requestEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
-    responseEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
-    streamMessageEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
+    requestEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
+    responseEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
+    streamMessageEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
 
     navigate: (path: string) => void,
     onDelete: (event: CollectedEvent) => void,

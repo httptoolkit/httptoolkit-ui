@@ -8,7 +8,7 @@ import { HttpExchange } from "../../types";
 import { UiStore } from '../../model/ui/ui-store';
 import { AccountStore } from '../../model/account/account-store';
 
-import { ThemedContainerSizedEditor } from '../editor/base-editor';
+import { ContainerSizedEditor } from '../editor/base-editor';
 import { LoadingCard } from '../common/loading-card';
 import { HttpAbortedResponseCard } from '../view/http/http-aborted-card';
 
@@ -30,7 +30,7 @@ export class ResponsePane extends React.Component<{
     accountStore?: AccountStore,
 
     exchange: HttpExchange | undefined,
-    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>
+    editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>
 }> {
 
     get cardProps() {

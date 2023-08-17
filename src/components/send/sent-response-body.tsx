@@ -24,7 +24,7 @@ import {
 import { ContentViewer } from '../editor/content-viewer';
 
 import { SendBodyCardSection } from './send-card-section';
-import { ThemedContainerSizedEditor } from '../editor/base-editor';
+import { ContainerSizedEditor } from '../editor/base-editor';
 
 export interface SentResponseBodyProps extends CollapsibleCardProps {
     url: string;
@@ -32,7 +32,7 @@ export interface SentResponseBodyProps extends CollapsibleCardProps {
 
     isPaidUser: boolean;
 
-    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
 }
 
 export const SentResponseEditorContent = styled(EditorCardContent)`
@@ -54,7 +54,7 @@ export class SentResponseBodyCard extends React.Component<{
     isPaidUser: boolean,
     url: string,
     message: ExchangeMessage,
-    editorNode: portals.HtmlPortalNode<typeof ThemedContainerSizedEditor>
+    editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>
 }> {
 
     @observable

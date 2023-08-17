@@ -13,7 +13,7 @@ import {
     CollapsibleCard,
     CollapsibleCardHeading
 } from '../../common/card';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { SelfSizedEditor } from '../../editor/base-editor';
 import { ContentViewer } from '../../editor/content-viewer';
 import { EditorCardContent } from '../../editor/body-card-components';
 
@@ -23,7 +23,7 @@ interface RtcSdpCardProps {
     connection: RTCConnection;
     type: 'local' | 'remote';
     sessionDescription: MockRTCSessionDescription;
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>;
 
     collapsed: boolean;
     expanded: boolean;

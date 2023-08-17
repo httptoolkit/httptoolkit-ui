@@ -16,7 +16,7 @@ import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
 
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { SelfSizedEditor } from '../editor/base-editor';
 import {
     StreamMessageCollapsedRow,
     StreamMessageEditorRow
@@ -49,7 +49,7 @@ export class StreamMessageListCard extends React.Component<{
     streamType: StreamType,
     streamLabel?: string,
     messages: Array<StreamMessage>,
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
+    editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
 }> {
 
     @observable

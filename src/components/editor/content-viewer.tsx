@@ -13,7 +13,7 @@ import { stringToBuffer } from '../../util';
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
 
-import { ThemedContainerSizedEditor, ThemedSelfSizedEditor } from './base-editor';
+import { ContainerSizedEditor, SelfSizedEditor } from './base-editor';
 import { LoadingCardContent } from '../common/loading-card';
 
 interface ContentViewerProps {
@@ -22,7 +22,7 @@ interface ContentViewerProps {
     expanded: boolean;
     rawContentType?: string;
     contentType: ViewableContentType;
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor | typeof ThemedContainerSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor | typeof ContainerSizedEditor>;
     cache: Map<Symbol, unknown>;
 
     // See BaseEditor.props.contentid
@@ -136,7 +136,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                 if (isObservablePromise<string>(content)) {
                     return <LoadingCardContent height='500px' />;
                 } else {
-                    return <portals.OutPortal<typeof ThemedSelfSizedEditor>
+                    return <portals.OutPortal<typeof SelfSizedEditor>
                         contentId={this.props.contentId}
                         node={this.props.editorNode}
                         options={this.editorOptions}

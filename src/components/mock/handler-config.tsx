@@ -92,7 +92,7 @@ import {
 } from '../../model/events/content-types';
 import { RulesStore } from '../../model/rules/rules-store';
 
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { SelfSizedEditor } from '../editor/base-editor';
 import { TextInput, Select, Button } from '../common/inputs';
 import { EditableHeaders, EditableRawHeaders } from '../common/editable-headers';
 import { EditableStatus } from '../common/editable-status';
@@ -454,7 +454,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
                 </ConfigSelect>
             </BodyHeader>
             <BodyContainer>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     language={this.contentType}
                     value={bodyAsString}
@@ -1240,7 +1240,7 @@ const RawBodyTransfomConfig = (props: {
             </ConfigSelect>
         </BodyHeader>
         <BodyContainer>
-            <ThemedSelfSizedEditor
+            <SelfSizedEditor
                 contentId={null}
                 language={contentType}
                 value={bufferToString(props.body)}
@@ -1286,7 +1286,7 @@ const JsonUpdateTransformConfig = (props: {
             />
         </BodyHeader>
         <BodyContainer>
-            <ThemedSelfSizedEditor
+            <SelfSizedEditor
                 contentId={null}
                 language='json'
                 value={bodyString}
@@ -1733,7 +1733,7 @@ class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
                 />
             </BodyHeader>
             <BodyContainer>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     language='json'
                     value={valueString}
@@ -1981,7 +1981,7 @@ class IpfsCatTextHandlerConfig extends HandlerConfig<IpfsCatTextHandler> {
                 </ConfigSelect>
             </BodyHeader>
             <BodyContainer>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     language={this.contentType}
                     value={bodyAsString}
@@ -2463,7 +2463,7 @@ class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
                 </ConfigSelect>
             </BodyHeader>
             <BodyContainer>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     language={this.contentType}
                     value={messageAsString}

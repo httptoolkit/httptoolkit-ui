@@ -1,18 +1,21 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer, disposeOnUnmount } from 'mobx-react';
+import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import { observable, action, autorun, reaction, runInAction, comparer } from 'mobx';
-import { withTheme } from 'styled-components';
 import type { SchemaObject } from 'openapi-directory';
 
 import type * as monacoTypes from 'monaco-editor';
 import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-editor';
 
 import { logError } from '../../errors';
+import { Omit } from '../../types';
+import { styled, defineMonacoThemes } from '../../styles';
+
 import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
-import { Omit } from '../../types';
-import { styled, Theme, defineMonacoThemes } from '../../styles';
+
+import { UiStore } from '../../model/ui/ui-store';
+
 import { FocusWrapper } from './focus-wrapper';
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
@@ -97,10 +100,12 @@ const EditorMaxHeightContainer = styled.div`
     }
 `;
 
+@inject('uiStore')
 @observer
 export class SelfSizedEditor extends React.Component<
     Omit<EditorProps, 'onContentSizeChange'> & {
-        expanded?: boolean
+        expanded?: boolean,
+        uiStore?: UiStore // Injected automatically
     }
 > {
 
@@ -143,6 +148,7 @@ export class SelfSizedEditor extends React.Component<
             style={{ 'height': this.contentHeight + 'px' }}
         >
             <BaseEditor
+                theme={this.props.uiStore!.theme.monacoTheme}
                 {...this.props}
                 ref={this.editor}
                 onContentSizeChange={this.onContentSizeChange}
@@ -150,18 +156,6 @@ export class SelfSizedEditor extends React.Component<
         </EditorMaxHeightContainer>
     }
 }
-
-export const ThemedSelfSizedEditor = withTheme(
-    React.forwardRef(
-        (
-            { theme, ...otherProps }: {
-                theme?: Theme,
-                expanded?: boolean
-            } & Omit<EditorProps, 'onContentSizeChange' | 'theme'>,
-            ref: React.Ref<SelfSizedEditor>
-        ) => <SelfSizedEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
-    )
-);
 
 // As opposed to self-sized - when not expanded, the container-sized
 const ContainerSizedEditorContainer = styled.div`
@@ -180,10 +174,12 @@ const ContainerSizedEditorContainer = styled.div`
     }
 `;
 
+@inject('uiStore')
 @observer
 export class ContainerSizedEditor extends React.Component<
     Omit<EditorProps, 'onContentSizeChange'> & {
-        expanded?: boolean
+        expanded?: boolean,
+        uiStore?: UiStore // Injected automatically
     }
 > {
 
@@ -218,6 +214,7 @@ export class ContainerSizedEditor extends React.Component<
             expanded={!!this.props.expanded}
         >
             <BaseEditor
+                theme={this.props.uiStore!.theme.monacoTheme}
                 {...this.props}
                 ref={this.editor}
             />
@@ -225,25 +222,13 @@ export class ContainerSizedEditor extends React.Component<
     }
 }
 
-export const ThemedContainerSizedEditor = withTheme(
-    React.forwardRef(
-        (
-            { theme, ...otherProps }: {
-                theme?: Theme,
-                expanded?: boolean
-            } & Omit<EditorProps, 'onContentSizeChange' | 'theme'>,
-            ref: React.Ref<ContainerSizedEditor>
-        ) => <ContainerSizedEditor theme={theme!.monacoTheme} ref={ref} {...otherProps} />
-    )
-);
-
 const EditorFocusWrapper = styled(FocusWrapper)`
     height: 100%;
     width: 100%;
 `;
 
 @observer
-export class BaseEditor extends React.Component<EditorProps> {
+class BaseEditor extends React.Component<EditorProps> {
 
     // Both provided async, once the editor has initialized
     editor: monacoTypes.editor.IStandaloneCodeEditor | undefined;

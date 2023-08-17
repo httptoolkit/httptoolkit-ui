@@ -17,7 +17,7 @@ import {
 } from '../../../model/events/content-types';
 
 import { CollapsibleCard } from '../../common/card';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { SelfSizedEditor } from '../../editor/base-editor';
 import { EditableBodyCardHeader, EditorCardContent } from '../../editor/body-card-components';
 
 @observer
@@ -33,7 +33,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
     body: Buffer,
     rawHeaders: RawHeaders,
     onChange: (result: Buffer) => void,
-    editorNode: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>;
+    editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>;
 }> {
 
     @observable
@@ -101,7 +101,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
                 />
             </header>
             <EditorCardContent>
-                <portals.OutPortal<typeof ThemedSelfSizedEditor>
+                <portals.OutPortal<typeof SelfSizedEditor>
                     contentId={`bp-${exchangeId}-${direction}`}
                     node={this.props.editorNode}
                     language={this.contentType}

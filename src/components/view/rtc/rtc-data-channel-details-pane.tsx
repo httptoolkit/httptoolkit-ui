@@ -13,7 +13,7 @@ import { AccountStore } from '../../../model/account/account-store';
 import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 
 import { ExpandedPaneContentContainer } from '../view-details-pane';
-import { ThemedSelfSizedEditor } from '../../editor/base-editor';
+import { SelfSizedEditor } from '../../editor/base-editor';
 import { RTCDataChannelCard } from './rtc-data-channel-card';
 import { RTCConnectionHeader } from './rtc-connection-header';
 
@@ -22,7 +22,7 @@ import { RTCConnectionHeader } from './rtc-connection-header';
 export class RTCDataChannelDetailsPane extends React.Component<{
     dataChannel: RTCDataChannel,
 
-    streamMessageEditor: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>,
+    streamMessageEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
     navigate: (path: string) => void,
 
     // Injected:

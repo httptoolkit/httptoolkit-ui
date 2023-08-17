@@ -30,7 +30,7 @@ import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { SelfSizedEditor } from '../editor/base-editor';
 
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
@@ -125,9 +125,9 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private readonly editors = EDITOR_KEYS.reduce((v, key) => ({
         ...v,
-        [key]: portals.createHtmlPortalNode<typeof ThemedSelfSizedEditor>()
+        [key]: portals.createHtmlPortalNode<typeof SelfSizedEditor>()
     }), {} as {
-        [K in EditorKey]: portals.HtmlPortalNode<typeof ThemedSelfSizedEditor>
+        [K in EditorKey]: portals.HtmlPortalNode<typeof SelfSizedEditor>
     });
 
     searchInputRef = React.createRef<HTMLInputElement>();
@@ -372,7 +372,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
             {Object.values(this.editors).map((node, i) =>
                 <portals.InPortal key={i} node={node}>
-                    <ThemedSelfSizedEditor
+                    <SelfSizedEditor
                         contentId={null}
                     />
                 </portals.InPortal>

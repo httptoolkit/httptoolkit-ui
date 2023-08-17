@@ -19,7 +19,7 @@ import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
 import { ContentLabel, ContentValue } from '../common/text-content';
 import { Button } from '../common/inputs';
 import { TabbedOptionsContainer, Tab, TabsContainer } from '../common/tabbed-options';
-import { BaseEditor } from '../editor/base-editor';
+import { ContainerSizedEditor } from '../editor/base-editor';
 
 import * as amIUsingHtml from '../../amiusing.html';
 
@@ -330,10 +330,9 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             </ThemeColors>
 
                             <EditorContainer>
-                                <BaseEditor
+                                <ContainerSizedEditor
                                     contentId={null}
                                     language='html'
-                                    theme={uiStore.theme.monacoTheme}
                                     defaultValue={amIUsingHtml}
                                 />
                             </EditorContainer>

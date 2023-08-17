@@ -54,7 +54,7 @@ import {
 import { Select, TextInput } from '../common/inputs';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
 import { EditableHeaders } from '../common/editable-headers';
-import { ThemedSelfSizedEditor } from '../editor/base-editor';
+import { SelfSizedEditor } from '../editor/base-editor';
 
 type MatcherConfigProps<M extends Matcher> = {
     matcher?: M;
@@ -894,7 +894,7 @@ class RawBodyMatcherConfig<
                 </ConfigLabel>
             }
             <BodyContainer>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     value={content}
                     onChange={this.onBodyChange}
@@ -985,7 +985,7 @@ class JsonMatcherConfig<
                 </ConfigLabel>
             }
             <BodyContainer error={!!error}>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     value={content}
                     onChange={this.onBodyChange}
@@ -1104,7 +1104,7 @@ class EthParamsMatcherConfig extends MatcherConfig<EthereumParamsMatcher> {
                 </ConfigLabel>
             }
             <BodyContainer error={!!error}>
-                <ThemedSelfSizedEditor
+                <SelfSizedEditor
                     contentId={null}
                     value={content}
                     onChange={this.onJsonChange}
