@@ -636,7 +636,9 @@ export class EventsStore {
         // First, we run through the request & TLS error events together, in order, since these
         // define the initial event ordering
         const [initialEvents, updateEvents] = _.partition(events, ({ type }) =>
-            type === 'request' || type === 'tls-client-error'
+            type === 'request' ||
+            type === 'websocket-request' ||
+            type === 'tls-client-error'
         );
         this.eventQueue.push(..._.sortBy(initialEvents, (e) =>
             (e.event as { timingEvents: TimingEvents }).timingEvents.startTime

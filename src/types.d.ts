@@ -40,6 +40,7 @@ import type { RTCMediaTrack } from './model/webrtc/rtc-media-track';
 import type { TrafficSource } from './model/http/sources';
 import type { ViewableContentType } from './model/events/content-types';
 
+// These are the HAR types as returned from parseHar(), not the raw types as defined in the HAR itself
 export type HarBody = { encodedLength: number, decoded: Buffer };
 export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &
     { body: HarBody; timingEvents: TimingEvents, matchedRuleId: false };

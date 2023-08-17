@@ -12,8 +12,9 @@ import {
     HttpExchange,
     CollectedEvent,
     TimingEvents,
-    InputTlsFailure,
-    FailedTlsConnection
+    FailedTlsConnection,
+    InputWebSocketMessage,
+    InputTlsFailure
 } from '../../types';
 
 import { stringToBuffer } from '../../util';
@@ -62,7 +63,21 @@ export interface ExtendedHarRequest extends HarFormat.Request {
 }
 
 export interface HarEntry extends HarFormat.Entry {
+    _resourceType?: 'websocket';
+    _webSocketMessages?: HarWebSocketMessage[];
+    _webSocketClose?: {
+        code?: number;
+        reason?: string;
+        timestamp?: number;
+    } | 'aborted'
     _pinned?: true;
+}
+
+export interface HarWebSocketMessage {
+    type: 'send' | 'receive';
+    opcode: 1 | 2;
+    data: string;
+    time: number; // Epoch timestamp, as a float in seconds
 }
 
 export type HarTlsErrorEntry = {
@@ -354,7 +369,8 @@ async function generateHarHttpEntry(
         ? timingEvents.responseSentTimestamp! - timingEvents.headersSentTimestamp!
         : 0;
 
-    const endTimestamp = timingEvents.responseSentTimestamp ??
+    const endTimestamp = timingEvents.wsClosedTimestamp ??
+        timingEvents.responseSentTimestamp ??
         timingEvents.abortedTimestamp;
 
     const totalDuration = endTimestamp
@@ -387,7 +403,16 @@ async function generateHarHttpEntry(
             _resourceType: 'websocket',
             _webSocketMessages: exchange.messages.map((message) =>
                 generateHarWebSocketMessage(message, timingEvents)
-            )
+            ),
+            _webSocketClose: exchange.closeState && exchange.closeState !== 'aborted'
+                ? {
+                    code: exchange.closeState.closeCode,
+                    reason: exchange.closeState.closeReason,
+                    timestamp: timingEvents.wsClosedTimestamp
+                        ? timingEvents.wsClosedTimestamp / 1000 // Match _webSocketMessage format
+                        : undefined
+                }
+                : exchange.closeState
         } : {})
     };
 }
@@ -461,8 +486,9 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 
     har.log.entries.forEach((entry, i) => {
         const id = baseId + i;
+        const isWebSocket = entry._resourceType === 'websocket';
 
-        const timingEvents: TimingEvents = Object.assign({
+        const timingEvents: TimingEvents = {
             startTime: dateFns.parse(entry.startedDateTime).getTime(),
             startTimestamp: 0,
             bodyReceivedTimestamp: sumTimings(entry.timings,
@@ -478,44 +504,92 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
                 'send',
                 'wait'
             )
-        }, entry.response.status !== 0
-            ? { responseSentTimestamp: entry.time }
-            : { abortedTimestamp: entry.time }
+        };
+
+        Object.assign(timingEvents,
+            entry.response.status !== 0
+                ? { responseSentTimestamp: entry.time }
+                : { abortedTimestamp: entry.time },
+
+            isWebSocket
+                ? {
+                    wsAcceptedTimestamp: timingEvents.headersSentTimestamp,
+                    wsClosedTimestamp: entry.time
+                }
+                : {}
         );
 
+
         const request = parseHarRequest(id, entry.request, timingEvents);
-        events.push({ type: 'request', event: request });
+
+        events.push({
+            type: isWebSocket ? 'websocket-request' : 'request',
+            event: request
+        });
 
         if (entry.response.status !== 0) {
             events.push({
-                type: 'response',
+                type: isWebSocket && entry.response.status === 101
+                    ? 'websocket-accepted'
+                    : 'response',
                 event: parseHarResponse(id, entry.response, timingEvents)
             });
         } else {
             events.push({ type: 'abort', event: request });
         }
 
+        if (isWebSocket) {
+            events.push(...entry._webSocketMessages?.map(message => ({
+                type: `websocket-message-${message.type === 'send' ? 'received' : 'sent'}` as const,
+                event: {
+                    streamId: request.id,
+                    direction: message.type === 'send' ? 'received' : 'sent',
+                    isBinary: message.opcode === 2,
+                    content: Buffer.from(message.data, message.opcode === 2 ? 'base64' : 'utf8'),
+                    eventTimestamp: (message.time * 1000) - timingEvents.startTime,
+                    timingEvents: timingEvents,
+                    tags: []
+                } satisfies InputWebSocketMessage
+            })) ?? []);
+
+            const closeEvent = entry._webSocketClose;
+
+            if (closeEvent && closeEvent !== 'aborted') {
+                events.push({
+                    type: 'websocket-close',
+                    event: {
+                        streamId: request.id,
+                        closeCode: closeEvent.code,
+                        closeReason: closeEvent.reason ?? "",
+                        timingEvents: timingEvents,
+                        tags: []
+                    }
+                });
+            } else {
+                // N.b. WebSockets can abort _after_ the response event!
+                events.push({ type: 'abort', event: request });
+            }
+        }
+
         if (entry._pinned) pinnedIds.push(id);
     });
 
     if (har.log._tlsErrors) {
-        har.log._tlsErrors.forEach((entry) => {
-            events.push({
-                type: 'tls-client-error',
-                event: {
-                    failureCause: entry.cause,
-                    hostname: entry.hostname,
-                    remoteIpAddress: entry.clientIPAddress,
-                    remotePort: entry.clientPort,
-                    tags: [],
-                    timingEvents: {
-                        startTime: dateFns.parse(entry.startedDateTime).getTime(),
-                        connectTimestamp: 0,
-                        failureTimestamp: entry.time
-                    }
+        events.push(...har.log._tlsErrors.map((entry) => ({
+            type: 'tls-client-error' as const,
+            event: {
+                failureCause: entry.cause,
+                hostname: entry.hostname,
+                remoteIpAddress: entry.clientIPAddress,
+                remotePort: entry.clientPort,
+                tags: [],
+                timingEvents: {
+                    startTime: dateFns.parse(entry.startedDateTime).getTime(),
+                    connectTimestamp: 0,
+                    failureTimestamp: entry.time
                 }
-            });
-        });
+            }
+        })));
     }
 
     return { events, pinnedIds };
