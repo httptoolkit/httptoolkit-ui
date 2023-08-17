@@ -319,12 +319,23 @@ export class UiStore {
     @observable.ref // This shouldn't be mutated
     contextMenuState: ContextMenuState<any> | undefined;
 
+    handleContextMenuEvent<T>(
+        event: React.MouseEvent,
+        items: readonly ContextMenuItem<T>[],
+        data: T
+    ): void;
+    handleContextMenuEvent(
+        event: React.MouseEvent,
+        items: readonly ContextMenuItem<void>[]
+    ): void;
     @action.bound
     handleContextMenuEvent<T>(
         event: React.MouseEvent,
-        data: T,
-        items: readonly ContextMenuItem<T>[]
-    ) {
+        items: readonly ContextMenuItem<T>[],
+        data?: T
+    ): void {
+        if (!items.length) return;
+
         event.preventDefault();
 
         if (DesktopApi.openContextMenu) {
@@ -337,7 +348,7 @@ export class UiStore {
             }).then((result) => {
                 if (result) {
                     const selectedItem = _.get(items, result) as ContextMenuOption<T>;
-                    selectedItem.callback(data);
+                    selectedItem.callback(data!);
                 }
             }).catch((error) => {
                 console.log(error);

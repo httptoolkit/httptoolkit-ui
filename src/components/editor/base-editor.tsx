@@ -17,6 +17,7 @@ import { asError } from '../../util/error';
 import { UiStore } from '../../model/ui/ui-store';
 
 import { FocusWrapper } from './focus-wrapper';
+import { buildContextMenuCallback } from './editor-context-menu';
 
 let MonacoEditor: typeof _MonacoEditor | undefined;
 // Defer loading react-monaco-editor ever so slightly. This has two benefits:
@@ -146,6 +147,11 @@ export class SelfSizedEditor extends React.Component<
             ref={this.container}
             expanded={!!this.props.expanded}
             style={{ 'height': this.contentHeight + 'px' }}
+            onContextMenu={buildContextMenuCallback(
+                this.props.uiStore!,
+                !!this.props.options?.readOnly,
+                this.editor
+            )}
         >
             <BaseEditor
                 theme={this.props.uiStore!.theme.monacoTheme}
@@ -212,6 +218,11 @@ export class ContainerSizedEditor extends React.Component<
         return <ContainerSizedEditorContainer
             ref={this.container}
             expanded={!!this.props.expanded}
+            onContextMenu={buildContextMenuCallback(
+                this.props.uiStore!,
+                !!this.props.options?.readOnly,
+                this.editor
+            )}
         >
             <BaseEditor
                 theme={this.props.uiStore!.theme.monacoTheme}

@@ -49,7 +49,7 @@ export class ViewEventContextMenuBuilder {
                 : undefined;
 
             if (event.isHttp()) {
-                this.uiStore.handleContextMenuEvent(mouseEvent, event, [
+                this.uiStore.handleContextMenuEvent(mouseEvent, [
                     this.BaseOptions.Pin,
                     {
                         type: 'option',
@@ -110,13 +110,13 @@ export class ViewEventContextMenuBuilder {
                             }))
                         }))
                     },
-                ])
+                ], event)
             } else {
                 // For non-HTTP events, we just show the super-basic globally supported options:
-                this.uiStore.handleContextMenuEvent(mouseEvent, event, [
+                this.uiStore.handleContextMenuEvent(mouseEvent, [
                     this.BaseOptions.Pin,
                     this.BaseOptions.Delete
-                ]);
+                ], event);
             }
         };
     }
