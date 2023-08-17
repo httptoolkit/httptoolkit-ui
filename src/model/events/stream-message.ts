@@ -17,6 +17,16 @@ export class StreamMessage {
         this.inputMessage = inputMessage;
     }
 
+    /**
+     * The direction the message travelled.
+     *
+     * Note that this may seem reversed! msg.direction is from the perspective
+     * of Mockttp, not the client.
+     *
+     * I.e. 'received' means the client sent it and the proxy received it. Sent
+     * means Mockttp sent it to the client (which typically means an upstream
+     * server sent it to Mockttp, but it depends on the rule setup).
+     */
     get direction() {
         return this.inputMessage.direction;
     }

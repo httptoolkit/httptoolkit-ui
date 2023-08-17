@@ -21,6 +21,8 @@ import {
 
 import { UI_VERSION } from '../../services/service-versions';
 import { getStatusMessage } from './http-docs';
+import { StreamMessage } from '../events/stream-message';
+import { unreachableCheck } from '../../util/error';
 
 // We only include request/response bodies that are under 500KB
 const HAR_BODY_SIZE_LIMIT = 500000;
@@ -82,7 +84,7 @@ export async function generateHar(
     const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
 
     const sourcePages = getSourcesAsHarPages(exchanges);
-    const entries = await Promise.all(exchanges.map(e => generateHarEntry(e, options)));
+    const entries = await Promise.all(exchanges.map(e => generateHarHttpEntry(e, options)));
     const errorEntries = errors.map(generateHarTlsError);
 
     return {
@@ -334,7 +336,7 @@ function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
     });
 }
 
-async function generateHarEntry(
+async function generateHarHttpEntry(
     exchange: HttpExchange,
     options: HarGenerationOptions
 ): Promise<HarEntry> {
@@ -342,7 +344,7 @@ async function generateHarEntry(
 
     const startTime = 'startTime' in timingEvents
         ? timingEvents.startTime
-        : new Date();
+        : Date.now();
 
     const sendDuration = 'bodyReceivedTimestamp' in timingEvents
         ? timingEvents.bodyReceivedTimestamp! - timingEvents.startTimestamp
@@ -377,7 +379,34 @@ async function generateHarEntry(
             wait: Math.max(waitDuration, 0),
             receive: Math.max(receiveDuration, 0)
         },
-        _pinned: exchange.pinned || undefined
+        _pinned: exchange.pinned || undefined,
+
+        ...(exchange.isWebSocket() ? {
+            _resourceType: 'websocket',
+            _webSocketMessages: exchange.messages.map((message) =>
+                generateHarWebSocketMessage(startTime, message)
+            )
+        } : {})
+    };
+}
+
+function generateHarWebSocketMessage(startTime: number, message: StreamMessage) {
+    return {
+        // Note that msg.direction is from the perspective of Mockttp, not the client.
+        type: message.direction === 'sent'
+                ? 'receive'
+            : message.direction === 'received'
+                ? 'send'
+            : unreachableCheck(message.direction),
+
+        opcode: message.isBinary ? 2 : 1,
+        data: message.isBinary
+            ? message.content.toString('base64')
+            : message.content.toString('utf8'),
+
+        // We don't record the start time for now, so just simulate with this. We
+        // have to set a value here or Chrome drops the messages.
+        time: (startTime / 1000) + message.messageIndex // Float, in seconds
     };
 }
 
