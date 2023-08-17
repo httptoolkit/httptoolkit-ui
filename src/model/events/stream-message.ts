@@ -49,6 +49,10 @@ export class StreamMessage {
         else return 'text';
     }
 
+    get timestamp() {
+        return this.inputMessage.eventTimestamp;
+    }
+
     cleanup() {
         // As with Exchange & WebSocketStream - in some cases, browsers can keep references to
         // these messages, which causes issues with releasing memory, so we aggressively drop

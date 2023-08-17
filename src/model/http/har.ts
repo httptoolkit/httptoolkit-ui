@@ -386,13 +386,16 @@ async function generateHarHttpEntry(
         ...(exchange.isWebSocket() ? {
             _resourceType: 'websocket',
             _webSocketMessages: exchange.messages.map((message) =>
-                generateHarWebSocketMessage(startTime, message)
+                generateHarWebSocketMessage(message, timingEvents)
             )
         } : {})
     };
 }
 
-function generateHarWebSocketMessage(startTime: number, message: StreamMessage) {
+function generateHarWebSocketMessage(
+    message: StreamMessage,
+    timingEvents: Partial<TimingEvents>
+): HarWebSocketMessage {
     return {
         // Note that msg.direction is from the perspective of Mockttp, not the client.
         type: message.direction === 'sent'
@@ -406,9 +409,9 @@ function generateHarWebSocketMessage(startTime: number, message: StreamMessage) 
             ? message.content.toString('base64')
             : message.content.toString('utf8'),
 
-        // We don't record the start time for now, so just simulate with this. We
-        // have to set a value here or Chrome drops the messages.
-        time: (startTime / 1000) + message.messageIndex // Float, in seconds
+        // N.b. timestamp is precise but relative, startTime is epoch-based but imprecise,
+        // eventual result here has to be in seconds as a float.
+        time: (timingEvents.startTime! + (message.timestamp - timingEvents.startTimestamp!)) / 1000
     };
 }
 
