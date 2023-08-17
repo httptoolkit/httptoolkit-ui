@@ -324,9 +324,7 @@ function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
 
     return _.map(exchangesBySource, (exchanges, source) => {
         const sourceStartTime = Math.min(...exchanges.map(e =>
-            'startTime' in e.timingEvents
-                ? e.timingEvents.startTime
-                : Date.now()
+            e.timingEvents.startTime ?? Date.now()
         ), Date.now());
 
         return {
@@ -344,21 +342,23 @@ async function generateHarHttpEntry(
 ): Promise<HarEntry> {
     const { timingEvents } = exchange;
 
-    const startTime = 'startTime' in timingEvents
-        ? timingEvents.startTime
-        : Date.now();
+    const startTime = timingEvents.startTime ?? Date.now();
 
-    const sendDuration = 'bodyReceivedTimestamp' in timingEvents
-        ? timingEvents.bodyReceivedTimestamp! - timingEvents.startTimestamp
+    const sendDuration = timingEvents.bodyReceivedTimestamp
+        ? timingEvents.bodyReceivedTimestamp! - timingEvents.startTimestamp!
         : 0;
-    const waitDuration = 'bodyReceivedTimestamp' in timingEvents && 'headersSentTimestamp' in timingEvents
-        ? timingEvents.headersSentTimestamp! - timingEvents.bodyReceivedTimestamp!
+    const waitDuration = timingEvents.bodyReceivedTimestamp && timingEvents.headersSentTimestamp
+        ? timingEvents.headersSentTimestamp - timingEvents.bodyReceivedTimestamp
         : 0;
-    const receiveDuration = 'responseSentTimestamp' in timingEvents
+    const receiveDuration = timingEvents.responseSentTimestamp
         ? timingEvents.responseSentTimestamp! - timingEvents.headersSentTimestamp!
         : 0;
-    const totalDuration = 'responseSentTimestamp' in timingEvents
-        ? timingEvents.responseSentTimestamp! - timingEvents.startTimestamp!
+
+    const endTimestamp = timingEvents.responseSentTimestamp ??
+        timingEvents.abortedTimestamp;
+
+    const totalDuration = endTimestamp
+        ? endTimestamp - timingEvents.startTimestamp!
         : -1;
 
     return {

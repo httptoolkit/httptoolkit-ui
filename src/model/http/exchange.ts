@@ -260,7 +260,7 @@ export class HttpExchange extends HTKEventBase {
     }
 
     @observable
-    public readonly timingEvents: TimingEvents | {};  // May be {} if using an old server (<0.1.7)
+    public readonly timingEvents: Partial<TimingEvents>; // May be {} if using an old server (<0.1.7)
 
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;
