@@ -357,33 +357,31 @@ export const HttpErrorHeader = (p: {
             </HeaderText>
         : p.type === 'connection-refused'
             ? <HeaderText>
-                This typically means the server isn't running right now on the port you're using,
-                although it's possible this is an intermittent connection issue. You can either
-                try again, or you can mock requests like this to avoid sending them upstream
-                at all.
+                This typically means the server isn't running on the port you're using, though
+                it is possible this is an intermittent connection issue. You can either try
+                again, or mock requests like this to avoid sending them upstream at all.
             </HeaderText>
         : p.type === 'connection-reset'
             ? <HeaderText>
-                This could be due to a connection issue, or may be caused by an issue on the server.
-                In many cases, this is an intermittent issue that will be solved by retrying
-                the request. You can also mock requests like this, to avoid sending them upstream
-                at all.
+                This could be due to a connection issue, or an issue with the server.
+                This may be an intermittent issue that will be solved by retrying the request, or
+                you can mock requests like this to avoid sending them upstream at all.
             </HeaderText>
         : p.type === 'client-abort'
             ? <HeaderText>
-                This could be due to connection issues, general problems in the client, or that
+                This could be due to connection issues, problems within the client, or that
                 the client simply no longer wanted to receive the response and closed the
                 connection intentionally.
             </HeaderText>
         : p.type === 'client-timeout'
             ? <HeaderText>
-                This could be due to connection issues, general problems in the client, or delays
+                This could be due to connection issues, problems within the client, or delays
                 generating the complete body of the request. This might be resolved by retrying
                 the request, or sending a simpler request with a smaller or easier to generate body.
             </HeaderText>
         : p.type === 'server-timeout'
             ? <HeaderText>
-                This could be due to connection issues, general issues on the server, or issues
+                This could be due to connection issues, problems within the server, or issues
                 with handling this request specifically. This might be resolved by retrying
                 the request, or you can mock requests like this to avoid sending them upstream
                 at all.
