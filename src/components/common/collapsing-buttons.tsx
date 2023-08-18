@@ -8,6 +8,7 @@ import { useSize } from '../../util/ui';
 const VisibleButtonsContainer = styled.div`
     overflow: hidden;
     display: flex;
+    flex-direction: inherit;
 `;
 
 const HiddenButtonsWrapper = styled.div`
@@ -40,6 +41,11 @@ const ButtonContainer = styled.div`
 
     position: relative;
     display: flex;
+
+    /* Match the parent (typically card header) flex direction, but justify
+       content in the opposite direction */
+    flex-direction: inherit;
+    justify-content: flex-start;
 `;
 
 const MenuButton = styled(Icon)`

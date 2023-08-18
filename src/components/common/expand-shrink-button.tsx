@@ -11,7 +11,7 @@ export const ExpandShrinkButton = (p: { expanded: boolean, onClick: () => void }
         onClick={p.onClick}
         title={
             p.expanded
-                ? "Shrink this card, so you can see other details"
-                : "Expand this card to view it in more detail, hiding other details"
+                ? "Shrink this area, so you can see other details"
+                : "Expand this area to view it in more detail, hiding other areas"
         }
     />
