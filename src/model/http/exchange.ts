@@ -378,6 +378,8 @@ export class HttpExchange extends HTKEventBase {
                 } else if (apiMetadata.type === 'openrpc') {
                     return await parseRpcApiExchange(apiMetadata, this);
                 } else {
+                    console.log('Unknown API metadata type for host', this.request.parsedUrl.hostname);
+                    console.log(apiMetadata);
                     throw new UnreachableCheck(apiMetadata, m => m.type);
                 }
             } catch (e) {
