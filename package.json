@@ -1,6 +1,5 @@
 {
   "name": "httptoolkit-ui",
-  "version": "0.1.0",
   "private": true,
   "description": "Beautiful, cross-platform & open-source HTTP(S) debugging proxy, analyzer & client.",
   "main": "dist/main.js",
@@ -35,7 +34,8 @@
   "author": "Tim Perry <tim@httptoolkit.com>",
   "license": "AGPL-3.0-or-later",
   "runtimeDependencies": {
-    "httptoolkit-server": "^0.1.18 || ^1.0.0"
+    "httptoolkit-server": ">=1.0.0",
+    "httptoolkit-desktop": ">=1.1.0"
   },
   "dependencies": {
     "@ethersproject/abi": "^5.7.0",

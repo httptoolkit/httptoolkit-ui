@@ -24,9 +24,6 @@ export const serverVersion = lazyObservablePromise(() =>
         })
 );
 
-// Notable desktop versions:
-export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
-
 // The last known service version - immediately available (though still async),
 // but reports the previous startup version, not necessarily the latest one.
 // May be undefined if the app has never yet started successfully.
@@ -44,6 +41,9 @@ export function versionSatisfies(version: string | Error | undefined, range: str
     return (typeof version === 'string') &&
         semver.satisfies(version, range, { includePrerelease: true });
 }
+
+// Notable desktop versions:
+export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
 
 // Notable server versions:
 export const PORT_RANGE_SERVER_RANGE = '^0.1.14 || ^1.0.0';

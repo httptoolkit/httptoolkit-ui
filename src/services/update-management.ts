@@ -1,8 +1,13 @@
+import dedent from 'dedent';
+
 import registerUpdateWorker, {
     ServiceWorkerNoSupportError
 } from 'service-worker-loader!./ui-update-worker';
 
 import { triggerServerUpdate } from './server-api';
+
+import packageMetadata from '../../package.json';
+import { desktopVersion, serverVersion, versionSatisfies } from './service-versions';
 
 export const attemptServerUpdate = () =>
     triggerServerUpdate().catch(console.warn);
@@ -31,4 +36,45 @@ export async function runBackgroundUpdates() {
         }
         throw e;
     }
+}
+
+function showPleaseUpdateMessage() {
+    alert(
+        "This HTTP Toolkit installation is now very outdated, and this version is " +
+        "no longer supported." +
+        "\n\n" +
+        "You can continue to use HTTP Toolkit, but you may experience issues & " +
+        "instability." +
+        "\n\n" +
+        "Please update to the latest version from httptoolkit.com when you can, " +
+        "to access the many new features, bug fixes & performance improvements " +
+        "available there."
+    );
+}
+
+export function checkForOutdatedComponents() {
+    const { runtimeDependencies } = packageMetadata;
+
+    let hasShownUpdateMessage = false;
+
+    serverVersion.then((serverVersion) => {
+        if (versionSatisfies(serverVersion, runtimeDependencies['httptoolkit-server'])) return;
+        if (hasShownUpdateMessage) return;
+
+        // This one should be _very_ rare, since the server always auto-updates - it'll only
+        // affect systems where that is failing for some reason, for years.
+
+        showPleaseUpdateMessage();
+        hasShownUpdateMessage = true;
+    }).catch(() => {});
+
+    desktopVersion.then((desktopVersion) => {
+        if (versionSatisfies(desktopVersion, runtimeDependencies['httptoolkit-desktop'])) return;
+        if (hasShownUpdateMessage) return;
+
+        // This will trigger for a few users, but not many - below 0.2% of weekly users right now
+
+        showPleaseUpdateMessage();
+        hasShownUpdateMessage = true;
+    }).catch(() => {});
 }

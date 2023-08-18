@@ -35,6 +35,7 @@ import { SendStore } from './model/send/send-store';
 import { serverVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
 import {
     attemptServerUpdate,
+    checkForOutdatedComponents,
     runBackgroundUpdates
 } from './services/update-management';
 
@@ -52,6 +53,7 @@ mobx.configure({ enforceActions: 'observed' });
 // background updates & instant offline startup. We slightly delay this to avoid
 // competing for bandwidth/CPU/etc with startup on slow connections.
 delay(5000).then(runBackgroundUpdates);
+checkForOutdatedComponents();
 
 const accountStore = new AccountStore(
     () => appHistory.navigate('/settings')

@@ -8,7 +8,7 @@ import { PrecacheController } from 'workbox-precaching'
 import { ExpirationPlugin } from 'workbox-expiration';
 import { StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies';
 
-import * as packageMetadata from '../../package.json';
+import packageMetadata from '../../package.json';
 import { getServerVersion } from './server-api';
 import { lastServerVersion, versionSatisfies } from './service-versions';
 import { delay } from '../util/promise';
