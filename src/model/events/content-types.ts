@@ -75,6 +75,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'image/svg': 'image',
     'image/tiff': 'image',
     'image/webp': 'image',
+    'image/avif': 'image',
     'image/x-icon': 'image',
     'image/vnd.microsoft.icon': 'image',
 
