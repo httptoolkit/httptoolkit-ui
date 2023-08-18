@@ -21,8 +21,6 @@ import { delay } from './util/promise';
 import { initMetrics } from './metrics';
 import { appHistory } from './routing';
 
-import registerUpdateWorker, { ServiceWorkerNoSupportError } from 'service-worker-loader!./services/update-worker';
-
 import { HttpExchange } from './types';
 
 import { UiStore } from './model/ui/ui-store';
@@ -34,8 +32,11 @@ import { InterceptorStore } from './model/interception/interceptor-store';
 import { ApiStore } from './model/api/api-store';
 import { SendStore } from './model/send/send-store';
 
-import { triggerServerUpdate } from './services/server-api';
 import { serverVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
+import {
+    attemptServerUpdate,
+    runBackgroundUpdates
+} from './services/update-management';
 
 import { App } from './components/app';
 import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
@@ -47,31 +48,10 @@ const APP_ELEMENT_SELECTOR = '#app';
 
 mobx.configure({ enforceActions: 'observed' });
 
-// Set up a SW in the background to add offline support & instant startup.
-// This also checks for new versions after the first SW is already live.
-// Slightly delayed to avoid competing for bandwidth with startup on slow connections.
-delay(5000).then(() => {
-    // Try to trigger a server update. Can't guarantee it'll work, and we also trigger
-    // after successful startup, but this tries to ensure that even if startup is broken,
-    // we still update the server (and hopefully thereby unbreak app startup).
-    triggerServerUpdate();
-    return registerUpdateWorker({ scope: '/' });
-}).then((registration) => {
-    console.log('Service worker loaded');
-    registration.update().catch(console.log);
-
-    // Check for SW updates every 5 minutes.
-    setInterval(() => {
-        triggerServerUpdate();
-        registration.update().catch(console.log);
-    }, 1000 * 60 * 5);
-})
-.catch((e) => {
-    if (e instanceof ServiceWorkerNoSupportError) {
-        console.log('Service worker not supported, oh well, no autoupdating for you.');
-    }
-    throw e;
-});
+// Begin checking for updates and pre-caching UI components we might need, to support
+// background updates & instant offline startup. We slightly delay this to avoid
+// competing for bandwidth/CPU/etc with startup on slow connections.
+delay(5000).then(runBackgroundUpdates);
 
 const accountStore = new AccountStore(
     () => appHistory.navigate('/settings')
@@ -121,7 +101,7 @@ initMetrics();
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
     // We now know that the server is running - tell it to check for updates
-    triggerServerUpdate();
+    attemptServerUpdate();
 
     console.log('App started, rendering');
 

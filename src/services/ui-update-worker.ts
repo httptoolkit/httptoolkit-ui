@@ -8,7 +8,7 @@ import { PrecacheController } from 'workbox-precaching'
 import { ExpirationPlugin } from 'workbox-expiration';
 import { StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies';
 
-import * as appPackage from '../../package.json';
+import * as packageMetadata from '../../package.json';
 import { getServerVersion } from './server-api';
 import { lastServerVersion, versionSatisfies } from './service-versions';
 import { delay } from '../util/promise';
@@ -107,10 +107,10 @@ async function checkServerVersion() {
 
     console.log(`Connected httptoolkit-server version is ${serverVersion}.`);
     console.log(`App requires server version satisfying ${
-        appPackage.runtimeDependencies['httptoolkit-server']
+        packageMetadata.runtimeDependencies['httptoolkit-server']
     }.`);
 
-    if (!versionSatisfies(serverVersion, appPackage.runtimeDependencies['httptoolkit-server'])) {
+    if (!versionSatisfies(serverVersion, packageMetadata.runtimeDependencies['httptoolkit-server'])) {
         throw new Error(
             `New app version ${appVersion} available, but server ${
                 await serverVersion

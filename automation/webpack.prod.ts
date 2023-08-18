@@ -42,9 +42,9 @@ export default merge(common, {
             swSrc: path.join(
                 path.dirname(common.entry as string),
                 'services',
-                'update-worker.ts'
+                'ui-update-worker.ts'
             ),
-            exclude: ['google-fonts', /^api\//, 'update-worker.js', /.map$/],
+            exclude: ['google-fonts', /^api\//, 'ui-update-worker.js', /.map$/],
             maximumFileSizeToCacheInBytes: 100 * 1024 * 1024,
             manifestTransforms: [
                 (originalManifest: any, compilation: any) => {
