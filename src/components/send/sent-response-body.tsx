@@ -16,7 +16,7 @@ import { CollapsibleCardProps } from '../common/card';
 import { LoadingCard } from '../common/loading-card';
 
 import {
-    EditorCardContent,
+    ContainerSizedEditorCardContent,
     ReadonlyBodyCardHeader,
     getBodyDownloadFilename,
     BodyDecodingErrorBanner
@@ -34,10 +34,6 @@ export interface SentResponseBodyProps extends CollapsibleCardProps {
 
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
 }
-
-export const SentResponseEditorContent = styled(EditorCardContent)`
-    flex-shrink: 1;
-`;
 
 // A selection of content types you might want to try out, to explore your encoded data:
 const ENCODED_DATA_CONTENT_TYPES = ['text', 'raw', 'base64', 'image'] as const;
@@ -127,7 +123,7 @@ export class SentResponseBodyCard extends React.Component<{
                         isPaidUser={isPaidUser}
                     />
                 </header>
-                <SentResponseEditorContent>
+                <ContainerSizedEditorCardContent>
                     <ContentViewer
                         contentId={message.id}
                         editorNode={this.props.editorNode}
@@ -138,7 +134,7 @@ export class SentResponseBodyCard extends React.Component<{
                     >
                         {decodedBody}
                     </ContentViewer>
-                </SentResponseEditorContent>
+                </ContainerSizedEditorCardContent>
             </SendBodyCardSection>;
         } else if (!decodedBody && message.body.decodingError) {
             // We have failed to decode the body content! Show the error & raw encoded data instead:
@@ -179,7 +175,7 @@ export class SentResponseBodyCard extends React.Component<{
                     headers={message.rawHeaders}
                 />
                 { encodedBody &&
-                    <SentResponseEditorContent>
+                    <ContainerSizedEditorCardContent>
                         <ContentViewer
                             contentId={message.id}
                             editorNode={this.props.editorNode}
@@ -189,7 +185,7 @@ export class SentResponseBodyCard extends React.Component<{
                         >
                             { encodedBody }
                         </ContentViewer>
-                    </SentResponseEditorContent>
+                    </ContainerSizedEditorCardContent>
                 }
             </SendBodyCardSection>;
         } else {

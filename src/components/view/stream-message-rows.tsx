@@ -311,6 +311,7 @@ const EditorRowHeader = styled.div<{ messageDirection: 'left' | 'right' }>`
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 8px;
 
     padding: 4px 15px 4px 0;
 
@@ -327,6 +328,8 @@ const EditorRowHeader = styled.div<{ messageDirection: 'left' | 'right' }>`
         flex-grow: 1;
         text-overflow: ellipsis;
         overflow: hidden;
+
+        margin-left: -8px;
     }
 
     > ${IconButton} {

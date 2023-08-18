@@ -42,14 +42,6 @@ const pillStyles = css`
     border-radius: 4px;
     padding: 4px 8px;
 
-    margin: 0 8px 0 0;
-    * + & {
-        margin-left: 8px;
-    }
-    & + & {
-        margin-left: 0;
-    }
-
     text-align: center;
     text-transform: none;
     font-weight: bold;
@@ -92,10 +84,6 @@ const Select = styled(Pill.withComponent('select'))`
 
     font-size: ${p => p.theme.textSize};
     font-family: ${p => p.theme.fontFamily};
-
-    ${Pill} + & {
-        margin-left: 0;
-    }
 
     ${interactiveMouseoverStyles}
 

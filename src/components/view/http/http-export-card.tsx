@@ -44,6 +44,14 @@ const SnippetDescriptionContainer = styled.div`
     }
 `;
 
+const SnippetDetailButtons = styled.div`
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+    margin-bottom: 10px;
+`;
+
 const SnippetEditorContainer = styled.div`
     margin: 0 -20px -20px -20px;
     border-top: solid 1px ${p => p.theme.containerBorder};
@@ -82,13 +90,14 @@ const ExportSnippetEditor = observer((p: {
                     getCodeSnippetFormatName(p.exportOption)
                 }</strong>: { description }
             </p>
-            <p>
+            <SnippetDetailButtons>
                 <DocsLink href={link}>
                     Find out more
-                </DocsLink> <CopyButtonPill content={snippet}>
+                </DocsLink>
+                <CopyButtonPill content={snippet}>
                     {' '}Copy snippet
                 </CopyButtonPill>
-            </p>
+            </SnippetDetailButtons>
         </SnippetDescriptionContainer>
         <SnippetEditorContainer>
             <SelfSizedEditor

@@ -5,6 +5,35 @@ import { observer } from 'mobx-react';
 import { styled, Theme, ThemeProps, css } from '../../styles';
 import { Icon } from '../../icons';
 
+interface CollapseIconProps extends ThemeProps<Theme> {
+    className?: string;
+    onClick: () => void;
+    collapsed: boolean;
+    headerAlignment: 'left' | 'right';
+}
+
+const CollapseIcon = styled((props: CollapseIconProps) =>
+    <Icon
+        className={props.className}
+        icon={['fas', props.collapsed ? 'chevron-down' : 'chevron-up']}
+        onClick={props.onClick}
+    />
+)`
+    cursor: pointer;
+    user-select: none;
+
+    padding: 4px 10px;
+
+    ${p => p.headerAlignment === 'right'
+        ? 'margin: 0 -10px 0 -3px;'
+        : 'margin: 0 -3px 0 -10px;'
+    }
+
+    &:hover {
+        color: ${p => p.theme.popColor};
+    }
+`;
+
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
     className?: string;
     disabled?: boolean;
@@ -56,6 +85,8 @@ const Card = styled.section.attrs((p: CardProps) => ({
         ${p => p.headerAlignment === 'left' && `
             flex-direction: row-reverse;
         `}
+
+        gap: 8px;
     }
 `;
 
@@ -199,35 +230,6 @@ export class CollapsibleCard extends React.Component<
     }
 
 }
-
-interface CollapseIconProps extends ThemeProps<Theme> {
-    className?: string;
-    onClick: () => void;
-    collapsed: boolean;
-    headerAlignment: 'left' | 'right';
-}
-
-const CollapseIcon = styled((props: CollapseIconProps) =>
-    <Icon
-        className={props.className}
-        icon={['fas', props.collapsed ? 'chevron-down' : 'chevron-up']}
-        onClick={props.onClick}
-    />
-)`
-    cursor: pointer;
-    user-select: none;
-
-    padding: 4px 10px;
-
-    ${p => p.headerAlignment === 'right'
-        ? 'margin: 0 -10px 0 5px;'
-        : 'margin: 0 5px 0 -10px;'
-    }
-
-    &:hover {
-        color: ${p => p.theme.popColor};
-    }
-`;
 
 // Bit of redundancy here, but just because the TS styled plugin
 // gets super confused if you use variables in property names.

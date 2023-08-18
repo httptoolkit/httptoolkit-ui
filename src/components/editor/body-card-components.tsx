@@ -49,6 +49,10 @@ export const EditorCardContent = styled.div`
     min-height: 0;
 `;
 
+export const ContainerSizedEditorCardContent = styled(EditorCardContent)`
+    flex-shrink: 1;
+`;
+
 export function getBodyDownloadFilename(url: string, headers: Headers | RawHeaders): string | undefined {
     const contentDisposition = getHeaderValue(headers, 'content-disposition') || "";
     const filenameMatch = / filename="([^"]+)"/.exec(contentDisposition);

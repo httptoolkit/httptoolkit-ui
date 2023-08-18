@@ -139,7 +139,6 @@ const CompressionResultsContainer = styled.div`
 
 const CompressionResultsPill = styled(Pill)`
     flex-shrink: 0;
-    margin: 0;
 `;
 
 const CompressionOptions = observer((p: {

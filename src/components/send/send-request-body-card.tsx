@@ -12,7 +12,10 @@ import { EditableContentType, EditableContentTypes } from '../../model/events/co
 import { CollapsibleCardProps } from '../common/card';
 import { SendBodyCardSection } from './send-card-section';
 import { ContainerSizedEditor } from '../editor/base-editor';
-import { EditableBodyCardHeader, EditorCardContent } from '../editor/body-card-components';
+import {
+    EditableBodyCardHeader,
+    ContainerSizedEditorCardContent
+} from '../editor/body-card-components';
 
 export interface SendRequestBodyProps extends CollapsibleCardProps {
     body: Buffer;
@@ -23,10 +26,6 @@ export interface SendRequestBodyProps extends CollapsibleCardProps {
 
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
 }
-
-export const SendRequestEditorContent = styled(EditorCardContent)`
-    flex-shrink: 1;
-`;
 
 @observer
 export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
@@ -82,7 +81,7 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                     onChangeContentType={this.onChangeContentType}
                 />
             </header>
-            <SendRequestEditorContent>
+            <ContainerSizedEditorCardContent>
                 <portals.OutPortal<typeof ContainerSizedEditor>
                     node={editorNode}
 
@@ -91,7 +90,7 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                     value={bodyString}
                     onChange={this.updateBody}
                 />
-            </SendRequestEditorContent>
+            </ContainerSizedEditorCardContent>
         </SendBodyCardSection>;
     }
 }
