@@ -201,7 +201,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
 
                 { proxyType !== 'direct' && proxyType !== 'system' && <>
                     <TextInput
-                        placeholder={`The ${proxyType} proxy host`}
+                        placeholder={`The ${proxyType} proxy host details, e.g. example.com or user:pwd@example.com:8080`}
                         value={proxyHostInput}
                         onChange={setProxyHostInput}
                     />
