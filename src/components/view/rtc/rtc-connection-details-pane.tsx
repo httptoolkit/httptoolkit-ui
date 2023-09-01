@@ -95,12 +95,12 @@ export class RTCConnectionDetailsPane extends React.Component<{
         const offerCardProps = {
             ...uiStore!.viewCardProps.rtcSessionOffer,
             direction: locallyInitiated ? 'right' : 'left'
-        };
+        } as const;
 
         const answerCardProps = {
             ...uiStore!.viewCardProps.rtcSessionAnswer,
             direction: locallyInitiated ? 'left' : 'right'
-        };
+        } as const;
 
         return <PaneOuterContainer>
             <PaneScrollContainer>

@@ -3,13 +3,11 @@ import { action, computed, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { styled } from '../../styles';
-
 import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util';
 
 import { EditableContentType, EditableContentTypes } from '../../model/events/content-types';
 
-import { CollapsibleCardProps } from '../common/card';
+import { ExpandableCardProps } from '../common/card';
 import { SendBodyCardSection } from './send-card-section';
 import { ContainerSizedEditor } from '../editor/base-editor';
 import {
@@ -17,13 +15,9 @@ import {
     ContainerSizedEditorCardContent
 } from '../editor/body-card-components';
 
-export interface SendRequestBodyProps extends CollapsibleCardProps {
+export interface SendRequestBodyProps extends ExpandableCardProps {
     body: Buffer;
     onBodyUpdated: (body: Buffer) => void;
-    expanded: boolean;
-    onCollapseToggled: () => void;
-    onExpandToggled: () => void;
-
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
 }
 

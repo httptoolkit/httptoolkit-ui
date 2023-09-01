@@ -11,7 +11,8 @@ import * as portals from 'react-reverse-portal';
 
 import {
     CollapsibleCard,
-    CollapsibleCardHeading
+    CollapsibleCardHeading,
+    ExpandableCardProps
 } from '../../common/card';
 import { SelfSizedEditor } from '../../editor/base-editor';
 import { ContentViewer } from '../../editor/content-viewer';
@@ -19,17 +20,12 @@ import { EditorCardContent } from '../../editor/body-card-components';
 
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
 
-interface RtcSdpCardProps {
+interface RtcSdpCardProps extends ExpandableCardProps {
     connection: RTCConnection;
     type: 'local' | 'remote';
     sessionDescription: MockRTCSessionDescription;
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>;
-
-    collapsed: boolean;
-    expanded: boolean;
-    onExpandToggled: () => void;
-    onCollapseToggled?: () => void;
-};
+}
 
 @observer
 export class SDPCard extends React.Component<RtcSdpCardProps> {

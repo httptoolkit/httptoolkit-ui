@@ -1,8 +1,12 @@
 import * as React from 'react';
 
 import { IconButton } from './icon-button';
+import { ExpandState } from './card';
 
-export const ExpandShrinkButton = (p: { expanded: boolean, onClick: () => void }) =>
+export const ExpandShrinkButton = (p: {
+    expanded: ExpandState | undefined,
+    onClick: () => void
+}) =>
     <IconButton
         icon={[
             'fas',

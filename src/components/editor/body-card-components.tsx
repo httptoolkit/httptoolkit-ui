@@ -16,7 +16,7 @@ import {
 } from '../../model/events/content-types';
 import { getReadableSize } from '../../model/events/bodies';
 
-import { CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCardHeading, ExpandState } from '../common/card';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { Pill, PillSelector } from '../common/pill';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
@@ -72,9 +72,9 @@ export const ReadonlyBodyCardHeader = (props: {
     downloadFilename?: string,
 
     title: string,
-    expanded: boolean,
+    expanded: ExpandState,
     onExpandToggled: () => void,
-    onCollapseToggled: () => void,
+    onCollapseToggled?: () => void,
 
     selectedContentType: ViewableContentType,
     contentTypeOptions: readonly ViewableContentType[],
@@ -125,9 +125,9 @@ export const EditableBodyCardHeader = (props: {
     onBodyFormatted: (bodyString: string) => void,
 
     title: string,
-    expanded: boolean,
+    expanded: ExpandState,
     onExpandToggled: () => void,
-    onCollapseToggled: () => void,
+    onCollapseToggled?: () => void,
 
     selectedContentType: EditableContentType,
     contentTypeOptions: readonly EditableContentType[],

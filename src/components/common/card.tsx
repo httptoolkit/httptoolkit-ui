@@ -124,9 +124,13 @@ export const BigCard = styled(MediumCard)`
     }
 `;
 
+// Starting is a very brief temporary state, used to show a card as expanded but
+// apply a brief animation, when expansion is first triggered
+export type ExpandState = boolean | 'starting';
+
 export interface CollapsibleCardProps {
     collapsed: boolean;
-    expanded?: boolean;
+    expanded?: ExpandState;
 
     // The highlighted content direction - shows a border on the
     // left or right of the whole card to indicate up/downstream
@@ -138,6 +142,12 @@ export interface CollapsibleCardProps {
     className?: string;
 
     onCollapseToggled?: () => void;
+}
+
+// A convenient type for always-expandable cards, where relevant properties are strictly required:
+export interface ExpandableCardProps extends CollapsibleCardProps {
+    expanded: ExpandState;
+    onExpandToggled: () => void;
 }
 
 @observer
@@ -245,7 +255,7 @@ const cardDirectionCss = (direction?: string) =>
 
 const CollapsibleCardContainer = styled(MediumCard)<{
     collapsed: boolean;
-    expanded: boolean;
+    expanded: ExpandState;
     direction?: 'left' | 'right';
 }>`
     display: flex;
@@ -260,6 +270,9 @@ const CollapsibleCardContainer = styled(MediumCard)<{
     `}
 
     ${p => p.expanded && css`
+        /* Override the Send container setting this to 'none', which hides non-expanded parts: */
+        display: flex !important;
+
         height: 100%;
         width: 100%;
         border-radius: 0;
@@ -267,6 +280,14 @@ const CollapsibleCardContainer = styled(MediumCard)<{
 
         flex-shrink: 1;
         min-height: 0;
+
+        ${p.expanded === 'starting'
+            ? `
+                padding-top: 40px;
+                padding-bottom: 40px;
+            `
+            : 'transition: padding 0.1s;'
+        }
     `}
 
     &:focus {

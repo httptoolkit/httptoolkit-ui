@@ -6,14 +6,16 @@ import { RawHeaders } from '../../types';
 
 import {
     CollapsibleCardHeading,
-    CollapsibleCardProps
+    ExpandableCardProps
 } from '../common/card';
 import {
     SendCardSection
 } from './send-card-section';
 import { EditableRawHeaders } from '../common/editable-headers';
+import { ExpandShrinkButton } from '../common/expand-shrink-button';
+import { CollapsingButtons } from '../common/collapsing-buttons';
 
-export interface SendRequestHeadersProps extends CollapsibleCardProps {
+export interface SendRequestHeadersProps extends ExpandableCardProps {
     headers: RawHeaders;
     updateHeaders: (headers: RawHeaders) => void;
 }
@@ -28,17 +30,30 @@ const HeaderFieldsContainer = styled.div`
     padding: 0 20px 20px 20px;
 `;
 
-export const SendRequestHeadersCard = observer((props: SendRequestHeadersProps) => {
-    return <SendCardSection {...props} headerAlignment='left'>
+export const SendRequestHeadersCard = observer(({
+    headers,
+    updateHeaders,
+    ...cardProps
+}: SendRequestHeadersProps) => {
+    return <SendCardSection
+        {...cardProps}
+        headerAlignment='left'
+    >
         <header>
-            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
+            <CollapsingButtons>
+                <ExpandShrinkButton
+                    expanded={cardProps.expanded}
+                    onClick={cardProps.onExpandToggled}
+                />
+            </CollapsingButtons>
+            <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
                 Request Headers
             </CollapsibleCardHeading>
         </header>
         <HeaderFieldsContainer>
             <EditableRawHeaders
-                headers={props.headers}
-                onChange={props.updateHeaders}
+                headers={headers}
+                onChange={updateHeaders}
             />
         </HeaderFieldsContainer>
     </SendCardSection>;

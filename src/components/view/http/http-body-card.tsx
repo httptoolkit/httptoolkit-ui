@@ -12,7 +12,7 @@ import { getHeaderValue, lastHeader } from '../../../util/headers';
 
 import { ViewableContentType, getCompatibleTypes } from '../../../model/events/content-types';
 
-import { CollapsibleCard } from '../../common/card';
+import { CollapsibleCard, ExpandableCardProps } from '../../common/card';
 
 import {
     EditorCardContent,
@@ -29,13 +29,10 @@ import { SelfSizedEditor } from '../../editor/base-editor';
 const ENCODED_DATA_CONTENT_TYPES = ['text', 'raw', 'base64', 'image'] as Array<ViewableContentType>;
 
 @observer
-export class HttpBodyCard extends React.Component<{
+export class HttpBodyCard extends React.Component<ExpandableCardProps & {
     title: string,
     direction?: 'left' | 'right',
-    collapsed: boolean,
-    expanded: boolean,
     onCollapseToggled: () => void,
-    onExpandToggled: () => void,
 
     isPaidUser: boolean,
     url: string,
@@ -107,7 +104,7 @@ export class HttpBodyCard extends React.Component<{
                         downloadFilename={getBodyDownloadFilename(url, message.headers)}
 
                         title={title}
-                        expanded={expanded}
+                        expanded={!!expanded}
                         onExpandToggled={onExpandToggled}
                         onCollapseToggled={onCollapseToggled}
 
@@ -125,7 +122,7 @@ export class HttpBodyCard extends React.Component<{
                         rawContentType={lastHeader(message.headers['content-type'])}
                         contentType={decodedContentType}
                         schema={apiBodySchema}
-                        expanded={expanded}
+                        expanded={!!expanded}
                         cache={message.cache}
                     >
                         {decodedBody}
@@ -178,7 +175,7 @@ export class HttpBodyCard extends React.Component<{
                             contentId={`${message.id}-${direction}`}
                             editorNode={this.props.editorNode}
                             contentType={encodedDataContentType}
-                            expanded={expanded}
+                            expanded={!!expanded}
                             cache={message.cache}
                         >
                             { encodedBody }
@@ -199,7 +196,7 @@ export class HttpBodyCard extends React.Component<{
                         body={undefined}
 
                         title={title}
-                        expanded={expanded}
+                        expanded={!!expanded}
                         onExpandToggled={onExpandToggled}
                         onCollapseToggled={onCollapseToggled}
 

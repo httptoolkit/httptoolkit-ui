@@ -4,15 +4,14 @@ import { observable, autorun, action } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { ExchangeMessage, MessageBody } from '../../types';
-import { styled } from '../../styles';
+import { ExchangeMessage } from '../../types';
 
 import { ErrorLike } from '../../util/error';
 import { getHeaderValue, lastHeader } from '../../util/headers';
 
 import { ViewableContentType, getCompatibleTypes } from '../../model/events/content-types';
 
-import { CollapsibleCardProps } from '../common/card';
+import { ExpandableCardProps } from '../common/card';
 import { LoadingCard } from '../common/loading-card';
 
 import {
@@ -26,26 +25,14 @@ import { ContentViewer } from '../editor/content-viewer';
 import { SendBodyCardSection } from './send-card-section';
 import { ContainerSizedEditor } from '../editor/base-editor';
 
-export interface SentResponseBodyProps extends CollapsibleCardProps {
-    url: string;
-    body: MessageBody;
-
-    isPaidUser: boolean;
-
-    editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
-}
-
 // A selection of content types you might want to try out, to explore your encoded data:
 const ENCODED_DATA_CONTENT_TYPES = ['text', 'raw', 'base64', 'image'] as const;
 
 // Closely based on the HTTP body card, but not identical (notably: different card container,
 // different editor sizing logic within, and no directions)
 @observer
-export class SentResponseBodyCard extends React.Component<{
-    collapsed: boolean,
-    expanded: boolean,
+export class SentResponseBodyCard extends React.Component<ExpandableCardProps & {
     onCollapseToggled: () => void,
-    onExpandToggled: () => void,
 
     isPaidUser: boolean,
     url: string,
@@ -129,7 +116,7 @@ export class SentResponseBodyCard extends React.Component<{
                         editorNode={this.props.editorNode}
                         rawContentType={lastHeader(message.headers['content-type'])}
                         contentType={decodedContentType}
-                        expanded={expanded}
+                        expanded={!!expanded}
                         cache={message.cache}
                     >
                         {decodedBody}
@@ -180,7 +167,7 @@ export class SentResponseBodyCard extends React.Component<{
                             contentId={message.id}
                             editorNode={this.props.editorNode}
                             contentType={encodedDataContentType}
-                            expanded={expanded}
+                            expanded={!!expanded}
                             cache={message.cache}
                         >
                             { encodedBody }

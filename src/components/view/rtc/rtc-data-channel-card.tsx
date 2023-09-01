@@ -9,6 +9,7 @@ import * as portals from 'react-reverse-portal';
 
 import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 
+import { ExpandableCardProps } from '../../common/card';
 import { SelfSizedEditor } from '../../editor/base-editor';
 import { StreamMessageListCard } from '../stream-message-list-card';
 
@@ -17,15 +18,10 @@ export const RTCDataChannelCard = observer(({
     isPaidUser,
     streamMessageEditor,
     ...cardProps
-}: {
+}: ExpandableCardProps & {
     dataChannel: RTCDataChannel,
     isPaidUser: boolean,
-    streamMessageEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
-
-    collapsed: boolean,
-    expanded: boolean,
-    onCollapseToggled?: () => void,
-    onExpandToggled?: () => void,
+    streamMessageEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>
 }) => <StreamMessageListCard
     {...cardProps}
 

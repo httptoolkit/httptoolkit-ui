@@ -8,7 +8,7 @@ import { CollectedEvent, HtkResponse, HttpExchange } from '../../../types';
 import { styled } from '../../../styles';
 import { logError } from '../../../errors';
 
-import { UiStore } from '../../../model/ui/ui-store';
+import { ExpandableViewCardKey, UiStore } from '../../../model/ui/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { ApiExchange } from '../../../model/api/api-interfaces';
@@ -17,11 +17,7 @@ import { findItem } from '../../../model/rules/rules-structure';
 import { HtkMockRule, getRulePartKey } from '../../../model/rules/rules';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 
-import {
-    PaneOuterContainer,
-    PaneScrollContainer,
-    ExpandedPaneContentContainer
-} from '../view-details-pane';
+import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
 import { StreamMessageListCard } from '../stream-message-list-card';
 import { WebSocketCloseCard } from '../websocket-close-card';
 
@@ -95,10 +91,7 @@ export class HttpDetailsPane extends React.Component<{
         } = this.props;
 
         const { isPaidUser } = accountStore!;
-        const {
-            expandedViewCard,
-            expandCompleted
-        } = uiStore!;
+        const { expandedViewCard } = uiStore!;
         const { requestBreakpoint, responseBreakpoint } = exchange;
 
         // The full API details - for paid APIs, and non-paid users, we don't show
@@ -118,10 +111,10 @@ export class HttpDetailsPane extends React.Component<{
         const headerCard = this.renderHeaderCard(exchange);
 
         if (expandedViewCard) {
-            return <ExpandedPaneContentContainer expandCompleted={expandCompleted}>
+            return <PaneOuterContainer>
                 { headerCard }
                 { this.renderExpandedCard(expandedViewCard, exchange, apiExchange) }
-            </ExpandedPaneContentContainer>;
+            </PaneOuterContainer>;
         }
 
         const cards = (requestBreakpoint || responseBreakpoint)
@@ -213,7 +206,7 @@ export class HttpDetailsPane extends React.Component<{
     }
 
     private renderExpandedCard(
-        expandedCard: 'requestBody' | 'responseBody' | 'webSocketMessages',
+        expandedCard: ExpandableViewCardKey,
         exchange: HttpExchange,
         apiExchange: ApiExchange | undefined
     ) {

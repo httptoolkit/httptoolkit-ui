@@ -4,27 +4,39 @@ import { RawHeaders } from '../../types';
 
 import {
     CollapsibleCardHeading,
-    CollapsibleCardProps
+    ExpandableCardProps
 } from '../common/card';
 
 import { HeaderDetails } from '../view/http/header-details';
 import { SendCardSection } from './send-card-section';
+import { CollapsingButtons } from '../common/collapsing-buttons';
+import { ExpandShrinkButton } from '../common/expand-shrink-button';
 
-export interface ResponseHeaderSectionProps extends CollapsibleCardProps {
+export interface ResponseHeaderSectionProps extends ExpandableCardProps {
     requestUrl: URL;
     headers: RawHeaders;
 }
 
-export const SentResponseHeaderSection = (props: ResponseHeaderSectionProps) => {
-    return <SendCardSection {...props}>
+export const SentResponseHeaderSection = ({
+    requestUrl,
+    headers,
+    ...cardProps
+}: ResponseHeaderSectionProps) => {
+    return <SendCardSection {...cardProps}>
         <header>
-            <CollapsibleCardHeading onCollapseToggled={props.onCollapseToggled}>
+            <CollapsingButtons>
+                <ExpandShrinkButton
+                    expanded={cardProps.expanded}
+                    onClick={cardProps.onExpandToggled}
+                />
+            </CollapsingButtons>
+            <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
                 Response Headers
             </CollapsibleCardHeading>
         </header>
         <HeaderDetails
-            requestUrl={props.requestUrl}
-            headers={props.headers}
+            requestUrl={requestUrl}
+            headers={headers}
         />
     </SendCardSection>;
 };

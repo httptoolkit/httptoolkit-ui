@@ -2,11 +2,12 @@ import * as React from "react";
 import { inject, observer } from "mobx-react";
 import * as portals from 'react-reverse-portal';
 
-import { styled } from '../../styles';
+import { css, styled } from '../../styles';
 import { HttpExchange } from "../../types";
 
 import { UiStore } from '../../model/ui/ui-store';
 import { AccountStore } from '../../model/account/account-store';
+import { SuccessfulExchange } from "../../model/http/exchange";
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 import { LoadingCard } from '../common/loading-card';
@@ -16,10 +17,19 @@ import { ResponseStatusSection } from './sent-response-status';
 import { SentResponseHeaderSection } from './sent-response-headers';
 import { SentResponseBodyCard } from './sent-response-body';
 
-const ResponsePaneContainer = styled.section`
+const ResponsePaneContainer = styled.section<{
+    hasExpandedChild: boolean
+}>`
     display: flex;
     flex-direction: column;
     height: 100%;
+
+    ${p => p.hasExpandedChild && css`
+        > * {
+            /* CollapsibleCard applies its own display property to override this for the expanded card */
+            display: none;
+        }
+    `}
 `;
 
 @inject('uiStore')
@@ -38,45 +48,58 @@ export class ResponsePane extends React.Component<{
     }
 
     render() {
-        const { exchange, uiStore, editorNode } = this.props;
+        const { exchange, uiStore } = this.props;
         if (!exchange) return null;
 
-        if (exchange.isSuccessfulExchange()) {
-            const response = exchange.response;
-            return <ResponsePaneContainer>
-                <ResponseStatusSection
-                    exchange={exchange}
-                    theme={uiStore!.theme}
-                />
-                <SentResponseHeaderSection
-                    requestUrl={exchange.request.parsedUrl}
-                    headers={response.rawHeaders}
-                    {...this.cardProps.responseHeaders}
-                />
-                <SentResponseBodyCard
-                    {...this.cardProps.responseBody}
-                    isPaidUser={this.props.accountStore!.isPaidUser}
-                    url={exchange.request.url}
-                    message={response}
-                    editorNode={editorNode}
-                />
-            </ResponsePaneContainer>;
-        } else if (exchange.isCompletedExchange()) {
-            return <ResponsePaneContainer>
-                <HttpAbortedResponseCard
-                    cardProps={this.cardProps.responseHeaders}
-                    exchange={exchange}
-                />
-            </ResponsePaneContainer>
-        } else {
-            return <ResponsePaneContainer>
-                <LoadingCard {...this.cardProps.responseHeaders}>
-                    <header>
-                        <h1>Response...</h1>
-                    </header>
-                </LoadingCard>
-            </ResponsePaneContainer>;
-        }
+        return <ResponsePaneContainer hasExpandedChild={!!uiStore?.expandedSentResponseCard}>
+            {
+                exchange.isSuccessfulExchange()
+                    ? this.renderSuccessfulResponse(exchange)
+                : exchange.isCompletedExchange()
+                    ? this.renderAbortedResponse(exchange)
+                : this.renderInProgressResponse()
+            }
+        </ResponsePaneContainer>;
+    }
+
+    renderSuccessfulResponse(exchange: SuccessfulExchange) {
+        const { uiStore, editorNode } = this.props;
+        const response = exchange.response;
+
+        return <>
+            <ResponseStatusSection
+                exchange={exchange}
+                theme={uiStore!.theme}
+            />
+            <SentResponseHeaderSection
+                {...this.cardProps.responseHeaders}
+                requestUrl={exchange.request.parsedUrl}
+                headers={response.rawHeaders}
+            />
+            <SentResponseBodyCard
+                {...this.cardProps.responseBody}
+                isPaidUser={this.props.accountStore!.isPaidUser}
+                url={exchange.request.url}
+                message={response}
+                editorNode={editorNode}
+            />
+        </>;
+
+    }
+
+    renderAbortedResponse(exchange: HttpExchange) {
+        return <HttpAbortedResponseCard
+            cardProps={this.cardProps.responseHeaders}
+            exchange={exchange}
+        />;
+    }
+
+    renderInProgressResponse() {
+        return <LoadingCard {...this.cardProps.responseHeaders}>
+            <header>
+                <h1>Response...</h1>
+            </header>
+        </LoadingCard>;
     }
 
 }

@@ -6,7 +6,7 @@ import * as portals from 'react-reverse-portal';
 import { Method } from 'mockttp';
 
 import { RawHeaders } from '../../types';
-import { styled } from '../../styles';
+import { css, styled } from '../../styles';
 import { Icon } from '../../icons';
 
 import { RulesStore } from '../../model/rules/rules-store';
@@ -18,10 +18,19 @@ import { ContainerSizedEditor } from '../editor/base-editor';
 import { SendRequestHeadersCard } from './send-request-headers-card';
 import { SendRequestBodyCard } from './send-request-body-card';
 
-const RequestPaneContainer = styled.section`
+const RequestPaneContainer = styled.section<{
+    hasExpandedChild: boolean
+}>`
     display: flex;
     flex-direction: column;
     height: 100%;
+
+    ${p => p.hasExpandedChild && css`
+        > * {
+            /* CollapsibleCard applies its own display property to override this for the expanded card */
+            display: none;
+        }
+    `}
 `;
 
 // Layout here is tricky. Current setup seems to work (flex hrink everywhere, grow bodies,
@@ -68,9 +77,9 @@ export class RequestPane extends React.Component<{
     }
 
     render() {
-        const { requestInput, editorNode } = this.props;
+        const { requestInput, editorNode, uiStore } = this.props;
 
-        return <RequestPaneContainer>
+        return <RequestPaneContainer hasExpandedChild={!!uiStore?.expandedSendRequestCard}>
             <MethodSelect value={requestInput.method} onChange={this.updateMethod}>
                 { validMethods.map((methodOption) =>
                     <option

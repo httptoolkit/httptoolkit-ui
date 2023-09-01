@@ -16,18 +16,14 @@ import {
     getEditableContentType
 } from '../../../model/events/content-types';
 
-import { CollapsibleCard } from '../../common/card';
+import { CollapsibleCard, ExpandableCardProps } from '../../common/card';
 import { SelfSizedEditor } from '../../editor/base-editor';
 import { EditableBodyCardHeader, EditorCardContent } from '../../editor/body-card-components';
 
 @observer
-export class HttpBreakpointBodyCard extends React.Component<{
+export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps & {
     title: string,
     direction: 'left' | 'right',
-    collapsed: boolean,
-    expanded: boolean,
-    onCollapseToggled: () => void,
-    onExpandToggled: () => void,
 
     exchangeId: string,
     body: Buffer,
@@ -107,7 +103,7 @@ export class HttpBreakpointBodyCard extends React.Component<{
                     language={this.contentType}
                     value={bodyString}
                     onChange={this.onBodyChange}
-                    expanded={expanded}
+                    expanded={!!expanded}
                 />
             </EditorCardContent>
         </CollapsibleCard>;

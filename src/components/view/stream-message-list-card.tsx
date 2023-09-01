@@ -14,7 +14,7 @@ import { Pill } from '../common/pill';
 import { IconButton } from '../common/icon-button';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
-import { CollapsibleCard, CollapsibleCardHeading } from '../common/card';
+import { CollapsibleCard, CollapsibleCardHeading, ExpandableCardProps } from '../common/card';
 
 import { SelfSizedEditor } from '../editor/base-editor';
 import {
@@ -37,12 +37,7 @@ function getFilename(
 export type StreamType = 'WebSocket' | 'DataChannel';
 
 @observer
-export class StreamMessageListCard extends React.Component<{
-    collapsed: boolean,
-    expanded: boolean,
-    onCollapseToggled?: () => void,
-    onExpandToggled?: () => void,
-
+export class StreamMessageListCard extends React.Component<ExpandableCardProps & {
     isPaidUser: boolean,
     filenamePrefix: string,
     streamId: string,
@@ -113,7 +108,7 @@ export class StreamMessageListCard extends React.Component<{
                     { streamType } messages
                 </CollapsibleCardHeading>
             </header>
-            <StreamMessagesList expanded={expanded}>
+            <StreamMessagesList expanded={!!expanded}>
                 {
                     messages.map((message, i) =>
                         this.expandedRow === i

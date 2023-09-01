@@ -14,7 +14,8 @@ import { getSummaryColour } from '../../../model/events/categorization';
 
 import {
     CollapsibleCard,
-    CollapsibleCardHeading
+    CollapsibleCardHeading,
+    ExpandableCardProps
 } from '../../common/card';
 import {
     CollapsibleSection,
@@ -31,12 +32,8 @@ import { SourceIcon } from '../../common/source-icon';
 import { Pill } from '../../common/pill';
 import { UrlBreakdown } from '../url-breakdown';
 
-interface RTCConnectionCardProps {
+interface RTCConnectionCardProps extends ExpandableCardProps {
     connection: RTCConnection;
-
-    collapsed: boolean;
-    expanded: boolean;
-    onExpandToggled: () => void;
     onCollapseToggled?: () => void;
 };
 
