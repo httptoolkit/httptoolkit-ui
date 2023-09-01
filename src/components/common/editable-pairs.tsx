@@ -196,7 +196,6 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
                         values.splice(i, 1);
                         onChangeValues(values);
                     })}
-                    onKeyPress={clickOnEnter}
                 >
                     <Icon icon={['far', 'trash-alt']} />
                 </PairDeleteButton>

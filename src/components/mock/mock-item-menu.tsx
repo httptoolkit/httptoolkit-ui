@@ -2,9 +2,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 
 import { styled, css } from '../../styles';
-import { Icon, IconProp } from '../../icons';
+import { IconProp } from '../../icons';
 
-import { clickOnEnter } from '../component-utils';
+import { IconButton } from '../common/icon-button';
 
 export const IconMenu = styled.div<{ topOffset: number }>`
     position: absolute;
@@ -22,13 +22,12 @@ export const IconMenuButton = styled(React.memo((p: {
     title: string,
     onClick: (event: React.MouseEvent) => void,
     disabled?: boolean
-}) => <Icon
+}) => <IconButton
     className={p.className}
     icon={p.icon}
     title={p.title}
-    tabIndex={p.disabled ? -1 : 0}
-    onKeyPress={clickOnEnter}
-    onClick={p.disabled ? _.noop : p.onClick}
+    disabled={p.disabled}
+    onClick={p.onClick}
 />))`
     padding: 5px;
     margin: 0 5px;
@@ -37,18 +36,22 @@ export const IconMenuButton = styled(React.memo((p: {
 
     font-size: 1.2em;
 
-    ${p => p.disabled
-        ? css`
-            color: ${p => p.theme.containerWatermark};
-        `
-        : css`
-            cursor: pointer;
-            color: ${p => p.theme.primaryInputBackground};
+    > svg {
+        display: block;
+    }
 
-            &:hover, &:focus {
-                outline: none;
-                color: ${p => p.theme.popColor};
-            }
-        `
+    :disabled {
+        opacity: 1;
+        color: ${p => p.theme.containerWatermark};
+    }
+
+    :not(:disabled) {
+        cursor: pointer;
+        color: ${p => p.theme.primaryInputBackground};
+
+        &:hover, &:focus {
+            outline: none;
+            color: ${p => p.theme.popColor};
+        }
     }
 `;

@@ -3,7 +3,6 @@ import * as React from 'react';
 import { styled } from '../../styles'
 import { Icon, IconProp } from '../../icons';
 
-import { clickOnEnter } from '../component-utils';
 import { UnstyledButton, UnstyledButtonLink } from './inputs';
 
 export const IconButton = styled((p: {
@@ -20,7 +19,6 @@ export const IconButton = styled((p: {
         tabIndex={p.disabled ? -1 : 0}
         disabled={p.disabled}
         onClick={p.onClick}
-        onKeyPress={clickOnEnter}
     >
         <Icon
             icon={p.icon}

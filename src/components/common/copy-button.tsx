@@ -67,7 +67,6 @@ export const CopyButtonPill = (p: { content: string, children?: React.ReactNode 
 
     return <PillButton
         tabIndex={0}
-        onKeyDown={clickOnEnter}
         onClick={() => {
             copyToClipboard(p.content);
             showSuccess();
