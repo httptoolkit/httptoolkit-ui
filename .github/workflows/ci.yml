@@ -52,10 +52,10 @@ jobs:
     name: Checking available secrets
     runs-on: ubuntu-latest
     outputs:
-      netlify: ${{ steps.netlify.outputs.result }}
-      docker: ${{ steps.docker.outputs.result }}
-      scaleway: ${{ steps.scaleway.outputs.result }}
-      bunny: ${{ steps.bunny.outputs.result }}
+      netlify: ${{ steps.all.outputs.netlify }}
+      docker: ${{ steps.all.outputs.docker }}
+      scaleway: ${{ steps.all.outputs.scaleway }}
+      bunny: ${{ steps.all.outputs.bunny }}
 
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -70,24 +70,32 @@ jobs:
       BUNNY_SITE_API_KEY: ${{ secrets.BUNNY_SITE_API_KEY }}
 
     steps:
-      - name: "Checking if netlify is OK"
-        id: netlify
-        if: ${{ env.NETLIFY_AUTH_TOKEN != "" && env.NETLIFY_SITE_ID  != "" }}
+      - name: "Checking..."
+        id: all
         shell: bash
         run: |
-          if [ NETLIFY_AUTH_TOKEN != "" && NETLIFY_SITE_ID  != ""] then
-          echo "TRUE" >> "$GITHUB_OUTPUT"
-            
+          check () {
+            result=1; for var in $*; do if [ -z "${!var}" ]; then result=0; fi; done;
+          }
+          
+          check "NETLIFY_AUTH_TOKEN" "NETLIFY_SITE_ID"
+          echo "netlify=$result" >> "$GITHUB_OUTPUT"
 
-      
-      
+          check "DOCKERHUB_USERNAME" "DOCKERHUB_TOKEN"
+          echo "docker=$result" >> "$GITHUB_OUTPUT"
 
+          check "SCW_API_CONTAINER_ID" "SCW_SECRET_KEY"
+          echo "scaleway=$result" >> "$GITHUB_OUTPUT"
+
+          check "BUNNY_SITE_API_KEY"
+          echo "bunny=$result" >> "$GITHUB_OUTPUT"
+          
   publish-netlify:
     name: Deploy ${{ (github.ref == 'refs/heads/main' && 'to Netlify production') || 'Netlify preview' }}
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
-    needs: build
+    needs: [build, check-secrets]
+    if: github.event_name == 'push' && ${{needs.check-secrets.outputs.netlify == 1}}
     steps:
       - uses: actions/checkout@v3
 
@@ -115,10 +123,10 @@ jobs:
 
   publish-docker:
     name: Build & publish container to Docker Hub
-    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/')
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
-    needs: build
+    needs: [build, check-secrets]
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/') && ${{needs.check-secrets.outputs.docker == 1}}
     steps:
       - uses: actions/checkout@v3
 
@@ -155,10 +163,10 @@ jobs:
 
   publish-scaleway:
     name: Deploy to Scaleway
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
-    needs: publish-docker
+    needs: [publish-docker, check-secrets]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && ${{needs.check-secrets.outputs.scaleway == 1}}
     steps:
       - name: Redeploy container
         uses: thibaultchazal/scaleway-serverless-container-deploy-action@0d290edda0c3359e51442bd8bf730eafef4e290f
@@ -168,6 +176,7 @@ jobs:
           registry_image_url: "registry.hub.docker.com/httptoolkit/ui:prod"
 
       - name: Flush CDN cache
+        if: ${{needs.check-secrets.outputs.bunny == 1}}
         run: |
           # Clear CDN cache to re-request content:
           curl -f --request POST \
