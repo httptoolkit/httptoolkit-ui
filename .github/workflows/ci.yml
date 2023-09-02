@@ -48,6 +48,40 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  check-secrets:
+    name: Checking available secrets
+    runs-on: ubuntu-latest
+    outputs:
+      netlify: ${{ steps.netlify.outputs.result }}
+      docker: ${{ steps.docker.outputs.result }}
+      scaleway: ${{ steps.scaleway.outputs.result }}
+      bunny: ${{ steps.bunny.outputs.result }}
+
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      SCW_API_CONTAINER_ID: ${{ vars.SCW_API_CONTAINER_ID }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+
+      BUNNY_SITE_API_KEY: ${{ secrets.BUNNY_SITE_API_KEY }}
+
+    steps:
+      - name: "Checking if netlify is OK"
+        id: netlify
+        if: ${{ env.NETLIFY_AUTH_TOKEN != "" && env.NETLIFY_SITE_ID  != "" }}
+        shell: bash
+        run: |
+          if [ NETLIFY_AUTH_TOKEN != "" && NETLIFY_SITE_ID  != ""] then
+          echo "TRUE" >> "$GITHUB_OUTPUT"
+            
+
+      
+      
+
   publish-netlify:
     name: Deploy ${{ (github.ref == 'refs/heads/main' && 'to Netlify production') || 'Netlify preview' }}
     if: github.event_name == 'push'
