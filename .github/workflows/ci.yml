@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: [build, check-secrets]
-    if: github.event_name == 'push' && ${{needs.check-secrets.outputs.netlify == 1}}
+    if: ${{github.event_name == 'push' && needs.check-secrets.outputs.netlify == 1}}
     steps:
       - uses: actions/checkout@v3
 
@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: [build, check-secrets]
-    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/') && ${{needs.check-secrets.outputs.docker == 1}}
+    if: ${{github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/') && needs.check-secrets.outputs.docker == 1}}
     steps:
       - uses: actions/checkout@v3
 
@@ -166,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     container: httptoolkit/act-build-base
     needs: [publish-docker, check-secrets]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && ${{needs.check-secrets.outputs.scaleway == 1}}
+    if: ${{github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.check-secrets.outputs.scaleway == 1}}
     steps:
       - name: Redeploy container
         uses: thibaultchazal/scaleway-serverless-container-deploy-action@0d290edda0c3359e51442bd8bf730eafef4e290f
