@@ -18,6 +18,7 @@ import { AndroidAdbCustomUi } from "../../components/intercept/config/android-ad
 import { ExistingBrowserCustomUi } from "../../components/intercept/config/existing-browser-config";
 import { JvmCustomUi } from "../../components/intercept/config/jvm-config";
 import { DockerAttachCustomUi } from "../../components/intercept/config/docker-attach-config";
+import { ManualIOSCustomUi } from "../../components/intercept/config/manual-ios-config";
 
 interface InterceptorConfig {
     name: string;
@@ -254,8 +255,16 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         uiConfig: AndroidDeviceCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
     },
+    'manual-ios-device': {
+        name: 'iOS via manual setup',
+        description: ["Manually intercept all HTTP(S) traffic from any iOS device"],
+        iconProps: SourceIcons.iOS,
+        clientOnly: true,
+        uiConfig: ManualIOSCustomUi,
+        tags: [...MOBILE_TAGS, ...IOS_TAGS]
+    },
     'ios-device': {
-        name: 'An iOS device',
+        name: 'Automatic iOS device setup',
         description: ["Intercept all HTTP traffic from an iOS device on your network"],
         iconProps: SourceIcons.iOS,
         tags: [...MOBILE_TAGS, ...IOS_TAGS]
