@@ -14,7 +14,12 @@ import * as badSslPfxData from 'arraybuffer-loader!../../fixtures/badssl.p12';
 import * as rsaCaCert from 'arraybuffer-loader!../../fixtures/ca-cert-rsa.pem';
 import * as ecdsaCaCert from 'arraybuffer-loader!../../fixtures/ca-cert-ecdsa.pem';
 
-describe("validatePfx", () => {
+describe("validatePfx", function () {
+
+    // Occasionally the success-case tests can time out in CI. Very unclear why, I suspect
+    // some kind of data/lib loading delay somewhere? No apparent errors...
+
+    this.retries(3);
 
     it("should validate successfully with the right passphrase", () => {
         expect(
