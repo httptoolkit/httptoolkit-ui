@@ -3,6 +3,8 @@
 
     header *.wasm Content-Type "application/wasm"
 
+    rewrite /update-worker.js /ui-update-worker.js
+
     root * /site
     try_files {path} /index.html
     file_server

@@ -1,5 +1,3 @@
-import dedent from 'dedent';
-
 import registerUpdateWorker, {
     ServiceWorkerNoSupportError
 } from 'service-worker-loader!./ui-update-worker';
