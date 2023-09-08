@@ -8,7 +8,7 @@ import { WarningIcon, Icon } from '../../icons';
 import { trackEvent } from '../../metrics';
 
 import { uploadFile } from '../../util/ui';
-import { asError } from '../../util/error';
+import { UnreachableCheck, asError, unreachableCheck } from '../../util/error';
 
 import { UpstreamProxyType, RulesStore } from '../../model/rules/rules-store';
 import { ParsedCertificate, ValidationResult } from '../../model/crypto';
@@ -316,6 +316,9 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
     @observable
     clientCertState: undefined | 'encrypted' | 'processing' | 'error' | 'decrypted';
 
+    @observable
+    clientCertError: string | undefined;
+
     @action.bound
     onClientCertSelected(event: React.ChangeEvent<HTMLInputElement>) {
         const input = event.target;
@@ -326,6 +329,7 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
         fileReader.readAsArrayBuffer(file);
 
         this.clientCertState = 'processing';
+        this.clientCertError = undefined;
 
         const thisConfig = this; // fileReader events set 'this'
         fileReader.addEventListener('load', flow(function * () {
@@ -338,29 +342,18 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
 
             result = yield validatePKCS(thisConfig.clientCertData.pfx, undefined);
 
-            if (result === 'valid') {
-                thisConfig.clientCertState = 'decrypted';
-                thisConfig.clientCertData.passphrase = undefined;
-                return;
+            if (result === 'invalid-passphrase') {
+                // If it fails, try again with an empty key, since that is sometimes used for 'no passphrase'
+                result = yield validatePKCS(thisConfig.clientCertData.pfx, '');
+
+                if (result === 'valid') {
+                    thisConfig.clientCertData.passphrase = '';
+                }
+
+                thisConfig.handleClientCertValidationResult(result);
+            } else {
+                thisConfig.handleClientCertValidationResult(result);
             }
-
-            if (result === 'invalid-format') {
-                thisConfig.clientCertState = 'error';
-                return;
-            }
-
-            // If it fails, try again with an empty key, since that is sometimes used for 'no passphrase'
-            result = yield validatePKCS(thisConfig.clientCertData.pfx, '');
-
-            if (result === 'valid') {
-                thisConfig.clientCertState = 'decrypted';
-                thisConfig.clientCertData.passphrase = '';
-                return;
-            }
-
-            // If that still hasn't worked, it's encrypted. Mark is as such, and wait for the user
-            // to either cancel, or enter the correct passphrase.
-            thisConfig.clientCertState = 'encrypted';
         }));
 
         fileReader.addEventListener('error', () => {
@@ -371,14 +364,31 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
     readonly decryptClientCertData = flow(function * (this: ClientCertificateConfig) {
         const { pfx, passphrase } = this.clientCertData!;
 
-        let result: ValidationResult;
-
         this.clientCertState = 'processing';
-        result = yield validatePKCS(pfx, passphrase);
-        this.clientCertState = result === 'valid'
-            ? 'decrypted'
-            : 'encrypted';
+        this.clientCertError = undefined;
+
+        const result = yield validatePKCS(pfx, passphrase);
+        this.handleClientCertValidationResult(result);
     });
+
+    handleClientCertValidationResult(result: ValidationResult) {
+        this.clientCertError = undefined;
+
+        if (result === 'valid') {
+            this.clientCertState = 'decrypted';
+        } else if (result === 'invalid-passphrase') {
+            this.clientCertState = 'encrypted';
+        } else if (result === 'invalid-format') {
+            this.clientCertState = 'error';
+            this.clientCertError = 'Parsing failed';
+        } else if (result === 'missing-key') {
+            this.clientCertState = 'error';
+            this.clientCertError = 'No private key found';
+        } else if (result === 'missing-cert') {
+            this.clientCertState = 'error';
+            this.clientCertError = 'No certificate found';
+        } else unreachableCheck(result);
+    }
 
     @action.bound
     dropClientCertData() {
@@ -456,12 +466,14 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
                                 <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
                             </SettingsButton>
                         </DecryptionInput>
-                    : <DecryptionInput>
-                        <p><WarningIcon /> Invalid certificate</p>
-                        <SettingsButton onClick={this.dropClientCertData}>
-                            <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
-                        </SettingsButton>
-                    </DecryptionInput>
+                    : this.clientCertState === 'error'
+                        ? <DecryptionInput>
+                            <p><WarningIcon /> {this.clientCertError || 'Invalid certificate'}</p>
+                            <SettingsButton onClick={this.dropClientCertData}>
+                                <Icon icon={['fas', 'undo']} title='Deselect this certificate' />
+                            </SettingsButton>
+                        </DecryptionInput>
+                    : unreachableCheck(this.clientCertState)
                 }
                 <SettingsButton
                     disabled={

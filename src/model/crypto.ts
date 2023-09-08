@@ -5,8 +5,17 @@ require('node-forge/lib/asn1');
 require('node-forge/lib/pki');
 require('node-forge/lib/pkcs12');
 import * as forge from 'node-forge/lib/forge';
+import { isErrorLike } from '../util/error';
 
-export type ValidationResult = 'valid' | 'invalid-format' | 'invalid-passphrase';
+export type ValidationResult =
+    | 'valid'
+    | 'invalid-format'
+    | 'invalid-passphrase'
+    | 'missing-cert'
+    | 'missing-key';
+
+const pkcs12ContainsBag = (pfx: forge.pkcs12.Pkcs12Pfx, bagType: string) =>
+    pfx.getBags({ bagType })[bagType]?.length;
 
 export function validatePKCS12(
     data: ArrayBuffer,
@@ -23,11 +32,26 @@ export function validatePKCS12(
     try {
         // Decrypt the PKCS12 with the passphrase - we assume if this works, it's good.
         // Could be false (different key on cert within, who knows what else), but typically not.
-        forge.pkcs12.pkcs12FromAsn1(asn1Data, passphrase);
+        const pfx = forge.pkcs12.pkcs12FromAsn1(asn1Data, passphrase);
+
+        if (!pkcs12ContainsBag(pfx, forge.pki.oids.pkcs8ShroudedKeyBag)) {
+            return 'missing-key';
+            // There is also oids.keyBag, but AFAICT that's not what we need here generally.
+        }
+
+        if (!pkcs12ContainsBag(pfx, forge.pki.oids.certBag)) {
+            return 'missing-cert';
+        }
+
         return 'valid';
     } catch (e) {
         console.log(e);
-        return 'invalid-passphrase';
+        if (isErrorLike(e) && e.message?.includes('Invalid password')) {
+            return 'invalid-passphrase';
+        } else {
+            // E.g. "ASN.1 object is not an PKCS#12 PFX."
+            return 'invalid-format';
+        }
     }
 }
 
