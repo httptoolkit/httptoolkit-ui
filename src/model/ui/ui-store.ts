@@ -111,12 +111,23 @@ export class UiStore {
         // logout & subscription expiration (even if that happened while the app was
         // closed), but don't get reset when the app starts with stale account data.
         observe(this.accountStore, 'accountDataLastUpdated', () => {
-            if (!this.accountStore.isPaidUser) this.setTheme('light');
+            if (!this.accountStore.isPaidUser) {
+                this.autoTheme = false;
+                this.setTheme('light');
+            }
         });
 
         await hydrate({
             key: 'ui-store',
             store: this
+        });
+
+        const darkThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
+        this._prefersDarkTheme = darkThemeMq.matches;
+        this._updateAutoTheme();
+        darkThemeMq.addEventListener('change', e => {
+            this._prefersDarkTheme = e.matches;
+            this._updateAutoTheme();
         });
 
         console.log('UI store initialized');
@@ -150,6 +161,26 @@ export class UiStore {
         } else {
             return Themes[this.themeName];
         }
+    }
+
+    /**
+     * Stores if user prefers a dark color theme (for example when set in system settings).
+     * Used if automatic theme is enabled.
+     */
+    private _prefersDarkTheme: boolean = false;
+
+    @persist @observable
+    autoTheme: boolean = false;
+
+    @action.bound
+    toggleAutoTheme() {
+        this.autoTheme = !this.autoTheme
+        this._updateAutoTheme();
+    }
+
+    private _updateAutoTheme() {
+        if (!this.autoTheme) return;
+        this.setTheme(this._prefersDarkTheme ? 'dark' : 'light');
     }
 
     // Set briefly at the moment any card expansion is toggled, to trigger animation for the expansion as it's

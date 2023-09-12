@@ -86,6 +86,10 @@ const AccountContactFooter = styled.div`
     }
 `;
 
+const ThemeAutoButton = styled(SettingsButton)`
+    margin: 10px 0;
+`;
+
 const ThemeColors = styled.div`
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -286,8 +290,12 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 Themes
                             </CollapsibleCardHeading>
                         </header>
+                        <ThemeAutoButton onClick={uiStore.toggleAutoTheme}>
+                            {uiStore.autoTheme ?  'Use specific theme' : 'Use automatic theme'}
+                        </ThemeAutoButton>
                         <TabbedOptionsContainer>
                             <TabsContainer
+                                disabled={uiStore.autoTheme}
                                 onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
                                 isSelected={(value: ThemeName | Theme) => {
                                     if (typeof value === 'string') {
@@ -311,7 +319,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 </Tab>
                                 <Tab
                                     icon={['fas', 'adjust']}
-                                    value={'high-contrast'}
+                                    value='high-contrast'
                                 >
                                     High Contrast
                                 </Tab>
