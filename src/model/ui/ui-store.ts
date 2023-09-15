@@ -112,7 +112,6 @@ export class UiStore {
         // closed), but don't get reset when the app starts with stale account data.
         observe(this.accountStore, 'accountDataLastUpdated', () => {
             if (!this.accountStore.isPaidUser) {
-                this.autoTheme = false;
                 this.setTheme('light');
             }
         });
@@ -123,18 +122,16 @@ export class UiStore {
         });
 
         const darkThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
-        this._prefersDarkTheme = darkThemeMq.matches;
-        this._updateAutoTheme();
+        this._setPrefersDarkTheme(darkThemeMq.matches);
         darkThemeMq.addEventListener('change', e => {
-            this._prefersDarkTheme = e.matches;
-            this._updateAutoTheme();
+            this._setPrefersDarkTheme(e.matches);
         });
 
         console.log('UI store initialized');
     });
 
     @action.bound
-    setTheme(themeNameOrObject: Theme | ThemeName) {
+    setTheme(themeNameOrObject: Theme | ThemeName | 'automatic') {
         if (typeof themeNameOrObject === 'string') {
             this._themeName = themeNameOrObject;
             this.customTheme = undefined;
@@ -145,10 +142,22 @@ export class UiStore {
     }
 
     @persist @observable
-    private _themeName: ThemeName | 'custom' = 'light';
+    private _themeName: ThemeName | 'automatic' | 'custom' = 'light';
 
     get themeName() {
         return this._themeName;
+    }
+
+    /**
+     * Stores if user prefers a dark color theme (for example when set in system settings).
+     * Used if automatic theme is enabled.
+     */
+    @observable
+    private _prefersDarkTheme: boolean = false;
+
+    @action.bound
+    private _setPrefersDarkTheme(value: boolean) {
+        this._prefersDarkTheme = value;
     }
 
     @persist('object') @observable
@@ -156,31 +165,14 @@ export class UiStore {
 
     @computed
     get theme(): Theme {
-        if (this.themeName === 'custom') {
-            return this.customTheme!;
-        } else {
-            return Themes[this.themeName];
+        switch(this.themeName) {
+            case 'automatic':
+                return {...Themes[this._prefersDarkTheme ? 'dark' : 'light']}
+            case 'custom':
+                return this.customTheme!;
+            default:
+                return Themes[this.themeName];
         }
-    }
-
-    /**
-     * Stores if user prefers a dark color theme (for example when set in system settings).
-     * Used if automatic theme is enabled.
-     */
-    private _prefersDarkTheme: boolean = false;
-
-    @persist @observable
-    autoTheme: boolean = false;
-
-    @action.bound
-    toggleAutoTheme() {
-        this.autoTheme = !this.autoTheme
-        this._updateAutoTheme();
-    }
-
-    private _updateAutoTheme() {
-        if (!this.autoTheme) return;
-        this.setTheme(this._prefersDarkTheme ? 'dark' : 'light');
     }
 
     // Set briefly at the moment any card expansion is toggled, to trigger animation for the expansion as it's

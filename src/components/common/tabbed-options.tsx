@@ -15,10 +15,9 @@ interface TabClickEvent extends React.MouseEvent {
 }
 
 export const TabsContainer = styled((p: {
-    onClick: (tabValue: any) => void;
-    isSelected: (value: any) => boolean;
-    children: Array<React.ReactElement<any, typeof Tab>>;
-    disabled?: boolean;
+    onClick: (tabValue: any) => void,
+    isSelected: (value: any) => boolean,
+    children: Array<React.ReactElement<any, typeof Tab>>
 }) => <nav
     {...omit(p, 'isSelected')}
     onClick={(event: TabClickEvent) => {
@@ -41,11 +40,6 @@ export const TabsContainer = styled((p: {
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-
-    ${p => p.disabled && css`
-        opacity: 0.5;
-        pointer-events: none;
-    `}
 `;
 
 export const Tab = styled((p: {

@@ -86,15 +86,11 @@ const AccountContactFooter = styled.div`
     }
 `;
 
-const ThemeAutoButton = styled(SettingsButton)`
-    margin: 10px 0;
-`;
-
 const ThemeColors = styled.div`
     display: grid;
     grid-template-columns: 1fr 1fr;
     border: 3px solid #999;
-    margin: 0 20px;
+    margin: auto 20px;
 `;
 
 const ThemeColorBlock = styled.div<{ themeColor: keyof Theme }>`
@@ -107,6 +103,7 @@ const EditorContainer = styled.div`
     border: 3px solid #999;
     height: 300px;
     flex-grow: 1;
+    margin: auto 0;
 `;
 
 const AccountUpdateSpinner = styled(Icon).attrs(() => ({
@@ -290,21 +287,23 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 Themes
                             </CollapsibleCardHeading>
                         </header>
-                        <ThemeAutoButton onClick={uiStore.toggleAutoTheme}>
-                            {uiStore.autoTheme ?  'Use specific theme' : 'Use automatic theme'}
-                        </ThemeAutoButton>
                         <TabbedOptionsContainer>
                             <TabsContainer
-                                disabled={uiStore.autoTheme}
-                                onClick={(value: ThemeName | Theme) => uiStore.setTheme(value)}
-                                isSelected={(value: ThemeName | Theme) => {
+                                onClick={(value: ThemeName | 'automatic' | Theme) => uiStore.setTheme(value)}
+                                isSelected={(value: ThemeName | 'automatic' | Theme) => {
                                     if (typeof value === 'string') {
-                                        return uiStore.themeName === value
+                                        return uiStore.themeName === value;
                                     } else {
                                         return _.isEqual(value, uiStore.theme);
                                     }
                                 }}
                             >
+                                <Tab
+                                    icon={['fas', 'magic']}
+                                    value='automatic'
+                                >
+                                    Automatic
+                                </Tab>
                                 <Tab
                                     icon={['fas', 'sun']}
                                     value='light'
