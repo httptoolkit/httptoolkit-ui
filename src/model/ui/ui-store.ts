@@ -111,7 +111,9 @@ export class UiStore {
         // logout & subscription expiration (even if that happened while the app was
         // closed), but don't get reset when the app starts with stale account data.
         observe(this.accountStore, 'accountDataLastUpdated', () => {
-            if (!this.accountStore.isPaidUser) this.setTheme('light');
+            if (!this.accountStore.isPaidUser) {
+                this.setTheme('light');
+            }
         });
 
         await hydrate({
@@ -119,11 +121,17 @@ export class UiStore {
             store: this
         });
 
+        const darkThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
+        this._setPrefersDarkTheme(darkThemeMq.matches);
+        darkThemeMq.addEventListener('change', e => {
+            this._setPrefersDarkTheme(e.matches);
+        });
+
         console.log('UI store initialized');
     });
 
     @action.bound
-    setTheme(themeNameOrObject: Theme | ThemeName) {
+    setTheme(themeNameOrObject: Theme | ThemeName | 'automatic') {
         if (typeof themeNameOrObject === 'string') {
             this._themeName = themeNameOrObject;
             this.customTheme = undefined;
@@ -134,10 +142,22 @@ export class UiStore {
     }
 
     @persist @observable
-    private _themeName: ThemeName | 'custom' = 'light';
+    private _themeName: ThemeName | 'automatic' | 'custom' = 'light';
 
     get themeName() {
         return this._themeName;
+    }
+
+    /**
+     * Stores if user prefers a dark color theme (for example when set in system settings).
+     * Used if automatic theme is enabled.
+     */
+    @observable
+    private _prefersDarkTheme: boolean = false;
+
+    @action.bound
+    private _setPrefersDarkTheme(value: boolean) {
+        this._prefersDarkTheme = value;
     }
 
     @persist('object') @observable
@@ -145,10 +165,13 @@ export class UiStore {
 
     @computed
     get theme(): Theme {
-        if (this.themeName === 'custom') {
-            return this.customTheme!;
-        } else {
-            return Themes[this.themeName];
+        switch(this.themeName) {
+            case 'automatic':
+                return {...Themes[this._prefersDarkTheme ? 'dark' : 'light']}
+            case 'custom':
+                return this.customTheme!;
+            default:
+                return Themes[this.themeName];
         }
     }
 
