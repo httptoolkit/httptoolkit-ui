@@ -18,6 +18,11 @@ import {
 
 import { CookieHeaderDescription } from './set-cookie-header-description';
 import { UserAgentHeaderDescription } from './user-agent-header-description';
+import { IEList, IncludeExcludeList } from '../../../model/IncludeExcludeList';
+import { HeadersContextMenuBuilder } from './headers-context-menu-builder';
+import { filterProps } from '../../component-utils';
+import { ArrowIcon, Icon, WarningIcon } from '../../../icons';
+import { UiStore } from '../../../model/ui/ui-store';
 
 const HeadersGrid = styled.section`
     display: grid;
@@ -77,12 +82,49 @@ const getHeaderDescription = (
     </p>
 };
 
-export const HeaderDetails = inject('accountStore')(observer((props: {
+
+const RowPin = styled(
+    filterProps(Icon, 'pinned')
+).attrs((p: { pinned: boolean }) => ({
+    icon: ['fas', 'thumbtack'],
+    title: p.pinned ? "This header is pinned, it will appear at the top of the list by default" : ''
+}))`
+    font-size: 90%;
+    background-color: ${p => p.theme.containerBackground};
+    /* Without this, 0 width pins create a large & invisible but still clickable icon */
+    overflow: hidden;
+    transition: width 0.1s, padding 0.1s, margin 0.1s;
+    ${(p: { pinned: boolean }) =>
+        p.pinned
+            ? `
+            width: auto;
+            padding: 4px;
+            height: 40%;
+            && { margin-right: -3px; }
+        `
+            : `
+            padding: 0px 0;
+            width: 0 !important;
+            margin: 0 !important;
+        `
+    }
+`;
+
+export const HeaderDetails = inject('accountStore', 'uiStore')(observer((props: {
     headers: RawHeaders,
     requestUrl: URL,
-    accountStore?: AccountStore
+    HeadersIncludeExcludeList: IncludeExcludeList<string>,
+    accountStore?: AccountStore,
+    uiStore?: UiStore
 }) => {
-    const sortedHeaders = _.sortBy(props.headers, ([key]) => key.toLowerCase());
+    const contextMenuBuilder = new HeadersContextMenuBuilder(
+        props.accountStore!,
+        props.uiStore!
+    );
+    const filtered = props.HeadersIncludeExcludeList.FilterArrayAgainstList(_.sortBy(props.headers, ([key]) => key.toLowerCase()), IEList.Favorite, true, ([key]) => key);
+    const sortedHeaders = Array.from(props.HeadersIncludeExcludeList.SortArrayAgainstList(filtered, IEList.Favorite, ([key]) => key));
+    let hiddenCount = props.headers.length - sortedHeaders.length;
+
 
     return sortedHeaders.length === 0 ?
         <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
@@ -98,8 +140,8 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
                 )
 
                 return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
-                    <HeaderKeyValue>
-                        <HeaderName>{ key }: </HeaderName>
+                    <HeaderKeyValue onContextMenu={contextMenuBuilder.getContextMenuCallback({ header_name: key, header_value: [value], HeadersIncludeExcludeList: props.HeadersIncludeExcludeList })}>
+                        <HeaderName><RowPin pinned={props.HeadersIncludeExcludeList.IsKeyOnList(key, IEList.Favorite)} /> {key}: </HeaderName>
                         <span>{ value }</span>
                     </HeaderKeyValue>
 
@@ -111,5 +153,13 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
                     </HeaderDescriptionContainer> }
                 </CollapsibleSection>
             }) }
+            {
+hiddenCount > 0 ? 
+<CollapsibleSection withinGrid={true}><HeaderKeyValue>
+<HeaderName>Plus {hiddenCount} hidden...</HeaderName>
+
+</HeaderKeyValue></CollapsibleSection>
+ : <BlankContentPlaceholder />
+            }
         </HeadersGrid>;
 }));

@@ -12,6 +12,8 @@ import { getSummaryColour } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
 import { nameHandlerClass } from '../../../model/rules/rule-descriptions';
 import { HandlerClassKey } from '../../../model/rules/rules';
+import {IEList, IncludeExcludeList} from '../../../model/IncludeExcludeList';
+import { HeadersHeaderContextMenuBuilder, HeaderEvent } from './headers-context-menu-builder';
 
 import {
     CollapsibleCardHeading,
@@ -87,7 +89,10 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
     }
 `;
 
-const RawRequestDetails = (p: { request: HtkRequest }) => {
+const HeadersIncludeExcludeList = new IncludeExcludeList<string>();
+
+const RawRequestDetails = (p: { request: HtkRequest, contextMenuBuilder: HeadersHeaderContextMenuBuilder, uiStore : UiStore }) => {
+
     const methodDocs = getMethodDocs(p.request.method);
     const methodDetails = [
         methodDocs && <Markdown
@@ -131,14 +136,14 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
                 </CollapsibleSectionBody>
             }
         </CollapsibleSection>
-
-        <ContentLabelBlock>Headers</ContentLabelBlock>
-        <HeaderDetails headers={p.request.rawHeaders} requestUrl={p.request.parsedUrl} />
+        <ContentLabelBlock onContextMenu={p.contextMenuBuilder.getContextMenuCallback({HeadersIncludeExcludeList})}>Headers</ContentLabelBlock>
+        <HeaderDetails uiStore={p.uiStore} headers={p.request.rawHeaders} HeadersIncludeExcludeList={HeadersIncludeExcludeList} requestUrl={p.request.parsedUrl} />
     </div>;
 }
 
 interface HttpRequestCardProps extends CollapsibleCardProps {
     exchange: HttpExchange;
+    uiStore?: UiStore;
     matchedRuleData: {
         stepTypes: HandlerClassKey[],
         status: 'unchanged' | 'modified-types' | 'deleted'
@@ -146,9 +151,13 @@ interface HttpRequestCardProps extends CollapsibleCardProps {
     onRuleClicked: () => void;
 }
 
-export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
+export const HttpRequestCard = inject('uiStore') (observer((props: HttpRequestCardProps) => {
     const { exchange, matchedRuleData, onRuleClicked } = props;
     const { request } = exchange;
+    const contextMenuBuilder = new HeadersHeaderContextMenuBuilder(
+        props.uiStore!
+    );
+
 
     // We consider passthrough as a no-op, and so don't show anything in that case.
     const noopRule = matchedRuleData?.stepTypes.every(
@@ -177,6 +186,6 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
             </CollapsibleCardHeading>
         </header>
 
-        <RawRequestDetails request={request} />
+        <RawRequestDetails uiStore={props.uiStore!} request={request} contextMenuBuilder={contextMenuBuilder} />
     </CollapsibleCard>;
-});
+}));
