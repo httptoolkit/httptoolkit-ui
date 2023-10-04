@@ -93,6 +93,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
 
             event: CollectedEvent,
             onDelete: (event: CollectedEvent) => void,
+            onPin: (event: CollectedEvent) => void,
             onScrollToEvent: (event: CollectedEvent) => void,
             onBuildRuleFromExchange: (event: HttpExchange) => void,
             isPaidUser: boolean,
@@ -107,9 +108,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
                 />
                 <PinButton
                     pinned={pinned}
-                    onClick={action(() => {
-                        event.pinned = !event.pinned;
-                    })}
+                    onClick={() => props.onPin(event)}
                 />
                 <DeleteButton
                     pinned={pinned}

@@ -61,6 +61,7 @@ export const ViewEventListFooter = styled(observer((props: {
     onClear: () => void,
     onFiltersConsidered: (filters: FilterSet | undefined) => void,
     onScrollToEnd: () => void,
+    isMultiSelectEnabled: boolean,
 
     allEvents: CollectedEvent[],
     filteredEvents: CollectedEvent[],
@@ -87,7 +88,7 @@ export const ViewEventListFooter = styled(observer((props: {
     <ButtonsContainer>
         <PlayPauseButton />
         <ScrollToEndButton onScrollToEnd={props.onScrollToEnd} />
-        <ExportAsHarButton events={props.filteredEvents} />
+        <ExportAsHarButton events={props.filteredEvents} isMultiSelectEnabled={props.isMultiSelectEnabled} />
         <ImportHarButton />
         <ClearAllButton
             disabled={props.allEvents.length === 0}

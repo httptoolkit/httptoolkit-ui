@@ -66,6 +66,7 @@ export class HttpDetailsPane extends React.Component<{
 
     navigate: (path: string) => void,
     onDelete: (event: CollectedEvent) => void,
+    onPin: (event: CollectedEvent) => void,
     onScrollToEvent: (event: CollectedEvent) => void,
     onBuildRuleFromExchange: (exchange: HttpExchange) => void,
 
@@ -83,6 +84,7 @@ export class HttpDetailsPane extends React.Component<{
         const {
             exchange,
             onDelete,
+            onPin,
             onScrollToEvent,
             onBuildRuleFromExchange,
             uiStore,
@@ -129,6 +131,7 @@ export class HttpDetailsPane extends React.Component<{
             <HttpDetailsFooter
                 event={exchange}
                 onDelete={onDelete}
+                onPin={onPin}
                 onScrollToEvent={onScrollToEvent}
                 onBuildRuleFromExchange={onBuildRuleFromExchange}
                 navigate={navigate}

@@ -41,6 +41,7 @@ import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
+import { HtkMockRule } from '../../model/rules/rules';
 
 interface ViewPageProps {
     className?: string;
@@ -283,6 +284,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                 navigate={this.props.navigate}
                 onDelete={this.onDelete}
+                onPin={this.onPin}
                 onScrollToEvent={this.onScrollToCenterEvent}
                 onBuildRuleFromExchange={this.onBuildRuleFromExchange}
             />;
@@ -343,6 +345,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                     <ViewEventListFooter // Footer above the list to ensure correct tab order
                         searchInputRef={this.searchInputRef}
                         allEvents={events}
+                        isMultiSelectEnabled={this.props.eventsStore.isMultiSelectEnabled}
                         filteredEvents={filteredEvents}
                         filteredCount={filteredEventCount}
                         onFiltersConsidered={this.onSearchFiltersConsidered}
@@ -354,9 +357,11 @@ class ViewPage extends React.Component<ViewPageProps> {
                         filteredEvents={filteredEvents}
                         selectedEvent={this.selectedEvent}
                         isPaused={isPaused}
+                        isMultiSelectEnabled={this.props.eventsStore.isMultiSelectEnabled}
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
+                        onMultiSelectToggled={this.onMultiSelectToggled}
 
                         contextMenuBuilder={this.contextMenuBuilder}
 
@@ -392,6 +397,17 @@ class ViewPage extends React.Component<ViewPageProps> {
             : '/view'
         );
     }
+    @action.bound
+    onMultiSelectToggled(){
+        this.props.eventsStore.isMultiSelectEnabled  = ! this.props.eventsStore.isMultiSelectEnabled;
+        const bulk = this.GetMultiselectSelectedBulkEvents();
+        if (! bulk)
+            return;
+        bulk.forEach( evt => evt.mulitSelected=false);
+        if (this.selectedEvent)
+            this.selectedEvent.mulitSelected = true;
+            
+    }
 
     @action.bound
     moveSelection(distance: number) {
@@ -418,24 +434,63 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onPin(event: CollectedEvent) {
+        const bulkEvents = this.GetMultiselectSelectedBulkEvents();
+        if (bulkEvents){
+            let doUnpin=false;
+            if (bulkEvents.every(evt => evt.pinned))//if we cant find any unpinned events then we will unpin all
+                doUnpin=true;
+            bulkEvents.forEach(evt => evt.pinned = ! doUnpin);
+        }
+        if (! bulkEvents || bulkEvents.length == 0)
+            this.doActualPin(event);
+    }
+    private doActualPin(event: CollectedEvent){
         event.pinned = !event.pinned;
     }
 
     @action.bound
     onBuildRuleFromExchange(exchange: HttpExchange) {
-        const { rulesStore, navigate } = this.props;
+        const { navigate } = this.props;
+        let navRule : HtkMockRule;
+        const bulkEvents = this.GetMultiselectSelectedBulkEvents();
+        if (bulkEvents){
+            let toAdd = bulkEvents.filter( evt => evt.isHttp() && evt != exchange) as HttpExchange[];
+            toAdd.forEach(evt => this.DoActualBuildRuleFromExchange(evt));
+        }
+        const rule = this.DoActualBuildRuleFromExchange(exchange);
+        navigate(`/mock/${rule.id}`);
+    }
+    private DoActualBuildRuleFromExchange(exchange: HttpExchange) : HtkMockRule {
+        const { rulesStore } = this.props;
 
         const rule = buildRuleFromExchange(exchange);
         rulesStore!.draftRules.items.unshift(rule);
-        navigate(`/mock/${rule.id}`);
+        return rule;
     }
 
     @action.bound
     onDelete(event: CollectedEvent) {
-        const { filteredEvents } = this.filteredEventState;
-
         // Prompt before deleting pinned events:
         if (event.pinned && !confirm("Delete this pinned exchange?")) return;
+
+        this.doActualDelete(event);
+        const bulkEvents = this.GetMultiselectSelectedBulkEvents();
+        if (bulkEvents){
+            if (! event.pinned){
+                if (bulkEvents.some(evt => evt.pinned) && !confirm("Delete selected events even though one or more are pinned?")) return;
+            }
+            
+            bulkEvents.forEach( evt => this.doActualDelete(evt));
+        }
+    }
+    private GetMultiselectSelectedBulkEvents() : CollectedEvent[] | null {
+        if (! this.props.eventsStore.isMultiSelectEnabled)
+            return null;
+        return this.filteredEventState.filteredEvents.filter(evt=> evt.mulitSelected);
+    }
+    private doActualDelete(event: CollectedEvent) {        
+        const { filteredEvents } = this.filteredEventState;
+
 
         const rowIndex = filteredEvents.indexOf(event);
         const wasSelected = event === this.selectedEvent;

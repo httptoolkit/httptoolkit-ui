@@ -35,6 +35,9 @@ import { StatusCode } from '../common/status-code';
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
 
+const USE_MULTI_SELECT_CHECKBOXES=false;// if this is enabled then a checkbox is shown when multi-select is enabled to allow controlling the checked rows that way rather than using the list directly
+const MULTI_SELECT_ROW_CLASSNAME="multiSelected";
+
 const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
 
 const EmptyStateOverlay = styled(EmptyState)`
@@ -52,6 +55,8 @@ interface ViewEventListProps {
     filteredEvents: CollectedEvent[];
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
+    isMultiSelectEnabled: boolean;
+    onMultiSelectToggled: () => void;
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
 
@@ -156,6 +161,15 @@ const Status = styled(Column)`
     flex-shrink: 0;
     flex-grow: 0;
 `;
+const MultiSelect = styled(Column)`
+    flex-basis: 20px;
+    ${(p: { isMultiSelectEnabled: boolean }) => p.isMultiSelectEnabled && USE_MULTI_SELECT_CHECKBOXES  ? "margin-right: 25px !important;" : "margin-right: 15px !important;" }
+    flex-shrink: 0;
+    margin-left: -20px !important;
+
+    title: "Multi-select events";
+    flex-grow: 0;
+`;
 
 const Source = styled(Column)`
     flex-basis: 49px;
@@ -229,6 +243,10 @@ const EventListRow = styled.div`
     user-select: none;
     cursor: pointer;
 
+    &.multiSelected {
+        background-color: ${p => p.theme.highlightBackground};
+        color: ${p => p.theme.highlightColor};
+    }
     &.selected {
         background-color: ${p => p.theme.highlightBackground};
         color: ${p => p.theme.highlightColor};
@@ -322,6 +340,7 @@ interface EventRowProps extends ListChildComponentProps {
         selectedEvent: CollectedEvent | undefined;
         events: CollectedEvent[];
         contextMenuBuilder: ViewEventContextMenuBuilder;
+        isMultiSelectEnabled: boolean;
     }
 }
 
@@ -352,6 +371,7 @@ const EventRow = observer((props: EventRowProps) => {
             return <ExchangeRow
                 index={index}
                 isSelected={isSelected}
+                isMultiSelectEnabled={props.data.isMultiSelectEnabled}
                 style={style}
                 exchange={event}
                 contextMenuBuilder={contextMenuBuilder}
@@ -376,15 +396,31 @@ const EventRow = observer((props: EventRowProps) => {
     }
 });
 
+interface RowCheckboxProps {
+    checked:boolean;
+    whenChecked: React.ChangeEventHandler<HTMLInputElement>;
+    isMultiSelectEnabled: boolean;
+}
+
+
+const RowCheckbox = styled.input.attrs( (props : RowCheckboxProps) => ({
+    type: "checkbox", checked: props.checked, onChange: props.whenChecked
+
+  }))<RowCheckboxProps>`
+  ${props =>  props.isMultiSelectEnabled && USE_MULTI_SELECT_CHECKBOXES ? `` : `width: 0 !important;`}
+  `;
+
 const ExchangeRow = inject('uiStore')(observer(({
     index,
     isSelected,
     style,
     exchange,
-    contextMenuBuilder
+    contextMenuBuilder,
+    isMultiSelectEnabled
 }: {
     index: number,
     isSelected: boolean,
+    isMultiSelectEnabled: boolean,
     style: {},
     exchange: HttpExchange,
     contextMenuBuilder: ViewEventContextMenuBuilder
@@ -403,10 +439,11 @@ const ExchangeRow = inject('uiStore')(observer(({
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
         onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
-        className={isSelected ? 'selected' : ''}
+        className={isSelected ? 'selected' : exchange.mulitSelected ? MULTI_SELECT_ROW_CLASSNAME : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
+        <RowCheckbox checked={exchange.mulitSelected} whenChecked={exchange.onMultiSelected}  isMultiSelectEnabled={isMultiSelectEnabled}  />
         <RowMarker category={category} title={describeEventCategory(category)} />
         <Method pinned={pinned}>{ request.method }</Method>
         <Status>
@@ -492,7 +529,7 @@ const RTCConnectionRow = observer(({
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={isSelected ? 'selected' : event.mulitSelected ? MULTI_SELECT_ROW_CLASSNAME : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -536,7 +573,7 @@ const RTCStreamRow = observer(({
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={isSelected ? 'selected' : event.mulitSelected ? MULTI_SELECT_ROW_CLASSNAME : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -604,7 +641,7 @@ const BuiltInApiRow = observer((p: {
         tabIndex={p.isSelected ? 0 : -1}
 
         onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
-        className={p.isSelected ? 'selected' : ''}
+        className={p.isSelected ? 'selected' : p.exchange.mulitSelected ? MULTI_SELECT_ROW_CLASSNAME : ''}
         style={p.style}
     >
         <RowPin pinned={pinned}/>
@@ -659,7 +696,7 @@ const TlsRow = observer((p: {
         data-event-id={tlsEvent.id}
         tabIndex={p.isSelected ? 0 : -1}
 
-        className={p.isSelected ? 'selected' : ''}
+        className={p.isSelected ? 'selected' : tlsEvent.mulitSelected ? MULTI_SELECT_ROW_CLASSNAME : ''}
         style={p.style}
     >
         {
@@ -686,12 +723,14 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         return {
             selectedEvent: this.props.selectedEvent,
             events: this.props.filteredEvents,
+            isMultiSelectEnabled: this.props.isMultiSelectEnabled,
             contextMenuBuilder: this.props.contextMenuBuilder
         };
     }
 
     private listBodyRef = React.createRef<HTMLDivElement>();
     private listRef = React.createRef<List>();
+    private AreMultipleEventsSelected = false;
 
     private KeyBoundListWindow = observer(
         React.forwardRef<HTMLDivElement>(
@@ -714,6 +753,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         return <ListContainer>
             <TableHeader>
                 <MarkerHeader />
+                <MultiSelect isMultiSelectEnabled={this.props.isMultiSelectEnabled}><input type="Checkbox" onChange={(evt) => this.props.onMultiSelectToggled()} /></MultiSelect>
                 <Method>Method</Method>
                 <Status>Status</Status>
                 <Source>Source</Source>
@@ -876,7 +916,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
         const event = this.props.filteredEvents[eventIndex];
         if (event !== this.props.selectedEvent) {
-            this.onEventSelected(eventIndex);
+            this.onEventSelected(eventIndex, mouseEvent);
         } else {
             // Clicking the selected row deselects it
             this.onEventDeselected();
@@ -884,12 +924,46 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     }
 
     @action.bound
-    onEventSelected(index: number) {
+    onEventSelected(index: number, mouseEvent: React.MouseEvent) {
+        if (this.props.isMultiSelectEnabled){
+            const eventIndex = index;
+            const event = this.props.filteredEvents[eventIndex];
+            if ( (! USE_MULTI_SELECT_CHECKBOXES || mouseEvent.shiftKey) && ! mouseEvent.ctrlKey && this.AreMultipleEventsSelected){ //if using the checkboxes then only clear otehr checkboxes when shift key is hit
+                this.props.filteredEvents.forEach(evt => evt.mulitSelected = false);//to increase the perf here we should cache the selected events in a list, then we can uncheck them quickly and clear the list rather than doing this every click
+                this.AreMultipleEventsSelected=false;
+            }
+            if (! USE_MULTI_SELECT_CHECKBOXES){
+               if (! mouseEvent.ctrlKey){
+                    if (this.props.selectedEvent){
+                        this.props.selectedEvent.mulitSelected = false;
+                    }
+                    event.mulitSelected = true;
+                }
+            }
+
+
+            if (mouseEvent.ctrlKey){
+                event.mulitSelected  = ! event.mulitSelected;
+                this.AreMultipleEventsSelected=true; //even if technically only one is selected we are safe to set this to true it just does the above reset first
+            }
+            if (mouseEvent.shiftKey){
+                this.AreMultipleEventsSelected = true; //even if technically only one is selected we are safe to set this to true it just does the above reset first
+                if (this.props.selectedEvent){
+                    let curIndex = this.props.filteredEvents.indexOf(this.props.selectedEvent);
+                    for(let x = curIndex < eventIndex ? curIndex : eventIndex; x <= (curIndex < eventIndex ? eventIndex : curIndex); x++){
+                        this.props.filteredEvents[x].mulitSelected = true;
+                    }
+                }
+            }
+        }        
         this.props.onSelected(this.props.filteredEvents[index]);
     }
 
     @action.bound
     onEventDeselected() {
+        if (! USE_MULTI_SELECT_CHECKBOXES && this.props.selectedEvent){
+            this.props.selectedEvent.mulitSelected = false;
+        }
         this.props.onSelected(undefined);
     }
 
