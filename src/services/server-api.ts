@@ -1,7 +1,7 @@
 import * as localForage from 'localforage';
 
 import { RUNNING_IN_WORKER } from '../util';
-import { getDeferred } from '../util/promise';
+import { delay, getDeferred } from '../util/promise';
 import {
     versionSatisfies,
     SERVER_REST_API_SUPPORTED
@@ -35,22 +35,39 @@ const serverReady = getDeferred();
 export const announceServerReady = () => serverReady.resolve();
 export const waitUntilServerReady = () => serverReady.promise;
 
-// We initially default to the GQL API. If at the first version lookup we discover that the REST
-// API is supported, this is swapped out for the REST client instead. Both work, but REST is the
-// goal long-term so should be preferred where available.
-let apiClient: Promise<GraphQLApiClient | RestApiClient> = authTokenPromise
-    .then((authToken) => new GraphQLApiClient(authToken));
-export async function getServerVersion(): Promise<string> {
-    const client = await apiClient;
-    const version = await client.getServerVersion();
+const apiClient: Promise<GraphQLApiClient | RestApiClient> = authTokenPromise.then(async (authToken) => {
+    await waitUntilServerReady();
 
-    // Swap to the REST client if we receive a version where it's supported:
-    if (versionSatisfies(version, SERVER_REST_API_SUPPORTED) && client instanceof GraphQLApiClient) {
-        apiClient = authTokenPromise
-            .then((authToken) => new RestApiClient(authToken));
+    const restClient = new RestApiClient(authToken);
+    const graphQLClient = new GraphQLApiClient(authToken);
+
+    // To work out which API is supported, we loop trying to get the version from
+    // each one (may take a couple of tries as the server starts up), and then
+    // check the resulting version to see what's supported.
+
+    let version: string | undefined;
+    while (!version) {
+        version = await restClient.getServerVersion().catch(() => {
+            console.log("Couldn't get version from REST API");
+
+            return graphQLClient.getServerVersion().catch(() => {
+                console.log("Couldn't get version from GraphQL API");
+                return undefined;
+            });
+        });
+
+        if (!version) await delay(100);
     }
 
-    return version;
+    if (versionSatisfies(version, SERVER_REST_API_SUPPORTED)) {
+        return restClient;
+    } else {
+        return graphQLClient;
+    }
+});
+
+export async function getServerVersion(): Promise<string> {
+    return (await apiClient).getServerVersion();
 }
 
 export async function getConfig(proxyPort: number): Promise<ServerConfig> {
