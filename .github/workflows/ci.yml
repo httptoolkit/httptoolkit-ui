@@ -10,10 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Install Node 16
+      # Install Node
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.16.0
+          node-version: 20.8.0
           cache: 'npm'
 
       - run: npm install -g npm@8.5.5
