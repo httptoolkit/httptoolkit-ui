@@ -3,6 +3,7 @@ import * as React from 'react';
 import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import { action, computed, observable } from 'mobx';
 import { trackUndo } from 'mobx-shallow-undo';
+import * as polished from 'polished';
 
 import { css, styled } from '../../../styles';
 import { copyToClipboard, isCmdCtrlPressed } from '../../../util/ui';
@@ -49,7 +50,33 @@ const SearchFilterBox = styled.div<{ hasContents: boolean }>`
     font-size: ${p => p.theme.textSize};
 
     display: flex;
-    flex-wrap: wrap;
+
+    &:hover, &:focus-within {
+        flex-wrap: wrap;
+    }
+    &:not(:hover):not(:focus-within) {
+        overflow: hidden;
+    }
+
+    /* Add a layer to act as a button background over non-wrapping content */
+    &:after {
+        content: "";
+        position: absolute;
+        display: block;
+
+        z-index: 5;
+
+        top: 4px;
+        bottom: 4px;
+
+        right: 0px;
+        width: 36px;
+        background: linear-gradient(
+            to right,
+            transparent 0%,
+            ${p => polished.rgba(p.theme.highlightBackground, 0.9)} 25%
+        );
+    }
 
     .react-autosuggest__container {
         flex-grow: 1;
@@ -75,7 +102,10 @@ const FloatingSearchButtonStyles = css`
     top: 0;
     right: 0;
     bottom: 0;
-`
+
+    /* Appears in front of the :after background layer */
+    z-index: 10;
+`;
 
 const FloatingClearFiltersButton = styled(IconButton)`${FloatingSearchButtonStyles}`;
 const FloatingFilterDocsButtonLink = styled(IconButtonLink)`
