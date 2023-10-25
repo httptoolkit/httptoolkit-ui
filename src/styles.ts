@@ -38,8 +38,10 @@ export const lightTheme = {
     secondaryInputBorder: '#7ab2e2',
     secondaryInputColor: '#1665af',
 
-    textInputBackground: '#fafafa',
-    textInputColor: '#222222',
+    inputBackground: '#fafafa',
+    inputHoverBackground: '#eee',
+    inputBorder: '#a0afaf',
+    inputColor: '#222222',
 
     highlightBackground: '#ffffff',
     highlightColor: '#222',
@@ -84,8 +86,10 @@ export const darkTheme = {
     secondaryInputBorder: '#1b5b96',
     secondaryInputColor: '#6babe6',
 
-    textInputBackground: '#fafafa',
-    textInputColor: '#222222',
+    inputBackground: '#1a1a1a',
+    inputHoverBackground: '#333',
+    inputBorder: '#666',
+    inputColor: '#fafafa',
 
     highlightBackground: '#111111',
     highlightColor: '#efefef',
@@ -141,8 +145,10 @@ export const highContrastTheme = {
     secondaryInputBorder: '#ffffff',
     secondaryInputColor: '#ffffff',
 
-    textInputBackground: '#ffffff',
-    textInputColor: '#000000',
+    inputBackground: '#ffffff',
+    inputHoverBackground: '#ddd',
+    inputBorder: '#aaa',
+    inputColor: '#000000',
 
     highlightBackground: '#ffffff',
     highlightColor: '#000',

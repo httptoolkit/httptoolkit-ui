@@ -22,7 +22,7 @@ import {
     CollapsibleCardHeading
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
-import { Select } from '../common/inputs';
+import { Select, TextInput } from '../common/inputs';
 import {
     SettingsButton,
     SettingsExplanation,
@@ -62,23 +62,13 @@ const ProxyPortsContainer = styled.div`
     margin-bottom: 10px;
 
     input {
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
-
         & + ${WarningIcon} {
             visibility: hidden;
             align-self: center;
         }
 
-        &:invalid {
-            border-color: ${p => p.theme.warningColor};
-            background-color: ${p => p.theme.warningBackground};
-            color: ${p => p.theme.mainColor};
-
-            & + ${WarningIcon} {
-                visibility: visible;
-            }
+        &:invalid + ${WarningIcon} {
+            visibility: visible;
         }
     }
 `;
@@ -202,7 +192,7 @@ export class ProxySettingsCard extends React.Component<
                 <ContentLabel>
                     Minimum port
                 </ContentLabel>
-                <input
+                <TextInput
                     type="number"
                     required
                     min="1"
@@ -215,7 +205,7 @@ export class ProxySettingsCard extends React.Component<
                 <ContentLabel>
                     Maximum port
                 </ContentLabel>
-                <input
+                <TextInput
                     type="number"
                     required
                     min={this.minPortValue}

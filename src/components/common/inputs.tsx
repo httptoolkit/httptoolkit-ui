@@ -123,12 +123,16 @@ export const TextInput = styled.input.attrs((p: { type?: string }) => ({
     font-size: ${p => p.theme.textInputFontSize};
     padding: 5px 10px;
     border-radius: 4px;
-    border: solid 1px ${p => p.theme.containerBorder};
+    border: solid 1px ${p => p.theme.inputBorder};
 
     min-width: 20px; /* Without this, editable headers especially refuse to shrink */
 
-    background-color: ${p => p.theme.textInputBackground};
-    color: ${p => p.theme.textInputColor};
+    background-color: ${p => p.theme.inputBackground};
+    &:hover:not(:disabled) {
+        background-color: ${p => p.theme.inputHoverBackground};
+    }
+
+    color: ${p => p.theme.inputColor};
 
     &:disabled {
         opacity: 0.6;

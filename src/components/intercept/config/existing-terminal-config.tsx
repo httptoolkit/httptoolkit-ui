@@ -39,9 +39,12 @@ const CopyableCommand = styled((p: {
         pointer-events: none;
     `}
 
-    border: solid 1px ${p => p.theme.containerBorder};
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
+    background-color: ${p => p.theme.inputBackground};
+    &:hover {
+        background-color: ${p => p.theme.inputHoverBackground};
+    }
+    border: solid 1px ${p => p.theme.inputBorder};
+    color: ${p => p.theme.inputColor};
 
     padding: 10px 75px 10px 20px;
     border-radius: 4px;
