@@ -9,6 +9,8 @@ export const SendCardSection = styled(CollapsibleCard)`
     flex-shrink: 1;
     flex-grow: 0; /* Overridden below, so only the bodies expand */
     min-height: 0;
+
+    box-shadow: 0 -2px 5px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 export const SendBodyCardSection = styled(SendCardSection)`
