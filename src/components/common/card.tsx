@@ -58,7 +58,7 @@ const Card = styled.section.attrs((p: CardProps) => ({
         cursor: pointer;
 
         &:hover {
-            box-shadow: 0 2px 20px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha*2});
+            box-shadow: 0 2px 20px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha * 2});
         }
 
         &:active {
