@@ -39,7 +39,7 @@ const SidebarNav = styled.nav`
 
     border-right: 1px solid rgba(0,0,0,0.12);
     box-sizing: border-box;
-    box-shadow: 0 0 30px rgba(0,0,0,0.2);
+    box-shadow: 0 0 30px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     font-size: ${p => p.theme.textSize};
 

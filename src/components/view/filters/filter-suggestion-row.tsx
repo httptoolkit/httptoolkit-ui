@@ -44,7 +44,7 @@ const SuggestionDetails = styled(SuggestionRowPart)`
     white-space: pre; /* Nowrap + show spaces accurately */
 
     ${(p: { isHighlighted: boolean }) => p.isHighlighted && css`
-        box-shadow: 0px -8px 10px -10px rgba(0,0,0,0.3);
+        box-shadow: 0px -8px 10px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha * 2});
     `}
 
     svg {
@@ -63,8 +63,8 @@ const SuggestionDeleteButton = styled(IconButton).attrs(() => ({
 const SuggestionDescription = styled(SuggestionRowPart)`
     background-color: ${p => p.theme.mainLowlightBackground};
     box-shadow:
-        inset 0px 12px 8px -10px rgba(0,0,0,0.15),
-        inset 0px -8px 8px -10px rgba(0,0,0,0.15);
+        inset 0px 12px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha}),
+        inset 0px -8px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     white-space: pre; /* Nowrap + show spaces accurately */
     overflow: hidden;

@@ -28,7 +28,7 @@ const ButtonsContainer = styled.div`
     justify-content: center;
 
     z-index: 1;
-    box-shadow: 0 -10px 30px -5px rgba(0,0,0,0.1);
+    box-shadow: 0 -10px 30px -5px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 const ScrollToButton = observer((p: {

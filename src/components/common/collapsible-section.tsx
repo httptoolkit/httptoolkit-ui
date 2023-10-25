@@ -225,7 +225,7 @@ export const CollapsibleSectionSummary = styled.header`
             height: 35px;
             width: 1px;
             background-color: rgba(0,0,0,0.1);
-            box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
+            box-shadow: 1px 1px 5px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
         }
 
         &:after {
@@ -236,7 +236,7 @@ export const CollapsibleSectionSummary = styled.header`
             right: 0;
             height: 1px;
             background-color: rgba(0,0,0,0.1);
-            box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
+            box-shadow: 1px 1px 5px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
         }
     `}
 `;
@@ -251,8 +251,8 @@ export const CollapsibleSectionBody = styled.div`
 
     background-color: ${p => p.theme.mainLowlightBackground};
     box-shadow:
-        inset 0px 12px 8px -10px rgba(0,0,0,0.15),
-        inset 0px -8px 8px -10px rgba(0,0,0,0.15);
+        inset 0px 12px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha}),
+        inset 0px -8px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     padding: 8px 10px 10px 10px;
 

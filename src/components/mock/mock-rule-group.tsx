@@ -41,7 +41,7 @@ const CollapsedItemPlaceholder = styled.div<{
 
     background-color: ${p => p.theme.mainBackground};
     border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     opacity: ${p => (p.activated ? 1 : 0.6) - p.index * 0.2};
     z-index: ${p => 9 - p.index};
@@ -133,7 +133,7 @@ const GroupHeaderContainer = styled.header<{
             ? 'text-shadow: 0 0 5px rgba(0,0,0,0.2);'
             : css`
                 > ${CollapsedItemPlaceholder} {
-                    box-shadow: 0 2px 20px 0 rgba(0,0,0,0.3);
+                    box-shadow: 0 2px 20px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
                 }
             `
         }

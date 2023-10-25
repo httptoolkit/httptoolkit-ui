@@ -58,7 +58,7 @@ const FilterSuggestionsBox = styled.div`
 
     background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerBorder};
-    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     border-radius: 4px;
     .react-autosuggest__suggestion:first-child > * {

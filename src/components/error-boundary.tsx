@@ -45,7 +45,7 @@ const ErrorOverlay = styled((props: {
 
         color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.mainBackground};
-        box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
+        box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
         border-radius: 4px;
         border: none;
 

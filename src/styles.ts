@@ -30,6 +30,7 @@ export const lightTheme = {
 
     lowlightTextOpacity: 0.65,
     pillContrast: 0.8,
+    boxShadowAlpha: 0.2,
 
     primaryInputBackground: '#1076b9',
     primaryInputColor: '#fafafa',
@@ -75,6 +76,7 @@ export const darkTheme = {
 
     lowlightTextOpacity: 0.6,
     pillContrast: 0.8,
+    boxShadowAlpha: 0.4,
 
     primaryInputBackground: '#0868c1',
     primaryInputColor: '#fafafa',
@@ -131,6 +133,7 @@ export const highContrastTheme = {
 
     lowlightTextOpacity: 0.8,
     pillContrast: 0.95,
+    boxShadowAlpha: 0.1,
 
     primaryInputBackground: '#0868c1',
     primaryInputColor: '#ffffff',
@@ -246,7 +249,7 @@ export const GlobalStyles = createGlobalStyle`
         }
 
         .auth0-lock-widget {
-            box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2) !important;
+            box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha}) !important;
             overflow: visible !important;
         }
 

@@ -54,11 +54,11 @@ const Card = styled.section.attrs((p: CardProps) => ({
         opacity: 0.5;
     `}
 
-    ${(p: CardProps) => !p.disabled && p.onClick && `
+    ${(p: CardProps) => !p.disabled && p.onClick && css`
         cursor: pointer;
 
         &:hover {
-            box-shadow: 0 2px 20px 0 rgba(0,0,0,0.3);
+            box-shadow: 0 2px 20px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha*2});
         }
 
         &:active {
@@ -68,7 +68,7 @@ const Card = styled.section.attrs((p: CardProps) => ({
 
     background-color: ${p => p.theme.mainBackground};
     border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     position: relative;
 

@@ -41,7 +41,7 @@ const GetProButton = styled(UnstyledButton)`
     color: ${p => p.theme.primaryInputColor};
     background-color: ${p => p.theme.primaryInputBackground};
     border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.3);
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha/2});
 
     > svg {
         margin-bottom: 5px;

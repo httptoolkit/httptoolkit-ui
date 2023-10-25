@@ -143,7 +143,7 @@ export const AddRuleRow = styled((p: {
     background-color: ${p =>
         polished.rgba(p.theme.mainBackground, 0.4)
     };
-    box-shadow: 0 0 4px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 0 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 const MatcherOrHandler = styled.section`

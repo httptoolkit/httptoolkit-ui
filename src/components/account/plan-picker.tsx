@@ -92,7 +92,7 @@ const PlanCycle = styled.span<{selected: boolean}>`
     ${p => p.selected && css`
         background-color: ${p => p.theme.mainBackground};
         border-bottom: 3px solid ${p => p.theme.containerBorder};
-        box-shadow: 0 4px 10px 0 rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha/2});
     `}
 
     ${p => !p.selected && css`
@@ -142,7 +142,7 @@ const PricingTable = styled.div`
 const PricingTier = styled.section<{ highlighted?: boolean }>`
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 10px 0 rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha/2});
     border-radius: 4px;
     border: 1px solid ${p => p.theme.containerBorder};
 

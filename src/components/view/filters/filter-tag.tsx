@@ -51,13 +51,13 @@ const FilterTagContainer = styled.div`
 
     background-color: ${p => p.theme.mainBackground};
     border: 1px solid ${p => p.theme.containerWatermark};
-    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
     border-radius: 3px;
 
     cursor: pointer;
 
     &:hover, &:focus-within {
-        box-shadow: 0 2px 4px 0 rgba(0,0,0,0.4);
+        box-shadow: 0 2px 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha * 2});
     }
 
     &:hover {
