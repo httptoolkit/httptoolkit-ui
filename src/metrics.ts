@@ -69,14 +69,15 @@ const normalizeUrl = (url: string) =>
     .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
     .replace(/\?.*/, ''); // Strip any query & hash params
 
-let lastUrl: string | undefined;
+let seenPages: string[] = [];
+
 export function trackPage(location: Window['location']) {
     if (!enabled) return;
 
     const currentUrl = normalizeUrl(location.href);
 
-    if (currentUrl === lastUrl) return;
-    lastUrl = currentUrl;
+    if (seenPages.includes(currentUrl)) return;
+    seenPages.push(currentUrl);
 
     posthog.capture('$pageview', {
         $current_url: currentUrl,
