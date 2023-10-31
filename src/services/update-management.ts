@@ -30,7 +30,8 @@ export async function runBackgroundUpdates() {
         }, 1000 * 60 * 5);
     } catch (e) {
         if (e instanceof ServiceWorkerNoSupportError) {
-            console.log('Service worker not supported, oh well, no autoupdating for you.');
+            console.warn('Service worker not supported - cached & offline startup will not be available');
+            return;
         }
         throw e;
     }
