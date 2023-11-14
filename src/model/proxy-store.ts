@@ -165,23 +165,6 @@ export class ProxyStore {
             store: this
         });
 
-        // Backward compat for store data before 2020-01-28 - drop this in a month or two
-        const rawData = localStorage.getItem('interception-store');
-        if (rawData) {
-            try {
-                const data = JSON.parse(rawData);
-
-                // Migrate data from the interception store to here:
-                if (data._portConfig) {
-                    runInAction(() => {
-                        this._portConfig = data._portConfig;
-                    });
-                }
-            } catch (e) {
-                console.log(e);
-            }
-        }
-
         console.log('Proxy settings loaded');
     }
 
