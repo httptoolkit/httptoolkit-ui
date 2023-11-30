@@ -42,6 +42,9 @@ const ButtonContainer = styled.div`
     position: relative;
     display: flex;
 
+    /* Try to avoid button padding expanding outer containers */
+    margin: -5px -9px;
+
     /* Match the parent (typically card header) flex direction, but justify
        content in the opposite direction */
     flex-direction: inherit;
