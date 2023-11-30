@@ -269,26 +269,30 @@ const CollapsibleCardContainer = styled(MediumCard)<{
         }
     `}
 
-    ${p => p.expanded && css`
-        /* Override the Send container setting this to 'none', which hides non-expanded parts: */
-        display: flex !important;
+    ${p => p.expanded
+        ?  css`
+            /* Override the Send container setting this to 'none', which hides non-expanded parts: */
+            display: flex !important;
 
-        height: 100%;
-        width: 100%;
-        border-radius: 0;
-        margin: 0;
+            height: 100%;
+            width: 100%;
+            border-radius: 0;
+            margin: 0;
 
-        flex-shrink: 1;
-        min-height: 0;
+            flex-shrink: 1;
+            min-height: 0;
 
-        ${p.expanded === 'starting'
-            ? `
-                padding-top: 40px;
-                padding-bottom: 40px;
-            `
-            : 'transition: padding 0.1s;'
-        }
-    `}
+            ${p.expanded === 'starting'
+                ? `
+                    padding-top: 40px;
+                    padding-bottom: 40px;
+                `
+                : 'transition: padding 0.1s;'
+            }
+        `
+        // Show card direction markers only when not expanded
+        : cardDirectionCss(p.direction)
+    }
 
     &:focus {
         ${CollapseIcon} {
@@ -304,8 +308,6 @@ const CollapsibleCardContainer = styled(MediumCard)<{
         outline: none;
         border-color: ${p => p.theme.popColor};
     }
-
-    ${p => cardDirectionCss(p.direction)};
 `;
 
 export const CollapsibleCardHeading = styled((p: {
