@@ -206,6 +206,7 @@ const {
     createGlobalStyle,
     keyframes,
     ThemeProvider,
+    StyleSheetManager
 } = styledComponents as unknown as styledComponents.ThemedStyledComponentsModule<Theme>;
 
 export {
@@ -214,7 +215,8 @@ export {
     createGlobalStyle,
     keyframes,
     ThemeProvider,
-    ThemeProps
+    ThemeProps,
+    StyleSheetManager
 };
 
 export const GlobalStyles = createGlobalStyle`

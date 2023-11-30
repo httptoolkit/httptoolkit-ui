@@ -40,7 +40,7 @@ import {
 } from './services/update-management';
 
 import { App } from './components/app';
-import { StorePoweredThemeProvider } from './components/store-powered-theme-provider';
+import { StyleProvider } from './components/style-provider';
 import { ErrorBoundary } from './components/error-boundary';
 
 console.log(`Initialising UI (version ${UI_VERSION})`);
@@ -110,12 +110,12 @@ appStartupPromise.then(() => {
     document.dispatchEvent(new Event('load:rendering'));
     ReactDOM.render(
         <Provider {...stores}>
-            <StorePoweredThemeProvider>
+            <StyleProvider>
                 <ErrorBoundary>
                     <GlobalStyles />
                     <App />
                 </ErrorBoundary>
-            </StorePoweredThemeProvider>
+            </StyleProvider>
         </Provider>
     , document.querySelector(APP_ELEMENT_SELECTOR))
 });
