@@ -106,7 +106,7 @@ export const MediumCard = styled(Card)`
 
     > header, > h1 {
         text-transform: uppercase;
-        text-align: right;
+        text-align: ${p => p.headerAlignment};
         color: ${p => p.theme.containerWatermark};
 
         &:not(:last-child) {

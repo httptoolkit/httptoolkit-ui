@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { Theme } from '../../styles';
+import { Theme, styled } from '../../styles';
 
 import { getStatusColor } from '../../model/events/categorization';
 import { getStatusMessage } from '../../model/http/http-docs';
@@ -11,14 +11,26 @@ import { SendCardSection } from './send-card-section';
 import { Pill } from '../common/pill';
 import { DurationPill } from '../common/duration-pill';
 
+const ResponseStatusSectionCard = styled(SendCardSection)`
+    padding-top: 4px;
+    padding-bottom: 5px;
+    flex-shrink: 0;
+
+    > header {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+`;
+
 export const ResponseStatusSection = (props: {
     exchange: SuccessfulExchange,
     theme: Theme
 }) => {
     const response = props.exchange.response;
 
-    return <SendCardSection
+    return <ResponseStatusSectionCard
         collapsed={false}
+        headerAlignment='left'
     >
         <header>
             <Pill
@@ -26,10 +38,10 @@ export const ResponseStatusSection = (props: {
             >
                 { response.statusCode }: { response.statusMessage || getStatusMessage(response.statusCode) }
             </Pill>
+            <DurationPill timingEvents={props.exchange.timingEvents} />
             <Pill title="The size of the raw encoded response body">
                 { getReadableSize(response.body.encoded.byteLength) }
             </Pill>
-            <DurationPill timingEvents={props.exchange.timingEvents} />
         </header>
-    </SendCardSection>;
+    </ResponseStatusSectionCard>;
 }
