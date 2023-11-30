@@ -278,6 +278,7 @@ export const warningIconHtml = iconHtml(
 );
 
 export const ArrowIcon = styled(Icon).attrs(() => ({
+    fixedWidth: true,
     icon: ['fas', 'arrow-left']
 }))`
     ${(p: { direction: 'left' | 'right' }) =>
