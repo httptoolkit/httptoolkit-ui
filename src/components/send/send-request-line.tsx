@@ -42,7 +42,7 @@ const MethodSelect = styled(Select)`
 
     border-left: 5px solid ${(p: { borderColor: string }) => p.borderColor};
 
-    padding: 5px 0 5px 10px;
+    padding: 5px 0 5px 15px;
     font-size: ${p => p.theme.textInputFontSize};
 
     height: 100%;
@@ -60,8 +60,9 @@ const MethodSelectContainer = styled.div`
     flex-grow: 0;
     flex-basis: 105px;
 
-    &:focus-within {
+    &:focus-within > svg {
         color: ${p => p.theme.popColor};
+        opacity: 1;
     }
 `;
 
@@ -72,7 +73,7 @@ const UrlInput = styled(TextInput)`
     border-radius: 0;
     border: none;
 
-    padding: 7px 10px 8px;
+    padding: 10px 10px 10px;
 
     font-size: ${p => p.theme.textSize};
 
@@ -137,7 +138,10 @@ export const SendRequestLine = (props: {
             <MethodSelectArrow />
         </MethodSelectContainer>
         <UrlInput
+            type='url'
+            spellCheck='false'
             placeholder='https://example.com/hello?name=world'
+
             value={props.url}
             onChange={updateUrlFromEvent}
         />

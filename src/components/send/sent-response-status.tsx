@@ -12,8 +12,8 @@ import { Pill } from '../common/pill';
 import { DurationPill } from '../common/duration-pill';
 
 const ResponseStatusSectionCard = styled(SendCardSection)`
-    padding-top: 4px;
-    padding-bottom: 5px;
+    padding-top: 7px;
+    padding-bottom: 7px;
     flex-shrink: 0;
 
     > header {
