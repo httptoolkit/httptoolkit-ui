@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { action, flow, observable, runInAction } from 'mobx';
+import { action, autorun, flow, observable, runInAction } from 'mobx';
 import * as uuid from 'uuid/v4';
 import {
     MOCKTTP_PARAM_REF,
@@ -46,17 +46,22 @@ export class SendStore {
             store: this
         });
 
+        autorun(() => {
+            if (this.requestInputs.length === 0) this.addRequestInput();
+        })
+
         console.log('Send store initialized');
     });
 
-    @persist('object', requestInputSchema) @observable
-    requestInput: RequestInput = {
-        url: '',
-        method: 'GET',
-        headers: [],
-        requestContentType: 'text',
-        rawBody: Buffer.from([])
-    };
+    @persist('list', requestInputSchema) @observable
+    requestInputs: RequestInput[] = [];
+
+    @action.bound
+    addRequestInput(): RequestInput {
+        const requestInput = new RequestInput();
+        this.requestInputs.push(requestInput);
+        return requestInput;
+    }
 
     @observable
     sentExchange: HttpExchange | undefined;
@@ -87,7 +92,7 @@ export class SendStore {
             url: requestInput.url,
             method: requestInput.method,
             headers: requestInput.headers,
-            rawBody: requestInput.rawBody
+            rawBody: await requestInput.rawBody.encoded
         }, requestOptions);
 
         const exchange = this.eventStore.recordSentRequest({
@@ -100,7 +105,7 @@ export class SendStore {
             hostname: url.hostname,
             headers: rawHeadersToHeaders(requestInput.headers),
             rawHeaders: requestInput.headers,
-            body: { buffer: requestInput.rawBody },
+            body: { buffer: await requestInput.rawBody.encoded },
             timingEvents: {} as TimingEvents,
             tags: ['httptoolkit:manually-sent-request']
         });

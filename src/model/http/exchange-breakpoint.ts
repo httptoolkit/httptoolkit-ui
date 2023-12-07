@@ -129,7 +129,7 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
         this.editableBody = new EditableBody(
             decodedBody,
             encodedBody,
-            () => getHeaderValue(this.resultMetadata.rawHeaders, 'Content-Encoding')
+            () => this.resultMetadata.rawHeaders
         );
 
         // Update the content-length when necessary, if it was previously correct

@@ -86,7 +86,7 @@ export class RequestPane extends React.Component<{
             />
             <SendRequestBodyCard
                 {...this.cardProps.requestBody}
-                body={requestInput.rawBody}
+                body={requestInput.rawBody.decoded}
                 onBodyUpdated={this.updateBody}
                 editorNode={editorNode}
             />
@@ -112,7 +112,7 @@ export class RequestPane extends React.Component<{
     @action.bound
     updateBody(input: Buffer) {
         const { requestInput } = this.props;
-        requestInput.rawBody = input;
+        requestInput.rawBody.updateDecodedBody(input);
     }
 
     @observable

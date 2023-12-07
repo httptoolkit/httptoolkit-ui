@@ -1,9 +1,9 @@
 import * as _ from 'lodash';
 import { computed, observable, action, runInAction, reaction } from 'mobx';
 
-import { BreakpointBody } from '../../types';
+import { BreakpointBody, RawHeaders } from '../../types';
 import { logError } from "../../errors";
-import { asHeaderArray } from "../../util/headers";
+import { asHeaderArray, getHeaderValues } from "../../util/headers";
 import { observablePromise, ObservablePromise } from '../../util/observable';
 
 import { encodeBody } from "../../services/ui-worker-api";
@@ -22,7 +22,7 @@ export class EditableBody implements BreakpointBody {
     constructor(
         initialDecodedBody: Buffer,
         initialEncodedBody: Buffer | undefined,
-        private getContentEncodingHeader: () => string | string[] | undefined
+        private getHeaders: () => RawHeaders
     ) {
         this._decodedBody = initialDecodedBody;
 
@@ -45,10 +45,10 @@ export class EditableBody implements BreakpointBody {
 
     @computed.struct
     private get contentEncodings() {
-        return asHeaderArray(this.getContentEncodingHeader());
+        return asHeaderArray(getHeaderValues(this.getHeaders(), 'content-encoding'));
     }
 
-    private updateEncodedBody = _.throttle(() => {
+    private updateEncodedBody = _.throttle(action(() => {
         const encodeBodyPromise = observablePromise((async () => {
             const encodings = this.contentEncodings;
 
@@ -69,7 +69,7 @@ export class EditableBody implements BreakpointBody {
         })());
 
         this._encodingPromise = encodeBodyPromise;
-    }, 500, { leading: true, trailing: true });
+    }), 500, { leading: true, trailing: true });
 
     @computed
     get contentLength() {

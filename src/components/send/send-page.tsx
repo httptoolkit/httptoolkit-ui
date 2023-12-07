@@ -32,7 +32,7 @@ export class SendPage extends React.Component<{
 
     render() {
         const {
-            requestInput,
+            requestInputs,
             sendRequest,
             sentExchange
         } = this.props.sendStore!;
@@ -46,7 +46,7 @@ export class SendPage extends React.Component<{
                 maxSize={-300}
             >
                 <RequestPane
-                    requestInput={requestInput}
+                    requestInput={requestInputs[0]}
                     sendRequest={sendRequest}
                     editorNode={this.requestEditorNode}
                 />

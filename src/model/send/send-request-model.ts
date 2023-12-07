@@ -1,39 +1,52 @@
 import * as Mockttp from 'mockttp';
 import * as serializr from 'serializr';
+import { observable } from 'mobx';
 
 import { RawHeaders } from "../../types";
 import { EditableContentType } from "../events/content-types";
+import { EditableBody } from '../http/editable-body';
 
 // This is our model of a Request for sending. Smilar to the API model,
 // but not identical, as we add extra UI metadata etc.
-export interface RequestInput {
-    method: string;
-    url: string;
+export class RequestInput {
 
-    /**
-     * The raw headers to send. These will be sent exactly as provided - no headers
-     * will be added automatically.
-     *
-     * Note that this means omitting the 'Host' header may cause problems, as will
-     * omitting both 'Content-Length' and 'Transfer-Encoding' on requests with
-     * bodies.
-     */
-    headers: RawHeaders;
+    @observable
+    public method = 'GET';
 
-    requestContentType: EditableContentType;
-    rawBody: Buffer;
+    @observable
+    public url = '';
+
+    @observable
+    public headers: RawHeaders = [];
+
+    @observable
+    public requestContentType: EditableContentType = 'text';
+
+    @observable
+    public rawBody: EditableBody = new EditableBody(
+        Buffer.from([]),
+        undefined,
+        () => this.headers
+    )
+
 }
 
-// The schema to use to serialize the above as JSON.
-export const requestInputSchema = serializr.createSimpleSchema({
-    url: serializr.raw(),
-    method: serializr.raw(),
+export const requestInputSchema = serializr.createModelSchema(RequestInput, {
+    method: serializr.primitive(),
+    url: serializr.primitive(),
     headers: serializr.raw(),
-    requestContentType: serializr.raw(),
-    // Serialize as Base64 - needs to be something we can put into JSON:
+    requestContentType: serializr.primitive(),
+
     rawBody: serializr.custom(
-        (buffer) => buffer.toString('base64'),
-        (base64Data) => Buffer.from(base64Data, 'base64')
+        (body: EditableBody) => body.decoded.toString('base64'),
+        (base64Data, context) => {
+            const requestInput = context.target;
+            return new EditableBody(
+                Buffer.from(base64Data, 'base64'),
+                undefined,
+                () => requestInput.headers
+            );
+        }
     )
 });
 
