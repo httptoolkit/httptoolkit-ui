@@ -111,6 +111,11 @@ export const SendRequestLine = (props: {
         props.updateUrl(changeEvent.target.value);
     }, [props.updateUrl]);
 
+    const prepopulateUrl = React.useCallback((focusEvent: React.FocusEvent<HTMLInputElement>) => {
+        const inputField = focusEvent.target;
+        if (!inputField.value) inputField.value = 'https://';
+    }, []);
+
     const sendRequest = React.useCallback((event: React.SyntheticEvent<HTMLElement>) => {
         event.preventDefault();
         props.sendRequest();
@@ -143,6 +148,7 @@ export const SendRequestLine = (props: {
             placeholder='https://example.com/hello?name=world'
 
             value={props.url}
+            onFocus={prepopulateUrl}
             onChange={updateUrlFromEvent}
         />
         <SendButton
