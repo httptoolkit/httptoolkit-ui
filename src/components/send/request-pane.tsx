@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, computed, flow, observable } from 'mobx';
-import { inject, observer } from 'mobx-react';
+import { action, flow, observable } from 'mobx';
+import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { RawHeaders } from '../../types';
@@ -10,6 +10,7 @@ import { css, styled } from '../../styles';
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
+import { syncUrlToHeaders } from '../../model/http/editable-request-parts';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 import { SendRequestLine } from './send-request-line';
@@ -57,6 +58,13 @@ export class RequestPane extends React.Component<{
 
     get cardProps() {
         return this.props.uiStore!.sendCardProps;
+    }
+
+    componentDidMount() {
+        disposeOnUnmount(this, syncUrlToHeaders(
+            () => this.props.requestInput.url,
+            () => this.props.requestInput.headers
+        ));
     }
 
     render() {
