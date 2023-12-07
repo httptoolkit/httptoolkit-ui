@@ -8,7 +8,7 @@ import {
 } from './service-versions';
 
 import { type ServerConfig, type NetworkInterfaces, type ServerInterceptor, ApiError } from './server-api-types';
-export { ServerConfig, NetworkInterfaces, ServerInterceptor };
+export type { ServerConfig, NetworkInterfaces, ServerInterceptor };
 
 import { GraphQLApiClient } from './server-graphql-api';
 import { RestApiClient } from './server-rest-api';

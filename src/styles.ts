@@ -215,7 +215,7 @@ export {
     createGlobalStyle,
     keyframes,
     ThemeProvider,
-    ThemeProps,
+    type ThemeProps,
     StyleSheetManager
 };
 
