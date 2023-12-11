@@ -3,8 +3,11 @@ import { observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
 import { styled } from '../styles';
-import { Sentry, isSentryInitialized } from '../errors';
+import { Sentry } from '../errors';
+import { isErrorLike } from '../util/error';
 import { trackEvent } from '../metrics';
+
+import { Button, ButtonLink } from './common/inputs';
 
 const ErrorOverlay = styled((props: {
     className?: string,
@@ -25,43 +28,40 @@ const ErrorOverlay = styled((props: {
     align-items: center;
     justify-content: center;
 
+    overflow-y: auto;
+
     color: ${p => p.theme.mainColor};
 
     h1 {
-        font-size: 300px;
+        font-size: ${p => p.theme.screamingHeadingSize};
         font-weight: bold;
-        line-height: 230px;
         margin-bottom: 50px;
     }
 
-    p {
-        font-size: 50px;
+    h2 {
+        font-size: ${p => p.theme.loudHeadingSize};
         margin-bottom: 50px;
     }
 
-    button {
+    button, a {
         display: block;
-        margin: 0 auto 40px;
-
-        color: ${p => p.theme.mainColor};
-        background-color: ${p => p.theme.mainBackground};
-        box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
-        border-radius: 4px;
-        border: none;
+        margin: 40px 40px 0;
 
         padding: 20px;
 
-        font-size: 50px;
+        font-size: ${p => p.theme.loudHeadingSize};
         font-weight: bolder;
-
-        &:not(:disabled) {
-            cursor: pointer;
-
-            &:hover {
-                color: ${p => p.theme.popColor};
-            }
-        }
     }
+`;
+
+const ButtonContainer = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+`;
+
+const ErrorOutput = styled.code`
+    font-family: ${p => p.theme.monoFontFamily};
+    white-space: preserve;
 `;
 
 @observer
@@ -69,9 +69,6 @@ export class ErrorBoundary extends React.Component {
 
     @observable
     private error: Error | undefined;
-
-    @observable
-    private feedbackSent: boolean = false;
 
     @action
     componentDidCatch(error: Error, errorInfo: any) {
@@ -96,26 +93,25 @@ export class ErrorBoundary extends React.Component {
                 <h1>
                     Oh no!
                 </h1>
-                <p>
+                <h2>
                     Sorry, it's all gone wrong.
-                </p>
-                <div>
-                    { isSentryInitialized() &&
-                        <button disabled={this.feedbackSent} onClick={this.sendFeedback}>
-                            Tell us what happened
-                        </button>
-                    }
-                    <button onClick={() => window.location.reload()}>
+                </h2>
+                { isErrorLike(this.error) && <ErrorOutput>
+                    { this.error.stack ?? this.error.message }
+                </ErrorOutput> }
+                <ButtonContainer>
+                    <ButtonLink href={
+                        `https://github.com/httptoolkit/httptoolkit/issues/new?template=bug.yml&title=[UI Crash]%3A+${
+                            this.error.message || ''
+                        }`
+                    }>
+                        Tell us what happened
+                    </ButtonLink>
+                    <Button onClick={() => window.location.reload()}>
                         Reload HTTP Toolkit
-                    </button>
-                </div>
+                    </Button>
+                </ButtonContainer>
             </ErrorOverlay>
         ) : this.props.children;
-    }
-
-    @action.bound
-    sendFeedback() {
-        Sentry.showReportDialog();
-        this.feedbackSent = true;
     }
 }

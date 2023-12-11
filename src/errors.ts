@@ -6,10 +6,6 @@ import { ApiError } from './services/server-api-types';
 
 let sentryInitialized = false;
 
-export function isSentryInitialized() {
-    return sentryInitialized;
-}
-
 export { Sentry };
 
 export function initSentry(dsn: string | undefined) {

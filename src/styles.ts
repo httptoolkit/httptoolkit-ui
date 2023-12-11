@@ -12,6 +12,7 @@ const fontSizes = {
     headingSize: '20px',
     largeHeadingSize: '24px',
     loudHeadingSize: '38px',
+    screamingHeadingSize: '80px'
 };
 import "react-contexify/dist/ReactContexify.css";
 
