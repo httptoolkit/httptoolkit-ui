@@ -115,16 +115,24 @@ export const darkTheme = {
 
     /* In dark theme, we need to override the scrollbars or they stick out like a sore thumb */
     globalCss: styledComponents.css`
-        ::-webkit-scrollbar {
-            background-color: ${p => polished.darken(0.2, p.theme.containerBackground)};
+        @supports (color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+            }
         }
 
-        ::-webkit-scrollbar-thumb {
-            background-color: ${p => polished.lighten(0.2, p.theme.containerBackground)};
-        }
+        @supports not (color-scheme: dark) {
+            ::-webkit-scrollbar {
+                background-color: ${p => polished.darken(0.2, p.theme.containerBackground)};
+            }
 
-        /* Standard, but poorly supported: */
-        scrollbar-color: dark;
+            ::-webkit-scrollbar-thumb {
+                background-color: ${p => polished.lighten(0.2, p.theme.containerBackground)};
+            }
+
+            /* Standard, but poorly supported: */
+            scrollbar-color: dark;
+        }
     `
 };
 
