@@ -27,7 +27,7 @@ export default <Webpack.Configuration>{
     },
 
     resolve: {
-        extensions: ['.mjs', '.js', '.ts', '.tsx']
+        extensions: ['.mjs', '.js', '.ts', '.tsx', '.json']
     },
 
     stats: {
