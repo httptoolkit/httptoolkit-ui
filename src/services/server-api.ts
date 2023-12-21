@@ -36,7 +36,9 @@ export const announceServerReady = () => serverReady.resolve();
 export const waitUntilServerReady = () => serverReady.promise;
 
 const apiClient: Promise<GraphQLApiClient | RestApiClient> = authTokenPromise.then(async (authToken) => {
-    await waitUntilServerReady();
+    // Delay checking, just to avoid spamming requests that we know won't work. Doesn't work
+    // in the SW, which doesn't get a server-ready ping, and is delayed quite a while anyway.
+    if (!RUNNING_IN_WORKER) await waitUntilServerReady();
 
     const restClient = new RestApiClient(authToken);
     const graphQLClient = new GraphQLApiClient(authToken);
