@@ -1,14 +1,14 @@
 import * as _ from 'lodash';
 import { computed, observable, action, runInAction, reaction } from 'mobx';
 
-import { BreakpointBody, RawHeaders } from '../../types';
+import { RawHeaders } from '../../types';
 import { logError } from "../../errors";
 import { asHeaderArray, getHeaderValues } from "../../util/headers";
 import { observablePromise, ObservablePromise } from '../../util/observable';
 
 import { encodeBody } from "../../services/ui-worker-api";
 
-export class EditableBody implements BreakpointBody {
+export class EditableBody {
 
     @observable.ref
     private _decodedBody: Buffer;
@@ -75,8 +75,8 @@ export class EditableBody implements BreakpointBody {
     }), this.options.throttleDuration ?? 500, { leading: true, trailing: true });
 
     @computed
-    get contentLength() {
-        return this._encodedBody?.byteLength || 0;
+    get latestEncodedLength() {
+        return this._encodedBody?.byteLength;
     }
 
     get encoded() {

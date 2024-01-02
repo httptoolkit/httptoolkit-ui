@@ -38,6 +38,7 @@ import type { RTCDataChannel } from './model/webrtc/rtc-data-channel';
 import type { RTCMediaTrack } from './model/webrtc/rtc-media-track';
 
 import type { TrafficSource } from './model/http/sources';
+import type { EditableBody } from './model/http/editable-body';
 import type { ViewableContentType } from './model/events/content-types';
 
 // These are the HAR types as returned from parseHar(), not the raw types as defined in the HAR itself
@@ -91,18 +92,12 @@ export type InputRTCMediaTrackClosed = InputRTCEventData['media-track-closed'];
 
 export type InputStreamMessage = InputRTCMessage | InputWebSocketMessage;
 
-export interface BreakpointBody {
-    decoded: Buffer;
-    encoded: ObservablePromise<Buffer>;
-    contentLength: number;
-}
-
 // Define the restricted form of request BP result we'll use internally
 export type BreakpointRequestResult = {
     method: string,
     url: string,
     rawHeaders: RawHeaders,
-    body: BreakpointBody
+    body: EditableBody
 };
 
 // We still need this for the places where we actually interact with Mockttp
@@ -117,7 +112,7 @@ export type BreakpointResponseResult = {
     statusCode: number,
     statusMessage?: string,
     rawHeaders: RawHeaders,
-    body: BreakpointBody
+    body: EditableBody
 };
 
 export {

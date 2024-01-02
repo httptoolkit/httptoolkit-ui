@@ -9,7 +9,6 @@ import {
     MockttpBreakpointRequestResult,
     BreakpointRequestResult,
     BreakpointResponseResult,
-    BreakpointBody,
     MockttpBreakpointResponseResult,
 } from "../../types";
 import { logError } from "../../errors";
@@ -30,6 +29,7 @@ import {
     versionSatisfies
 } from '../../services/service-versions';
 import { decodeBody } from "../../services/ui-worker-api";
+
 import { EditableBody } from './editable-body';
 import { getStatusMessage } from "./http-docs";
 
@@ -133,7 +133,7 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
         );
 
         // Update the content-length when necessary, if it was previously correct
-        observe(this.editableBody, 'contentLength', ({
+        observe(this.editableBody, 'latestEncodedLength', ({
             oldValue: previousEncodedLength,
             newValue: newEncodedLength
         }) => {
@@ -144,7 +144,7 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
             if (previousContentLength === previousEncodedLength) {
                 this.updateMetadata({
                     rawHeaders: withHeaderValue(rawHeaders, {
-                        'Content-Length': newEncodedLength.toString()
+                        'Content-Length': newEncodedLength?.toString() ?? '0'
                     })
                 });
             }
@@ -157,7 +157,7 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
                 const { rawHeaders } = this.resultMetadata;
                 this.updateMetadata({
                     rawHeaders: withHeaderValue(rawHeaders, {
-                        'Content-Length': this.editableBody.contentLength.toString()
+                        'Content-Length': this.editableBody.latestEncodedLength?.toString() ?? '0'
                     })
                 });
             }
@@ -169,7 +169,7 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
     get inProgressResult(): T {
         return Object.assign(
             {
-                body: this.editableBody as BreakpointBody
+                body: this.editableBody as EditableBody
             },
             this.resultMetadata,
         ) as T;

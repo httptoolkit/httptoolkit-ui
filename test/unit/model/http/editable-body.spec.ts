@@ -39,7 +39,7 @@ describe("Editable bodies", () => {
         await delay(10); // Wait, in case some other encoding kicks in
 
         expect(body.encoded).to.equal(initialEncodedState);
-        expect(body.contentLength).to.equal(2);
+        expect(body.latestEncodedLength).to.equal(2);
 
         expect(body.encoded.state).to.equal('fulfilled');
         const encodedBody = body.encoded.value as Buffer;
@@ -53,11 +53,11 @@ describe("Editable bodies", () => {
             () => [['content-encoding', 'gzip']]
         );
 
-        expect(body.contentLength).to.equal(0);
+        expect(body.latestEncodedLength).to.equal(undefined);
 
         const encodedBody = await body.encoded;
         expect(zlib.gunzipSync(encodedBody).toString('utf8')).to.equal('hello');
-        expect(body.contentLength).to.equal(encodedBody.length);
+        expect(body.latestEncodedLength).to.equal(encodedBody.length);
     });
 
     it("should update the encoded body when the decoded body is updated", async () => {
@@ -98,15 +98,15 @@ describe("Editable bodies", () => {
             { throttleDuration: 0 }
         );
 
-        expect(body.contentLength).to.equal(0); // Initial pre-encoding value
+        expect(body.latestEncodedLength).to.equal(undefined); // Initial pre-encoding value
         await delay(0);
-        expect(body.contentLength).to.equal(5); // Initial encoded value
+        expect(body.latestEncodedLength).to.equal(5); // Initial encoded value
 
         body.updateDecodedBody(Buffer.from('updated'));
-        expect(body.contentLength).to.equal(5); // Still shows old value during encoding
+        expect(body.latestEncodedLength).to.equal(5); // Still shows old value during encoding
 
         await body.encoded;
-        expect(body.contentLength).to.equal(7); // Correct new value after encoding
+        expect(body.latestEncodedLength).to.equal(7); // Correct new value after encoding
     });
 
     it("should return the decoded raw body if encoding fails", async () => {
