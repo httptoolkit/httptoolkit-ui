@@ -22,7 +22,10 @@ export class EditableBody implements BreakpointBody {
     constructor(
         initialDecodedBody: Buffer,
         initialEncodedBody: Buffer | undefined,
-        private getHeaders: () => RawHeaders
+        private getHeaders: () => RawHeaders,
+        private options: {
+            throttleDuration?: number
+        } = { }
     ) {
         this._decodedBody = initialDecodedBody;
 
@@ -69,7 +72,7 @@ export class EditableBody implements BreakpointBody {
         })());
 
         this._encodingPromise = encodeBodyPromise;
-    }), 500, { leading: true, trailing: true });
+    }), this.options.throttleDuration ?? 500, { leading: true, trailing: true });
 
     @computed
     get contentLength() {
