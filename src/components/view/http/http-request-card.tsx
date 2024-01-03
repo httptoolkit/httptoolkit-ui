@@ -32,6 +32,7 @@ import {
 } from '../../common/text-content';
 import { DocsLink } from '../../common/docs-link';
 import { SourceIcon } from '../../common/source-icon';
+import { HttpVersionPill } from '../../common/http-version-pill';
 import { HeaderDetails } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
 
@@ -164,6 +165,7 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
                 />
             }
             <SourceIcon source={request.source} />
+            <HttpVersionPill request={request} />
             <Pill color={getSummaryColour(exchange)}>
                 { exchange.isWebSocket() ? 'WebSocket ' : '' }
                 { request.method } {
