@@ -1,7 +1,9 @@
 import { initSentry, logError } from '../errors';
 initSentry(process.env.SENTRY_DSN);
 
+// Used elsewhere in server API requests later to get the auth token:
 import * as localForage from 'localforage';
+localForage.config({ name: "httptoolkit", version: 1 });
 
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { PrecacheController } from 'workbox-precaching'
@@ -11,38 +13,8 @@ import { StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies';
 import packageMetadata from '../../package.json';
 import { getServerVersion } from './server-api';
 import { lastServerVersion, versionSatisfies } from './service-versions';
-import { delay } from '../util/promise';
 
 const appVersion = process.env.UI_VERSION || "Unknown";
-localForage.config({ name: "httptoolkit", version: 1 });
-
-// Check if the server is accessible, and that we've been given the relevant auth
-// details. If we haven't, that means the desktop has started the server with an
-// auth token, but we haven't received it. In general, that means the UI hasn't
-// passed it on, because it's outdated and doesn't understand it. To fix this,
-// we forcibly update the UI immediately. Should only ever happen once.
-
-type ServerStatus = 'accessible' | 'auth-required' | 'inaccessible'
-const serverStatus: Promise<ServerStatus> =
-    fetch("http://127.0.0.1:45457/", { method: 'POST' })
-    .then((response) => {
-        if (response.status === 403) return 'auth-required';
-        else return 'accessible';
-    })
-    .catch(() => 'inaccessible' as ServerStatus)
-    .then((status) => {
-        console.log('Service worker server status:', status);
-        return status;
-    });
-
-const forceUpdateRequired = serverStatus.then(async (status) => {
-    // Update should be forced if we're using a server that requires auth,
-    // the UI hasn't properly provided an auth token, and there is
-    // currently an active service worker (i.e. a cached UI)
-    return status === 'auth-required' &&
-        !(await localForage.getItem<string>('latest-auth-token')) &&
-        !!self.registration.active;
-});
 
 type PrecacheEntry = {
     url: string;
@@ -67,13 +39,6 @@ const precacheController = getPrecacheController();
 const precacheName = precacheController.strategy.cacheName;
 
 async function precacheNewVersionIfSupported(event: ExtendableEvent) {
-    if (await forceUpdateRequired) {
-        // Don't bother precaching: we want to take over & then force kill/refresh everything ASAP
-        self.skipWaiting();
-        logError("Force update required on newly installed SW");
-        return;
-    }
-
     await checkServerVersion();
 
     // Any required as the install return types haven't been updated for v4, so still use 'updatedEntries'
@@ -84,15 +49,6 @@ async function precacheNewVersionIfSupported(event: ExtendableEvent) {
 async function checkServerVersion() {
     const serverVersion = await getServerVersion().catch(async (e) => {
         console.log("Failed to get server version. Fallback back to last version anyway...");
-
-        console.log(
-            "Version unavailable but not forcing update, why?",
-            "status", await serverStatus,
-            "got token", !!(await localForage.getItem<string>('latest-auth-token')),
-            "SW registrations", self.registration,
-            "active SW", !!self.registration?.active
-        );
-
         logError(e);
 
         // This isn't perfect, but it's a pretty good approximation of when it's safe to update
@@ -102,7 +58,7 @@ async function checkServerVersion() {
 
         // This should never happen: the serverStatus checks should guarantee that we can
         // talk to the server in almost all cases, or that we have cached data. Fail & report it.
-        throw new Error("No server version available, even though server check passed");
+        throw new Error("No server version available in UI update worker");
     });
 
     console.log(`Connected httptoolkit-server version is ${serverVersion}.`);
@@ -150,40 +106,17 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 });
 
 self.addEventListener('activate', async (event) => {
+    console.log('Update worker activating...');
     event.waitUntil((async () => {
         console.log(`SW activating for version ${appVersion}`);
 
-        if (await forceUpdateRequired) {
-            logError("Force update required on newly activated SW");
+        // This can be removed only once we know that _nobody_ is using SWs from before 2019-05-09
+        deleteOldWorkboxCaches();
 
-            resettingSw = true; // Pass through all requests
+        await precacheController.activate(event);
 
-            // Take over and refresh all client pages:
-            await self.clients.claim();
-            const clients = await self.clients.matchAll({ type: 'window' });
-            clients.map((client) => {
-                console.log(`Refreshing ${client.url}`);
-                return (client as WindowClient).navigate(client.url)
-                    .catch(async (e) => {
-                        // On the first error, try once more, after a brief delay. Sometimes
-                        // claim() might not process fast enough, and this is necessary.
-                        await delay(100);
-                        return (client as WindowClient).navigate(client.url);
-                    });
-            });
-
-            // Unregister, so that future registration loads the SW & caches from scratch
-            self.registration.unregister();
-            console.log("SW forcibly refreshed");
-        } else {
-            // This can be removed only once we know that _nobody_ is using SWs from before 2019-05-09
-            deleteOldWorkboxCaches();
-
-            await precacheController.activate(event);
-
-            // Delete the old (now unused) SW event logs
-            indexedDB.deleteDatabase('keyval-store');
-        }
+        // Delete the old (now unused) SW event logs
+        indexedDB.deleteDatabase('keyval-store');
     })());
 });
 
