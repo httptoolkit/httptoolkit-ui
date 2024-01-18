@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as Webpack from 'webpack';
 
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import GoogleFontsPlugin from 'google-fonts-plugin';
+import GoogleFontsPlugin from '@beyonk/google-fonts-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import ForkTsCheckerNotifierWebpackPlugin from 'fork-ts-checker-notifier-webpack-plugin';
@@ -27,7 +27,27 @@ export default <Webpack.Configuration>{
     },
 
     resolve: {
-        extensions: ['.mjs', '.js', '.ts', '.tsx', '.json']
+        extensions: ['.mjs', '.ts', '.tsx', '...'],
+        fallback: {
+            fs: false,
+            net: false,
+            tls: false,
+            http: false,
+
+            assert: require.resolve('assert/'),
+            crypto: require.resolve('crypto-browserify'),
+            path: require.resolve('path-browserify'),
+            process: require.resolve('process/browser'),
+            querystring: require.resolve('querystring-es3'),
+            stream: require.resolve('stream-browserify'),
+            buffer: require.resolve('buffer/'),
+            url: require.resolve('url/'),
+            util: require.resolve('util/'),
+            zlib: require.resolve('browserify-zlib')
+        },
+        alias: {
+            mockrtc$: path.resolve(__dirname, '../node_modules/mockrtc/dist/main-browser.js')
+        }
     },
 
     stats: {
@@ -87,11 +107,8 @@ export default <Webpack.Configuration>{
         }]
     },
 
-    node: {
-        process: true,
-        fs: 'empty',
-        net: 'empty',
-        tls: 'empty'
+    experiments: {
+        asyncWebAssembly: true
     },
 
     plugins: [
@@ -106,11 +123,12 @@ export default <Webpack.Configuration>{
             }
         }),
         new ForkTsCheckerNotifierWebpackPlugin(),
-        new Webpack.IgnorePlugin(
+        new Webpack.IgnorePlugin({
             // Fallback, only used in wasm isn't supported. We just don't support zstd
             // if wasm isn't supported (i.e. if loaded custom in old old browsers).
-            /\/zstd-codec-binding.js$/, /zstd-codec/
-        ),
+            resourceRegExp: /\/zstd-codec-binding.js$/,
+            contextRegExp: /zstd-codec/
+        }),
         new HtmlWebpackPlugin({
             template: path.join(SRC_DIR, 'index.html')
         }),
@@ -153,7 +171,12 @@ export default <Webpack.Configuration>{
                 { family: "Lato" }
             ],
             formats: ['woff2'], // Supported by Chrome, FF, Edge, Safari 12+
-            filename: 'fonts.css'
+            filename: 'fonts.css',
+            apiUrl: 'https://gwfh.mranftl.com/api/fonts'
+        }),
+        new Webpack.ProvidePlugin({
+            'process': 'process/browser.js',
+            'Buffer': ['buffer', 'Buffer']
         }),
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null,

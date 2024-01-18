@@ -13,5 +13,7 @@
         ]
     },
     "files": [],
-    "include": []
+    "include": [
+      "../custom-typings/**/*.d.ts"
+    ]
 }
