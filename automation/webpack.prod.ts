@@ -5,6 +5,8 @@ import SentryPlugin from '@sentry/webpack-plugin';
 import { InjectManifest } from 'workbox-webpack-plugin';
 import * as ssri from "ssri";
 
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+
 import common from "./webpack.common";
 
 const shouldPublishSentryRelease =
@@ -22,6 +24,7 @@ export default merge(common, {
     // Automatically split into source/vendor bundle chunks.
     // Here because this breaks TS-node in the tests, not clear why.
     optimization: {
+        chunkIds: 'named',
         splitChunks: {
             chunks: (chunk) => {
                 // React monaco editor is 99.99% vendor code, so splitting it
@@ -77,6 +80,11 @@ export default merge(common, {
                 validate: true
             })
         ]
-        : [])
+        : []),
+        new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            openAnalyzer: false,
+            excludeAssets: /api\/.*\.json/
+        })
     ]
 });
