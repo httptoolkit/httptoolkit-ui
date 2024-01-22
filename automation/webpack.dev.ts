@@ -1,4 +1,5 @@
 import * as path from "path";
+import * as Webpack from 'webpack';
 
 import merge from 'webpack-merge';
 import common from './webpack.common';
@@ -28,5 +29,11 @@ export default merge(common, {
                 ]
             }
         ]
-    }
+    },
+
+    plugins: [
+        new Webpack.DefinePlugin({
+            'process.env.DISABLE_UPDATES': 'true'
+        })
+    ]
 });

@@ -13,6 +13,9 @@ export const attemptServerUpdate = () =>
 // Set up a SW in the background, to add offline support & instant startup.
 // This also checks for new UI & server versions at intervals.
 export async function runBackgroundUpdates() {
+    // Set in dev to avoid update noise etc:
+    if (process.env.DISABLE_UPDATES) return;
+
     // Try to trigger a server update. Can't guarantee it'll work, and we also trigger it
     // after successful startup, but this tries to ensure that even if startup is broken,
     // we still update the server (and hopefully thereby unbreak app startup).
