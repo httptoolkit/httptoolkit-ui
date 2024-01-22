@@ -66,7 +66,6 @@ export default <Webpack.Configuration>{
         rules: [{
             test: /\.tsx?$/,
             use: [
-                { loader: 'cache-loader' },
                 {
                     loader: 'thread-loader',
                     options: {

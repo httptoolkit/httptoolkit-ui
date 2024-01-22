@@ -170,7 +170,6 @@
     "assert": "^2.1.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
-    "cache-loader": "^4.1.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-deep-match": "^1.2.1",
