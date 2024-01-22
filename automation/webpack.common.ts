@@ -88,8 +88,8 @@ export default <Webpack.Configuration>{
             ],
             exclude: /node_modules/
         }, {
-            test: /\.(woff2|ttf|png|svg)$/,
-            loader: 'file-loader'
+            test: /\.(png|svg)$/,
+            type: 'asset/resource'
         }, {
             test: /\.mjs$/,
             include: /node_modules/,
@@ -99,7 +99,7 @@ export default <Webpack.Configuration>{
             use: ['style-loader', 'css-loader']
         }, {
             test: /amiusing.html$/,
-            use: 'raw-loader'
+            type: 'asset/source'
         }, {
             test: /node_modules[\\|/]typesafe-get/,
             use: { loader: 'umd-compat-loader' }

@@ -21,7 +21,7 @@ import { Button } from '../common/inputs';
 import { TabbedOptionsContainer, Tab, TabsContainer } from '../common/tabbed-options';
 import { ContainerSizedEditor } from '../editor/base-editor';
 
-import * as amIUsingHtml from '../../amiusing.html';
+import amIUsingHtml from '../../amiusing.html';
 
 import { ProxySettingsCard } from './proxy-settings-card';
 import { ConnectionSettingsCard } from './connection-settings-card';

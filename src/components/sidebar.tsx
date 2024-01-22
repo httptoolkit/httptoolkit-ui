@@ -9,7 +9,7 @@ import { Icon, IconProp } from '../icons';
 import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
-import * as logo from '../images/logo-icon.svg';
+import logo from '../images/logo-icon.svg';
 
 export interface SidebarItem {
     name: string;
