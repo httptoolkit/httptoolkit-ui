@@ -1,7 +1,3 @@
-import registerUpdateWorker, {
-    ServiceWorkerNoSupportError
-} from 'service-worker-loader!./ui-update-worker';
-
 import { triggerServerUpdate } from './server-api';
 
 import packageMetadata from '../../package.json';
@@ -22,7 +18,16 @@ export async function runBackgroundUpdates() {
     attemptServerUpdate();
 
     try {
-        const registration = await registerUpdateWorker({ scope: '/' });
+        if (!navigator?.serviceWorker?.register) {
+            console.warn('Service worker not supported - cached & offline startup will not be available');
+            return;
+        }
+
+        const registration = await navigator.serviceWorker.register(
+            '/ui-update-worker.js',
+            { scope: '/' }
+        );
+
         console.log('Service worker loaded');
         registration.update().catch(console.log);
 
@@ -32,10 +37,6 @@ export async function runBackgroundUpdates() {
             registration.update().catch(console.log);
         }, 1000 * 60 * 5);
     } catch (e) {
-        if (e instanceof ServiceWorkerNoSupportError) {
-            console.warn('Service worker not supported - cached & offline startup will not be available');
-            return;
-        }
         throw e;
     }
 }
