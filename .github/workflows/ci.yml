@@ -16,8 +16,6 @@ jobs:
           node-version: 20.8.0
           cache: 'npm'
 
-      - run: npm install -g npm@8.5.5
-
       # Install & build & test:
       - run: npm ci
 
