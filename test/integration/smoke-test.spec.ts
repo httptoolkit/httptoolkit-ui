@@ -38,6 +38,7 @@ describe('Smoke test', function () {
         [ browser, server ] = await Promise.all([
             puppeteer.launch({
                 headless: true,
+                defaultViewport: { width: 1280, height: 1024 },
                 slowMo: 0,
                 timeout: 10000,
                 args: ['--no-sandbox']
@@ -45,6 +46,8 @@ describe('Smoke test', function () {
             startServer(),
             startWebServer()
         ]);
+
+        console.log(`Testing with browser ${await browser.version()}`);
     });
 
     afterEach(async () => {
@@ -56,9 +59,9 @@ describe('Smoke test', function () {
 
     it('can load the app', async () => {
         const page = await browser.newPage();
-        await page.goto('http://local.httptoolkit.tech:7654');
+        await page.goto('http://localhost:7654');
 
-        await page.waitFor('h1');
+        await page.waitForSelector('h1');
         const heading = await page.$eval('h1', (h1) => h1.innerHTML);
 
         expect(heading).to.equal('Intercept HTTP');

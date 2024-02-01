@@ -14,7 +14,7 @@ import {
     Headers,
 } from '../../types';
 import { byteLength, tryParseJson } from '../../util';
-import * as amIUsingHtml from '../../amiusing.html';
+import amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';
 import { versionSatisfies, FROM_FILE_HANDLER_SERVER_RANGE } from '../../services/service-versions';

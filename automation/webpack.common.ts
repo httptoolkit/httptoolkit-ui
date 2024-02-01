@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as Webpack from 'webpack';
 
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import GoogleFontsPlugin from 'google-fonts-plugin';
+import GoogleFontsPlugin from '@beyonk/google-fonts-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import ForkTsCheckerNotifierWebpackPlugin from 'fork-ts-checker-notifier-webpack-plugin';
@@ -19,15 +19,33 @@ export default <Webpack.Configuration>{
 
     output: {
         path: OUTPUT_DIR,
-        filename: 'app.js',
+        filename: '[name].js',
         chunkFilename: '[name].bundle.js',
-        // https://github.com/webpack-contrib/worker-loader/issues/142
-        // Stops HMR breaking worker-loader
-        globalObject: 'this'
+        clean: true
     },
 
     resolve: {
-        extensions: ['.mjs', '.js', '.ts', '.tsx', '.json']
+        extensions: ['.mjs', '.ts', '.tsx', '...'],
+        fallback: {
+            fs: false,
+            net: false,
+            tls: false,
+            http: false,
+
+            assert: require.resolve('assert/'),
+            crypto: require.resolve('crypto-browserify'),
+            path: require.resolve('path-browserify'),
+            process: require.resolve('process/browser'),
+            querystring: require.resolve('querystring-es3'),
+            stream: require.resolve('stream-browserify'),
+            buffer: require.resolve('buffer/'),
+            url: require.resolve('url/'),
+            util: require.resolve('util/'),
+            zlib: require.resolve('browserify-zlib')
+        },
+        alias: {
+            mockrtc$: path.resolve(__dirname, '../node_modules/mockrtc/dist/main-browser.js')
+        }
     },
 
     stats: {
@@ -46,7 +64,6 @@ export default <Webpack.Configuration>{
         rules: [{
             test: /\.tsx?$/,
             use: [
-                { loader: 'cache-loader' },
                 {
                     loader: 'thread-loader',
                     options: {
@@ -69,8 +86,8 @@ export default <Webpack.Configuration>{
             ],
             exclude: /node_modules/
         }, {
-            test: /\.(woff2|ttf|png|svg)$/,
-            loader: 'file-loader'
+            test: /\.(png|svg)$/,
+            type: 'asset/resource'
         }, {
             test: /\.mjs$/,
             include: /node_modules/,
@@ -80,18 +97,15 @@ export default <Webpack.Configuration>{
             use: ['style-loader', 'css-loader']
         }, {
             test: /amiusing.html$/,
-            use: 'raw-loader'
+            type: 'asset/source'
         }, {
             test: /node_modules[\\|/]typesafe-get/,
             use: { loader: 'umd-compat-loader' }
         }]
     },
 
-    node: {
-        process: true,
-        fs: 'empty',
-        net: 'empty',
-        tls: 'empty'
+    experiments: {
+        asyncWebAssembly: true
     },
 
     plugins: [
@@ -106,18 +120,21 @@ export default <Webpack.Configuration>{
             }
         }),
         new ForkTsCheckerNotifierWebpackPlugin(),
-        new Webpack.IgnorePlugin(
+        new Webpack.IgnorePlugin({
             // Fallback, only used in wasm isn't supported. We just don't support zstd
             // if wasm isn't supported (i.e. if loaded custom in old old browsers).
-            /\/zstd-codec-binding.js$/, /zstd-codec/
-        ),
+            resourceRegExp: /\/zstd-codec-binding.js$/,
+            contextRegExp: /zstd-codec/
+        }),
         new HtmlWebpackPlugin({
             template: path.join(SRC_DIR, 'index.html')
         }),
-        new CopyPlugin([
-            { from: 'node_modules/openapi-directory/api', to: 'api' },
-            { from: './extra-apis', to: 'api' },
-        ]),
+        new CopyPlugin({
+            patterns: [
+                { from: 'node_modules/openapi-directory/api', to: 'api' },
+                { from: './extra-apis', to: 'api' },
+            ]
+        }),
         new MonacoWebpackPlugin({
             languages: [
                 'html',
@@ -153,7 +170,12 @@ export default <Webpack.Configuration>{
                 { family: "Lato" }
             ],
             formats: ['woff2'], // Supported by Chrome, FF, Edge, Safari 12+
-            filename: 'fonts.css'
+            filename: 'fonts.css',
+            apiUrl: 'https://gwfh.mranftl.com/api/fonts'
+        }),
+        new Webpack.ProvidePlugin({
+            'process': 'process/browser.js',
+            'Buffer': ['buffer', 'Buffer']
         }),
         new Webpack.EnvironmentPlugin({
             'SENTRY_DSN': null,

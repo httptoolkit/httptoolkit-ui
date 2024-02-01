@@ -20,13 +20,12 @@ import type {
     ParseCertRequest,
     ParseCertResponse
 } from './ui-worker';
-import Worker from 'worker-loader!./ui-worker';
 
 import { Omit } from '../types';
 import type { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
 import { WorkerFormatterKey } from './ui-worker-formatters';
 
-const worker = new Worker();
+const worker = new Worker(new URL('./ui-worker', import.meta.url));
 
 let messageId = 0;
 function getId() {
