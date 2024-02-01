@@ -13,6 +13,7 @@ import type {
     TimingEvents,
     TlsHandshakeFailure,
     TlsPassthroughEvent,
+    TlsSocketMetadata,
     ClientError
 } from 'mockttp';
 import type { PortRange } from 'mockttp/dist/mockttp';
@@ -167,7 +168,8 @@ export {
     Headers,
     RawHeaders,
     PortRange,
-    TimingEvents
+    TimingEvents,
+    TlsSocketMetadata
 };
 
 // Should only be created in the process of sanitizing, so every object with an

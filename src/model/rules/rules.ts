@@ -264,6 +264,7 @@ const HiddenMatchers = [
     'default-ws-wildcard',
     'multipart-form-data',
     'raw-body-regexp',
+    'regex-url',
     'hostname',
     'port',
     'protocol',

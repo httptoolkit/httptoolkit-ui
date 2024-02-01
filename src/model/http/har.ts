@@ -14,7 +14,7 @@ import {
     TimingEvents,
     FailedTlsConnection,
     InputWebSocketMessage,
-    InputTlsFailure
+    TlsSocketMetadata
 } from '../../types';
 
 import { stringToBuffer } from '../../util';
@@ -85,6 +85,8 @@ export type HarTlsErrorEntry = {
     time: number; // Floating-point high-resolution duration, in ms
     hostname?: string; // Undefined if connection fails before hostname received
     cause: FailedTlsConnection['failureCause'];
+
+    tlsMetadata?: TlsSocketMetadata;
 
     clientIPAddress: string;
     clientPort: number;
@@ -457,7 +459,8 @@ function generateHarTlsError(event: FailedTlsConnection): HarTlsErrorEntry {
         cause: event.failureCause,
         hostname: event.upstreamHostname,
         clientIPAddress: event.remoteIpAddress,
-        clientPort: event.remotePort
+        clientPort: event.remotePort,
+        tlsMetadata: event.tlsMetadata
     };
 }
 
@@ -582,6 +585,7 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
                 hostname: entry.hostname,
                 remoteIpAddress: entry.clientIPAddress,
                 remotePort: entry.clientPort,
+                tlsMetadata: entry.tlsMetadata ?? {},
                 tags: [],
                 timingEvents: {
                     startTime: dateFns.parse(entry.startedDateTime).getTime(),

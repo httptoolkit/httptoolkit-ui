@@ -96,6 +96,7 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
         case 'callback':
         case 'multipart-form-data':
         case 'raw-body-regexp':
+        case 'regex-url':
             throw new Error(`${key} handler should not be used directly`);
         default:
             throw new UnreachableCheck(key);
