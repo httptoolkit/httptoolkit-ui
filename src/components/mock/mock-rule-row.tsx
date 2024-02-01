@@ -30,7 +30,9 @@ import {
     RuleType,
     HandlerStep,
     isFinalHandler,
-    isStepPoweredRule
+    isStepPoweredRule,
+    RulePriority,
+    isHttpBasedRule
 } from '../../model/rules/rules';
 import { ItemPath } from '../../model/rules/rules-structure';
 import {
@@ -187,6 +189,14 @@ const DetailsHeader = styled.div`
     margin-bottom: 20px;
 `;
 
+const HighPriorityMarker = styled(Icon).attrs(() => ({
+    icon: ['fas', 'exclamation'],
+    title: 'High-priority rule: this rule overrides all non-high-prority rules'
+}))`
+    margin-right: 10px;4
+    align-self: baseline;
+}
+`;
 
 const RuleMenuContainer = styled(IconMenu)`
     background-image: radial-gradient(
@@ -354,7 +364,13 @@ export class RuleRow extends React.Component<{
 
         // We show the summary by default, but if you set a custom title, we only show it when expanded:
         const shouldShowSummary = !collapsed || (!rule.title && !this.titleEditState);
+
         const isEditingTitle = !!this.titleEditState && !collapsed;
+        const shouldShowCustomTitle = rule.title && !isEditingTitle;
+
+        const priorityMarker = isHttpBasedRule(rule) && rule.priority && rule.priority > RulePriority.DEFAULT
+            ? <HighPriorityMarker />
+            : null;
 
         return <Draggable
             draggableId={rule.id}
@@ -393,8 +409,10 @@ export class RuleRow extends React.Component<{
                 />
                 <DragHandle {...provided.dragHandleProps} />
 
-                { rule.title && !isEditingTitle &&
+
+                { shouldShowCustomTitle &&
                     <RuleTitle>
+                        { priorityMarker }
                         { rule.title }
                     </RuleTitle>
                 }
@@ -415,6 +433,11 @@ export class RuleRow extends React.Component<{
                 <MatcherOrHandler>
                     { shouldShowSummary &&
                         <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
+                            { !shouldShowCustomTitle &&
+                                // Same condition as the <RuleTitle> block above, because if a
+                                // non-editable title is shown, the marker moves there instead.
+                                priorityMarker
+                            }
                             { summarizeMatcher(rule) }
                         </Summary>
                     }

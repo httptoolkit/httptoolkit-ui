@@ -24,8 +24,8 @@ import { getStatusMessage } from '../http/http-docs';
 import { RulesStore } from './rules-store';
 import {
     Handler,
-    HandlerStep,
     HtkMockRule,
+    RulePriority,
     InitialMatcher,
     Matcher,
     RuleType,
@@ -212,6 +212,7 @@ export const buildDefaultGroupRules = (
         id: 'default-amiusing',
         type: 'http',
         activated: true,
+        priority: RulePriority.OVERRIDE,
         matchers: [
             new HttpRule.MethodMatchers.GET(),
             new HttpRule.AmIUsingMatcher()
@@ -230,6 +231,7 @@ export const buildDefaultGroupRules = (
             id: 'default-certificate',
             type: 'http' as 'http',
             activated: true,
+            priority: RulePriority.OVERRIDE,
             matchers: [
                 new HttpRule.MethodMatchers.GET(),
                 new matchers.SimplePathMatcher("amiusing.httptoolkit.tech/certificate")

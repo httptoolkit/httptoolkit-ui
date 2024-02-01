@@ -75,6 +75,7 @@ const MockRuleSerializer = serializr.custom(
             type: data.type,
             title: data.title,
             activated: data.activated,
+            priority: 'priority' in data ? data.priority : undefined,
             matchers: data.matchers.map((m) =>
                 deserializeByType(m, MatcherLookup, context.args)
             ),

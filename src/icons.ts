@@ -34,6 +34,7 @@ import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons/faExternalL
 import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { faMinus } from '@fortawesome/free-solid-svg-icons/faMinus';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons/faExclamationTriangle';
+import { faExclamation } from '@fortawesome/free-solid-svg-icons/faExclamation';
 import { faLightbulb } from '@fortawesome/free-solid-svg-icons/faLightbulb';
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog';
 import { faStar } from '@fortawesome/free-regular-svg-icons/faStar';
@@ -112,6 +113,7 @@ library.add(
     faPlus,
     faMinus,
     faExclamationTriangle,
+    faExclamation,
     faLightbulb,
     faCog,
     faStar,

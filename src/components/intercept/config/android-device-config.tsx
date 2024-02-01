@@ -21,6 +21,7 @@ import {
     StaticResponseHandler
 } from '../../../model/rules/definitions/http-rule-definitions';
 import { RulesStore } from '../../../model/rules/rules-store';
+import { RulePriority } from '../../../model/rules/rules';
 
 const ConfigContainer = styled.div`
     user-select: text;
@@ -85,6 +86,7 @@ export function setUpAndroidCertificateRule(
         id: 'default-android-certificate',
         type: 'http',
         activated: true,
+        priority: RulePriority.OVERRIDE,
         matchers: [
             new MethodMatchers.GET(),
             new matchers.SimplePathMatcher(

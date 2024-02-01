@@ -6,6 +6,7 @@ import {
 } from "../../../src/model/rules/rules-structure";
 
 import { expect } from "../../test-setup";
+import { HttpMockRule } from "../../../src/model/rules/definitions/http-rule-definitions";
 
 const group = (id: number, ...items: Array<HtkMockItem>) => ({
     id: id.toString(),
@@ -32,7 +33,7 @@ describe("Rules store", () => {
             serverVersion: '1.0.0',
             dnsServers: []
         };
-        store = new RulesStore({ featureFlags: [] } as any, proxyStore as any, null as any, null as any);
+        store = new RulesStore({ featureFlags: [] } as any, proxyStore as any, null as any);
         store.rules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
         store.draftRules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
     });
@@ -395,6 +396,18 @@ describe("Rules store", () => {
 
             expect(store.rules.items).to.deep.equal([a]);
             expect(store.draftRules.items).to.deep.equal([a]);
+        });
+
+        it("should update the rule if it exists but missing its priority", () => {
+            store.rules.items = [defaultGroup(a)];
+            store.draftRules.items = [defaultGroup(a)];
+
+            const highPriorityRule = { ...a, priority: 10 } as HttpMockRule;
+
+            store.ensureRuleExists(highPriorityRule);
+
+            expect(store.rules.items).to.deep.equal([defaultGroup(highPriorityRule)]);
+            expect(store.draftRules.items).to.deep.equal([defaultGroup(highPriorityRule)]);
         });
     });
 });
