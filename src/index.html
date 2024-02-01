@@ -79,7 +79,7 @@
 
         let progress = 0;
         function setProgress(newProgress) {
-            progress = Math.max(progress, newProgress);
+            progress = Math.max(progress, newProgress); // Never go backwards!
             progressElement.style.clipPath = 'inset(0 ' + (100 - progress) + '% 0 0)';
         }
 
@@ -137,6 +137,28 @@
         if (!window.globalThis) {
             window.globalThis = window;
         }
+
+        window.addEventListener('error', (error) => {
+            // If we hit an uncaught syntax error before the app loads, we assume this is a *very*
+            // old desktop version, which can't even parse the current code (including its desktop
+            // version check warning) and so we just show the warning by default
+            if ((error.error || error) instanceof SyntaxError && progress < 100) {
+                console.log('Syntax error:', error);
+                document.dispatchEvent(Object.assign(new Event('load:failed'), {
+                    error: new Error('Syntax compatibility error')
+                }));
+
+                alert(
+                    "HTTP Toolkit is failing to start, due to an unknown significant compatibility error." +
+                    "\n\n" +
+                    "This may mean your HTTP Toolkit installation is very outdated and requires a manual " +
+                    "update to continue working. Please try reinstalling the app from httptoolkit.com." +
+                    "\n\n" +
+                    "If that doesn't work, please report this bug at github.com/httptoolkit/httptoolkit to " +
+                    "get more help."
+                );
+            }
+        });
     </script>
   </body>
 </html>
