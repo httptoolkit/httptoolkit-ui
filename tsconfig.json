@@ -22,7 +22,8 @@
 
         // Limit the global types included, to fix https://github.com/DefinitelyTyped/DefinitelyTyped/issues/33015
         "types": [
-          "node"
+          "node",
+          "webpack-env"
         ],
 
         "plugins": [

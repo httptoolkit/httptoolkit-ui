@@ -150,3 +150,7 @@ Promise.race([
         });
     });
 });
+
+if (module.hot) {
+    module.hot.accept();
+}
