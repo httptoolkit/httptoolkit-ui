@@ -209,6 +209,7 @@ export class UiStore {
     get viewCardProps() {
         return _.mapValues(this.viewCardStates, (state, key) => ({
             key,
+            ariaLabel: `${_.startCase(key)} section`,
             expanded: key === this.animatedExpansionCard
                 ?  'starting' as const
                 : key === this.expandedViewCard,
@@ -267,6 +268,7 @@ export class UiStore {
 
             return {
                 key,
+                ariaLabel: `${_.startCase(key)} section`,
                 expanded: expandedState,
                 collapsed: state.collapsed && !expandedState,
                 onCollapseToggled: this.toggleSendCardCollapsed.bind(this, key as SendCardKey),
@@ -326,6 +328,7 @@ export class UiStore {
     get settingsCardProps() {
         return _.mapValues(this.settingsCardStates, (state, key) => ({
             key,
+            ariaLabel: `${_.startCase(key)} section`,
             collapsed: state.collapsed,
             onCollapseToggled: this.toggleSettingsCardCollapsed.bind(this, key as SettingsCardKey)
         }));

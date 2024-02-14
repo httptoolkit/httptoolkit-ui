@@ -136,6 +136,7 @@ export class RTCConnectionDetailsPane extends React.Component<{
                             collapsed={!!this.streamCardState[mediaTrack.id]?.collapsed}
                             onCollapseToggled={this.toggleCollapse.bind(this, mediaTrack.id)}
                             onExpandToggled={this.expandStream.bind(this, mediaTrack.id)}
+                            ariaLabel='RTC Media Stream Section'
                         />
                     )
                 }
@@ -152,6 +153,7 @@ export class RTCConnectionDetailsPane extends React.Component<{
                             collapsed={!!this.streamCardState[dataChannel.id]?.collapsed}
                             onCollapseToggled={this.toggleCollapse.bind(this, dataChannel.id)}
                             onExpandToggled={this.expandStream.bind(this, dataChannel.id)}
+                            ariaLabel='RTC Data Messages Section'
                         />
                     )
                 }

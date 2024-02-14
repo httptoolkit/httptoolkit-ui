@@ -75,7 +75,8 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
             collapsed,
             expanded,
             onCollapseToggled,
-            onExpandToggled
+            onExpandToggled,
+            ariaLabel
         } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(
@@ -92,6 +93,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
         if (decodedBody) {
             // We have successfully decoded the body content, show it:
             return <CollapsibleCard
+                ariaLabel={ariaLabel}
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -141,6 +143,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                 : 'text';
 
             return <CollapsibleCard
+                ariaLabel={ariaLabel}
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -186,6 +189,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
         } else {
             // No body content, but no error yet, show a loading spinner:
             return <LoadingCard
+                ariaLabel={ariaLabel}
                 direction={direction}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}

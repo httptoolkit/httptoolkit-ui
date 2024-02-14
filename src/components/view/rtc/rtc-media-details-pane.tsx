@@ -51,6 +51,7 @@ export class RTCMediaDetailsPane extends React.Component<{
                 expanded={true}
                 onExpandToggled={this.jumpToConnection}
                 onCollapseToggled={undefined} // Hide the collapse button
+                ariaLabel='RTC Media Stream Section'
 
                 // Link the key to the track, to ensure selected-message state gets
                 // reset when we switch between traffic:

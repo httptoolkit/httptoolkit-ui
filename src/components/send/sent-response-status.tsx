@@ -29,6 +29,7 @@ export const ResponseStatusSection = (props: {
     const response = props.exchange.response;
 
     return <ResponseStatusSectionCard
+        ariaLabel='Response status section'
         collapsed={false}
         headerAlignment='left'
     >

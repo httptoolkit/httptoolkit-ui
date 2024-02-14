@@ -66,13 +66,15 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
             collapsed,
             expanded,
             onCollapseToggled,
-            onExpandToggled
+            onExpandToggled,
+            ariaLabel
         } = this.props;
 
         return <CollapsibleCard
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled}
             expanded={expanded}
+            ariaLabel={ariaLabel}
         >
             <header>
                 <CollapsingButtons>

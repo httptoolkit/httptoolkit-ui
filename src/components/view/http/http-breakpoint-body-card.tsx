@@ -70,12 +70,14 @@ export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps 
             collapsed,
             expanded,
             onCollapseToggled,
-            onExpandToggled
+            onExpandToggled,
+            ariaLabel
         } = this.props;
 
         const bodyString = bufferToString(body, this.textEncoding);
 
         return <CollapsibleCard
+            ariaLabel={ariaLabel}
             direction={direction}
             collapsed={collapsed}
             onCollapseToggled={onCollapseToggled}

@@ -139,6 +139,8 @@ export interface CollapsibleCardProps {
     // The header alignment - defaults to right if not set
     headerAlignment?: 'left' | 'right';
 
+    ariaLabel: string;
+
     className?: string;
 
     onCollapseToggled?: () => void;
@@ -168,6 +170,7 @@ export class CollapsibleCard extends React.Component<
             tabIndex={0}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}
+            aria-label={this.props.ariaLabel}
         >{
             this.renderChildren()
         }</CollapsibleCardContainer>;

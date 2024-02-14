@@ -66,6 +66,7 @@ export class RTCDataChannelDetailsPane extends React.Component<{
                 expanded={true}
                 onExpandToggled={this.jumpToConnection}
                 onCollapseToggled={undefined} // Hide the collapse button
+                ariaLabel='RTC Data Messages Section'
             />
         </PaneOuterContainer>;
 

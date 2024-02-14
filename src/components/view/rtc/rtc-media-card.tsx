@@ -33,7 +33,8 @@ export type RTCMediaCardProps = {
     collapsed: boolean,
     expanded: boolean,
     onExpandToggled: () => void,
-    onCollapseToggled?: () => void
+    onCollapseToggled?: () => void,
+    ariaLabel: string;
 };
 
 export const RTCMediaCard = observer((props: RTCMediaCardProps) => {
