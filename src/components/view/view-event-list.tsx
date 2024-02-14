@@ -398,7 +398,25 @@ const ExchangeRow = inject('uiStore')(observer(({
 
     return <TrafficEventListRow
         role="row"
-        aria-label='row'
+        aria-label={
+            `${_.startCase(exchange.category)} ${
+                request.method
+            } request ${
+                response === 'aborted' || exchange.isWebSocket()
+                    ? '' // Stated by the category already
+                : exchange.isBreakpointed
+                    ? 'waiting at a breakpoint'
+                : !response
+                    ? 'waiting for a response'
+                // Actual response:
+                    : `with a ${response.statusCode} response`
+            } sent to ${
+                // We include host+path but not protocol or search here, to keep this short
+                request.parsedUrl.host + request.parsedUrl.pathname
+            } by ${
+                request.source.summary
+            }`
+        }
         aria-rowindex={index + 1}
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
@@ -487,7 +505,17 @@ const RTCConnectionRow = observer(({
 
     return <TrafficEventListRow
         role="row"
-        aria-label='row'
+        aria-label={
+            `${
+                event.closeState ? 'Closed' : 'Open'
+            } RTC connection from ${
+                event.clientURL
+            } to ${
+                event.remoteURL ?? 'an unknown peer'
+            } opened by ${
+                event.source.summary
+            }`
+        }
         aria-rowindex={index + 1}
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
@@ -531,7 +559,31 @@ const RTCStreamRow = observer(({
 
     return <TrafficEventListRow
         role="row"
-        aria-label='row'
+        aria-label={
+            `${
+                event.closeState ? 'Closed' : 'Open'
+            } RTC ${
+                event.isRTCDataChannel() ? 'data' : 'media'
+            } stream to ${
+                event.rtcConnection.remoteURL
+            } opened by ${
+                event.rtcConnection.source.summary
+            } ${
+                event.isRTCDataChannel()
+                ? `called ${
+                        event.label
+                    }${
+                        event.protocol ? ` (${event.protocol})` : ''
+                    } with ${event.messages.length} message${
+                        event.messages.length !== 1 ? 's' : ''
+                    }`
+                : `for ${event.direction} ${event.type} with ${
+                        getReadableSize(event.totalBytesSent)
+                    } sent and ${
+                        getReadableSize(event.totalBytesReceived)
+                    } received`
+            }`
+        }
         aria-rowindex={index + 1}
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
@@ -596,9 +648,31 @@ const BuiltInApiRow = observer((p: {
     } = p.exchange;
     const api = p.exchange.api!; // Only shown for built-in APIs, so this must be set
 
+    const apiOperationName =  _.startCase(
+        api.operation.name
+        .replace('eth_', '') // One-off hack for Ethereum, but result looks much nicer.
+    );
+
+    const apiRequestDescription = api.request.parameters
+        .filter(param => param.value !== undefined)
+        .map(param => `${param.name}=${JSON.stringify(param.value)}`)
+        .join(', ');
+
     return <TrafficEventListRow
         role="row"
-        aria-label='row'
+        aria-label={
+            `${_.startCase(category)} ${
+                api.service.shortName
+            } ${
+                apiOperationName
+            }${
+                apiRequestDescription
+                ? ` with ${apiRequestDescription}`
+                : ''
+            } sent by ${
+                request.source.summary
+            }`
+        }
         aria-rowindex={p.index + 1}
         data-event-id={p.exchange.id}
         tabIndex={p.isSelected ? 0 : -1}
@@ -610,12 +684,7 @@ const BuiltInApiRow = observer((p: {
         <RowPin pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
         <EventTypeColumn>
-            { api.service.shortName }: {
-                _.startCase(
-                    api.operation.name
-                    .replace('eth_', '') // One-off hack for Ethereum, but result looks much nicer.
-                )
-            }
+            { api.service.shortName }: { apiOperationName }
         </EventTypeColumn>
         <Source title={request.source.summary}>
             <Icon
@@ -624,12 +693,7 @@ const BuiltInApiRow = observer((p: {
             />
         </Source>
         <BuiltInApiRequestDetails>
-            {
-                api.request.parameters
-                .filter(param => param.value !== undefined)
-                .map(param => `${param.name}=${JSON.stringify(param.value)}`)
-                .join(', ')
-            }
+            { apiRequestDescription }
         </BuiltInApiRequestDetails>
     </TrafficEventListRow>
 });
@@ -650,11 +714,13 @@ const TlsRow = observer((p: {
             'unknown': 'Aborted ',
             'cert-rejected': 'Certificate rejected for ',
             'no-shared-cipher': 'HTTPS setup failed for ',
-        } as _.Dictionary<string>)[tlsEvent.failureCause]
+        } as _.Dictionary<string>)[tlsEvent.failureCause];
+
+    const connectionTarget = tlsEvent.upstreamHostname || 'unknown domain';
 
     return <TlsListRow
         role="row"
-        aria-label='row'
+        aria-label={`${description} connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
         data-event-id={tlsEvent.id}
         tabIndex={p.isSelected ? 0 : -1}
@@ -668,7 +734,7 @@ const TlsRow = observer((p: {
                 <ConnectedSpinnerIcon />
         } {
             description
-        } connection to { tlsEvent.upstreamHostname || 'unknown domain' }
+        } connection to { connectionTarget }
     </TlsListRow>
 });
 
