@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { observable, action, flow, computed, when } from 'mobx';
+import { observable, action, flow, computed, when, observe } from 'mobx';
 
 import { logError, logErrorsAsUser } from '../../errors';
 import { trackEvent } from '../../metrics';
@@ -75,6 +75,32 @@ export class AccountStore {
         this.updateUser();
         setInterval(this.updateUser, 1000 * 60 * 10);
         loginEvents.on('logout', this.updateUser);
+
+        // Whenever account data updates, check if we're a non-user team admin, and notify (and
+        // logout) if so. This isn't a security measure (admin's dont get access anyway) it's just
+        // a UX question, as it can be confusing for admins otherwise when logging in doesn't work.
+        observe(this, 'accountDataLastUpdated', () => {
+            if (
+                !this.user.subscription &&
+                this.user.teamSubscription
+            ) {
+                alert(
+                    "You are the administrator of an HTTP Toolkit team, but you aren't listed " +
+                    "as an active member, so you don't have access to HTTP Toolkit's " +
+                    "paid features yourself." +
+                    "\n\n" +
+                    "To manage your team, please visit accounts.httptoolkit.tech."
+                );
+
+                window.open(
+                    "https://accounts.httptoolkit.tech",
+                    "_blank",
+                    "noreferrer noopener"
+                );
+
+                this.logOut();
+            }
+        });
 
         console.log('Account store initialized');
     });
