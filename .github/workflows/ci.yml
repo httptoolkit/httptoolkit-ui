@@ -6,7 +6,6 @@ jobs:
   build:
     name: Build & test
     runs-on: ubuntu-latest
-    container: httptoolkit/act-build-base:v3.0.0
     steps:
       - uses: actions/checkout@v3
 
@@ -40,7 +39,7 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
@@ -50,12 +49,11 @@ jobs:
     name: Deploy ${{ (github.ref == 'refs/heads/main' && 'to Netlify production') || 'Netlify preview' }}
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    container: httptoolkit/act-build-base
     needs: build
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
@@ -81,12 +79,11 @@ jobs:
     name: Build & publish container to Docker Hub
     if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/')
     runs-on: ubuntu-latest
-    container: httptoolkit/act-build-base
     needs: build
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
