@@ -14,7 +14,7 @@ export function joinAnd(val: string[], initialSep = ', ', finalSep = ' and ') {
 
 const VOWEL_ISH = ['a', 'e', 'i', 'o', 'u', 'y'];
 export function aOrAn(value: string) {
-    if (VOWEL_ISH.includes(value[0])) return 'an';
+    if (VOWEL_ISH.includes(value[0].toLowerCase())) return 'an';
     else return 'a';
 }
 
