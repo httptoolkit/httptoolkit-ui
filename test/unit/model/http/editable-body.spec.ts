@@ -1,5 +1,7 @@
 import * as zlib from 'zlib';
 
+import { observable } from 'mobx';
+
 import { expect } from '../../../test-setup';
 
 import { EditableBody } from '../../../../src/model/http/editable-body';
@@ -15,14 +17,14 @@ describe("Editable bodies", () => {
         );
 
         // Check the encoded result synchronously
-        const initialEncodedState = body.encoded;
+        const initialEncodedState = body.encodingPromise;
 
         await delay(0); // Let the encoding promise resolve but little more
 
-        expect(body.encoded).to.equal(initialEncodedState);
+        expect(body.encodingPromise).to.equal(initialEncodedState);
 
-        expect(body.encoded.state).to.equal('fulfilled');
-        const encodedBody = body.encoded.value as Buffer;
+        expect(body.encodingPromise.state).to.equal('fulfilled');
+        const encodedBody = body.encodingPromise.value as Buffer;
         expect(encodedBody.toString('utf8')).to.equal('hello')
     });
 
@@ -34,15 +36,15 @@ describe("Editable bodies", () => {
             { throttleDuration: 0 }
         );
 
-        const initialEncodedState = body.encoded;
+        const initialEncodedState = body.encodingPromise;
 
         await delay(10); // Wait, in case some other encoding kicks in
 
-        expect(body.encoded).to.equal(initialEncodedState);
+        expect(body.encodingPromise).to.equal(initialEncodedState);
         expect(body.latestEncodedLength).to.equal(2);
 
-        expect(body.encoded.state).to.equal('fulfilled');
-        const encodedBody = body.encoded.value as Buffer;
+        expect(body.encodingPromise.state).to.equal('fulfilled');
+        const encodedBody = body.encodingPromise.value as Buffer;
         expect(encodedBody.toString('utf8')).to.equal('hi')
     });
 
@@ -55,7 +57,7 @@ describe("Editable bodies", () => {
 
         expect(body.latestEncodedLength).to.equal(undefined);
 
-        const encodedBody = await body.encoded;
+        const encodedBody = await body.encodingPromise;
         expect(zlib.gunzipSync(encodedBody).toString('utf8')).to.equal('hello');
         expect(body.latestEncodedLength).to.equal(encodedBody.length);
     });
@@ -71,7 +73,7 @@ describe("Editable bodies", () => {
         await delay(0);
         body.updateDecodedBody(Buffer.from('updated'));
 
-        const encodedBody = await body.encoded;
+        const encodedBody = await body.encodingPromise;
         expect((await encodedBody).toString('utf8')).to.equal('updated')
     });
 
@@ -86,7 +88,7 @@ describe("Editable bodies", () => {
         await delay(0);
         body.updateDecodedBody(Buffer.from('updated'));
 
-        const encodedBody = await body.encoded;
+        const encodedBody = await body.encodingPromise;
         expect(encodedBody.toString('utf8')).to.equal('updated');
     });
 
@@ -105,11 +107,11 @@ describe("Editable bodies", () => {
         body.updateDecodedBody(Buffer.from('updated'));
         expect(body.latestEncodedLength).to.equal(5); // Still shows old value during encoding
 
-        await body.encoded;
+        await body.encodingPromise;
         expect(body.latestEncodedLength).to.equal(7); // Correct new value after encoding
     });
 
-    it("should return the decoded raw body if encoding fails", async () => {
+    it("should throw encoding errors by default if encoding fails", async () => {
         const body = new EditableBody(
             Buffer.from('hello'),
             undefined,
@@ -117,7 +119,49 @@ describe("Editable bodies", () => {
             { throttleDuration: 0 }
         );
 
-        const encodedBody = await body.encoded;
+        try {
+            const result = await body.encodingPromise;
+            expect.fail(`Encoding should have thrown an error but returned ${result}`);
+        } catch (e: any) {
+            expect(e.message).to.equal('Unsupported encoding: invalid-unknown-encoding');
+        }
+    });
+
+    it("should still expose the previous errors during encoding", async () => {
+        let headers = observable.box([['content-encoding', 'invalid-unknown-encoding']] as Array<[string, string]>);
+        const body = new EditableBody(
+            Buffer.from('hello'),
+            undefined,
+            () => headers.get(), // <-- these headesr will fail to encode initially
+            { throttleDuration: 0 }
+        );
+
+        expect(body.latestEncodingResult).to.deep.equal({ state: 'pending' }); // Initial pre-encoding value
+        await delay(0);
+
+        // Initial failure:
+        const secondResult = body.latestEncodingResult;
+        expect(secondResult.state).to.equal('rejected');
+        expect((secondResult.value as any).message).to.equal('Unsupported encoding: invalid-unknown-encoding');
+
+        headers.set([]);
+        body.updateDecodedBody(Buffer.from('updated'));
+
+        expect(body.latestEncodingResult).to.deep.equal(secondResult); // Still shows initial failure during encoding
+
+        await body.encodingPromise;
+        expect(body.latestEncodingResult).to.deep.equal({ state: 'fulfilled', value: Buffer.from('updated') }); // Correct new value after encoding
+    });
+
+    it("should return the decoded raw body as a best effort if encoding fails", async () => {
+        const body = new EditableBody(
+            Buffer.from('hello'),
+            undefined,
+            () => [['content-encoding', 'invalid-unknown-encoding']], // <-- this will fail
+            { throttleDuration: 0 }
+        );
+
+        const encodedBody = await body.encodingBestEffortPromise;
         expect(encodedBody.toString('utf8')).to.equal('hello');
     });
 
@@ -135,7 +179,7 @@ describe("Editable bodies", () => {
         await delay(1);
         body.updateDecodedBody(Buffer.from('third update'));
 
-        const updatedEncodedState = body.encoded;
+        const updatedEncodedState = body.encodingPromise;
         expect((await updatedEncodedState).toString('utf8')).to.equal('third update')
     });
 

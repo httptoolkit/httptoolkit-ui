@@ -198,9 +198,9 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
 
             ...(versionSatisfies(await serverVersion, RAW_BODY_SUPPORTED)
                 // Mockttp v3+ skips auto-encoding only if you use rawBody:
-                ? { rawBody: await this.editableBody.encoded }
+                ? { rawBody: await this.editableBody.encodingBestEffortPromise }
                 // Old Mockttp doesn't support rawBody, never auto-encodes:
-                : { body: await this.editableBody.encoded }
+                : { body: await this.editableBody.encodingBestEffortPromise }
             ),
 
             // Psuedo-headers those will be generated automatically from the other,

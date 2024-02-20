@@ -88,11 +88,13 @@ export class SendStore {
             lookupOptions: passthroughOptions.lookupOptions
         };
 
+        const encodedBody = await requestInput.rawBody.encodingBestEffortPromise;
+
         const responseStream = await ServerApi.sendRequest({
             url: requestInput.url,
             method: requestInput.method,
             headers: requestInput.headers,
-            rawBody: await requestInput.rawBody.encoded
+            rawBody: encodedBody
         }, requestOptions);
 
         const exchange = this.eventStore.recordSentRequest({
@@ -105,7 +107,7 @@ export class SendStore {
             hostname: url.hostname,
             headers: rawHeadersToHeaders(requestInput.headers),
             rawHeaders: requestInput.headers,
-            body: { buffer: await requestInput.rawBody.encoded },
+            body: { buffer: encodedBody },
             timingEvents: {} as TimingEvents,
             tags: ['httptoolkit:manually-sent-request']
         });
