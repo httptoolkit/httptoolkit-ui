@@ -46,6 +46,26 @@ export function isObservablePromise<T>(p: any): p is ObservablePromise<T> {
         'state' in p;
 }
 
+export interface ObservableDeferred<T> {
+    resolve: (arg: T) => void,
+    reject: (e?: Error) => void,
+    promise: ObservablePromise<T>
+}
+
+export function getObservableDeferred<T = void>(): ObservableDeferred<T> {
+    let resolve: undefined | ((arg: T) => void) = undefined;
+    let reject: undefined | ((e?: Error) => void) = undefined;
+
+    const promise = observablePromise(new Promise<T>((resolveCb, rejectCb) => {
+        resolve = resolveCb;
+        reject = rejectCb;
+    }));
+
+    // TS thinks we're using these before they're assigned, which is why
+    // we need the undefined types, and the any here.
+    return { resolve, reject, promise } as any;
+}
+
 // Creates an observable promise which doesn't run until somebody tries
 // to check the value or wait for it to resolve somehow.
 export function lazyObservablePromise<T>(p: () => PromiseLike<T>): ObservablePromise<T> {

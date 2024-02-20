@@ -121,5 +121,22 @@ describe("Editable bodies", () => {
         expect(encodedBody.toString('utf8')).to.equal('hello');
     });
 
+    it("should update the encoding promise synchronously after updates, even if throttled", async () => {
+        const body = new EditableBody(
+            Buffer.from('hello'),
+            undefined,
+            () => [],
+            { throttleDuration: 10 } // <-- Throttling explicitly enabled
+        );
+
+        body.updateDecodedBody(Buffer.from('first update'));
+        await delay(1);
+        body.updateDecodedBody(Buffer.from('second update'));
+        await delay(1);
+        body.updateDecodedBody(Buffer.from('third update'));
+
+        const updatedEncodedState = body.encoded;
+        expect((await updatedEncodedState).toString('utf8')).to.equal('third update')
+    });
 
 });
