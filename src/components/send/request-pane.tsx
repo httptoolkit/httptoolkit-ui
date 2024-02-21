@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, flow, observable } from 'mobx';
+import { action, flow, observable, reaction } from 'mobx';
 import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -42,6 +42,12 @@ const RequestPaneContainer = styled.section<{
 // - When multiple areas are open, if there is spare space (e.g. few headers), the
 //   other areas that need it (body editor) expand and use the space.
 
+const METHODS_WITHOUT_BODY = [
+    'GET',
+    'HEAD',
+    'OPTIONS'
+]
+
 @inject('rulesStore')
 @inject('uiStore')
 @observer
@@ -60,6 +66,20 @@ export class RequestPane extends React.Component<{
     }
 
     componentDidMount() {
+        // Auto-collapse the body if you pick a body-less HTTP method
+        disposeOnUnmount(this, reaction(() => this.props.requestInput.method, (method) => {
+            // If there's a body entered, don't mess with it
+            if (this.props.requestInput.rawBody.decoded.length > 0) return;
+
+            // If the body is empty, match the open/closed status to the method:
+            if (METHODS_WITHOUT_BODY.includes(method)) {
+                if (this.cardProps.requestBody.collapsed) return;
+                else this.cardProps.requestBody.onCollapseToggled();
+            } else {
+                if (!this.cardProps.requestBody.collapsed) return;
+                this.cardProps.requestBody.onCollapseToggled();
+            }
+        }, { fireImmediately: true }));
     }
 
     render() {
