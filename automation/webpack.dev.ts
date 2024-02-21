@@ -1,6 +1,8 @@
 import * as path from "path";
 import * as Webpack from 'webpack';
 
+import type __ from 'webpack-dev-server';
+
 import merge from 'webpack-merge';
 import common from './webpack.common';
 
@@ -11,7 +13,19 @@ export default merge(common, {
 
     devServer: {
         host: '127.0.0.1',
-        historyApiFallback: true
+        historyApiFallback: true,
+        client: {
+            overlay: {
+                runtimeErrors: (error) => {
+                    const IGNORED_RUNTIME_ERRORS = [
+                        'ResizeObserver loop completed with undelivered notifications.',
+                        'ResizeObserver loop limit exceeded'
+                    ];
+
+                    return !IGNORED_RUNTIME_ERRORS.includes(error.message);
+                }
+            }
+        }
     },
 
     module: {
