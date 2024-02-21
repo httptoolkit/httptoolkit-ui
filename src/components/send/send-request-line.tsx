@@ -127,7 +127,10 @@ export const SendRequestLine = (props: {
 
     const borderColor = getMethodColor(props.method);
 
-    return <SendRequestLineContainer onSubmit={sendRequest}>
+    return <SendRequestLineContainer
+        className='ignores-expanded' // This always shows, even if something is expanded
+        onSubmit={sendRequest}
+    >
         <MethodSelectContainer>
             <MethodSelect
                 value={props.method}

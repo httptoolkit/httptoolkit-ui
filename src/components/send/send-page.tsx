@@ -15,6 +15,7 @@ import { ResponsePane } from './response-pane';
 const SendPageContainer = styled.div`
     height: 100vh;
     position: relative;
+    background-color: ${p => p.theme.mainBackground};
 `;
 
 @inject('sendStore')

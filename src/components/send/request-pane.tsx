@@ -5,31 +5,17 @@ import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { RawHeaders } from '../../types';
-import { css, styled } from '../../styles';
 
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
+
+import { SendCardContainer } from './send-card-section';
 import { SendRequestLine } from './send-request-line';
 import { SendRequestHeadersCard } from './send-request-headers-card';
 import { SendRequestBodyCard } from './send-request-body-card';
-
-const RequestPaneContainer = styled.section<{
-    hasExpandedChild: boolean
-}>`
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-
-    ${p => p.hasExpandedChild && css`
-        > * {
-            /* CollapsibleCard applies its own display property to override this for the expanded card */
-            display: none;
-        }
-    `}
-`;
 
 // Layout here is tricky. Current setup seems to work (flex grow & shrink everywhere,
 // card basis: auto and min-height: 0, with editor 50% + min-height, and then
@@ -85,7 +71,9 @@ export class RequestPane extends React.Component<{
     render() {
         const { requestInput, editorNode, uiStore } = this.props;
 
-        return <RequestPaneContainer hasExpandedChild={!!uiStore?.expandedSendRequestCard}>
+        return <SendCardContainer
+            hasExpandedChild={!!uiStore?.expandedSendRequestCard}
+        >
             <SendRequestLine
                 method={requestInput.method}
                 updateMethod={this.updateMethod}
@@ -106,7 +94,7 @@ export class RequestPane extends React.Component<{
                 onBodyUpdated={this.updateBody}
                 editorNode={editorNode}
             />
-        </RequestPaneContainer>;
+        </SendCardContainer>;
     }
 
     @action.bound

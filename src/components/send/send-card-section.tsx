@@ -1,5 +1,26 @@
-import { styled } from "../../styles";
+import { css, styled } from "../../styles";
 import { CollapsibleCard } from "../common/card";
+
+export const SendCardContainer = styled.section<{
+    hasExpandedChild: boolean
+}>`
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    ${p => p.hasExpandedChild && css`
+        > :not(.ignores-expanded) {
+            /* CollapsibleCard applies its own display property to override this for the expanded card */
+            display: none;
+        }
+
+        > .ignores-expanded {
+            /* Some components (request line & response status) don't disappear, but they shrink */
+            margin-bottom: -10px;
+            z-index: 0;
+        }
+    `}
+`;
 
 export const SendCardSection = styled(CollapsibleCard)`
     border-radius: 0;

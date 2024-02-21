@@ -13,24 +13,10 @@ import { ContainerSizedEditor } from '../editor/base-editor';
 import { LoadingCard } from '../common/loading-card';
 import { HttpAbortedResponseCard } from '../view/http/http-aborted-card';
 
+import { SendCardContainer } from './send-card-section';
 import { ResponseStatusSection } from './sent-response-status';
 import { SentResponseHeaderSection } from './sent-response-headers';
 import { SentResponseBodyCard } from './sent-response-body';
-
-const ResponsePaneContainer = styled.section<{
-    hasExpandedChild: boolean
-}>`
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-
-    ${p => p.hasExpandedChild && css`
-        > * {
-            /* CollapsibleCard applies its own display property to override this for the expanded card */
-            display: none;
-        }
-    `}
-`;
 
 @inject('uiStore')
 @inject('accountStore')
@@ -51,7 +37,9 @@ export class ResponsePane extends React.Component<{
         const { exchange, uiStore } = this.props;
         if (!exchange) return null;
 
-        return <ResponsePaneContainer hasExpandedChild={!!uiStore?.expandedSentResponseCard}>
+        return <SendCardContainer
+            hasExpandedChild={!!uiStore?.expandedSentResponseCard}
+        >
             {
                 exchange.isSuccessfulExchange()
                     ? this.renderSuccessfulResponse(exchange)
@@ -59,7 +47,7 @@ export class ResponsePane extends React.Component<{
                     ? this.renderAbortedResponse(exchange)
                 : this.renderInProgressResponse()
             }
-        </ResponsePaneContainer>;
+        </SendCardContainer>;
     }
 
     renderSuccessfulResponse(exchange: SuccessfulExchange) {

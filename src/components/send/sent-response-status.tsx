@@ -33,6 +33,7 @@ export const ResponseStatusSection = (props: {
     const response = props.exchange.response;
 
     return <ResponseStatusSectionCard
+        className='ignores-expanded' // This always shows, even if something is expanded
         ariaLabel='Response status section'
         collapsed={false}
         headerAlignment='left'
