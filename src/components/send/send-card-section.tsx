@@ -7,7 +7,10 @@ export const SendCardSection = styled(CollapsibleCard)`
 
     flex-basis: auto;
     flex-shrink: 1;
-    flex-grow: 0; /* Overridden below, so only the bodies expand */
+    flex-grow: ${p =>
+        // Collapsed cards should not expand into unused space
+        p.collapsed ? '0' : '1'
+    };
     min-height: 0;
 
     box-shadow: 0 -2px 5px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
@@ -18,10 +21,6 @@ export const SendBodyCardSection = styled(SendCardSection)`
        beyond the limits of the column when other item is expanded and pushes it down */
     overflow-y: hidden;
 
-    flex-grow: ${p =>
-        // Collapsed cards should not expand into unused space
-        p.collapsed ? '0' : '1'
-    };
 
     ${p => !p.collapsed && `
         /* When we're open, we want space more than any siblings */
