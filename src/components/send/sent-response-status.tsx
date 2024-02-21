@@ -16,6 +16,9 @@ const ResponseStatusSectionCard = styled(SendCardSection)`
     padding-bottom: 7px;
     flex-shrink: 0;
 
+    z-index: 1;
+    box-shadow: 0 2px 3px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
+
     > header {
         flex-direction: row;
         justify-content: flex-start;

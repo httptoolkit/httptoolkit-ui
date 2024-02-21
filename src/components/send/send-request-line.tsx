@@ -17,6 +17,9 @@ const SendRequestLineContainer = styled.form`
     background-color: ${p => p.theme.mainBackground};
     flex-grow: 0;
     display: flex;
+
+    z-index: 1;
+    box-shadow: 0 2px 3px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 const MethodSelectArrow = styled(Icon).attrs(() => ({
