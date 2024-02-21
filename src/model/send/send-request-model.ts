@@ -5,6 +5,7 @@ import { observable } from 'mobx';
 import { RawHeaders } from "../../types";
 import { EditableContentType } from "../events/content-types";
 import { EditableBody } from '../http/editable-body';
+import { syncBodyToContentLength, syncUrlToHeaders } from '../http/editable-request-parts';
 
 // This is our model of a Request for sending. Smilar to the API model,
 // but not identical, as we add extra UI metadata etc.
@@ -28,6 +29,11 @@ export class RequestInput {
         undefined,
         () => this.headers
     )
+
+    constructor() {
+        syncUrlToHeaders(() => this.url, () => this.headers);
+        syncBodyToContentLength(this.rawBody, () => this.headers);
+    }
 
 }
 

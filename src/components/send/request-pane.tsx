@@ -10,7 +10,6 @@ import { css, styled } from '../../styles';
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
-import { syncUrlToHeaders, syncBodyToContentLength } from '../../model/http/editable-request-parts';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 import { SendRequestLine } from './send-request-line';
@@ -61,15 +60,6 @@ export class RequestPane extends React.Component<{
     }
 
     componentDidMount() {
-        disposeOnUnmount(this, syncUrlToHeaders(
-            () => this.props.requestInput.url,
-            () => this.props.requestInput.headers
-        ));
-
-        disposeOnUnmount(this, syncBodyToContentLength(
-            this.props.requestInput.rawBody,
-            () => this.props.requestInput.headers
-        ));
     }
 
     render() {
