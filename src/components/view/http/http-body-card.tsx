@@ -18,7 +18,7 @@ import {
     EditorCardContent,
     ReadonlyBodyCardHeader,
     getBodyDownloadFilename,
-    BodyDecodingErrorBanner
+    BodyCodingErrorBanner
 } from '../../editor/body-card-components';
 
 import { LoadingCard } from '../../common/loading-card';
@@ -167,7 +167,8 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                         isPaidUser={isPaidUser}
                     />
                 </header>
-                <BodyDecodingErrorBanner
+                <BodyCodingErrorBanner
+                    type='decoding'
                     direction={this.props.direction}
                     error={error}
                     headers={message.rawHeaders}

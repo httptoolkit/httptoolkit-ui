@@ -1,11 +1,12 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { observer } from 'mobx-react';
 
 import { Headers, RawHeaders } from '../../types';
 import { styled } from '../../styles';
 import { WarningIcon } from '../../icons';
 
-import { getHeaderValue } from '../../util/headers';
+import { asHeaderArray, getHeaderValue, getHeaderValues } from '../../util/headers';
 import { saveFile } from '../../util/ui';
 import { ErrorLike } from '../../util/error';
 
@@ -15,6 +16,7 @@ import {
     getContentEditorName
 } from '../../model/events/content-types';
 import { getReadableSize } from '../../model/events/bodies';
+import { EditableBody } from '../../model/http/editable-body';
 
 import { CollapsibleCardHeading, ExpandState } from '../common/card';
 import { CollapsingButtons } from '../common/collapsing-buttons';
@@ -120,8 +122,8 @@ export const ReadonlyBodyCardHeader = (props: {
     </>;
 };
 
-export const EditableBodyCardHeader = (props: {
-    body: Buffer,
+export const EditableBodyCardHeader = observer((props: {
+    body: EditableBody,
     onBodyFormatted: (bodyString: string) => void,
 
     title: string,
@@ -143,12 +145,13 @@ export const EditableBodyCardHeader = (props: {
             />
             <FormatButton
                 format={props.selectedContentType}
-                content={body}
+                content={body.decoded}
                 onFormatted={props.onBodyFormatted}
             />
         </CollapsingButtons>
 
-        <Pill>{ getReadableSize(body) }</Pill>
+        <Pill>{ getReadableSize(body.decoded) }</Pill>
+
         <PillSelector<EditableContentType>
             onChange={props.onChangeContentType}
             value={props.selectedContentType}
@@ -160,21 +163,22 @@ export const EditableBodyCardHeader = (props: {
             { props.title }
         </CollapsibleCardHeading>
     </>;
-};
+});
 
 const EncodingErrorMessage = styled(ContentMonoValue)`
     padding: 0;
     margin: 10px 0;
 `;
 
-export const BodyDecodingErrorBanner = (props: {
+export const BodyCodingErrorBanner = (props: {
+    type: 'encoding' | 'decoding'
     direction?: 'left' | 'right',
     error: ErrorLike,
     headers: Headers | RawHeaders
 }) => <CardErrorBanner direction={props.direction}>
     <p>
-        <WarningIcon/> Body decoding failed for encoding '{
-            getHeaderValue(props.headers, 'content-encoding')
+        <WarningIcon/> Body { props.type } failed for encoding '{
+            asHeaderArray(getHeaderValues(props.headers, 'content-encoding'))
         }' due to:
     </p>
     <EncodingErrorMessage>
@@ -184,7 +188,15 @@ export const BodyDecodingErrorBanner = (props: {
         }{ props.error.message || props.error.toString() }
     </EncodingErrorMessage>
     <p>
-        This typically means either the <code>content-encoding</code> header is incorrect or
-        unsupported, or the body was corrupted. The raw content (not decoded) is shown below.
+        This typically means the <code>content-encoding</code> header is incorrect or
+        unsupported{
+            props.type === 'decoding'
+            ? ', or the body was corrupted'
+            : '' // Can't really happen when encoding user input.
+        }. The raw content {
+            props.type === 'decoding'
+            ? '(not decoded) is shown below'
+            : '(not encoded) will be used as-is'
+        }.
     </p>
-</CardErrorBanner>
+</CardErrorBanner>;

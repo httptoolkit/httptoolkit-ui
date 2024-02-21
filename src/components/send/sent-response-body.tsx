@@ -18,7 +18,7 @@ import {
     ContainerSizedEditorCardContent,
     ReadonlyBodyCardHeader,
     getBodyDownloadFilename,
-    BodyDecodingErrorBanner
+    BodyCodingErrorBanner
 } from '../editor/body-card-components';
 import { ContentViewer } from '../editor/content-viewer';
 
@@ -160,7 +160,8 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
                         isPaidUser={isPaidUser}
                     />
                 </header>
-                <BodyDecodingErrorBanner
+                <BodyCodingErrorBanner
+                    type='decoding'
                     error={error}
                     headers={message.rawHeaders}
                 />
