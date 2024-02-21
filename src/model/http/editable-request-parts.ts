@@ -17,12 +17,11 @@ function getExpectedHost(url: string) {
  * previously in sync, we keep it in sync, updating the host header to match.
  */
 export function syncUrlToHeaders(getUrl: () => string, getHeaders: () => RawHeaders) {
-    // Track the previous value of the URL, so we know whether we were in sync before.
-    let lastHost: string | undefined; // Undefined means 'initially invalid URL' - we consider that updatable
-
     const initialUrl = getUrl();
-    if (!initialUrl) lastHost = '';
-    lastHost = getExpectedHost(initialUrl);
+
+    // Track the previous value of the URL, so we know whether we were in sync before.
+    let lastHost = getExpectedHost(initialUrl);
+    // Undefined here ^ represents 'initially invalid URL' - we consider that updatable
 
     return reaction(() => getUrl(), (url) => {
         const headers = getHeaders();
