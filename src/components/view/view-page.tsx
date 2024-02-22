@@ -19,14 +19,18 @@ import { useHotkeys, isEditable, windowSize } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 import { UnreachableCheck } from '../../util/error';
 
+import { SERVER_SEND_API_SUPPORTED, serverVersion, versionSatisfies } from '../../services/service-versions';
+
 import { UiStore } from '../../model/ui/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
+import { SendStore } from '../../model/send/send-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
+import { buildRequestInputFromExchange } from '../../model/send/send-request-model';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -49,6 +53,7 @@ interface ViewPageProps {
     uiStore: UiStore;
     accountStore: AccountStore;
     rulesStore: RulesStore;
+    sendStore: SendStore;
     navigate: (path: string) => void;
     eventId?: string;
 }
@@ -111,6 +116,7 @@ type EditorKey = typeof EDITOR_KEYS[number];
 @inject('uiStore')
 @inject('accountStore')
 @inject('rulesStore')
+@inject('sendStore')
 @observer
 class ViewPage extends React.Component<ViewPageProps> {
 
@@ -258,6 +264,11 @@ class ViewPage extends React.Component<ViewPageProps> {
         );
     }
 
+    isSendAvailable() {
+        return this.props.accountStore.featureFlags.includes('send') &&
+            versionSatisfies(serverVersion.value as string, SERVER_SEND_API_SUPPORTED);
+    }
+
     render(): JSX.Element {
         const { isPaused, events } = this.props.eventsStore;
         const { certPath } = this.props.proxyStore;
@@ -285,6 +296,11 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onDelete={this.onDelete}
                 onScrollToEvent={this.onScrollToCenterEvent}
                 onBuildRuleFromExchange={this.onBuildRuleFromExchange}
+                onPrepareToResendRequest={this.isSendAvailable()
+                    // Only show Send if flag is enabled & server is up to date
+                    ? this.onPrepareToResendRequest
+                    : undefined
+                }
             />;
         } else if (this.selectedEvent.isTlsFailure()) {
             rightPane = <TlsFailureDetailsPane
@@ -430,6 +446,12 @@ class ViewPage extends React.Component<ViewPageProps> {
         navigate(`/mock/${rule.id}`);
     }
 
+    onPrepareToResendRequest = async (exchange: HttpExchange) => {
+        const { sendStore, navigate } = this.props;
+        sendStore.addRequestInput(await buildRequestInputFromExchange(exchange));
+        navigate(`/send`);
+    }
+
     @action.bound
     onDelete(event: CollectedEvent) {
         const { filteredEvents } = this.filteredEventState;
@@ -521,7 +543,13 @@ const LeftPane = styled.div`
 const StyledViewPage = styled(
     // Exclude stores etc from the external props, as they're injected
     ViewPage as unknown as WithInjected<typeof ViewPage,
-        'uiStore' | 'proxyStore' | 'eventsStore' | 'rulesStore' | 'accountStore' | 'navigate'
+        | 'eventsStore'
+        | 'proxyStore'
+        | 'uiStore'
+        | 'accountStore'
+        | 'rulesStore'
+        | 'sendStore'
+        | 'navigate'
     >
 )`
     height: 100vh;

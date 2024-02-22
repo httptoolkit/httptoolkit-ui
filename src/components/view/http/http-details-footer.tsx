@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { action, runInAction } from 'mobx';
+import { action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
 import { CollectedEvent } from '../../../types';
@@ -8,7 +8,6 @@ import { Ctrl } from '../../../util/ui';
 
 import { HttpExchange } from '../../../model/http/exchange';
 import { RulesStore } from '../../../model/rules/rules-store';
-import { buildRuleFromExchange } from '../../../model/rules/rule-creation';
 
 import { HEADER_FOOTER_HEIGHT } from '../view-event-list-footer';
 import { IconButton } from '../../common/icon-button';
@@ -86,6 +85,16 @@ const MockButton = observer((p: {
     disabled={!p.isExchange || !p.isPaidUser}
 />);
 
+const SendButton = observer((p: {
+    isExchange: boolean,
+    onClick: () => void
+}) => <IconButton
+    icon={['far', 'paper-plane']}
+    onClick={p.onClick}
+    title={'Resend this request'}
+    disabled={!p.isExchange}
+/>);
+
 export const HttpDetailsFooter = inject('rulesStore')(
     observer(
         (props: {
@@ -95,6 +104,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
             onDelete: (event: CollectedEvent) => void,
             onScrollToEvent: (event: CollectedEvent) => void,
             onBuildRuleFromExchange: (event: HttpExchange) => void,
+            onPrepareToResendRequest?: (event: HttpExchange) => void,
             isPaidUser: boolean,
             navigate: (url: string) => void
         }) => {
@@ -120,6 +130,12 @@ export const HttpDetailsFooter = inject('rulesStore')(
                     isPaidUser={props.isPaidUser}
                     onClick={() => props.onBuildRuleFromExchange(props.event as HttpExchange)}
                 />
+                { props.onPrepareToResendRequest &&
+                    <SendButton
+                        isExchange={event.isHttp()}
+                        onClick={() => props.onPrepareToResendRequest!(props.event as HttpExchange)}
+                    />
+                }
             </ButtonsContainer>;
         }
     )

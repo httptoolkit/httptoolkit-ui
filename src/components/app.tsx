@@ -101,7 +101,7 @@ class App extends React.Component<{
             // Hide Send option if the server is too old for proper support.
             // We show by default to avoid flicker in the most common case
             serverVersion.state !== 'fulfilled' ||
-            versionSatisfies(serverVersion.value as string, SERVER_SEND_API_SUPPORTED)
+            versionSatisfies(serverVersion.value, SERVER_SEND_API_SUPPORTED)
         );
     }
 
@@ -130,7 +130,7 @@ class App extends React.Component<{
                     // Hide Mock option if the server is too old for proper support.
                     // We show by default to avoid flicker in the most common case
                     serverVersion.state !== 'fulfilled' ||
-                    versionSatisfies(serverVersion.value as string, MOCK_SERVER_RANGE)
+                    versionSatisfies(serverVersion.value, MOCK_SERVER_RANGE)
                 )
                 ? [{
                     name: 'Mock',

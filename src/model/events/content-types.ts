@@ -92,13 +92,16 @@ export function getContentType(mimeType: string | undefined): ViewableContentTyp
     return mimeTypeToContentTypeMap[baseContentType!];
 }
 
+export function getEditableContentTypeFromViewable(contentType: ViewableContentType): EditableContentType | undefined {
+    if (EditableContentTypes.includes(contentType as any)) {
+        return contentType as EditableContentType;
+    }
+}
+
 export function getEditableContentType(mimeType: string | undefined): EditableContentType | undefined {
     const baseContentType = getBaseContentType(mimeType);
     const viewableContentType = mimeTypeToContentTypeMap[baseContentType!];
-
-    if (EditableContentTypes.includes(viewableContentType as any)) {
-        return viewableContentType as EditableContentType;
-    }
+    return getEditableContentTypeFromViewable(viewableContentType);
 }
 
 export function getContentEditorName(contentType: ViewableContentType): string {

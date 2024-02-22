@@ -68,6 +68,7 @@ export class HttpDetailsPane extends React.Component<{
     onDelete: (event: CollectedEvent) => void,
     onScrollToEvent: (event: CollectedEvent) => void,
     onBuildRuleFromExchange: (exchange: HttpExchange) => void,
+    onPrepareToResendRequest?: (exchange: HttpExchange) => void,
 
     // Injected:
     uiStore?: UiStore,
@@ -85,6 +86,7 @@ export class HttpDetailsPane extends React.Component<{
             onDelete,
             onScrollToEvent,
             onBuildRuleFromExchange,
+            onPrepareToResendRequest,
             uiStore,
             accountStore,
             navigate
@@ -131,6 +133,7 @@ export class HttpDetailsPane extends React.Component<{
                 onDelete={onDelete}
                 onScrollToEvent={onScrollToEvent}
                 onBuildRuleFromExchange={onBuildRuleFromExchange}
+                onPrepareToResendRequest={onPrepareToResendRequest}
                 navigate={navigate}
                 isPaidUser={isPaidUser}
             />

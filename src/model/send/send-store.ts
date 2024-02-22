@@ -57,9 +57,8 @@ export class SendStore {
     requestInputs: RequestInput[] = [];
 
     @action.bound
-    addRequestInput(): RequestInput {
-        const requestInput = new RequestInput();
-        this.requestInputs.push(requestInput);
+    addRequestInput(requestInput = new RequestInput()): RequestInput {
+        this.requestInputs[0] = requestInput;
         return requestInput;
     }
 
