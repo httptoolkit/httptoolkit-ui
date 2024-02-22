@@ -20,6 +20,8 @@ import {
 
 export interface SendRequestBodyProps extends ExpandableCardProps {
     headers: RawHeaders;
+    contentType: EditableContentType;
+    onContentTypeUpdated: (contentType: EditableContentType) => void;
     body: EditableBody;
     onBodyUpdated: (body: Buffer) => void;
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>;
@@ -27,14 +29,6 @@ export interface SendRequestBodyProps extends ExpandableCardProps {
 
 @observer
 export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
-
-    @observable
-    private contentType: EditableContentType = 'text';
-
-    @action.bound
-    onChangeContentType(value: string) {
-        this.contentType = value as EditableContentType;
-    }
 
     @computed
     get textEncoding() {
@@ -56,6 +50,8 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
             onExpandToggled,
             onCollapseToggled,
             headers,
+            contentType,
+            onContentTypeUpdated,
             body
         } = this.props;
 
@@ -75,9 +71,9 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                     onExpandToggled={onExpandToggled}
                     onCollapseToggled={onCollapseToggled}
 
-                    selectedContentType={this.contentType}
+                    selectedContentType={contentType}
                     contentTypeOptions={EditableContentTypes}
-                    onChangeContentType={this.onChangeContentType}
+                    onChangeContentType={onContentTypeUpdated}
                 />
             </header>
 
@@ -95,7 +91,7 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                     node={editorNode}
 
                     contentId='request'
-                    language={this.contentType}
+                    language={contentType}
                     value={bodyString}
                     onChange={this.updateBody}
                 />

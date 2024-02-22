@@ -3,6 +3,7 @@ import { reaction } from 'mobx';
 import { RawHeaders } from '../../types';
 import { getHeaderValue, setHeaderValue, removeHeader } from '../../util/headers';
 import { EditableBody } from './editable-body';
+import { EditableContentType, getDefaultMimeType, getEditableContentType } from '../events/content-types';
 
 function getExpectedHost(url: string) {
     try {
@@ -96,4 +97,35 @@ export function syncBodyToContentLength(body: EditableBody, getHeaders: () => Ra
 
         lastBodyLength = bodyLength;
     });
+}
+
+export function syncFormattingToContentType(
+    getHeaders: () => RawHeaders,
+    getEditorFormatting: () => EditableContentType,
+    setEditorFormatting: (format: EditableContentType) => void
+) {
+    let previousEditorFormat = getEditorFormatting();
+
+    return [
+        // If the content-type header changes to a known value, update the format to match:
+        reaction(() => getHeaderValue(getHeaders(), 'content-type'), (contentTypeHeader) => {
+            const detectedContentType = getEditableContentType(contentTypeHeader);
+            if (detectedContentType) {
+                setEditorFormatting(detectedContentType);
+            }
+            // If not a known type, we leave the content type as-is
+        }),
+
+        // If the content-type header was in sync, and the format changes, update the header:
+        reaction(() => getEditorFormatting(), (newEditorFormat) => {
+            const contentTypeHeader = getHeaderValue(getHeaders(), 'content-type');
+            const impliedEditorFormat = getEditableContentType(contentTypeHeader);
+
+            if (!contentTypeHeader || previousEditorFormat === impliedEditorFormat) {
+                setHeaderValue(getHeaders(), 'content-type', getDefaultMimeType(newEditorFormat));
+            }
+
+            previousEditorFormat = newEditorFormat;
+        })
+    ];
 }

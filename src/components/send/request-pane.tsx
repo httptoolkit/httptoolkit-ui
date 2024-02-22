@@ -9,6 +9,7 @@ import { RawHeaders } from '../../types';
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
+import { EditableContentType } from '../../model/events/content-types';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 
@@ -90,6 +91,8 @@ export class RequestPane extends React.Component<{
             <SendRequestBodyCard
                 {...this.cardProps.requestBody}
                 headers={requestInput.headers}
+                contentType={requestInput.requestContentType}
+                onContentTypeUpdated={this.updateRequestContentType}
                 body={requestInput.rawBody}
                 onBodyUpdated={this.updateBody}
                 editorNode={editorNode}
@@ -111,6 +114,12 @@ export class RequestPane extends React.Component<{
     updateHeaders(headers: RawHeaders) {
         const { requestInput } = this.props;
         requestInput.headers = headers;
+    }
+
+    @action.bound
+    updateRequestContentType(contentType: EditableContentType) {
+        const { requestInput } = this.props;
+        requestInput.requestContentType = contentType;
     }
 
     @action.bound

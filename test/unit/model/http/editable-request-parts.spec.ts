@@ -6,11 +6,13 @@ import { RawHeaders } from '../../../../src/types';
 
 import {
     syncUrlToHeaders,
-    syncBodyToContentLength
+    syncBodyToContentLength,
+    syncFormattingToContentType
 } from '../../../../src/model/http/editable-request-parts';
 import { EditableBody } from '../../../../src/model/http/editable-body';
+import { EditableContentType } from '../../../../src/model/events/content-types';
 
-describe("Editable request header synchronization", () => {
+describe("Editable request part synchronization", () => {
     describe("for hostnames", () => {
         it("doesn't do anything immediately given an empty input", () => {
             const url = observable.box('');
@@ -314,5 +316,129 @@ describe("Editable request header synchronization", () => {
                 ['content-length', '11']
             ]);
         });
+    });
+
+    describe("for content type formatting", () => {
+
+        it("should change nothing by default, given blank headers", () => {
+            const format = observable.box<EditableContentType>('xml');
+            const headers: RawHeaders = observable([]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            expect(headers).to.deep.equal([]);
+            expect(format.get()).to.equal('xml');
+        });
+
+        it("should change nothing initially, even given mismatched formatting & content-type headers", () => {
+            const format = observable.box<EditableContentType>('xml');
+            const headers: RawHeaders = observable([
+                ['content-type', 'text/plain']
+            ]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            expect(headers).to.deep.equal([
+                ['content-type', 'text/plain']
+            ]);
+            expect(format.get()).to.equal('xml');
+        });
+
+        it("should add a content-type header if none exists when the formatting is set", () => {
+            const format = observable.box<EditableContentType>('xml');
+            const headers: RawHeaders = observable([]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            format.set('json');
+
+            expect(headers).to.deep.equal([
+                ['content-type', 'application/json']
+            ]);
+        });
+
+        it("should update the formatting if the content-type header is changed to a known type", () => {
+            const format = observable.box<EditableContentType>('xml');
+            const headers: RawHeaders = observable([
+                ['content-type', 'text/plain']
+            ]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            headers[0][1] = 'application/json'
+
+            expect(format.get()).to.equal('json');
+        });
+
+        it("should not update the formatting if the content-type header is changed to an unknown type", () => {
+            const format = observable.box<EditableContentType>('xml');
+            const headers: RawHeaders = observable([
+                ['content-type', 'text/plain']
+            ]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            headers[0][1] = 'application/unknown-mystery-data'
+            expect(format.get()).to.equal('xml');
+        });
+
+        it("should update the content-type if the formatting changes and they were in sync", () => {
+            const format = observable.box<EditableContentType>('text');
+            const headers: RawHeaders = observable([
+                ['content-type', 'text/plain']
+            ]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            format.set('xml');
+
+            expect(headers).to.deep.equal([
+                ['content-type', 'application/xml']
+            ]);
+        });
+
+        it("should not update the content-type if the formatting changes and they were out of sync", () => {
+            const format = observable.box<EditableContentType>('text');
+            const headers: RawHeaders = observable([
+                ['content-type', 'application/json']
+            ]);
+
+            syncFormattingToContentType(
+                () => headers,
+                () => format.get(),
+                (x) => format.set(x)
+            );
+
+            format.set('xml');
+
+            expect(headers).to.deep.equal([
+                ['content-type', 'application/json']
+            ]);
+        });
+
     });
 });
