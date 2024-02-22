@@ -30,11 +30,15 @@ export class RequestInput {
         () => this.headers
     )
 
-    constructor(existingBody?: EditableBody) {
+    constructor(existingBodyData?: Buffer) {
         // When deserializing, we need to ensure the body is provided directly
         // in the constructor, before model syncing is initialized.
-        if (existingBody) {
-            this.rawBody = existingBody
+        if (existingBodyData) {
+            this.rawBody = new EditableBody(
+                existingBodyData,
+                undefined,
+                () => this.headers
+            );
         }
 
         syncUrlToHeaders(() => this.url, () => this.headers);
@@ -51,7 +55,7 @@ export class RequestInput {
 export const requestInputSchema = serializr.createModelSchema(RequestInput, {
     method: serializr.primitive(),
     url: serializr.primitive(),
-    headers: serializr.raw(),
+    headers: serializr.list(serializr.list(serializr.primitive())),
     requestContentType: serializr.primitive(),
 
     rawBody: serializr.custom(
@@ -60,17 +64,8 @@ export const requestInputSchema = serializr.createModelSchema(RequestInput, {
     )
 }, (context) => {
     const data = context.json;
-
     const bodyData = Buffer.from(data.rawBody, 'base64');
-
-    // Bit of a hack, but since they're raw this is the real instance data
-    const headers = data.headers;
-
-    return new RequestInput(new EditableBody(
-        bodyData,
-        undefined,
-        () => headers
-    ));
+    return new RequestInput(bodyData);
 });
 
 // These are the types that the sever client API expects. They are _not_ the same as
