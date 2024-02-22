@@ -27,7 +27,7 @@ interface SidebarProps {
     items: Array<SidebarItem>;
 }
 
-export const SIDEBAR_WIDTH = '80px';
+export const SIDEBAR_WIDTH = '75px';
 
 const SidebarNav = styled.nav`
     width: ${SIDEBAR_WIDTH};
@@ -42,6 +42,7 @@ const SidebarNav = styled.nav`
     box-shadow: 0 0 30px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     font-size: ${p => p.theme.textSize};
+    letter-spacing: -0.4px;
 
     display: flex;
     flex-direction: column;
