@@ -2,6 +2,7 @@ import { posthog } from 'posthog-js';
 import { format as formatDate } from 'date-fns';
 
 import { serverVersion, desktopVersion, UI_VERSION } from './services/service-versions';
+import { delay } from './util/promise';
 
 const POSTHOG_KEY = process.env.POSTHOG_KEY;
 const enabled = !!POSTHOG_KEY && navigator.doNotTrack !== "1";
@@ -23,12 +24,25 @@ export function initMetrics() {
             api_host: 'https://events.httptoolkit.tech',
             autocapture: false, // No automatic event capture please
 
-            capture_pageview: false, // We manually capture pageview (to sanitize & dedupe URLs)
+            capture_pageview: false, // We manually capture pageviews (to sanitize & dedupe URLs)
 
             advanced_disable_decide: true, // We don't need dynamic features, skip checking
             disable_session_recording: false, // Disabled server-side, but disable explicitly here too
 
             persistence: 'memory' // No cookies/local storage tracking - just anon session metrics
+        });
+
+        // We capture just a single pageview to count overall user numbers - no point logging
+        // every single page separately, who cares. Try to wait for initialization first though,
+        // so we can see the server version etc. We might not track <10s sessions - again who cares.
+        Promise.race([
+            serverVersion,
+            delay(10_000)
+        ]).then(() => {
+            posthog.capture('$pageview', {
+                $current_url: window.origin,
+                $set_once: { ...sessionData() }
+            });
         });
     }
 }
@@ -68,22 +82,6 @@ const normalizeUrl = (url: string) =>
     .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
     .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
     .replace(/\?.*/, ''); // Strip any query & hash params
-
-let seenPages: string[] = [];
-
-export function trackPage(location: Window['location']) {
-    if (!enabled) return;
-
-    const currentUrl = normalizeUrl(location.href);
-
-    if (seenPages.includes(currentUrl)) return;
-    seenPages.push(currentUrl);
-
-    posthog.capture('$pageview', {
-        $current_url: currentUrl,
-        $set_once: { ...sessionData() }
-    });
-}
 
 export function trackEvent(event: {
     category: string,
