@@ -16,6 +16,7 @@ export const SendCardContainer = styled.section<{
 
         > .ignores-expanded {
             /* Some components (request line & response status) don't disappear, but they shrink */
+            transition: margin-bottom 0.1s;
             margin-bottom: -10px;
             z-index: 0;
         }

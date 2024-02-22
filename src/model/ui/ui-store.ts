@@ -262,9 +262,8 @@ export class UiStore {
     @computed
     get sendCardProps() {
         return _.mapValues(this.sendCardStates, (state, key) => {
-            const expandedState = key === this.animatedExpansionCard
-                ?  'starting' as const
-                : key === this.expandedSendRequestCard || key === this.expandedSentResponseCard;
+            const expandedState = key === this.expandedSendRequestCard
+                || key === this.expandedSentResponseCard;
 
             return {
                 key,
@@ -307,11 +306,8 @@ export class UiStore {
             this.sendCardStates[key].collapsed = false;
             this[expandedCardField] = key as any; // We ensured key matches the field already above
 
-            // Briefly set animatedExpansionCard, to trigger animation for this expansion:
-            this.animatedExpansionCard = key;
-            requestAnimationFrame(action(() => {
-                this.animatedExpansionCard = undefined;
-            }));
+            // We don't bother with animatedExpansionCard - not required for Send (we just
+            // animate top-line margin, not expanded card padding)
         }
     }
 
