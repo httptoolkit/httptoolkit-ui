@@ -24,7 +24,8 @@ export class ViewEventContextMenuBuilder {
 
         private onPin: (event: CollectedEvent) => void,
         private onDelete: (event: CollectedEvent) => void,
-        private onBuildRuleFromExchange: (exchange: HttpExchange) => void
+        private onBuildRuleFromExchange: (exchange: HttpExchange) => void,
+        private onPrepareToResendRequest?: (exchange: HttpExchange) => void
     ) {}
 
     private readonly BaseOptions = {
@@ -56,6 +57,13 @@ export class ViewEventContextMenuBuilder {
                         label: 'Copy Request URL',
                         callback: (data: HttpExchange) => copyToClipboard(data.request.url)
                     },
+                    ...(this.onPrepareToResendRequest ? [
+                        {
+                            type: 'option',
+                            label: 'Resend Request',
+                            callback: (data: HttpExchange) => this.onPrepareToResendRequest!(data)
+                        }
+                    ] as const : []),
                     this.BaseOptions.Delete,
                     ...(!isPaidUser ? [
                         { type: 'separator' },

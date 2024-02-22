@@ -184,7 +184,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.props.uiStore,
         this.onPin,
         this.onDelete,
-        this.onBuildRuleFromExchange
+        this.onBuildRuleFromExchange,
+        this.onPrepareToResendRequest
     );
 
     componentDidMount() {
@@ -446,7 +447,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         navigate(`/mock/${rule.id}`);
     }
 
-    onPrepareToResendRequest = async (exchange: HttpExchange) => {
+    @action.bound
+    async onPrepareToResendRequest(exchange: HttpExchange) {
         const { sendStore, navigate } = this.props;
         sendStore.addRequestInput(await buildRequestInputFromExchange(exchange));
         navigate(`/send`);
