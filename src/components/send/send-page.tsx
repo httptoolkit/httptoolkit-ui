@@ -52,6 +52,7 @@ export class SendPage extends React.Component<{
                     editorNode={this.requestEditorNode}
                 />
                 <ResponsePane
+                    requestInput={requestInputs[0]}
                     exchange={sentExchange}
                     editorNode={this.responseEditorNode}
                 />

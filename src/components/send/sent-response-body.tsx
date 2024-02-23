@@ -12,7 +12,6 @@ import { getHeaderValue, lastHeader } from '../../util/headers';
 import { ViewableContentType, getCompatibleTypes } from '../../model/events/content-types';
 
 import { ExpandableCardProps } from '../common/card';
-import { LoadingCard } from '../common/loading-card';
 
 import {
     ContainerSizedEditorCardContent,
@@ -22,7 +21,7 @@ import {
 } from '../editor/body-card-components';
 import { ContentViewer } from '../editor/content-viewer';
 
-import { SendBodyCardSection } from './send-card-section';
+import { SendBodyCardSection, SentLoadingBodyCard } from './send-card-section';
 import { ContainerSizedEditor } from '../editor/base-editor';
 
 // A selection of content types you might want to try out, to explore your encoded data:
@@ -36,7 +35,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
 
     isPaidUser: boolean,
     url: string,
-    message: ExchangeMessage,
+    message?: ExchangeMessage,
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>
 }> {
 
@@ -56,7 +55,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
 
     @action.bound
     onChangeContentType(contentType: ViewableContentType | undefined) {
-        if (contentType === this.props.message.contentType) {
+        if (contentType === this.props.message?.contentType) {
             this.selectedContentType = undefined;
         } else {
             this.selectedContentType = contentType;
@@ -75,16 +74,19 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
             ariaLabel
         } = this.props;
 
-        const compatibleContentTypes = getCompatibleTypes(
-            message.contentType,
-            lastHeader(message.headers['content-type']),
-            message.body
-        );
+        const compatibleContentTypes = message
+            ? getCompatibleTypes(
+                message.contentType,
+                lastHeader(message.headers['content-type']),
+                message.body
+            )
+            : ['text'] as const;
+
         const decodedContentType = _.includes(compatibleContentTypes, this.selectedContentType)
             ? this.selectedContentType!
-            : message.contentType;
+            : (message?.contentType ?? 'text');
 
-        const decodedBody = message.body.decoded;
+        const decodedBody = message?.body.decoded;
 
         if (decodedBody) {
             // We have successfully decoded the body content, show it:
@@ -125,7 +127,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
                     </ContentViewer>
                 </ContainerSizedEditorCardContent>
             </SendBodyCardSection>;
-        } else if (!decodedBody && message.body.decodingError) {
+        } else if (!decodedBody && message?.body.decodingError) {
             // We have failed to decode the body content! Show the error & raw encoded data instead:
             const error = message.body.decodingError as ErrorLike;
             const encodedBody = Buffer.isBuffer(message.body.encoded)
@@ -181,7 +183,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
             </SendBodyCardSection>;
         } else {
             // No body content, but no error yet, show a loading spinner:
-            return <LoadingCard
+            return <SentLoadingBodyCard
                 ariaLabel={ariaLabel}
                 collapsed={collapsed}
                 onCollapseToggled={onCollapseToggled}
@@ -202,7 +204,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
                         isPaidUser={isPaidUser}
                     />
                 </header>
-            </LoadingCard>;
+            </SentLoadingBodyCard>;
         }
     }
 

@@ -10,6 +10,7 @@ import {
 import { HeaderDetails } from '../view/http/header-details';
 import {
     SendCardSection,
+    SentLoadingCard,
     SendCardScrollableWrapper
 } from './send-card-section';
 import { CollapsingButtons } from '../common/collapsing-buttons';
@@ -44,4 +45,22 @@ export const SentResponseHeaderSection = ({
             />
         </SendCardScrollableWrapper>
     </SendCardSection>;
+};
+
+export const PendingResponseHeaderSection = ({
+    ...cardProps
+}: ExpandableCardProps) => {
+    return <SentLoadingCard {...cardProps}>
+        <header>
+            <CollapsingButtons>
+                <ExpandShrinkButton
+                    expanded={cardProps.expanded}
+                    onClick={cardProps.onExpandToggled}
+                />
+            </CollapsingButtons>
+            <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>
+                Response Headers
+            </CollapsibleCardHeading>
+        </header>
+    </SentLoadingCard>;
 };

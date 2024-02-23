@@ -87,29 +87,29 @@ export const ReadonlyBodyCardHeader = (props: {
     const { body } = props;
 
     return <>
-        { body && /* Body may be undefined during decoding */ <>
-            <CollapsingButtons>
-                <ExpandShrinkButton
-                    expanded={props.expanded}
-                    onClick={props.onExpandToggled}
-                />
-                <IconButton
-                    icon={['fas', 'download']}
-                    title={
-                        props.isPaidUser
-                            ? "Save this body as a file"
-                            : "With Pro: Save this body as a file"
-                    }
-                    disabled={!props.isPaidUser}
-                    onClick={() => saveFile(
-                        props.downloadFilename || "",
-                        props.mimeType || 'application/octet-stream',
-                        body
-                    )}
-                />
-            </CollapsingButtons>
+        <CollapsingButtons>
+            <ExpandShrinkButton
+                expanded={props.expanded}
+                onClick={props.onExpandToggled}
+            />
+            <IconButton
+                icon={['fas', 'download']}
+                title={
+                    props.isPaidUser
+                        ? "Save this body as a file"
+                        : "With Pro: Save this body as a file"
+                }
+                disabled={!props.isPaidUser || !body}
+                onClick={() => saveFile(
+                    props.downloadFilename || "",
+                    props.mimeType || 'application/octet-stream',
+                    body! // Checked in disabled state above
+                )}
+            />
+        </CollapsingButtons>
+        { body && // May be undefined during decoding
             <Pill>{ getReadableSize(body.byteLength) }</Pill>
-        </> }
+        }
         <PillSelector<ViewableContentType>
             onChange={props.onChangeContentType}
             value={props.selectedContentType}

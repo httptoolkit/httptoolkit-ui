@@ -51,3 +51,22 @@ export const ResponseStatusSection = (props: {
         </header>
     </ResponseStatusSectionCard>;
 }
+
+export const PendingResponseStatusSection = (props: {
+    theme: Theme
+}) => {
+    return <ResponseStatusSectionCard
+        className='ignores-expanded' // This always shows, even if something is expanded
+        ariaLabel='Response status section'
+        collapsed={false}
+        headerAlignment='left'
+    >
+        <header>
+            <Pill
+                color={getStatusColor(undefined, props.theme)}
+            >
+                &nbsp;...&nbsp;
+            </Pill>
+        </header>
+    </ResponseStatusSectionCard>;
+}
