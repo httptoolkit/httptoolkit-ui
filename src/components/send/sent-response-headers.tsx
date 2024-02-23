@@ -8,7 +8,10 @@ import {
 } from '../common/card';
 
 import { HeaderDetails } from '../view/http/header-details';
-import { SendCardSection } from './send-card-section';
+import {
+    SendCardSection,
+    SendCardScrollableWrapper
+} from './send-card-section';
 import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 
@@ -34,9 +37,11 @@ export const SentResponseHeaderSection = ({
                 Response Headers
             </CollapsibleCardHeading>
         </header>
-        <HeaderDetails
-            requestUrl={requestUrl}
-            headers={headers}
-        />
+        <SendCardScrollableWrapper>
+            <HeaderDetails
+                requestUrl={requestUrl}
+                headers={headers}
+            />
+        </SendCardScrollableWrapper>
     </SendCardSection>;
 };

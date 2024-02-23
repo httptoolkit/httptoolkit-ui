@@ -9,7 +9,8 @@ import {
     ExpandableCardProps
 } from '../common/card';
 import {
-    SendCardSection
+    SendCardSection,
+    SendCardScrollableWrapper
 } from './send-card-section';
 import { EditableRawHeaders } from '../common/editable-headers';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
@@ -19,16 +20,6 @@ export interface SendRequestHeadersProps extends ExpandableCardProps {
     headers: RawHeaders;
     updateHeaders: (headers: RawHeaders) => void;
 }
-
-const HeaderFieldsContainer = styled.div`
-    overflow-y: auto;
-
-    flex-grow: 1;
-    flex-shrink: 1;
-
-    margin: 0 -20px -20px -20px;
-    padding: 0 20px 20px 20px;
-`;
 
 export const SendRequestHeadersCard = observer(({
     headers,
@@ -50,11 +41,11 @@ export const SendRequestHeadersCard = observer(({
                 Request Headers
             </CollapsibleCardHeading>
         </header>
-        <HeaderFieldsContainer>
+        <SendCardScrollableWrapper>
             <EditableRawHeaders
                 headers={headers}
                 onChange={updateHeaders}
             />
-        </HeaderFieldsContainer>
+        </SendCardScrollableWrapper>
     </SendCardSection>;
 });

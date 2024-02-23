@@ -38,6 +38,16 @@ export const SendCardSection = styled(CollapsibleCard)`
     box-shadow: 0 -2px 5px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
+export const SendCardScrollableWrapper = styled.div`
+    overflow-y: auto;
+
+    flex-grow: 1;
+    flex-shrink: 1;
+
+    margin: 0 -20px -20px -20px;
+    padding: 0 20px 20px 20px;
+`;
+
 export const SendBodyCardSection = styled(SendCardSection)`
     /* This is required to force the editor to shrink to fit, instead of going
        beyond the limits of the column when other item is expanded and pushes it down */
