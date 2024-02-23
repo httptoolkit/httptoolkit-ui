@@ -96,6 +96,15 @@ const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
             // We can drop this after fixing https://github.com/Kong/httpsnippet/issues/298
             if (header.name.startsWith(':')) return false;
 
+            // The body data in the HAR (and therefore the snippet) is always the _decoded_ data,
+            // and encoded data is often not representable directly as a string anyway. Fortunately,
+            // request bodies are rarely encoded. In the rare cases that they are, we just drop the
+            // encoding header and send the decoded body directly instead. Not perfect, but it
+            // should be semantically equivalent, and the only alternative is embedding encoded data
+            // in snippets (messy, confusing, hard to edit) or adding encoding logic to every kind
+            // of snippet we can produce for every encoding you could use (difficult/impossible)
+            if (header.name.toLowerCase() === 'content-encoding') return false;
+
             return true;
         })
     };
