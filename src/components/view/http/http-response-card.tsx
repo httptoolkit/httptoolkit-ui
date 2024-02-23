@@ -1,12 +1,14 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer } from 'mobx-react';
+
+import { inject, observer } from 'mobx-react';
 import { get } from 'typesafe-get';
 
 import { HtkResponse, Omit } from '../../../types';
 import { Theme } from '../../../styles';
 
 import { ApiExchange } from '../../../model/api/api-interfaces';
+import { UiStore } from '../../../model/ui/ui-store';
 import { getStatusColor } from '../../../model/events/categorization';
 import { getStatusDocs, getStatusMessage } from '../../../model/http/http-docs';
 
@@ -17,6 +19,8 @@ import {
 } from '../../common/card';
 import { Pill } from '../../common/pill';
 import { HeaderDetails } from './header-details';
+import { HeadersHeaderContextMenuBuilder, HeaderEvent } from './headers-context-menu-builder';
+import {IEList, IncludeExcludeList} from '../../../model/IncludeExcludeList';
 import {
 } from '../../common/card';
 import {
@@ -35,12 +39,18 @@ import { DocsLink } from '../../common/docs-link';
 interface HttpResponseCardProps extends CollapsibleCardProps  {
     theme: Theme;
     requestUrl: URL;
+    uiStore?: UiStore;
     response: HtkResponse;
     apiExchange: ApiExchange | undefined;
 }
+const HeadersIncludeExcludeList = new IncludeExcludeList<string>();
 
-export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
+export const HttpResponseCard = inject('uiStore') (observer((props: HttpResponseCardProps) => {
     const { response, requestUrl, theme, apiExchange } = props;
+
+    const contextMenuBuilder = new HeadersHeaderContextMenuBuilder(
+        props.uiStore!
+    );
 
     const apiResponseDescription = get(apiExchange, 'response', 'description');
     const statusDocs = getStatusDocs(response.statusCode);
@@ -84,9 +94,8 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
                     : null
                 }
             </CollapsibleSection>
-
-            <ContentLabelBlock>Headers</ContentLabelBlock>
-            <HeaderDetails headers={response.rawHeaders} requestUrl={requestUrl} />
+            <ContentLabelBlock  onContextMenu={contextMenuBuilder.getContextMenuCallback({HeadersIncludeExcludeList})}>Headers</ContentLabelBlock>
+            <HeaderDetails headers={response.rawHeaders} requestUrl={requestUrl} HeadersIncludeExcludeList={HeadersIncludeExcludeList} uiStore={props.uiStore}  />
         </div>
     </CollapsibleCard>;
-});
+}));

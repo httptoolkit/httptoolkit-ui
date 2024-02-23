@@ -1,6 +1,8 @@
 import * as React from 'react';
 
 import { RawHeaders } from '../../types';
+import {IncludeExcludeList} from '../../model/IncludeExcludeList';
+
 
 import {
     CollapsibleCardHeading,
@@ -16,6 +18,7 @@ export interface ResponseHeaderSectionProps extends ExpandableCardProps {
     requestUrl: URL;
     headers: RawHeaders;
 }
+const HeadersIncludeExcludeList = new IncludeExcludeList<string>();
 
 export const SentResponseHeaderSection = ({
     requestUrl,
@@ -34,7 +37,7 @@ export const SentResponseHeaderSection = ({
                 Response Headers
             </CollapsibleCardHeading>
         </header>
-        <HeaderDetails
+        <HeaderDetails HeadersIncludeExcludeList={HeadersIncludeExcludeList}
             requestUrl={requestUrl}
             headers={headers}
         />
