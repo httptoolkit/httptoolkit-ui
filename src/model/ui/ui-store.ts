@@ -61,6 +61,9 @@ const isSendRequestCard = (key: SendCardKey): key is 'requestHeaders' | 'request
 const isSentResponseCard = (key: SendCardKey): key is 'responseHeaders' | 'responseBody' =>
     key.startsWith('response');
 
+const SEND_REQUEST_CARD_KEYS = SEND_CARD_KEYS.filter(isSendRequestCard);
+const SENT_RESPONSE_CARD_KEYS = SEND_CARD_KEYS.filter(isSentResponseCard);
+
 const EXPANDABLE_SEND_REQUEST_CARD_KEYS = [
     'requestHeaders',
     'requestBody',
@@ -282,6 +285,21 @@ export class UiStore {
     toggleSendCardCollapsed(key: SendCardKey) {
         const cardState = this.sendCardStates[key];
         cardState.collapsed = !cardState.collapsed;
+
+        const siblingCards: SendCardKey[] = isSendRequestCard(key)
+            ? SEND_REQUEST_CARD_KEYS
+            : SENT_RESPONSE_CARD_KEYS;
+
+        // If you collapse all cards, pop open an alternative, just because it looks a bit weird
+        // if you don't, and it makes it easier to quickly switch like an accordion in some cases.
+        if (siblingCards.every((k) => this.sendCardStates[k].collapsed)) {
+            const keyIndex = siblingCards.indexOf(key);
+            const bestAlternativeCard = (keyIndex === siblingCards.length - 1)
+                ? siblingCards[keyIndex - 1] // For last card, look back one
+                : siblingCards[keyIndex + 1] // Otherwise, look at next card
+
+            this.toggleSendCardCollapsed(bestAlternativeCard);
+        }
 
         if (isSendRequestCard(key)) {
             this.expandedSendRequestCard = undefined;
