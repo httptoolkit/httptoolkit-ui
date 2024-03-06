@@ -15,6 +15,8 @@ import { Formatters, isEditorFormatter } from '../../model/events/body-formattin
 
 import { ContainerSizedEditor, SelfSizedEditor } from './base-editor';
 import { LoadingCardContent } from '../common/loading-card';
+import { WarningIcon } from '../../icons';
+import { ContentMonoValue } from '../common/text-content';
 
 interface ContentViewerProps {
     children: Buffer | string;
@@ -64,6 +66,36 @@ const CenteredContentViewerContainer = styled.div<{
         `
     }
 `;
+
+const RendererErrorContainer = styled.div`
+    padding: 10px;
+
+    font-size: ${p => p.theme.textSize};
+    color: ${p => p.theme.mainColor};
+    background-color: ${p => p.theme.warningBackground};
+
+    svg {
+        margin-left: 0;
+    }
+`;
+
+const RendererErrorMessage = styled(ContentMonoValue)`
+    padding: 0;
+    margin: 10px 0 0;
+`;
+
+const RendererError = (props: {
+    error: Error,
+    contentType: string
+}) => <RendererErrorContainer>
+    <p>
+        <WarningIcon />
+        Failed to render {props.contentType} content due to:
+    </p>
+    <RendererErrorMessage>
+        { props.error.toString() }
+    </RendererErrorMessage>
+</RendererErrorContainer>
 
 @observer
 export class ContentViewer extends React.Component<ContentViewerProps> {
@@ -147,14 +179,13 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                     />;
                 }
             } catch (e) {
-                return <div>
-                    Failed to render {this.props.contentType} content:<br/>
-                    { asError(e).toString() }
-                </div>;
+                return <RendererError
+                    contentType={this.props.contentType}
+                    error={asError(e)}
+                />;
             }
         } else {
             const formatterConfig = this.formatter;
-
 
             // Formatter components should all be either scrollable (top aligned, extending
             // downwards, scrolling if there's no space) or centered (in the middle, scaling
