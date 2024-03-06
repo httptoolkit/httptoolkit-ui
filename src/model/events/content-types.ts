@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { MessageBody } from '../../types';
+import { isProbablyProtobuf } from '../../util/buffer';
 
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
@@ -152,6 +153,10 @@ export function getCompatibleTypes(
     // Allow optionally formatting non-XML as XML, if it looks like it might be
     if (firstChar === '<') {
         types.add('xml');
+    }
+
+    if (body && isProbablyProtobuf(body)) {
+        types.add('protobuf');
     }
 
     // SVGs can always be shown as XML
