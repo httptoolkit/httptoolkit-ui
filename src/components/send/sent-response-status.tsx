@@ -4,7 +4,7 @@ import { Theme, styled } from '../../styles';
 
 import { getStatusColor } from '../../model/events/categorization';
 import { getStatusMessage } from '../../model/http/http-docs';
-import { getReadableSize } from '../../model/events/bodies';
+import { getReadableSize } from '../../util/buffer';
 import { SuccessfulExchange } from '../../model/http/exchange';
 
 import { SendCardSection } from './send-card-section';

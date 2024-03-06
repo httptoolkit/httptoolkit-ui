@@ -24,7 +24,7 @@ import {
     describeEventCategory
 } from '../../model/events/categorization';
 import { nameHandlerClass } from '../../model/rules/rule-descriptions';
-import { getReadableSize } from '../../model/events/bodies';
+import { getReadableSize } from '../../util/buffer';
 
 import { UnreachableCheck } from '../../util/error';
 import { filterProps } from '../component-utils';

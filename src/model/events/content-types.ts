@@ -28,7 +28,8 @@ export type ViewableContentType =
     | 'javascript'
     | 'markdown'
     | 'yaml'
-    | 'image';
+    | 'image'
+    | 'protobuf';
 
 export const EditableContentTypes = [
     'text',
@@ -83,6 +84,10 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
 
     'text/html': 'html',
     'application/xhtml': 'html',
+
+    'application/protobuf': 'protobuf',
+    'application/x-protobuf': 'protobuf',
+    'application/vnd.google.protobuf': 'protobuf',
 
     'application/octet-stream': 'raw'
 } as const;

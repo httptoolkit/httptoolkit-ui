@@ -396,7 +396,7 @@ class BaseEditor extends React.Component<EditorProps> {
 
             quickSuggestions: false,
             parameterHints: { enabled: false },
-            codeLens: false,
+            codeLens: true,
             minimap: { enabled: false },
             contextmenu: false,
             scrollBeyondLastLine: false,

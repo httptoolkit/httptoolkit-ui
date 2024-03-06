@@ -44,6 +44,36 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
             });
         });
 
+        monaco.languages.register({
+            id: 'protobuf'
+        });
+
+        monaco.languages.registerCodeLensProvider("protobuf", {
+            provideCodeLenses: function (model, token) {
+                return {
+                    lenses: [
+                        {
+                            range: {
+                                startLineNumber: 1,
+                                startColumn: 1,
+                                endLineNumber: 2,
+                                endColumn: 1,
+                            },
+                            id: 'protobuf-decoding-header',
+                            command: {
+                                id: '', // No actual command defined here
+                                title: "Automatically decoded from raw Protobuf data",
+                            },
+                        },
+                    ],
+                    dispose: () => {},
+                };
+            },
+            resolveCodeLens: function (model, codeLens, token) {
+                return codeLens;
+            },
+        });
+
         MonacoEditor = rmeModule.default;
     } catch (err) {
         console.log('Monaco load failed', asError(err).message);

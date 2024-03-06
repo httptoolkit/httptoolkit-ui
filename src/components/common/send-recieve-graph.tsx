@@ -10,7 +10,7 @@ import { AxisLeft } from '@vx/axis';
 import { styled } from '../../styles';
 
 import { getSummaryColour } from '../../model/events/categorization';
-import { getReadableSize } from '../../model/events/bodies';
+import { getReadableSize } from '../../util/buffer';
 
 // Somewhat arbitrary colour selections, but picking from our existing category
 // pallet for vaugely related colours, that work together and which don't have

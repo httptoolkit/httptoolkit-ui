@@ -15,7 +15,7 @@ import {
     ViewableContentType,
     getContentEditorName
 } from '../../model/events/content-types';
-import { getReadableSize } from '../../model/events/bodies';
+import { getReadableSize } from '../../util/buffer';
 import { EditableBody } from '../../model/http/editable-body';
 
 import { CollapsibleCardHeading, ExpandState } from '../common/card';

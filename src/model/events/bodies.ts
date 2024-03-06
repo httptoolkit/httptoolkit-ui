@@ -3,27 +3,6 @@ import { IObservableValue, observable, action } from 'mobx';
 import { testEncodingsAsync } from '../../services/ui-worker-api';
 import { ExchangeMessage } from '../../types';
 
-export function getReadableSize(input: number | Buffer | string, siUnits = true) {
-    const bytes = Buffer.isBuffer(input)
-            ? input.byteLength
-        : typeof input === 'string'
-            ? input.length
-        : input;
-
-    let thresh = siUnits ? 1000 : 1024;
-
-    let units = siUnits
-        ? ['bytes', 'kB','MB','GB','TB','PB','EB','ZB','YB']
-        : ['bytes', 'KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
-
-    let unitIndex = bytes === 0 ? 0 :
-        Math.floor(Math.log(bytes) / Math.log(thresh));
-
-    let unitName = bytes === 1 ? 'byte' : units[unitIndex];
-
-    return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
-}
-
 const EncodedSizesCacheKey = Symbol('encoded-body-test');
 type EncodedBodySizes = { [encoding: string]: number };
 type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,

@@ -125,6 +125,11 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         cacheKey: Symbol('css'),
         render: buildAsyncRenderer('css')
     },
+    protobuf: {
+        language: 'protobuf',
+        cacheKey: Symbol('protobuf'),
+        render: buildAsyncRenderer('protobuf')
+    },
     'url-encoded': {
         layout: 'scrollable',
         Component: styled(ReadOnlyParams).attrs((p: FormatComponentProps) => ({

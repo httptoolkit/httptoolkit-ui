@@ -13,7 +13,7 @@ import {
     getCompatibleTypes,
     getContentEditorName
 } from '../../model/events/content-types';
-import { getReadableSize } from '../../model/events/bodies';
+import { getReadableSize } from '../../util/buffer';
 import { StreamMessage } from '../../model/events/stream-message';
 
 import { ContentLabel, ContentMonoValue } from '../common/text-content';

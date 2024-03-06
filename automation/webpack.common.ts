@@ -153,6 +153,7 @@ export default <Webpack.Configuration>{
                 'bracketMatching',
                 'caretOperations',
                 'clipboard',
+                'codelens',
                 'find',
                 'folding',
                 'hover',

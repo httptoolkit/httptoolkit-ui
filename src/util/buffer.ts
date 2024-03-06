@@ -42,8 +42,15 @@ export function stringToBuffer(input: string, encoding: 'utf8' | 'binary' = 'utf
     }
 }
 
-export function bufferToString(input: Buffer, encoding: 'utf8' | 'binary' = 'utf8') {
-    if (encoding === 'utf8') {
+export function bufferToString(
+    input: Buffer,
+    encoding: 'utf8' | 'binary' | 'detect-encoding' = 'utf8'
+): string {
+    if (encoding === 'detect-encoding') {
+        return isProbablyUtf8(input)
+            ? bufferToString(input, 'utf8')
+            : bufferToString(input, 'binary');
+    } else if (encoding === 'utf8') {
         return laxDecoder.decode(input); // ~5x faster than buffer.toString('utf8')
     } else if (encoding === 'binary') {
         return binaryLaxDecoder.decode(input);
@@ -90,4 +97,25 @@ export function bufferToHex(input: Buffer) {
     return input.toString('hex')
         .replace(/(\w\w)/g, '$1 ')
         .trimRight();
+}
+
+export function getReadableSize(input: number | Buffer | string, siUnits = true) {
+    const bytes = Buffer.isBuffer(input)
+            ? input.byteLength
+        : typeof input === 'string'
+            ? input.length
+        : input;
+
+    let thresh = siUnits ? 1000 : 1024;
+
+    let units = siUnits
+        ? ['bytes', 'kB','MB','GB','TB','PB','EB','ZB','YB']
+        : ['bytes', 'KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+
+    let unitIndex = bytes === 0 ? 0 :
+        Math.floor(Math.log(bytes) / Math.log(thresh));
+
+    let unitName = bytes === 1 ? 'byte' : units[unitIndex];
+
+    return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
 }

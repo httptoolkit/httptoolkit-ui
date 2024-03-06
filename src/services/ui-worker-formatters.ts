@@ -4,8 +4,9 @@ import {
     css as beautifyCss
 } from 'js-beautify/js/lib/beautifier';
 import * as beautifyXml from 'xml-beautifier';
+import parseRawProto from 'rawprotoparse';
 
-import { bufferToHex } from '../util/buffer';
+import { bufferToHex, bufferToString, byteLength, getReadableSize } from '../util/buffer';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -71,5 +72,23 @@ const WorkerFormatters = {
         return beautifyCss(content.toString('utf8'), {
             indent_size: 2
         });
+    },
+    protobuf: (content: Buffer) => {
+        const data = parseRawProto(content, '');
+
+        return JSON.stringify(data, (_key, value) => {
+            // Buffers have toJSON defined, so arrive here in JSONified form:
+            if (value.type === 'Buffer' && Array.isArray(value.data)) {
+                const buffer = Buffer.from(value.data);
+
+                return {
+                    "Type": `Buffer (${getReadableSize(buffer)})`,
+                    "As string": bufferToString(buffer, 'detect-encoding'),
+                    "As hex": bufferToHex(buffer)
+                }
+            } else {
+                return value;
+            }
+        }, 2);
     }
 } as const;
