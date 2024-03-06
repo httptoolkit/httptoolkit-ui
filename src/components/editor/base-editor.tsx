@@ -1,71 +1,29 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
-import { observable, action, autorun, reaction, runInAction, comparer } from 'mobx';
+import { observable, action, autorun, reaction, comparer } from 'mobx';
 import type { SchemaObject } from 'openapi-directory';
-
-import type * as monacoTypes from 'monaco-editor';
-import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-editor';
 
 import { logError } from '../../errors';
 import { Omit } from '../../types';
-import { styled, defineMonacoThemes } from '../../styles';
-
-import { delay } from '../../util/promise';
-import { asError } from '../../util/error';
+import { styled } from '../../styles';
 
 import { UiStore } from '../../model/ui/ui-store';
+import {
+    MonacoTypes,
+    MonacoEditorProps,
+    MonacoEditor,
+    monacoLoadingPromise,
+    modelsMarkers,
+    reloadMonacoEditor
+} from './monaco';
 
 import { FocusWrapper } from './focus-wrapper';
 import { buildContextMenuCallback } from './editor-context-menu';
 
-let MonacoEditor: typeof _MonacoEditor | undefined;
-// Defer loading react-monaco-editor ever so slightly. This has two benefits:
-// * don't delay first app start waiting for this massive chunk to load
-// * better caching (app/monaco-editor bundles can update independently)
-let rmeModulePromise = delay(100).then(() => loadMonacoEditor());
-
-async function loadMonacoEditor(retries = 5): Promise<void> {
-    try {
-        // These might look like two sequential requests, but since they're a single webpack
-        // chunk, it'll actually just be one load, and then both will fire together.
-        const rmeModule = await import('react-monaco-editor');
-        const monacoEditorModule = await import('monaco-editor/esm/vs/editor/editor.api');
-
-        defineMonacoThemes(monacoEditorModule);
-
-        // Track the currently visible markers per model:
-        monacoEditorModule.editor.onDidChangeMarkers((modelUris) => {
-            const markers = monacoEditorModule.editor.getModelMarkers({});
-
-            runInAction(() => {
-                modelsMarkers.clear();
-                markers.forEach((marker) => {
-                    const modelUri = marker.resource;
-                    const markersSoFar = modelsMarkers.get(modelUri) ?? [];
-                    markersSoFar.push(marker);
-                    modelsMarkers.set(modelUri, markersSoFar);
-                });
-            });
-        });
-        MonacoEditor = rmeModule.default;
-    } catch (err) {
-        console.log('Monaco load failed', asError(err).message);
-        if (retries <= 0) {
-            console.warn('Repeatedly failed to load monaco editor, giving up');
-            throw err;
-        }
-
-        return loadMonacoEditor(retries - 1);
-    }
-}
-
-// We keep a single global observable linking model URIs to their current error marker data,
-// updated via a global listener set up in loadMonacoEditor above.
-const modelsMarkers = observable.map<monacoTypes.Uri, monacoTypes.editor.IMarker[]>();
 
 export interface EditorProps extends MonacoEditorProps {
-    onContentSizeChange?: (contentUpdate: monacoTypes.editor.IContentSizeChangedEvent) => void;
+    onContentSizeChange?: (contentUpdate: MonacoTypes.editor.IContentSizeChangedEvent) => void;
 
     // When this prop changes, the editor layout will be reset. This can be used to indicate a change of the content
     // represented by the editor (which should update state, e.g. the editor content selection) even when editors
@@ -114,7 +72,7 @@ export class SelfSizedEditor extends React.Component<
     editor = React.createRef<BaseEditor>();
 
     @action.bound
-    onContentSizeChange(contentUpdate: monacoTypes.editor.IContentSizeChangedEvent) {
+    onContentSizeChange(contentUpdate: MonacoTypes.editor.IContentSizeChangedEvent) {
         this.contentHeight = Math.min(contentUpdate.contentHeight, MAX_HEIGHT);
     }
 
@@ -242,14 +200,14 @@ const EditorFocusWrapper = styled(FocusWrapper)`
 class BaseEditor extends React.Component<EditorProps> {
 
     // Both provided async, once the editor has initialized
-    editor: monacoTypes.editor.IStandaloneCodeEditor | undefined;
-    monaco: (typeof monacoTypes) | undefined;
+    editor: MonacoTypes.editor.IStandaloneCodeEditor | undefined;
+    monaco: (typeof MonacoTypes) | undefined;
 
     @observable
     monacoEditorLoaded = !!MonacoEditor;
 
     @observable
-    modelUri: monacoTypes.Uri | undefined = undefined;
+    modelUri: MonacoTypes.Uri | undefined = undefined;
 
     registeredSchemaUri: string | undefined = undefined;
 
@@ -257,12 +215,9 @@ class BaseEditor extends React.Component<EditorProps> {
         super(props);
 
         if (!this.monacoEditorLoaded) {
-            rmeModulePromise
+            monacoLoadingPromise
                 // Did it fail before? Retry it now, just in case
-                .catch(() => {
-                    rmeModulePromise = loadMonacoEditor(0);
-                    return rmeModulePromise;
-                })
+                .catch(() => reloadMonacoEditor())
                 .then(action(() => this.monacoEditorLoaded = true));
         }
 
@@ -286,7 +241,7 @@ class BaseEditor extends React.Component<EditorProps> {
 
     private getMarkerController() {
         return this.editor?.getContribution('editor.contrib.markerController') as unknown as {
-            showAtMarker(marker: monacoTypes.editor.IMarker): void;
+            showAtMarker(marker: MonacoTypes.editor.IMarker): void;
             close(focus: boolean): void;
         };
     }
@@ -322,14 +277,14 @@ class BaseEditor extends React.Component<EditorProps> {
     }
 
     @action.bound
-    onEditorDidMount(editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: typeof monacoTypes) {
+    onEditorDidMount(editor: MonacoTypes.editor.IStandaloneCodeEditor, monaco: typeof MonacoTypes) {
         this.editor = editor;
         this.monaco = monaco;
 
         const model = editor.getModel();
         this.modelUri = model?.uri;
 
-        this.editor.onDidChangeModel(action((e: monacoTypes.editor.IModelChangedEvent) => {
+        this.editor.onDidChangeModel(action((e: MonacoTypes.editor.IModelChangedEvent) => {
             this.modelUri = e.newModelUrl ?? undefined;
         }));
 
@@ -432,7 +387,7 @@ class BaseEditor extends React.Component<EditorProps> {
             return null;
         }
 
-        const options: monacoTypes.editor.IEditorConstructionOptions = {
+        const options: MonacoTypes.editor.IEditorConstructionOptions = {
             showFoldingControls: 'always',
 
             scrollbar: {
