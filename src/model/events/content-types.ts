@@ -92,6 +92,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/protobuf': 'protobuf',
     'application/x-protobuf': 'protobuf',
     'application/vnd.google.protobuf': 'protobuf',
+    'application/x-google-protobuf': 'protobuf',
     'application/proto': 'protobuf',
 
     'application/octet-stream': 'raw'
