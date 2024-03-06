@@ -1,7 +1,7 @@
 import { computed, observable } from 'mobx';
 
 import { InputStreamMessage } from "../../types";
-import { asBuffer } from '../../util';
+import { asBuffer } from '../../util/buffer';
 
 export class StreamMessage {
 

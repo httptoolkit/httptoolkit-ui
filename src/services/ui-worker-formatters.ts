@@ -5,6 +5,8 @@ import {
 } from 'js-beautify/js/lib/beautifier';
 import * as beautifyXml from 'xml-beautifier';
 
+import { bufferToHex } from '../util/buffer';
+
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
 
@@ -27,10 +29,7 @@ const WorkerFormatters = {
             content = content.slice(0, FIVE_MB)
         }
 
-        const formattedContent =
-                content.toString('hex')
-                .replace(/(\w\w)/g, '$1 ')
-                .trimRight();
+        const formattedContent = bufferToHex(content);
 
         if (needsTruncation) {
             return formattedContent + truncationMarker("5MB");

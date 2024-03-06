@@ -8,7 +8,7 @@ import {
     isProbablyUtf8,
     bufferToString,
     stringToBuffer
-} from '../../../util';
+} from '../../../util/buffer';
 import { getHeaderValue } from '../../../util/headers';
 import {
     EditableContentType,

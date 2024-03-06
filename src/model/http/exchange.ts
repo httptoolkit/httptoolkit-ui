@@ -20,7 +20,7 @@ import {
     fakeBuffer,
     FakeBuffer,
     stringToBuffer,
-} from '../../util';
+} from '../../util/buffer';
 import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 import {

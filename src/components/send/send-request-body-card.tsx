@@ -3,7 +3,7 @@ import { action, computed, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util';
+import { bufferToString, isProbablyUtf8, stringToBuffer } from '../../util/buffer';
 import { RawHeaders } from '../../types';
 
 import { EditableContentType, EditableContentTypes } from '../../model/events/content-types';

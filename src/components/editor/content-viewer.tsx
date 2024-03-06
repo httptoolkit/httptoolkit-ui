@@ -8,7 +8,7 @@ import * as portals from 'react-reverse-portal';
 import { styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
 import { asError, unreachableCheck } from '../../util/error';
-import { stringToBuffer } from '../../util';
+import { stringToBuffer } from '../../util/buffer';
 
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';

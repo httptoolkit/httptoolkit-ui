@@ -13,7 +13,7 @@ import {
 } from "../../types";
 import { logError } from "../../errors";
 
-import { stringToBuffer } from '../../util';
+import { stringToBuffer } from '../../util/buffer';
 import { getDeferred, Deferred } from "../../util/promise";
 import {
     asHeaderArray,

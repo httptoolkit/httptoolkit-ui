@@ -5,7 +5,7 @@ import { disposeOnUnmount, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { styled, warningColor } from '../../styles';
-import { asBuffer, bufferToString } from '../../util';
+import { asBuffer, bufferToString } from '../../util/buffer';
 import { ArrowIcon } from '../../icons';
 
 import {

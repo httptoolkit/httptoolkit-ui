@@ -17,7 +17,7 @@ import {
     TlsSocketMetadata
 } from '../../types';
 
-import { stringToBuffer } from '../../util';
+import { stringToBuffer } from '../../util/buffer';
 import { lastHeader } from '../../util/headers';
 import { ObservablePromise } from '../../util/observable';
 import { unreachableCheck } from '../../util/error';

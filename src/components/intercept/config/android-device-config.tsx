@@ -9,7 +9,7 @@ import {
 } from 'mockttp';
 
 import { styled } from '../../../styles';
-import { stringToBuffer } from '../../../util';
+import { stringToBuffer } from '../../../util/buffer';
 import { logError } from '../../../errors';
 
 import { Interceptor } from '../../../model/interception/interceptors';

@@ -1,5 +1,6 @@
 import * as serializr from 'serializr';
-import { asBuffer, recursiveMapValues } from '../util';
+import { recursiveMapValues } from '../util';
+import { asBuffer } from '../util/buffer';
 
 export const serializeAsTag = (getTag: (value: any) => any) =>
     serializr.custom(

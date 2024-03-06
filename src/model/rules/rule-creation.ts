@@ -13,7 +13,8 @@ import {
     HtkResponse,
     Headers,
 } from '../../types';
-import { byteLength, tryParseJson } from '../../util';
+import { tryParseJson } from '../../util';
+import { byteLength } from '../../util/buffer';
 import amIUsingHtml from '../../amiusing.html';
 
 import { ProxyStore } from '../proxy-store';

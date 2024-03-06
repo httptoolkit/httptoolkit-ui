@@ -15,7 +15,7 @@ import {
     isProbablyUtf8,
     stringToBuffer,
     bufferToString
-} from '../../util';
+} from '../../util/buffer';
 import {
     getHeaderValue,
     headersToRawHeaders,

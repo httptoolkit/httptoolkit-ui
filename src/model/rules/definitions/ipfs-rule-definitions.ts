@@ -11,7 +11,7 @@ import {
 } from 'mockttp';
 import * as serializr from 'serializr';
 
-import { byteLength } from '../../../util';
+import { byteLength } from '../../../util/buffer';
 import {
     HttpHandlerLookup
 } from './http-rule-definitions';

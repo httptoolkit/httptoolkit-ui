@@ -9,7 +9,7 @@ import {
 import * as serializr from 'serializr';
 
 import { MockttpSerializedBuffer } from '../../../types';
-import { byteLength, isSerializedBuffer } from '../../../util';
+import { byteLength, isSerializedBuffer } from '../../../util/buffer';
 
 import { MethodName, MethodNames } from '../../http/methods';
 import { serializeAsTag, serializeBuffer, serializeWithUndefineds } from '../../serialization';

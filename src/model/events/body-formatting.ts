@@ -2,7 +2,7 @@ import { styled } from '../../styles';
 
 import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
-import { bufferToString } from '../../util';
+import { bufferToString, bufferToHex } from '../../util/buffer';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
@@ -47,10 +47,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                 try {
                     // For short-ish inputs, we return synchronously - conveniently this avoids
                     // showing the loading spinner that churns the layout in short content cases.
-                    return input.toString('hex')
-                        .replace(/(\w\w)/g, '$1 ')
-                        .trimRight();
-                        // ^ Same logic as in UI-worker-formatter
+                    return bufferToHex(input);
                 } catch (e) {
                     return observablePromise(Promise.reject(e));
                 }
