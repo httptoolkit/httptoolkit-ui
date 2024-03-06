@@ -1,6 +1,9 @@
 import * as _ from 'lodash';
 import { MessageBody } from '../../types';
-import { isProbablyProtobuf } from '../../util/buffer';
+import {
+    isProbablyProtobuf,
+    isValidProtobuf
+} from '../../util/protobuf';
 
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
@@ -89,6 +92,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/protobuf': 'protobuf',
     'application/x-protobuf': 'protobuf',
     'application/vnd.google.protobuf': 'protobuf',
+    'application/proto': 'protobuf',
 
     'application/octet-stream': 'raw'
 } as const;
@@ -113,6 +117,7 @@ export function getEditableContentType(mimeType: string | undefined): EditableCo
 export function getContentEditorName(contentType: ViewableContentType): string {
     return contentType === 'raw' ? 'Hex'
         : contentType === 'json' ? 'JSON'
+        : contentType === 'css' ? 'CSS'
         : contentType === 'url-encoded' ? 'URL-Encoded'
         : _.capitalize(contentType);
 }
@@ -155,7 +160,14 @@ export function getCompatibleTypes(
         types.add('xml');
     }
 
-    if (body && isProbablyProtobuf(body)) {
+    if (
+        body &&
+        isProbablyProtobuf(body) &&
+        !types.has('protobuf') &&
+        // If it's probably unmarked protobuf, and it's a manageable size, try
+        // parsing it just to check:
+        (body.length < 100_000 && isValidProtobuf(body))
+    ) {
         types.add('protobuf');
     }
 

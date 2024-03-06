@@ -12,7 +12,8 @@ export class StreamMessage {
 
     constructor(
         inputMessage: InputStreamMessage,
-        public readonly messageIndex: number
+        public readonly messageIndex: number,
+        private readonly subprotocol?: string
     ) {
         this.inputMessage = inputMessage;
     }
@@ -41,11 +42,22 @@ export class StreamMessage {
     }
 
     get contentType() {
-        if (this.inputMessage.isBinary) return 'raw';
+        if (this.inputMessage.isBinary) {
+            if (this.subprotocol?.includes('proto')) {
+                return 'protobuf';
+            } else {
+                return 'raw';
+            }
+        }
 
         // prefix+JSON is very common, so we try to parse anything JSON-ish optimistically:
-        const startOfMessage = this.content.slice(0, 10).toString('utf-8');
-        if (startOfMessage.includes('{') || startOfMessage.includes('[')) return 'json';
+        const startOfMessage = this.content.slice(0, 10).toString('utf-8').trim();
+        if (
+            startOfMessage.includes('{') ||
+            startOfMessage.includes('[') ||
+            this.subprotocol?.includes('json')
+        ) return 'json';
+
         else return 'text';
     }
 

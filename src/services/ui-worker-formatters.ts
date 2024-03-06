@@ -4,9 +4,9 @@ import {
     css as beautifyCss
 } from 'js-beautify/js/lib/beautifier';
 import * as beautifyXml from 'xml-beautifier';
-import parseRawProto from 'rawprotoparse';
 
-import { bufferToHex, bufferToString, byteLength, getReadableSize } from '../util/buffer';
+import { bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
+import { parseRawProtobuf } from '../util/protobuf';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -74,7 +74,7 @@ const WorkerFormatters = {
         });
     },
     protobuf: (content: Buffer) => {
-        const data = parseRawProto(content, '');
+        const data = parseRawProtobuf(content, '');
 
         return JSON.stringify(data, (_key, value) => {
             // Buffers have toJSON defined, so arrive here in JSONified form:

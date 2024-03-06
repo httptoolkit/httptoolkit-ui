@@ -55,7 +55,9 @@ export class WebSocketStream extends HttpExchange {
 
     @action
     addMessage(message: InputWebSocketMessage) {
-        this.messages.push(new StreamMessage(message, this.messages.length));
+        this.messages.push(
+            new StreamMessage(message, this.messages.length, this.selectedSubprotocol)
+        );
     }
 
     @observable

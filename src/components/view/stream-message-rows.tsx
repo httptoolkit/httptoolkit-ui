@@ -222,8 +222,10 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
             undefined,
             asBuffer(message.content)
         );
-        const contentType = _.includes(compatibleContentTypes, this.selectedContentType) ?
-            this.selectedContentType! : message.contentType;
+
+        const contentType = _.includes(compatibleContentTypes, this.selectedContentType)
+            ? this.selectedContentType!
+            : message.contentType;
 
         const messageDirection = message.direction === 'sent' ? 'left' : 'right';
 
