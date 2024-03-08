@@ -113,7 +113,7 @@
     "posthog-js": "^1.57.2",
     "qrcode.react": "^1.0.0",
     "randexp": "^0.5.3",
-    "rawprotoparse": "^0.0.4",
+    "rawprotoparse": "^0.0.9",
     "react": "^16.14.0",
     "react-autosuggest": "^10.0.4",
     "react-beautiful-dnd": "^13.1.1",

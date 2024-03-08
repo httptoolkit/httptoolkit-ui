@@ -74,7 +74,9 @@ const WorkerFormatters = {
         });
     },
     protobuf: (content: Buffer) => {
-        const data = parseRawProtobuf(content, '');
+        const data = parseRawProtobuf(content, {
+            prefix: ''
+        });
 
         return JSON.stringify(data, (_key, value) => {
             // Buffers have toJSON defined, so arrive here in JSONified form:
