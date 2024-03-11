@@ -182,9 +182,13 @@ const trackResponseEvents = flow(function * (
                 break;
             case 'error':
                 if (value.error.message) {
-                    throw new Error(value.error.message + (
-                        value.error.code ? ` (${value.error.code})` : ''
-                    ));
+                    throw Object.assign(
+                        new Error(value.error.message + (
+                            value.error.code ? ` (${value.error.code})` : ''
+                        )), {
+                            code: value.error.code
+                        }
+                    );
                 } else {
                     logError(`Unknown response error for sent request: ${
                         JSON.stringify(value.error)
