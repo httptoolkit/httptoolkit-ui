@@ -160,6 +160,8 @@ export class CollapsibleCard extends React.Component<
     private cardRef = React.createRef<HTMLElement>();
 
     render() {
+        const collapsable = !!this.props.onCollapseToggled;
+
         return <CollapsibleCardContainer
             className={this.props.className}
             collapsed={this.props.collapsed}
@@ -167,7 +169,7 @@ export class CollapsibleCard extends React.Component<
             direction={this.props.direction}
             headerAlignment={this.props.headerAlignment ?? 'right'}
 
-            tabIndex={0}
+            tabIndex={collapsable ? 0 : undefined}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}
             aria-label={this.props.ariaLabel}
@@ -179,7 +181,7 @@ export class CollapsibleCard extends React.Component<
     renderChildren() {
         const { children, collapsed, headerAlignment } = this.props;
 
-        const showCollapseIcon = !!this.props.onCollapseToggled;
+        const collapsable = !!this.props.onCollapseToggled;
 
         return React.Children.map(children as React.ReactElement<any>[], (child, i) => {
             if (i !== 0) {
@@ -187,7 +189,7 @@ export class CollapsibleCard extends React.Component<
                 else return child;
             }
 
-            if (!showCollapseIcon) return child;
+            if (!collapsable) return child;
 
             // Otherwise: it's the first child and we want to inject a collapse icon.
 
