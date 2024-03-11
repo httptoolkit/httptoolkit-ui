@@ -107,19 +107,21 @@ export class SendStore {
             headers: rawHeadersToHeaders(requestInput.headers),
             rawHeaders: requestInput.headers,
             body: { buffer: encodedBody },
-            timingEvents: {} as TimingEvents,
+            timingEvents: {
+                startTime: Date.now()
+            } as TimingEvents,
             tags: ['httptoolkit:manually-sent-request']
         });
 
         // Keep the exchange up to date as response data arrives:
         trackResponseEvents(responseStream, exchange)
-        .catch(action((error: ErrorLike) => {
+        .catch(action((error: ErrorLike & { timingEvents?: TimingEvents }) => {
             exchange.markAborted({
                 id: exchange.id,
                 error: error,
                 timingEvents: {
                     ...exchange.timingEvents as TimingEvents,
-                    abortedTimestamp: performance.now()
+                    ...error.timingEvents
                 },
                 tags: error.code ? [`passthrough-error:${error.code}`] : []
             });
@@ -152,7 +154,6 @@ const trackResponseEvents = flow(function * (
         const messageType = value.type;
         switch (messageType) {
             case 'request-start':
-                timingEvents.startTime = Date.now();
                 timingEvents.startTimestamp = value.timestamp;
                 timingEvents.bodyReceivedTimestamp = value.timestamp;
                 break;
@@ -182,11 +183,15 @@ const trackResponseEvents = flow(function * (
                 break;
             case 'error':
                 if (value.error.message) {
+                    timingEvents.startTimestamp ??= value.timestamp; // If request not yet started
+                    timingEvents.abortedTimestamp = value.timestamp;
+
                     throw Object.assign(
                         new Error(value.error.message + (
                             value.error.code ? ` (${value.error.code})` : ''
                         )), {
-                            code: value.error.code
+                            code: value.error.code,
+                            timingEvents
                         }
                     );
                 } else {
