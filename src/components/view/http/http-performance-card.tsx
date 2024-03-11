@@ -4,11 +4,7 @@ import { observer, inject } from 'mobx-react';
 import { get } from 'typesafe-get';
 
 import { styled } from '../../../styles';
-import {
-    HttpExchange,
-    TimingEvents,
-    ExchangeMessage
-} from '../../../types';
+import { HttpExchange, ExchangeMessage } from '../../../types';
 
 import { getReadableSize } from '../../../util/buffer';
 import { asHeaderArray } from '../../../util/headers';

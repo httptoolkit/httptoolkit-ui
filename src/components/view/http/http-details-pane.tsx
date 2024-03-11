@@ -16,6 +16,7 @@ import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
 import { findItem } from '../../../model/rules/rules-structure';
 import { HtkMockRule, getRulePartKey } from '../../../model/rules/rules';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
+import { tagsToErrorType } from '../../../model/http/error-types';
 
 import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
 import { StreamMessageListCard } from '../stream-message-list-card';
@@ -29,7 +30,7 @@ import { HttpAbortedResponseCard } from './http-aborted-card';
 import { HttpPerformanceCard } from './http-performance-card';
 import { HttpExportCard } from './http-export-card';
 import { SelfSizedEditor } from '../../editor/base-editor';
-import { HttpErrorHeader, tagsToErrorType } from './http-error-header';
+import { HttpErrorHeader } from './http-error-header';
 import { HttpDetailsFooter } from './http-details-footer';
 import { HttpRequestBreakpointHeader, HttpResponseBreakpointHeader } from './http-breakpoint-header';
 import { HttpBreakpointRequestCard } from './http-breakpoint-request-card';

@@ -21,6 +21,10 @@ export function firstMatch<R>(...tests: Array<Case<R> | R | undefined>): R | und
     }
 }
 
+export function typeCheck<T extends string>(types: readonly T[]) {
+    return (type: string): type is T => types.includes(type as T);
+}
+
 export function longestPrefix(baseString: string, ...strings: string[]) {
     let prefix = "";
     const shortestLength = Math.min(

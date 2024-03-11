@@ -3,20 +3,21 @@ import { inject, observer } from "mobx-react";
 import * as portals from 'react-reverse-portal';
 
 import { HttpExchange } from "../../types";
+import { logError } from "../../errors";
 
 import { UiStore } from '../../model/ui/ui-store';
 import { AccountStore } from '../../model/account/account-store';
-import { SuccessfulExchange } from "../../model/http/exchange";
+import { CompletedExchange, SuccessfulExchange } from "../../model/http/exchange";
 import { RequestInput } from "../../model/send/send-request-model";
+import { tagsToErrorType } from "../../model/http/error-types";
 
 import { ContainerSizedEditor } from '../editor/base-editor';
-import { HttpAbortedResponseCard } from '../view/http/http-aborted-card';
 
 import { SendCardContainer } from './send-card-section';
-import { PendingResponseStatusSection, ResponseStatusSection } from './sent-response-status';
+import { FailedResponseStatusSection, PendingResponseStatusSection, ResponseStatusSection } from './sent-response-status';
 import { PendingResponseHeaderSection, SentResponseHeaderSection } from './sent-response-headers';
 import { SentResponseBodyCard } from './sent-response-body';
-
+import { SentResponseError } from './sent-response-error';
 @inject('uiStore')
 @inject('accountStore')
 @observer
@@ -44,7 +45,7 @@ export class ResponsePane extends React.Component<{
                 exchange.isSuccessfulExchange()
                     ? this.renderSuccessfulResponse(exchange)
                 : exchange.isCompletedExchange()
-                    ? this.renderAbortedResponse(exchange)
+                    ? this.renderFailedResponse(exchange)
                 : this.renderInProgressResponse()
             }
         </SendCardContainer>;
@@ -75,11 +76,28 @@ export class ResponsePane extends React.Component<{
 
     }
 
-    renderAbortedResponse(exchange: HttpExchange) {
-        return <HttpAbortedResponseCard
-            cardProps={this.cardProps.responseHeaders}
-            exchange={exchange}
-        />;
+    renderFailedResponse(exchange: CompletedExchange) {
+        const { uiStore } = this.props;
+
+        const errorType = tagsToErrorType(exchange.tags);
+
+        if (!errorType) {
+            logError(`Sent response failed with no error tags: ${
+                JSON.stringify(exchange.tags)
+            } (${exchange.abortMessage})`);
+        }
+
+        return <>
+            <FailedResponseStatusSection
+                exchange={exchange}
+                errorType={errorType ?? 'unknown'}
+                theme={uiStore!.theme}
+            />
+            <SentResponseError
+                errorType={errorType ?? 'unknown'}
+                errorMessage={exchange.abortMessage}
+            />
+        </>;
     }
 
     renderInProgressResponse() {
