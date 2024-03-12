@@ -8,9 +8,12 @@ import { Ctrl } from '../../../util/ui';
 
 import { HttpExchange } from '../../../model/http/exchange';
 import { RulesStore } from '../../../model/rules/rules-store';
+import { AccountStore } from '../../../model/account/account-store';
 
 import { HEADER_FOOTER_HEIGHT } from '../view-event-list-footer';
+import { ProPill } from '../../account/pro-placeholders';
 import { IconButton } from '../../common/icon-button';
+import { UnstyledButton } from '../../common/inputs';
 
 const ButtonsContainer = styled.div`
     height: ${HEADER_FOOTER_HEIGHT}px;
@@ -87,13 +90,30 @@ const MockButton = observer((p: {
 
 const SendButton = observer((p: {
     isExchange: boolean,
+    isPaidUser: boolean,
     onClick: () => void
 }) => <IconButton
     icon={['far', 'paper-plane']}
     onClick={p.onClick}
-    title={'Resend this request'}
-    disabled={!p.isExchange}
+    title={p.isPaidUser
+        ? 'Resend this request'
+        : 'With Pro: Resend this request'
+    }
+    disabled={!p.isExchange || !p.isPaidUser}
 />);
+
+const ProSeparator = styled(inject('accountStore')((p: {
+    accountStore?: AccountStore,
+    className?: string
+}) => <UnstyledButton
+    onClick={() => p.accountStore!.getPro('http-event-footer')}
+    className={p.className}
+>
+    <ProPill>With Pro:</ProPill>
+</UnstyledButton>))`
+    padding: 0;
+    margin-left: 40px;
+`;
 
 export const HttpDetailsFooter = inject('rulesStore')(
     observer(
@@ -125,6 +145,12 @@ export const HttpDetailsFooter = inject('rulesStore')(
                     pinned={pinned}
                     onClick={() => props.onDelete(event)}
                 />
+
+                {
+                    !props.isPaidUser &&
+                        <ProSeparator />
+                }
+
                 <MockButton
                     isExchange={event.isHttp()}
                     isPaidUser={props.isPaidUser}
@@ -133,6 +159,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
                 { props.onPrepareToResendRequest &&
                     <SendButton
                         isExchange={event.isHttp()}
+                        isPaidUser={props.isPaidUser}
                         onClick={() => props.onPrepareToResendRequest!(props.event as HttpExchange)}
                     />
                 }

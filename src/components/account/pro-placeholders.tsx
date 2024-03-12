@@ -10,8 +10,12 @@ import { Pill } from "../common/pill";
 import { UnstyledButton } from "../common/inputs";
 import { AccountStore } from "../../model/account/account-store";
 
-export const ProPill = styled(inject('uiStore')((p: { uiStore?: UiStore, className?: string }) =>
-    <Pill className={p.className} color={p.uiStore!.theme.popColor}>PRO</Pill>
+export const ProPill = styled(inject('uiStore')((p: {
+    uiStore?: UiStore,
+    className?: string,
+    children?: string
+}) =>
+    <Pill className={p.className} color={p.uiStore!.theme.popColor}>{ p.children || 'PRO' }</Pill>
 ))`
     font-size: ${p => p.theme.textSize};
 
