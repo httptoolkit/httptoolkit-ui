@@ -1,6 +1,7 @@
-import { action, runInAction } from 'mobx';
+import * as _ from 'lodash';
+import { runInAction } from 'mobx';
 
-import { CollectedEvent } from '../../types';
+import { CollectedEvent, WebSocketStream } from '../../types';
 
 import { copyToClipboard } from '../../util/ui';
 
@@ -15,6 +16,7 @@ import {
     getCodeSnippetOptionFromKey,
     snippetExportOptions
 } from '../../model/ui/export';
+import { ContextMenuItem } from '../../model/ui/context-menu';
 
 export class ViewEventContextMenuBuilder {
 
@@ -50,24 +52,24 @@ export class ViewEventContextMenuBuilder {
                 : undefined;
 
             if (event.isHttp()) {
-                this.uiStore.handleContextMenuEvent(mouseEvent, [
+                const menuOptions = [
                     this.BaseOptions.Pin,
                     {
                         type: 'option',
                         label: 'Copy Request URL',
                         callback: (data: HttpExchange) => copyToClipboard(data.request.url)
                     },
-                    ...(this.onPrepareToResendRequest ? [
-                        {
-                            type: 'option',
-                            label: 'Resend Request',
-                            callback: (data: HttpExchange) => this.onPrepareToResendRequest!(data)
-                        }
-                    ] as const : []),
-                    this.BaseOptions.Delete,
                     ...(!isPaidUser ? [
                         { type: 'separator' },
                         { type: 'option', label: 'With Pro:', enabled: false, callback: () => {} }
+                    ] as const : []),
+                    ...(this.onPrepareToResendRequest ? [
+                        {
+                            type: 'option',
+                            enabled: isPaidUser,
+                            label: 'Resend Request',
+                            callback: (data: HttpExchange) => this.onPrepareToResendRequest!(data)
+                        }
                     ] as const : []),
                     {
                         type: 'option',
@@ -98,10 +100,10 @@ export class ViewEventContextMenuBuilder {
                         enabled: isPaidUser,
                         label: `Copy as Code Snippet`,
                         items: Object.keys(snippetExportOptions).map((snippetGroupName) => ({
-                            type: 'submenu',
+                            type: 'submenu' as const,
                             label: snippetGroupName,
                             items: snippetExportOptions[snippetGroupName].map((snippetOption) => ({
-                                type: 'option',
+                                type: 'option' as const,
                                 label: getCodeSnippetFormatName(snippetOption),
                                 callback: async (data: HttpExchange) => {
                                     // When you pick an option here, it updates your preferred default option
@@ -118,7 +120,18 @@ export class ViewEventContextMenuBuilder {
                             }))
                         }))
                     },
-                ], event)
+                    this.BaseOptions.Delete
+                ];
+
+                const sortedOptions = _.sortBy(menuOptions, (o: ContextMenuItem<any>) =>
+                    o.type === 'separator' || !(o.enabled ?? true)
+                ) as Array<ContextMenuItem<HttpExchange | WebSocketStream>>;
+
+                this.uiStore.handleContextMenuEvent(
+                    mouseEvent,
+                    sortedOptions,
+                    event
+                )
             } else {
                 // For non-HTTP events, we just show the super-basic globally supported options:
                 this.uiStore.handleContextMenuEvent(mouseEvent, [
