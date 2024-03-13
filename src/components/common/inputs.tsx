@@ -15,6 +15,10 @@ export const interactiveMouseoverStyles = css`
         &:active {
             background-image: linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.05) 40%, transparent);
         }
+
+        &:focus {
+            outline-offset: -1px;
+        }
     }
 `;
 
@@ -130,6 +134,10 @@ export const TextInput = styled.input.attrs((p: { type?: string }) => ({
     background-color: ${p => p.theme.inputBackground};
     &:hover:not(:disabled) {
         background-color: ${p => p.theme.inputHoverBackground};
+    }
+
+    &:focus {
+        outline-offset: -1px;
     }
 
     color: ${p => p.theme.inputColor};
