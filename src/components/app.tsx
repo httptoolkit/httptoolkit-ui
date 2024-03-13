@@ -97,12 +97,10 @@ class App extends React.Component<{
 
     @computed
     get canVisitSend() {
-        return this.props.accountStore.featureFlags.includes('send') && (
-            // Hide Send option if the server is too old for proper support.
-            // We show by default to avoid flicker in the most common case
-            serverVersion.state !== 'fulfilled' ||
-            versionSatisfies(serverVersion.value, SERVER_SEND_API_SUPPORTED)
-        );
+        // Hide Send option if the server is too old for proper support.
+        // We show by default to avoid flicker in the most common case
+        return serverVersion.state !== 'fulfilled' ||
+            versionSatisfies(serverVersion.value, SERVER_SEND_API_SUPPORTED);
     }
 
     @computed

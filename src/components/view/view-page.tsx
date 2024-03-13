@@ -266,8 +266,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     isSendAvailable() {
-        return this.props.accountStore.featureFlags.includes('send') &&
-            versionSatisfies(serverVersion.value as string, SERVER_SEND_API_SUPPORTED);
+        return versionSatisfies(serverVersion.value as string, SERVER_SEND_API_SUPPORTED);
     }
 
     render(): JSX.Element {
