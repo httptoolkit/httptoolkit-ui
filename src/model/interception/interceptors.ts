@@ -61,12 +61,11 @@ const recoloured = (icon: IconProps, color: string) => ({ ...icon, color });
 
 export const MANUAL_INTERCEPT_ID = 'manual-setup';
 
-const getChromiumOptions = ({ accountStore, serverVersion }: {
+const getChromiumOptions = ({ serverVersion }: {
     accountStore: AccountStore,
     serverVersion?: string
 }) => ({
-    webExtensionEnabled: accountStore.featureFlags.includes('webrtc') ||
-        versionSatisfies(serverVersion || '', WEBRTC_GLOBALLY_ENABLED)
+    webExtensionEnabled: versionSatisfies(serverVersion || '', WEBRTC_GLOBALLY_ENABLED)
 });
 
 const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
