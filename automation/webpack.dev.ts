@@ -12,7 +12,7 @@ export default merge(common, {
     devtool: 'eval-cheap-module-source-map' as any,
 
     devServer: {
-        host: '127.0.0.1',
+        host: 'localhost',
         historyApiFallback: true,
         client: {
             overlay: {
