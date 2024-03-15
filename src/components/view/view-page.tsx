@@ -30,7 +30,6 @@ import { SendStore } from '../../model/send/send-store';
 import { HttpExchange } from '../../model/http/exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
-import { buildRequestInputFromExchange } from '../../model/send/send-request-model';
 
 import { SplitPane } from '../split-pane';
 import { EmptyState } from '../common/empty-state';
@@ -449,7 +448,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     async onPrepareToResendRequest(exchange: HttpExchange) {
         const { sendStore, navigate } = this.props;
-        sendStore.addRequestInput(await buildRequestInputFromExchange(exchange));
+        await sendStore.addRequestInputFromExchange(exchange);
         navigate(`/send`);
     }
 

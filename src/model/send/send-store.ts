@@ -14,6 +14,7 @@ import { lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { ErrorLike, UnreachableCheck } from '../../util/error';
 import { rawHeadersToHeaders } from '../../util/headers';
+import { trackEvent } from '../../metrics';
 
 import { EventsStore } from '../events/events-store';
 import { RulesStore } from '../rules/rules-store';
@@ -22,6 +23,7 @@ import * as ServerApi from '../../services/server-api';
 import { HttpExchange } from '../http/exchange';
 import { ResponseHeadEvent, ResponseStreamEvent } from './send-response-model';
 import {
+    buildRequestInputFromExchange,
     ClientProxyConfig,
     RequestInput,
     requestInputSchema,
@@ -62,10 +64,20 @@ export class SendStore {
         return requestInput;
     }
 
+    async addRequestInputFromExchange(exchange: HttpExchange) {
+        trackEvent({ category: 'Send', action: 'Resend exchange' });
+
+        this.addRequestInput(
+            await buildRequestInputFromExchange(exchange)
+        );
+    }
+
     @observable
     sentExchange: HttpExchange | undefined;
 
     readonly sendRequest = async (requestInput: RequestInput) => {
+        trackEvent({ category: 'Send', action: 'Sent request' });
+
         const exchangeId = uuid();
 
         const passthroughOptions = this.rulesStore.activePassthroughOptions;
