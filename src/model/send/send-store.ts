@@ -18,6 +18,7 @@ import { trackEvent } from '../../metrics';
 
 import { EventsStore } from '../events/events-store';
 import { RulesStore } from '../rules/rules-store';
+import { AccountStore } from '../account/account-store';
 import * as ServerApi from '../../services/server-api';
 
 import { HttpExchange } from '../http/exchange';
@@ -33,20 +34,25 @@ import {
 export class SendStore {
 
     constructor(
+        private accountStore: AccountStore,
         private eventStore: EventsStore,
         private rulesStore: RulesStore
     ) {}
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
+            this.accountStore.initialized,
             this.eventStore.initialized,
             this.rulesStore.initialized
         ]);
 
-        await hydrate({
-            key: 'send-store',
-            store: this
-        });
+        if (this.accountStore.mightBePaidUser) {
+            // For Pro users only, your 'Send' content persists on reload
+            await hydrate({
+                key: 'send-store',
+                store: this
+            });
+        }
 
         autorun(() => {
             if (this.requestInputs.length === 0) this.addRequestInput();
