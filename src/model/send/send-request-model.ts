@@ -66,7 +66,12 @@ export class RequestInput {
 
 }
 
-export const requestInputSchema = serializr.createModelSchema(RequestInput, {
+export interface SendRequest {
+    request: RequestInput,
+    sentExchange: HttpExchange | undefined
+}
+
+const requestInputSchema = serializr.createModelSchema(RequestInput, {
     method: serializr.primitive(),
     url: serializr.primitive(),
     headers: serializr.list(serializr.list(serializr.primitive())),
@@ -83,6 +88,11 @@ export const requestInputSchema = serializr.createModelSchema(RequestInput, {
         ...data,
         rawBody: bodyData
     });
+});
+
+export const sendRequestSchema = serializr.createSimpleSchema({
+    request: serializr.object(requestInputSchema),
+    sentExchange: false // Never persisted here
 });
 
 export async function buildRequestInputFromExchange(exchange: HttpExchange): Promise<RequestInput> {

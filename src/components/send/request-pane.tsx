@@ -56,7 +56,7 @@ export class RequestPane extends React.Component<{
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>,
 
     requestInput: RequestInput,
-    sendRequest: (requestInput: RequestInput) => void
+    sendRequest: () => void
 }> {
 
     get cardProps() {
@@ -152,7 +152,7 @@ export class RequestPane extends React.Component<{
         this.isSending = true;
 
         try {
-            yield this.props.sendRequest(this.props.requestInput);
+            yield this.props.sendRequest();
         } catch (e) {
             console.warn('Sending request failed', e);
         } finally {

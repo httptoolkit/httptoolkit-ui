@@ -27,8 +27,9 @@ import {
     buildRequestInputFromExchange,
     ClientProxyConfig,
     RequestInput,
-    requestInputSchema,
-    RULE_PARAM_REF_KEY
+    SendRequest,
+    RULE_PARAM_REF_KEY,
+    sendRequestSchema
 } from './send-request-model';
 
 export class SendStore {
@@ -55,18 +56,18 @@ export class SendStore {
         }
 
         autorun(() => {
-            if (this.requestInputs.length === 0) this.addRequestInput();
+            if (this.sendRequests.length === 0) this.addRequestInput();
         })
 
         console.log('Send store initialized');
     });
 
-    @persist('list', requestInputSchema) @observable
-    requestInputs: RequestInput[] = [];
+    @persist('list', sendRequestSchema) @observable
+    sendRequests: Array<SendRequest> = [];
 
     @action.bound
     addRequestInput(requestInput = new RequestInput()): RequestInput {
-        this.requestInputs[0] = requestInput;
+        this.sendRequests[0] = { request: requestInput, sentExchange: undefined };
         return requestInput;
     }
 
@@ -78,11 +79,13 @@ export class SendStore {
         );
     }
 
-    @observable
-    sentExchange: HttpExchange | undefined;
-
-    readonly sendRequest = async (requestInput: RequestInput) => {
+    readonly sendRequest = async (sendRequest: SendRequest) => {
         trackEvent({ category: 'Send', action: 'Sent request' });
+
+        const requestInput = sendRequest.request;
+        runInAction(() => {
+            sendRequest.sentExchange = undefined;
+        });
 
         const exchangeId = uuid();
 
@@ -146,7 +149,7 @@ export class SendStore {
         }));
 
         runInAction(() => {
-            this.sentExchange = exchange;
+            sendRequest.sentExchange = exchange;
         });
     }
 

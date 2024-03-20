@@ -33,10 +33,11 @@ export class SendPage extends React.Component<{
 
     render() {
         const {
-            requestInputs,
-            sendRequest,
-            sentExchange
+            sendRequests,
+            sendRequest
         } = this.props.sendStore!;
+
+        const focusedSendRequest = sendRequests[0];
 
         return <SendPageContainer>
             <SplitPane
@@ -47,13 +48,13 @@ export class SendPage extends React.Component<{
                 maxSize={-300}
             >
                 <RequestPane
-                    requestInput={requestInputs[0]}
-                    sendRequest={sendRequest}
+                    requestInput={focusedSendRequest.request}
+                    sendRequest={() => sendRequest(focusedSendRequest)}
                     editorNode={this.requestEditorNode}
                 />
                 <ResponsePane
-                    requestInput={requestInputs[0]}
-                    exchange={sentExchange}
+                    requestInput={focusedSendRequest.request}
+                    exchange={focusedSendRequest.sentExchange}
                     editorNode={this.responseEditorNode}
                 />
             </SplitPane>
