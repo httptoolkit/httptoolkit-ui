@@ -12,6 +12,7 @@ import { RequestInput } from '../../model/send/send-request-model';
 import { EditableContentType } from '../../model/events/content-types';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
+import { useHotkeys } from '../../util/ui';
 
 import { SendCardContainer } from './send-card-section';
 import { SendRequestLine } from './send-request-line';
@@ -33,7 +34,17 @@ const METHODS_WITHOUT_BODY = [
     'GET',
     'HEAD',
     'OPTIONS'
-]
+];
+
+const RequestPaneKeyboardShortcuts = (props: {
+    sendRequest: () => void
+}) => {
+    useHotkeys('Ctrl+Enter, Cmd+Enter', (event) => {
+        props.sendRequest()
+    }, [props.sendRequest]);
+
+    return null;
+};
 
 @inject('rulesStore')
 @inject('uiStore')
@@ -75,6 +86,10 @@ export class RequestPane extends React.Component<{
         return <SendCardContainer
             hasExpandedChild={!!uiStore?.expandedSendRequestCard}
         >
+            <RequestPaneKeyboardShortcuts
+                sendRequest={this.sendRequest}
+            />
+
             <SendRequestLine
                 method={requestInput.method}
                 updateMethod={this.updateMethod}

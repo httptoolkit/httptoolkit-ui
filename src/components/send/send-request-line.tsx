@@ -4,8 +4,10 @@ import { Method } from 'mockttp';
 import { styled } from '../../styles';
 import { Icon, ArrowIcon } from '../../icons';
 
-import { Button, Select, TextInput } from '../common/inputs';
 import { getMethodColor } from '../../model/events/categorization';
+
+import { Ctrl } from '../../util/ui';
+import { Button, Select, TextInput } from '../common/inputs';
 
 type MethodName = keyof typeof Method;
 const validMethods = Object.values(Method)
@@ -160,7 +162,7 @@ export const SendRequestLine = (props: {
         <SendButton
             type='submit'
             disabled={props.isSending}
-            title='Send this request'
+            title={`Send this request (${Ctrl}+Enter)`}
         >
             { props.isSending
                 ? <Icon spin fixedWidth={true} icon={['fas', 'spinner']} />
