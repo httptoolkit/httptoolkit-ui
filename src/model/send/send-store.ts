@@ -55,9 +55,8 @@ export class SendStore {
             });
         }
 
-        autorun(() => {
-            if (this.sendRequests.length === 0) this.addRequestInput();
-        })
+        if (this.sendRequests.length === 0) this.addRequestInput();
+        this.selectedRequest = this.sendRequests[this.sendRequests.length - 1];
 
         console.log('Send store initialized');
     });
@@ -65,9 +64,20 @@ export class SendStore {
     @persist('list', sendRequestSchema) @observable
     sendRequests: Array<SendRequest> = [];
 
+    @observable
+    selectedRequest!: SendRequest;
+
     @action.bound
     addRequestInput(requestInput = new RequestInput()): RequestInput {
-        this.sendRequests[0] = { request: requestInput, sentExchange: undefined };
+        const newSendRequest = observable({
+            id: uuid(),
+            request: requestInput,
+            sentExchange: undefined
+        });
+
+        this.sendRequests.push(newSendRequest);
+        this.selectedRequest = newSendRequest;
+
         return requestInput;
     }
 
@@ -77,6 +87,35 @@ export class SendStore {
         this.addRequestInput(
             await buildRequestInputFromExchange(exchange)
         );
+    }
+
+    @action.bound
+    selectRequest(sendRequest: SendRequest) {
+        this.selectedRequest = sendRequest;
+    }
+
+    @action.bound
+    deleteRequest(sendRequest: SendRequest) {
+        const index = this.sendRequests.indexOf(sendRequest);
+        if (index === -1) throw new Error('Attempt to delete non-existent Send request');
+
+        if (this.sendRequests.length === 1) {
+            // Special case: if you close the only tab, you get a new empty tab
+            this.addRequestInput(); // Add new fresh tab
+            this.sendRequests.shift(); // Drop existing tab
+            return;
+        }
+
+        // Otherwise >1 tab: drop the closed tab and select an appropriate replacement
+        if (this.selectedRequest == sendRequest) {
+            const indexToSelect = (this.sendRequests.length > index + 1)
+                ? index + 1
+                : index - 1;
+
+            this.selectRequest(this.sendRequests[indexToSelect]);
+        }
+
+        this.sendRequests.splice(index, 1);
     }
 
     readonly sendRequest = async (sendRequest: SendRequest) => {
