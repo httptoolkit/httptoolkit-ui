@@ -27,15 +27,20 @@ const TabContentContainer = styled.div`
 `;
 
 const SendPageKeyboardShortcuts = (props: {
-    onMoveSelection: (distance: number) => void
+    onMoveSelection: (distance: number) => void,
+    onAbortRequest?: () => void
 }) => {
-    useHotkeys('Ctrl+Tab, Cmd+Tab', (event) => {
+    useHotkeys('Ctrl+Tab, Cmd+Tab', () => {
         props.onMoveSelection(1);
     }, [props.onMoveSelection]);
 
-    useHotkeys('Ctrl+Shift+Tab, Cmd+Shift+Tab', (event) => {
+    useHotkeys('Ctrl+Shift+Tab, Cmd+Shift+Tab', () => {
         props.onMoveSelection(-1);
     }, [props.onMoveSelection]);
+
+    useHotkeys('Escape', () => {
+        if (props.onAbortRequest) props.onAbortRequest();
+    }, [props.onAbortRequest])
 
     return null;
 };
@@ -84,6 +89,7 @@ export class SendPage extends React.Component<{
 
             <SendPageKeyboardShortcuts
                 onMoveSelection={moveSelection}
+                onAbortRequest={selectedRequest?.pendingSend?.abort}
             />
 
             <TabContentContainer
