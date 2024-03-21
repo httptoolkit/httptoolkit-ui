@@ -9,6 +9,7 @@ import { SendStore } from '../../model/send/send-store';
 import { ContainerSizedEditor } from '../editor/base-editor';
 
 import { SplitPane } from '../split-pane';
+import { SendTabs, TAB_BAR_HEIGHT } from './send-tabs';
 import { RequestPane } from './request-pane';
 import { ResponsePane } from './response-pane';
 
@@ -16,6 +17,12 @@ const SendPageContainer = styled.div`
     height: 100vh;
     position: relative;
     background-color: ${p => p.theme.mainBackground};
+`;
+
+const TabContentContainer = styled.div`
+    position: relative;
+    height: calc(100vh - ${TAB_BAR_HEIGHT});
+    box-shadow: 0 0 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 @inject('sendStore')
@@ -34,30 +41,45 @@ export class SendPage extends React.Component<{
     render() {
         const {
             sendRequests,
-            sendRequest
+            selectRequest,
+            deleteRequest,
+            sendRequest,
+            selectedRequest,
+            addRequestInput
         } = this.props.sendStore!;
 
-        const focusedSendRequest = sendRequests[0];
-
         return <SendPageContainer>
-            <SplitPane
-                split='vertical'
-                primary='second'
-                defaultSize='50%'
-                minSize={300}
-                maxSize={-300}
+            <SendTabs
+                sendRequests={sendRequests}
+                selectedTab={selectedRequest}
+                onSelectTab={selectRequest}
+                onCloseTab={deleteRequest}
+                onAddTab={addRequestInput}
+            />
+
+            <TabContentContainer
+                id='send-tabpanel'
+                role='tabpanel'
             >
-                <RequestPane
-                    requestInput={focusedSendRequest.request}
-                    sendRequest={() => sendRequest(focusedSendRequest)}
-                    editorNode={this.requestEditorNode}
-                />
-                <ResponsePane
-                    requestInput={focusedSendRequest.request}
-                    exchange={focusedSendRequest.sentExchange}
-                    editorNode={this.responseEditorNode}
-                />
-            </SplitPane>
+                <SplitPane
+                    split='vertical'
+                    primary='second'
+                    defaultSize='50%'
+                    minSize={300}
+                    maxSize={-300}
+                >
+                    <RequestPane
+                        requestInput={selectedRequest.request}
+                        sendRequest={() => sendRequest(selectedRequest)}
+                        editorNode={this.requestEditorNode}
+                    />
+                    <ResponsePane
+                        requestInput={selectedRequest.request}
+                        exchange={selectedRequest.sentExchange}
+                        editorNode={this.responseEditorNode}
+                    />
+                </SplitPane>
+            </TabContentContainer>
 
             <portals.InPortal node={this.requestEditorNode}>
                 <ContainerSizedEditor contentId={null} />

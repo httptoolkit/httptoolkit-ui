@@ -67,8 +67,9 @@ export class RequestInput {
 }
 
 export interface SendRequest {
-    request: RequestInput,
-    sentExchange: HttpExchange | undefined
+    id: string;
+    request: RequestInput;
+    sentExchange: HttpExchange | undefined;
 }
 
 const requestInputSchema = serializr.createModelSchema(RequestInput, {
@@ -91,6 +92,7 @@ const requestInputSchema = serializr.createModelSchema(RequestInput, {
 });
 
 export const sendRequestSchema = serializr.createSimpleSchema({
+    id: serializr.primitive(),
     request: serializr.object(requestInputSchema),
     sentExchange: false // Never persisted here
 });
