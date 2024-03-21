@@ -12,8 +12,9 @@ import { CompletedExchange, SuccessfulExchange } from '../../model/http/exchange
 import { ErrorType } from '../../model/http/error-types';
 
 import { SendCardSection } from './send-card-section';
-import { Pill } from '../common/pill';
+import { Pill, PillButton } from '../common/pill';
 import { DurationPill } from '../common/duration-pill';
+import { Icon } from '../../icons';
 
 const ResponseStatusSectionCard = styled(SendCardSection)`
     padding-top: 7px;
@@ -56,9 +57,17 @@ export const ResponseStatusSection = (props: {
     </ResponseStatusSectionCard>;
 }
 
+const AbortButton = styled(PillButton)`
+    margin-left: auto;
+    svg {
+        margin-right: 5px;
+    }
+`;
+
 export const PendingResponseStatusSection = observer((props: {
     theme: Theme,
-    timingEvents?: Partial<TimingEvents>
+    timingEvents?: Partial<TimingEvents>,
+    abortRequest?: () => void
 }) => {
     return <ResponseStatusSectionCard
         className='ignores-expanded' // This always shows, even if something is expanded
@@ -73,6 +82,15 @@ export const PendingResponseStatusSection = observer((props: {
                 &nbsp;...&nbsp;
             </Pill>
             <DurationPill timingEvents={props.timingEvents ?? {}} />
+            { props.abortRequest &&
+                <AbortButton
+                    color={props.theme.popColor}
+                    onClick={props.abortRequest}
+                >
+                    <Icon icon={['fas', 'times']} />
+                    Cancel request
+                </AbortButton>
+            }
         </header>
     </ResponseStatusSectionCard>;
 });

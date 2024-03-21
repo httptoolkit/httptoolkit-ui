@@ -27,6 +27,7 @@ export class ResponsePane extends React.Component<{
 
     requestInput: RequestInput,
     exchange: HttpExchange | undefined,
+    abortRequest: (() => void) | undefined,
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>
 }> {
 
@@ -101,12 +102,19 @@ export class ResponsePane extends React.Component<{
     }
 
     renderInProgressResponse() {
-        const { uiStore, editorNode, requestInput, exchange } = this.props;
+        const {
+            uiStore,
+            editorNode,
+            requestInput,
+            exchange,
+            abortRequest
+        } = this.props;
 
         return <>
             <PendingResponseStatusSection
                 theme={uiStore!.theme}
                 timingEvents={exchange?.timingEvents}
+                abortRequest={abortRequest}
             />
             <PendingResponseHeaderSection
                 {...this.cardProps.responseHeaders}

@@ -31,7 +31,8 @@ export const SentResponseError = (props: {
 
     if (
         !wasNotForwarded(errorType) &&
-        !wasServerIssue(errorType)
+        !wasServerIssue(errorType) &&
+        errorType !== 'client-abort'
     ) {
         logError(`Unexpected Send error type: ${errorType}`);
     }
@@ -51,6 +52,8 @@ export const SentResponseError = (props: {
                     ? 'This request was not sent successfully'
                 : wasServerIssue(errorType)
                     ? 'This response was not received successfully'
+                : errorType === 'client-abort'
+                    ? 'This request was cancelled'
                 : `The request failed because of an unexpected error: ${errorType}`
             } <WarningIcon />
         </FailureBlock>
@@ -89,6 +92,16 @@ export const SentResponseError = (props: {
                         : unreachableCheck(errorType)
                     }.
                 </ExplanationBlock>
+            : errorType === 'client-abort'
+                ? <>
+                    <ExplanationBlock>
+                        This request was cancelled after sending, before a response was completed.
+                    </ExplanationBlock>
+                    <ExplanationBlock>
+                        The server may have received and could still be processing this request, but
+                        the connection has been closed so HTTP Toolkit will not receive any response.
+                    </ExplanationBlock>
+                </>
             : <ExplanationBlock>
                 It's not clear what's gone wrong here, but for some reason HTTP Toolkit
                 couldn't successfully and/or securely complete this request. This might be an
@@ -96,7 +109,7 @@ export const SentResponseError = (props: {
             </ExplanationBlock>
         }
         { !!errorMessage &&
-            <ContentMonoValue>{ errorMessage }</ContentMonoValue>
+            <ContentMonoValue>Error: { errorMessage }</ContentMonoValue>
         }
     </SendCardSection>
 }

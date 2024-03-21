@@ -132,13 +132,18 @@ export class SendStore {
 
         const requestInput = sendRequest.request;
         const pendingRequestDeferred = getObservableDeferred();
+        const abortController = new AbortController();
         runInAction(() => {
             sendRequest.sentExchange = undefined;
 
-            sendRequest.pendingSendPromise = pendingRequestDeferred.promise;
-            sendRequest.pendingSendPromise.then(() => { sendRequest.pendingSendPromise = undefined; });
-        });
+            sendRequest.pendingSend = {
+                promise: pendingRequestDeferred.promise,
+                abort: () => abortController.abort()
+            };
 
+            const clearPending = action(() => { sendRequest.pendingSend = undefined; });
+            sendRequest.pendingSend.promise.then(clearPending, clearPending);
+        });
 
         const exchangeId = uuid();
 
@@ -163,12 +168,16 @@ export class SendStore {
 
         const encodedBody = await requestInput.rawBody.encodingBestEffortPromise;
 
-        const responseStream = await ServerApi.sendRequest({
-            url: requestInput.url,
-            method: requestInput.method,
-            headers: requestInput.headers,
-            rawBody: encodedBody
-        }, requestOptions);
+        const responseStream = await ServerApi.sendRequest(
+            {
+                url: requestInput.url,
+                method: requestInput.method,
+                headers: requestInput.headers,
+                rawBody: encodedBody
+            },
+            requestOptions,
+            abortController.signal
+        );
 
         const exchange = this.eventStore.recordSentRequest({
             id: exchangeId,
@@ -190,23 +199,43 @@ export class SendStore {
         // Keep the exchange up to date as response data arrives:
         trackResponseEvents(responseStream, exchange)
         .catch(action((error: ErrorLike & { timingEvents?: TimingEvents }) => {
-            exchange.markAborted({
-                id: exchange.id,
-                error: error,
-                timingEvents: {
-                    ...exchange.timingEvents as TimingEvents,
-                    ...error.timingEvents
-                },
-                tags: error.code ? [`passthrough-error:${error.code}`] : []
-            });
+            if (error.name === 'AbortError' && abortController.signal.aborted) {
+                const startTime = exchange.timingEvents.startTime!; // Always set in Send case (just above)
+                // Make a guess at an aborted timestamp, since this error won't give us one automatically:
+                const durationBeforeAbort = Date.now() - startTime;
+                const startTimestamp = exchange.timingEvents.startTimestamp ?? startTime;
+                const abortedTimestamp = startTimestamp + durationBeforeAbort;
+
+                exchange.markAborted({
+                    id: exchange.id,
+                    error: {
+                        message: 'Request cancelled'
+                    },
+                    timingEvents: {
+                        startTimestamp,
+                        abortedTimestamp,
+                        ...exchange.timingEvents,
+                        ...error.timingEvents
+                    } as TimingEvents,
+                    tags: ['client-error:ECONNABORTED']
+                });
+            } else {
+                exchange.markAborted({
+                    id: exchange.id,
+                    error: error,
+                    timingEvents: {
+                        ...exchange.timingEvents as TimingEvents,
+                        ...error.timingEvents
+                    },
+                    tags: error.code ? [`passthrough-error:${error.code}`] : []
+                });
+            }
         }))
         .then(() => pendingRequestDeferred.resolve());
 
         runInAction(() => {
             sendRequest.sentExchange = exchange;
         });
-
-        return sendRequest.pendingSendPromise;
     }
 
 }

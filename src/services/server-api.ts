@@ -113,14 +113,15 @@ export async function activateInterceptor(id: string, proxyPort: number, options
 
 export async function sendRequest(
     requestDefinition: RequestDefinition,
-    requestOptions: RequestOptions
+    requestOptions: RequestOptions,
+    abortSignal: AbortSignal
 ) {
     const client = (await apiClient);
     if (!(client instanceof RestApiClient)) {
         throw new Error("Requests cannot be sent via the GraphQL API client");
     }
 
-    return client.sendRequest(requestDefinition, requestOptions);
+    return client.sendRequest(requestDefinition, requestOptions, { abortSignal });
 }
 
 export async function triggerServerUpdate() {

@@ -68,7 +68,6 @@ export class SendPage extends React.Component<{
             selectRequest,
             moveSelection,
             deleteRequest,
-            sendRequest,
             selectedRequest,
             addRequestInput
         } = this.props.sendStore!;
@@ -102,13 +101,16 @@ export class SendPage extends React.Component<{
                         requestInput={selectedRequest.request}
                         sendRequest={this.sendRequest}
                         isSending={
-                            selectedRequest.pendingSendPromise?.state === 'pending'
+                            selectedRequest.pendingSend?.promise.state === 'pending'
                         }
                         editorNode={this.requestEditorNode}
                     />
                     <ResponsePane
                         requestInput={selectedRequest.request}
                         exchange={selectedRequest.sentExchange}
+                        abortRequest={
+                            selectedRequest.pendingSend?.abort
+                        }
                         editorNode={this.responseEditorNode}
                     />
                 </SplitPane>

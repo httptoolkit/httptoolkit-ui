@@ -76,7 +76,10 @@ export interface SendRequest {
     id: string;
     request: RequestInput;
     sentExchange: HttpExchange | undefined;
-    pendingSendPromise?: ObservablePromise<void>;
+    pendingSend?: {
+        promise: ObservablePromise<void>,
+        abort: () => void
+    }
 }
 
 const requestInputSchema = serializr.createModelSchema(RequestInput, {
@@ -102,7 +105,7 @@ export const sendRequestSchema = serializr.createSimpleSchema({
     id: serializr.primitive(),
     request: serializr.object(requestInputSchema),
     sentExchange: false, // Never persisted here (exportable as HAR etc though)
-    pendingSendPromise: false // Never persisted at all
+    pendingSend: false // Never persisted at all
 });
 
 export async function buildRequestInputFromExchange(exchange: HttpExchange): Promise<RequestInput> {
