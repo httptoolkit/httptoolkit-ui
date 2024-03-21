@@ -19,7 +19,6 @@ const TabsContainer = styled.div.attrs(() => ({
     box-sizing: border-box;
 
     background-color: ${p => p.theme.containerBackground};
-    border-bottom: 1px solid ${p => p.theme.containerWatermark};
 
     font-size: ${p => p.theme.textSize};
 

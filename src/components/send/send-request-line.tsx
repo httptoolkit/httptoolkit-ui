@@ -165,6 +165,7 @@ export const SendRequestLine = (props: {
             type='url'
             spellCheck='false'
             placeholder='https://example.com/hello?name=world'
+            required={true}
 
             value={props.url}
             onFocus={prepopulateUrl}
