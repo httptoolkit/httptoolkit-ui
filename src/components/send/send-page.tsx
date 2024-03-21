@@ -53,6 +53,15 @@ export class SendPage extends React.Component<{
         attributes: { 'style': 'height: 100%' }
     });
 
+    private sendRequest = () => {
+        const {
+            sendRequest,
+            selectedRequest
+        } = this.props.sendStore!;
+
+        sendRequest(selectedRequest);
+    };
+
     render() {
         const {
             sendRequests,
@@ -91,7 +100,10 @@ export class SendPage extends React.Component<{
                 >
                     <RequestPane
                         requestInput={selectedRequest.request}
-                        sendRequest={() => sendRequest(selectedRequest)}
+                        sendRequest={this.sendRequest}
+                        isSending={
+                            selectedRequest.pendingSendPromise?.state === 'pending'
+                        }
                         editorNode={this.requestEditorNode}
                     />
                     <ResponsePane

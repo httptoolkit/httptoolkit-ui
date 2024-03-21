@@ -3,9 +3,15 @@ import * as serializr from 'serializr';
 import { observable } from 'mobx';
 
 import { HttpExchange, RawHeaders } from "../../types";
+import { ObservablePromise } from '../../util/observable';
+
 import { EditableContentType, getEditableContentTypeFromViewable } from "../events/content-types";
 import { EditableBody } from '../http/editable-body';
-import { syncBodyToContentLength, syncFormattingToContentType, syncUrlToHeaders } from '../http/editable-request-parts';
+import {
+    syncBodyToContentLength,
+    syncFormattingToContentType,
+    syncUrlToHeaders
+} from '../http/editable-request-parts';
 
 // This is our model of a Request for sending. Smilar to the API model,
 // but not identical, as we add extra UI metadata etc.
@@ -70,6 +76,7 @@ export interface SendRequest {
     id: string;
     request: RequestInput;
     sentExchange: HttpExchange | undefined;
+    pendingSendPromise?: ObservablePromise<void>;
 }
 
 const requestInputSchema = serializr.createModelSchema(RequestInput, {
@@ -94,7 +101,8 @@ const requestInputSchema = serializr.createModelSchema(RequestInput, {
 export const sendRequestSchema = serializr.createSimpleSchema({
     id: serializr.primitive(),
     request: serializr.object(requestInputSchema),
-    sentExchange: false // Never persisted here
+    sentExchange: false, // Never persisted here (exportable as HAR etc though)
+    pendingSendPromise: false // Never persisted at all
 });
 
 export async function buildRequestInputFromExchange(exchange: HttpExchange): Promise<RequestInput> {

@@ -166,3 +166,46 @@ export function debounceComputed<T>(
         return computed(debounced(fn, timeoutMs), computedOptions);
     }
 }
+
+// An observable clock, allowing for time-reactive logic & UI, but ticking only while
+// observed, so no intervals etc are required any time it isn't in active use. Closely
+// based on the example in https://mobx.js.org/custom-observables.html.
+class Clock {
+
+    private atom: IAtom = createAtom(
+        "Clock",
+        () => this.startTicking(),
+        () => this.stopTicking()
+    );
+
+    private intervalHandler: ReturnType<typeof setInterval> | null = null;
+    private currentDateTime: number = Date.now();
+
+    getTime() {
+        if (this.atom.reportObserved()) {
+            return this.currentDateTime;
+        } else {
+            return Date.now();
+        }
+    }
+
+    tick() {
+        this.currentDateTime = Date.now();
+        this.atom.reportChanged();
+    }
+
+    startTicking() {
+        this.tick();
+        this.intervalHandler = setInterval(() => this.tick(), 50);
+    }
+
+    stopTicking() {
+        if (this.intervalHandler == null) return;
+
+        clearInterval(this.intervalHandler);
+        this.intervalHandler = null;
+    }
+
+}
+
+export const observableClock = new Clock();

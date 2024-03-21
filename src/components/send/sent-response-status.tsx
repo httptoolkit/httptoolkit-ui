@@ -1,6 +1,8 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { observer } from 'mobx-react-lite';
 
+import { TimingEvents } from '../../types';
 import { Theme, styled } from '../../styles';
 import { getReadableSize } from '../../util/buffer';
 
@@ -54,8 +56,9 @@ export const ResponseStatusSection = (props: {
     </ResponseStatusSectionCard>;
 }
 
-export const PendingResponseStatusSection = (props: {
-    theme: Theme
+export const PendingResponseStatusSection = observer((props: {
+    theme: Theme,
+    timingEvents?: Partial<TimingEvents>
 }) => {
     return <ResponseStatusSectionCard
         className='ignores-expanded' // This always shows, even if something is expanded
@@ -69,9 +72,10 @@ export const PendingResponseStatusSection = (props: {
             >
                 &nbsp;...&nbsp;
             </Pill>
+            <DurationPill timingEvents={props.timingEvents ?? {}} />
         </header>
     </ResponseStatusSectionCard>;
-}
+});
 
 export const FailedResponseStatusSection = (props: {
     exchange: CompletedExchange,

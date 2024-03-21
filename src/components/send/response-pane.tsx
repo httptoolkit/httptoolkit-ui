@@ -101,11 +101,12 @@ export class ResponsePane extends React.Component<{
     }
 
     renderInProgressResponse() {
-        const { uiStore, editorNode, requestInput } = this.props;
+        const { uiStore, editorNode, requestInput, exchange } = this.props;
 
         return <>
             <PendingResponseStatusSection
                 theme={uiStore!.theme}
+                timingEvents={exchange?.timingEvents}
             />
             <PendingResponseHeaderSection
                 {...this.cardProps.responseHeaders}

@@ -56,7 +56,8 @@ export class RequestPane extends React.Component<{
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>,
 
     requestInput: RequestInput,
-    sendRequest: () => void
+    sendRequest: () => void,
+    isSending: boolean
 }> {
 
     get cardProps() {
@@ -81,13 +82,19 @@ export class RequestPane extends React.Component<{
     }
 
     render() {
-        const { requestInput, editorNode, uiStore } = this.props;
+        const {
+            requestInput,
+            sendRequest,
+            isSending,
+            editorNode,
+            uiStore
+        } = this.props;
 
         return <SendCardContainer
             hasExpandedChild={!!uiStore?.expandedSendRequestCard}
         >
             <RequestPaneKeyboardShortcuts
-                sendRequest={this.sendRequest}
+                sendRequest={sendRequest}
             />
 
             <SendRequestLine
@@ -95,8 +102,8 @@ export class RequestPane extends React.Component<{
                 updateMethod={this.updateMethod}
                 url={requestInput.url}
                 updateUrl={this.updateUrl}
-                isSending={this.isSending}
-                sendRequest={this.sendRequest}
+                isSending={isSending}
+                sendRequest={sendRequest}
             />
             <SendRequestHeadersCard
                 {...this.cardProps.requestHeaders}
@@ -142,22 +149,5 @@ export class RequestPane extends React.Component<{
         const { requestInput } = this.props;
         requestInput.rawBody.updateDecodedBody(input);
     }
-
-    @observable
-    private isSending = false;
-
-    sendRequest = flow(function * (this: RequestPane) {
-        if (this.isSending) return;
-
-        this.isSending = true;
-
-        try {
-            yield this.props.sendRequest();
-        } catch (e) {
-            console.warn('Sending request failed', e);
-        } finally {
-            this.isSending = false;
-        }
-    }).bind(this);
 
 }

@@ -10,7 +10,7 @@ import {
 } from 'mockttp';
 
 import { logError } from '../../errors';
-import { lazyObservablePromise } from '../../util/observable';
+import { getObservableDeferred, lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { ErrorLike, UnreachableCheck } from '../../util/error';
 import { rawHeadersToHeaders } from '../../util/headers';
@@ -131,9 +131,14 @@ export class SendStore {
         trackEvent({ category: 'Send', action: 'Sent request' });
 
         const requestInput = sendRequest.request;
+        const pendingRequestDeferred = getObservableDeferred();
         runInAction(() => {
             sendRequest.sentExchange = undefined;
+
+            sendRequest.pendingSendPromise = pendingRequestDeferred.promise;
+            sendRequest.pendingSendPromise.then(() => { sendRequest.pendingSendPromise = undefined; });
         });
+
 
         const exchangeId = uuid();
 
@@ -194,11 +199,14 @@ export class SendStore {
                 },
                 tags: error.code ? [`passthrough-error:${error.code}`] : []
             });
-        }));
+        }))
+        .then(() => pendingRequestDeferred.resolve());
 
         runInAction(() => {
             sendRequest.sentExchange = exchange;
         });
+
+        return sendRequest.pendingSendPromise;
     }
 
 }
