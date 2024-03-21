@@ -65,9 +65,15 @@ const MethodSelectContainer = styled.div`
     flex-grow: 0;
     flex-basis: 105px;
 
-    &:focus-within > svg {
-        color: ${p => p.theme.popColor};
-        opacity: 1;
+    &:focus-within {
+        > svg {
+            color: ${p => p.theme.popColor};
+            opacity: 1;
+        }
+
+        > select {
+            font-weight: bold;
+        }
     }
 `;
 
@@ -95,6 +101,11 @@ const SendButton = styled(Button)`
 
     > svg {
         padding: 0;
+    }
+
+    &:focus {
+        outline: none;
+        background-color: ${p => p.theme.popColor};
     }
 `;
 

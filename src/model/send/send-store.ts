@@ -95,6 +95,15 @@ export class SendStore {
     }
 
     @action.bound
+    moveSelection(distance: number) {
+        const currentIndex = this.sendRequests.indexOf(this.selectedRequest);
+        if (currentIndex === -1) throw new Error("Selected request is somehow not in Send requests list");
+
+        const newIndex = _.clamp(currentIndex + distance, 0, this.sendRequests.length - 1);
+        this.selectRequest(this.sendRequests[newIndex]);
+    }
+
+    @action.bound
     deleteRequest(sendRequest: SendRequest) {
         const index = this.sendRequests.indexOf(sendRequest);
         if (index === -1) throw new Error('Attempt to delete non-existent Send request');

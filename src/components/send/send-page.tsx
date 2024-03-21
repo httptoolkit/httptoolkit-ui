@@ -3,6 +3,7 @@ import { inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
+import { useHotkeys } from '../../util/ui';
 
 import { SendStore } from '../../model/send/send-store';
 
@@ -25,6 +26,20 @@ const TabContentContainer = styled.div`
     box-shadow: 0 0 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
+const SendPageKeyboardShortcuts = (props: {
+    onMoveSelection: (distance: number) => void
+}) => {
+    useHotkeys('Ctrl+Tab, Cmd+Tab', (event) => {
+        props.onMoveSelection(1);
+    }, [props.onMoveSelection]);
+
+    useHotkeys('Ctrl+Shift+Tab, Cmd+Shift+Tab', (event) => {
+        props.onMoveSelection(-1);
+    }, [props.onMoveSelection]);
+
+    return null;
+};
+
 @inject('sendStore')
 @observer
 export class SendPage extends React.Component<{
@@ -42,6 +57,7 @@ export class SendPage extends React.Component<{
         const {
             sendRequests,
             selectRequest,
+            moveSelection,
             deleteRequest,
             sendRequest,
             selectedRequest,
@@ -53,8 +69,13 @@ export class SendPage extends React.Component<{
                 sendRequests={sendRequests}
                 selectedTab={selectedRequest}
                 onSelectTab={selectRequest}
+                onMoveSelection={moveSelection}
                 onCloseTab={deleteRequest}
                 onAddTab={addRequestInput}
+            />
+
+            <SendPageKeyboardShortcuts
+                onMoveSelection={moveSelection}
             />
 
             <TabContentContainer

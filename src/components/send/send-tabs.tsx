@@ -1,12 +1,13 @@
 import * as React from 'react';
+import { observer } from 'mobx-react-lite';
 
 import { css, styled } from '../../styles';
-import { UnstyledButton } from '../common/inputs';
+
 import { SendRequest } from '../../model/send/send-request-model';
 import { getMethodColor } from '../../model/events/categorization';
-import { observer } from 'mobx-react';
+
+import { UnstyledButton } from '../common/inputs';
 import { IconButton } from '../common/icon-button';
-import { noPropagation } from '../component-utils';
 
 export const TAB_BAR_HEIGHT = '38px';
 
@@ -62,23 +63,6 @@ const TabContainer = styled.div<{ selected: boolean }>`
     }
 `;
 
-const TabButton = styled(UnstyledButton).attrs((p: { selected: boolean }) => ({
-    role: 'tab',
-    'aria-selected': p.selected.toString(),
-    'tabindex': p.selected ? '0' : '-1'
-}))`
-    flex-basis: 100%;
-    flex-grow: 1;
-    flex-shrink: 1;
-
-    text-align: left;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-
-    padding: 0 10px;
-`;
-
 const TabMethodMarker = styled.span<{ method: string }>`
     color: ${p => getMethodColor(p.method)};
     font-size: ${p => p.theme.textInputFontSize};
@@ -101,51 +85,148 @@ const AddTabButton = styled(IconButton)`
     align-self: center;
 `;
 
+const TabButton = styled(UnstyledButton).attrs((p: { selected: boolean }) => ({
+    role: 'tab',
+    'aria-selected': p.selected.toString(),
+    'tabindex': p.selected ? '0' : '-1'
+}))`
+    flex-basis: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
+
+    text-align: left;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+
+    padding: 0 10px;
+
+    :focus-visible {
+        outline: none;
+        font-weight: bold;
+
+        & + ${CloseTabButton} {
+            color: ${p => p.theme.popColor};
+        }
+    }
+`;
+
+const SendTab = observer((props: {
+    sendRequest: SendRequest,
+    isSelectedTab: boolean,
+    onSelectTab: (request: SendRequest) => void,
+    onCloseTab: (request: SendRequest) => void
+}) => {
+    const { id, request } = props.sendRequest;
+
+    const onTabClick = React.useCallback(() => {
+        props.onSelectTab(props.sendRequest)
+    }, [props.onSelectTab, props.sendRequest]);
+
+    const onTaxAuxClick = React.useCallback((event) => {
+        if (event.button === 1) { // Middle mouse click
+            props.onCloseTab(props.sendRequest);
+        }
+    }, [props.onCloseTab, props.sendRequest]);
+
+    const onCloseClick = React.useCallback((event: React.SyntheticEvent) => {
+        props.onCloseTab(props.sendRequest);
+        event.stopPropagation();
+    }, [props.onCloseTab, props.sendRequest]);
+
+    return <TabContainer
+        key={id}
+        selected={props.isSelectedTab}
+        onClick={onTabClick}
+        onAuxClick={onTaxAuxClick}
+    >
+        <TabButton
+            selected={props.isSelectedTab}
+            tabIndex={props.isSelectedTab ? 0 : -1}
+        >
+            <TabMethodMarker method={request.method}>
+                { request.method }
+            </TabMethodMarker>
+
+            <TabName>{
+                request.url.replace(/^https?:\/\//, '') || ''
+            }</TabName>
+        </TabButton>
+
+        {
+            props.isSelectedTab && <CloseTabButton
+                title='Close this tab'
+                icon={['fas', 'times']}
+                onClick={onCloseClick}
+                tabIndex={-1} // No focus - keyboard closes via 'Delete' instead
+            />
+        }
+    </TabContainer>;
+});
+
 export const SendTabs = observer((props: {
     sendRequests: Array<SendRequest>;
     selectedTab: SendRequest;
     onSelectTab: (sendRequest: SendRequest) => void;
+    onMoveSelection: (distance: number) => void;
     onCloseTab: (sendRequest: SendRequest) => void;
     onAddTab: () => void;
 }) => {
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
+    const focusSelectedEvent = React.useCallback(() => {
+        const container = containerRef.current;
+        if (!container) return;
 
-    return <TabsContainer>
+        const selectedTab = container.querySelector('[role=tab][aria-selected=true]') as HTMLButtonElement;
+        if (!selectedTab) return;
+        selectedTab.focus();
+    }, [containerRef]);
+
+    const onKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+        // Note that selected tab === focused tab so no worries differentiating the two
+        if (event.key === 'Delete') {
+            props.onCloseTab(props.selectedTab);
+        } else if (event.key === 'ArrowRight') {
+            props.onMoveSelection(1);
+        } else if (event.key === 'ArrowLeft') {
+            props.onMoveSelection(-1);
+        } else if (event.key === 'Home') {
+            props.onMoveSelection(-Infinity);
+        } else if (event.key === 'End') {
+            props.onMoveSelection(Infinity);
+        } else {
+            return;
+        }
+
+        // In all the above cases, we want to update the focus to match:
+        requestAnimationFrame(() => focusSelectedEvent());
+    }, [props.onCloseTab, props.selectedTab, props.onMoveSelection, focusSelectedEvent]);
+
+    const onAddButtonKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+        event.stopPropagation();
+    }, []);
+
+    return <TabsContainer
+        ref={containerRef}
+        onKeyDown={onKeyDown}
+    >
         {
             props.sendRequests.map((sendRequest) => {
-                const { id, request } = sendRequest;
-
-                const isSelected = props.selectedTab === sendRequest;
-
-                return <TabContainer
-                    key={id}
-                    selected={isSelected}
-                    onClick={() => props.onSelectTab(sendRequest)}
-                >
-                    <TabButton selected={isSelected}>
-                        <TabMethodMarker method={request.method}>
-                            { request.method }
-                        </TabMethodMarker>
-
-                        <TabName>{
-                            request.url.replace(/^https?:\/\//, '') || ''
-                        }</TabName>
-                    </TabButton>
-
-                    {
-                        isSelected && <CloseTabButton
-                            title='Close this tab'
-                            icon={['fas', 'times']}
-                            onClick={noPropagation(() => props.onCloseTab(sendRequest))}
-                        />
-                    }
-                </TabContainer>;
+                const isSelectedTab = props.selectedTab === sendRequest;
+                return <SendTab
+                    sendRequest={sendRequest}
+                    isSelectedTab={isSelectedTab}
+                    onSelectTab={props.onSelectTab}
+                    onCloseTab={props.onCloseTab}
+                />
             })
         }
 
         <AddTabButton
             title='Add another tab to send a new request'
             icon={['fas', 'plus']}
+            onKeyDown={onAddButtonKeyDown}
             onClick={() => props.onAddTab()}
         />
     </TabsContainer>

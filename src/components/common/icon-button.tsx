@@ -11,14 +11,17 @@ export const IconButton = styled((p: {
     icon: IconProp,
     disabled?: boolean,
     fixedWidth?: boolean,
-    onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
+    tabIndex?: number,
+    onClick: (e: React.MouseEvent<HTMLButtonElement>) => void,
+    onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void
 }) =>
     <UnstyledButton
         className={p.className}
         title={p.title}
-        tabIndex={p.disabled ? -1 : 0}
+        tabIndex={p.tabIndex ?? (p.disabled ? -1 : 0)}
         disabled={p.disabled}
         onClick={p.onClick}
+        onKeyDown={p.onKeyDown}
     >
         <Icon
             icon={p.icon}
