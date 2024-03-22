@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 
 import { TimingEvents } from '../../types';
 import { Theme, styled } from '../../styles';
+import { Icon } from '../../icons';
 import { getReadableSize } from '../../util/buffer';
 
 import { getStatusColor } from '../../model/events/categorization';
@@ -14,7 +15,7 @@ import { ErrorType } from '../../model/http/error-types';
 import { SendCardSection } from './send-card-section';
 import { Pill, PillButton } from '../common/pill';
 import { DurationPill } from '../common/duration-pill';
-import { Icon } from '../../icons';
+import { IconButton } from '../common/icon-button';
 
 const ResponseStatusSectionCard = styled(SendCardSection)`
     padding-top: 7px;
@@ -31,8 +32,19 @@ const ResponseStatusSectionCard = styled(SendCardSection)`
     }
 `;
 
+const ShowRequestButton = styled(IconButton).attrs(() => ({
+    icon: ['fas', 'search'],
+    title: 'Jump to this request on the View page'
+}))`
+    padding: 3px 10px;
+    margin-right: -10px;
+
+    margin-left: auto;
+`;
+
 export const ResponseStatusSection = (props: {
     exchange: SuccessfulExchange,
+    showRequestOnViewPage?: () => void,
     theme: Theme
 }) => {
     const response = props.exchange.response;
@@ -53,6 +65,9 @@ export const ResponseStatusSection = (props: {
             <Pill title="The size of the raw encoded response body">
                 { getReadableSize(response.body.encoded.byteLength) }
             </Pill>
+            { props.showRequestOnViewPage &&
+                <ShowRequestButton onClick={props.showRequestOnViewPage} />
+            }
         </header>
     </ResponseStatusSectionCard>;
 }
@@ -65,9 +80,9 @@ const AbortButton = styled(PillButton)`
 `;
 
 export const PendingResponseStatusSection = observer((props: {
-    theme: Theme,
     timingEvents?: Partial<TimingEvents>,
-    abortRequest?: () => void
+    abortRequest?: () => void,
+    theme: Theme,
 }) => {
     return <ResponseStatusSectionCard
         className='ignores-expanded' // This always shows, even if something is expanded
@@ -97,7 +112,8 @@ export const PendingResponseStatusSection = observer((props: {
 
 export const FailedResponseStatusSection = (props: {
     exchange: CompletedExchange,
-    errorType: ErrorType
+    errorType: ErrorType,
+    showRequestOnViewPage?: () => void,
     theme: Theme
 }) => {
     return <ResponseStatusSectionCard
@@ -113,6 +129,10 @@ export const FailedResponseStatusSection = (props: {
                 Failed: { _.startCase(props.errorType) }
             </Pill>
             <DurationPill timingEvents={props.exchange.timingEvents} />
+
+            { props.showRequestOnViewPage &&
+                <ShowRequestButton onClick={props.showRequestOnViewPage} />
+            }
         </header>
     </ResponseStatusSectionCard>;
 }

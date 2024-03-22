@@ -4,6 +4,7 @@ import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
 import { useHotkeys } from '../../util/ui';
+import { WithInjected } from '../../types';
 
 import { SendStore } from '../../model/send/send-store';
 
@@ -47,8 +48,9 @@ const SendPageKeyboardShortcuts = (props: {
 
 @inject('sendStore')
 @observer
-export class SendPage extends React.Component<{
-    sendStore?: SendStore
+class SendPage extends React.Component<{
+    sendStore: SendStore
+    navigate: (path: string) => void
 }> {
 
     private requestEditorNode = portals.createHtmlPortalNode<typeof ContainerSizedEditor>({
@@ -62,10 +64,19 @@ export class SendPage extends React.Component<{
         const {
             sendRequest,
             selectedRequest
-        } = this.props.sendStore!;
+        } = this.props.sendStore;
 
         sendRequest(selectedRequest);
     };
+
+    private showRequestOnViewPage = () => {
+        const { sentExchange } = this.props.sendStore.selectedRequest;
+        if (!sentExchange) return;
+
+        const { navigate } = this.props;
+
+        navigate(`/view/${sentExchange.id}`);
+    }
 
     render() {
         const {
@@ -75,7 +86,7 @@ export class SendPage extends React.Component<{
             deleteRequest,
             selectedRequest,
             addRequestInput
-        } = this.props.sendStore!;
+        } = this.props.sendStore;
 
         return <SendPageContainer>
             <SendTabs
@@ -114,8 +125,10 @@ export class SendPage extends React.Component<{
                     <ResponsePane
                         requestInput={selectedRequest.request}
                         exchange={selectedRequest.sentExchange}
-                        abortRequest={
-                            selectedRequest.pendingSend?.abort
+                        abortRequest={selectedRequest.pendingSend?.abort}
+                        showRequestOnViewPage={selectedRequest.sentExchange
+                            ? this.showRequestOnViewPage
+                            : undefined
                         }
                         editorNode={this.responseEditorNode}
                     />
@@ -132,3 +145,10 @@ export class SendPage extends React.Component<{
     }
 
 }
+
+// Annoying cast required to handle the store prop nicely in our types
+const InjectedSendPage = SendPage as unknown as WithInjected<
+    typeof SendPage,
+    'sendStore' | 'navigate'
+>;
+export { InjectedSendPage as SendPage };
