@@ -93,10 +93,13 @@ export const PendingResponseStatusSection = observer((props: {
         <header>
             <Pill
                 color={getStatusColor(undefined, props.theme)}
+                // Spacing here is intended to be approx the same as "200: OK" to avoid
+                // too much layout churn between pending & completed requests
             >
-                &nbsp;...&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;&nbsp;&nbsp;&nbsp;
             </Pill>
             <DurationPill timingEvents={props.timingEvents ?? {}} />
+
             { props.abortRequest &&
                 <AbortButton
                     color={props.theme.popColor}
