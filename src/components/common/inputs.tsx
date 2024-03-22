@@ -115,6 +115,11 @@ const invalidTextCss = css`
     border-color: ${p => p.theme.warningColor};
     background-color: ${p => p.theme.warningBackground};
     color: ${p => p.theme.mainColor};
+
+    &:hover:not(:disabled) {
+        border-color: ${p => p.theme.mainColor};
+        background-color: ${p => p.theme.warningBackground};
+    }
 `;
 
 type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
