@@ -45,8 +45,8 @@ const AppContainer = styled.div<{ inert?: boolean }>`
     }
 `;
 
-interface ExtendProps extends React.PropsWithChildren<any> {
-	pageComponent: React.ComponentType<{}>;
+interface ExtendProps extends React.ComponentProps<any> {
+    pageComponent: React.ComponentType<any>;
 }
 
 const Route = ({ children, ...props }: ExtendProps & RouteComponentProps): React.ReactElement => {

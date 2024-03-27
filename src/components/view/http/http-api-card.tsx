@@ -129,7 +129,7 @@ function formatValue(value: unknown): string | undefined {
 
 const getDetailsWithWarnings = (details: Html | undefined, warnings: string[]) => [
     warnings.length && warnings.map((warning, i) => <Warning key={warning}>{ warning }</Warning>),
-    details && <ExternalContent key='details' content={details} />
+    details && <ExternalContent key='details' htmlContent={details} />
 ].filter(d => !!d);
 
 
@@ -187,7 +187,7 @@ const ApiRequestDetails = (props: {
             { api.service.description &&
                 <CollapsibleSectionBody>
                     <ServiceLogo src={ api.service.logoUrl } alt='' />
-                    <ExternalContent content={api.service.description} />
+                    <ExternalContent htmlContent={api.service.description} />
                     <DocsLink href={api.service.docsUrl}>
                         Find out more
                     </DocsLink>

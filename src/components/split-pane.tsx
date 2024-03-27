@@ -6,7 +6,8 @@ import { styled } from '../styles';
 // Styles original taken from
 // https://github.com/tomkp/react-split-pane/blob/master/README.md#example-styling
 export const SplitPane = styled(ReactSplitPane)<{
-    hiddenPane?: '1' | '2'
+    hiddenPane?: '1' | '2',
+    children?: React.ReactNode // Missing in real types - causes issues in React 18
 }>`
     .Resizer {
         background: #000;

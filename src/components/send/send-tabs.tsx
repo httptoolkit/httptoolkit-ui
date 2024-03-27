@@ -122,7 +122,7 @@ const SendTab = observer((props: {
         props.onSelectTab(props.sendRequest)
     }, [props.onSelectTab, props.sendRequest]);
 
-    const onTaxAuxClick = React.useCallback((event) => {
+    const onTaxAuxClick = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {
         if (event.button === 1) { // Middle mouse click
             props.onCloseTab(props.sendRequest);
         }

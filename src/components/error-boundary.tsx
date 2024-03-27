@@ -65,7 +65,9 @@ const ErrorOutput = styled.code`
 `;
 
 @observer
-export class ErrorBoundary extends React.Component {
+export class ErrorBoundary extends React.Component<{
+    children?: React.ReactNode
+}> {
 
     @observable
     private error: Error | undefined;

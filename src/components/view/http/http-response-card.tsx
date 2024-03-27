@@ -48,7 +48,7 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
     const responseDetails = [
         apiResponseDescription && <ExternalContent
             key='api-response-docs'
-            content={apiResponseDescription}
+            htmlContent={apiResponseDescription}
         />,
         statusDocs && <Markdown
             key='status-docs'

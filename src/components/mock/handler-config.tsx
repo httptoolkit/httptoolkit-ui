@@ -1386,7 +1386,7 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
                     : this.props.ruleType === 'websocket'
                         ? 'WebSocket'
                     : this.props.ruleType === 'webrtc'
-                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })()
                     : unreachableCheck(this.props.ruleType)
                 } is received, the server will keep the connection open but do nothing.
                 With no data or response, most clients will time out and abort the
@@ -1407,7 +1407,7 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
                     : this.props.ruleType === 'websocket'
                         ? 'WebSocket'
                     : this.props.ruleType === 'webrtc'
-                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })()
                     : unreachableCheck(this.props.ruleType)
                 } is received, the connection will be cleanly closed, with no response.
             </ConfigExplanation>
@@ -1426,7 +1426,7 @@ class ResetConnectionHandlerConfig extends HandlerConfig<ResetConnectionHandler>
                     : this.props.ruleType === 'websocket'
                         ? 'WebSocket'
                     : this.props.ruleType === 'webrtc'
-                        ? (() => { throw new Error('Not compatible with WebRTC rules') })
+                        ? (() => { throw new Error('Not compatible with WebRTC rules') })()
                     : unreachableCheck(this.props.ruleType)
                 } is received, the connection will be killed with a TCP RST packet (or a
                 RST_STREAM frame, for HTTP/2 requests).

@@ -65,8 +65,8 @@ export const BlankContentPlaceholder = styled.div`
 // The __html format is intended to enforce this - those objects
 // should only be created during sanitization.
 export const ExternalContent = (p:  React.HTMLAttributes<HTMLDivElement> & {
-    content: Html
-}) => <Content {..._.omit(p, 'content')} dangerouslySetInnerHTML={p.content} />
+    htmlContent: Html
+}) => <Content {..._.omit(p, 'htmlContent')} dangerouslySetInnerHTML={p.htmlContent} />
 
 // Format blocks of readable text/docs/etc.
 export const Content = styled.div`
@@ -146,7 +146,7 @@ export const Content = styled.div`
 
 export const Markdown = (p: { content: string | undefined }) =>
     p.content ?
-        <ExternalContent content={fromMarkdown(
+        <ExternalContent htmlContent={fromMarkdown(
             p.content
                 .replace(/:suggestion:/g, suggestionIconHtml)
                 .replace(/:warning:/g, warningIconHtml)
