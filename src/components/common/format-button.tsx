@@ -20,13 +20,7 @@ export const FormatButton = (props: {
     const formatter = Formatters[format];
     const canFormat = !!formatter &&
         isEditorFormatter(formatter) &&
-        [
-            'json',
-            'html',
-            'xml',
-            'javascript',
-            'css'
-        ].includes(format);
+        formatter.isEditApplicable;
 
     return <IconButton
         className={props.className}

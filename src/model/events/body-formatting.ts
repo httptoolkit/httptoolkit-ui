@@ -12,6 +12,7 @@ import { ImageViewer } from '../../components/editor/image-viewer';
 export interface EditorFormatter {
     language: string;
     cacheKey: Symbol;
+    isEditApplicable: boolean; // Can you apply this manually during editing to format an input?
     render(content: Buffer): string | ObservablePromise<string>;
 }
 
@@ -42,6 +43,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
         language: 'text',
         cacheKey: Symbol('raw'),
+        isEditApplicable: false,
         render: (input: Buffer) => {
             if (input.byteLength < 2000) {
                 try {
@@ -61,6 +63,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     text: {
         language: 'text',
         cacheKey: Symbol('text'),
+        isEditApplicable: false,
         render: (input: Buffer) => {
             return bufferToString(input);
         }
@@ -68,31 +71,37 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     base64: {
         language: 'text',
         cacheKey: Symbol('base64'),
+        isEditApplicable: false,
         render: buildAsyncRenderer('base64')
     },
     markdown: {
         language: 'markdown',
         cacheKey: Symbol('markdown'),
+        isEditApplicable: false,
         render: buildAsyncRenderer('markdown')
     },
     yaml: {
         language: 'yaml',
         cacheKey: Symbol('yaml'),
+        isEditApplicable: false,
         render: buildAsyncRenderer('yaml')
     },
     html: {
         language: 'html',
         cacheKey: Symbol('html'),
+        isEditApplicable: true,
         render: buildAsyncRenderer('html')
     },
     xml: {
         language: 'xml',
         cacheKey: Symbol('xml'),
+        isEditApplicable: true,
         render: buildAsyncRenderer('xml')
     },
     json: {
         language: 'json',
         cacheKey: Symbol('json'),
+        isEditApplicable: true,
         render: (input: Buffer) => {
             if (input.byteLength < 10000) {
                 const inputAsString = bufferToString(input);
@@ -118,16 +127,19 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
     javascript: {
         language: 'javascript',
         cacheKey: Symbol('javascript'),
+        isEditApplicable: true,
         render: buildAsyncRenderer('javascript')
     },
     css: {
         language: 'css',
         cacheKey: Symbol('css'),
+        isEditApplicable: true,
         render: buildAsyncRenderer('css')
     },
     protobuf: {
         language: 'protobuf',
         cacheKey: Symbol('protobuf'),
+        isEditApplicable: false,
         render: buildAsyncRenderer('protobuf')
     },
     'url-encoded': {
