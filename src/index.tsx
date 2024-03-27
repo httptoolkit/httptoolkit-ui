@@ -12,7 +12,7 @@ initSentry(process.env.SENTRY_DSN);
 
 import * as _ from 'lodash';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import * as ReactDOM from 'react-dom/client';
 import * as mobx from 'mobx';
 import { Provider } from 'mobx-react';
 
@@ -108,7 +108,8 @@ appStartupPromise.then(() => {
     console.log('App started, rendering');
 
     document.dispatchEvent(new Event('load:rendering'));
-    ReactDOM.render(
+    const root = ReactDOM.createRoot(document.querySelector(APP_ELEMENT_SELECTOR)!);
+    root.render(
         <Provider {...stores}>
             <StyleProvider>
                 <ErrorBoundary>
@@ -117,7 +118,7 @@ appStartupPromise.then(() => {
                 </ErrorBoundary>
             </StyleProvider>
         </Provider>
-    , document.querySelector(APP_ELEMENT_SELECTOR))
+    );
 });
 
 const STARTUP_TIMEOUT = 10000;
