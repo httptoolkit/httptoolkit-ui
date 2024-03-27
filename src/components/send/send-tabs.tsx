@@ -116,7 +116,7 @@ const SendTab = observer((props: {
     onSelectTab: (request: SendRequest) => void,
     onCloseTab: (request: SendRequest) => void
 }) => {
-    const { id, request } = props.sendRequest;
+    const { request } = props.sendRequest;
 
     const onTabClick = React.useCallback(() => {
         props.onSelectTab(props.sendRequest)
@@ -134,7 +134,6 @@ const SendTab = observer((props: {
     }, [props.onCloseTab, props.sendRequest]);
 
     return <TabContainer
-        key={id}
         selected={props.isSelectedTab}
         onClick={onTabClick}
         onAuxClick={onTaxAuxClick}
@@ -214,6 +213,7 @@ export const SendTabs = observer((props: {
             props.sendRequests.map((sendRequest) => {
                 const isSelectedTab = props.selectedTab === sendRequest;
                 return <SendTab
+                    key={sendRequest.id}
                     sendRequest={sendRequest}
                     isSelectedTab={isSelectedTab}
                     onSelectTab={props.onSelectTab}
