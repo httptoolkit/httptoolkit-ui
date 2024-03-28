@@ -188,7 +188,7 @@ export class SendStore {
             path: url.pathname,
             hostname: url.hostname,
             headers: rawHeadersToHeaders(requestInput.headers),
-            rawHeaders: requestInput.headers,
+            rawHeaders: _.cloneDeep(requestInput.headers),
             body: { buffer: encodedBody },
             timingEvents: {
                 startTime: Date.now()
