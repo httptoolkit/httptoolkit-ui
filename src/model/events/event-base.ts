@@ -1,4 +1,4 @@
-import { observable, computed } from 'mobx';
+import { observable, computed, action } from 'mobx';
 
 import {
     FailedTlsConnection,
@@ -37,6 +37,14 @@ export abstract class HTKEventBase {
 
     @observable
     public pinned: boolean = false;
+
+    @observable
+    public mulitSelected: boolean = false;
+
+    @action.bound
+    onMultiSelected(evt : any){
+        this.mulitSelected = ! this.mulitSelected;
+    }
 
     // Logic elsewhere can put values into these caches to cache calculations
     // about this event weakly, so they GC with the event.

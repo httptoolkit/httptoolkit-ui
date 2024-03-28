@@ -28,6 +28,7 @@ export const ClearAllButton = observer((props: {
 
 export const ExportAsHarButton = inject('accountStore')(observer((props: {
     className?: string,
+    isMultiSelectEnabled: boolean,
     accountStore?: AccountStore,
     events: CollectedEvent[]
 }) => {
@@ -45,8 +46,9 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
         }
         disabled={!isPaidUser || props.events.length === 0}
         onClick={async () => {
+            const serialize = props.isMultiSelectEnabled ? props.events.filter(evt=> evt.mulitSelected) : props.events;
             const harContent = JSON.stringify(
-                await generateHar(props.events)
+                await generateHar(serialize)
             );
             const filename = `HTTPToolkit_${
                 dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
