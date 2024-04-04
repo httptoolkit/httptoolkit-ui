@@ -58,9 +58,12 @@ interface ViewPageProps {
 }
 
 const ViewPageKeyboardShortcuts = (props: {
+    isPaidUser: boolean,
     selectedEvent: CollectedEvent | undefined,
     moveSelection: (distance: number) => void,
     onPin: (event: HttpExchange) => void,
+    onResend: (event: HttpExchange) => void,
+    onMockRequest: (event: HttpExchange) => void,
     onDelete: (event: CollectedEvent) => void,
     onClear: () => void,
     onStartSearch: () => void
@@ -81,6 +84,20 @@ const ViewPageKeyboardShortcuts = (props: {
             event.preventDefault();
         }
     }, [props.selectedEvent, props.onPin]);
+
+    useHotkeys('Ctrl+r, Cmd+r', (event) => {
+        if (props.isPaidUser && props.selectedEvent?.isHttp()) {
+            props.onResend(props.selectedEvent);
+            event.preventDefault();
+        }
+    }, [props.selectedEvent, props.onResend, props.isPaidUser]);
+
+    useHotkeys('Ctrl+m, Cmd+m', (event) => {
+        if (props.isPaidUser && props.selectedEvent?.isHttp()) {
+            props.onMockRequest(props.selectedEvent);
+            event.preventDefault();
+        }
+    }, [props.selectedEvent, props.onMockRequest, props.isPaidUser]);
 
     useHotkeys('Ctrl+Delete, Cmd+Delete', (event) => {
         if (isEditable(event.target)) return;
@@ -271,6 +288,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     render(): JSX.Element {
         const { isPaused, events } = this.props.eventsStore;
         const { certPath } = this.props.proxyStore;
+        const { isPaidUser } = this.props.accountStore;
 
         const { filteredEvents, filteredEventCount } = this.filteredEventState;
 
@@ -338,9 +356,12 @@ class ViewPage extends React.Component<ViewPageProps> {
 
         return <div className={this.props.className}>
             <ViewPageKeyboardShortcuts
+                isPaidUser={isPaidUser}
                 selectedEvent={this.selectedEvent}
                 moveSelection={this.moveSelection}
                 onPin={this.onPin}
+                onResend={this.onPrepareToResendRequest}
+                onMockRequest={this.onBuildRuleFromExchange}
                 onDelete={this.onDelete}
                 onClear={this.onForceClear}
                 onStartSearch={this.onStartSearch}
@@ -440,6 +461,8 @@ class ViewPage extends React.Component<ViewPageProps> {
     onBuildRuleFromExchange(exchange: HttpExchange) {
         const { rulesStore, navigate } = this.props;
 
+        if (!this.props.accountStore!.isPaidUser) return;
+
         const rule = buildRuleFromExchange(exchange);
         rulesStore!.draftRules.items.unshift(rule);
         navigate(`/mock/${rule.id}`);
@@ -448,6 +471,9 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     async onPrepareToResendRequest(exchange: HttpExchange) {
         const { sendStore, navigate } = this.props;
+
+        if (!this.props.accountStore!.isPaidUser) return;
+
         await sendStore.addRequestInputFromExchange(exchange);
         navigate(`/send`);
     }

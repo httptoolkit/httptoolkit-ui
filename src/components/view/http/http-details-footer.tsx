@@ -82,7 +82,7 @@ const MockButton = observer((p: {
     onClick={p.onClick}
     title={
         p.isPaidUser
-            ? 'Create a mock rule from this exchange'
+            ? `Create a mock rule from this exchange (${Ctrl}+m)`
             : 'With Pro: create a mock rule from this exchange'
     }
     disabled={!p.isExchange || !p.isPaidUser}
@@ -96,7 +96,7 @@ const SendButton = observer((p: {
     icon={['far', 'paper-plane']}
     onClick={p.onClick}
     title={p.isPaidUser
-        ? 'Resend this request'
+        ? `Resend this request (${Ctrl}+r)`
         : 'With Pro: Resend this request'
     }
     disabled={!p.isExchange || !p.isPaidUser}
