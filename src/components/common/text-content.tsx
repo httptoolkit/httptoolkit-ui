@@ -9,6 +9,7 @@ import { fromMarkdown } from '../../model/ui/markdown';
 
 export const ContentLabel = styled.h2`
     text-transform: uppercase;
+    font-family: ${p => p.theme.titleTextFamily};
     opacity: ${p => p.theme.lowlightTextOpacity};
 
     display: inline-block;

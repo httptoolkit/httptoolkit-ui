@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as Webpack from 'webpack';
 
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import GoogleFontsPlugin from '@beyonk/google-fonts-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import ForkTsCheckerNotifierWebpackPlugin from 'fork-ts-checker-notifier-webpack-plugin';
@@ -164,16 +163,6 @@ export default <Webpack.Configuration>{
                 'wordHighlighter',
                 'wordOperations'
             ]
-        }),
-        new GoogleFontsPlugin({
-            fonts: [
-                { family: "Fira Mono" },
-                { family: "Lato" }
-            ],
-            path: '.',
-            formats: ['woff2'], // Supported by Chrome, FF, Edge, Safari 12+
-            filename: 'fonts.css',
-            apiUrl: 'https://gwfh.mranftl.com/api/fonts'
         }),
         new Webpack.ProvidePlugin({
             'process': 'process/browser.js',

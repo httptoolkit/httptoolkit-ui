@@ -49,6 +49,7 @@ const PlanPickerDetails = styled.section`
 
 const PlanPickerHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
+    font-family: ${p => p.theme.titleTextFamily};
     font-weight: bold;
     letter-spacing: -1px;
     text-align: center;
@@ -117,6 +118,8 @@ const PlanPickerButtons = styled.div`
 `;
 
 const PlanSecondaryButton = styled(SecondaryButton)`
+    letter-spacing: -0.5px;
+
     &:not(:last-child) {
         margin-bottom: 10px;
     }
@@ -170,13 +173,14 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
     `}
 `;
 
-const TierHeader = styled.div`
+const TierHeader = styled.h2`
     width: 100%;
     padding: 30px 0;
     color: ${p => p.theme.popColor};
     text-align: center;
     font-weight: bold;
     font-size: ${p => p.theme.loudHeadingSize};
+    font-family: ${p => p.theme.titleTextFamily};
 `;
 
 const TierPriceBlock = styled.div`

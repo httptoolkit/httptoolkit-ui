@@ -104,6 +104,10 @@ export const MediumCard = styled(Card)`
     padding: 20px;
     margin-bottom: 20px;
 
+    > header h1, > h1 {
+        font-family: ${p => p.theme.titleTextFamily};
+    }
+
     > header, > h1 {
         text-transform: uppercase;
         text-align: ${p => p.headerAlignment};

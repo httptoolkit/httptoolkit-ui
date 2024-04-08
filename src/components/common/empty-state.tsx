@@ -27,8 +27,10 @@ export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & 
     align-items: center;
     justify-content: center;
 
-    color: ${props => props.theme.containerWatermark};
-    font-size: 40px;
+    color: ${p => p.theme.containerWatermark};
+    font-size: ${p => p.theme.loudHeadingSize};
+    letter-spacing: -1px;
+
     text-align: center;
 
     box-sizing: border-box;

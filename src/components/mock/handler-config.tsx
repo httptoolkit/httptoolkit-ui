@@ -247,6 +247,7 @@ const SectionLabel = styled.h2`
     }
 
     text-transform: uppercase;
+    font-family: ${p => p.theme.titleTextFamily};
     opacity: ${p => p.theme.lowlightTextOpacity};
     width: 100%;
 `;

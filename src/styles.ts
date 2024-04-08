@@ -3,12 +3,16 @@ import * as polished from 'polished';
 import type { ThemeProps } from 'styled-components';
 import type * as monacoTypes from 'monaco-editor';
 
+import "@fontsource/dm-sans";
+import "@fontsource/dm-mono";
+import "@fontsource/saira";
+
 import reset from 'styled-reset';
 
 const fontSizes = {
     textInputFontSize: '13px',
-    textSize: '15px',
-    subHeadingSize: '18px',
+    textSize: '14.5px',
+    subHeadingSize: '17px',
     headingSize: '20px',
     largeHeadingSize: '24px',
     loudHeadingSize: '38px',
@@ -22,8 +26,9 @@ export const warningColor = '#f1971f';
 export const popColor = '#e1421f';
 
 export const lightTheme = {
-    fontFamily: 'Lato, Arial, sans-serif',
-    monoFontFamily: "'Fira Mono', monospace",
+    fontFamily: '"DM Sans", Arial, sans-serif',
+    titleTextFamily: 'Saira, "DM Sans", Arial, sans-serif',
+    monoFontFamily: '"DM Mono", monospace',
 
     mainBackground: '#fafafa',
     mainLowlightBackground: '#eaeaea',
@@ -70,8 +75,9 @@ export const lightTheme = {
 };
 
 export const darkTheme = {
-    fontFamily: 'Lato, Arial, sans-serif',
-    monoFontFamily: "'Fira Mono', monospace",
+    fontFamily: '"DM Sans", Arial, sans-serif',
+    titleTextFamily: 'Saira, "DM Sans", Arial, sans-serif',
+    monoFontFamily: '"DM Mono", monospace',
 
     mainBackground: '#222222',
     mainLowlightBackground: '#303030',
@@ -137,8 +143,9 @@ export const darkTheme = {
 };
 
 export const highContrastTheme = {
-    fontFamily: 'Lato, Arial, sans-serif',
-    monoFontFamily: "'Fira Mono', monospace",
+    fontFamily: '"DM Sans", Arial, sans-serif',
+    titleTextFamily: 'Saira, "DM Sans", Arial, sans-serif',
+    monoFontFamily: '"DM Mono", monospace',
 
     mainBackground: '#000000',
     mainLowlightBackground: '#262626',

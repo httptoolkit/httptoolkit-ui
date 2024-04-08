@@ -40,7 +40,7 @@ function getDefaultColor(theme: Theme) {
 const pillStyles = css`
     display: inline-block;
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 5px 8px 3px;
 
     text-align: center;
     text-transform: none;
@@ -80,7 +80,7 @@ const Select = styled(Pill.withComponent('select'))`
     border: none;
 
     height: 24px;
-    padding: 0 4px 3px 8px;
+    padding: 0 4px 0 8px;
 
     font-size: ${p => p.theme.textSize};
     font-family: ${p => p.theme.fontFamily};

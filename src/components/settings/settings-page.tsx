@@ -59,6 +59,7 @@ const SettingPageContainer = styled.section`
 
 const SettingsHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
+    font-family: ${p => p.theme.titleTextFamily};
     font-weight: bold;
     margin-bottom: 40px;
 `;

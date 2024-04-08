@@ -34,6 +34,9 @@
   },
   "dependencies": {
     "@ethersproject/abi": "^5.7.0",
+    "@fontsource/dm-mono": "^5.0.19",
+    "@fontsource/dm-sans": "^5.0.20",
+    "@fontsource/saira": "^5.0.27",
     "@fortawesome/fontawesome-svg-core": "^1.2.27",
     "@fortawesome/free-brands-svg-icons": "^5.12.1",
     "@fortawesome/free-regular-svg-icons": "^5.12.1",
@@ -144,7 +147,6 @@
     "yaml": "^1.7.2"
   },
   "devDependencies": {
-    "@beyonk/google-fonts-webpack-plugin": "^1.7.0",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
     "@types/chai-enzyme": "^0.6.6",

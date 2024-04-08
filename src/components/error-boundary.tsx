@@ -34,6 +34,7 @@ const ErrorOverlay = styled((props: {
 
     h1 {
         font-size: ${p => p.theme.screamingHeadingSize};
+        font-family: ${p => p.theme.titleTextFamily};
         font-weight: bold;
         margin-bottom: 50px;
     }

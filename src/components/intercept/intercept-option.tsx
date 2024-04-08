@@ -118,6 +118,10 @@ const InterceptOptionCard = styled(LittleCard)<{
         z-index: 1;
     }
 
+    h1 {
+        font-family: ${p => p.theme.titleTextFamily};
+    }
+
     > h1:not(:last-child) {
         margin-bottom: 10px; /* Override LittleCard default */
     }

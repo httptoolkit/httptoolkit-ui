@@ -195,6 +195,7 @@ const ConfigLabel = styled.label`
     margin: 5px 0;
 
     text-transform: uppercase;
+    font-family: ${p => p.theme.titleTextFamily};
     font-size: ${p => p.theme.textSize};
     opacity: ${p => p.theme.lowlightTextOpacity};
 `;

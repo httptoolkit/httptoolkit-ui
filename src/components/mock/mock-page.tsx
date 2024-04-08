@@ -66,6 +66,7 @@ const MockPageHeader = styled.header`
 
 const MockHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
+    font-family: ${p => p.theme.titleTextFamily};
     font-weight: bold;
     flex-grow: 1;
 `;
