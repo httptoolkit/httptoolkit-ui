@@ -9,11 +9,10 @@
     try_files {path} /index.html
     file_server
 
-    # Cache responses for 1 minute, validate async during next 10 minutes, or
-    # continue serving old data as-is for up to 24 hours if this server stops
-    # responding/returns errors.
+    # Cache responses for 1 minute (local)/1h (CDN - invalidated on deploy), validate async during the next 10
+    # minutes, or continue using old data as-is for up to 24 hours if this server stops responding/returns errors.
     @get method GET
-    header @get Cache-Control "public, max-age=60, stale-while-revalidate=600, stale-if-error=86400"
+    header @get Cache-Control "public, max-age=60, s-maxage=3600, stale-while-revalidate=600, stale-if-error=86400"
 
     header Content-Security-Policy "frame-ancestors 'none'"
     header Referrer-Policy "strict-origin"
