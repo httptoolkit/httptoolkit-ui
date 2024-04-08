@@ -16,5 +16,7 @@
     header @get Cache-Control "public, max-age=60, stale-while-revalidate=600, stale-if-error=86400"
 
     header Content-Security-Policy "frame-ancestors 'none'"
+    header Referrer-Policy "strict-origin"
+
     header X-Clacks-Overhead "GNU Terry Pratchett" # https://xclacksoverhead.org
 }
