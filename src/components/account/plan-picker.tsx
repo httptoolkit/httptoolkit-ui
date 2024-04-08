@@ -24,7 +24,7 @@ const PlanPickerModal = styled.dialog`
     right: auto;
 
     transform: translate(-50%, -50%);
-    z-index: 99;
+    z-index: 9999;
 
     display: flex;
     flex-direction: row;
