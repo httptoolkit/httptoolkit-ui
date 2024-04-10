@@ -83,12 +83,25 @@ const normalizeUrl = (url: string) =>
     .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
     .replace(/\?.*/, ''); // Strip any query & hash params
 
+const SINGLE_EVENT_CATEGORIES = ["Interceptors"];
+const seenLimitedEvents: string[] = [];
+
 export function trackEvent(event: {
     category: string,
     action: string,
     value?: string
 }) {
     if (!enabled) return;
+
+    if (SINGLE_EVENT_CATEGORIES.includes(event.category)) {
+        const eventKey = `${event.category}${event.action}${event.value}`;
+
+        // For events in these categories, we only want to log them once
+        // per session. No need to track more detail than that, good to
+        // avoid tracking unnecessary data where possible.
+        if (seenLimitedEvents.includes(eventKey)) return;
+        else seenLimitedEvents.push(eventKey);
+    }
 
     const currentUrl = normalizeUrl(location.href);
 
