@@ -22,9 +22,31 @@ const binaryLaxDecoder = new TextDecoder('latin1', { fatal: false });
 // as UTF8) but for _editing_ binary data we need a lossless encoding, not utf8.
 // (Monaco isn't perfectly lossless editing binary anyway, but we can try).
 export function isProbablyUtf8(buffer: Buffer) {
+    let dataToCheck: Buffer;
+    if (buffer.byteLength > 1028) {
+        // We want to trim the data to ~1KB, to avoid checking huge bodies in full.
+        // Unfortunately, for UTF-8 this isn't safe: if a multibyte char crosses the
+        // line when we cut the string, our slice of valid UTF-8 will be invalid.
+        // To handle this, we find the first non-continuation byte after 1024, and
+        // decode everything up to that point.
+
+        const lastUtf8IndexBefore1024 = buffer
+            .slice(1024, 1028) // 4 bytes should be enough - max length of UTF8 char
+            .findIndex((byte) =>
+                (byte & 0xC0) != 0x80 // 0x80 === 0b10... => continuation byte
+            );
+
+        // If there's no non-continuation byte, it's definitely not UTF-8
+        if (lastUtf8IndexBefore1024 === -1) return false;
+        const cleanEndOfUtf8Data = 1024 + lastUtf8IndexBefore1024;
+
+        dataToCheck = buffer.slice(0, cleanEndOfUtf8Data);
+    } else {
+        dataToCheck = buffer;
+    }
+
     try {
-        // Just check the first 1kb, in case it's a huge file
-        const dataToCheck = buffer.slice(0, 1024);
+        // Fully decode our maybe-UTF8 chunk, and see if it's valid throughout:
         strictDecoder.decode(dataToCheck);
         return true; // Decoded OK, probably safe
     } catch (e) {
