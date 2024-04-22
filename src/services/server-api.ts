@@ -89,8 +89,11 @@ export async function getInterceptors(proxyPort: number): Promise<ServerIntercep
     return (await apiClient).getInterceptors(proxyPort);
 }
 
-export async function getDetailedInterceptorMetadata<M extends unknown>(id: string): Promise<M | undefined> {
-    return (await apiClient).getDetailedInterceptorMetadata(id);
+export async function getDetailedInterceptorMetadata<M extends unknown>(
+    id: string,
+    subId?: string
+): Promise<M | undefined> {
+    return (await apiClient).getDetailedInterceptorMetadata(id, subId);
 }
 
 export async function activateInterceptor(id: string, proxyPort: number, options?: any): Promise<unknown> {

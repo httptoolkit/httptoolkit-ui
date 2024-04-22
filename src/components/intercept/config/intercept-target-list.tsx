@@ -28,7 +28,6 @@ const Spinner = styled(Icon).attrs(() => ({
 `;
 
 const ListScrollContainer = styled.div`
-    max-height: 279px;
     overflow-y: auto;
     margin: 10px -15px;
     flex-grow: 1;
