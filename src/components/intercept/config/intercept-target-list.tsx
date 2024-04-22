@@ -9,6 +9,13 @@ import { Button } from '../../common/inputs';
 
 const SpinnerBlock = styled.div`
     text-align: center;
+    flex-grow: 1;
+    flex-shrink: 1;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 `;
 
 const Spinner = styled(Icon).attrs(() => ({
@@ -24,6 +31,8 @@ const ListScrollContainer = styled.div`
     max-height: 279px;
     overflow-y: auto;
     margin: 10px -15px;
+    flex-grow: 1;
+    flex-shrink: 1;
 `;
 
 const TargetList = styled.ul`

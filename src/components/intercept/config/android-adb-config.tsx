@@ -46,6 +46,10 @@ const ConfigContainer = styled.div`
     }
 `;
 
+const Footer = styled.p`
+    font-size: 85%;
+    font-style: italic;
+`;
 
 @inject('proxyStore')
 @inject('rulesStore')
@@ -81,12 +85,35 @@ class AndroidAdbConfig extends React.Component<{
 
     render() {
         return <ConfigContainer>
-            <p>
-                There are multiple ADB devices connected.
-            </p>
-            <p>
-                Pick which device you'd like to intercept:
-            </p>
+            { this.deviceIds.length > 1
+                ? <>
+                    <p>
+                        There are multiple ADB devices connected.
+                    </p>
+                    <p>
+                        Pick which device you'd like to intercept:
+                    </p>
+                </>
+            : this.deviceIds.length === 1
+            // Should only happen if a device disappears after UI opens, due to
+            // componentDidMount auto-setup for the single-device case.
+                ? <>
+                    <p>
+                        There is one ADB device connected.
+                    </p>
+                    <p>
+                        Select the device below to begin setup:
+                    </p>
+                </>
+            // No devices connected:
+                : <>
+                    <p>
+                        There are no ADB devices connected.
+                    </p>
+                    <p>
+                        Connect an Android device to ADB to begin setup.
+                    </p>
+                </> }
 
             <InterceptionTargetList
                 spinnerText='Waiting for Android devices to intercept...'
@@ -110,6 +137,12 @@ class AndroidAdbConfig extends React.Component<{
                 interceptTarget={this.interceptDevice}
                 ellipseDirection='right'
             />
+
+            <Footer>
+                Take a look at <a
+                    href="https://httptoolkit.com/docs/guides/android/"
+                >the Android docs</a> for a detailed setup guide.
+            </Footer>
         </ConfigContainer>;
     }
 
