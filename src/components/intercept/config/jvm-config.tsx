@@ -60,7 +60,7 @@ class JvmConfig extends React.Component<{
             </p>
 
             <InterceptionTargetList<string>
-                targetName='JVM processes'
+                spinnerText='Looking for JVM processes to intercept...'
                 interceptTarget={this.interceptTarget}
                 ellipseDirection='left'
                 targets={interestingTargets.map((target) => {

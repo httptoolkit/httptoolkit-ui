@@ -60,10 +60,11 @@ const TargetButton = styled(Button)<{
     ${p => p.state === 'active' &&
         '&& { background-color: #4caf7d; }'
     }
-`;
 
-const TargetIcon = styled(Icon)`
-    margin-right: 10px;
+    > svg:first-child {
+        margin-right: 10px;
+        width: 15px;
+    }
 `;
 
 const TargetText = styled.span<{ ellipseDirection: 'left' | 'right' }>`
@@ -83,24 +84,25 @@ type TargetItem<Id> = {
     id: Id,
     title: string,
     content: React.ReactNode,
+    icon?: React.ReactNode,
     status: 'active' | 'available' | 'activating' | 'unavailable',
 };
 
 @observer
 export class InterceptionTargetList<Id extends string | number> extends React.Component<{
-    targetName: string,
+    spinnerText: string,
     targets: TargetItem<Id>[],
     interceptTarget: (id: Id) => void,
     ellipseDirection: 'left' | 'right'
 }> {
 
     render() {
-        const { targetName, targets, interceptTarget, ellipseDirection } = this.props;
+        const { spinnerText, targets, interceptTarget, ellipseDirection } = this.props;
 
         if (targets.length === 0) {
             return <SpinnerBlock>
                 <Spinner />
-                Looking for running { targetName } to intercept...
+                { spinnerText }
             </SpinnerBlock>
         }
 
@@ -118,9 +120,11 @@ export class InterceptionTargetList<Id extends string | number> extends React.Co
                     >
                         {
                             target.status === 'activating'
-                                ? <TargetIcon icon={['fas', 'spinner']} spin />
+                                ? <Icon icon={['fas', 'spinner']} spin />
                             : target.status === 'active'
-                                ? <TargetIcon icon={['fas', 'check']} />
+                                ? <Icon icon={['fas', 'check']} />
+                            : target.icon
+                                ? target.icon
                             : null
                         }
                         <TargetText ellipseDirection={ellipseDirection}>

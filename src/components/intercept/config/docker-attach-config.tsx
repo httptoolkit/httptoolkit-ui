@@ -102,7 +102,7 @@ class DockerAttachConfig extends React.Component<{
             </p>
 
             <InterceptionTargetList<string>
-                targetName='Docker containers'
+                spinnerText='Looking for Docker containers to intercept...'
                 interceptTarget={this.interceptTarget}
                 ellipseDirection='right'
                 targets={targets.map((target) => {
