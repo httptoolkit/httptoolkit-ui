@@ -238,7 +238,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     },
     'existing-terminal': {
         name: 'Existing Terminal',
-        description: ["Intercept all launched processes & Docker containers from an existing terminal window"],
+        description: ["Intercept launched processes & Docker containers from an existing terminal window"],
         iconProps: recoloured(SourceIcons.Terminal, '#dd44dd'),
         uiConfig: ExistingTerminalCustomUi,
         tags: TERMINAL_TAGS

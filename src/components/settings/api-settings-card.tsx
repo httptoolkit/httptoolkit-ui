@@ -160,7 +160,7 @@ export class ApiSettingsCard extends React.Component<
             </ApiRows>
 
             <SettingsExplanation>
-                APIs added here will provide documentation and validation for all matching
+                APIs here will provide documentation & validation for all matching
                 requests within their base URL.
             </SettingsExplanation>
             <SettingsExplanation>

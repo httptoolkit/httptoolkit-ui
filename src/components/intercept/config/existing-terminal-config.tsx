@@ -209,8 +209,8 @@ class ExistingTerminalConfig extends React.Component<{
     render() {
         return <ConfigContainer>
             <p>
-                Run the command below in any {this.shellDescription} terminal on this machine, to
-                immediately enable interception for all new processes started there.
+                Run the command below in any {this.shellDescription} terminal on this machine to
+                intercept all new processes & containers launched there.
             </p>
             { this.shouldShowDropdown
                 ? <PillSelector<string>
