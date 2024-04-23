@@ -73,7 +73,6 @@ const InterceptInstructions = styled.div`
 
     > h1 {
         font-size: ${p => p.theme.loudHeadingSize};
-        font-family: ${p => p.theme.titleTextFamily};
         font-weight: bold;
         margin-bottom: 40px;
     }
