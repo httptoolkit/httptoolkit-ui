@@ -60,7 +60,7 @@ const androidInterceptIconProps = _.assign({
     style: { transform: 'translateY(32px)' }
 }, SourceIcons.Android);
 
-const recoloured = (icon: IconProps, color: string) => ({ ...icon, color });
+const recolored = (icon: IconProps, color: string) => ({ ...icon, color });
 
 export const MANUAL_INTERCEPT_ID = 'manual-setup';
 
@@ -103,21 +103,21 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'fresh-chrome-beta': {
         name: 'Chrome (Beta)',
         description: ["Intercept a fresh independent Chrome window"],
-        iconProps: recoloured(SourceIcons.Chrome, '#DB4437'),
+        iconProps: recolored(SourceIcons.Chrome, '#DB4437'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
     'fresh-chrome-dev': {
         name: 'Chrome (Dev)',
         description: ["Intercept a fresh independent Chrome window"],
-        iconProps: recoloured(SourceIcons.Chrome, '#74929f'),
+        iconProps: recolored(SourceIcons.Chrome, '#74929f'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
     'fresh-chrome-canary': {
         name: 'Chrome (Canary)',
         description: ["Intercept a fresh independent Chrome window"],
-        iconProps: recoloured(SourceIcons.Chrome, '#e8ab01'),
+        iconProps: recolored(SourceIcons.Chrome, '#e8ab01'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
@@ -131,7 +131,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'fresh-chromium-dev': {
         name: 'Chromium (Dev)',
         description: ["Intercept a fresh independent Chromium window"],
-        iconProps: recoloured(SourceIcons.Chromium, '#74929f'),
+        iconProps: recolored(SourceIcons.Chromium, '#74929f'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
@@ -154,16 +154,14 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'fresh-firefox-dev': {
         name: 'Firefox (Dev)',
         description: ["Intercept a fresh independent Firefox Developer window"],
-        iconProps: recoloured(SourceIcons.Firefox, "#007EE7"),
-        tags: BROWSER_TAGS,
-        
+        iconProps: recolored(SourceIcons.Firefox, "#007EE7"),
+        tags: BROWSER_TAGS
     },
     'fresh-firefox-nightly': {
         name: 'Firefox (Nightly)',
         description: ["Intercept a fresh independent Firefox Nightly window"],
-        iconProps: recoloured(SourceIcons.Firefox, "#1ED5E2"),
-        tags: BROWSER_TAGS,
-        
+        iconProps: recolored(SourceIcons.Firefox, "#1ED5E2"),
+        tags: BROWSER_TAGS
     },
     'existing-arc': {
         name: 'Global Arc Browser',
@@ -193,21 +191,21 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'fresh-edge-beta': {
         name: 'Edge (Beta)',
         description: ["Intercept a fresh independent Edge window"],
-        iconProps: recoloured(SourceIcons.Edge, '#50e6ff'),
+        iconProps: recolored(SourceIcons.Edge, '#50e6ff'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
     'fresh-edge-dev': {
         name: 'Edge (Dev)',
         description: ["Intercept a fresh independent Edge window"],
-        iconProps: recoloured(SourceIcons.Edge, '#74929f'),
+        iconProps: recolored(SourceIcons.Edge, '#74929f'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
     'fresh-edge-canary': {
         name: 'Edge (Canary)',
         description: ["Intercept a fresh independent Edge window"],
-        iconProps: recoloured(SourceIcons.Edge, '#ffc225'),
+        iconProps: recolored(SourceIcons.Edge, '#ffc225'),
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
@@ -239,7 +237,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
     'existing-terminal': {
         name: 'Existing Terminal',
         description: ["Intercept launched processes & Docker containers from an existing terminal window"],
-        iconProps: recoloured(SourceIcons.Terminal, '#dd44dd'),
+        iconProps: recolored(SourceIcons.Terminal, '#dd44dd'),
         uiConfig: ExistingTerminalCustomUi,
         tags: TERMINAL_TAGS
     },
@@ -263,7 +261,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             'Intercept any Android device on your network',
             'Manual setup required for HTTPS in some apps'
         ],
-        iconProps: recoloured(androidInterceptIconProps, '#4285F4'),
+        iconProps: recolored(androidInterceptIconProps, '#4285F4'),
         checkRequirements: ({ serverVersion }) => {
             return versionSatisfies(serverVersion || '', DETAILED_CONFIG_RANGE);
         },
@@ -278,7 +276,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             'This automatically disables most certificate pinning',
             'Requires a rooted device connected to ADB'
         ],
-        iconProps: recoloured(androidInterceptIconProps, '#ef6456'),
+        iconProps: recolored(androidInterceptIconProps, '#ef6456'),
 
         uiConfig: FridaCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS],
@@ -291,7 +289,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             'This automatically disables most certificate pinning',
             'Requires a jailbroken device running Frida Server'
         ],
-        iconProps: recoloured(SourceIcons.iOS, '#ef6456'),
+        iconProps: recolored(SourceIcons.iOS, '#ef6456'),
 
         uiConfig: FridaCustomUi,
         tags: [...MOBILE_TAGS, ...IOS_TAGS],

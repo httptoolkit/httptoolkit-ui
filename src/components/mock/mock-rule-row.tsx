@@ -15,7 +15,7 @@ import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
 import { UnreachableCheck } from '../../util/error';
 
-import { getMethodColor, getSummaryColour } from '../../model/events/categorization';
+import { getMethodColor, getSummaryColor } from '../../model/events/categorization';
 import {
     HtkMockRule,
     Matcher,
@@ -335,23 +335,23 @@ export class RuleRow extends React.Component<{
         const ruleType = rule.type;
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
-        let ruleColour: string;
+        let ruleColor: string;
         if (ruleType === 'http') {
             if (initialMatcher instanceof matchers.MethodMatcher) {
-                ruleColour = getMethodColor(Method[initialMatcher.method]);
+                ruleColor = getMethodColor(Method[initialMatcher.method]);
             } else if (initialMatcher !== undefined) {
-                ruleColour = getMethodColor('unknown');
+                ruleColor = getMethodColor('unknown');
             } else {
-                ruleColour = 'transparent';
+                ruleColor = 'transparent';
             }
         } else if (ruleType === 'websocket') {
-            ruleColour = getSummaryColour('websocket');
+            ruleColor = getSummaryColor('websocket');
         } else if (ruleType === 'ethereum') {
-            ruleColour = getSummaryColour('mutative');
+            ruleColor = getSummaryColor('mutative');
         } else if (ruleType === 'ipfs') {
-            ruleColour = getSummaryColour('html');
+            ruleColor = getSummaryColor('html');
         } else if (ruleType === 'webrtc') {
-            ruleColour = getSummaryColour('rtc-data');
+            ruleColor = getSummaryColor('rtc-data');
         } else {
             throw new UnreachableCheck(ruleType);
         }
@@ -380,7 +380,7 @@ export class RuleRow extends React.Component<{
         >{ (provided, snapshot) => <Observer>{ () =>
             <RowContainer
                 {...provided.draggableProps}
-                borderColor={ruleColour}
+                borderColor={ruleColor}
                 ref={(ref: HTMLElement | null) => {
                     provided.innerRef(ref);
                     this.containerRef = ref;
