@@ -284,7 +284,7 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
                 />
                 <Pill>{ getReadableSize(message.content.byteLength) }</Pill>
             </EditorRowHeader>
-            <RowEditorContent>
+            <RowEditorContent showFullBorder={false}>
                 <ContentViewer
                     contentId={`ws-${streamId}-${message.messageIndex}`}
                     editorNode={editorNode}

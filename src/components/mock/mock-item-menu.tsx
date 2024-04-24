@@ -46,7 +46,7 @@ export const IconMenuButton = styled(React.memo((p: {
 
     :not(:disabled) {
         cursor: pointer;
-        color: ${p => p.theme.primaryInputBackground};
+        color: ${p => p.theme.secondaryInputColor};
 
         &:hover, &:focus {
             outline: none;

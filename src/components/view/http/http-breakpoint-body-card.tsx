@@ -114,7 +114,7 @@ export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps 
                 />
             }
 
-            <EditorCardContent>
+            <EditorCardContent showFullBorder={!expanded}>
                 <portals.OutPortal<typeof SelfSizedEditor>
                     contentId={`bp-${exchangeId}-${direction}`}
                     node={this.props.editorNode}

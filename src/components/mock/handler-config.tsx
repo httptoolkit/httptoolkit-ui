@@ -292,7 +292,7 @@ const BodyContainer = styled.div<{ isInvalid?: boolean }>`
             ? p.theme.warningColor
             : p.theme.containerBorder
         };
-        padding: 1px;
+        padding-right: 1px;
     }
 `;
 

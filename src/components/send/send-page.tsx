@@ -25,7 +25,7 @@ const SendPageContainer = styled.div`
 const TabContentContainer = styled.div`
     position: relative;
     height: calc(100vh - ${TAB_BAR_HEIGHT});
-    box-shadow: 0 -2px 5px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
+    box-shadow: 0 -2px 5px 1px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 const SendPageKeyboardShortcuts = (props: {

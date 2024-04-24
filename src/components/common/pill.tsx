@@ -4,37 +4,13 @@ import * as polished from 'polished';
 
 import { styled, Theme, css } from '../../styles';
 import { UnstyledButton, interactiveMouseoverStyles } from './inputs';
-
-// Given a base colour, returns a constrasting (but related hue) text colour
-function getTextColor(baseColor: string, theme: Theme) {
-    // Effective BG colour (as it's very transparent - assume on a main-ish bg)
-    const bgColor = polished.mix(0.3, baseColor, theme.mainBackground);
-
-    const lightOption = polished.setLightness(theme.pillContrast, baseColor);
-    const darkOption = polished.setLightness(1 - theme.pillContrast, baseColor);
-
-    return polished.rgba(polished.readableColor(
-        bgColor,
-        darkOption,
-        lightOption,
-    ), theme.pillContrast);
-}
-
-// Given a base colour, returns a semi-transparent background
-function getBackgroundColor(baseColor: string) {
-    return polished.rgba(baseColor, 0.3);
-}
+import {
+    getTextColor,
+    getBackgroundColor
+} from '../../util/colors';
 
 function getNonTransparentBackground(baseColor: string, theme: Theme) {
     return polished.mix(0.3, baseColor, theme.mainBackground);
-}
-
-function getDefaultColor(theme: Theme) {
-    if (polished.getLuminance(theme.mainBackground) > 0.5) {
-        return polished.darken(0.4, theme.mainBackground);
-    } else {
-        return polished.lighten(0.4, theme.mainBackground);
-    }
 }
 
 const pillStyles = css`
@@ -52,11 +28,11 @@ const pillStyles = css`
     text-overflow: ellipsis;
 
     color: ${(p: { color?: string, theme?: Theme }) =>
-        getTextColor(p.color || getDefaultColor(p.theme!), p.theme!)
+        getTextColor(p.color || p.theme!.pillDefaultColor, p.theme!.mainColor, p.theme!.pillContrast)
     };
 
     background-color: ${(p: { color?: string, theme?: Theme }) =>
-        getBackgroundColor(p.color || getDefaultColor(p.theme!))
+        getBackgroundColor(p.color || p.theme!.pillDefaultColor, p.theme!.mainBackground)
     };
 `;
 
@@ -90,7 +66,7 @@ const Select = styled(Pill.withComponent('select'))`
     * {
         background-color: ${(p: { color?: string, theme?: Theme }) =>
             getNonTransparentBackground(
-                p.color || getDefaultColor(p.theme!),
+                p.color || p.theme!.pillDefaultColor,
                 p.theme!
             )
         };

@@ -49,7 +49,6 @@ const PlanPickerDetails = styled.section`
 
 const PlanPickerHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
-    font-family: ${p => p.theme.titleTextFamily};
     font-weight: bold;
     letter-spacing: -1px;
     text-align: center;
@@ -180,7 +179,6 @@ const TierHeader = styled.h2`
     text-align: center;
     font-weight: bold;
     font-size: ${p => p.theme.loudHeadingSize};
-    font-family: ${p => p.theme.titleTextFamily};
 `;
 
 const TierPriceBlock = styled.div`
@@ -297,7 +295,7 @@ const SpinnerModal = styled.div`
     }
 
     > p, > svg {
-        color: #fff;
+        color: ${p => p.theme.mainBackground};
         margin: 20px auto;
     }
 

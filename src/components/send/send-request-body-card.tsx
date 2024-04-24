@@ -10,11 +10,13 @@ import { EditableContentType, EditableContentTypes } from '../../model/events/co
 import { EditableBody } from '../../model/http/editable-body';
 
 import { ExpandableCardProps } from '../common/card';
-import { SendBodyCardSection } from './send-card-section';
+import {
+    SendBodyCardSection,
+    SendEditorCardContent
+} from './send-card-section';
 import { ContainerSizedEditor } from '../editor/base-editor';
 import {
     EditableBodyCardHeader,
-    ContainerSizedEditorCardContent,
     BodyCodingErrorBanner
 } from '../editor/body-card-components';
 
@@ -86,7 +88,7 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                 />
             }
 
-            <ContainerSizedEditorCardContent>
+            <SendEditorCardContent showFullBorder={false}>
                 <portals.OutPortal<typeof ContainerSizedEditor>
                     node={editorNode}
 
@@ -95,7 +97,7 @@ export class SendRequestBodyCard extends React.Component<SendRequestBodyProps> {
                     value={bodyString}
                     onChange={this.updateBody}
                 />
-            </ContainerSizedEditorCardContent>
+            </SendEditorCardContent>
         </SendBodyCardSection>;
     }
 }

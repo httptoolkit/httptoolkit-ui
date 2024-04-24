@@ -54,7 +54,11 @@ const SnippetDetailButtons = styled.div`
 
 const SnippetEditorContainer = styled.div`
     margin: 0 -20px -20px -20px;
-    border-top: solid 1px ${p => p.theme.containerBorder};
+
+    border: solid 1px ${p => p.theme.containerBorder};
+    padding-right: 1px;
+    border-radius: 0 0 3px 3px;
+
     background-color: ${p => p.theme.highlightBackground};
     color: ${p => p.theme.highlightColor};
 `;

@@ -23,99 +23,128 @@ import "react-contexify/dist/ReactContexify.css";
 export const NARROW_LAYOUT_BREAKPOINT = 1100;
 
 export const warningColor = '#f1971f';
+const warningBackground = '#f1971f40';
 export const popColor = '#e1421f';
+
+const black = "#000000";
+const inkBlack = "#16181e";
+const inkGrey = "#1e2028";
+const darkGrey = "#32343B";
+const mediumGrey = "#818490";
+const lightGrey = "#9a9da8";
+const brightGrey = "#d1d3da";
+const ghostGrey = "#e4e8ed"; // Actual brand color is e6e8f2 but it's just too blue
+const almostWhite = "#f2f2f2";
+const white = "#ffffff";
+
+const darkerBlue = "#2d4cbd";
+const lighterBlue = "#6284fa";
+
+const globalMonacoOverrides = {
+    'editorWarning.foreground': '#ff0000'
+};
 
 export const lightTheme = {
     fontFamily: '"DM Sans", Arial, sans-serif',
     titleTextFamily: 'Saira, "DM Sans", Arial, sans-serif',
     monoFontFamily: '"DM Mono", monospace',
 
-    mainBackground: '#fafafa',
-    mainLowlightBackground: '#eaeaea',
-    mainColor: '#222',
+    mainBackground: white,
+    mainLowlightBackground: almostWhite,
+    mainColor: inkGrey,
 
     lowlightTextOpacity: 0.65,
-    pillContrast: 0.8,
-    boxShadowAlpha: 0.2,
+    boxShadowAlpha: 0.3,
 
-    primaryInputBackground: '#1076b9',
-    primaryInputColor: '#fafafa',
+    pillContrast: 0.85,
+    pillDefaultColor: lightGrey,
 
-    secondaryInputBorder: '#7ab2e2',
-    secondaryInputColor: '#1665af',
+    primaryInputBackground: darkerBlue,
+    primaryInputColor: white,
 
-    inputBackground: '#fafafa',
-    inputHoverBackground: '#eee',
-    inputBorder: '#a0afaf',
-    inputColor: '#222222',
+    secondaryInputBorder: lighterBlue,
+    secondaryInputColor: darkerBlue,
 
-    highlightBackground: '#ffffff',
-    highlightColor: '#222',
+    inputBackground: white,
+    inputHoverBackground: almostWhite,
+    inputBorder: darkGrey,
+    inputColor: inkGrey,
+
+    highlightBackground: white,
+    highlightColor: inkGrey,
 
     popColor,
 
     warningColor,
-    warningBackground: '#f1971f40',
+    warningBackground,
 
-    containerBackground: '#d8e2e6',
-    containerWatermark: '#a0afaf',
-    containerBorder: '#888',
+    containerBackground: ghostGrey,
+    containerWatermark: mediumGrey,
+    containerBorder: lightGrey,
 
     // These are the same as the standard defaults
     linkColor: '#0000EE',
     visitedLinkColor: '#551A8B',
 
     monacoTheme: 'vs-custom',
+    monacoThemeBase: 'vs',
+    monacoThemeOverrides: globalMonacoOverrides,
 
     modalGradient: 'radial-gradient(#40404b, #111118)',
 
     ...fontSizes,
 
     globalCss: ''
-};
+} as const;
 
 export const darkTheme = {
     fontFamily: '"DM Sans", Arial, sans-serif',
     titleTextFamily: 'Saira, "DM Sans", Arial, sans-serif',
     monoFontFamily: '"DM Mono", monospace',
 
-    mainBackground: '#222222',
-    mainLowlightBackground: '#303030',
-    mainColor: '#efefef',
+    mainBackground: darkGrey,
+    mainLowlightBackground: inkBlack,
+    mainColor: white,
 
     lowlightTextOpacity: 0.6,
-    pillContrast: 0.8,
     boxShadowAlpha: 0.4,
 
-    primaryInputBackground: '#0868c1',
-    primaryInputColor: '#fafafa',
+    pillContrast: 0.85,
+    pillDefaultColor: lightGrey,
 
-    secondaryInputBorder: '#1b5b96',
-    secondaryInputColor: '#6babe6',
+    primaryInputBackground: darkerBlue,
+    primaryInputColor: white,
 
-    inputBackground: '#1a1a1a',
-    inputHoverBackground: '#333',
+    secondaryInputBorder: darkerBlue,
+    secondaryInputColor: lighterBlue,
+
+    inputBackground: inkBlack,
+    inputHoverBackground: inkGrey,
     inputBorder: '#666',
-    inputColor: '#fafafa',
+    inputColor: white,
 
-    highlightBackground: '#111111',
-    highlightColor: '#efefef',
+    highlightBackground: inkBlack,
+    highlightColor: white,
 
     popColor,
 
     warningColor,
-    warningBackground: '#f1971f40',
-
-    containerBackground: '#3c3c41',
-    containerWatermark: '#757580',
-    containerBorder: '#000000',
+    warningBackground,
+    containerBackground: inkGrey,
+    containerWatermark: lightGrey,
+    containerBorder: black,
 
     linkColor: '#8699ff',
     visitedLinkColor: '#ac7ada',
 
     monacoTheme: 'vs-dark-custom',
+    monacoThemeBase: 'vs-dark',
+    monacoThemeOverrides: {
+        ...globalMonacoOverrides,
+        'editor.background': inkBlack // Same as input background - darker for more contrast vs containerBg
+    },
 
-    modalGradient: 'radial-gradient(#ffffff,#9c9c9c)',
+    modalGradient: `radial-gradient(${white}, ${lightGrey})`,
 
     ...fontSizes,
 
@@ -140,7 +169,7 @@ export const darkTheme = {
             scrollbar-color: dark;
         }
     `
-};
+} as const;
 
 export const highContrastTheme = {
     fontFamily: '"DM Sans", Arial, sans-serif',
@@ -152,10 +181,12 @@ export const highContrastTheme = {
     mainColor: '#ffffff',
 
     lowlightTextOpacity: 0.8,
-    pillContrast: 0.95,
     boxShadowAlpha: 0.1,
 
-    primaryInputBackground: '#0868c1',
+    pillContrast: 0.95,
+    pillDefaultColor: mediumGrey,
+
+    primaryInputBackground: darkerBlue,
     primaryInputColor: '#ffffff',
 
     secondaryInputBorder: '#ffffff',
@@ -172,9 +203,9 @@ export const highContrastTheme = {
     popColor,
 
     warningColor,
-    warningBackground: '#f1971f40',
+    warningBackground,
 
-    containerBackground: '#404045',
+    containerBackground: darkGrey,
     containerWatermark: '#a0a0b0',
     containerBorder: '#000000',
 
@@ -182,13 +213,15 @@ export const highContrastTheme = {
     visitedLinkColor: '#ac7ada',
 
     monacoTheme: 'hc-black-custom',
+    monacoThemeBase: 'hc-black',
+    monacoThemeOverrides: globalMonacoOverrides,
 
-    modalGradient: '#c0c0c0',
+    modalGradient: '#f0f0f0',
 
     ...fontSizes,
 
     globalCss: ``
-};
+} as const;
 
 export const Themes = {
     'light': lightTheme,
@@ -199,19 +232,13 @@ export const Themes = {
 export type ThemeName = keyof typeof Themes;
 export type Theme = typeof Themes[ThemeName];
 
-const monacoColorOverrides = {
-    'editorWarning.foreground': '#ff0000',
-};
-
-const monacoThemes = ['vs', 'vs-dark', 'hc-black'] as const;
-
 export function defineMonacoThemes(monaco: typeof monacoTypes) {
-    monacoThemes.forEach((themeName) => {
-        monaco.editor.defineTheme(`${themeName}-custom`, {
-            base: themeName,
+    Object.values(Themes).forEach((theme) => {
+        monaco.editor.defineTheme(theme.monacoTheme, {
+            base: theme.monacoThemeBase,
             inherit: true,
             rules: [],
-            colors: monacoColorOverrides
+            colors: theme.monacoThemeOverrides
         });
     });
 }
