@@ -96,7 +96,7 @@ const MessageArrow = styled(React.memo((p: {
         padding: 0;
         color: ${p => p.selected
             ? p.theme.popColor
-            : p.theme.containerBorder
+            : p.theme.containerWatermark
         };
     }
 
