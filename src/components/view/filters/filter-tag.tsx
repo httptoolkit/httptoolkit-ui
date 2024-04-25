@@ -50,6 +50,8 @@ const FilterTagContainer = styled.div`
     margin-right: 5px;
 
     background-color: ${p => p.theme.mainBackground};
+    color: ${p => p.theme.mainColor};
+
     border: 1px solid ${p => p.theme.containerWatermark};
     box-shadow: 0 2px 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
     border-radius: 3px;

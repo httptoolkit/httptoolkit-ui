@@ -9,7 +9,7 @@ export function getTextColor(baseColor: string, mainColor: string, contrastRatio
     // Calculate a color difference from 0 (black/white) - 1 (identical)
     const baseSimilarity = (polished.getContrast(baseColor, mainColor) - 1) / 20;
 
-    // Mix the colors, using between 30% & 100% of the base color, depending on how far
+    // Mix the colors, using between 35% & 100% of the base color, depending on how far
     // off we are and how much constrast we're aiming for (i.e. more maincolor for HC theme)
     const constrastBias = 1 - contrastRatio;
     const baseWeighting = 0.35 + (baseSimilarity * constrastBias) * 0.65;

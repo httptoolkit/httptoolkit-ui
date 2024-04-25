@@ -29,12 +29,14 @@ export const popColor = '#e1421f';
 const black = "#000000";
 const inkBlack = "#16181e";
 const inkGrey = "#1e2028";
+const darkerGrey = "#25262e";
 const darkGrey = "#32343B";
+const darkishGrey =  "#53565e";
 const mediumGrey = "#818490";
 const lightGrey = "#9a9da8";
-const brightGrey = "#d1d3da";
-const ghostGrey = "#e4e8ed"; // Actual brand color is e6e8f2 but it's just too blue
-const almostWhite = "#f2f2f2";
+const ghostGrey = "#e4e8ed";
+const greyWhite = "#f2f2f2";
+const almostWhite = "#fafafa";
 const white = "#ffffff";
 
 const darkerBlue = "#2d4cbd";
@@ -49,14 +51,14 @@ export const lightTheme = {
     titleTextFamily: 'Saira, "DM Sans", Arial, sans-serif',
     monoFontFamily: '"DM Mono", monospace',
 
-    mainBackground: white,
-    mainLowlightBackground: almostWhite,
+    mainBackground: almostWhite,
+    mainLowlightBackground: greyWhite,
     mainColor: inkGrey,
 
     lowlightTextOpacity: 0.65,
     boxShadowAlpha: 0.3,
 
-    pillContrast: 0.85,
+    pillContrast: 0.9,
     pillDefaultColor: lightGrey,
 
     primaryInputBackground: darkerBlue,
@@ -66,7 +68,7 @@ export const lightTheme = {
     secondaryInputColor: darkerBlue,
 
     inputBackground: white,
-    inputHoverBackground: almostWhite,
+    inputHoverBackground: greyWhite,
     inputBorder: darkGrey,
     inputColor: inkGrey,
 
@@ -103,7 +105,7 @@ export const darkTheme = {
     monoFontFamily: '"DM Mono", monospace',
 
     mainBackground: darkGrey,
-    mainLowlightBackground: inkBlack,
+    mainLowlightBackground: darkerGrey,
     mainColor: white,
 
     lowlightTextOpacity: 0.6,
@@ -120,10 +122,10 @@ export const darkTheme = {
 
     inputBackground: inkBlack,
     inputHoverBackground: inkGrey,
-    inputBorder: '#666',
+    inputBorder: darkishGrey,
     inputColor: white,
 
-    highlightBackground: inkBlack,
+    highlightBackground: darkishGrey,
     highlightColor: white,
 
     popColor,

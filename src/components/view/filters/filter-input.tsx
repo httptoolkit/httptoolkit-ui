@@ -36,8 +36,8 @@ const FilterInputField = styled.input`
     border: none;
     outline: none;
 
-    background-color: ${p => p.theme.highlightBackground};
-    color: ${p => p.theme.highlightColor};
+    background-color: ${p => p.theme.inputBackground};
+    color: ${p => p.theme.inputColor};
     font-size: ${p => p.theme.textSize};
 
     ::placeholder {
@@ -57,6 +57,8 @@ const FilterSuggestionsBox = styled.div`
     z-index: 1;
 
     background-color: ${p => p.theme.mainBackground};
+    color: ${p => p.theme.mainColor};
+
     border: 1px solid ${p => p.theme.containerBorder};
     box-shadow: 0 2px 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
@@ -71,7 +73,6 @@ const FilterSuggestionsBox = styled.div`
         border-radius: 4px;
     }
 
-    color: ${p => p.theme.highlightColor};
     font-size: ${p => p.theme.textSize};
 
     &:empty {
