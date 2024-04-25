@@ -117,7 +117,7 @@ export class UiStore {
         // closed), but don't get reset when the app starts with stale account data.
         observe(this.accountStore, 'accountDataLastUpdated', () => {
             if (!this.accountStore.isPaidUser) {
-                this.setTheme('light');
+                this.setTheme('automatic');
             }
         });
 
