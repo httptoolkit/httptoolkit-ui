@@ -21,7 +21,9 @@
       margin: 0;
       padding: 8px;
 
-      background-color: #d8e2e6;
+      background-color: #fafafa;
+      color: #1e2028;
+
       font-family: "DM Sans", Arial, sans-serif;
       letter-spacing: -0.5px;
       line-height: 1.3;
@@ -49,6 +51,20 @@
       margin: 40px auto;
       height: 200px;
       width: 200px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #32343B;
+        color: #ffffff;
+      }
+    }
+
+    @media not (prefers-color-scheme: dark) {
+      body {
+        background-color: #fafafa;
+        color: #1e2028;
+      }
     }
   </style>
 </head>
