@@ -317,6 +317,12 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                     Dark
                                 </Tab>
                                 <Tab
+                                    icon={['fas', 'moon']}
+                                    value='dark-blue'
+                                >
+                                    Dark Blue
+                                </Tab>
+                                <Tab
                                     icon={['fas', 'adjust']}
                                     value='high-contrast'
                                 >

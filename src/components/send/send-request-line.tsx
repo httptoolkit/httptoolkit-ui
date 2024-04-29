@@ -16,7 +16,7 @@ const validMethods = Object.values(Method)
     ) as Array<MethodName>;
 
 const SendRequestLineContainer = styled.form`
-    background-color: ${p => p.theme.mainBackground};
+    background-color: ${p => p.theme.containerBackground};
     flex-grow: 0;
     display: flex;
 

@@ -183,10 +183,77 @@ export const highContrastTheme = {
     globalCss: ``
 };
 
+export const darkBlueTheme = {
+    fontFamily: 'Lato, Arial, sans-serif',
+    monoFontFamily: "'Fira Mono', monospace",
+
+    mainBackground: '#161630',
+    mainLowlightBackground: '#1e1e42',
+    mainColor: '#efefef',
+
+    lowlightTextOpacity: 0.6,
+    pillContrast: 0.8,
+    boxShadowAlpha: 0.4,
+
+    primaryInputBackground: '#0868c1',
+    primaryInputColor: '#fafafa',
+
+    secondaryInputBorder: '#1b5b96',
+    secondaryInputColor: '#6babe6',
+
+    inputBackground: '#1e1e38',
+    inputHoverBackground: '#20203d',
+    inputBorder: '#27274a',
+    inputColor: '#fafafa',
+
+    highlightBackground: '#171b30',
+    highlightColor: '#efefef',
+
+    popColor,
+
+    warningColor,
+    warningBackground: '#f1971f40',
+
+    containerBackground: '#2f2f45',
+    containerWatermark: '#757580',
+    containerBorder: '#000000',
+
+    linkColor: '#8699ff',
+    visitedLinkColor: '#ac7ada',
+
+    monacoTheme: 'vs-dark-custom',
+
+    modalGradient: 'radial-gradient(#ffffff,#9c9c9c)',
+
+    ...fontSizes,
+
+    globalCss: styledComponents.css`
+        @supports (color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+            }
+        }
+
+        @supports not (color-scheme: dark) {
+            ::-webkit-scrollbar {
+                background-color: ${p => polished.darken(0.2, p.theme.containerBackground)};
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background-color: ${p => polished.lighten(0.2, p.theme.containerBackground)};
+            }
+
+            /* Standard, but poorly supported: */
+            scrollbar-color: dark;
+        }
+    `
+}
+
 export const Themes = {
     'light': lightTheme,
     'dark': darkTheme,
-    'high-contrast': highContrastTheme
+    'high-contrast': highContrastTheme,
+    'dark-blue': darkBlueTheme
 };
 
 export type ThemeName = keyof typeof Themes;
