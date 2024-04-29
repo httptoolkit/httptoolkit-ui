@@ -71,6 +71,7 @@ export const lightTheme = {
     inputHoverBackground: greyWhite,
     inputBorder: darkGrey,
     inputColor: inkGrey,
+    inputPlaceholderColor: darkishGrey,
 
     highlightBackground: white,
     highlightColor: inkGrey,
@@ -124,6 +125,7 @@ export const darkTheme = {
     inputHoverBackground: inkGrey,
     inputBorder: darkishGrey,
     inputColor: white,
+    inputPlaceholderColor: mediumGrey,
 
     highlightBackground: darkishGrey,
     highlightColor: white,
@@ -198,6 +200,7 @@ export const highContrastTheme = {
     inputHoverBackground: '#ddd',
     inputBorder: '#aaa',
     inputColor: '#000000',
+    inputPlaceholderColor: '#444',
 
     highlightBackground: '#ffffff',
     highlightColor: '#000',

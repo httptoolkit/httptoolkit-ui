@@ -68,6 +68,16 @@ import { expect } from '../test-setup';
                 );
             });
 
+            it("should have sufficient input placeholder contrast", () => {
+                const mainColor = theme.inputPlaceholderColor;
+                const bgColor = theme.inputBackground;
+
+                const contrast = polished.getContrast(mainColor, bgColor);
+                expect(contrast).to.be.greaterThan(normalContrastTarget,
+                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                );
+            });
+
             it("should have sufficient primary button contrast", () => {
                 const mainColor = theme.primaryInputColor;
                 const bgColor = theme.primaryInputBackground;

@@ -151,6 +151,10 @@ export const TextInput = styled.input.attrs((p: { type?: string }) => ({
         opacity: 0.6;
     }
 
+    &::placeholder {
+        color: ${p => p.theme.inputPlaceholderColor};
+    }
+
     &:invalid {
         ${invalidTextCss}
     }
