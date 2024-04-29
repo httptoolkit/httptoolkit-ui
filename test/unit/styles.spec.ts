@@ -99,6 +99,16 @@ import { expect } from '../test-setup';
                 );
             });
 
+            it("should have sufficient main-on-container text contrast", () => {
+                const mainColor = theme.mainColor;
+                const bgColor = theme.containerBackground;
+
+                const contrast = polished.getContrast(mainColor, bgColor);
+                expect(contrast).to.be.greaterThan(normalContrastTarget,
+                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                );
+            });
+
             it("should have sufficient container watermark contrast", () => {
                 const mainColor = theme.containerWatermark;
                 const bgColor = theme.containerBackground;
