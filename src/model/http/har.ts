@@ -699,6 +699,7 @@ function parseHarRequest(
         timingEvents,
         tags: [],
         matchedRuleId: false,
+        httpVersion: parseHttpVersion(request.httpVersion, request.headers),
         protocol: request.url.split(':')[0],
         method: request.method,
         url: request.url,
@@ -715,6 +716,27 @@ function parseHarRequest(
             encodedLength: request.bodySize
         }
     }
+}
+
+function parseHttpVersion(
+    versionString: string | undefined,
+    headers: HarFormat.Header[]
+) {
+    if (!versionString) {
+        // Make a best guess:
+        if (headers.some(({ name }) => name.startsWith(':'))) {
+            return '2.0';
+        } else {
+            return '1.1';
+        }
+    }
+
+    const regexMatch = /^(HTTP\/)?([\d\.]+)$/i.exec(versionString);
+    if (regexMatch) {
+        return regexMatch[2];
+    }
+
+    throw TypeError(`Invalid HTTP version: ${versionString}`);
 }
 
 function parseHarRequestContents(data: RequestContentData): Buffer {
