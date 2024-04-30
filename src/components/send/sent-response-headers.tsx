@@ -17,11 +17,13 @@ import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 
 export interface ResponseHeaderSectionProps extends ExpandableCardProps {
+    httpVersion: 1 | 2;
     requestUrl: URL;
     headers: RawHeaders;
 }
 
 export const SentResponseHeaderSection = ({
+    httpVersion,
     requestUrl,
     headers,
     ...cardProps
@@ -40,6 +42,7 @@ export const SentResponseHeaderSection = ({
         </header>
         <SendCardScrollableWrapper>
             <HeaderDetails
+                httpVersion={httpVersion}
                 requestUrl={requestUrl}
                 headers={headers}
             />

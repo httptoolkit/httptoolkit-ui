@@ -312,6 +312,7 @@ export class HttpDetailsPane extends React.Component<{
         } else if (!!response) {
             cards.push(<HttpResponseCard
                 {...this.cardProps.response}
+                httpVersion={exchange.httpVersion}
                 response={response}
                 requestUrl={exchange.request.parsedUrl}
                 apiExchange={apiExchange}
