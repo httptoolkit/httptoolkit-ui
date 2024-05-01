@@ -9,6 +9,8 @@ import {
     TimingEvents
 } from 'mockttp';
 
+import { RawTrailers } from '../../types';
+
 import { logError } from '../../errors';
 import { getObservableDeferred, lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
@@ -250,6 +252,7 @@ const trackResponseEvents = flow(function * (
 
     let responseHead: ResponseHeadEvent | undefined;
     let responseBodyParts: Buffer[] = [];
+    let rawTrailers: RawTrailers = [];
 
     while (true) {
         const { done, value } = (
@@ -270,6 +273,9 @@ const trackResponseEvents = flow(function * (
             case 'response-body-part':
                 responseBodyParts.push(value.rawBody);
                 break;
+            case 'response-trailers':
+                rawTrailers.push(...value.trailers);
+                break;
             case 'response-end':
                 if (!responseHead) throw new Error(`Received response-end before response-head!`);
 
@@ -282,6 +288,8 @@ const trackResponseEvents = flow(function * (
                     headers: rawHeadersToHeaders(responseHead.headers),
                     rawHeaders: responseHead.headers,
                     body: { buffer: Buffer.concat(responseBodyParts) },
+                    trailers: rawHeadersToHeaders(rawTrailers),
+                    rawTrailers: rawTrailers,
                     tags: [],
                     timingEvents
                 });

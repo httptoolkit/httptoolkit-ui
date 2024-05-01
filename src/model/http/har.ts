@@ -6,6 +6,7 @@ import * as querystring from 'querystring';
 
 import {
     Headers,
+    Trailers,
     HtkRequest,
     HarRequest,
     HarResponse,
@@ -60,6 +61,11 @@ export interface ExtendedHarRequest extends HarFormat.Request {
         | 'discarded:not-representable'
         | 'discarded:not-decodable';
     _content?: RequestContentData;
+    _trailers?: HarFormat.Header[];
+}
+
+export interface ExtendedHarResponse extends HarFormat.Response {
+    _trailers?: HarFormat.Header[];
 }
 
 export interface HarEntry extends HarFormat.Entry {
@@ -120,7 +126,7 @@ export async function generateHar(
     };
 }
 
-function asHarHeaders(headers: Headers) {
+function asHarHeaders(headers: Headers | Trailers) {
     return _.map(headers, (headerValue, headerKey) => ({
         name: headerKey,
         value: _.isArray(headerValue)
@@ -167,6 +173,9 @@ export function generateHarRequest(
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
         cookies: [],
         headers: asHarHeaders(request.headers),
+        ...(request.trailers ? {
+            _trailers: asHarHeaders(request.trailers)
+        } : {}),
         queryString: Array.from(request.parsedUrl.searchParams.entries()).map(
             ([paramKey, paramValue]) => ({
                 name: paramKey,
@@ -714,7 +723,9 @@ function parseHarRequest(
                 ? parseHarRequestContents(request._content)
                 : parseHarPostData(request.postData),
             encodedLength: request.bodySize
-        }
+        },
+        rawTrailers: request._trailers?.map(t => [t.name, t.value]) ?? [],
+        trailers: asHtkHeaders(request._trailers ?? []) as Trailers
     }
 }
 
@@ -768,7 +779,7 @@ function parseHarPostData(data: HarFormat.PostData | undefined): Buffer {
 
 function parseHarResponse(
     id: string,
-    response: HarFormat.Response,
+    response: ExtendedHarResponse,
     timingEvents: TimingEvents
 ): HarResponse {
     return {
@@ -787,6 +798,8 @@ function parseHarResponse(
             encodedLength: (!response.bodySize || response.bodySize === -1)
                 ? 0 // If bodySize is missing or inaccessible, just zero it
                 : response.bodySize
-        }
+        },
+        rawTrailers: response._trailers?.map(t => [t.name, t.value]) ?? [],
+        trailers: asHtkHeaders(response._trailers ?? []) as Trailers,
     }
 }
