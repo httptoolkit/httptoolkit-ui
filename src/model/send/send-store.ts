@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { action, autorun, flow, observable, runInAction } from 'mobx';
+import { action, flow, observable, runInAction } from 'mobx';
 import * as uuid from 'uuid/v4';
 import {
     MOCKTTP_PARAM_REF,
@@ -12,7 +12,7 @@ import {
 import { logError } from '../../errors';
 import { getObservableDeferred, lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
-import { ErrorLike, UnreachableCheck } from '../../util/error';
+import { ErrorLike, unreachableWarning } from '../../util/error';
 import { rawHeadersToHeaders } from '../../util/headers';
 import { trackEvent } from '../../metrics';
 
@@ -307,7 +307,7 @@ const trackResponseEvents = flow(function * (
                     throw new Error('Unknown response error');
                 }
             default:
-                throw new UnreachableCheck(messageType);
+                unreachableWarning(messageType);
         }
     }
 });

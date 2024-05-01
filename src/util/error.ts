@@ -38,3 +38,9 @@ export class UnreachableCheck extends Error {
 export const unreachableCheck = (value: never, getValue: (v: any) => any = (x => x)): never => {
     throw new UnreachableCheck(value, getValue);
 }
+
+// For cases where we want to type-safe check for unreachability, but not actually break (e.g.
+// APIs that might return new values in future).
+export const unreachableWarning = (value: never, getValue: (v: any) => any = (x => x)) => {
+    console.warn(`Unhandled case value: ${getValue(value)}`);
+}
