@@ -20,8 +20,10 @@ export function initSentry(dsn: string | undefined) {
         ],
         integrations: [
             Sentry.dedupeIntegration(),
-            Sentry.extraErrorDataIntegration()
+            Sentry.extraErrorDataIntegration(),
+            Sentry.httpClientIntegration()
         ],
+        sendDefaultPii: true, // We don't actually collect or send PII, but this is required to debug HTTP headers
         beforeSend: function (event, hint) {
             if (!sentryInitialized) return null; // Don't send errors if we're disabled
 
