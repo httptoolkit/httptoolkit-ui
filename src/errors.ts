@@ -16,6 +16,7 @@ export function initSentry(dsn: string | undefined) {
         release: UI_VERSION,
         ignoreErrors: [
             'ResizeObserver loop limit exceeded', // No visible effect: https://stackoverflow.com/a/50387233/68051
+            'ResizeObserver loop completed with undelivered notifications.'
         ],
         beforeSend: function (event, hint) {
             const exception = hint?.originalException;
