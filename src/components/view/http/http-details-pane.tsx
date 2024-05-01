@@ -27,6 +27,7 @@ import { HttpApiCard, HttpApiPlaceholderCard } from './http-api-card';
 import { HttpRequestCard } from './http-request-card';
 import { HttpResponseCard } from './http-response-card';
 import { HttpAbortedResponseCard } from './http-aborted-card';
+import { HttpTrailersCard } from './http-trailers-card';
 import { HttpPerformanceCard } from './http-performance-card';
 import { HttpExportCard } from './http-export-card';
 import { SelfSizedEditor } from '../../editor/base-editor';
@@ -303,6 +304,16 @@ export class HttpDetailsPane extends React.Component<{
             cards.push(this.renderRequestBody(exchange, apiExchange));
         }
 
+        if (exchange.request.rawTrailers?.length) {
+            cards.push(<HttpTrailersCard
+                {...this.cardProps.requestTrailers}
+                type='request'
+                httpVersion={exchange.httpVersion}
+                requestUrl={exchange.request.parsedUrl}
+                trailers={exchange.request.rawTrailers}
+            />);
+        }
+
         if (response === 'aborted') {
             cards.push(<HttpAbortedResponseCard
                 key={this.cardProps.response.key}
@@ -321,6 +332,16 @@ export class HttpDetailsPane extends React.Component<{
 
             if (exchange.hasResponseBody()) {
                 cards.push(this.renderResponseBody(exchange, apiExchange));
+            }
+
+            if (exchange.isSuccessfulExchange() && exchange.response?.rawTrailers?.length) {
+                cards.push(<HttpTrailersCard
+                    {...this.cardProps.responseTrailers}
+                    type='response'
+                    httpVersion={exchange.httpVersion}
+                    requestUrl={exchange.request.parsedUrl}
+                    trailers={exchange.response.rawTrailers}
+                />);
             }
         }
 

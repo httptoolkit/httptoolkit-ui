@@ -211,6 +211,7 @@ export class HttpExchange extends HTKEventBase {
                 this.request.parsedUrl.search
         ]
         .concat(..._.map(this.request.headers, (value, key) => `${key}: ${value}`))
+        .concat(..._.map(this.request.trailers, (value, key) => `${key}: ${value}`))
         .concat(this.request.method)
         .join('\n')
         .toLowerCase();
@@ -329,7 +330,8 @@ export class HttpExchange extends HTKEventBase {
             this.searchIndex,
             response.statusCode.toString(),
             response.statusMessage.toString(),
-            ..._.map(response.headers, (value, key) => `${key}: ${value}`)
+            ..._.map(response.headers, (value, key) => `${key}: ${value}`),
+            ..._.map(response.trailers, (value, key) => `${key}: ${value}`)
         ].join('\n').toLowerCase();
 
         // Wrap the API promise to also add this response data (but lazily)

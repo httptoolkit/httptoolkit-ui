@@ -22,8 +22,10 @@ const VIEW_CARD_KEYS = [
 
     'request',
     'requestBody',
+    'requestTrailers',
     'response',
     'responseBody',
+    'responseTrailers',
 
     'webSocketMessages',
     'webSocketClose',
@@ -191,8 +193,10 @@ export class UiStore {
 
         'request': { collapsed: false },
         'requestBody': { collapsed: false },
+        'requestTrailers': { collapsed: false },
         'response': { collapsed: false },
         'responseBody': { collapsed: false },
+        'responseTrailers': { collapsed: false },
 
         'webSocketMessages': { collapsed: false },
         'webSocketClose': { collapsed: false },
