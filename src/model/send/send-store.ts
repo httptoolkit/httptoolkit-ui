@@ -183,6 +183,7 @@ export class SendStore {
 
         const exchange = this.eventStore.recordSentRequest({
             id: exchangeId,
+            httpVersion: '1.1',
             matchedRuleId: false,
             method: requestInput.method,
             url: requestInput.url,

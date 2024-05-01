@@ -1,6 +1,10 @@
 import * as _ from 'lodash';
 import { Headers, RawHeaders } from '../types';
 
+export {
+    h2HeadersToH1
+} from 'mockttp/dist/util/header-utils';
+
 // Based RFC7230, 3.2.6:
 export const HEADER_NAME_PATTERN = '^[!#$%&\'*+\\-.^_`\\|~A-Za-z0-9]+$';
     // The \\| is required here because in 'v' flag regexes (used in HTML patterns by default) the |

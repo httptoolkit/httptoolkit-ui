@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { styled } from '../../styles';
 import { RawHeaders } from '../../types';
 
 import {
