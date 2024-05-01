@@ -95,10 +95,11 @@ export default merge(common, {
         }),
         ...(shouldPublishSentryRelease
         ? [
-            new SentryPlugin({
-                release: process.env.UI_VERSION,
-                include: common!.output!.path!,
-                validate: true
+            SentryPlugin.sentryWebpackPlugin({
+                release: {
+                    name: process.env.UI_VERSION!,
+                    setCommits: { auto: true }
+                }
             })
         ]
         : []),
