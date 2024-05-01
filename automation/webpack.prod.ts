@@ -1,6 +1,6 @@
 import * as path from 'path';
 import merge from "webpack-merge";
-import SentryPlugin from '@sentry/webpack-plugin';
+import * as SentryPlugin from '@sentry/webpack-plugin';
 
 import { InjectManifest } from 'workbox-webpack-plugin';
 import * as ssri from "ssri";
@@ -95,10 +95,11 @@ export default merge(common, {
         }),
         ...(shouldPublishSentryRelease
         ? [
-            new SentryPlugin({
-                release: process.env.UI_VERSION,
-                include: common!.output!.path!,
-                validate: true
+            SentryPlugin.sentryWebpackPlugin({
+                release: {
+                    name: process.env.UI_VERSION!,
+                    setCommits: { auto: true }
+                }
             })
         ]
         : []),
