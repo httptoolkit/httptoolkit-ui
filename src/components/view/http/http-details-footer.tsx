@@ -152,13 +152,13 @@ export const HttpDetailsFooter = inject('rulesStore')(
                 }
 
                 <MockButton
-                    isExchange={event.isHttp()}
+                    isExchange={event.isHttp() && !event.isWebSocket()}
                     isPaidUser={props.isPaidUser}
                     onClick={() => props.onBuildRuleFromExchange(props.event as HttpExchange)}
                 />
                 { props.onPrepareToResendRequest &&
                     <SendButton
-                        isExchange={event.isHttp()}
+                        isExchange={event.isHttp() && !event.isWebSocket()}
                         isPaidUser={props.isPaidUser}
                         onClick={() => props.onPrepareToResendRequest!(props.event as HttpExchange)}
                     />

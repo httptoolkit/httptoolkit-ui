@@ -68,6 +68,8 @@ const ViewPageKeyboardShortcuts = (props: {
     onClear: () => void,
     onStartSearch: () => void
 }) => {
+    const selectedEvent = props.selectedEvent;
+
     useHotkeys('j', (event) => {
         if (isEditable(event.target)) return;
         props.moveSelection(1);
@@ -79,33 +81,33 @@ const ViewPageKeyboardShortcuts = (props: {
     }, [props.moveSelection]);
 
     useHotkeys('Ctrl+p, Cmd+p', (event) => {
-        if (props.selectedEvent?.isHttp()) {
-            props.onPin(props.selectedEvent);
+        if (selectedEvent?.isHttp()) {
+            props.onPin(selectedEvent);
             event.preventDefault();
         }
-    }, [props.selectedEvent, props.onPin]);
+    }, [selectedEvent, props.onPin]);
 
     useHotkeys('Ctrl+r, Cmd+r', (event) => {
-        if (props.isPaidUser && props.selectedEvent?.isHttp()) {
-            props.onResend(props.selectedEvent);
+        if (props.isPaidUser && selectedEvent?.isHttp() && !selectedEvent?.isWebSocket()) {
+            props.onResend(selectedEvent);
             event.preventDefault();
         }
-    }, [props.selectedEvent, props.onResend, props.isPaidUser]);
+    }, [selectedEvent, props.onResend, props.isPaidUser]);
 
     useHotkeys('Ctrl+m, Cmd+m', (event) => {
-        if (props.isPaidUser && props.selectedEvent?.isHttp()) {
-            props.onMockRequest(props.selectedEvent);
+        if (props.isPaidUser && selectedEvent?.isHttp() && !selectedEvent?.isWebSocket()) {
+            props.onMockRequest(selectedEvent);
             event.preventDefault();
         }
-    }, [props.selectedEvent, props.onMockRequest, props.isPaidUser]);
+    }, [selectedEvent, props.onMockRequest, props.isPaidUser]);
 
     useHotkeys('Ctrl+Delete, Cmd+Delete', (event) => {
         if (isEditable(event.target)) return;
 
-        if (props.selectedEvent) {
-            props.onDelete(props.selectedEvent);
+        if (selectedEvent) {
+            props.onDelete(selectedEvent);
         }
-    }, [props.selectedEvent, props.onDelete]);
+    }, [selectedEvent, props.onDelete]);
 
     useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete', (event) => {
         props.onClear();
