@@ -20,7 +20,8 @@ export function initSentry(dsn: string | undefined) {
         ],
         integrations: [
             Sentry.dedupeIntegration(),
-            Sentry.extraErrorDataIntegration()
+            Sentry.extraErrorDataIntegration(),
+            Sentry.httpClientIntegration()
         ],
         beforeSend: function (event, hint) {
             if (!sentryInitialized) return null; // Don't send errors if we're disabled
