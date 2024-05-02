@@ -98,7 +98,11 @@ export default merge(common, {
             SentryPlugin.sentryWebpackPlugin({
                 release: {
                     name: process.env.UI_VERSION!,
-                    setCommits: { auto: true }
+                    setCommits: {
+                        auto: true,
+                        ignoreEmpty: true,
+                        ignoreMissing: true
+                    }
                 }
             })
         ]
