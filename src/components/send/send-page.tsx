@@ -6,6 +6,7 @@ import { styled } from '../../styles';
 import { useHotkeys } from '../../util/ui';
 import { WithInjected } from '../../types';
 
+import { ApiError } from '../../services/server-api-types';
 import { SendStore } from '../../model/send/send-store';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
@@ -66,7 +67,13 @@ class SendPage extends React.Component<{
             selectedRequest
         } = this.props.sendStore;
 
-        sendRequest(selectedRequest);
+        sendRequest(selectedRequest).catch(e => {
+            console.log(e);
+            const errorMessage = (e instanceof ApiError && e.apiErrorMessage)
+                ? e.apiErrorMessage
+                : e.message ?? e;
+            alert(errorMessage);
+        });
     };
 
     private showRequestOnViewPage = () => {

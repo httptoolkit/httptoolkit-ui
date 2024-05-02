@@ -58,7 +58,8 @@ export class RestApiClient {
                 : undefined,
             signal: options?.abortSignal
         }).catch((e) => {
-            throw new ApiError(`fetch failed with '${e.message ?? e}'`, operationName);
+            const errorMessage = e.message ?? e;
+            throw new ApiError(`fetch failed with '${errorMessage}'`, operationName);
         });
 
         if (!response.ok) {
@@ -71,16 +72,16 @@ export class RestApiClient {
 
             console.error(response.status, errorBody);
 
+            const errorMessage = errorBody?.error?.message ?? '[unknown]';
+            const errorCode = errorBody?.error?.code;
+
             throw new ApiError(
                 `unexpected ${response.status} ${response.statusText} - ${
-                    errorBody?.error?.code
-                        ? `${errorBody?.error?.code} -`
-                        : ''
-                }${
-                    errorBody?.error?.message ?? '[unknown]'
+                    errorCode ? `${errorCode} -` : ''
                 }`,
                 operationName,
-                response.status
+                response.status,
+                errorMessage
             );
         }
 
