@@ -8,29 +8,29 @@ import { styled } from '../../styles';
 
 import {
     areItemsEqual,
-    HtkMockRuleGroup,
+    HtkRuleGroup,
     ItemPath,
     findItemPath,
-    HtkMockRuleRoot,
+    HtkRuleRoot,
     getItemParentByPath,
     isRuleGroup,
     comparePaths,
     getItemAtPath,
     findItem,
 } from '../../model/rules/rules-structure';
-import { Handler, HandlerStep, HtkMockRule, RuleType } from '../../model/rules/rules';
+import { Handler, HtkRule, RuleType } from '../../model/rules/rules';
 
-import { GroupHeader, GroupTail } from './mock-rule-group';
-import { AddRuleRow, RuleRow } from './mock-rule-row';
+import { GroupHeader, GroupTail } from './rule-group';
+import { AddRuleRow, RuleRow } from './rule-row';
 
-const MockRuleListContainer = styled.ol`
+const RuleListContainer = styled.ol`
     padding: 0 40px 20px;
     min-height: calc(100% - 40px);
 `;
 
 function getDragTarget(
     indexMapping: Array<ItemPath>,
-    rules: HtkMockRuleRoot,
+    rules: HtkRuleRoot,
     sourceIndex: number,
     destinationIndex: number
 ) {
@@ -102,9 +102,9 @@ function getDragTarget(
 }
 
 @observer
-export class MockRuleList extends React.Component<{
-    draftRules: HtkMockRuleRoot,
-    activeRules: HtkMockRuleRoot,
+export class RuleList extends React.Component<{
+    draftRules: HtkRuleRoot,
+    activeRules: HtkRuleRoot,
 
     addRule: () => void,
     saveRule: (path: ItemPath) => void,
@@ -138,7 +138,7 @@ export class MockRuleList extends React.Component<{
         }
     }
 
-    buildDragEndListener = (indexMapping: Array<ItemPath>, rules: HtkMockRuleRoot) =>
+    buildDragEndListener = (indexMapping: Array<ItemPath>, rules: HtkRuleRoot) =>
         action(({ source, destination, combine }: DropResult) => {
             this.currentlyDraggingRuleId = undefined;
 
@@ -170,7 +170,7 @@ export class MockRuleList extends React.Component<{
             if (!destination) {
                 if (this.wasGroupOpenBeforeDrag) {
                     const path = indexMapping[source.index];
-                    const item = getItemAtPath(draftRules, path) as HtkMockRuleGroup;
+                    const item = getItemAtPath(draftRules, path) as HtkRuleGroup;
                     item.collapsed = false;
                 }
 
@@ -190,7 +190,7 @@ export class MockRuleList extends React.Component<{
             );
 
             if (this.wasGroupOpenBeforeDrag) {
-                const item = getItemAtPath(draftRules, targetPath) as HtkMockRuleGroup;
+                const item = getItemAtPath(draftRules, targetPath) as HtkRuleGroup;
                 item.collapsed = false;
             }
         });
@@ -238,9 +238,9 @@ export class MockRuleList extends React.Component<{
         >
             <Droppable
                 isCombineEnabled={true}
-                droppableId='mock-rule-list'
+                droppableId='edit-rule-list'
             >{(provided) => <Observer>{() =>
-                <MockRuleListContainer
+                <RuleListContainer
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                 >
@@ -252,7 +252,7 @@ export class MockRuleList extends React.Component<{
                     { ruleRows }
 
                     { provided.placeholder }
-                </MockRuleListContainer>
+                </RuleListContainer>
             }</Observer>}</Droppable>
         </DragDropContext>
     };
@@ -261,8 +261,8 @@ export class MockRuleList extends React.Component<{
 type RuleRowsData = { indexMapping: Array<ItemPath>, ruleRows: Array<React.ReactNode> };
 
 function buildRuleRows(
-    allDraftRules: HtkMockRuleRoot,
-    allActiveRules: HtkMockRuleRoot,
+    allDraftRules: HtkRuleRoot,
+    allActiveRules: HtkRuleRoot,
     collapsedRulesMap: { [id: string]: boolean },
     currentlyDraggingRuleId: string | undefined,
 
@@ -274,7 +274,7 @@ function buildRuleRows(
     updateGroupTitle: (groupId: string, title: string) => void,
     getRuleDefaultHandler: (ruleType: RuleType) => Handler,
 
-    ruleGroup: HtkMockRuleGroup = allDraftRules,
+    ruleGroup: HtkRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
     overallStartIndex = 0,
 ): RuleRowsData {
@@ -371,10 +371,10 @@ function buildRuleRows(
 }
 
 function getChangedState(
-    draftRule: HtkMockRule,
+    draftRule: HtkRule,
     draftPath: ItemPath,
-    draftRules: HtkMockRuleRoot,
-    activeRules: HtkMockRuleRoot
+    draftRules: HtkRuleRoot,
+    activeRules: HtkRuleRoot
 ): 'changed' | 'new' | false {
     const activePath = findItemPath(activeRules, { id: draftRule.id });
     if (!activePath) return 'new';

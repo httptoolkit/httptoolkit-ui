@@ -1,20 +1,20 @@
 import { RulesStore } from "../../../src/model/rules/rules-store";
-import { HtkMockRule } from "../../../src/model/rules/rules";
+import { HtkRule } from "../../../src/model/rules/rules";
 import {
-    HtkMockRuleRoot,
-    HtkMockItem
+    HtkRuleRoot,
+    HtkRuleItem
 } from "../../../src/model/rules/rules-structure";
 
 import { expect } from "../../test-setup";
-import { HttpMockRule } from "../../../src/model/rules/definitions/http-rule-definitions";
+import { HttpRule } from "../../../src/model/rules/definitions/http-rule-definitions";
 
-const group = (id: number, ...items: Array<HtkMockItem>) => ({
+const group = (id: number, ...items: Array<HtkRuleItem>) => ({
     id: id.toString(),
     title: id.toString(),
     items
 });
 
-const defaultGroup = (...items: Array<HtkMockItem>) => ({
+const defaultGroup = (...items: Array<HtkRuleItem>) => ({
     id: 'default-group',
     title: "Default rules",
     collapsed: true,
@@ -26,7 +26,7 @@ describe("Rules store", () => {
     let store: RulesStore;
     let [a, b, c, d, e, f] = 'abcdef'
         .split('')
-        .map((char) => ({ id: char }) as HtkMockRule);
+        .map((char) => ({ id: char }) as HtkRule);
 
     beforeEach(() => {
         const proxyStore = {
@@ -34,8 +34,8 @@ describe("Rules store", () => {
             dnsServers: []
         };
         store = new RulesStore({ featureFlags: [] } as any, proxyStore as any, null as any);
-        store.rules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
-        store.draftRules = { id: 'root', items: [] } as any as HtkMockRuleRoot;
+        store.rules = { id: 'root', items: [] } as any as HtkRuleRoot;
+        store.draftRules = { id: 'root', items: [] } as any as HtkRuleRoot;
     });
 
     describe("should update all positions for a single save, if the saved rule has moved", () => {
@@ -402,7 +402,7 @@ describe("Rules store", () => {
             store.rules.items = [defaultGroup(a)];
             store.draftRules.items = [defaultGroup(a)];
 
-            const highPriorityRule = { ...a, priority: 10 } as HttpMockRule;
+            const highPriorityRule = { ...a, priority: 10 } as HttpRule;
 
             store.ensureRuleExists(highPriorityRule);
 

@@ -3,7 +3,7 @@ import { inject, observer } from 'mobx-react';
 
 import { HttpExchange, HtkRequest } from '../../../types';
 import { styled } from '../../../styles';
-import { Icon } from '../../../icons';
+import { PhosphorIcon } from '../../../icons';
 
 import { aOrAn, uppercaseFirst } from '../../../util/text';
 
@@ -69,12 +69,12 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
                 : ''
             }.${
                 p.ruleData.status !== 'deleted'
-                    ? '\nClick here to jump to the rule on the Mock page.'
+                    ? '\nClick here to jump to the rule on the Modify page.'
                     : ''
             }`
         }
     >
-        <Icon icon={['fas', 'theater-masks']} />
+        <PhosphorIcon icon='Pencil' size='16px' />
         { uppercaseFirst(stepDescription) }
     </PillButton>;
 }))`
@@ -84,7 +84,7 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
     word-spacing: 0;
 
     > svg {
-        margin-right: 5px;
+        margin: -1px 5px 0 -1px;
     }
 `;
 

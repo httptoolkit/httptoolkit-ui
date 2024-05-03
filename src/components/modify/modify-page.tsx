@@ -26,9 +26,9 @@ import { SERIALIZED_RULES_MIME_TYPE, serializeRules } from '../../model/rules/ru
 
 import { clickOnEnter } from '../component-utils';
 import { Button, SecondaryButton } from '../common/inputs';
-import { MockRuleList } from './mock-rule-list';
+import { RuleList } from './rule-list';
 
-interface MockPageProps {
+interface ModifyPageProps {
     className?: string;
     rulesStore: RulesStore;
     accountStore: AccountStore;
@@ -37,7 +37,7 @@ interface MockPageProps {
     initialRuleId?: string;
 }
 
-const MockPageContainer = styled.section`
+const ModifyPageContainer = styled.section`
     box-sizing: border-box;
     height: 100%;
     width: 100%;
@@ -46,12 +46,12 @@ const MockPageContainer = styled.section`
     align-items: stretch;
 `;
 
-const MockPageScrollContainer = styled.div`
+const ModifyPageScrollContainer = styled.div`
     overflow-y: scroll;
     flex-grow: 1;
 `;
 
-const MockPageHeader = styled.header`
+const ModifyPageHeader = styled.header`
     box-sizing: border-box;
     width: 100%;
     padding: 20px calc(40px + 16px) 20px 40px; /* ~16px to match scrollbar below */
@@ -64,9 +64,8 @@ const MockPageHeader = styled.header`
     align-items: center;
 `;
 
-const MockHeading = styled.h1`
+const EditHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
-    font-family: ${p => p.theme.titleTextFamily};
     font-weight: bold;
     flex-grow: 1;
 `;
@@ -91,7 +90,7 @@ const OtherButton = styled(SecondaryButton)`
 @inject('rulesStore')
 @inject('accountStore')
 @observer
-class MockPage extends React.Component<MockPageProps> {
+class ModifyPage extends React.Component<ModifyPageProps> {
 
     containerRef = React.createRef<HTMLDivElement>();
 
@@ -153,9 +152,9 @@ class MockPage extends React.Component<MockPageProps> {
         } = this.props.rulesStore;
         const { isPaidUser } = this.props.accountStore;
 
-        return <MockPageContainer ref={this.containerRef}>
-            <MockPageHeader>
-                <MockHeading>Mock & Rewrite HTTP</MockHeading>
+        return <ModifyPageContainer ref={this.containerRef}>
+            <ModifyPageHeader>
+                <EditHeading>Transform & Mock HTTP</EditHeading>
 
                 <OtherButton
                     disabled={!areSomeRulesNonDefault}
@@ -208,10 +207,10 @@ class MockPage extends React.Component<MockPageProps> {
                 >
                     <Icon icon={['fas', 'save']} /> Save changes
                 </SaveButton>
-            </MockPageHeader>
+            </ModifyPageHeader>
 
-            <MockPageScrollContainer>
-                <MockRuleList
+            <ModifyPageScrollContainer>
+                <RuleList
                     activeRules={rules}
                     draftRules={draftRules}
                     collapsedRulesMap={this.collapsedRulesMap}
@@ -228,8 +227,8 @@ class MockPage extends React.Component<MockPageProps> {
                     moveRule={moveDraftRule}
                     combineRulesAsGroup={combineDraftRulesAsGroup}
                 />
-            </MockPageScrollContainer>
-        </MockPageContainer>
+            </ModifyPageScrollContainer>
+        </ModifyPageContainer>
     }
 
     @action.bound
@@ -353,8 +352,8 @@ class MockPage extends React.Component<MockPageProps> {
 }
 
 // Exclude stores etc from the external props, as they're injected
-const InjectedMockPage = MockPage as unknown as WithInjected<
-    typeof MockPage,
+const InjectedModifyPage = ModifyPage as unknown as WithInjected<
+    typeof ModifyPage,
     'rulesStore' | 'accountStore' | 'navigate'
 >;
-export { InjectedMockPage as MockPage };
+export { InjectedModifyPage as ModifyPage };

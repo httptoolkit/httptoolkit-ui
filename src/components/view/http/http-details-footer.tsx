@@ -73,17 +73,17 @@ const DeleteButton = observer((p: {
     onClick={p.onClick}
 />);
 
-const MockButton = observer((p: {
+const ModifyButton = observer((p: {
     isExchange: boolean,
     isPaidUser: boolean,
     onClick: () => void
 }) => <IconButton
-    icon={['fas', 'theater-masks']}
+    icon='Pencil'
     onClick={p.onClick}
     title={
         p.isPaidUser
-            ? `Create a mock rule from this exchange (${Ctrl}+m)`
-            : 'With Pro: create a mock rule from this exchange'
+            ? `Create a modify rule from this exchange (${Ctrl}+m)`
+            : 'With Pro: create a modify rule from this exchange'
     }
     disabled={!p.isExchange || !p.isPaidUser}
 />);
@@ -151,7 +151,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
                         <ProSeparator />
                 }
 
-                <MockButton
+                <ModifyButton
                     isExchange={event.isHttp() && !event.isWebSocket()}
                     isPaidUser={props.isPaidUser}
                     onClick={() => props.onBuildRuleFromExchange(props.event as HttpExchange)}

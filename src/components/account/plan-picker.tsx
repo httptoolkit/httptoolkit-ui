@@ -407,11 +407,11 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     </TierPriceBlock>
                     <TierFeatures>
                         <Feature>
-                            <strong>Automated HTTP mocking & rewriting rules</strong>, including traffic redirection,
-                            mock responses, and errors & timeouts.
+                            <strong>Automated HTTP rewriting rules</strong>, including traffic
+                            redirection, mock responses, and errors & timeouts.
                         </Feature>
                         <Feature>
-                            <strong>Reusable Mock & Send tools</strong>. Persistent by default, plus
+                            <strong>Reusable Modify & Send tools</strong>. Persistent by default, plus
                             import/export so you can store, reuse & share your rules & requests.
                         </Feature>
                         <Feature>

@@ -19,14 +19,14 @@ import { UiStore } from '../model/ui/ui-store';
 import {
     serverVersion,
     versionSatisfies,
-    MOCK_SERVER_RANGE,
+    MODIFY_RULE_SERVER_RANGE,
     SERVER_SEND_API_SUPPORTED
 } from '../services/service-versions';
 
 import { Sidebar, SidebarItem, SIDEBAR_WIDTH } from './sidebar';
 import { InterceptPage } from './intercept/intercept-page';
 import { ViewPage } from './view/view-page';
-import { MockPage } from './mock/mock-page';
+import { ModifyPage } from './modify/modify-page';
 import { SendPage } from './send/send-page';
 import { SettingsPage } from './settings/settings-page';
 
@@ -71,7 +71,7 @@ const AppKeyboardShortcuts = (props: {
         e.preventDefault();
     }, [props.navigate]);
     useHotkeys('Ctrl+3,Cmd+3', (e) => {
-        props.navigate('/mock');
+        props.navigate('/modify');
         e.preventDefault();
     }, [props.navigate]);
     useHotkeys('Ctrl+9,Cmd+9', (e) => {
@@ -125,18 +125,18 @@ class App extends React.Component<{
 
             ...(
                 (
-                    // Hide Mock option if the server is too old for proper support.
+                    // Hide Modify option if the server is too old for proper support.
                     // We show by default to avoid flicker in the most common case
                     serverVersion.state !== 'fulfilled' ||
-                    versionSatisfies(serverVersion.value, MOCK_SERVER_RANGE)
+                    versionSatisfies(serverVersion.value, MODIFY_RULE_SERVER_RANGE)
                 )
                 ? [{
-                    name: 'Mock',
-                    title: `Add rules to mock & rewrite HTTP traffic (${Ctrl}+3)`,
+                    name: 'Modify',
+                    title: `Add rules to transform & mock HTTP traffic (${Ctrl}+3)`,
                     icon: 'Pencil',
                     position: 'top',
                     type: 'router',
-                    url: '/mock'
+                    url: '/modify'
                 }]
                 : []
             ),
@@ -220,8 +220,8 @@ class App extends React.Component<{
                     <Route path={'/intercept'} pageComponent={InterceptPage} />
                     <Route path={'/view'} pageComponent={ViewPage} />
                     <Route path={'/view/:eventId'} pageComponent={ViewPage} />
-                    <Route path={'/mock'} pageComponent={MockPage} />
-                    <Route path={'/mock/:initialRuleId'} pageComponent={MockPage} />
+                    <Route path={'/modify'} pageComponent={ModifyPage} />
+                    <Route path={'/modify/:initialRuleId'} pageComponent={ModifyPage} />
                     <Route path={'/send'} pageComponent={SendPage} />
                     <Route path={'/settings'} pageComponent={SettingsPage} />
                 </Router>

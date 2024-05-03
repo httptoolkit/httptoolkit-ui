@@ -90,7 +90,7 @@ const Card = styled.section.attrs((p: CardProps) => ({
     }
 `;
 
-// Card-like buttons, e.g. mock rule rows & intercept buttons
+// Card-like buttons, e.g. modify rule rows & intercept buttons
 export const LittleCard = styled(Card)`
     padding: 15px;
 

@@ -163,7 +163,10 @@ const Source = styled(Column)`
     flex-basis: 49px;
     flex-shrink: 0;
     flex-grow: 0;
-    text-align: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 `;
 
 const Host = styled(Column)`
@@ -236,9 +239,11 @@ const EventListRow = styled.div<{ role: 'row' }>`
         font-weight: bold;
 
         color: ${p => p.theme.highlightColor};
+        fill: ${p => p.theme.highlightColor};
         * {
             /* Override status etc colours to ensure contrast & give row max visibility */
             color: ${p => p.theme.highlightColor};
+            fill: ${p => p.theme.highlightColor};
         }
     }
 
@@ -460,15 +465,15 @@ const ExchangeRow = inject('uiStore')(observer(({
                 exchange.matchedRule.handlerStepTypes.some(t =>
                     t !== 'passthrough' && t !== 'ws-passthrough' && t !== 'rtc-dynamic-proxy'
                 ) &&
-                <Icon
-                    title={`Handled by ${
+                <PhosphorIcon
+                    icon='Pencil'
+                    alt={`Handled by ${
                         exchange.matchedRule.handlerStepTypes.length === 1
                         ? nameHandlerClass(exchange.matchedRule.handlerStepTypes[0])
                         : 'multi-step'
                     } rule`}
-                    icon={['fas', 'theater-masks']}
+                    size='20px'
                     color={getSummaryColor('mutative')}
-                    fixedWidth={true}
                 />
             }
         </Source>

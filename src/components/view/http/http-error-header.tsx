@@ -34,7 +34,7 @@ export const HttpErrorHeader = (p: {
     type: ErrorType,
     getPro: (source: string) => void,
     navigate: (path: string) => void,
-    mockRequest: () => void,
+    createRuleFromRequest: () => void,
     ignoreError: () => void
 }) => {
     const advancedHeaderOverflowSupported =
@@ -161,8 +161,8 @@ export const HttpErrorHeader = (p: {
                     could be an issue with your DNS or network configuration.
                 </HeaderText>
                 <HeaderText>
-                    You can define mock responses for requests like this from the
-                    Mock page, to return fake data even for servers and hostnames
+                    You can define rules to handle requests like this from the
+                    Modify page, to return fake data even for servers and hostnames
                     that don't exist.
                 </HeaderText>
             </>
@@ -173,8 +173,8 @@ export const HttpErrorHeader = (p: {
                     host's DNS records.
                 </HeaderText>
                 <HeaderText>
-                    You can define mock responses for requests like this from the
-                    Mock page, to return fake data even for servers and hostnames
+                    You can define rules to handle requests like this from the
+                    Modify page, to return fake data even for servers and hostnames
                     that aren't accessible.
                 </HeaderText>
             </>
@@ -186,8 +186,8 @@ export const HttpErrorHeader = (p: {
                     connectivity, and may just be a temporary issue.
                 </HeaderText>
                 <HeaderText>
-                    You can define mock responses for requests like this from the
-                    Mock page, to return fake data even for servers and hostnames
+                    You can define rules to handle requests like this from the
+                    Modify page, to return fake data even for servers and hostnames
                     that don't exist or aren't accessible.
                 </HeaderText>
             </>
@@ -211,13 +211,13 @@ export const HttpErrorHeader = (p: {
             ? <HeaderText>
                 This typically means the server isn't running on the port you're using, though
                 it is possible this is an intermittent connection issue. You can either try
-                again, or mock requests like this to avoid sending them upstream at all.
+                again, or create a rule for requests like this to avoid sending them upstream at all.
             </HeaderText>
         : p.type === 'connection-reset'
             ? <HeaderText>
                 This could be due to a connection issue, or an issue with the server.
                 This may be an intermittent issue that will be solved by retrying the request, or
-                you can mock requests like this to avoid sending them upstream at all.
+                you can create a rule for requests like this to avoid sending them upstream at all.
             </HeaderText>
         : p.type === 'client-abort'
             ? <HeaderText>
@@ -235,8 +235,8 @@ export const HttpErrorHeader = (p: {
             ? <HeaderText>
                 This could be due to connection issues, problems within the server, or issues
                 with handling this request specifically. This might be resolved by retrying
-                the request, or you can mock requests like this to avoid sending them upstream
-                at all.
+                the request, or you can create a rule for requests like this to avoid sending
+                them upstream at all.
             </HeaderText>
         : isClientBug(p.type)
             ? <HeaderText>
@@ -310,8 +310,8 @@ export const HttpErrorHeader = (p: {
         </HeaderButton>
 
         { isMockable(p.type)
-            ? <HeaderButton onClick={p.mockRequest} onKeyPress={clickOnEnter}>
-                Mock requests like this
+            ? <HeaderButton onClick={p.createRuleFromRequest} onKeyPress={clickOnEnter}>
+                Create a rule
             </HeaderButton>
         : isWhitelistable(p.type)
             ? (p.isPaidUser

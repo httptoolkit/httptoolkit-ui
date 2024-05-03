@@ -17,7 +17,7 @@ import { UnreachableCheck } from '../../util/error';
 
 import { getMethodColor, getSummaryColor } from '../../model/events/categorization';
 import {
-    HtkMockRule,
+    HtkRule,
     Matcher,
     Handler,
     AvailableHandler,
@@ -55,9 +55,9 @@ import {
 } from './matcher-selection';
 import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
-import { DragHandle } from './mock-drag-handle';
-import { IconMenu, IconMenuButton } from './mock-item-menu';
-import { RuleTitle, EditableRuleTitle } from './mock-rule-title';
+import { DragHandle } from './rule-drag-handle';
+import { IconMenu, IconMenuButton } from './rule-icon-menu';
+import { RuleTitle, EditableRuleTitle } from './rule-title';
 
 const RowContainer = styled(LittleCard)<{
     deactivated?: boolean,
@@ -295,7 +295,7 @@ export class RuleRow extends React.Component<{
 
     index: number;
     path: ItemPath;
-    rule: HtkMockRule;
+    rule: HtkRule;
     isNewRule: boolean;
     hasUnsavedChanges: boolean;
     collapsed: boolean;

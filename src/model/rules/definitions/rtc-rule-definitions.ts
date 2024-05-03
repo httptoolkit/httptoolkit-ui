@@ -78,7 +78,7 @@ export type RTCInitialMatcher = InstanceType<typeof RTCInitialMatcherClasses[num
 export type RTCStepClass = typeof RTCStepLookup[keyof typeof RTCStepLookup];
 export type RTCStep = InstanceType<RTCStepClass>;
 
-export interface RTCMockRule {
+export interface RTCRule {
     id: string;
     type: 'webrtc';
     activated: boolean;

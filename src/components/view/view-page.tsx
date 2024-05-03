@@ -63,7 +63,7 @@ const ViewPageKeyboardShortcuts = (props: {
     moveSelection: (distance: number) => void,
     onPin: (event: HttpExchange) => void,
     onResend: (event: HttpExchange) => void,
-    onMockRequest: (event: HttpExchange) => void,
+    onBuildRuleFromExchange: (event: HttpExchange) => void,
     onDelete: (event: CollectedEvent) => void,
     onClear: () => void,
     onStartSearch: () => void
@@ -96,10 +96,10 @@ const ViewPageKeyboardShortcuts = (props: {
 
     useHotkeys('Ctrl+m, Cmd+m', (event) => {
         if (props.isPaidUser && selectedEvent?.isHttp() && !selectedEvent?.isWebSocket()) {
-            props.onMockRequest(selectedEvent);
+            props.onBuildRuleFromExchange(selectedEvent);
             event.preventDefault();
         }
-    }, [selectedEvent, props.onMockRequest, props.isPaidUser]);
+    }, [selectedEvent, props.onBuildRuleFromExchange, props.isPaidUser]);
 
     useHotkeys('Ctrl+Delete, Cmd+Delete', (event) => {
         if (isEditable(event.target)) return;
@@ -372,7 +372,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 moveSelection={this.moveSelection}
                 onPin={this.onPin}
                 onResend={this.onPrepareToResendRequest}
-                onMockRequest={this.onBuildRuleFromExchange}
+                onBuildRuleFromExchange={this.onBuildRuleFromExchange}
                 onDelete={this.onDelete}
                 onClear={this.onForceClear}
                 onStartSearch={this.onStartSearch}
@@ -476,7 +476,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
         const rule = buildRuleFromExchange(exchange);
         rulesStore!.draftRules.items.unshift(rule);
-        navigate(`/mock/${rule.id}`);
+        navigate(`/modify/${rule.id}`);
     }
 
     @action.bound

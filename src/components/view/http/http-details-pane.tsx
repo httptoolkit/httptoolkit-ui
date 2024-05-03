@@ -14,7 +14,7 @@ import { AccountStore } from '../../../model/account/account-store';
 import { ApiExchange } from '../../../model/api/api-interfaces';
 import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
 import { findItem } from '../../../model/rules/rules-structure';
-import { HtkMockRule, getRulePartKey } from '../../../model/rules/rules';
+import { HtkRule, getRulePartKey } from '../../../model/rules/rules';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 import { tagsToErrorType } from '../../../model/http/error-types';
 
@@ -174,7 +174,7 @@ export class HttpDetailsPane extends React.Component<{
             isPaidUser,
             getPro,
             navigate,
-            mockRequest: this.mockRequest,
+            createRuleFromRequest: this.createRuleFromRequest,
             ignoreError: this.ignoreError
         };
 
@@ -463,12 +463,12 @@ export class HttpDetailsPane extends React.Component<{
     }
 
     @action.bound
-    private mockRequest() {
+    private createRuleFromRequest() {
         const { exchange, rulesStore, navigate } = this.props;
 
         const rule = buildRuleFromRequest(rulesStore!, exchange.request);
         rulesStore!.draftRules.items.unshift(rule);
-        navigate(`/mock/${rule.id}`);
+        navigate(`/modify/${rule.id}`);
     }
 
     @computed
@@ -478,7 +478,7 @@ export class HttpDetailsPane extends React.Component<{
         const { matchedRule } = exchange;
         if (!matchedRule) return;
 
-        const currentRuleDraft = findItem(rulesStore!.draftRules, { id: matchedRule.id }) as HtkMockRule | undefined;
+        const currentRuleDraft = findItem(rulesStore!.draftRules, { id: matchedRule.id }) as HtkRule | undefined;
         if (!currentRuleDraft) {
             return { stepTypes: matchedRule.handlerStepTypes, status: 'deleted' } as const;
         }
@@ -500,7 +500,7 @@ export class HttpDetailsPane extends React.Component<{
         const { navigate, exchange } = this.props;
         const { matchedRule } = exchange;
         if (!matchedRule) return;
-        navigate(`/mock/${matchedRule.id}`);
+        navigate(`/modify/${matchedRule.id}`);
     }
 
     @action.bound

@@ -25,7 +25,7 @@ import { getStatusMessage } from '../http/http-docs';
 import { RulesStore } from './rules-store';
 import {
     Handler,
-    HtkMockRule,
+    HtkRule,
     RulePriority,
     InitialMatcher,
     Matcher,
@@ -34,9 +34,9 @@ import {
     getRulePartKey
 } from './rules';
 import {
-    HtkMockItem,
-    HtkMockRuleGroup,
-    HtkMockRuleRoot
+    HtkRuleItem,
+    HtkRuleGroup,
+    HtkRuleRoot
 } from './rules-structure';
 import * as HttpRule from './definitions/http-rule-definitions';
 import * as WsRule from './definitions/websocket-rule-definitions';
@@ -44,7 +44,7 @@ import * as EthRule from './definitions/ethereum-rule-definitions';
 import * as IpfsRule from './definitions/ipfs-rule-definitions';
 import * as RtcRule from './definitions/rtc-rule-definitions';
 
-export function getNewRule(rulesStore: RulesStore): HtkMockRule {
+export function getNewRule(rulesStore: RulesStore): HtkRule {
     return observable({
         id: uuid(),
         type: 'http', // New rules default to HTTP (i.e. they show HTTP handler options)
@@ -69,7 +69,7 @@ export function getRuleDefaultMatchers(
 }
 
 export function updateRuleAfterInitialMatcherChange(
-    rule: HtkMockRule
+    rule: HtkRule
 ) {
     if (rule.type !== 'ipfs') return;
 
@@ -90,11 +90,11 @@ export function updateRuleAfterInitialMatcherChange(
     }
 }
 
-export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpMockRule['handler'];
-export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketMockRule['handler'];
-export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumMockRule['handler'];
-export function getRuleDefaultHandler(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsMockRule['handler'];
-export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCMockRule['steps'][0];
+export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpRule['handler'];
+export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketRule['handler'];
+export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumRule['handler'];
+export function getRuleDefaultHandler(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsRule['handler'];
+export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCRule['steps'][0];
 export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
 export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
     switch (type) {
@@ -144,7 +144,7 @@ function buildRequestMatchers(request: HtkRequest) {
     ];
 }
 
-export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest): HtkMockRule {
+export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest): HtkRule {
     return {
         id: uuid(),
         type: 'http',
@@ -155,7 +155,7 @@ export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest
     };
 }
 
-export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
+export function buildRuleFromExchange(exchange: HttpExchange): HtkRule {
     const { statusCode, statusMessage, headers } = exchange.isSuccessfulExchange()
         ? exchange.response
         : { statusCode: 200, statusMessage: "OK", headers: {} as Headers };
@@ -173,17 +173,17 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
         : "A mock response";
 
     // Copy headers so we can mutate them independently:
-    const mockRuleHeaders = Object.assign({}, headers);
+    const ruleHeaderMatch = Object.assign({}, headers);
 
-    delete mockRuleHeaders['date'];
-    delete mockRuleHeaders['expires'];
-    delete mockRuleHeaders[':status']; // Pseudoheaders aren't set directly
+    delete ruleHeaderMatch['date'];
+    delete ruleHeaderMatch['expires'];
+    delete ruleHeaderMatch[':status']; // Pseudoheaders aren't set directly
 
-    // Problematic for the mock rule UI, so skip for now:
-    delete mockRuleHeaders['content-encoding'];
+    // Problematic for the modify rule UI, so skip for now:
+    delete ruleHeaderMatch['content-encoding'];
 
-    if (mockRuleHeaders['content-length']) {
-        mockRuleHeaders['content-length'] = byteLength(bodyContent).toString();
+    if (ruleHeaderMatch['content-length']) {
+        ruleHeaderMatch['content-length'] = byteLength(bodyContent).toString();
     }
 
     return {
@@ -195,13 +195,13 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkMockRule {
             statusCode,
             statusMessage || getStatusMessage(statusCode),
             bodyContent,
-            mockRuleHeaders
+            ruleHeaderMatch
         ),
         completionChecker: new completionCheckers.Always(),
     };
 }
 
-export const buildDefaultGroupWrapper = (items: HtkMockItem[]): HtkMockRuleGroup => ({
+export const buildDefaultGroupWrapper = (items: HtkRuleItem[]): HtkRuleGroup => ({
     id: 'default-group',
     title: "Default rules",
     collapsed: true,
@@ -211,7 +211,7 @@ export const buildDefaultGroupWrapper = (items: HtkMockItem[]): HtkMockRuleGroup
 export const buildDefaultGroupRules = (
     rulesStore: RulesStore,
     proxyStore: ProxyStore
-): HtkMockItem[] => [
+): HtkRuleItem[] => [
     // Respond to amiusing.httptoolkit.tech with an emphatic YES
     {
         id: 'default-amiusing',
@@ -276,13 +276,13 @@ export const buildDefaultRulesRoot = (rulesStore: RulesStore, proxyStore: ProxyS
             buildDefaultGroupRules(rulesStore, proxyStore)
         )
     ]
-} as HtkMockRuleRoot);
+} as HtkRuleRoot);
 
 export const buildForwardingRuleIntegration = (
     sourceHost: string,
     targetHost: string,
     rulesStore: RulesStore
-): HtkMockRule => ({
+): HtkRule => ({
     id: 'default-forwarding-rule',
     type: 'http',
     activated: true,

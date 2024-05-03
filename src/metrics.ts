@@ -80,7 +80,7 @@ const sessionData = () => ({
 const normalizeUrl = (url: string) =>
     url
     .replace(/\/view\/[a-z0-9\-]+/, '/view') // Strip row ids
-    .replace(/\/mock\/[a-z0-9\-]+/, '/mock') // Strip mock rule ids
+    .replace(/\/modify\/[a-z0-9\-]+/, '/modify') // Strip modify rule ids
     .replace(/\?.*/, ''); // Strip any query & hash params
 
 const SINGLE_EVENT_CATEGORIES = ["Interceptors"];

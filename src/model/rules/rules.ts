@@ -21,14 +21,14 @@ import {
     TransformingHandler,
     HttpMatcherLookup,
     HttpHandlerLookup,
-    HttpMockRule,
+    HttpRule,
     HttpInitialMatcherClasses
 } from './definitions/http-rule-definitions';
 
 import {
     WebSocketMatcherLookup,
     WebSocketHandlerLookup,
-    WebSocketMockRule,
+    WebSocketRule,
     WebSocketInitialMatcherClasses,
     EchoWebSocketHandlerDefinition,
     RejectWebSocketHandlerDefinition,
@@ -39,12 +39,12 @@ import {
     EthereumMatcherLookup,
     EthereumHandlerLookup,
     EthereumInitialMatcherClasses,
-    EthereumMockRule,
+    EthereumRule,
     EthereumMethodMatcher
 } from './definitions/ethereum-rule-definitions';
 
 import {
-    IpfsMockRule,
+    IpfsRule,
     IpfsMatcherLookup,
     IpfsInitialMatcherClasses,
     IpfsHandlerLookup,
@@ -54,7 +54,7 @@ import {
 import {
     RTCMatcherLookup,
     RTCStepLookup,
-    RTCMockRule,
+    RTCRule,
     RTCInitialMatcherClasses
 } from './definitions/rtc-rule-definitions';
 
@@ -424,17 +424,17 @@ export const isPaidHandlerClass = (
 
 /// --- Rules ---
 
-export type HtkMockRule = (
-    | HttpMockRule
-    | WebSocketMockRule
-    | EthereumMockRule
-    | IpfsMockRule
-    | RTCMockRule
+export type HtkRule = (
+    | HttpRule
+    | WebSocketRule
+    | EthereumRule
+    | IpfsRule
+    | RTCRule
 ) & {
     title?: string;
 };
 
-export type RuleType = HtkMockRule['type'];
+export type RuleType = HtkRule['type'];
 
 const matchRuleType = <T extends RuleType>(
     ...types: T[]
@@ -443,7 +443,7 @@ const matchRuleType = <T extends RuleType>(
 
 const matchRule = <T extends RuleType>(
     matcher: (type: string) => type is T
-) => (rule: HtkMockRule): rule is HtkMockRule & { type: T } =>
+) => (rule: HtkRule): rule is HtkRule & { type: T } =>
     matcher(rule.type);
 
 export const isHttpCompatibleType = matchRuleType('http', 'ethereum', 'ipfs');
