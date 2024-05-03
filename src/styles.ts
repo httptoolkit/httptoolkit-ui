@@ -55,6 +55,9 @@ export const lightTheme = {
     mainLowlightBackground: greyWhite,
     mainColor: inkGrey,
 
+    highlightBackground: white,
+    highlightColor: inkGrey,
+
     lowlightTextOpacity: 0.65,
     boxShadowAlpha: 0.3,
 
@@ -69,13 +72,10 @@ export const lightTheme = {
 
     inputBackground: white,
     inputHoverBackground: greyWhite,
-    inputBorder: darkGrey,
+    inputBorder: darkishGrey,
     inputColor: inkGrey,
     inputPlaceholderColor: darkishGrey,
     inputWarningPlaceholder: '#8c5c1d', // Mix of warning + inkGrey
-
-    highlightBackground: white,
-    highlightColor: inkGrey,
 
     popColor,
 
@@ -110,7 +110,10 @@ export const darkTheme = {
     mainLowlightBackground: darkerGrey,
     mainColor: white,
 
-    lowlightTextOpacity: 0.6,
+    highlightBackground: darkishGrey,
+    highlightColor: white,
+
+    lowlightTextOpacity: 0.65,
     boxShadowAlpha: 0.4,
 
     pillContrast: 0.85,
@@ -128,9 +131,6 @@ export const darkTheme = {
     inputColor: white,
     inputPlaceholderColor: mediumGrey,
     inputWarningPlaceholder: '#e8b978', // Mix of warning + white
-
-    highlightBackground: darkishGrey,
-    highlightColor: white,
 
     popColor,
 
@@ -186,6 +186,9 @@ export const highContrastTheme = {
     mainLowlightBackground: '#262626',
     mainColor: '#ffffff',
 
+    highlightBackground: '#ffffff',
+    highlightColor: '#000',
+
     lowlightTextOpacity: 0.8,
     boxShadowAlpha: 0.1,
 
@@ -204,9 +207,6 @@ export const highContrastTheme = {
     inputColor: '#000000',
     inputPlaceholderColor: '#444',
     inputWarningPlaceholder: '#e1b374', // Mix of warning + white
-
-    highlightBackground: '#ffffff',
-    highlightColor: '#000',
 
     popColor,
 

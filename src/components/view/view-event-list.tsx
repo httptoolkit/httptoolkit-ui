@@ -6,7 +6,7 @@ import { action, computed } from 'mobx';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
-import { css, highContrastTheme, styled } from '../../styles'
+import { styled } from '../../styles'
 import { ArrowIcon, Icon, WarningIcon, Icons } from '../../icons';
 
 import {
@@ -233,15 +233,12 @@ const EventListRow = styled.div<{ role: 'row' }>`
 
     &.selected {
         background-color: ${p => p.theme.highlightBackground};
-        color: ${p => p.theme.highlightColor};
         font-weight: bold;
 
-        ${(p): any => p.theme === highContrastTheme &&
-            css`
-                ${StatusCode} {
-                    color: ${p => p.theme.highlightColor};
-                }
-            `
+        color: ${p => p.theme.highlightColor};
+        * {
+            /* Override status etc colours to ensure contrast & give row max visibility */
+            color: ${p => p.theme.highlightColor};
         }
     }
 
