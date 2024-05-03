@@ -2,20 +2,15 @@ import * as React from 'react';
 import * as _ from 'lodash';
 
 import { styled } from '../../styles'
-import { Icon, IconProp } from '../../icons';
+import { PhosphorIcon } from '../../icons';
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,
-    icon: IconProp,
-    spin?: true | 'slow',
+    icon: PhosphorIcon,
     children?: React.ReactNode
 }) => (
-    <div {..._.omit(props, ['message', 'icon', 'spin'])}>
-        <Icon
-            icon={props.icon}
-            spin={props.spin === true}
-            className={props.spin === 'slow' ? 'slow-spin' : undefined}
-        />
+    <div className={props.className}>
+        <props.icon />
         { props.children && <>
             <br/>
             { props.children }

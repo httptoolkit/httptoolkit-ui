@@ -34,6 +34,7 @@ import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
 import { CheckoutSpinner } from './account/checkout-spinner';
 import { HtmlContextMenu } from './html-context-menu';
+import { Icons } from '../icons';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -109,7 +110,7 @@ class App extends React.Component<{
             {
                 name: 'Intercept',
                 title: `Connect clients to HTTP Toolkit (${Ctrl}+1)`,
-                icon: ['fas', 'plug'],
+                icon: Icons.Plugs,
                 position: 'top',
                 type: 'router',
                 url: '/intercept'
@@ -117,7 +118,7 @@ class App extends React.Component<{
             {
                 name: 'View',
                 title: `View intercepted HTTP traffic (${Ctrl}+2)`,
-                icon: ['fas', 'search'],
+                icon: Icons.MagnifyingGlass,
                 position: 'top',
                 type: 'router',
                 url: '/view'
@@ -133,7 +134,7 @@ class App extends React.Component<{
                 ? [{
                     name: 'Mock',
                     title: `Add rules to mock & rewrite HTTP traffic (${Ctrl}+3)`,
-                    icon: ['fas', 'theater-masks'],
+                    icon: Icons.Pencil,
                     position: 'top',
                     type: 'router',
                     url: '/mock'
@@ -145,7 +146,7 @@ class App extends React.Component<{
                 ? [{
                     name: 'Send',
                     title: `Send HTTP requests directly (${Ctrl}+4)`,
-                    icon: ['far', 'paper-plane'],
+                    icon: Icons.PaperPlaneTilt,
                     position: 'top',
                     type: 'router',
                     url: '/send'
@@ -157,7 +158,7 @@ class App extends React.Component<{
                 ? {
                     name: 'Settings',
                     title: `Reconfigure HTTP Toolkit and manage your account (${Ctrl}+9)`,
-                    icon: ['fas', 'cog'],
+                    icon: Icons.GearSix,
                     position: 'bottom',
                     type: 'router',
                     url: '/settings'
@@ -165,7 +166,7 @@ class App extends React.Component<{
                 : {
                     name: 'Get Pro',
                     title: "Sign up for HTTP Toolkit Pro",
-                    icon: ['far', 'star'],
+                    icon: Icons.Star,
                     position: 'bottom',
                     type: 'callback',
                     onClick: () => this.props.accountStore.getPro('sidebar')
@@ -175,7 +176,7 @@ class App extends React.Component<{
             {
                 name: 'Give feedback',
                 title: "Suggest features or report issues",
-                icon: ['far', 'comment'],
+                icon: Icons.ChatText,
                 position: 'bottom',
                 highlight: true,
                 type: 'web',

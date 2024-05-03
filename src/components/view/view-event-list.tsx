@@ -7,7 +7,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { css, highContrastTheme, styled } from '../../styles'
-import { ArrowIcon, Icon, WarningIcon } from '../../icons';
+import { ArrowIcon, Icon, WarningIcon, Icons } from '../../icons';
 
 import {
     CollectedEvent,
@@ -792,16 +792,16 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             {
                 events.length === 0
                 ? (isPaused
-                    ? <EmptyStateOverlay icon={['fas', 'pause']}>
+                    ? <EmptyStateOverlay icon={Icons.Pause}>
                         Interception is paused, resume it to collect intercepted requests
                     </EmptyStateOverlay>
-                    : <EmptyStateOverlay icon={['fas', 'plug']}>
+                    : <EmptyStateOverlay icon={Icons.Plug}>
                         Connect a client and intercept some requests, and they'll appear here
                     </EmptyStateOverlay>
                 )
 
                 : filteredEvents.length === 0
-                ? <EmptyStateOverlay icon={['fas', 'question']}>
+                ? <EmptyStateOverlay icon={Icons.QuestionMark}>
                         No requests match this search filter{
                             isPaused ? ' and interception is paused' : ''
                         }

@@ -1,6 +1,45 @@
 import * as React from 'react';
 import { styled, warningColor } from './styles';
 
+// Import required Phosphor icons:
+import {
+    type Icon as PhosphorIcon,
+    type IconProps as PhosphorIconProps,
+
+    // Sidebar icons
+    Plugs,
+    MagnifyingGlass,
+    Pencil,
+    PaperPlaneTilt,
+    GearSix,
+    Star,
+    ChatText,
+
+    // Functional icons
+    Pause,
+    Plug,
+    QuestionMark,
+    ArrowLeft,
+} from '@phosphor-icons/react';
+
+export type { PhosphorIcon, PhosphorIconProps };
+export type PhosphorIconKey = keyof typeof Icons;
+
+export const Icons = {
+    Plugs,
+    MagnifyingGlass,
+    Pencil,
+    PaperPlaneTilt,
+    GearSix,
+    Star,
+    ChatText,
+
+    Pause,
+    Plug,
+    QuestionMark,
+    ArrowLeft,
+} as const;
+
 // Import required FA icons:
 import {
     library,

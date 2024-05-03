@@ -5,7 +5,7 @@ import { Link, Match } from '@reach/router';
 import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
-import { Icon, IconProp } from '../icons';
+import { PhosphorIcon } from '../icons';
 import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
@@ -13,7 +13,7 @@ import logo from '../images/logo-icon.svg';
 
 export interface SidebarItem {
     name: string;
-    icon: IconProp;
+    icon: PhosphorIcon;
     position: 'top' | 'bottom';
     highlight?: true;
 
@@ -49,8 +49,8 @@ const SidebarNav = styled.nav`
 `
 
 const sidebarItemStyles = css`
-    width: 70px;
-    height: 70px;
+    width: 72px;
+    height: 72px;
     margin: 0 auto;
 
     display: flex;
@@ -151,8 +151,8 @@ const SidebarButton = styled(
 export const Sidebar = observer((props: SidebarProps) => {
     const items = props.items.map((item, i) => {
         const itemContent = <>
-            <Icon size='2x' icon={item.icon} />
-            {item.name}
+            <item.icon size={34} />
+            { item.name }
         </>;
 
         if (item.type === 'web') {
