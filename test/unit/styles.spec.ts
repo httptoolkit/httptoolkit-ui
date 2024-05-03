@@ -68,6 +68,26 @@ import { expect } from '../test-setup';
                 );
             });
 
+            it("should have sufficient input warning contrast", () => {
+                const mainColor = theme.inputWarningPlaceholder;
+
+                // Warning background is #RRGGBBAA, so we need to mix to check the real bg colour:
+                const warningBackgroundColor = theme.warningBackground.slice(0, 7);
+                const warningBackgroundOpacity = theme.warningBackground.slice(7, 9);
+                const warningBackgroundRatio = parseInt(warningBackgroundOpacity, 16) / 255;
+
+                const bgColor = polished.mix(
+                    warningBackgroundRatio,
+                    warningBackgroundColor,
+                    theme.mainBackground
+                );
+
+                const contrast = polished.getContrast(mainColor, bgColor);
+                expect(contrast).to.be.greaterThan(normalContrastTarget,
+                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                );
+            });
+
             it("should have sufficient input placeholder contrast", () => {
                 const mainColor = theme.inputPlaceholderColor;
                 const bgColor = theme.inputBackground;

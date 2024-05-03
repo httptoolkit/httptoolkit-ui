@@ -120,6 +120,10 @@ const invalidTextCss = css`
         border-color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.warningBackground};
     }
+
+    &::placeholder {
+        color: ${p => p.theme.inputWarningPlaceholder};
+    }
 `;
 
 type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {

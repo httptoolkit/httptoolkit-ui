@@ -72,6 +72,7 @@ export const lightTheme = {
     inputBorder: darkGrey,
     inputColor: inkGrey,
     inputPlaceholderColor: darkishGrey,
+    inputWarningPlaceholder: '#8c5c1d', // Mix of warning + inkGrey
 
     highlightBackground: white,
     highlightColor: inkGrey,
@@ -126,6 +127,7 @@ export const darkTheme = {
     inputBorder: darkishGrey,
     inputColor: white,
     inputPlaceholderColor: mediumGrey,
+    inputWarningPlaceholder: '#e8b978', // Mix of warning + white
 
     highlightBackground: darkishGrey,
     highlightColor: white,
@@ -201,6 +203,7 @@ export const highContrastTheme = {
     inputBorder: '#aaa',
     inputColor: '#000000',
     inputPlaceholderColor: '#444',
+    inputWarningPlaceholder: '#e1b374', // Mix of warning + white
 
     highlightBackground: '#ffffff',
     highlightColor: '#000',
