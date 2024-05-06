@@ -59,6 +59,16 @@
             height: 100%;
         }
     </style>
+
+    <script>
+        const bgColor = localStorage.getItem('theme-background-color') || (
+            // Use dark/light theme containerBackground
+            window.matchMedia("(prefers-color-scheme: dark)")
+                ? '#1e2028'
+                : '#e4e8ed'
+        );
+        document.querySelector('html').style.backgroundColor = bgColor;
+    </script>
   </head>
   <body>
     <div id="app"></div>
@@ -70,14 +80,6 @@
     </div>
 
     <script>
-        const bgColor = localStorage.getItem('theme-background-color') || (
-            // Use dark/light theme containerBackground
-            window.matchMedia("(prefers-color-scheme: dark)")
-                ? '#1e2028'
-                : '#e4e8ed'
-        );
-        document.querySelector('html').style.backgroundColor = bgColor;
-
         let progressElement = document.getElementById('progress-logo');
         let errorElement = document.getElementById('app-loading-error');
         let errorDetailsElement = document.getElementById('app-loading-error-details');
