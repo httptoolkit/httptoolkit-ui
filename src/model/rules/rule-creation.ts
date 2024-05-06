@@ -129,11 +129,10 @@ function buildRequestMatchers(request: HtkRequest) {
     const urlParts = request.parsedUrl.toString().split('?');
     const path = urlParts[0];
 
-    const hasQuery = request.url.includes('?'); // Not just with parameters, but also trailing '?'
-    const query = urlParts.slice(1).join('?');
+    const hasQuery = urlParts.length > 1; // Not just with parameters, but also trailing '?'
     const queryMatcher = hasQuery
         ? [new matchers.QueryMatcher(
-            querystring.parse(query) as ({ [key: string]: string | string[] })
+            querystring.parse(urlParts.slice(1).join('?')) as ({ [key: string]: string | string[] })
         )]
         : [];
 
