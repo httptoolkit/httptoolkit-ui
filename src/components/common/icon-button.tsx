@@ -9,6 +9,7 @@ export const IconButton = styled((p: {
     className?: string,
     title: string,
     icon: IconProp | IconKey,
+    iconSize?: string,
     disabled?: boolean,
     fixedWidth?: boolean,
     tabIndex?: number,
@@ -26,11 +27,12 @@ export const IconButton = styled((p: {
         { Array.isArray(p.icon)
             ? <Icon
                 icon={p.icon}
+                size={p.iconSize}
                 fixedWidth={p.fixedWidth ? true : false}
             />
             : <PhosphorIcon
                 icon={p.icon as IconKey}
-                size='1.25em'
+                size={p.iconSize || '1.25em'}
             />
         }
     </UnstyledButton>

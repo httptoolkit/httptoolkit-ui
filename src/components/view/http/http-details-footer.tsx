@@ -93,7 +93,7 @@ const SendButton = observer((p: {
     isPaidUser: boolean,
     onClick: () => void
 }) => <IconButton
-    icon={['far', 'paper-plane']}
+    icon='PaperPlaneTilt'
     onClick={p.onClick}
     title={p.isPaidUser
         ? `Resend this request (${Ctrl}+r)`

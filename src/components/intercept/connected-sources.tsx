@@ -25,7 +25,11 @@ export const ConnectedSources = styled((props: { activeSources: TrafficSource[],
             props.activeSources.length ?
                 props.activeSources.map((source) =>
                     <ConnectedSource key={source.ua} title={source.ua}>
-                        <Icon {...source.icon} fixedWidth={true} />
+                        <Icon
+                            {...source.icon}
+                            size='1.1em'
+                            fixedWidth={true}
+                        />
                         { source.summary }
                     </ConnectedSource>
                 )
