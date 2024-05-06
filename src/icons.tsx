@@ -3,7 +3,6 @@ import { styled, warningColor } from './styles';
 
 // Import required Phosphor icons:
 import {
-    type Icon as PhosphorIcon,
     type IconProps as PhosphorIconProps,
 
     // Sidebar icons
@@ -22,10 +21,19 @@ import {
     ArrowLeft,
 } from '@phosphor-icons/react';
 
-export type { PhosphorIcon, PhosphorIconProps };
-export type PhosphorIconKey = keyof typeof Icons;
+export type IconKey = keyof typeof Icons;
 
-export const Icons = {
+export const PhosphorIcon = React.memo((props: { icon: IconKey } & PhosphorIconProps) => {
+    const { icon, ...otherProps } = props;
+    const PIcon = Icons[props.icon];
+
+    return <PIcon
+        className='phosphor-icon'
+        {...otherProps}
+    />;
+});
+
+const Icons = {
     Plugs,
     MagnifyingGlass,
     Pencil,

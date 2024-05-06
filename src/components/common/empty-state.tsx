@@ -2,15 +2,15 @@ import * as React from 'react';
 import * as _ from 'lodash';
 
 import { styled } from '../../styles'
-import { PhosphorIcon } from '../../icons';
+import { IconKey, PhosphorIcon } from '../../icons';
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,
-    icon: PhosphorIcon,
+    icon: IconKey,
     children?: React.ReactNode
 }) => (
     <div className={props.className}>
-        <props.icon />
+        <PhosphorIcon icon={props.icon} />
         { props.children && <>
             <br/>
             { props.children }

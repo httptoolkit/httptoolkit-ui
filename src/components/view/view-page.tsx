@@ -15,7 +15,6 @@ import * as portals from 'react-reverse-portal';
 
 import { WithInjected, CollectedEvent } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
-import { Icons } from '../../icons';
 import { useHotkeys, isEditable, windowSize } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 import { UnreachableCheck } from '../../util/error';
@@ -307,7 +306,7 @@ class ViewPage extends React.Component<ViewPageProps> {
         let rightPane: JSX.Element | null;
         if (!this.selectedEvent) {
             if (this.splitDirection === 'vertical') {
-                rightPane = <EmptyState key='details' icon={Icons.ArrowLeft}>
+                rightPane = <EmptyState key='details' icon='ArrowLeft'>
                     Select an exchange to see the full details.
                 </EmptyState>;
             } else {

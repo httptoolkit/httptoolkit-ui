@@ -331,5 +331,10 @@ export const GlobalStyles = createGlobalStyle`
         }
     }
 
+    .phosphor-icon {
+        /* Ensures icons line up with FontAwesome & neighbouring text */
+        vertical-align: -0.125em;
+    }
+
     ${p => p.theme.globalCss}
 `;
