@@ -21,11 +21,13 @@ To get started:
 
 * Clone this repo.
 * `npm install`
+    * On an arm64 Mac, you may see a Puppeteer error saying "The chromium binary is not available for arm64". See https://github.com/puppeteer/puppeteer/issues/6622 for more details. As a quick fix you can run `export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true` and then re-run npm install (you may need to delete node_modules first). In this case, the integration tests won't work but that's rarely important for local development.
 * For pure UI development
     * Run `npm start` to start the UI along with a backing [httptoolkit server](https://github.com/httptoolkit/httptoolkit-server).
-    * Open [`localhost:8080`](http://localhost:8080) to view the UI
+        * On an arm64 Mac, this may not work. You can run the server in development mode locally though (jump to the next section).
+    * Open [`localhost:8080`](http://localhost:8080) to view the UI.
 * To develop the UI & server together
     * Start [a server](https://github.com/httptoolkit/httptoolkit-server) locally
     * Run `npm run start:web` to start the UI without running a separate HTTP Toolkit server
     * Open [`localhost:8080`](http://localhost:8080) to view the UI
-* `npm test` - run the tests (not many yet, but more are very welcome!)
+* `npm test` - run the tests
