@@ -148,6 +148,15 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             return versionSatisfies(interceptorVersion, "^1.1.0")
         },
     },
+    'fresh-firefox-dev': {
+        name: 'Firefox (Dev)',
+        description: ["Intercept a fresh independent Firefox Developer window"],
+        iconProps: recoloured(SourceIcons.Firefox, "#007EE7"),
+        tags: BROWSER_TAGS,
+        checkRequirements: ({ interceptorVersion }) => {
+            return versionSatisfies(interceptorVersion, "^1.1.0")
+        },
+    },
     'existing-arc': {
         name: 'Global Arc Browser',
         description: [
