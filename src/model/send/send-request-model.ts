@@ -4,6 +4,7 @@ import { observable } from 'mobx';
 
 import { HttpExchange, RawHeaders } from "../../types";
 import { ObservablePromise } from '../../util/observable';
+import { h2HeadersToH1 } from '../../util/headers';
 
 import { EditableContentType, getEditableContentTypeFromViewable } from "../events/content-types";
 import { EditableBody } from '../http/editable-body';
@@ -112,10 +113,15 @@ export async function buildRequestInputFromExchange(exchange: HttpExchange): Pro
     const body = await exchange.request.body.decodedPromise ??
         Buffer.from('!!! ORIGINAL REQUEST BODY COULD NOT BE DECODED !!!');
 
+    // For now, all sent requests are HTTP/1, so we need to make sure we convert:
+    const headers = exchange.httpVersion === 2
+        ? h2HeadersToH1(exchange.request.rawHeaders)
+        : exchange.request.rawHeaders;
+
     return new RequestInput({
         method: exchange.request.method,
         url: exchange.request.url,
-        headers: exchange.request.rawHeaders,
+        headers: headers,
         requestContentType: getEditableContentTypeFromViewable(exchange.request.contentType) ?? 'text',
         rawBody: body,
     });

@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { action, autorun, flow, observable, runInAction } from 'mobx';
+import { action, flow, observable, runInAction } from 'mobx';
 import * as uuid from 'uuid/v4';
 import {
     MOCKTTP_PARAM_REF,
@@ -9,10 +9,12 @@ import {
     TimingEvents
 } from 'mockttp';
 
+import { RawTrailers } from '../../types';
+
 import { logError } from '../../errors';
 import { getObservableDeferred, lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
-import { ErrorLike, UnreachableCheck } from '../../util/error';
+import { ErrorLike, unreachableWarning } from '../../util/error';
 import { rawHeadersToHeaders } from '../../util/headers';
 import { trackEvent } from '../../metrics';
 
@@ -133,109 +135,120 @@ export class SendStore {
         const requestInput = sendRequest.request;
         const pendingRequestDeferred = getObservableDeferred();
         const abortController = new AbortController();
-        runInAction(() => {
-            sendRequest.sentExchange = undefined;
 
-            sendRequest.pendingSend = {
-                promise: pendingRequestDeferred.promise,
-                abort: () => abortController.abort()
+        try {
+            runInAction(() => {
+                sendRequest.sentExchange = undefined;
+
+                sendRequest.pendingSend = {
+                    promise: pendingRequestDeferred.promise,
+                    abort: () => abortController.abort()
+                };
+
+                const clearPending = action(() => { sendRequest.pendingSend = undefined; });
+                sendRequest.pendingSend.promise.then(clearPending, clearPending);
+            });
+
+            const exchangeId = uuid();
+
+            const passthroughOptions = this.rulesStore.activePassthroughOptions;
+
+            const url = new URL(requestInput.url);
+            const effectivePort = getEffectivePort(url);
+            const hostWithPort = `${url.hostname}:${effectivePort}`;
+            const clientCertificate = passthroughOptions.clientCertificateHostMap?.[hostWithPort] ||
+                passthroughOptions.clientCertificateHostMap?.[url.hostname!] ||
+                undefined;
+
+            const requestOptions = {
+                ignoreHostHttpsErrors: passthroughOptions.ignoreHostHttpsErrors,
+                trustAdditionalCAs: this.rulesStore.additionalCaCertificates.map((cert) =>
+                    ({ cert: cert.rawPEM })
+                ),
+                clientCertificate,
+                proxyConfig: getProxyConfig(this.rulesStore.proxyConfig),
+                lookupOptions: passthroughOptions.lookupOptions
             };
 
-            const clearPending = action(() => { sendRequest.pendingSend = undefined; });
-            sendRequest.pendingSend.promise.then(clearPending, clearPending);
-        });
+            const encodedBody = await requestInput.rawBody.encodingBestEffortPromise;
 
-        const exchangeId = uuid();
+            const responseStream = await ServerApi.sendRequest(
+                {
+                    url: requestInput.url,
+                    method: requestInput.method,
+                    headers: requestInput.headers,
+                    rawBody: encodedBody
+                },
+                requestOptions,
+                abortController.signal
+            );
 
-        const passthroughOptions = this.rulesStore.activePassthroughOptions;
-
-        const url = new URL(requestInput.url);
-        const effectivePort = getEffectivePort(url);
-        const hostWithPort = `${url.hostname}:${effectivePort}`;
-        const clientCertificate = passthroughOptions.clientCertificateHostMap?.[hostWithPort] ||
-            passthroughOptions.clientCertificateHostMap?.[url.hostname!] ||
-            undefined;
-
-        const requestOptions = {
-            ignoreHostHttpsErrors: passthroughOptions.ignoreHostHttpsErrors,
-            trustAdditionalCAs: this.rulesStore.additionalCaCertificates.map((cert) =>
-                ({ cert: cert.rawPEM })
-            ),
-            clientCertificate,
-            proxyConfig: getProxyConfig(this.rulesStore.proxyConfig),
-            lookupOptions: passthroughOptions.lookupOptions
-        };
-
-        const encodedBody = await requestInput.rawBody.encodingBestEffortPromise;
-
-        const responseStream = await ServerApi.sendRequest(
-            {
-                url: requestInput.url,
+            const exchange = this.eventStore.recordSentRequest({
+                id: exchangeId,
+                httpVersion: '1.1',
+                matchedRuleId: false,
                 method: requestInput.method,
-                headers: requestInput.headers,
-                rawBody: encodedBody
-            },
-            requestOptions,
-            abortController.signal
-        );
+                url: requestInput.url,
+                protocol: url.protocol.slice(0, -1),
+                path: url.pathname,
+                hostname: url.hostname,
+                headers: rawHeadersToHeaders(requestInput.headers),
+                rawHeaders: _.cloneDeep(requestInput.headers),
+                body: { buffer: encodedBody },
+                timingEvents: {
+                    startTime: Date.now()
+                } as TimingEvents,
+                tags: ['httptoolkit:manually-sent-request']
+            });
 
-        const exchange = this.eventStore.recordSentRequest({
-            id: exchangeId,
-            matchedRuleId: false,
-            method: requestInput.method,
-            url: requestInput.url,
-            protocol: url.protocol.slice(0, -1),
-            path: url.pathname,
-            hostname: url.hostname,
-            headers: rawHeadersToHeaders(requestInput.headers),
-            rawHeaders: _.cloneDeep(requestInput.headers),
-            body: { buffer: encodedBody },
-            timingEvents: {
-                startTime: Date.now()
-            } as TimingEvents,
-            tags: ['httptoolkit:manually-sent-request']
-        });
+            // Keep the exchange up to date as response data arrives:
+            trackResponseEvents(responseStream, exchange)
+            .catch(action((error: ErrorLike & { timingEvents?: TimingEvents }) => {
+                if (error.name === 'AbortError' && abortController.signal.aborted) {
+                    const startTime = exchange.timingEvents.startTime!; // Always set in Send case (just above)
+                    // Make a guess at an aborted timestamp, since this error won't give us one automatically:
+                    const durationBeforeAbort = Date.now() - startTime;
+                    const startTimestamp = exchange.timingEvents.startTimestamp ?? startTime;
+                    const abortedTimestamp = startTimestamp + durationBeforeAbort;
 
-        // Keep the exchange up to date as response data arrives:
-        trackResponseEvents(responseStream, exchange)
-        .catch(action((error: ErrorLike & { timingEvents?: TimingEvents }) => {
-            if (error.name === 'AbortError' && abortController.signal.aborted) {
-                const startTime = exchange.timingEvents.startTime!; // Always set in Send case (just above)
-                // Make a guess at an aborted timestamp, since this error won't give us one automatically:
-                const durationBeforeAbort = Date.now() - startTime;
-                const startTimestamp = exchange.timingEvents.startTimestamp ?? startTime;
-                const abortedTimestamp = startTimestamp + durationBeforeAbort;
+                    exchange.markAborted({
+                        id: exchange.id,
+                        error: {
+                            message: 'Request cancelled'
+                        },
+                        timingEvents: {
+                            startTimestamp,
+                            abortedTimestamp,
+                            ...exchange.timingEvents,
+                            ...error.timingEvents
+                        } as TimingEvents,
+                        tags: ['client-error:ECONNABORTED']
+                    });
+                } else {
+                    exchange.markAborted({
+                        id: exchange.id,
+                        error: error,
+                        timingEvents: {
+                            ...exchange.timingEvents as TimingEvents,
+                            ...error.timingEvents
+                        },
+                        tags: error.code ? [`passthrough-error:${error.code}`] : []
+                    });
+                }
+            }))
+            .then(() => pendingRequestDeferred.resolve());
 
-                exchange.markAborted({
-                    id: exchange.id,
-                    error: {
-                        message: 'Request cancelled'
-                    },
-                    timingEvents: {
-                        startTimestamp,
-                        abortedTimestamp,
-                        ...exchange.timingEvents,
-                        ...error.timingEvents
-                    } as TimingEvents,
-                    tags: ['client-error:ECONNABORTED']
-                });
-            } else {
-                exchange.markAborted({
-                    id: exchange.id,
-                    error: error,
-                    timingEvents: {
-                        ...exchange.timingEvents as TimingEvents,
-                        ...error.timingEvents
-                    },
-                    tags: error.code ? [`passthrough-error:${error.code}`] : []
-                });
-            }
-        }))
-        .then(() => pendingRequestDeferred.resolve());
-
-        runInAction(() => {
-            sendRequest.sentExchange = exchange;
-        });
+            runInAction(() => {
+                sendRequest.sentExchange = exchange;
+            });
+        } catch (e: any) {
+            pendingRequestDeferred.reject(e);
+            runInAction(() => {
+                sendRequest.pendingSend = undefined;
+                sendRequest.sentExchange = undefined;
+            });
+            throw e;
+        }
     }
 
 }
@@ -250,6 +263,7 @@ const trackResponseEvents = flow(function * (
 
     let responseHead: ResponseHeadEvent | undefined;
     let responseBodyParts: Buffer[] = [];
+    let rawTrailers: RawTrailers = [];
 
     while (true) {
         const { done, value } = (
@@ -270,6 +284,9 @@ const trackResponseEvents = flow(function * (
             case 'response-body-part':
                 responseBodyParts.push(value.rawBody);
                 break;
+            case 'response-trailers':
+                rawTrailers.push(...value.trailers);
+                break;
             case 'response-end':
                 if (!responseHead) throw new Error(`Received response-end before response-head!`);
 
@@ -282,6 +299,8 @@ const trackResponseEvents = flow(function * (
                     headers: rawHeadersToHeaders(responseHead.headers),
                     rawHeaders: responseHead.headers,
                     body: { buffer: Buffer.concat(responseBodyParts) },
+                    trailers: rawHeadersToHeaders(rawTrailers),
+                    rawTrailers: rawTrailers,
                     tags: [],
                     timingEvents
                 });
@@ -307,7 +326,7 @@ const trackResponseEvents = flow(function * (
                     throw new Error('Unknown response error');
                 }
             default:
-                throw new UnreachableCheck(messageType);
+                unreachableWarning(messageType);
         }
     }
 });

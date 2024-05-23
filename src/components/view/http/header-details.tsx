@@ -49,6 +49,15 @@ const HeaderDocsLink = styled(DocsLink)`
     margin-top: 10px;
 `;
 
+const PseudoHeadersHiddenMessage = styled.span`
+    grid-column: 2 / -1;
+    font-style: italic;
+`;
+
+const PseudoHeadersContent = styled(CollapsibleSectionBody)`
+    line-height: 1.3;
+`;
+
 const getHeaderDescription = (
     name: string,
     value: string,
@@ -78,38 +87,80 @@ const getHeaderDescription = (
 };
 
 export const HeaderDetails = inject('accountStore')(observer((props: {
+    httpVersion: 1 | 2;
     headers: RawHeaders,
     requestUrl: URL,
     accountStore?: AccountStore
 }) => {
     const sortedHeaders = _.sortBy(props.headers, ([key]) => key.toLowerCase());
 
-    return sortedHeaders.length === 0 ?
-        <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
-    :
-        <HeadersGrid>
-            { _.flatMap(sortedHeaders, ([key, value], i) => {
-                const docs = getHeaderDocs(key);
-                const description = getHeaderDescription(
-                    key,
-                    value,
-                    props.requestUrl,
-                    props.accountStore!.isPaidUser
-                )
+    if (sortedHeaders.length === 0) {
+        return <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
+    }
 
-                return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
-                    <HeaderKeyValue>
-                        <HeaderName>{ key }: </HeaderName>
-                        <span>{ value }</span>
-                    </HeaderKeyValue>
+    let [pseudoHeaders, normalHeaders] = _.partition(sortedHeaders, ([key]) =>
+        props.httpVersion >= 2 && key.startsWith(':')
+    );
 
-                    { description && <HeaderDescriptionContainer>
-                        { description }
-                        { docs && <HeaderDocsLink href={docs.url}>
-                            Find out more
-                        </HeaderDocsLink> }
-                    </HeaderDescriptionContainer> }
-                </CollapsibleSection>
-            }) }
-        </HeadersGrid>;
+    if (normalHeaders.length === 0) {
+        normalHeaders = pseudoHeaders;
+        pseudoHeaders = [];
+    }
+
+    return <HeadersGrid>
+        {
+            pseudoHeaders.length > 0 && <CollapsibleSection withinGrid={true}>
+                <CollapsibleSectionSummary>
+                    <PseudoHeadersHiddenMessage>
+                        HTTP/{props.httpVersion} pseudo-headers
+                    </PseudoHeadersHiddenMessage>
+                </CollapsibleSectionSummary>
+
+                <PseudoHeadersContent>
+                    <PseudoHeaderDetails
+                        headers={pseudoHeaders}
+                    />
+                </PseudoHeadersContent>
+            </CollapsibleSection>
+        }
+
+        { _.flatMap(normalHeaders, ([key, value], i) => {
+            const docs = getHeaderDocs(key);
+            const description = getHeaderDescription(
+                key,
+                value,
+                props.requestUrl,
+                props.accountStore!.isPaidUser
+            )
+
+            return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
+                <HeaderKeyValue>
+                    <HeaderName>{ key }: </HeaderName>
+                    <span>{ value }</span>
+                </HeaderKeyValue>
+
+                { description && <HeaderDescriptionContainer>
+                    { description }
+                    { docs && <HeaderDocsLink href={docs.url}>
+                        Find out more
+                    </HeaderDocsLink> }
+                </HeaderDescriptionContainer> }
+            </CollapsibleSection>;
+        }) }
+    </HeadersGrid>;
 }));
+
+const PseudoHeaderDetails = observer((props: {
+    headers: RawHeaders
+}) => {
+    return <HeadersGrid>
+        { _.flatMap(props.headers, ([key, value], i) => {
+            return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
+                <HeaderKeyValue>
+                    <HeaderName>{ key }: </HeaderName>
+                    <span>{ value }</span>
+                </HeaderKeyValue>
+            </CollapsibleSection>;
+        }) }
+    </HeadersGrid>;
+});

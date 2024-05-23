@@ -34,13 +34,14 @@ import { DocsLink } from '../../common/docs-link';
 
 interface HttpResponseCardProps extends CollapsibleCardProps  {
     theme: Theme;
+    httpVersion: 1 | 2;
     requestUrl: URL;
     response: HtkResponse;
     apiExchange: ApiExchange | undefined;
 }
 
 export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
-    const { response, requestUrl, theme, apiExchange } = props;
+    const { httpVersion, response, requestUrl, theme, apiExchange } = props;
 
     const apiResponseDescription = get(apiExchange, 'response', 'description');
     const statusDocs = getStatusDocs(response.statusCode);
@@ -86,7 +87,11 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
             </CollapsibleSection>
 
             <ContentLabelBlock>Headers</ContentLabelBlock>
-            <HeaderDetails headers={response.rawHeaders} requestUrl={requestUrl} />
+            <HeaderDetails
+                httpVersion={httpVersion}
+                headers={response.rawHeaders}
+                requestUrl={requestUrl}
+            />
         </div>
     </CollapsibleCard>;
 });

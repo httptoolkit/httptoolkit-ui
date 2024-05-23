@@ -166,7 +166,7 @@ export function useSize(ref: React.RefObject<HTMLElement>, defaultValue: number)
             if (container) {
                 setSpaceAvailable(container.clientWidth);
             } else {
-                logError("Element resized, but no ref available");
+                console.warn("Element resized, but no ref available");
             }
         });
 

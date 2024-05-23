@@ -1,9 +1,10 @@
-import { RawHeaders } from "../../types";
+import { RawHeaders, RawTrailers } from "../../types";
 
 export type ResponseStreamEvent =
     | RequestStartEvent
     | ResponseHeadEvent
     | ResponseBodyPartEvent
+    | ResponseTrailersEvent
     | ResponseEndEvent
     | ErrorEvent;
 
@@ -24,6 +25,12 @@ export interface ResponseHeadEvent {
 interface ResponseBodyPartEvent {
     type: 'response-body-part';
     rawBody: Buffer;
+    timestamp: number;
+}
+
+interface ResponseTrailersEvent {
+    type: 'response-trailers';
+    trailers: RawTrailers;
     timestamp: number;
 }
 

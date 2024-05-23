@@ -10,6 +10,8 @@ import type {
     SubscribableEvent as MockttpEvent,
     Headers,
     RawHeaders,
+    Trailers,
+    RawTrailers,
     TimingEvents,
     TlsHandshakeFailure,
     TlsPassthroughEvent,
@@ -126,7 +128,9 @@ export type HtkRequest = Omit<InputRequest, 'body' | 'path'> & {
     source: TrafficSource,
     contentType: ViewableContentType,
     cache: Map<symbol, unknown>,
-    body: MessageBody
+    body: MessageBody,
+    trailers?: Trailers,
+    rawTrailers?: RawTrailers
 };
 
 export type HtkResponse = Omit<InputResponse, 'body'> & {
@@ -167,6 +171,8 @@ export type RTCStream = RTCDataChannel | RTCMediaTrack;
 export {
     Headers,
     RawHeaders,
+    Trailers,
+    RawTrailers,
     PortRange,
     TimingEvents,
     TlsSocketMetadata

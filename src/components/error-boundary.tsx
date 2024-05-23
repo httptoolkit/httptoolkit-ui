@@ -76,12 +76,8 @@ export class ErrorBoundary extends React.Component<{
     componentDidCatch(error: Error, errorInfo: any) {
         this.error = error;
 
-        Sentry.withScope(scope => {
-            Object.keys(errorInfo).forEach(key => {
-                scope.setExtra(key, errorInfo[key]);
-            });
-            Sentry.captureException(error);
-        });
+        Sentry.setExtras(errorInfo);
+        Sentry.captureException(error);
 
         trackEvent({
             category: 'Error',

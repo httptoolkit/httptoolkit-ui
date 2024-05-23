@@ -88,7 +88,10 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
     }
 `;
 
-const RawRequestDetails = (p: { request: HtkRequest }) => {
+const RawRequestDetails = (p: {
+    request: HtkRequest,
+    httpVersion: 1 | 2
+}) => {
     const methodDocs = getMethodDocs(p.request.method);
     const methodDetails = [
         methodDocs && <Markdown
@@ -134,7 +137,11 @@ const RawRequestDetails = (p: { request: HtkRequest }) => {
         </CollapsibleSection>
 
         <ContentLabelBlock>Headers</ContentLabelBlock>
-        <HeaderDetails headers={p.request.rawHeaders} requestUrl={p.request.parsedUrl} />
+        <HeaderDetails
+            httpVersion={p.httpVersion}
+            headers={p.request.rawHeaders}
+            requestUrl={p.request.parsedUrl}
+        />
     </div>;
 }
 
@@ -179,6 +186,9 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
             </CollapsibleCardHeading>
         </header>
 
-        <RawRequestDetails request={request} />
+        <RawRequestDetails
+            request={request}
+            httpVersion={exchange.httpVersion}
+        />
     </CollapsibleCard>;
 });

@@ -28,7 +28,8 @@ export class ApiError extends Error {
     constructor(
         message: string,
         readonly operationName: string,
-        readonly errorCode?: string | number
+        readonly errorCode?: string | number,
+        public apiErrorMessage?: string
     ) {
         super(`API error during ${operationName}: ${message}`);
     }

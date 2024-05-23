@@ -66,6 +66,7 @@ export class ResponsePane extends React.Component<{
             />
             <SentResponseHeaderSection
                 {...this.cardProps.responseHeaders}
+                httpVersion={exchange.httpVersion}
                 requestUrl={exchange.request.parsedUrl}
                 headers={response.rawHeaders}
             />
