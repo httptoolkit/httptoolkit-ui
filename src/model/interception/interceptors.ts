@@ -153,18 +153,14 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         description: ["Intercept a fresh independent Firefox Developer window"],
         iconProps: recoloured(SourceIcons.Firefox, "#007EE7"),
         tags: BROWSER_TAGS,
-        checkRequirements: ({ interceptorVersion }) => {
-            return versionSatisfies(interceptorVersion, "^1.1.0")
-        },
+        
     },
     'fresh-firefox-nightly': {
         name: 'Firefox (Nightly)',
         description: ["Intercept a fresh independent Firefox Nightly window"],
-        iconProps: recoloured(SourceIcons.Firefox, "#7870FF"),
+        iconProps: recoloured(SourceIcons.Firefox, "#1ED5E2"),
         tags: BROWSER_TAGS,
-        checkRequirements: ({ interceptorVersion }) => {
-            return versionSatisfies(interceptorVersion, "^1.1.0")
-        },
+        
     },
     'existing-arc': {
         name: 'Global Arc Browser',
