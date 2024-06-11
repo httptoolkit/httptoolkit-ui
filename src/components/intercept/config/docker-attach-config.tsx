@@ -101,7 +101,7 @@ class DockerAttachConfig extends React.Component<{
                 Pick a container to restart it with all traffic intercepted:
             </p>
 
-            <InterceptionTargetList<string>
+            <InterceptionTargetList
                 spinnerText='Looking for Docker containers to intercept...'
                 interceptTarget={this.interceptTarget}
                 ellipseDirection='right'

@@ -88,8 +88,8 @@ const TargetText = styled.span<{ ellipseDirection: 'left' | 'right' }>`
     : ''}
 `;
 
-type TargetItem<Id> = {
-    id: Id,
+type TargetItem = {
+    id: string,
     title: string,
     content: React.ReactNode,
     icon?: React.ReactNode,
@@ -97,10 +97,10 @@ type TargetItem<Id> = {
 };
 
 @observer
-export class InterceptionTargetList<Id extends string | number> extends React.Component<{
+export class InterceptionTargetList extends React.Component<{
     spinnerText: string,
-    targets: TargetItem<Id>[],
-    interceptTarget: (id: Id) => void,
+    targets: TargetItem[],
+    interceptTarget: (id: string) => void,
     ellipseDirection: 'left' | 'right'
 }> {
 
@@ -116,7 +116,7 @@ export class InterceptionTargetList<Id extends string | number> extends React.Co
 
         return <ListScrollContainer>
             <TargetList>
-                { _.map(targets, (target: TargetItem<Id>) => <Target key={target.id}>
+                { _.map(targets, (target: TargetItem) => <Target key={target.id}>
                     <TargetButton
                         title={target.title}
                         state={target.status}
