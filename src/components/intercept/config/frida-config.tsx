@@ -78,12 +78,6 @@ const SearchBox = styled(TextInput)`
     padding: 10px 10px 8px;
 `;
 
-const Footer = styled.p`
-    margin-top: auto;
-    font-size: 85%;
-    font-style: italic;
-`;
-
 @inject('proxyStore')
 @inject('rulesStore')
 @inject('eventsStore')
@@ -224,12 +218,6 @@ class FridaConfig extends React.Component<{
     render() {
         const selectedHost = this.selectedHost;
 
-        const docsFooter = <Footer>
-            For more information, see the in-depth <a
-                href="https://httptoolkit.com/docs/guides/frida/"
-            >Frida interception guide</a>.
-        </Footer>;
-
         if (selectedHost) {
             const lowercaseSearchInput = this.searchInput.toLowerCase();
             const targets = _.sortBy(
@@ -269,7 +257,6 @@ class FridaConfig extends React.Component<{
                     interceptTarget={this.interceptTarget}
                     ellipseDirection='right'
                 />
-                { docsFooter }
             </ConfigContainer>;
         }
 
@@ -305,7 +292,6 @@ class FridaConfig extends React.Component<{
                 interceptTarget={this.selectHost}
                 ellipseDirection='right'
             />
-            { docsFooter }
         </ConfigContainer>;
     }
 
