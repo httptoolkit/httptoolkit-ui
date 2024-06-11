@@ -21,13 +21,15 @@ import { IconButton } from '../../common/icon-button';
 
 const ConfigContainer = styled.div`
     user-select: text;
-    max-height: 440px;
 
     height: 100%;
-    width: 100%;
+    max-height: 390px;
     display: flex;
     flex-direction: column;
     justify-content: start;
+
+    margin: 5px -15px -15px -15px;
+    width: calc(100% + 30px);
 
     > p {
         line-height: 1.2;
@@ -50,16 +52,30 @@ const ConfigContainer = styled.div`
     }
 `;
 
-const BackAndSearchBlock = styled.div`
-    margin: 5px -15px 0;
+const FridaTargetList = styled(InterceptionTargetList)`
+    padding: 10px 0;
+    margin: 0;
+`;
 
+const SelectedHostBlock = styled.div`
     display: flex;
     flex-direction: row;
     align-items: stretch;
 
     z-index: 1;
     box-shadow: 0 0 5px 2px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
+`;
 
+const SelectedHostName = styled.h2`
+    height: 34px;
+    flex-grow: 1;
+
+    line-height: 32px;
+    text-align: center;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 `;
 
 const BackButton = styled(IconButton).attrs(() => ({
@@ -67,15 +83,28 @@ const BackButton = styled(IconButton).attrs(() => ({
     title: 'Jump to this request on the View page'
 }))`
     font-size: ${p => p.theme.textSize};
-    padding: 2px 10px 0;
+    padding: 0 10px;
+`;
+
+// Spacer - used to center align the name despite the back button
+const NameSpacer = styled.div`
+    flex-basis: 34px;
+    flex-shrink: 999;
+    min-width: 5px;
 `;
 
 const SearchBox = styled(TextInput)`
-    flex-grow: 1;
-
-    border: none;
+    border-style: solid;
+    border-width: 1px 0 1px 0;
+    border-color: ${p => p.theme.inputHoverBackground};
     border-radius: 0;
+
     padding: 10px 10px 8px;
+
+    :focus {
+        outline: none;
+        border-color: ${p => p.theme.inputBorder};
+    }
 `;
 
 @inject('proxyStore')
@@ -227,16 +256,18 @@ class FridaConfig extends React.Component<{
             );
 
             return <ConfigContainer>
-                <BackAndSearchBlock>
+                <SelectedHostBlock>
                     <BackButton onClick={this.deselectHost} />
-                    <SearchBox
-                        value={this.searchInput}
-                        onChange={this.onSearchChange}
-                        placeholder='Search for a target...'
-                        autoFocus={true}
-                    />
-                </BackAndSearchBlock>
-                <InterceptionTargetList
+                    <SelectedHostName>{ selectedHost.name }</SelectedHostName>
+                    <NameSpacer />
+                </SelectedHostBlock>
+                <SearchBox
+                    value={this.searchInput}
+                    onChange={this.onSearchChange}
+                    placeholder='Search for a target...'
+                    autoFocus={true}
+                />
+                <FridaTargetList
                     spinnerText='Scanning for apps to intercept...'
                     targets={targets.map(target => {
                             const { id, name } = target;
@@ -248,9 +279,7 @@ class FridaConfig extends React.Component<{
                                 status: activating
                                         ? 'activating'
                                         : 'available',
-                                content: <p>
-                                    { name }
-                                </p>
+                                content: name
                             };
                         })
                     }
@@ -261,7 +290,7 @@ class FridaConfig extends React.Component<{
         }
 
         return <ConfigContainer>
-            <InterceptionTargetList
+            <FridaTargetList
                 spinnerText={`Waiting for ${this.deviceClassName} devices to attach to...`}
                 targets={this.fridaHosts.map(host => {
                     const { id, name, state } = host;

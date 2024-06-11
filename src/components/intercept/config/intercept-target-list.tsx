@@ -29,6 +29,8 @@ const Spinner = styled(Icon).attrs(() => ({
 
 const ListScrollContainer = styled.div`
     overflow-y: auto;
+    overscroll-behavior: contain;
+
     margin: 10px -15px;
     flex-grow: 1;
     flex-shrink: 1;
@@ -98,6 +100,7 @@ type TargetItem = {
 
 @observer
 export class InterceptionTargetList extends React.Component<{
+    className?: string,
     spinnerText: string,
     targets: TargetItem[],
     interceptTarget: (id: string) => void,
@@ -105,7 +108,13 @@ export class InterceptionTargetList extends React.Component<{
 }> {
 
     render() {
-        const { spinnerText, targets, interceptTarget, ellipseDirection } = this.props;
+        const {
+            className,
+            spinnerText,
+            targets,
+            interceptTarget,
+            ellipseDirection
+        } = this.props;
 
         if (targets.length === 0) {
             return <SpinnerBlock>
@@ -114,7 +123,7 @@ export class InterceptionTargetList extends React.Component<{
             </SpinnerBlock>
         }
 
-        return <ListScrollContainer>
+        return <ListScrollContainer className={className}>
             <TargetList>
                 { _.map(targets, (target: TargetItem) => <Target key={target.id}>
                     <TargetButton
