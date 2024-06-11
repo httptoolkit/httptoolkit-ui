@@ -183,16 +183,23 @@ class FridaConfig extends React.Component<{
     @computed
     get selectedHost() {
         if (!this.selectedHostId) return;
-        const hosts = this.fridaHosts;
-        return this.fridaHosts.find(host => host.id === this.selectedHostId && host.state !== 'unavailable');
+
+        const host = this.getHost(this.selectedHostId);
+        if (host?.state === 'unavailable') return;
+
+        return host;
+    }
+
+    private getHost(hostId: string) {
+        return this.fridaHosts.find(host => host.id === hostId);
     }
 
     @action.bound
     selectHost(hostId: string) {
-        this.selectedHostId = hostId;
+        const host = this.getHost(hostId);
 
-        const host = this.selectedHost;
         if (host?.state === 'available') {
+            this.selectedHostId = hostId;
             this.searchInput = '';
             this.updateTargets();
         } else if (host?.state === 'launch-required') {
@@ -232,6 +239,8 @@ class FridaConfig extends React.Component<{
             action: 'intercept',
             hostId: host.id,
             targetId
+        }).then(() => {
+            this.props.reportSuccess();
         }).finally(action(() => {
             _.pull(this.inProgressTargetIds, targetId);
         }));
@@ -323,10 +332,6 @@ class FridaConfig extends React.Component<{
             />
         </ConfigContainer>;
     }
-
-    onSuccess = () => {
-        this.props.reportSuccess();
-    };
 
 }
 
