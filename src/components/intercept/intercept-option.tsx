@@ -111,7 +111,7 @@ const InterceptOptionCard = styled(LittleCard)<{
     }
 
     > h1:not(:last-child) {
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* Override LittleCard default */
     }
 
     > p {
@@ -127,6 +127,15 @@ const InterceptOptionCard = styled(LittleCard)<{
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+`;
+
+const InterceptorTitle = styled.h1<{
+    expanded: boolean
+}>`
+    ${p => p.expanded
+        ? 'margin-right: 20px;' // Avoid overlapping the close icon
+        : ''
+    }
 `;
 
 const LoadingOverlay = styled.div`
@@ -233,7 +242,9 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                 }
             </BackgroundIcons>
 
-            <h1>{ interceptor.name }</h1>
+            <InterceptorTitle expanded={expanded}>
+                { interceptor.name }
+            </InterceptorTitle>
 
             { ConfigComponent && expanded
                 ? <>
