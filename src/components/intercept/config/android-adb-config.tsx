@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { computed, observable, action } from 'mobx';
-import { observer, inject } from 'mobx-react';
+import { computed, observable, action, autorun } from 'mobx';
+import { observer, inject, disposeOnUnmount } from 'mobx-react';
 
 import { styled } from '../../../styles';
 
@@ -85,6 +85,12 @@ class AndroidAdbConfig extends React.Component<{
             this.interceptDevice(this.deviceIds[0]);
             this.props.closeSelf();
         }
+
+        disposeOnUnmount(this, autorun(() => {
+            if (this.deviceIds?.length === 0) {
+                this.props.closeSelf();
+            }
+        }));
     }
 
     render() {

@@ -184,6 +184,10 @@ class FridaConfig extends React.Component<{
             if (this.selectedHostId && !this.fridaHosts.some(host => host.id === this.selectedHostId)) {
                 this.deselectHost();
             }
+
+            if (this.fridaHosts?.length === 0) {
+                this.props.closeSelf();
+            }
         }));
 
         this.updateTargets();
