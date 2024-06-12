@@ -43,7 +43,7 @@ const TargetList = styled.ul`
     justify-content: center;
 `;
 
-const Target = styled.li`
+const TargetItem = styled.li`
     margin-bottom: -10px;
     padding: 10px;
 
@@ -90,6 +90,13 @@ const TargetText = styled.span<{ ellipseDirection: 'left' | 'right' }>`
     : ''}
 `;
 
+// Spacer - used to consistently center align the name despite the icons appearing
+// on the left e.g. on activating/active.
+const IconSpacer = styled.div`
+    flex-basis: 25px;
+    flex-shrink: 999;
+`;
+
 type TargetItem = {
     id: string,
     title: string,
@@ -125,31 +132,55 @@ export class InterceptionTargetList extends React.Component<{
 
         return <ListScrollContainer className={className}>
             <TargetList>
-                { _.map(targets, (target: TargetItem) => <Target key={target.id}>
-                    <TargetButton
-                        title={target.title}
-                        state={target.status}
-                        disabled={target.status !== 'available'}
-                        onClick={target.status === 'available'
-                            ? () => interceptTarget(target.id)
-                            : _.noop
-                        }
-                    >
-                        {
-                            target.status === 'activating'
-                                ? <Icon icon={['fas', 'spinner']} spin />
-                            : target.status === 'active'
-                                ? <Icon icon={['fas', 'check']} />
-                            : target.icon
-                                ? target.icon
-                            : null
-                        }
-                        <TargetText ellipseDirection={ellipseDirection}>
-                            { target.content }
-                        </TargetText>
-                    </TargetButton>
-                </Target>) }
+                { _.map(targets, (target) =>
+                    <Target
+                        key={target.id}
+                        target={target}
+                        interceptTarget={interceptTarget}
+                        ellipseDirection={ellipseDirection}
+                    />
+                ) }
             </TargetList>
         </ListScrollContainer>;
     }
 }
+
+const Target = (props: {
+    target: TargetItem,
+    interceptTarget: (id: string) => void,
+    ellipseDirection: 'left' | 'right'
+}) => {
+    const {
+        target,
+        interceptTarget,
+        ellipseDirection
+    } = props;
+
+    const icon = target.status === 'activating'
+            ? <Icon icon={['fas', 'spinner']} spin />
+        : target.status === 'active'
+            ? <Icon icon={['fas', 'check']} />
+        : target.icon
+            ? target.icon
+        : null;
+
+    return <TargetItem>
+        <TargetButton
+            title={target.title}
+            state={target.status}
+            disabled={target.status !== 'available'}
+            onClick={target.status === 'available'
+                ? () => interceptTarget(target.id)
+                : _.noop
+            }
+        >
+            { icon }
+
+            <TargetText ellipseDirection={ellipseDirection}>
+                { target.content }
+            </TargetText>
+
+            { icon !== null ? <IconSpacer /> : null }
+        </TargetButton>
+    </TargetItem>;
+};
