@@ -64,6 +64,9 @@ const SelectedHostBlock = styled.div`
 
     z-index: 1;
     box-shadow: 0 0 5px 2px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
+
+    background-color: ${p => p.theme.highlightBackground};
+    color: ${p => p.theme.highlightColor};
 `;
 
 const SelectedHostName = styled.h2`
@@ -100,6 +103,9 @@ const SearchBox = styled(TextInput)`
     border-radius: 0;
 
     padding: 10px 10px 8px;
+
+    z-index: 0;
+    box-shadow: 0 0 5px 2px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     :focus {
         outline: none;
