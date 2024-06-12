@@ -169,6 +169,9 @@ export class EventsStore {
     @observable
     isPaused = false;
 
+    @observable
+    isMultiSelectEnabled = false;
+
     private eventQueue: Array<QueuedEvent> = [];
     private orphanedEvents: { [id: string]: OrphanableQueuedEvent<any> } = {};
 
