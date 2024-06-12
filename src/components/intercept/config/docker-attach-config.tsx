@@ -104,7 +104,7 @@ class DockerAttachConfig extends React.Component<{
             <InterceptionTargetList
                 spinnerText='Looking for Docker containers to intercept...'
                 interceptTarget={this.interceptTarget}
-                ellipseDirection='right'
+                ellipseDirection='left'
                 targets={targets.map((target) => {
                     const activating = this.inProgressIds.includes(target.id);
                     const interceptedByUs = target.labels[CONTAINER_PROXY_LABEL] === proxyPort.toString();
