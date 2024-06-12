@@ -46,6 +46,10 @@ const ConfigContainer = styled.div`
     }
 `;
 
+const AdbTargetList = styled(InterceptionTargetList)`
+    max-height: 280px;
+`;
+
 const Footer = styled.p`
     font-size: 85%;
     font-style: italic;
@@ -88,10 +92,8 @@ class AndroidAdbConfig extends React.Component<{
             { this.deviceIds.length > 1
                 ? <>
                     <p>
-                        There are multiple ADB devices connected.
-                    </p>
-                    <p>
-                        Pick which device you'd like to intercept:
+                        There are multiple ADB devices connected. Pick which
+                        device you'd like to intercept:
                     </p>
                 </>
             : this.deviceIds.length === 1
@@ -115,7 +117,7 @@ class AndroidAdbConfig extends React.Component<{
                     </p>
                 </> }
 
-            <InterceptionTargetList
+            <AdbTargetList
                 spinnerText='Waiting for Android devices to intercept...'
                 targets={this.deviceIds.map(id => {
                     const activating = this.inProgressIds.includes(id);

@@ -13,6 +13,10 @@ import { InterceptionTargetList } from './intercept-target-list';
 
 type JvmTarget = { pid: string, name: string, interceptedByProxy: number | undefined };
 
+const JvmTargetList = styled(InterceptionTargetList)`
+    max-height: 282px;
+`;
+
 @inject('proxyStore')
 @observer
 class JvmConfig extends React.Component<{
@@ -59,7 +63,7 @@ class JvmConfig extends React.Component<{
                 Pick which JVM process you'd like to intercept:
             </p>
 
-            <InterceptionTargetList
+            <JvmTargetList
                 spinnerText='Looking for JVM processes to intercept...'
                 interceptTarget={this.interceptTarget}
                 ellipseDirection='left'

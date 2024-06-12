@@ -24,7 +24,7 @@ const ConfigContainer = styled.div`
     user-select: text;
 
     height: 100%;
-    max-height: 390px;
+    max-height: 410px;
     display: flex;
     flex-direction: column;
     justify-content: start;
