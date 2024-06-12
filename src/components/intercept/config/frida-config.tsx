@@ -118,7 +118,8 @@ const SearchBox = styled(TextInput)`
 
 // We actively hide specific known non-interceptable apps:
 const INCOMPATIBLE_APP_IDS: string[] = [
-    "com.apple.mobilesafari"
+    "com.apple.mobilesafari",
+    "com.google.android.googlequicksearchbox"
 ];
 
 @inject('proxyStore')
