@@ -79,13 +79,19 @@ const TargetButton = styled(Button)<{
     }
 `;
 
-const TargetText = styled.span<{ ellipseDirection: 'left' | 'right' }>`
+const TargetText = styled.div<{ ellipseDirection: 'left' | 'right' }>`
     flex-grow: 1;
 
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     text-align: center;
+
+    &, & * {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 
     ${p => p.ellipseDirection === 'left' ?
         'direction: rtl;'
