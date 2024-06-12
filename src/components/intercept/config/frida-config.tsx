@@ -88,6 +88,7 @@ const BackButton = styled(IconButton).attrs(() => ({
     title: 'Jump to this request on the View page'
 }))`
     font-size: ${p => p.theme.textSize};
+    color: ${p => p.theme.highlightColor};
     padding: 0 10px;
 `;
 
