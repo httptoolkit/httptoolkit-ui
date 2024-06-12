@@ -55,6 +55,7 @@ const ConfigContainer = styled.div`
 const FridaTargetList = styled(InterceptionTargetList)`
     padding: 10px 0;
     margin: 0;
+    max-height: unset;
 `;
 
 const SelectedHostBlock = styled.div`

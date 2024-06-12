@@ -34,6 +34,8 @@ const ListScrollContainer = styled.div`
     margin: 10px -15px;
     flex-grow: 1;
     flex-shrink: 1;
+
+    max-height: 279px;
 `;
 
 const TargetList = styled.ul`
