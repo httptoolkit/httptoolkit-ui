@@ -39,6 +39,7 @@ interface InterceptorConfig {
         serverVersion?: string
     }) => unknown;
     notAvailableHelpUrl?: string;
+    experimental?: boolean;
 }
 
 export type Interceptor =
@@ -279,7 +280,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: recoloured(androidInterceptIconProps, '#ef6456'),
 
         uiConfig: FridaCustomUi,
-        tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
+        tags: [...MOBILE_TAGS, ...ANDROID_TAGS],
+        experimental: true
     },
     'ios-frida': {
         name: 'iOS App via Frida',
@@ -291,7 +293,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: recoloured(SourceIcons.iOS, '#ef6456'),
 
         uiConfig: FridaCustomUi,
-        tags: [...MOBILE_TAGS, ...IOS_TAGS]
+        tags: [...MOBILE_TAGS, ...IOS_TAGS],
+        experimental: true
     },
     'manual-ios-device': {
         name: 'iOS via Manual Setup',
