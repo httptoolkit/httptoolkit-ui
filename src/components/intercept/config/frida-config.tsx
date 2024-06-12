@@ -107,6 +107,11 @@ const SearchBox = styled(TextInput)`
     }
 `;
 
+// We actively hide specific known non-interceptable apps:
+const INCOMPATIBLE_APP_IDS: string[] = [
+    "com.apple.mobilesafari"
+];
+
 @inject('proxyStore')
 @inject('rulesStore')
 @inject('eventsStore')
@@ -143,7 +148,9 @@ class FridaConfig extends React.Component<{
             yield getDetailedInterceptorMetadata(this.props.interceptor.id, this.selectedHost?.id)
         );
 
-        this.fridaTargets = result?.targets ?? [];
+        this.fridaTargets = result?.targets?.filter(
+            target => !INCOMPATIBLE_APP_IDS.includes(target.id)
+        ) ?? [];
     }.bind(this));
 
 
