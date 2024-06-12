@@ -77,6 +77,22 @@ const TargetButton = styled(Button)<{
         margin-right: 10px;
         width: 15px;
     }
+
+    position: relative;
+`;
+
+const ProgressBar = styled.div<{ progress: number }>`
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: ${p => p.progress}%;
+    transition: width 0.1s linear;
+
+    background-color: ${p => p.theme.primaryInputBackground};
+    mix-blend-mode: overlay;
+    border-radius: 4px;
 `;
 
 const TargetText = styled.div<{ ellipseDirection: 'left' | 'right' }>`
@@ -110,6 +126,7 @@ type TargetItem = {
     title: string,
     content: React.ReactNode,
     icon?: React.ReactNode,
+    progress?: number; // 0 - 100
     status: 'active' | 'available' | 'activating' | 'unavailable',
 };
 
@@ -172,6 +189,10 @@ const Target = (props: {
             ? target.icon
         : null;
 
+    const progress = target.progress !== undefined
+        ? <ProgressBar progress={target.progress} />
+        : null
+
     return <TargetItem>
         <TargetButton
             title={target.title}
@@ -182,6 +203,8 @@ const Target = (props: {
                 : _.noop
             }
         >
+            { progress }
+
             { icon }
 
             <TargetText ellipseDirection={ellipseDirection}>

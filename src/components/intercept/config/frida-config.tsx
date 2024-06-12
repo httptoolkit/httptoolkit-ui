@@ -3,6 +3,7 @@ import * as React from 'react';
 import { computed, observable, action, autorun, flow } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
 
+import { delay } from '../../../util/promise';
 import { styled } from '../../../styles';
 
 import { Interceptor } from '../../../model/interception/interceptors';
@@ -160,9 +161,17 @@ class FridaConfig extends React.Component<{
         ) ?? [];
     }.bind(this));
 
-
-    @observable private inProgressHostIds: string[] = [];
     @observable private inProgressTargetIds: string[] = [];
+    @observable private hostProgress: { [hostId: string]: number } = {};
+
+    @action
+    setHostProgress(hostId: string, progress: number | undefined) {
+        if (progress === undefined) {
+            delete this.hostProgress[hostId];
+        } else {
+            this.hostProgress[hostId] = progress;
+        }
+    }
 
     async componentDidMount() {
         if (this.fridaHosts.length === 1 && this.fridaHosts[0].state === 'available') {
@@ -209,30 +218,25 @@ class FridaConfig extends React.Component<{
     }
 
     @action.bound
-    selectHost(hostId: string) {
+    async selectHost(hostId: string) {
         const host = this.getHost(hostId);
 
         if (host?.state === 'available') {
-            this.selectedHostId = hostId;
-            this.searchInput = '';
-            this.updateTargets();
-        } else if (host?.state === 'launch-required') {
-            this.inProgressHostIds.push(hostId);
-            this.props.activateInterceptor({
-                action: 'launch',
-                hostId
-            }).finally(action(() => {
-                _.pull(this.inProgressHostIds, hostId);
-            }));
+            this.viewHostTargets(hostId);
+            return;
+        }
+
+        // Do nothing if the host is already busy:
+        if (this.hostProgress[hostId] !== undefined) return;
+
+        this.hostProgress[hostId] = 10;
+
+        if (host?.state === 'launch-required') {
+            await this.launchInterceptor(hostId);
         } else if (host?.state === 'setup-required') {
-            this.inProgressHostIds.push(hostId);
-            this.props.activateInterceptor({
-                action: 'setup',
-                hostId
-            }).finally(action(() => {
-                _.pull(this.inProgressHostIds, hostId);
-            }));
+            await this.setupInterceptor(hostId);
         } else {
+            // Should probably never happen, but maybe in some race conditions
             return;
         }
     }
@@ -240,6 +244,62 @@ class FridaConfig extends React.Component<{
     @action.bound
     deselectHost() {
         this.selectedHostId = undefined;
+    }
+
+    @action
+    viewHostTargets(hostId: string) {
+        this.selectedHostId = hostId;
+        this.searchInput = '';
+        this.updateTargets();
+    }
+
+    async setupInterceptor(hostId: string) {
+        // Logarithmically move towards 75% while setup runs:
+        let interval = setInterval(() => {
+            const currentProgress = this.hostProgress[hostId];
+            const remaining = 74 - currentProgress;
+            this.setHostProgress(hostId,
+                currentProgress + Math.floor(remaining / 10)
+            );
+        }, 100);
+
+        try {
+            await this.props.activateInterceptor({
+                action: 'setup',
+                hostId
+            });
+
+            this.setHostProgress(hostId, 75);
+            await this.launchInterceptor(hostId);
+        } finally {
+            clearInterval(interval);
+            this.setHostProgress(hostId, undefined);
+        }
+    }
+
+    async launchInterceptor(hostId: string) {
+        // Logarithmically move towards 100% while setup runs:
+        let interval = setInterval(() => {
+            const currentProgress = this.hostProgress[hostId];
+            const remaining = 99 - currentProgress;
+            this.setHostProgress(hostId,
+                currentProgress + Math.floor(remaining / 5)
+            );
+        }, 100);
+
+        try {
+            await this.props.activateInterceptor({
+                action: 'launch',
+                hostId
+            });
+
+            this.setHostProgress(hostId, 100);
+            await delay(10); // Tiny delay purely for nice UI purposes
+            this.viewHostTargets(hostId);
+        } finally {
+            clearInterval(interval);
+            this.setHostProgress(hostId, undefined);
+        }
     }
 
     @action.bound
@@ -317,28 +377,24 @@ class FridaConfig extends React.Component<{
                 spinnerText={`Waiting for ${this.deviceClassName} devices to attach to...`}
                 targets={this.fridaHosts.map(host => {
                     const { id, name, state } = host;
-                    const activating = this.inProgressHostIds.includes(id);
+                    const activating = this.hostProgress[id] !== undefined;
 
                     return {
                         id,
                         title: `${this.deviceClassName} device ${name} in state ${state}`,
+                        icon: id.includes("emulator-")
+                                ? <Icon icon={['far', 'window-maximize']} />
+                            : id.match(/\d+\.\d+\.\d+\.\d+:\d+/)
+                                ? <Icon icon={['fas', 'network-wired']} />
+                            : <Icon icon={['fas', 'mobile-alt']} />,
                         status: activating
                                 ? 'activating'
                             : state === 'unavailable'
                                 ? 'unavailable'
                             // Available here means clickable - interceptable/setupable/launchable
                                 : 'available',
-                        content: <p>
-                            {
-                                activating
-                                    ? <Icon icon={['fas', 'spinner']} spin />
-                                : id.includes("emulator-")
-                                    ? <Icon icon={['far', 'window-maximize']} />
-                                : id.match(/\d+\.\d+\.\d+\.\d+:\d+/)
-                                    ? <Icon icon={['fas', 'network-wired']} />
-                                : <Icon icon={['fas', 'mobile-alt']} />
-                            } { name }<br />{ state }
-                        </p>
+                        progress: this.hostProgress[id],
+                        content: <p>{ name }<br />{ state }</p>
                     };
                 })}
                 interceptTarget={this.selectHost}
