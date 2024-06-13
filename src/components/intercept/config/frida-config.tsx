@@ -402,7 +402,7 @@ class FridaConfig extends React.Component<{
 
                     return {
                         id,
-                        title: `${this.deviceClassName} device ${name} in state ${state}`,
+                        title: `${this.deviceClassName} device ${name} (${id}) in state ${state}`,
                         icon: id.includes("emulator-")
                                 ? <Icon icon={['far', 'window-maximize']} />
                             : id.match(/\d+\.\d+\.\d+\.\d+:\d+/)

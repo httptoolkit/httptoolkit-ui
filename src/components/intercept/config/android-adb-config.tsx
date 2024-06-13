@@ -128,9 +128,15 @@ class AndroidAdbConfig extends React.Component<{
                 targets={this.deviceIds.map(id => {
                     const activating = this.inProgressIds.includes(id);
 
+                    // Only new servers (1.17.0+) expose metadata.devices with names
+                    const deviceName = this.props.interceptor.metadata?.devices?.[id].name
+                        ?? id;
+
                     return {
                         id,
-                        title: `Intercept Android device ${id}`,
+                        title: `Intercept Android device ${deviceName}${
+                            id !== deviceName ? ` (ID: ${id})` : ''
+                        }`,
                         status: activating
                                 ? 'activating'
                                 : 'available',
@@ -139,7 +145,7 @@ class AndroidAdbConfig extends React.Component<{
                         : id.match(/\d+\.\d+\.\d+\.\d+:\d+/)
                             ? <Icon icon={['fas', 'network-wired']} />
                         : <Icon icon={['fas', 'mobile-alt']} />,
-                        content: id
+                        content: deviceName
                     };
                 })}
                 interceptTarget={this.interceptDevice}
