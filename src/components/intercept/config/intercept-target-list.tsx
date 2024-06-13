@@ -60,6 +60,7 @@ const TargetItem = styled.li`
 const TargetButton = styled(Button)<{
     state: 'active' | 'available' | 'activating' | 'unavailable'
 }>`
+    user-select: none;
     font-size: ${p => p.theme.textSize};
     padding: 10px;
     width: 100%;

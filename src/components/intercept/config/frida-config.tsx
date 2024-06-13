@@ -4,7 +4,9 @@ import { computed, observable, action, autorun, flow, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
 
 import { delay } from '../../../util/promise';
+import { UnreachableCheck } from '../../../util/error';
 import { styled } from '../../../styles';
+import { Icon } from '../../../icons';
 
 import { Interceptor } from '../../../model/interception/interceptors';
 import { ProxyStore } from '../../../model/proxy-store';
@@ -16,7 +18,6 @@ import { FridaActivationOptions, FridaHost, FridaTarget } from '../../../model/i
 import { getDetailedInterceptorMetadata } from '../../../services/server-api';
 
 import { TextInput } from '../../common/inputs';
-import { Icon } from '../../../icons';
 import { InterceptionTargetList } from './intercept-target-list';
 import { IconButton } from '../../common/icon-button';
 
@@ -114,6 +115,45 @@ const SearchBox = styled(TextInput)`
         outline: none;
         border-color: ${p => p.theme.inputBorder};
     }
+`;
+
+const HostName = styled.p`
+    font-weight: bold;
+`;
+
+const getStateDescriptionText = ({ type, state }: {
+    type: FridaHost['type'],
+    state: Exclude<FridaHost['state'], 'available'>
+}) => {
+    if (state === 'launch-required') return 'Frida launch required';
+    else if (state === 'setup-required') return 'Frida installation required';
+    else if (state === 'unavailable') {
+        if (type === 'android') {
+            return 'Root access not available';
+        } else {
+            return 'Device must be jailbroken and running Frida server';
+        }
+    }
+
+    throw new UnreachableCheck(state);
+};
+
+const StateDescription = styled(({ type, state, className }: {
+    type: FridaHost['type'],
+    state: FridaHost['state'],
+    className?: string
+}) => {
+    if (state === 'available') return null;
+
+    return <p className={className}>
+        { getStateDescriptionText({ type, state }) }
+    </p>;
+})`
+    margin-top: 5px;
+    font-style: italic;
+
+    white-space: normal;
+    text-wrap: balance;
 `;
 
 // We actively hide specific known non-interceptable apps:
@@ -402,7 +442,7 @@ class FridaConfig extends React.Component<{
 
                     return {
                         id,
-                        title: `${this.deviceClassName} device ${name} (${id}) in state ${state}`,
+                        title: `${this.deviceClassName} device ${name} (${id}): ${_.startCase(state)}`,
                         icon: id.includes("emulator-")
                                 ? <Icon icon={['far', 'window-maximize']} />
                             : id.match(/\d+\.\d+\.\d+\.\d+:\d+/)
@@ -415,7 +455,10 @@ class FridaConfig extends React.Component<{
                             // Available here means clickable - interceptable/setupable/launchable
                                 : 'available',
                         progress: this.hostProgress[id],
-                        content: <p>{ name }<br />{ state }</p>
+                        content: <div>
+                            <HostName>{ name }</HostName>
+                            <StateDescription type={host.type} state={host.state} />
+                        </div>
                     };
                 })}
                 interceptTarget={this.selectHost}
