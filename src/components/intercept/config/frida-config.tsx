@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { computed, observable, action, autorun, flow } from 'mobx';
+import { computed, observable, action, autorun, flow, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
 
 import { delay } from '../../../util/promise';
@@ -140,8 +140,8 @@ class FridaConfig extends React.Component<{
     closeSelf: () => void
 }> {
 
-    @computed private get fridaHosts(): Array<FridaHost> {
-        return this.props.interceptor.metadata?.hosts || [];
+    @computed private get fridaHosts(): Record<string, FridaHost> {
+        return this.props.interceptor.metadata?.hosts || {};
     }
 
     @observable fridaTargets: Array<FridaTarget> = [];
@@ -176,16 +176,22 @@ class FridaConfig extends React.Component<{
     }
 
     async componentDidMount() {
-        if (this.fridaHosts.length === 1 && this.fridaHosts[0].state === 'available') {
-            this.selectHost(this.fridaHosts[0].id);
+        // Auto-open the first host, if there's only one:
+        const hosts = Object.values(this.fridaHosts);
+        if (hosts.length === 1 && hosts[0].state === 'available') {
+            this.selectHost(hosts[0].id);
         }
 
         disposeOnUnmount(this, autorun(() => {
-            if (this.selectedHostId && !this.fridaHosts.some(host => host.id === this.selectedHostId)) {
+            // If the selected host disappears or becomes unavailable, deselect it:
+            if (
+                this.selectedHostId &&
+                this.fridaHosts[this.selectedHostId]?.state !== 'available'
+            ) {
                 this.deselectHost();
             }
 
-            if (this.fridaHosts?.length === 0) {
+            if (Object.keys(this.fridaHosts).length === 0) {
                 this.props.closeSelf();
             }
         }));
@@ -220,7 +226,7 @@ class FridaConfig extends React.Component<{
     }
 
     private getHost(hostId: string) {
-        return this.fridaHosts.find(host => host.id === hostId);
+        return this.fridaHosts[hostId];
     }
 
     @action.bound
@@ -381,7 +387,7 @@ class FridaConfig extends React.Component<{
         return <ConfigContainer>
             <FridaTargetList
                 spinnerText={`Waiting for ${this.deviceClassName} devices to attach to...`}
-                targets={this.fridaHosts.map(host => {
+                targets={Object.values(this.fridaHosts).map(host => {
                     const { id, name, state } = host;
                     const activating = this.hostProgress[id] !== undefined;
 
