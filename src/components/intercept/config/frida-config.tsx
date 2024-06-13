@@ -306,8 +306,17 @@ class FridaConfig extends React.Component<{
             });
 
             this.setHostProgress(hostId, 100);
-            await delay(10); // Tiny delay purely for nice UI purposes
-            this.viewHostTargets(hostId);
+            await delay(10); // Tiny delay, purely for nice UI purposes
+
+            // When launch succeeds, it guarantees that the current state is now available.
+            // We directly check that, rather than waiting for the next metadata update:
+            runInAction(() => {
+                this.props.interceptor.metadata!.hosts[hostId].state = 'available';
+            });
+
+            if (Object.values(this.hostProgress).length === 1) { // Don't jump if setting up multiple devices
+                this.viewHostTargets(hostId);
+            }
         } finally {
             clearInterval(interval);
             this.setHostProgress(hostId, undefined);
