@@ -16,6 +16,9 @@ const SpinnerBlock = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    word-break: break-word;
+    padding: 0 10px;
 `;
 
 const Spinner = styled(Icon).attrs(() => ({
@@ -28,8 +31,9 @@ const Spinner = styled(Icon).attrs(() => ({
 `;
 
 const ListScrollContainer = styled.div`
-    max-height: 279px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+
     margin: 10px -15px;
     flex-grow: 1;
     flex-shrink: 1;
@@ -42,7 +46,7 @@ const TargetList = styled.ul`
     justify-content: center;
 `;
 
-const Target = styled.li`
+const TargetItem = styled.li`
     margin-bottom: -10px;
     padding: 10px;
 
@@ -59,6 +63,7 @@ const Target = styled.li`
 const TargetButton = styled(Button)<{
     state: 'active' | 'available' | 'activating' | 'unavailable'
 }>`
+    user-select: none;
     font-size: ${p => p.theme.textSize};
     padding: 10px;
     width: 100%;
@@ -74,9 +79,25 @@ const TargetButton = styled(Button)<{
         margin-right: 10px;
         width: 15px;
     }
+
+    position: relative;
 `;
 
-const TargetText = styled.span<{ ellipseDirection: 'left' | 'right' }>`
+const ProgressBar = styled.div<{ progress: number }>`
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: ${p => p.progress}%;
+    transition: width 0.1s linear;
+
+    background-color: ${p => p.theme.primaryInputBackground};
+    mix-blend-mode: overlay;
+    border-radius: 4px;
+`;
+
+const TargetText = styled.div<{ ellipseDirection: 'left' | 'right' }>`
     flex-grow: 1;
 
     overflow: hidden;
@@ -84,29 +105,50 @@ const TargetText = styled.span<{ ellipseDirection: 'left' | 'right' }>`
     text-overflow: ellipsis;
     text-align: center;
 
+    &, & * {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     ${p => p.ellipseDirection === 'left' ?
         'direction: rtl;'
     : ''}
 `;
 
-type TargetItem<Id> = {
-    id: Id,
+// Spacer - used to consistently center align the name despite the icons appearing
+// on the left e.g. on activating/active.
+const IconSpacer = styled.div`
+    flex-basis: 25px;
+    flex-shrink: 999;
+`;
+
+type TargetItem = {
+    id: string,
     title: string,
     content: React.ReactNode,
     icon?: React.ReactNode,
+    progress?: number; // 0 - 100
     status: 'active' | 'available' | 'activating' | 'unavailable',
 };
 
 @observer
-export class InterceptionTargetList<Id extends string | number> extends React.Component<{
+export class InterceptionTargetList extends React.Component<{
+    className?: string,
     spinnerText: string,
-    targets: TargetItem<Id>[],
-    interceptTarget: (id: Id) => void,
+    targets: TargetItem[],
+    interceptTarget: (id: string) => void,
     ellipseDirection: 'left' | 'right'
 }> {
 
     render() {
-        const { spinnerText, targets, interceptTarget, ellipseDirection } = this.props;
+        const {
+            className,
+            spinnerText,
+            targets,
+            interceptTarget,
+            ellipseDirection
+        } = this.props;
 
         if (targets.length === 0) {
             return <SpinnerBlock>
@@ -115,33 +157,63 @@ export class InterceptionTargetList<Id extends string | number> extends React.Co
             </SpinnerBlock>
         }
 
-        return <ListScrollContainer>
+        return <ListScrollContainer className={className}>
             <TargetList>
-                { _.map(targets, (target: TargetItem<Id>) => <Target key={target.id}>
-                    <TargetButton
-                        title={target.title}
-                        state={target.status}
-                        disabled={target.status !== 'available'}
-                        onClick={target.status === 'available'
-                            ? () => interceptTarget(target.id)
-                            : _.noop
-                        }
-                    >
-                        {
-                            target.status === 'activating'
-                                ? <Icon icon={['fas', 'spinner']} spin />
-                            : target.status === 'active'
-                                ? <Icon icon={['fas', 'check']} />
-                            : target.icon
-                                ? target.icon
-                            : null
-                        }
-                        <TargetText ellipseDirection={ellipseDirection}>
-                            { target.content }
-                        </TargetText>
-                    </TargetButton>
-                </Target>) }
+                { _.map(targets, (target) =>
+                    <Target
+                        key={target.id}
+                        target={target}
+                        interceptTarget={interceptTarget}
+                        ellipseDirection={ellipseDirection}
+                    />
+                ) }
             </TargetList>
         </ListScrollContainer>;
     }
 }
+
+const Target = (props: {
+    target: TargetItem,
+    interceptTarget: (id: string) => void,
+    ellipseDirection: 'left' | 'right'
+}) => {
+    const {
+        target,
+        interceptTarget,
+        ellipseDirection
+    } = props;
+
+    const icon = target.status === 'activating'
+            ? <Icon icon={['fas', 'spinner']} spin />
+        : target.status === 'active'
+            ? <Icon icon={['fas', 'check']} />
+        : target.icon
+            ? target.icon
+        : null;
+
+    const progress = target.progress !== undefined
+        ? <ProgressBar progress={target.progress} />
+        : null
+
+    return <TargetItem>
+        <TargetButton
+            title={target.title}
+            state={target.status}
+            disabled={target.status !== 'available'}
+            onClick={target.status === 'available'
+                ? () => interceptTarget(target.id)
+                : _.noop
+            }
+        >
+            { progress }
+
+            { icon }
+
+            <TargetText ellipseDirection={ellipseDirection}>
+                { target.content }
+            </TargetText>
+
+            { icon !== null ? <IconSpacer /> : null }
+        </TargetButton>
+    </TargetItem>;
+};

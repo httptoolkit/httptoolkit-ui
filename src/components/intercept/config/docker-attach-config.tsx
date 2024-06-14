@@ -42,6 +42,10 @@ const ConfigContainer = styled.div`
     }
 `;
 
+const DockerTargetList = styled(InterceptionTargetList)`
+    max-height: 262px;
+`;
+
 const Footer = styled.p`
     font-size: 85%;
     font-style: italic;
@@ -101,10 +105,10 @@ class DockerAttachConfig extends React.Component<{
                 Pick a container to restart it with all traffic intercepted:
             </p>
 
-            <InterceptionTargetList<string>
+            <DockerTargetList
                 spinnerText='Looking for Docker containers to intercept...'
                 interceptTarget={this.interceptTarget}
-                ellipseDirection='right'
+                ellipseDirection='left'
                 targets={targets.map((target) => {
                     const activating = this.inProgressIds.includes(target.id);
                     const interceptedByUs = target.labels[CONTAINER_PROXY_LABEL] === proxyPort.toString();

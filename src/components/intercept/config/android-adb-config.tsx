@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { computed, observable, action } from 'mobx';
-import { observer, inject } from 'mobx-react';
+import { computed, observable, action, autorun } from 'mobx';
+import { observer, inject, disposeOnUnmount } from 'mobx-react';
 
 import { styled } from '../../../styles';
 
@@ -46,6 +46,10 @@ const ConfigContainer = styled.div`
     }
 `;
 
+const AdbTargetList = styled(InterceptionTargetList)`
+    max-height: 280px;
+`;
+
 const Footer = styled.p`
     font-size: 85%;
     font-style: italic;
@@ -81,6 +85,12 @@ class AndroidAdbConfig extends React.Component<{
             this.interceptDevice(this.deviceIds[0]);
             this.props.closeSelf();
         }
+
+        disposeOnUnmount(this, autorun(() => {
+            if (this.deviceIds?.length === 0) {
+                this.props.closeSelf();
+            }
+        }));
     }
 
     render() {
@@ -88,10 +98,8 @@ class AndroidAdbConfig extends React.Component<{
             { this.deviceIds.length > 1
                 ? <>
                     <p>
-                        There are multiple ADB devices connected.
-                    </p>
-                    <p>
-                        Pick which device you'd like to intercept:
+                        There are multiple ADB devices connected. Pick which
+                        device you'd like to intercept:
                     </p>
                 </>
             : this.deviceIds.length === 1
@@ -115,14 +123,20 @@ class AndroidAdbConfig extends React.Component<{
                     </p>
                 </> }
 
-            <InterceptionTargetList
+            <AdbTargetList
                 spinnerText='Waiting for Android devices to intercept...'
                 targets={this.deviceIds.map(id => {
                     const activating = this.inProgressIds.includes(id);
 
+                    // Only new servers (1.17.0+) expose metadata.devices with names
+                    const deviceName = this.props.interceptor.metadata?.devices?.[id].name
+                        ?? id;
+
                     return {
                         id,
-                        title: `Intercept Android device ${id}`,
+                        title: `Intercept Android device ${deviceName}${
+                            id !== deviceName ? ` (ID: ${id})` : ''
+                        }`,
                         status: activating
                                 ? 'activating'
                                 : 'available',
@@ -131,7 +145,7 @@ class AndroidAdbConfig extends React.Component<{
                         : id.match(/\d+\.\d+\.\d+\.\d+:\d+/)
                             ? <Icon icon={['fas', 'network-wired']} />
                         : <Icon icon={['fas', 'mobile-alt']} />,
-                        content: id
+                        content: deviceName
                     };
                 })}
                 interceptTarget={this.interceptDevice}

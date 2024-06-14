@@ -81,7 +81,7 @@ export class RestApiClient {
                 }`,
                 operationName,
                 response.status,
-                errorMessage
+                { message: errorMessage, code: errorCode }
             );
         }
 
@@ -146,10 +146,10 @@ export class RestApiClient {
         return response.interceptors;
     }
 
-    async getDetailedInterceptorMetadata<M extends unknown>(id: string): Promise<M | undefined> {
+    async getDetailedInterceptorMetadata<M extends unknown>(id: string, subId?: string): Promise<M | undefined> {
         const response = await this.apiJsonRequest<{
             interceptorMetadata: M
-        }>('GET', `/interceptors/${id}/metadata`);
+        }>('GET', `/interceptors/${id}/metadata/${subId || ''}`);
 
         return response.interceptorMetadata;
     }

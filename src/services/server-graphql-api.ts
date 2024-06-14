@@ -174,8 +174,12 @@ export class GraphQLApiClient {
         return response.interceptors;
     }
 
-    async getDetailedInterceptorMetadata<M extends unknown>(id: string): Promise<M | undefined> {
+    async getDetailedInterceptorMetadata<M extends unknown>(id: string, subId?: string): Promise<M | undefined> {
         if (!versionSatisfies(await serverVersion, DETAILED_METADATA)) return undefined;
+
+        if (subId) {
+            throw new Error('Metadata subqueries cannot be used with GraphQL API client');
+        }
 
         const response = await this.graphql<{
             interceptor: { metadata: M }

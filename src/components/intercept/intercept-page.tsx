@@ -38,7 +38,7 @@ const InterceptPageContainer = styled.section`
         padding: 40px;
     }
 
-    grid-auto-rows: minmax(200px, auto);
+    grid-auto-rows: minmax(210px, auto);
     grid-auto-flow: row dense;
 
     max-width: 1200px;

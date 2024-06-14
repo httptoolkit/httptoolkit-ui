@@ -207,6 +207,15 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
+        // After first render, scroll to the selected event (or the end of the list) by default:
+        requestAnimationFrame(() => {
+            if (this.props.eventId && this.selectedEvent) {
+                this.onScrollToCenterEvent(this.selectedEvent);
+            } else {
+                this.onScrollToEnd();
+            }
+        });
+
         disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
             if (this.splitDirection !== 'horizontal') return;
 

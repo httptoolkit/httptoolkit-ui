@@ -15,6 +15,7 @@ import { ExistingTerminalCustomUi } from "../../components/intercept/config/exis
 import { ElectronCustomUi } from '../../components/intercept/config/electron-config';
 import { AndroidDeviceCustomUi } from "../../components/intercept/config/android-device-config";
 import { AndroidAdbCustomUi } from "../../components/intercept/config/android-adb-config";
+import { FridaCustomUi } from "../../components/intercept/config/frida-config";
 import { ExistingBrowserCustomUi } from "../../components/intercept/config/existing-browser-config";
 import { JvmCustomUi } from "../../components/intercept/config/jvm-config";
 import { DockerAttachCustomUi } from "../../components/intercept/config/docker-attach-config";
@@ -38,6 +39,7 @@ interface InterceptorConfig {
         serverVersion?: string
     }) => unknown;
     notAvailableHelpUrl?: string;
+    experimental?: boolean;
 }
 
 export type Interceptor =
@@ -267,6 +269,32 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         clientOnly: true,
         uiConfig: AndroidDeviceCustomUi,
         tags: [...MOBILE_TAGS, ...ANDROID_TAGS]
+    },
+    'android-frida': {
+        name: 'Android App via Frida',
+        description: [
+            'Intercept a target Android app',
+            'This automatically disables most certificate pinning',
+            'Requires a rooted device connected to ADB'
+        ],
+        iconProps: recoloured(androidInterceptIconProps, '#ef6456'),
+
+        uiConfig: FridaCustomUi,
+        tags: [...MOBILE_TAGS, ...ANDROID_TAGS],
+        experimental: true
+    },
+    'ios-frida': {
+        name: 'iOS App via Frida',
+        description: [
+            'Intercept a target iOS app',
+            'This automatically disables most certificate pinning',
+            'Requires a jailbroken device running Frida Server'
+        ],
+        iconProps: recoloured(SourceIcons.iOS, '#ef6456'),
+
+        uiConfig: FridaCustomUi,
+        tags: [...MOBILE_TAGS, ...IOS_TAGS],
+        experimental: true
     },
     'manual-ios-device': {
         name: 'iOS via Manual Setup',

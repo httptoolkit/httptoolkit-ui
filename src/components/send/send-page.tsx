@@ -69,8 +69,8 @@ class SendPage extends React.Component<{
 
         sendRequest(selectedRequest).catch(e => {
             console.log(e);
-            const errorMessage = (e instanceof ApiError && e.apiErrorMessage)
-                ? e.apiErrorMessage
+            const errorMessage = (e instanceof ApiError && e.apiError?.message)
+                ? e.apiError?.message
                 : e.message ?? e;
             alert(errorMessage);
         });
