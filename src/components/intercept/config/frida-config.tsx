@@ -412,6 +412,8 @@ class FridaConfig extends React.Component<{
                 (target) => target.name.toLowerCase()
             );
 
+            const allResultsFiltered = this.fridaTargets.length > 0 && targets.length === 0;
+
             return <ConfigContainer>
                 <SelectedHostBlock>
                     <BackButton onClick={this.deselectHost} />
@@ -425,7 +427,11 @@ class FridaConfig extends React.Component<{
                     autoFocus={true}
                 />
                 <FridaTargetList
-                    spinnerText='Scanning for apps to intercept...'
+                    spinnerText={
+                        allResultsFiltered
+                        ? `No '${this.searchInput}' apps found...`
+                        : 'Scanning for apps to intercept...'
+                    }
                     targets={targets.map(target => {
                             const { id, name } = target;
                             const activating = this.inProgressTargetIds.includes(id);

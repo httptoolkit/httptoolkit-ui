@@ -16,6 +16,9 @@ const SpinnerBlock = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    word-break: break-word;
+    padding: 0 10px;
 `;
 
 const Spinner = styled(Icon).attrs(() => ({
