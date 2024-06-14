@@ -4,7 +4,7 @@ import { computed, observable, action, autorun, flow, runInAction } from 'mobx';
 import { observer, inject, disposeOnUnmount } from 'mobx-react';
 
 import { delay } from '../../../util/promise';
-import { UnreachableCheck } from '../../../util/error';
+import { ErrorLike, UnreachableCheck } from '../../../util/error';
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 
@@ -16,6 +16,7 @@ import { RulesStore } from '../../../model/rules/rules-store';
 import { FridaActivationOptions, FridaHost, FridaTarget } from '../../../model/interception/frida';
 
 import { getDetailedInterceptorMetadata } from '../../../services/server-api';
+import { ActivationFailure } from '../../../services/server-api-types';
 
 import { TextInput } from '../../common/inputs';
 import { InterceptionTargetList } from './intercept-target-list';
@@ -161,6 +162,16 @@ const INCOMPATIBLE_APP_IDS: string[] = [
     "com.apple.mobilesafari",
     "com.google.android.googlequicksearchbox"
 ];
+
+const alertActivationError = (action: string, error: ErrorLike) => {
+    if (error instanceof ActivationFailure) {
+        alert(`Failed to ${action}: ${error.failureMessage} (${error.errorCode})`);
+    } else {
+        alert(`Failed to ${action}: ${error.message ?? error}`);
+    }
+
+    throw error;
+};
 
 @inject('proxyStore')
 @inject('rulesStore')
@@ -319,7 +330,7 @@ class FridaConfig extends React.Component<{
             await this.props.activateInterceptor({
                 action: 'setup',
                 hostId
-            });
+            }).catch((e) => alertActivationError('setup Frida', e));
 
             this.setHostProgress(hostId, 75);
             await this.launchInterceptor(hostId);
@@ -343,7 +354,7 @@ class FridaConfig extends React.Component<{
             await this.props.activateInterceptor({
                 action: 'launch',
                 hostId
-            });
+            }).catch((e) => alertActivationError('launch Frida', e));
 
             this.setHostProgress(hostId, 100);
             await delay(10); // Tiny delay, purely for nice UI purposes
@@ -374,7 +385,9 @@ class FridaConfig extends React.Component<{
             action: 'intercept',
             hostId: host.id,
             targetId
-        }).then(() => {
+        })
+        .catch((e) => alertActivationError(`intercept ${targetId}`, e))
+        .then(() => {
             this.props.reportSuccess();
         }).finally(action(() => {
             _.pull(this.inProgressTargetIds, targetId);

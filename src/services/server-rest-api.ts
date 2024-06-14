@@ -81,7 +81,7 @@ export class RestApiClient {
                 }`,
                 operationName,
                 response.status,
-                errorMessage
+                { message: errorMessage, code: errorCode }
             );
         }
 
