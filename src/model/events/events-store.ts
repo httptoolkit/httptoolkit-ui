@@ -623,9 +623,13 @@ export class EventsStore {
             // Log all suberrors, for easier reporting & debugging.
             // This does not include HAR data - only schema errors like
             // 'bodySize is missing' at 'entries[1].request'
-            harParseError.errors.forEach((error) => {
-                console.log(error);
-            });
+            if (harParseError.errors) {
+                harParseError.errors.forEach((error) => {
+                    console.log(error);
+                });
+            } else {
+                console.log(harParseError);
+            }
             throw harParseError;
         });
 
