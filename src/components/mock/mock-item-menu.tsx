@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 
-import { styled, css } from '../../styles';
+import { styled } from '../../styles';
 import { IconProp } from '../../icons';
 
 import { IconButton } from '../common/icon-button';
@@ -12,7 +12,6 @@ export const IconMenu = styled.div<{ topOffset: number }>`
     right: 10px;
 
     display: none; /* Made flex by container, on hover/expand */
-    flex-direction: row-reverse;
     align-items: center;
 `;
 

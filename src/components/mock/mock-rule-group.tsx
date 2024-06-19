@@ -68,9 +68,9 @@ const RuleGroupMenu = (p: {
     onDelete: (event: React.MouseEvent) => void,
 }) => <IconMenu topOffset={-2}>
     <IconMenuButton
-        title='Delete these rules'
-        icon={['far', 'trash-alt']}
-        onClick={p.onDelete}
+        title={p.toggleState ? 'Deactivate these rules' : 'Activate these rules'}
+        icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
+        onClick={p.onToggleActivation}
     />
     <IconMenuButton
         title='Clone this rule'
@@ -78,9 +78,9 @@ const RuleGroupMenu = (p: {
         onClick={p.onClone}
     />
     <IconMenuButton
-        title={p.toggleState ? 'Deactivate these rules' : 'Activate these rules'}
-        icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
-        onClick={p.onToggleActivation}
+        title='Delete these rules'
+        icon={['far', 'trash-alt']}
+        onClick={p.onDelete}
     />
 </IconMenu>;
 

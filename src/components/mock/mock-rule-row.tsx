@@ -221,33 +221,6 @@ const RuleMenu = (p: {
     onDelete: (event: React.UIEvent) => void,
 }) => <RuleMenuContainer topOffset={7}>
         <IconMenuButton
-            title='Delete this rule'
-            icon={['far', 'trash-alt']}
-            onClick={p.onDelete}
-        />
-        <IconMenuButton
-            title='Clone this rule'
-            icon={['far', 'clone']}
-            onClick={p.onClone}
-        />
-        <IconMenuButton
-            title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
-            icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
-            onClick={p.onToggleActivation}
-        />
-        <IconMenuButton
-            title='Give this rule a custom name'
-            icon={['fas', 'edit']}
-            disabled={p.isEditingTitle}
-            onClick={p.onSetCustomTitle}
-        />
-        <IconMenuButton
-            title='Revert this rule to the last saved version'
-            icon={['fas', 'undo']}
-            disabled={!p.hasUnsavedChanges || p.isNewRule}
-            onClick={p.onReset}
-        />
-        <IconMenuButton
             icon={['fas',
                 p.hasUnsavedChanges
                     ? 'save'
@@ -261,6 +234,33 @@ const RuleMenu = (p: {
                     ? 'Show rule details'
                 : 'Hide rule details'}
             onClick={p.hasUnsavedChanges ? p.onSave : p.onToggleCollapse}
+        />
+        <IconMenuButton
+            title='Revert this rule to the last saved version'
+            icon={['fas', 'undo']}
+            disabled={!p.hasUnsavedChanges || p.isNewRule}
+            onClick={p.onReset}
+        />
+        <IconMenuButton
+            title='Give this rule a custom name'
+            icon={['fas', 'edit']}
+            disabled={p.isEditingTitle}
+            onClick={p.onSetCustomTitle}
+        />
+        <IconMenuButton
+            title={p.toggleState ? 'Deactivate this rule' : 'Activate this rule'}
+            icon={['fas', p.toggleState ? 'toggle-on' : 'toggle-off']}
+            onClick={p.onToggleActivation}
+        />
+        <IconMenuButton
+            title='Clone this rule'
+            icon={['far', 'clone']}
+            onClick={p.onClone}
+        />
+        <IconMenuButton
+            title='Delete this rule'
+            icon={['far', 'trash-alt']}
+            onClick={p.onDelete}
         />
     </RuleMenuContainer>;
 
