@@ -120,7 +120,7 @@ const GroupHeaderContainer = styled.header<{
             color: ${p => p.theme.popColor};
         }
     }
-    &:hover {
+    &:hover, &:focus-within {
         ${DragHandle} {
             opacity: 0.5;
         }
