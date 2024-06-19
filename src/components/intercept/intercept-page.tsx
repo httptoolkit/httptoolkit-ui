@@ -138,6 +138,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         search for connectors that could work for you:
                     </p>
                     <InterceptSearchBox
+                        aria-label="Filter the list of intercept options below"
                         value={this.filter || ''}
                         onSearch={this.onSearchInput}
                     />

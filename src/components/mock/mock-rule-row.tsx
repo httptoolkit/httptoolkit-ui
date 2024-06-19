@@ -127,6 +127,7 @@ export const AddRuleRow = styled((p: {
         collapsed={true}
         borderColor='transparent'
         {..._.omit(p, 'onAdd')}
+        role="button"
 
         tabIndex={0}
         depth={0}
@@ -384,6 +385,7 @@ export class RuleRow extends React.Component<{
                     provided.innerRef(ref);
                     this.containerRef = ref;
                 }}
+                aria-expanded={!collapsed}
                 collapsed={collapsed}
                 deactivated={!rule.activated}
                 disabled={disabled}
@@ -407,7 +409,14 @@ export class RuleRow extends React.Component<{
                     isEditingTitle={isEditingTitle}
                     onSetCustomTitle={this.startEnteringCustomTitle}
                 />
-                <DragHandle {...provided.dragHandleProps} />
+                <DragHandle
+                    aria-label={`Drag handle for ${
+                        (shouldShowCustomTitle || isEditingTitle) && rule.title
+                            ? `this '${rule.title}'`
+                            : 'this'
+                    } mock rule`}
+                    {...provided.dragHandleProps}
+                />
 
 
                 { shouldShowCustomTitle &&

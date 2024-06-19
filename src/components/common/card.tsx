@@ -169,6 +169,10 @@ export class CollapsibleCard extends React.Component<
             direction={this.props.direction}
             headerAlignment={this.props.headerAlignment ?? 'right'}
 
+            aria-expanded={collapsable
+                ? !this.props.collapsed
+                : undefined
+            }
             tabIndex={collapsable ? 0 : undefined}
             ref={this.cardRef}
             onKeyDown={this.onKeyDown}

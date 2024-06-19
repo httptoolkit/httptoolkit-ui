@@ -235,6 +235,7 @@ export const GroupHeader = observer((p: {
     >{ (provided, snapshot) => <Observer>{ () =>
         <GroupHeaderContainer
             depth={p.path.length - 1}
+            aria-expanded={!p.collapsed}
             collapsed={p.collapsed}
             editingTitle={isEditing}
 
@@ -246,7 +247,14 @@ export const GroupHeader = observer((p: {
             onKeyPress={clickOnEnter}
             tabIndex={0}
         >
-            <DragHandle {...provided.dragHandleProps} />
+            <DragHandle
+                aria-label={`Drag handle for the '${
+                    isEditing
+                        ? unsavedTitle
+                        : p.group.title
+                }' rule group`}
+                {...provided.dragHandleProps}
+            />
 
             <h2>
                 <Icon
