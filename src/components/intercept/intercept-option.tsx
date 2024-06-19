@@ -32,11 +32,11 @@ type InterceptorConfigComponent = React.ComponentType<{
     // with no side effects except check for updated interceptor state afterwards.
     activateInterceptor: (activationOptions?: any) => Promise<any>,
     // This should be called when each activation is considered started (i.e. after any required
-    // user input or confirmation).
-    reportStarted: () => void,
+    // user input or confirmation). Id suffix can be specified to distinguish activation types.
+    reportStarted: (options?: { idSuffix?: string }) => void,
     // This should be called when each activation is considered successfully completed. If
     // showRequests is not explicitly set to false, it will jump to the View page.
-    reportSuccess: (options?: { showRequests?: boolean }) => void,
+    reportSuccess: (options?: { showRequests?: boolean, idSuffix?: string }) => void,
     // This should be called to hide the custom UI again. Mainly useful if interception is cancelled,
     // or the UI deems itself unnecessary. The UI is never closed automatically, but reportSuccess
     // without showRequests false will jump to the View page, giving similar results.
@@ -282,11 +282,13 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
         </InterceptOptionCard>;
     }
 
-    onActivationStarted = () => {
+    onActivationStarted = (options: { idSuffix?: string } = {}) => {
         trackEvent({
             category: 'Interceptors',
             action: 'Activated',
-            value: this.props.interceptor.id
+            value: options.idSuffix
+                ? `${this.props.interceptor.id}-${options.idSuffix}`
+                : this.props.interceptor.id
         });
     };
 
@@ -296,12 +298,15 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
     };
 
     onActivationSuccessful = (options: {
-        showRequests?: boolean
+        showRequests?: boolean,
+        idSuffix?: string
     } = {}) => {
         trackEvent({
             category: 'Interceptors',
             action: 'Successfully Activated',
-            value: this.props.interceptor.id
+            value: options.idSuffix
+                ? `${this.props.interceptor.id}-${options.idSuffix}`
+                : this.props.interceptor.id
         });
 
         // Some interceptors don't switch to show the requests, e.g. if the UI shows a list

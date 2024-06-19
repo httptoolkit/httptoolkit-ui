@@ -186,8 +186,8 @@ class FridaConfig extends React.Component<{
 
     interceptor: Interceptor,
     activateInterceptor: (options: FridaActivationOptions) => Promise<void>,
-    reportStarted: () => void,
-    reportSuccess: () => void,
+    reportStarted: (options?: { idSuffix?: string }) => void,
+    reportSuccess: (options?: { idSuffix?: string }) => void,
     closeSelf: () => void
 }> {
 
@@ -327,10 +327,12 @@ class FridaConfig extends React.Component<{
         }, 100);
 
         try {
+            this.props.reportStarted({ idSuffix: 'setup' });
             await this.props.activateInterceptor({
                 action: 'setup',
                 hostId
             }).catch((e) => alertActivationError('setup Frida', e));
+            this.props.reportSuccess({ idSuffix: 'setup' });
 
             this.setHostProgress(hostId, 75);
             await this.launchInterceptor(hostId);
@@ -351,10 +353,12 @@ class FridaConfig extends React.Component<{
         }, 100);
 
         try {
+            this.props.reportStarted({ idSuffix: 'launch' });
             await this.props.activateInterceptor({
                 action: 'launch',
                 hostId
             }).catch((e) => alertActivationError('launch Frida', e));
+            this.props.reportSuccess({ idSuffix: 'launch' });
 
             this.setHostProgress(hostId, 100);
             await delay(10); // Tiny delay, purely for nice UI purposes
@@ -381,6 +385,7 @@ class FridaConfig extends React.Component<{
         if (!host) return;
 
         this.inProgressTargetIds.push(targetId);
+        this.props.reportStarted({ idSuffix: 'app' });
         this.props.activateInterceptor({
             action: 'intercept',
             hostId: host.id,
@@ -388,7 +393,7 @@ class FridaConfig extends React.Component<{
         })
         .catch((e) => alertActivationError(`intercept ${targetId}`, e))
         .then(() => {
-            this.props.reportSuccess();
+            this.props.reportSuccess({ idSuffix: 'app' });
         }).finally(action(() => {
             _.pull(this.inProgressTargetIds, targetId);
         }));
