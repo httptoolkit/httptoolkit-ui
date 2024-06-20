@@ -1,19 +1,16 @@
 import { styled, Theme } from "../../styles";
 import { Icon } from "../../icons";
-import { filterProps, clickOnEnter } from '../component-utils';
+import { clickOnEnter } from '../component-utils';
 
 interface CloseButtonProps {
     onClose: () => void;
-    inverted?: boolean;
     top?: string;
     right?: string;
 
     theme?: Theme;
 }
 
-export const CloseButton = styled(
-    filterProps(Icon, 'inverted')
-).attrs((props: CloseButtonProps) => ({
+export const CloseButton = styled(Icon).attrs((props: CloseButtonProps) => ({
     icon: ['fas', 'times'],
     size: '2x',
 
@@ -25,12 +22,15 @@ export const CloseButton = styled(
     z-index: 1;
     cursor: pointer;
 
-    color: ${(p: CloseButtonProps) => p.inverted ?
-        p.theme!.mainBackground : p.theme!.mainColor
-    };
+    color: ${p => p.theme!.mainColor};
 
-    top: ${p => p.top || '10px'};
-    right: ${p => p.right || '15px'};
+    &:focus-visible {
+        outline: none;
+        color: ${p => p.theme!.popColor};
+    }
+
+    top: ${(p: CloseButtonProps) => p.top || '10px'};
+    right: ${(p: CloseButtonProps) => p.right || '15px'};
 
     &:hover {
         opacity: 0.6;

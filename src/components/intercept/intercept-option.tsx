@@ -231,6 +231,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             ? 4
             : 3;
 
+        const isExpandable = !!ConfigComponent && !isDisabled;
+
         return <InterceptOptionCard
             ref={this.cardRef}
 
@@ -238,6 +240,12 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             expanded={expanded}
             uiConfig={uiConfig}
             gridWidth={gridWidth}
+
+            role={!this.expanded ? 'button' : 'section'}
+            aria-expanded={isExpandable
+                ? this.expanded
+                : undefined
+            }
 
             disabled={isDisabled}
             onKeyDown={clickOnEnter}
@@ -260,7 +268,10 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
 
             { ConfigComponent && expanded
                 ? <>
-                    <CloseButton onClose={this.onClose} />
+                    <CloseButton
+                        title="Close this interceptor"
+                        onClose={this.onClose}
+                    />
                     <ConfigComponent
                         interceptor={interceptor}
                         activateInterceptor={activateInterceptor}
