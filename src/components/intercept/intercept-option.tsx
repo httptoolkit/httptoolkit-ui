@@ -51,6 +51,14 @@ export interface InterceptorCustomUiConfig {
     customPill?: React.ComponentType<{}>;
 }
 
+// A function with the same types as a custom config component, but none of the UI:
+export type CustomActivationFunction = (
+    interceptor: Interceptor,
+    activateInterceptor: (activationOptions?: any) => Promise<any>,
+    reportStarted: (options?: { idSuffix?: string }) => void,
+    reportSuccess: (options?: { showRequests?: boolean, idSuffix?: string }) => void
+) => Promise<void>;
+
 const BackgroundIcons = styled.div`
     z-index: 0;
 
@@ -341,6 +349,14 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
                     behavior: 'smooth'
                 });
             });
+        } else if (interceptor.customActivation) {
+            onActivationStarted();
+            interceptor.customActivation(
+                interceptor,
+                this.activateInterceptor,
+                onActivationStarted,
+                onActivationSuccessful
+            ).catch((e) => logError(e));
         } else {
             onActivationStarted();
             activateInterceptor(interceptor.activationOptions)

@@ -9,14 +9,14 @@ import {
 import { IconProps, SourceIcons } from "../../icons";
 import { AccountStore } from "../account/account-store";
 
-import { InterceptorCustomUiConfig } from "../../components/intercept/intercept-option";
+import { CustomActivationFunction, InterceptorCustomUiConfig } from "../../components/intercept/intercept-option";
 import { ManualInterceptCustomUi } from "../../components/intercept/config/manual-intercept-config";
 import { ExistingTerminalCustomUi } from "../../components/intercept/config/existing-terminal-config";
 import { ElectronCustomUi } from '../../components/intercept/config/electron-config';
 import { AndroidDeviceCustomUi } from "../../components/intercept/config/android-device-config";
 import { AndroidAdbCustomUi } from "../../components/intercept/config/android-adb-config";
 import { FridaCustomUi } from "../../components/intercept/config/frida-config";
-import { ExistingBrowserCustomUi } from "../../components/intercept/config/existing-browser-config";
+import { onActivateExistingBrowser } from "../../components/intercept/config/existing-browser-config";
 import { JvmCustomUi } from "../../components/intercept/config/jvm-config";
 import { DockerAttachCustomUi } from "../../components/intercept/config/docker-attach-config";
 import { ManualIOSCustomUi } from "../../components/intercept/config/manual-ios-config";
@@ -34,6 +34,7 @@ interface InterceptorConfig {
         serverVersion?: string
     }) => boolean;
     uiConfig?: InterceptorCustomUiConfig;
+    customActivation?: CustomActivationFunction,
     getActivationOptions?: (options: {
         accountStore: AccountStore,
         serverVersion?: string
@@ -91,7 +92,7 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
             "Intercept your main Chrome profile globally",
             "This captures all default Chrome traffic, so may interfere with normal usage"
         ],
-        uiConfig: ExistingBrowserCustomUi,
+        customActivation: onActivateExistingBrowser,
         iconProps: [
             SourceIcons.Chrome,
             { icon: ['fas', 'globe'], color: '#fafafa', size: '2x' }
