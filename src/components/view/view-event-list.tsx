@@ -59,7 +59,8 @@ interface ViewEventListProps {
     onSelected: (event: CollectedEvent | undefined) => void;
 }
 
-const ListContainer = styled.div`
+const ListContainer = styled.table`
+    display: block;
     flex-grow: 1;
     position: relative;
     width: 100%;
@@ -79,7 +80,8 @@ const ListContainer = styled.div`
     }
 `;
 
-const Column = styled.div`
+const Column = styled.td`
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -134,7 +136,7 @@ const RowMarker = styled(Column)`
     border-left: 5px solid ${p => p.theme.containerBackground};
 `;
 
-const MarkerHeader = styled.div`
+const MarkerHeader = styled.td`
     flex-basis: 10px;
     flex-shrink: 0;
 `;
@@ -221,7 +223,7 @@ const BuiltInApiRequestDetails = styled(Column)`
     flex-basis: 1000px;
 `;
 
-const EventListRow = styled.div`
+const EventListRow = styled.tr`
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -287,7 +289,7 @@ const TlsListRow = styled(EventListRow)`
     }
 `;
 
-export const TableHeader = styled.header`
+export const TableHeaderRow = styled.tr`
     height: 38px;
     overflow: hidden;
     width: 100%;
@@ -306,7 +308,7 @@ export const TableHeader = styled.header`
     padding-right: 18px;
     box-sizing: border-box;
 
-    > div {
+    > td {
         padding: 5px 0;
         margin-right: 10px;
         min-width: 0px;
@@ -397,7 +399,6 @@ const ExchangeRow = inject('uiStore')(observer(({
     } = exchange;
 
     return <TrafficEventListRow
-        role="row"
         aria-label={
             `${_.startCase(exchange.category)} ${
                 request.method
@@ -424,7 +425,7 @@ const ExchangeRow = inject('uiStore')(observer(({
         className={isSelected ? 'selected' : ''}
         style={style}
     >
-        <RowPin pinned={pinned}/>
+        <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
         <RowMarker category={category} title={describeEventCategory(category)} />
         <Method pinned={pinned}>{ request.method }</Method>
         <Status>
@@ -504,7 +505,6 @@ const RTCConnectionRow = observer(({
     const { category, pinned } = event;
 
     return <TrafficEventListRow
-        role="row"
         aria-label={
             `${
                 event.closeState ? 'Closed' : 'Open'
@@ -558,7 +558,6 @@ const RTCStreamRow = observer(({
     const { category, pinned } = event;
 
     return <TrafficEventListRow
-        role="row"
         aria-label={
             `${
                 event.closeState ? 'Closed' : 'Open'
@@ -659,7 +658,6 @@ const BuiltInApiRow = observer((p: {
         .join(', ');
 
     return <TrafficEventListRow
-        role="row"
         aria-label={
             `${_.startCase(category)} ${
                 api.service.shortName
@@ -719,7 +717,6 @@ const TlsRow = observer((p: {
     const connectionTarget = tlsEvent.upstreamHostname || 'unknown domain';
 
     return <TlsListRow
-        role="row"
         aria-label={`${description} connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
         data-event-id={tlsEvent.id}
@@ -761,7 +758,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     private KeyBoundListWindow = observer(
         React.forwardRef<HTMLDivElement>(
-            (props: any, ref) => <section
+            (props: any, ref) => <div
                 {...props}
                 style={Object.assign({}, props.style, { 'overflowY': 'scroll' })}
                 ref={ref}
@@ -778,14 +775,14 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const { events, filteredEvents, isPaused } = this.props;
 
         return <ListContainer>
-            <TableHeader>
-                <MarkerHeader />
-                <Method>Method</Method>
-                <Status>Status</Status>
-                <Source>Source</Source>
-                <Host>Host</Host>
-                <PathAndQuery>Path and query</PathAndQuery>
-            </TableHeader>
+            <TableHeaderRow>
+                <MarkerHeader role="columnheader" aria-label="Category" />
+                <Method role="columnheader">Method</Method>
+                <Status role="columnheader">Status</Status>
+                <Source role="columnheader">Source</Source>
+                <Host role="columnheader">Host</Host>
+                <PathAndQuery role="columnheader">Path and query</PathAndQuery>
+            </TableHeaderRow>
 
             {
                 events.length === 0
