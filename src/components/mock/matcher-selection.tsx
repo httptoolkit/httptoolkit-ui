@@ -81,6 +81,7 @@ export const InitialMatcherRow = React.forwardRef((p: {
     return <MatcherRow>
         <MatcherInputsContainer>
             <Select
+                aria-label="Select the base matcher for this rule"
                 ref={ref}
                 value={getMatcherKey(p.matcher)}
                 onChange={(event) => {
@@ -235,6 +236,7 @@ export class NewMatcherRow extends React.Component<{
         return <MatcherRow>
             <MatcherInputsContainer>
                 <Select
+                    aria-label="Select another type of matcher to add to this rule"
                     onChange={this.selectMatcher}
                     value={getMatcherKey(matcherClass) ?? ''}
                     ref={this.dropdownRef}
@@ -267,6 +269,7 @@ export class NewMatcherRow extends React.Component<{
             </MatcherInputsContainer>
 
             <MatcherButton
+                aria-label="Add this matcher to the rule"
                 disabled={!draftMatchers.length || invalidMatcherState}
                 onClick={saveMatcher}
             >

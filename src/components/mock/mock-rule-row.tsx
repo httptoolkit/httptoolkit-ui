@@ -707,7 +707,8 @@ class HandlerStepSection extends React.Component<{
             getPro,
             ruleType,
             availableHandlers,
-            handler
+            handler,
+            handlerIndex
         } = this.props;
 
         const shownHandler = this.demoHandler ?? handler;
@@ -722,6 +723,7 @@ class HandlerStepSection extends React.Component<{
                 ruleType={ruleType}
                 onChange={this.updateHandler}
                 availableHandlers={availableHandlers}
+                handlerIndex={handlerIndex}
             />
 
             { isHandlerDemo

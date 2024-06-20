@@ -184,6 +184,7 @@ export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p:
     ruleType: RuleType,
     availableHandlers: Array<HandlerClass>,
     value: Handler,
+    handlerIndex: number,
     onChange: (handler: Handler) => void
 }) => {
     let [ allowedHandlers, needProHandlers ] = _.partition(
@@ -197,6 +198,11 @@ export const HandlerSelector = inject('rulesStore', 'accountStore')(observer((p:
     );
 
     return <HandlerSelect
+        aria-label={
+            p.handlerIndex === 0
+            ? "Select how matching requests should be handled"
+            : "Select the next step in how matching requests should be handled"
+        }
         value={getHandlerKey(p.value)}
         onChange={(event) => {
             const handlerKey = event.target.value as AvailableHandlerKey;
