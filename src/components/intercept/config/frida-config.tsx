@@ -187,7 +187,7 @@ class FridaConfig extends React.Component<{
     interceptor: Interceptor,
     activateInterceptor: (options: FridaActivationOptions) => Promise<void>,
     reportStarted: (options?: { idSuffix?: string }) => void,
-    reportSuccess: (options?: { idSuffix?: string }) => void,
+    reportSuccess: (options?: { idSuffix?: string, showRequests?: boolean }) => void,
     closeSelf: () => void
 }> {
 
@@ -332,7 +332,7 @@ class FridaConfig extends React.Component<{
                 action: 'setup',
                 hostId
             }).catch((e) => alertActivationError('setup Frida', e));
-            this.props.reportSuccess({ idSuffix: 'setup' });
+            this.props.reportSuccess({ idSuffix: 'setup', showRequests: false });
 
             this.setHostProgress(hostId, 75);
             await this.launchInterceptor(hostId);
@@ -358,7 +358,7 @@ class FridaConfig extends React.Component<{
                 action: 'launch',
                 hostId
             }).catch((e) => alertActivationError('launch Frida', e));
-            this.props.reportSuccess({ idSuffix: 'launch' });
+            this.props.reportSuccess({ idSuffix: 'launch', showRequests: false });
 
             this.setHostProgress(hostId, 100);
             await delay(10); // Tiny delay, purely for nice UI purposes
@@ -393,7 +393,7 @@ class FridaConfig extends React.Component<{
         })
         .catch((e) => alertActivationError(`intercept ${targetId}`, e))
         .then(() => {
-            this.props.reportSuccess({ idSuffix: 'app' });
+            this.props.reportSuccess({ idSuffix: 'app', showRequests: true });
         }).finally(action(() => {
             _.pull(this.inProgressTargetIds, targetId);
         }));
