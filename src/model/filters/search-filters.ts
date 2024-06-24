@@ -1402,7 +1402,11 @@ class NotFilter extends Filter {
                 match: matchSyntax(filter.filterSyntax, innerValue, 0)
             })).filter(({ match }) => (match?.partiallyConsumed || 0) > 0);
 
-            const bestMatch = _.maxBy(matches, m => m.match!.partiallyConsumed);
+            const bestMatch = _.maxBy(matches, m =>
+                // Use both, to ensure that fuller matches go before more partial
+                // matches (e.g. header/headers) when both are available
+                m.match!.fullyConsumed + m.match!.partiallyConsumed
+            );
             const innerDescription = bestMatch
                 ? bestMatch.filter.filterDescription(innerValue, isTemplate)
                 : '...';
