@@ -1389,7 +1389,10 @@ class NotFilter extends Filter {
     static filterName = "not";
 
     static filterDescription(value: string, isTemplate: boolean) {
-        const innerValue = value.slice(4, -1);
+        const hasFinalBracket = value[value.length - 1] === ')';
+        const innerValue = hasFinalBracket
+            ? value.slice(4, -1)
+            : value.slice(4);
 
         if (innerValue.length === 0) {
             return "exchanges that do not match a given condition"

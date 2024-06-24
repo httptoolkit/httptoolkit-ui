@@ -1582,6 +1582,7 @@ describe("Search filter model integration test:", () => {
                 ["not(error", "excluding requests that weren't transmitted successfully"],
                 ["not(head", "excluding exchanges by all header values"],
                 ["not(query^=?abc)", "excluding requests with a query string starting with ?abc"],
+                ["not(hostname*=", "excluding requests to a hostname containing a given value"],
                 ["not(method=POST)", "excluding POST requests"]
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
