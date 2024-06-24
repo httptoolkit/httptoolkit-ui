@@ -658,7 +658,7 @@ class HostnameFilter extends Filter {
         } else if (op === '=') {
             return `requests to ${hostname}`;
         } else {
-            return `requests to a hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
+            return `requests to any hostname ${operationDescriptions[op]} ${hostname || 'a given value'}`;
         }
     }
 
@@ -717,7 +717,7 @@ class PortFilter extends Filter {
         } else if (op === '=') {
             return `requests to port ${port}`;
         } else {
-            return `requests to a port ${operationDescriptions[op]} ${port || 'a given port'}`;
+            return `requests to any port ${operationDescriptions[op]} ${port || 'a given value'}`;
         }
     }
 
@@ -781,7 +781,7 @@ class PathFilter extends Filter {
         } else if (op === '=') {
             return `requests to ${path}`;
         } else {
-            return `requests to a path ${operationDescriptions[op]} ${path || 'a given path'}`;
+            return `requests to any path ${operationDescriptions[op]} ${path || 'a given value'}`;
         }
     }
 
@@ -1058,7 +1058,7 @@ class HeaderFilter extends Filter {
         );
 
         if (!headerName) {
-            return "exchanges by a specific header";
+            return "exchanges with a specific header";
         } else if (!op) {
             return `exchanges with a '${headerName}' header`;
         } else {

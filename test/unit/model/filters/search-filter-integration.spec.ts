@@ -96,7 +96,7 @@ describe("Search filter model integration test:", () => {
                 "requests with a given query string",
                 "responses with a given status code",
                 "exchanges by all header values",
-                "exchanges by a specific header",
+                "exchanges with a specific header",
                 "exchanges by body content",
                 "exchanges by body size",
                 "exchanges that contain a given value anywhere",
@@ -979,7 +979,7 @@ describe("Search filter model integration test:", () => {
 
         it("should show descriptions for various suggestions", () => {
             [
-                ["header", "exchanges by a specific header"],
+                ["header", "exchanges with a specific header"],
                 ["header[date]", "exchanges with a 'date' header"],
                 ["header[date]=",
                     "exchanges with a 'date' header equal to a given value"],
@@ -1581,9 +1581,9 @@ describe("Search filter model integration test:", () => {
                 ["not(", "exchanges that do not match a given condition"],
                 ["not(error", "excluding requests that weren't transmitted successfully"],
                 ["not(head", "excluding exchanges by all header values"],
-                ["not(header", "excluding exchanges by a specific header"],
+                ["not(header", "excluding exchanges with a specific header"],
                 ["not(query^=?abc)", "excluding requests with a query string starting with ?abc"],
-                ["not(hostname*=", "excluding requests to a hostname containing a given value"],
+                ["not(hostname*=", "excluding requests to any hostname containing a given value"],
                 ["not(method=POST)", "excluding POST requests"]
             ].forEach(([input, expectedOutput]) => {
                 const description = getSuggestionDescriptions(input)[0];
