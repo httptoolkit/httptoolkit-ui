@@ -144,11 +144,15 @@ export const Content = styled.div`
     }
 `;
 
-export const Markdown = (p: { content: string | undefined }) =>
+export const Markdown = (p: {
+    content: string | undefined,
+    linkify?: boolean
+}) =>
     p.content ?
         <ExternalContent htmlContent={fromMarkdown(
             p.content
                 .replace(/:suggestion:/g, suggestionIconHtml)
-                .replace(/:warning:/g, warningIconHtml)
+                .replace(/:warning:/g, warningIconHtml),
+            { linkify: p.linkify }
         )} />
     : null;

@@ -10,6 +10,7 @@ import {
 import { HttpExchange, ExchangeMessage } from '../../types';
 import { lastHeader, asHeaderArray } from '../../util/headers';
 import { joinAnd } from '../../util/text';
+import { escapeForMarkdownEmbedding } from '../ui/markdown';
 
 // https://tools.ietf.org/html/draft-ietf-httpbis-semantics-04#section-7.2.3
 const CACHEABLE_METHODS = ['GET', 'HEAD', 'POST'];
@@ -53,7 +54,13 @@ const CORS_SIMPLE_HEADERS = [
 
 function formatHeader(headerName: string): string {
     // Upper case the first letter of each word (including hyphenated parts)
-    return headerName.toLowerCase().replace(/(\b\w)/g, v => v.toUpperCase())
+    return headerName.toLowerCase().replace(/(\b\w)/g, v => v.toUpperCase());
+}
+
+function escapeAndFormatHeader(headerName: string): string {
+    return `<code>${escapeForMarkdownEmbedding(
+        formatHeader(headerName)
+    )}</code>`;
 }
 
 const THE_DAWN_OF_TIME = parseDate(0);
@@ -126,9 +133,10 @@ export function explainCacheability(exchange: HttpExchange): (
                         mechanisms, but the CORS result itself can be cached if a
                         Access-Control-Max-Age header is provided.
 
-                        In this case that header is set to ${maxAgeHeader}, explicitly
-                        requesting that this result should not be cached, and that clients
-                        should not reuse this CORS response in future.
+                        In this case that header is set to ${escapeForMarkdownEmbedding(
+                            maxAgeHeader!
+                        )}, explicitly requesting that this result should not be cached,
+                        and that clients should not reuse this CORS response in future.
                     `
                 };
             }
@@ -146,7 +154,9 @@ export function explainCacheability(exchange: HttpExchange): (
             return {
                 cacheable: false,
                 summary: 'Not cacheable',
-                explanation: `${request.method} requests are never cacheable.`
+                explanation: `${escapeForMarkdownEmbedding(
+                    request.method
+                )} requests are never cacheable.`
             };
         }
     }
@@ -550,7 +560,7 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
         const allowedHeaders = _.union(
             CORS_SIMPLE_HEADERS,
             asHeaderArray(response.headers['access-control-allow-headers'])
-                .map(formatHeader)
+                .map(escapeAndFormatHeader)
         );
         const allowsCredentials = response.headers['Access-Control-Allow-Credentials'] === 'true';
 
@@ -561,37 +571,44 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
                 request for future CORS requests, when:
 
                 * The CORS request would be sent to the same URL
-                * The origin is \`${request.headers['origin']}\`
+                * The origin is <code>${escapeForMarkdownEmbedding(
+                    request.headers['origin'].toString()
+                )}</code>
                 ${!allowsCredentials ? '* No credentials are being sent\n' : ''
-                }* The request method would be ${joinAnd(allowedMethods, ', ', ' or ')}
+                }* The request method would be ${escapeForMarkdownEmbedding(
+                    joinAnd(allowedMethods, ', ', ' or ')
+                )}
                 * There are no extra request headers other than ${joinAnd(allowedHeaders)}
             `
         };
     }
 
-    const varyHeaders = asHeaderArray(response.headers['vary']).map(formatHeader);
-
-    const hasVaryHeaders = varyHeaders.length > 0;
+    const rawVaryHeaders = asHeaderArray(response.headers['vary']);
+    const hasVaryHeaders = rawVaryHeaders.length > 0;
 
     // Don't need to handle Vary: *, as that would've excluded cacheability entirely.
 
     const varySummary = hasVaryHeaders ?
         ` that have the same ${
-            joinAnd(varyHeaders)
-        } header${varyHeaders.length > 1 ? 's' : ''}`
+            joinAnd(rawVaryHeaders.map(h => `'${formatHeader(h)}'`)) // No escaping - summary (non-markdown) only
+        } header${rawVaryHeaders.length > 1 ? 's' : ''}`
         : '';
 
     const varyExplanation = hasVaryHeaders ? dedent`
-        , as long as those requests have ${joinAnd(varyHeaders.map(headerName => {
+        , as long as those requests have ${joinAnd(rawVaryHeaders.map(headerName => {
             const realHeaderValue = request.headers[headerName.toLowerCase()];
 
+            const formattedName = escapeAndFormatHeader(headerName);
+
             return realHeaderValue === undefined ?
-                `no ${headerName} header` :
-                `a ${headerName} header set to \`${realHeaderValue}\``
+                `no ${formattedName} header` :
+                `a ${formattedName} header set to <code>${escapeForMarkdownEmbedding(
+                    realHeaderValue.toString()
+                )}</code>`
         }))}.
 
-        ${varyHeaders.length > 1 ? 'These headers are' : 'This header is'}
-        required because ${varyHeaders.length > 1 ? "they're" : "it's"} listed in
+        ${rawVaryHeaders.length > 1 ? 'These headers are' : 'This header is'}
+        required because ${rawVaryHeaders.length > 1 ? "they're" : "it's"} listed in
         the Vary header of the response.
     ` : dedent`
         , regardless of header values or other factors.
@@ -760,7 +777,9 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             some percentage of the time since the content was last modified, often using
             the Last-Modified header value${
                 response.headers['last-modified'] ?
-                    ` (${response.headers['last-modified']})`
+                    ` (<code>${escapeForMarkdownEmbedding(
+                        response.headers['last-modified'].toString()
+                    )}</code>)`
                     : ', although that is not explicitly defined in this response either'
             }
         ` :
@@ -770,11 +789,11 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
                     a \`max-age\` directive set to ${maxAge} seconds
                 ` :
                 dateHeader ? dedent `
-                    an Expires header set to ${expiresHeader}, which is
-                    not after its Date header value (${dateHeader})
+                    an Expires header set to ${escapeForMarkdownEmbedding(expiresHeader!.toString())}, which is
+                    not after its Date header value (${escapeForMarkdownEmbedding(dateHeader)})
                 `
                 : dedent`
-                    an Expires header set to ${expiresHeader}, which is
+                    an Expires header set to ${escapeForMarkdownEmbedding(expiresHeader!)}, which is
                     before the response was received
                 `
             }${explainSharedCacheLifetime}
@@ -784,7 +803,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
             as specified by its \`max-age\` directive${explainSharedCacheLifetime}
         `
         : dedent`
-            This response expires at ${expiresHeader} (after ${formatDuration(lifetime!)}),
+            This response expires at ${escapeForMarkdownEmbedding(expiresHeader!)} (after ${formatDuration(lifetime!)}),
             as specified by its Expires header${explainSharedCacheLifetime}
         `;
 

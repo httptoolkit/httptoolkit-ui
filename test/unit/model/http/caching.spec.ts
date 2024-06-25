@@ -818,11 +818,11 @@ describe('Caching explanations', () => {
 
         it("should explain the detailed CORS matching behaviour", () => {
             const result = explainCacheMatching(exchange);
-            expect(result!.explanation).to.include('The origin is \`http://example2.com\`');
+            expect(result!.explanation).to.include('The origin is <code>http://example2\\.com</code>');
             expect(result!.explanation).to.include(
                 'The request method would be GET, HEAD, POST or DELETE'
             );
-            expect(result!.explanation).to.include('X-Header');
+            expect(result!.explanation).to.include('X\\-Header');
         });
 
         it("should say when it expires", () => {
@@ -936,14 +936,14 @@ describe('Caching explanations', () => {
         it("should include the Vary in the cache key", () => {
             const result = explainCacheMatching(exchange);
             expect(result!.summary).to.include(
-                'this URL that have the same Cookie header'
+                'this URL that have the same \'Cookie\' header'
             );
         });
 
         it("should explain the Vary in the cache key", () => {
             const result = explainCacheMatching(exchange);
             expect(result!.explanation).to.include(
-                'as long as those requests have a Cookie header set to `abc`'
+                'as long as those requests have a <code>Cookie</code> header set to <code>abc</code>'
             );
         });
     });
@@ -969,16 +969,17 @@ describe('Caching explanations', () => {
 
         it("should include the Vary in the cache key", () => {
             const result = explainCacheMatching(exchange);
-            expect(result!.summary).to.include(
-                'this URL that have the same Cookie, Accept-Language and Accept headers'
-            );
+            expect(result!.summary).to.include(dedent`
+                this URL that have the same 'Cookie', 'Accept-Language'
+                and 'Accept' headers
+            `.replace(/\n/g, ' '));
         });
 
         it("should explain the Vary in the cache key", () => {
             const result = explainCacheMatching(exchange);
             expect(result!.explanation).to.include(dedent`
-                as long as those requests have a Cookie header set to \`abc\`,
-                a Accept-Language header set to \`en\` and no Accept header
+                as long as those requests have a <code>Cookie</code> header set to <code>abc</code>,
+                a <code>Accept\-Language</code> header set to <code>en</code> and no <code>Accept</code> header
             `.replace(/\n/g, ' '));
         });
     });

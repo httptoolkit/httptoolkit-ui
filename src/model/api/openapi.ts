@@ -103,7 +103,7 @@ export function getParameters(
                 specParam: param,
                 name: param.name,
                 in: param.in,
-                description: fromMarkdown(param.description),
+                description: fromMarkdown(param.description, { linkify: true }),
                 required: param.required || param.in === 'path',
                 type: schema && schema.type,
                 defaultValue: schema && schema.default,
@@ -333,7 +333,7 @@ class OpenApiService implements ApiService {
             ?? this.name.split(' ')[0];
 
         this.logoUrl = service['x-logo']?.url;
-        this.description = fromMarkdown(service.description);
+        this.description = fromMarkdown(service.description, { linkify: true });
         this.docsUrl = spec?.externalDocs?.url;
     }
 
@@ -383,14 +383,15 @@ class OpenApiOperation implements ApiOperation {
                     () => (get(op.spec, 'description', 'length') || Infinity) < 40, op.spec.description!
                 ],
                 op.pathSpec.summary
-            ) || `${op.method.toUpperCase()} ${op.path}`
+            ) || `${op.method.toUpperCase()} ${op.path}`,
+            { linkify: true }
         ).__html);
 
         this.description = fromMarkdown(firstMatch<string>(
             [() => get(op.spec, 'description') !== this.name, get(op.spec, 'description')],
             [() => get(op.spec, 'summary') !== this.name, get(op.spec, 'summary')],
             op.pathSpec.description
-        ));
+        ), { linkify: true });
 
         if (!op.matched) this.warnings.push(
             `Unknown operation '${this.name}'.`
@@ -449,7 +450,7 @@ class OpenApiResponse implements ApiResponse {
             : undefined;
 
         this.description = bodySpec && bodySpec.description !== response.statusMessage
-            ? fromMarkdown(bodySpec.description)
+            ? fromMarkdown(bodySpec.description, { linkify: true })
             : undefined;
         this.bodySchema = getBodySchema(spec, bodySpec, response);
     }

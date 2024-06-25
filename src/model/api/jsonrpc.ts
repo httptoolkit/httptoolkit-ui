@@ -130,7 +130,7 @@ export class JsonRpcApiService implements ApiService {
             ?? this.name.split(' ')[0];
 
         this.logoUrl = api.spec.info['x-logo']?.url;
-        this.description = fromMarkdown(api.spec.info.description);
+        this.description = fromMarkdown(api.spec.info.description, { linkify: true });
         this.docsUrl = api.spec.externalDocs?.url;
     }
 
@@ -154,7 +154,7 @@ export class JsonRpcApiOperation implements ApiOperation {
         this.description = fromMarkdown([
             methodSpec.summary,
             methodSpec.description
-        ].filter(x => !!x).join('\n\n'));
+        ].filter(x => !!x).join('\n\n'), { linkify: true });
         this.docsUrl = methodSpec.externalDocs?.url
             ?? (methodDocsBaseUrl
                 ? methodDocsBaseUrl + methodSpec.name.toLowerCase()
@@ -204,7 +204,7 @@ export class JsonRpcApiRequest implements ApiRequest {
                             ]
                             : []
                         )
-                    ].filter(x => !!x).join('\n\n')),
+                    ].filter(x => !!x).join('\n\n'), { linkify: true }),
                     in: 'body',
                     required: !!param.required,
                     deprecated: !!param.deprecated,
@@ -234,7 +234,7 @@ export class JsonRpcApiResponse implements ApiResponse {
     constructor(rpcMethod: MatchedOperation) {
         const resultSpec = rpcMethod.methodSpec.result as ContentDescriptorObject;
 
-        this.description = fromMarkdown(resultSpec.description);
+        this.description = fromMarkdown(resultSpec.description, { linkify: true });
         this.bodySchema = {
             type: 'object',
             properties: {
