@@ -230,6 +230,9 @@ export class HttpExchange extends HTKEventBase {
     @observable
     public tags: string[];
 
+    @observable
+    public hideErrors = false; // Set to true when errors are ignored for an exchange
+
     @computed
     get httpVersion() {
         return this.request.httpVersion === '2.0' ? 2 : 1;

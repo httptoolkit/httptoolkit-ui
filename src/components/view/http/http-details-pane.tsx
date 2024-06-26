@@ -180,7 +180,7 @@ export class HttpDetailsPane extends React.Component<{
 
         const errorType = tagsToErrorType(tags);
 
-        if (errorType) {
+        if (errorType && !exchange.hideErrors) {
             return <HttpErrorHeader type={errorType} {...errorHeaderProps} />;
         } else {
             return null;
@@ -345,18 +345,21 @@ export class HttpDetailsPane extends React.Component<{
             }
         }
 
-        if (exchange.isWebSocket() && exchange.wasAccepted()) {
-            cards.push(this.renderWebSocketMessages(exchange));
+        if (exchange.isWebSocket()) {
+            if (exchange.wasAccepted()) {
+                cards.push(this.renderWebSocketMessages(exchange));
 
-            if (exchange.closeState) {
-                cards.push(<WebSocketCloseCard
-                    {...this.cardProps.webSocketClose}
-                    theme={uiStore!.theme}
-                    closeState={exchange.closeState}
-                />);
+                if (exchange.closeState) {
+                    cards.push(<WebSocketCloseCard
+                        {...this.cardProps.webSocketClose}
+                        theme={uiStore!.theme}
+                        closeState={exchange.closeState}
+                    />);
+                }
             }
-        } else {
-            // We only show performance & export for non-websockets, for now:
+        } else if (!exchange.tags.some(tag => tag.startsWith('client-error:'))) {
+            // We show perf & export only for valid requests, and never for
+            // websockets (at least for now):
 
             // Push all cards below this point to the bottom
             cards.push(<CardDivider key='divider' />);
@@ -503,14 +506,7 @@ export class HttpDetailsPane extends React.Component<{
     @action.bound
     private ignoreError() {
         const { exchange } = this.props;
-
-        // Drop all error tags from this exchange
-        exchange.tags = exchange.tags.filter(t =>
-            !t.startsWith('passthrough-error:') &&
-            !t.startsWith('passthrough-tls-error:') &&
-            !t.startsWith('client-error:') &&
-            !['header-overflow', 'http-2'].includes(t)
-        );
+        exchange.hideErrors = true;
     }
 
 };
