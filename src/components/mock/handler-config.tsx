@@ -281,13 +281,16 @@ const BodyHeader = styled.div`
     }
 `;
 
-const BodyContainer = styled.div`
+const BodyContainer = styled.div<{ isInvalid?: boolean }>`
     margin-top: 5px;
 
     > div {
         margin-top: 5px;
         border-radius: 4px;
-        border: solid 1px ${p => p.theme.containerBorder};
+        border: solid 1px ${p => p.isInvalid
+            ? p.theme.warningColor
+            : p.theme.containerBorder
+        };
         padding: 1px;
     }
 `;
@@ -1318,7 +1321,7 @@ const JsonUpdateTransformConfig = (props: {
                 onFormatted={setBodyString}
             />
         </BodyHeader>
-        <BodyContainer>
+        <BodyContainer isInvalid={!!error}>
             <SelfSizedEditor
                 contentId={null}
                 language='json'
@@ -1367,7 +1370,7 @@ const JsonPatchTransformConfig = (props: {
                 onFormatted={setOperationsString}
             />
         </BodyHeader>
-        <BodyContainer>
+        <BodyContainer isInvalid={!!error}>
             <SelfSizedEditor
                 contentId={null}
                 language='json'
@@ -1814,7 +1817,7 @@ class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
                     onFormatted={this.onChange}
                 />
             </BodyHeader>
-            <BodyContainer>
+            <BodyContainer isInvalid={!!error}>
                 <SelfSizedEditor
                     contentId={null}
                     language='json'
