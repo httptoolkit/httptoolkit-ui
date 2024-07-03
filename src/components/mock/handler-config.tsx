@@ -3,6 +3,10 @@ import * as React from 'react';
 import { action, observable, reaction, autorun, observe, runInAction, computed } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as dedent from 'dedent';
+import {
+    Operation as JsonPatchOperation,
+    validate as validateJsonPatch
+} from 'fast-json-patch';
 
 import { Headers, RawHeaders } from '../../types';
 import { css, styled } from '../../styles';
@@ -23,6 +27,10 @@ import {
     HEADER_NAME_REGEX,
     setHeaderValue
 } from '../../util/headers';
+import {
+    ADVANCED_PATCH_TRANSFORMS,
+    serverSupports
+} from '../../services/service-versions';
 
 import {
     Handler,
@@ -1105,7 +1113,8 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
     private static readonly FIELDS = [
         'replaceBody',
         'replaceBodyFromFile',
-        'updateJsonBody'
+        'updateJsonBody',
+        'patchJsonBody'
     ] as const;
 
     @computed
@@ -1120,8 +1129,11 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
             onTransformTypeChange,
             setBodyReplacement,
             selectBodyReplacementFile,
-            setJsonBodyUpdate
+            setJsonBodyUpdate,
+            setJsonBodyPatch
         } = this;
+
+        const advancedPatchesSupported = serverSupports(ADVANCED_PATCH_TRANSFORMS);
 
         const selected = _.find(BodyTransformConfig.FIELDS, (field) =>
             transform[field] !== undefined
@@ -1134,7 +1146,10 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
                 <option value='none'>Pass through the real { type } body</option>
                 <option value='replaceBody'>Replace the { type } body with a fixed value</option>
                 <option value='replaceBodyFromFile'>Replace the { type } body with a file</option>
-                <option value='updateJsonBody'>Update values within a JSON { type } body</option>
+                <option value='updateJsonBody'>Update a JSON { type } body by merging data</option>
+                { advancedPatchesSupported && <>
+                    <option value='patchJsonBody'>Update a JSON { type } body using JSON patch</option>
+                </> }
             </SelectTransform>
             {
                 selected === 'replaceBody'
@@ -1165,7 +1180,15 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
                         body={transform.updateJsonBody!}
                         updateBody={setJsonBodyUpdate}
                     />
-                : null
+                : selected === 'patchJsonBody'
+                    ? <JsonPatchTransformConfig
+                        type={type}
+                        operations={transform.patchJsonBody!}
+                        updateOperations={setJsonBodyPatch}
+                    />
+                : selected === 'none'
+                    ? null
+                : unreachableCheck(selected)
             }
         </TransformConfig>;
     }
@@ -1176,11 +1199,15 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
         this.clearValues();
         if (value === 'updateJsonBody') {
             this.props.onChange('updateJsonBody')({});
+        } else if (value === 'patchJsonBody') {
+            this.props.onChange('patchJsonBody')([]);
         } else if (value === 'replaceBody') {
             this.props.onChange('replaceBody')('');
         } else if (value === 'replaceBodyFromFile') {
             this.props.onChange('replaceBodyFromFile')('');
-        }
+        } else if (value === 'none') {
+            return;
+        } else unreachableCheck(value);
     };
 
     @action.bound
@@ -1210,6 +1237,12 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
     setJsonBodyUpdate(body: {}) {
         this.clearValues();
         this.props.onChange('updateJsonBody')(body);
+    };
+
+    @action.bound
+    setJsonBodyPatch(operations: Array<JsonPatchOperation>) {
+        this.clearValues();
+        this.props.onChange('patchJsonBody')(operations);
     };
 };
 
@@ -1276,7 +1309,7 @@ const JsonUpdateTransformConfig = (props: {
 
     return <TransformDetails>
         <BodyHeader>
-            <SectionLabel>JSON { props.type } body patch</SectionLabel>
+            <SectionLabel>JSON to merge into { props.type } body</SectionLabel>
             { error && <WarningIcon title={error.message} /> }
 
             <StandaloneFormatButton
@@ -1291,6 +1324,55 @@ const JsonUpdateTransformConfig = (props: {
                 language='json'
                 value={bodyString}
                 onChange={(content) => setBodyString(content)}
+            />
+        </BodyContainer>
+    </TransformDetails>;
+};
+
+const JsonPatchTransformConfig = (props: {
+    type: 'request' | 'response',
+    operations: Array<JsonPatchOperation>,
+    updateOperations: (operations: Array<JsonPatchOperation>) => void
+}) => {
+    const [error, setError] = React.useState<Error>();
+
+    const [operationsString, setOperationsString] = React.useState<string>(
+        JSON.stringify(props.operations, null, 2)
+    );
+
+    React.useEffect(() => {
+        try {
+            const parsedInput = JSON.parse(operationsString);
+
+            const validationError = validateJsonPatch(parsedInput);
+            if (validationError) throw validationError;
+
+            props.updateOperations(parsedInput);
+            setError(undefined);
+        } catch (e) {
+            setError(asError(e));
+        }
+    }, [operationsString]);
+
+    return <TransformDetails>
+        <BodyHeader>
+            <SectionLabel>JSON { props.type } body patch (see <a
+                href="https://jsonpatch.com/"
+            >jsonpatch.com</a>)</SectionLabel>
+            { error && <WarningIcon title={error.message} /> }
+
+            <StandaloneFormatButton
+                format='json'
+                content={asBuffer(operationsString)}
+                onFormatted={setOperationsString}
+            />
+        </BodyHeader>
+        <BodyContainer>
+            <SelfSizedEditor
+                contentId={null}
+                language='json'
+                value={operationsString}
+                onChange={(content) => setOperationsString(content)}
             />
         </BodyContainer>
     </TransformDetails>;

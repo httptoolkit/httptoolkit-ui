@@ -42,6 +42,17 @@ export function versionSatisfies(version: string | Error | undefined, range: str
         semver.satisfies(version, range, { includePrerelease: true });
 }
 
+// A quick way to check server support synchronously
+export function serverSupports(versionRequirement: string | undefined) {
+    if (!versionRequirement || versionRequirement === '*') return true;
+
+    // If we haven't got the server version yet, assume anything specific is unsupported
+    if (serverVersion.state !== 'fulfilled') return false;
+
+    const version = serverVersion.value as string; // Fulfilled -> string value
+    return versionSatisfies(version, versionRequirement);
+}
+
 // Notable desktop versions:
 export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
 
@@ -73,3 +84,4 @@ export const TLS_PASSTHROUGH_SUPPORTED = '^1.12.0';
 export const CONNECTION_RESET_SUPPORTED = '^1.12.0';
 export const SERVER_REST_API_SUPPORTED = '^1.13.0';
 export const SERVER_SEND_API_SUPPORTED = '^1.13.0';
+export const ADVANCED_PATCH_TRANSFORMS = '^1.18.0';

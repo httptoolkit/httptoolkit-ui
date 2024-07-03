@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import {
-    serverVersion as serverVersionObservable,
-    versionSatisfies,
+    serverSupports,
     BODY_MATCHING_RANGE,
     HOST_MATCHER_SERVER_RANGE,
     FROM_FILE_HANDLER_SERVER_RANGE,
@@ -93,16 +92,6 @@ const PartVersionRequirements: {
     'ws-reject': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     'reset-connection': CONNECTION_RESET_SUPPORTED
 };
-
-const serverSupports = (versionRequirement: string | undefined) => {
-    if (!versionRequirement || versionRequirement === '*') return true;
-
-    // If we haven't got the server version yet, assume it doesn't support this
-    if (serverVersionObservable.state !== 'fulfilled') return false;
-
-    const version = serverVersionObservable.value as string; // Fulfilled -> string value
-    return versionSatisfies(version, versionRequirement);
-}
 
 /// --- Matchers ---
 
