@@ -1,11 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, observable, reaction } from 'mobx';
+import { action, autorun, comparer, observable, reaction } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 
 import { styled } from '../../styles';
 
-import { clickOnEnter } from '../component-utils';
 import { Button, TextInput } from './inputs';
 import { Icon } from '../../icons';
 
@@ -13,6 +12,8 @@ export type Pair = { key: string, value: string, disabled?: true };
 export type PairsArray = Array<Pair>;
 
 interface EditablePairsProps<R = PairsArray> {
+    className?: string;
+
     pairs: PairsArray;
 
     onChange: (pairs: R) => void;
@@ -29,7 +30,8 @@ interface EditablePairsProps<R = PairsArray> {
     transformInput?: (pairs: PairsArray) => PairsArray;
 
     keyTitle?: string;
-    keyPattern?: string;
+    // Either a pattern string, or a validation function
+    keyValidation?: string | ((key: string) => true | string);
 
     keyPlaceholder: string;
     valuePlaceholder: string;
@@ -111,6 +113,27 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
                 }
             }
         ));
+
+        disposeOnUnmount(this, autorun(() => {
+            const { keyValidation } = this.props;
+            if (!_.isFunction(keyValidation)) return;
+
+            const inputs = this.containerRef?.current?.querySelectorAll('input');
+            if (!inputs) return;
+
+            this.values.forEach((pair, i) => {
+                const keyInput = inputs?.[i * 2];
+                const validationResult = keyValidation(pair.key);
+
+                if (validationResult === true) {
+                    keyInput.setCustomValidity('');
+                    keyInput.reportValidity();
+                } else {
+                    keyInput.setCustomValidity(validationResult);
+                    keyInput.reportValidity();
+                }
+            });
+        }));
     }
 
     private convert = (pairs: PairsArray): R => {
@@ -150,8 +173,9 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
 
     render() {
         const {
+            className,
             keyTitle,
-            keyPattern,
+            keyValidation,
             keyPlaceholder,
             valuePlaceholder,
             allowEmptyValues
@@ -159,7 +183,12 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
 
         const { values, onChangeValues, containerRef } = this;
 
+        const keyPattern = typeof keyValidation === 'string'
+            ? keyValidation
+            : undefined;
+
         return <EditablePairsContainer
+            className={className}
             ref={containerRef}
         >
             { _.flatMap(values, ({ key, value, disabled }, i) => [

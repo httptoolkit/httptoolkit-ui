@@ -77,7 +77,7 @@ export const EditableRawHeaders = observer((
 
         allowEmptyValues={allowEmptyValues}
 
-        keyPattern={HEADER_NAME_PATTERN}
+        keyValidation={HEADER_NAME_PATTERN}
         keyTitle="Header names must contain only alphanumeric characters and !#$%&'*+-.^_`|~ symbols"
 
         keyPlaceholder='Header name'

@@ -1117,8 +1117,9 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
         'replaceBody',
         'replaceBodyFromFile',
         'updateJsonBody',
-        'patchJsonBody'
-    ] as const;
+        'patchJsonBody',
+        'matchReplaceBody'
+    ] as const satisfies ReadonlyArray<keyof RequestTransform & ResponseTransform>;
 
     @computed
     get bodyReplacementBuffer() {
@@ -1152,11 +1153,12 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
                 <option value='updateJsonBody'>Update a JSON { type } body by merging data</option>
                 { advancedPatchesSupported && <>
                     <option value='patchJsonBody'>Update a JSON { type } body using JSON patch</option>
+                    <option value='matchReplaceBody'>Match & replace text in the { type } body</option>
                 </> }
             </SelectTransform>
             {
                 selected === 'replaceBody'
-                    ? <RawBodyTransfomConfig
+                    ? <RawBodyTransformConfig
                         type={type}
                         body={bodyReplacementBuffer}
                         updateBody={setBodyReplacement}
@@ -1189,6 +1191,12 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
                         operations={transform.patchJsonBody!}
                         updateOperations={setJsonBodyPatch}
                     />
+                : selected === 'matchReplaceBody'
+                    ? <MatchReplaceBodyTransformConfig
+                        type={type}
+                        replacements={transform.matchReplaceBody!}
+                        updateReplacements={this.props.onChange('matchReplaceBody')}
+                    />
                 : selected === 'none'
                     ? null
                 : unreachableCheck(selected)
@@ -1208,6 +1216,8 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
             this.props.onChange('replaceBody')('');
         } else if (value === 'replaceBodyFromFile') {
             this.props.onChange('replaceBodyFromFile')('');
+        } else if (value === 'matchReplaceBody') {
+            this.props.onChange('matchReplaceBody')([]);
         } else if (value === 'none') {
             return;
         } else unreachableCheck(value);
@@ -1249,7 +1259,7 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
     };
 };
 
-const RawBodyTransfomConfig = (props: {
+const RawBodyTransformConfig = (props: {
     type: 'request' | 'response',
     body: Buffer,
     updateBody: (body: string) => void
@@ -1380,6 +1390,74 @@ const JsonPatchTransformConfig = (props: {
         </BodyContainer>
     </TransformDetails>;
 };
+
+const MatchReplaceBodyTransformConfig = (props: {
+    type: 'request' | 'response',
+    replacements: Array<[RegExp | string, string]>,
+    updateReplacements: (replacements: Array<[RegExp | string, string]>) => void
+}) => {
+    const [error, setError] = React.useState<Error>();
+
+    const [replacementPairs, updatePairs] = React.useState<PairsArray>(
+        props.replacements.map(([match, replace]) => ({
+            key: match instanceof RegExp
+                ? match.source
+                // It's type-possible to get a string here (since Mockttp supports it)
+                // but it shouldn't be runtime-possible as we always use regex
+                : _.escapeRegExp(match),
+            value: replace
+        }))
+    );
+
+    React.useEffect(() => {
+        const validPairs = replacementPairs.filter((pair) =>
+            validateRegexMatcher(pair.key) === true
+        );
+        const invalidCount = replacementPairs.length - validPairs.length;
+
+        if (invalidCount > 0) {
+            setError(new Error(
+                `${invalidCount} regular expression${invalidCount === 1 ? ' is' : 's are'} invalid`
+            ));
+        } else {
+            setError(undefined);
+        }
+
+        props.updateReplacements(validPairs.map(({ key, value }) =>
+            [new RegExp(key, 'g'), value]
+        ));
+    }, [replacementPairs]);
+
+    return <TransformDetails>
+        <BodyHeader>
+            <SectionLabel>Regex matchers & replacements</SectionLabel>
+            { error && <WarningIcon title={error.message} /> }
+        </BodyHeader>
+        <MonoKeyEditablePairs
+            pairs={replacementPairs}
+            onChange={updatePairs}
+            keyPlaceholder='Regular expression to match'
+            keyValidation={validateRegexMatcher}
+            valuePlaceholder='Replacement value'
+            allowEmptyValues={true}
+        />
+    </TransformDetails>;
+};
+
+const MonoKeyEditablePairs = styled(EditablePairs<PairsArray>)`
+    input:nth-of-type(odd) {
+        font-family: ${p => p.theme.monoFontFamily};
+    }
+`;
+
+const validateRegexMatcher = (value: string) => {
+    try {
+        new RegExp(value, 'g');
+        return true;
+    } catch (e: any) {
+        return e.message ?? e.toString();
+    }
+}
 
 @observer
 class PassThroughHandlerConfig extends HandlerConfig<
@@ -1583,7 +1661,7 @@ class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler
                 pairs={typeValuePairs}
                 onChange={this.onChange}
                 keyPlaceholder='Return value type (e.g. string, int256, etc)'
-                keyPattern={NATIVE_ETH_TYPES_PATTERN}
+                keyValidation={NATIVE_ETH_TYPES_PATTERN}
                 valuePlaceholder='Return value'
                 allowEmptyValues={true}
             />
