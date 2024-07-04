@@ -111,7 +111,8 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
                     this.values = _.cloneDeep(pairs);
                     this.lastValuesLength = this.values.length;
                 }
-            }
+            },
+            { equals: comparer.structural }
         ));
 
         disposeOnUnmount(this, autorun(() => {
@@ -140,7 +141,7 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
         if (this.props.convertResult) {
             return this.props.convertResult(pairs);
         } else {
-            return pairs as unknown as R;
+            return _.cloneDeep(pairs) as unknown as R;
         }
     };
 
