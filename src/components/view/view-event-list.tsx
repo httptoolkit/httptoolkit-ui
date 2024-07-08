@@ -59,7 +59,7 @@ interface ViewEventListProps {
     onSelected: (event: CollectedEvent | undefined) => void;
 }
 
-const ListContainer = styled.table`
+const ListContainer = styled.div<{ role: 'table' }>`
     display: block;
     flex-grow: 1;
     position: relative;
@@ -80,7 +80,7 @@ const ListContainer = styled.table`
     }
 `;
 
-const Column = styled.td`
+const Column = styled.div<{ role: 'cell' | 'columnheader' }>`
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -136,7 +136,7 @@ const RowMarker = styled(Column)`
     border-left: 5px solid ${p => p.theme.containerBackground};
 `;
 
-const MarkerHeader = styled.td`
+const MarkerHeader = styled.div<{ role: 'columnheader' }>`
     flex-basis: 10px;
     flex-shrink: 0;
 `;
@@ -223,7 +223,7 @@ const BuiltInApiRequestDetails = styled(Column)`
     flex-basis: 1000px;
 `;
 
-const EventListRow = styled.tr`
+const EventListRow = styled.div<{ role: 'row' }>`
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -289,7 +289,7 @@ const TlsListRow = styled(EventListRow)`
     }
 `;
 
-export const TableHeaderRow = styled.tr`
+export const TableHeaderRow = styled.div<{ role: 'row' }>`
     height: 38px;
     overflow: hidden;
     width: 100%;
@@ -308,7 +308,7 @@ export const TableHeaderRow = styled.tr`
     padding-right: 18px;
     box-sizing: border-box;
 
-    > td {
+    > div[role=columnheader] {
         padding: 5px 0;
         margin-right: 10px;
         min-width: 0px;
@@ -399,6 +399,7 @@ const ExchangeRow = inject('uiStore')(observer(({
     } = exchange;
 
     return <TrafficEventListRow
+        role="row"
         aria-label={
             `${_.startCase(exchange.category)} ${
                 request.method
@@ -426,9 +427,9 @@ const ExchangeRow = inject('uiStore')(observer(({
         style={style}
     >
         <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
-        <RowMarker category={category} title={describeEventCategory(category)} />
-        <Method pinned={pinned}>{ request.method }</Method>
-        <Status>
+        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <Method role='cell' pinned={pinned}>{ request.method }</Method>
+        <Status role='cell'>
             {
                 response === 'aborted'
                     ? <StatusCode status={'aborted'} />
@@ -451,7 +452,7 @@ const ExchangeRow = inject('uiStore')(observer(({
                 />
             }
         </Status>
-        <Source>
+        <Source role='cell'>
             <Icon
                 title={request.source.summary}
                 {...request.source.icon}
@@ -474,10 +475,10 @@ const ExchangeRow = inject('uiStore')(observer(({
                 />
             }
         </Source>
-        <Host title={ request.parsedUrl.host }>
+        <Host role='cell' title={ request.parsedUrl.host }>
             { request.parsedUrl.host }
         </Host>
-        <PathAndQuery title={ request.parsedUrl.pathname + request.parsedUrl.search }>
+        <PathAndQuery role='cell' title={ request.parsedUrl.pathname + request.parsedUrl.search }>
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
     </TrafficEventListRow>;
@@ -505,6 +506,7 @@ const RTCConnectionRow = observer(({
     const { category, pinned } = event;
 
     return <TrafficEventListRow
+        role="row"
         aria-label={
             `${
                 event.closeState ? 'Closed' : 'Open'
@@ -524,17 +526,17 @@ const RTCConnectionRow = observer(({
         style={style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn>
+        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn role='cell'>
             { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC
         </EventTypeColumn>
-        <Source title={event.source.summary}>
+        <Source role='cell' title={event.source.summary}>
             <Icon
                 {...event.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <RTCConnectionDetails>
+        <RTCConnectionDetails role='cell'>
             {
                 event.clientURL
             } <ArrowIcon direction='right' /> {
@@ -558,6 +560,7 @@ const RTCStreamRow = observer(({
     const { category, pinned } = event;
 
     return <TrafficEventListRow
+        role="row"
         aria-label={
             `${
                 event.closeState ? 'Closed' : 'Open'
@@ -591,8 +594,8 @@ const RTCStreamRow = observer(({
         style={style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn>
+        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn role='cell'>
             { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC {
                 event.isRTCDataChannel()
                     ? 'Data'
@@ -600,16 +603,16 @@ const RTCStreamRow = observer(({
                     'Media'
             }
         </EventTypeColumn>
-        <Source title={event.rtcConnection.source.summary}>
+        <Source role='cell' title={event.rtcConnection.source.summary}>
             <Icon
                 {...event.rtcConnection.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <RTCEventLabel>
+        <RTCEventLabel role='cell'>
             <ArrowIcon direction='right' /> { event.rtcConnection.remoteURL }
         </RTCEventLabel>
-        <RTCEventDetails>
+        <RTCEventDetails role='cell'>
             {
                 event.isRTCDataChannel()
                     ? <>
@@ -658,6 +661,7 @@ const BuiltInApiRow = observer((p: {
         .join(', ');
 
     return <TrafficEventListRow
+        role="row"
         aria-label={
             `${_.startCase(category)} ${
                 api.service.shortName
@@ -680,17 +684,17 @@ const BuiltInApiRow = observer((p: {
         style={p.style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn>
+        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn role='cell'>
             { api.service.shortName }: { apiOperationName }
         </EventTypeColumn>
-        <Source title={request.source.summary}>
+        <Source role='cell' title={request.source.summary}>
             <Icon
                 {...request.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <BuiltInApiRequestDetails>
+        <BuiltInApiRequestDetails role='cell'>
             { apiRequestDescription }
         </BuiltInApiRequestDetails>
     </TrafficEventListRow>
@@ -717,6 +721,7 @@ const TlsRow = observer((p: {
     const connectionTarget = tlsEvent.upstreamHostname || 'unknown domain';
 
     return <TlsListRow
+        role="row"
         aria-label={`${description} connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
         data-event-id={tlsEvent.id}
@@ -774,8 +779,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     render() {
         const { events, filteredEvents, isPaused } = this.props;
 
-        return <ListContainer>
-            <TableHeaderRow>
+        return <ListContainer role="table">
+            <TableHeaderRow role="row">
                 <MarkerHeader role="columnheader" aria-label="Category" />
                 <Method role="columnheader">Method</Method>
                 <Status role="columnheader">Status</Status>
