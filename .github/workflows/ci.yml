@@ -35,11 +35,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
-          SENTRY_DSN: ${{ env.SENTRY_DSN }}
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
           SENTRY_ORG: http-toolkit
           SENTRY_PROJECT: httptoolkit-ui
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          REPORT_URI: ${{ env.REPORT_URI }}
+          REPORT_URI: ${{ vars.REPORT_URI }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
       - uses: actions/upload-artifact@v4
