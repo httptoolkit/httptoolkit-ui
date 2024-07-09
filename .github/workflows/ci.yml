@@ -71,7 +71,6 @@ jobs:
       # Build the app:
       - name: Test a production build
         run: npm run build
-        if: github.ref != 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
