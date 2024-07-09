@@ -75,36 +75,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
-  publish-netlify:
-    name: Deploy ${{ (github.ref == 'refs/heads/main' && 'to Netlify production') || 'Netlify preview' }}
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: './dist'
-          production-branch: main # Main goes to prod, others do deploy previews
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: GHA Deploy - ${{ github.event.head_commit.message }}
-          enable-commit-status: true
-          enable-pull-request-comment: false
-          enable-commit-comment: false
-          netlify-config-path: ./netlify.toml
-          alias: ${{ github.sha }}
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 1
-
   publish-docker:
     name: Build & publish container to Docker Hub
     if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/')
