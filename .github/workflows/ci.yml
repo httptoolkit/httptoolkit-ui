@@ -48,6 +48,33 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  # We build in parallel on Windows too, purely to check the build process is cross-compatible for contributors.
+  test-windows-build:
+    name: Test build on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+
+      # Install Node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.8.0
+          cache: 'npm'
+
+      # Install & unit test & build
+      - run: npm ci
+
+      - run: npm run test:unit
+
+      # Build the app:
+      - name: Test a production build
+        run: npm run build
+        if: github.ref != 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
+
   publish-netlify:
     name: Deploy ${{ (github.ref == 'refs/heads/main' && 'to Netlify production') || 'Netlify preview' }}
     if: github.event_name == 'push'
@@ -82,7 +109,7 @@ jobs:
     name: Build & publish container to Docker Hub
     if: github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/dependabot/')
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, test-windows-build]
     steps:
       - uses: actions/checkout@v4
 
