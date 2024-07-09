@@ -170,6 +170,7 @@ export default <Webpack.Configuration>{
                 { family: "Fira Mono" },
                 { family: "Lato" }
             ],
+            path: '.',
             formats: ['woff2'], // Supported by Chrome, FF, Edge, Safari 12+
             filename: 'fonts.css',
             apiUrl: 'https://gwfh.mranftl.com/api/fonts'
