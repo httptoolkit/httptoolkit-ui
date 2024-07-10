@@ -128,14 +128,19 @@ function buildRequestMatchers(request: HtkRequest) {
 
     const urlParts = request.parsedUrl.toString().split('?');
     const path = urlParts[0];
+
+    const hasQuery = request.url.includes('?'); // Not just with parameters, but also trailing '?'
     const query = urlParts.slice(1).join('?');
+    const queryMatcher = hasQuery
+        ? [new matchers.QueryMatcher(
+            querystring.parse(query) as ({ [key: string]: string | string[] })
+        )]
+        : [];
 
     return [
         new (HttpRule.MethodMatchers[request.method as MethodName] || HttpRule.WildcardMatcher)(),
         new matchers.SimplePathMatcher(path),
-        new matchers.QueryMatcher(
-            querystring.parse(query) as ({ [key: string]: string | string[] })
-        ),
+        ...queryMatcher,
         ...bodyMatcher
     ];
 }
