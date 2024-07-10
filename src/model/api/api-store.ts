@@ -180,6 +180,10 @@ export class ApiStore {
     async getApi(request: HtkRequest): Promise<ApiMetadata | undefined> {
         const { parsedUrl } = request;
 
+        // Some specs (e.g. lots of GitHub Enterprise API specs incorrectly match the GitHub public
+        // website. That's not correct or useful - we special case ignore it here.
+        if (parsedUrl.hostname === 'github.com') return;
+
         // Is this a configured private API? I.e. has the user explicitly given
         // us a spec to use for requests like these.
         let privateSpec = this.getPrivateApi(parsedUrl);
