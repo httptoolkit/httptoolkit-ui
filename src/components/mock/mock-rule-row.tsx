@@ -194,7 +194,7 @@ const HighPriorityMarker = styled(Icon).attrs(() => ({
     icon: ['fas', 'exclamation'],
     title: 'High-priority rule: this rule overrides all non-high-prority rules'
 }))`
-    margin-right: 10px;4
+    margin-right: 10px;
     align-self: baseline;
 }
 `;

@@ -15,6 +15,7 @@ import {
     CollapsibleSectionSummary,
     CollapsibleSectionBody
 } from '../../common/collapsible-section';
+import { Pill } from '../../common/pill';
 
 import { CookieHeaderDescription } from './set-cookie-header-description';
 import { UserAgentHeaderDescription } from './user-agent-header-description';
@@ -29,11 +30,62 @@ const HeadersGrid = styled.section`
     }
 `;
 
-const HeaderKeyValue = styled(CollapsibleSectionSummary)`
+const HeaderKeyValueContainer = styled(CollapsibleSectionSummary)`
     word-break: break-all; /* Fallback for anybody without break-word */
     word-break: break-word;
     font-family: ${p => p.theme.monoFontFamily};
     line-height: 1.1;
+`;
+
+const LONG_HEADER_LIMIT = 200;
+
+const HeaderKeyValue = (p: {
+    headerKey: string,
+    headerValue: string,
+
+    // All injected by CollapsibleSection itself:
+    children?: React.ReactNode,
+    open?: boolean,
+    withinGrid?: boolean
+}) => {
+    const longValue = p.headerValue.length > LONG_HEADER_LIMIT;
+
+    return <HeaderKeyValueContainer open={p.open} withinGrid={p.withinGrid}>
+        { p.children }
+        <HeaderName>{ p.headerKey }: </HeaderName>
+        {
+            p.open || !longValue
+            ? <span>{ p.headerValue }</span>
+            : <LongHeaderValue>
+                { p.headerValue.slice(0, LONG_HEADER_LIMIT - 10) }
+                <LongHeaderMarker>...</LongHeaderMarker>
+            </LongHeaderValue>
+        }
+    </HeaderKeyValueContainer>;
+};
+
+const LongHeaderValue = styled.span`
+    position: relative;
+
+    :after {
+        content: '';
+        background-image: linear-gradient(to bottom, transparent, transparent 75%, ${p => p.theme.mainBackground});
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+`;
+
+const LongHeaderMarker = styled(Pill)`
+    position: relative;
+    z-index: 1;
+
+    vertical-align: middle;
+    padding: 2px 4px;
+    font-size: 10px;
+    margin-left: 4px;
 `;
 
 const HeaderName = styled.span`
@@ -134,10 +186,7 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
             )
 
             return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
-                <HeaderKeyValue>
-                    <HeaderName>{ key }: </HeaderName>
-                    <span>{ value }</span>
-                </HeaderKeyValue>
+                <HeaderKeyValue headerKey={key} headerValue={value} />
 
                 { description && <HeaderDescriptionContainer>
                     { description }
@@ -156,10 +205,7 @@ const PseudoHeaderDetails = observer((props: {
     return <HeadersGrid>
         { _.flatMap(props.headers, ([key, value], i) => {
             return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
-                <HeaderKeyValue>
-                    <HeaderName>{ key }: </HeaderName>
-                    <span>{ value }</span>
-                </HeaderKeyValue>
+                <HeaderKeyValue headerKey={key} headerValue={value} />
             </CollapsibleSection>;
         }) }
     </HeadersGrid>;
