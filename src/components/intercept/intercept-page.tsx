@@ -89,6 +89,7 @@ const InterceptInstructions = styled.div`
 const InterceptSearchBox = styled(SearchBox).attrs(() => ({
     autoFocus: true,
     placeholder: 'Browsers, mobile, docker...',
+    'aria-label': "Filter the list of intercept options below",
     iconSize: '2x'
 }))`
     @media (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
@@ -138,7 +139,6 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         search for connectors that could work for you:
                     </p>
                     <InterceptSearchBox
-                        aria-label="Filter the list of intercept options below"
                         value={this.filter || ''}
                         onSearch={this.onSearchInput}
                     />

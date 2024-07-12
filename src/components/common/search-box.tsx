@@ -36,6 +36,7 @@ export const SearchBox = styled((props: {
     className?: string,
     value: string,
     placeholder?: string,
+    'aria-label'?: string,
     autoFocus?: boolean,
     onSearch: (input: string) => void,
     iconSize?: SizeProp
@@ -45,6 +46,7 @@ export const SearchBox = styled((props: {
             autoFocus={props.autoFocus}
             value={props.value}
             placeholder={props.placeholder}
+            aria-label={props['aria-label']}
             onChange={(e) => props.onSearch(e.currentTarget.value)}
         />
         <ClearSearchButton
