@@ -88,6 +88,10 @@ const LongHeaderMarker = styled(Pill)`
     margin-left: 4px;
 `;
 
+const ExpansionPlaceholder = styled.span`
+    display: none;
+`;
+
 const HeaderName = styled.span`
     margin-right: 10px;
 `;
@@ -194,6 +198,12 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
                         Find out more
                     </HeaderDocsLink> }
                 </HeaderDescriptionContainer> }
+
+                { !description && value.length > LONG_HEADER_LIMIT &&
+                    // For long headers, we add a child (so that the expand button is shown) even
+                    // if there's no description, so you can expand to see everything.
+                    <ExpansionPlaceholder />
+                }
             </CollapsibleSection>;
         }) }
     </HeadersGrid>;
