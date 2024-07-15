@@ -4,6 +4,7 @@ import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../../styles';
 import { RawHeaders } from '../../../types';
+import { Icon } from '../../../icons';
 
 import { getHeaderDocs } from '../../../model/http/http-docs';
 import { AccountStore } from '../../../model/account/account-store';
@@ -15,7 +16,7 @@ import {
     CollapsibleSectionSummary,
     CollapsibleSectionBody
 } from '../../common/collapsible-section';
-import { Pill } from '../../common/pill';
+import { PillButton } from '../../common/pill';
 
 import { CookieHeaderDescription } from './set-cookie-header-description';
 import { UserAgentHeaderDescription } from './user-agent-header-description';
@@ -37,7 +38,7 @@ const HeaderKeyValueContainer = styled(CollapsibleSectionSummary)`
     line-height: 1.1;
 `;
 
-const LONG_HEADER_LIMIT = 200;
+const LONG_HEADER_LIMIT = 500;
 
 const HeaderKeyValue = (p: {
     headerKey: string,
@@ -48,17 +49,34 @@ const HeaderKeyValue = (p: {
     open?: boolean,
     withinGrid?: boolean
 }) => {
-    const longValue = p.headerValue.length > LONG_HEADER_LIMIT;
+    const isLongValue = p.headerValue.length > LONG_HEADER_LIMIT;
+    const [isExpanded, setExpanded] = React.useState(false);
+
+    const expand = React.useCallback(() => setExpanded(true), [setExpanded]);
+    const collapse = React.useCallback(() => setExpanded(false), [setExpanded]);
 
     return <HeaderKeyValueContainer open={p.open} withinGrid={p.withinGrid}>
         { p.children }
         <HeaderName>{ p.headerKey }: </HeaderName>
-        {
-            p.open || !longValue
+        { !isLongValue
             ? <span>{ p.headerValue }</span>
-            : <LongHeaderValue>
+        : isExpanded
+            ? <span>
+                { p.headerValue }
+                <LongHeaderButton
+                    title='Collapse this large header value'
+                    onClick={collapse}
+                >
+                    <Icon icon={['fas', 'minus']} />
+                </LongHeaderButton>
+            </span>
+        : // Collapsed long header:
+            <LongHeaderValue>
                 { p.headerValue.slice(0, LONG_HEADER_LIMIT - 10) }
-                <LongHeaderMarker>...</LongHeaderMarker>
+                <LongHeaderButton
+                    title='Expand to show the full contents of this large header value'
+                    onClick={expand}
+                >...</LongHeaderButton>
             </LongHeaderValue>
         }
     </HeaderKeyValueContainer>;
@@ -69,7 +87,7 @@ const LongHeaderValue = styled.span`
 
     :after {
         content: '';
-        background-image: linear-gradient(to bottom, transparent, transparent 75%, ${p => p.theme.mainBackground});
+        background-image: linear-gradient(to bottom, transparent, transparent 60%, ${p => p.theme.mainBackground});
         position: absolute;
         top: 0;
         left: 0;
@@ -78,7 +96,7 @@ const LongHeaderValue = styled.span`
     }
 `;
 
-const LongHeaderMarker = styled(Pill)`
+const LongHeaderButton = styled(PillButton)`
     position: relative;
     z-index: 1;
 
@@ -86,10 +104,6 @@ const LongHeaderMarker = styled(Pill)`
     padding: 2px 4px;
     font-size: 10px;
     margin-left: 4px;
-`;
-
-const ExpansionPlaceholder = styled.span`
-    display: none;
 `;
 
 const HeaderName = styled.span`
@@ -198,12 +212,6 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
                         Find out more
                     </HeaderDocsLink> }
                 </HeaderDescriptionContainer> }
-
-                { !description && value.length > LONG_HEADER_LIMIT &&
-                    // For long headers, we add a child (so that the expand button is shown) even
-                    // if there's no description, so you can expand to see everything.
-                    <ExpansionPlaceholder />
-                }
             </CollapsibleSection>;
         }) }
     </HeadersGrid>;
