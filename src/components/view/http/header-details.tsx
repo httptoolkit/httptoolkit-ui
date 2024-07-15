@@ -5,9 +5,12 @@ import { inject, observer } from 'mobx-react';
 import { styled } from '../../../styles';
 import { RawHeaders } from '../../../types';
 import { Icon } from '../../../icons';
+import { copyToClipboard } from '../../../util/ui';
 
 import { getHeaderDocs } from '../../../model/http/http-docs';
 import { AccountStore } from '../../../model/account/account-store';
+import { UiStore } from '../../../model/ui/ui-store';
+import { ContextMenuItem } from '../../../model/ui/context-menu';
 
 import { CollapsibleSection } from '../../common/collapsible-section';
 import { DocsLink } from '../../common/docs-link';
@@ -40,14 +43,22 @@ const HeaderKeyValueContainer = styled(CollapsibleSectionSummary)`
 
 const LONG_HEADER_LIMIT = 500;
 
-const HeaderKeyValue = (p: {
+const HEADER_CONTEXT_MENU = [
+    { type: 'option', label: 'Copy header value', callback: ({ value }) => copyToClipboard(value) },
+    { type: 'option', label: 'Copy header name', callback: ({ key }) => copyToClipboard(key) },
+    { type: 'option', label: 'Copy header as "name: value"', callback: ({ key, value }) => copyToClipboard(`${key}: ${value}`) },
+] satisfies Array<ContextMenuItem<{ key: string, value: string }>>;
+
+const HeaderKeyValue = inject('uiStore')((p: {
     headerKey: string,
     headerValue: string,
 
     // All injected by CollapsibleSection itself:
     children?: React.ReactNode,
     open?: boolean,
-    withinGrid?: boolean
+    withinGrid?: boolean,
+
+    uiStore?: UiStore
 }) => {
     const isLongValue = p.headerValue.length > LONG_HEADER_LIMIT;
     const [isExpanded, setExpanded] = React.useState(false);
@@ -55,7 +66,20 @@ const HeaderKeyValue = (p: {
     const expand = React.useCallback(() => setExpanded(true), [setExpanded]);
     const collapse = React.useCallback(() => setExpanded(false), [setExpanded]);
 
-    return <HeaderKeyValueContainer open={p.open} withinGrid={p.withinGrid}>
+    const onContextMenu = React.useCallback((e: React.MouseEvent) => {
+        if (window.getSelection()?.type === 'Range') return; // If you right click selected text, we delegate to defaults
+
+        p.uiStore!.handleContextMenuEvent(e, HEADER_CONTEXT_MENU, {
+            key: p.headerKey,
+            value: p.headerValue
+        });
+    }, [p.uiStore, p.headerKey, p.headerValue]);
+
+    return <HeaderKeyValueContainer
+        open={p.open}
+        withinGrid={p.withinGrid}
+        onContextMenu={onContextMenu}
+    >
         { p.children }
         <HeaderName>{ p.headerKey }: </HeaderName>
         { !isLongValue
@@ -80,7 +104,7 @@ const HeaderKeyValue = (p: {
             </LongHeaderValue>
         }
     </HeaderKeyValueContainer>;
-};
+});
 
 const LongHeaderValue = styled.span`
     position: relative;
