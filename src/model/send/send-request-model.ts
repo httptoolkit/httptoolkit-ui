@@ -139,6 +139,8 @@ export interface RequestDefinition {
 
 export interface RequestOptions {
     ignoreHostHttpsErrors?: string[] | boolean;
+    additionalTrustedCAs?: Array<{ cert: string }>;
+    /** @deprecated alias for additionalTrustedCAs */
     trustAdditionalCAs?: Array<{ cert: string }>;
     clientCertificate?: { pfx: Buffer, passphrase?: string };
     proxyConfig?: ClientProxyConfig;

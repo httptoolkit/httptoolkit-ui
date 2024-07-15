@@ -293,7 +293,7 @@ export class RulesStore {
     get activePassthroughOptions(): requestHandlers.PassThroughHandlerOptions {
         const options: requestHandlers.PassThroughHandlerOptions = { // Check the type to catch changes
             ignoreHostHttpsErrors: this.whitelistedCertificateHosts,
-            trustAdditionalCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM })),
+            additionalTrustedCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM })),
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({
                 pfx: Buffer.from(cert.pfx),
                 passphrase: cert.passphrase
@@ -332,7 +332,10 @@ export class RulesStore {
                 // Localhost proxy config is ignored
                 return 'ignored';
             } else {
-                return systemProxyConfig;
+                return {
+                    ...systemProxyConfig,
+                    additionalTrustedCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM }))
+                };
             }
         } catch (e) {
             console.log("Could not parse proxy", proxyUrl);
@@ -353,7 +356,8 @@ export class RulesStore {
         } else {
             return {
                 proxyUrl: `${this.upstreamProxyType}://${this.upstreamProxyHost!}`,
-                noProxy: this.upstreamNoProxyHosts
+                noProxy: this.upstreamNoProxyHosts,
+                additionalTrustedCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM }))
             };
         }
     }

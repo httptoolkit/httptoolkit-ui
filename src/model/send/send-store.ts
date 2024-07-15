@@ -160,11 +160,14 @@ export class SendStore {
                 passthroughOptions.clientCertificateHostMap?.[url.hostname!] ||
                 undefined;
 
+            const additionalCACerts = this.rulesStore.additionalCaCertificates.map((cert) =>
+                ({ cert: cert.rawPEM })
+            );
+
             const requestOptions = {
                 ignoreHostHttpsErrors: passthroughOptions.ignoreHostHttpsErrors,
-                trustAdditionalCAs: this.rulesStore.additionalCaCertificates.map((cert) =>
-                    ({ cert: cert.rawPEM })
-                ),
+                additionalCACerts: additionalCACerts,
+                trustAdditionalCAs: additionalCACerts, // Deprecated alias, here for backward compat
                 clientCertificate,
                 proxyConfig: getProxyConfig(this.rulesStore.proxyConfig),
                 lookupOptions: passthroughOptions.lookupOptions
