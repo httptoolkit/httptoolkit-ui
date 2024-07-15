@@ -134,16 +134,22 @@ export default merge(common, {
                     'default-src': "'none'",
                     'object-src': "'none'",
                     'frame-ancestors': "'none'",
-                    'img-src': ["'self'", 'https://httptoolkit.com', 'data:'],
+                    'img-src': [
+                        "'self'", 'data:', 'https://httptoolkit.com', 'https://secure.gravatar.com'
+                    ],
                     'font-src': ["'self'"],
                     'style-src': ["'report-sample'", "'self'", "'unsafe-inline'"],
+                    'frame-src': "https://login.httptoolkit.tech",
                     'script-src': [
                         "'report-sample'",
                         "'unsafe-eval'", // For both wasm & real eval() uses
-                        "'self'", 'https://cdn.auth0.com/', 'https://cdn.eu.auth0.com/'
+                        "'self'",
+                        'https://cdn.auth0.com/', 'https://cdn.eu.auth0.com/', 'https://secure.gravatar.com'
                     ],
                     'connect-src': [
-                        "'self'", 'http://127.0.0.1:45456', 'http://127.0.0.1:45457', 'ws://127.0.0.1:45456', 'https://*.httptoolkit.tech', 'https://sentry.io', 'data:'
+                        "'self'", 'data:',
+                        'http://127.0.0.1:45456', 'http://127.0.0.1:45457', 'ws://127.0.0.1:45456',
+                        'https://*.httptoolkit.tech', 'https://*.sentry.io'
                     ],
                     'report-uri': CSP_REPORT_URL,
                     'report-to': 'csp-endpoint'
