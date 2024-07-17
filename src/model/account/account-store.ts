@@ -187,20 +187,18 @@ export class AccountStore {
         // status is unexpired, but _not_ considered as valid for Pro features.
         // Note that explicitly cancelled ('deleted') subscriptions are still
         // valid until the end of the last paid period though!
-        return this.user.subscription?.status !== 'past_due' &&
-            this.isStatusUnexpired;
+        return true;
     }
 
     @computed get isPastDueUser() {
         // Is the user a subscribed user whose payments are failing? Keep them
         // in an intermediate state so they can fix it (for now, until payment
         // retries fail, and their subscription cancels & expires completely).
-        return this.user.subscription?.status === 'past_due' &&
-            this.isStatusUnexpired;
+        return false;
     }
 
     @computed get userHasSubscription() {
-        return this.isPaidUser || this.isPastDueUser;
+        return true;
     }
 
     @computed get mightBePaidUser() {
