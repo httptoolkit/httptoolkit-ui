@@ -576,6 +576,7 @@ export class SearchFilter<T> extends React.Component<{
             <FilterInput
                 value={textInputValue}
                 onChange={onInputChanged}
+                label="Enter a string like 'hello' or a structured filter like hostname=google.com to filter the requests in the list"
                 placeholder={otherFilters.length === 0
                     ? placeholder
                     : '...'

@@ -116,6 +116,7 @@ const areSuggestionsVisible = (autosuggestRef: React.RefObject<Autosuggest>) => 
 
 export const FilterInput = <T extends unknown>(props: {
     value: string,
+    label: string,
     placeholder: string,
     searchInputRef?: React.Ref<HTMLInputElement>,
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
@@ -245,6 +246,7 @@ export const FilterInput = <T extends unknown>(props: {
         value: props.value,
         onChange: onInputChange,
         placeholder: props.placeholder,
+        'aria-label': props.label,
         ref: props.searchInputRef
     }), [props.value, onInputChange, props.placeholder, props.searchInputRef]);
 
