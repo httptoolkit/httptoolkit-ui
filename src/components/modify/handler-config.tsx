@@ -954,6 +954,7 @@ const MethodTransformConfig = (props: {
 }) => {
     return <TransformConfig active={!!props.replacementMethod}>
         <SelectTransform
+            aria-label='Select how the method should be transformed'
             value={props.replacementMethod ?? 'none'}
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
                 const value = event.target.value as 'none' | MethodName;
@@ -987,6 +988,7 @@ const StatusTransformConfig = (props: {
 
     return <TransformConfig active={selected !== 'none'}>
         <SelectTransform
+            aria-label='Select how the status should be transformed'
             value={selected ?? 'none'}
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
                 const value = event.target.value as 'none' | 'replace';
@@ -1051,6 +1053,7 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
 
         return <TransformConfig active={selected !== 'none'}>
             <SelectTransform
+                aria-label={`Select how the ${type} headers should be transformed`}
                 value={selected}
                 onChange={onTransformTypeChange}
             >
@@ -1146,6 +1149,7 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
 
         return <TransformConfig active={selected !== 'none'}>
             <SelectTransform
+                aria-label={`Select how the ${type} body should be transformed`}
                 value={selected}
                 onChange={onTransformTypeChange}>
                 <option value='none'>Pass through the real { type } body</option>
