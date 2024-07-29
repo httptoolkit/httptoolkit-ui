@@ -238,7 +238,7 @@ export class RuleList extends React.Component<{
         >
             <Droppable
                 isCombineEnabled={true}
-                droppableId='edit-rule-list'
+                droppableId='modify-rule-list'
             >{(provided) => <Observer>{() =>
                 <RuleListContainer
                     ref={provided.innerRef}
