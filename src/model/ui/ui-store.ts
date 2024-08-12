@@ -147,7 +147,7 @@ export class UiStore {
     }
 
     @persist @observable
-    private _themeName: ThemeName | 'automatic' | 'custom' = 'light';
+    private _themeName: ThemeName | 'automatic' | 'custom' = 'automatic';
 
     get themeName() {
         return this._themeName;
