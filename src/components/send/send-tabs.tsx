@@ -1,10 +1,12 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { css, styled } from '../../styles';
 
-import { SendRequest } from '../../model/send/send-request-model';
+import { RequestInput, SendRequest } from '../../model/send/send-request-model';
 import { getMethodColor } from '../../model/events/categorization';
+import { ContextMenuItem } from '../../model/ui/context-menu';
 
 import { UnstyledButton } from '../common/inputs';
 import { IconButton } from '../common/icon-button';
@@ -114,7 +116,8 @@ const SendTab = observer((props: {
     sendRequest: SendRequest,
     isSelectedTab: boolean,
     onSelectTab: (request: SendRequest) => void,
-    onCloseTab: (request: SendRequest) => void
+    onCloseTab: (request: SendRequest) => void,
+    onContextMenu: (event: React.MouseEvent, request: SendRequest) => void
 }) => {
     const { request } = props.sendRequest;
 
@@ -133,10 +136,15 @@ const SendTab = observer((props: {
         event.stopPropagation();
     }, [props.onCloseTab, props.sendRequest]);
 
+    const onContextMenu = React.useCallback((event: React.MouseEvent) => {
+        props.onContextMenu(event, props.sendRequest);
+    }, [props.onContextMenu, props.sendRequest]);
+
     return <TabContainer
         selected={props.isSelectedTab}
         onClick={onTabClick}
         onAuxClick={onTaxAuxClick}
+        onContextMenu={onContextMenu}
     >
         <TabButton
             selected={props.isSelectedTab}
@@ -168,7 +176,8 @@ export const SendTabs = observer((props: {
     onSelectTab: (sendRequest: SendRequest) => void;
     onMoveSelection: (distance: number) => void;
     onCloseTab: (sendRequest: SendRequest) => void;
-    onAddTab: () => void;
+    onAddTab: (requestInput?: RequestInput) => void;
+    onContextMenu: (event: React.MouseEvent, items: readonly ContextMenuItem<void>[]) => void;
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -205,6 +214,32 @@ export const SendTabs = observer((props: {
         event.stopPropagation();
     }, []);
 
+    const onContextMenu = React.useCallback((event: React.MouseEvent, request: SendRequest) => {
+        event.preventDefault();
+        props.onContextMenu(event, [
+            {
+                type: 'option',
+                label: 'Duplicate Tab',
+                callback: () => props.onAddTab(_.cloneDeep(request.request))
+            },
+            {
+                type: 'option',
+                label: 'Close Tab',
+                callback: () => props.onCloseTab(request)
+            },
+            {
+                type: 'option',
+                label: 'Close Other Tabs',
+                callback: () => {
+                    const tabs = [...props.sendRequests];
+                    for (let tab of tabs) {
+                        if (tab !== request) props.onCloseTab(tab);
+                    }
+                }
+            }
+        ]);
+    }, [props.onAddTab, props.onCloseTab, props.sendRequests]);
+
     return <TabsContainer
         ref={containerRef}
         onKeyDown={onKeyDown}
@@ -218,6 +253,7 @@ export const SendTabs = observer((props: {
                     isSelectedTab={isSelectedTab}
                     onSelectTab={props.onSelectTab}
                     onCloseTab={props.onCloseTab}
+                    onContextMenu={onContextMenu}
                 />
             })
         }

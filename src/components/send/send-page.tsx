@@ -8,6 +8,7 @@ import { WithInjected } from '../../types';
 
 import { ApiError } from '../../services/server-api-types';
 import { SendStore } from '../../model/send/send-store';
+import { UiStore } from '../../model/ui/ui-store';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 
@@ -48,9 +49,11 @@ const SendPageKeyboardShortcuts = (props: {
 };
 
 @inject('sendStore')
+@inject('uiStore')
 @observer
 class SendPage extends React.Component<{
-    sendStore: SendStore
+    sendStore: SendStore,
+    uiStore: UiStore,
     navigate: (path: string) => void
 }> {
 
@@ -95,6 +98,10 @@ class SendPage extends React.Component<{
             addRequestInput
         } = this.props.sendStore;
 
+        const {
+            handleContextMenuEvent
+        } = this.props.uiStore;
+
         return <SendPageContainer>
             <SendTabs
                 sendRequests={sendRequests}
@@ -103,6 +110,7 @@ class SendPage extends React.Component<{
                 onMoveSelection={moveSelection}
                 onCloseTab={deleteRequest}
                 onAddTab={addRequestInput}
+                onContextMenu={handleContextMenuEvent}
             />
 
             <SendPageKeyboardShortcuts
@@ -156,6 +164,6 @@ class SendPage extends React.Component<{
 // Annoying cast required to handle the store prop nicely in our types
 const InjectedSendPage = SendPage as unknown as WithInjected<
     typeof SendPage,
-    'sendStore' | 'navigate'
+    'sendStore' | 'uiStore' | 'navigate'
 >;
 export { InjectedSendPage as SendPage };
