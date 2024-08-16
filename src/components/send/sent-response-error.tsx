@@ -74,7 +74,7 @@ export const SentResponseError = (props: {
                         : errorType === 'host-unreachable'
                             ? 'was not reachable on your network connection'
                         : errorType === 'host-not-found' || errorType === 'dns-error'
-                            ? 'hostname could be not found'
+                            ? 'hostname could not be found'
                         : errorType === 'connection-refused'
                             ? 'refused the connection'
                         : unreachableCheck(errorType)

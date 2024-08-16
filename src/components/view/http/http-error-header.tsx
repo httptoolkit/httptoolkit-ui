@@ -92,7 +92,7 @@ export const HttpErrorHeader = (p: {
                         : p.type === 'host-unreachable'
                             ? 'was not reachable on your network connection'
                         : p.type === 'host-not-found' || p.type === 'dns-error'
-                            ? 'hostname could be not found'
+                            ? 'hostname could not be found'
                         : p.type === 'connection-refused'
                             ? 'refused the connection'
                         : unreachableCheck(p.type)
