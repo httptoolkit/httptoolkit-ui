@@ -88,7 +88,7 @@ export const HttpErrorHeader = (p: {
                         : p.type === 'untrusted'
                             ? 'has an untrusted HTTPS certificate'
                         : p.type === 'tls-error'
-                            ? 'failed to complete a TLS handshake'
+                            ? 'could not complete a TLS handshake'
                         : p.type === 'host-unreachable'
                             ? 'was not reachable on your network connection'
                         : p.type === 'host-not-found' || p.type === 'dns-error'
@@ -96,7 +96,7 @@ export const HttpErrorHeader = (p: {
                         : p.type === 'connection-refused'
                             ? 'refused the connection'
                         : unreachableCheck(p.type)
-                    }, so HTTP Toolkit did not forward the request.
+                    }, so HTTP Toolkit didn't forward the request.
                 </>
             : wasTimeout(p.type)
                 ? <>
@@ -135,15 +135,15 @@ export const HttpErrorHeader = (p: {
         { p.type === 'tls-error'
             ? <>
                 <HeaderText>
-                    This could be caused by the server not supporting modern cipher
-                    standards or TLS versions, requiring a client certificate that hasn't
-                    been provided, or other TLS configuration issues.
+                    This could be caused by the server not supporting modern ciphers or
+                    TLS versions, expecting a client certificate that wasn't provided,
+                    or TLS configuration issues in either the server or HTTP Toolkit.
                 </HeaderText>
                 <HeaderText>
                     { p.isPaidUser
                         ? <>
                             From the Settings page you can configure client certificates, or
-                            whitelist this host to relax HTTPS requirements and allow
+                            whitelist this host to relax security requirements and allow
                             self-signed certificates, which may resolve some TLS issues.
                         </>
                         : <>

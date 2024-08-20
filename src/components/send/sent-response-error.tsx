@@ -70,7 +70,7 @@ export const SentResponseError = (props: {
                         : errorType === 'untrusted'
                             ? 'has an untrusted HTTPS certificate'
                         : errorType === 'tls-error'
-                            ? 'failed to complete a TLS handshake'
+                            ? 'could not complete a TLS handshake'
                         : errorType === 'host-unreachable'
                             ? 'was not reachable on your network connection'
                         : errorType === 'host-not-found' || errorType === 'dns-error'
@@ -78,7 +78,7 @@ export const SentResponseError = (props: {
                         : errorType === 'connection-refused'
                             ? 'refused the connection'
                         : unreachableCheck(errorType)
-                    }, so HTTP Toolkit did not send the request.
+                    }, so HTTP Toolkit didn't send the request.
                 </ExplanationBlock>
             : wasServerIssue(errorType)
                 ? <ExplanationBlock>
