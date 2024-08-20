@@ -122,7 +122,7 @@ jobs:
     needs: publish-docker
     steps:
       - name: Redeploy container
-        uses: thibaultchazal/scaleway-serverless-container-deploy-action@0d290edda0c3359e51442bd8bf730eafef4e290f
+        uses: httptoolkit/scaleway-serverless-container-deploy-action@v1
         with:
           container_id: ${{ vars.SCW_API_CONTAINER_ID }}
           region: ${{ vars.SCW_API_CONTAINER_REGION }}
@@ -130,7 +130,7 @@ jobs:
           registry_image_url: "registry.hub.docker.com/httptoolkit/ui:prod"
 
       - name: Redeploy failover container
-        uses: thibaultchazal/scaleway-serverless-container-deploy-action@0d290edda0c3359e51442bd8bf730eafef4e290f
+        uses: httptoolkit/scaleway-serverless-container-deploy-action@v1
         with:
           container_id: ${{ vars.SCW_FAILOVER_API_CONTAINER_ID }}
           region: ${{ vars.SCW_FAILOVER_API_CONTAINER_REGION }}
@@ -139,9 +139,6 @@ jobs:
 
       - name: Flush CDN cache
         run: |
-          # Wait a little - the reploy commands don't wait for the container to start up
-          sleep 30
-
           # Clear CDN cache to re-request content:
           curl -f --request POST \
             --url https://api.bunny.net/pullzone/$PULL_ZONE_ID/purgeCache \
