@@ -95,7 +95,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/x-google-protobuf': 'protobuf',
     'application/proto': 'protobuf', // N.b. this covers all application/XXX+proto values
     'application/grpc': 'protobuf', // Used in GRPC requests
-    'application/x-protobuffer': 'protobuf' // Commonly seen in Google apps
+    'application/x-protobuffer': 'protobuf', // Commonly seen in Google apps
 
     'application/octet-stream': 'raw'
 } as const;
