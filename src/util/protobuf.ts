@@ -28,6 +28,25 @@ export function isProbablyProtobuf(input: Uint8Array) {
 
 export const parseRawProtobuf = parseRawProto;
 
+// The repeated sequence of Length-Prefixed-Message items is delivered in DATA frames
+
+// Length-Prefixed-Message → Compressed-Flag Message-Length Message
+// Compressed-Flag → 0 / 1 ; encoded as 1 byte unsigned integer
+// Message-Length → {length of Message} ; encoded as 4 byte unsigned integer (big endian)
+// Message → *{binary octet}
+export const parseGrpcProtobuf = (input: Buffer) => {
+    if (input.readInt8() != 0) {
+        // TODO support compressed gRPC messages?
+        throw new Error("compressed gRPC messages not yet supported")
+    }
+    const length = input.readInt32BE(1);
+    input = input.slice(5, 5+length);
+
+    return parseRawProtobuf(input, {
+        prefix: ''
+    });
+}
+
 export const isValidProtobuf = (input: Uint8Array) => {
     try {
         parseRawProtobuf(input);

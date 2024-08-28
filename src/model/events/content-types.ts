@@ -33,7 +33,8 @@ export type ViewableContentType =
     | 'markdown'
     | 'yaml'
     | 'image'
-    | 'protobuf';
+    | 'protobuf'
+    | 'grpc';
 
 export const EditableContentTypes = [
     'text',
@@ -94,8 +95,9 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/vnd.google.protobuf': 'protobuf',
     'application/x-google-protobuf': 'protobuf',
     'application/proto': 'protobuf', // N.b. this covers all application/XXX+proto values
-    'application/grpc': 'protobuf', // Used in GRPC requests
     'application/x-protobuffer': 'protobuf', // Commonly seen in Google apps
+
+    'application/grpc': 'grpc', // Used in GRPC requests (protobuf with special headers)
 
     'application/octet-stream': 'raw'
 } as const;
@@ -122,6 +124,7 @@ export function getContentEditorName(contentType: ViewableContentType): string {
         : contentType === 'json' ? 'JSON'
         : contentType === 'css' ? 'CSS'
         : contentType === 'url-encoded' ? 'URL-Encoded'
+        : contentType === 'grpc' ? 'gRPC'
         : _.capitalize(contentType);
 }
 
@@ -163,10 +166,14 @@ export function getCompatibleTypes(
         types.add('xml');
     }
 
+    if (!types.has('grpc') && rawContentType && rawContentType.startsWith('application/grpc')) {
+        types.add('grpc')
+    }
     if (
         body &&
         isProbablyProtobuf(body) &&
         !types.has('protobuf') &&
+        !types.has('grpc') &&
         // If it's probably unmarked protobuf, and it's a manageable size, try
         // parsing it just to check:
         (body.length < 100_000 && isValidProtobuf(body))
