@@ -166,7 +166,7 @@ export function getCompatibleTypes(
         types.add('xml');
     }
 
-    if (!types.has('grpc') && rawContentType && rawContentType.startsWith('application/grpc')) {
+    if (!types.has('grpc') && rawContentType && rawContentType === 'application/grpc') {
         types.add('grpc')
     }
     if (
