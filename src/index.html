@@ -32,6 +32,7 @@
 
         #initial-logo, #progress-logo {
             position: absolute;
+            max-width: 80%;
         }
 
         #initial-logo {
@@ -40,7 +41,7 @@
 
         #progress-logo {
             clip-path: inset(0 100% 0 0);
-            transition: clip-path 0.5s;
+            transition: clip-path 0.2s;
         }
 
         #app-loading-error {
@@ -73,8 +74,8 @@
   <body>
     <div id="app"></div>
     <div id="app-loading-placeholder">
-      <img id="initial-logo" src="<%=require('./images/logo-large.png')%>">
-      <img id="progress-logo" src="<%=require('./images/logo-large.png')%>">
+      <img id="initial-logo" src="<%=require('./images/loading-logo.png')%>">
+      <img id="progress-logo" src="<%=require('./images/loading-logo.png')%>">
       <div id="app-loading-error"></div>
       <div id="app-loading-error-details"></div>
     </div>
