@@ -128,6 +128,20 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
+    'existing-chromium': {
+        name: 'Global Chromium',
+        description: [
+            "Intercept your main Chromium profile globally",
+            "This captures all default Chromium traffic, so may interfere with normal usage"
+        ],
+        customActivation: onActivateExistingBrowser,
+        iconProps: [
+            SourceIcons.Chromium,
+            { icon: ['fas', 'globe'], color: '#fafafa', size: '2x' }
+        ],
+        tags: BROWSER_TAGS,
+        getActivationOptions: getChromiumOptions
+    },
     'fresh-chromium-dev': {
         name: 'Chromium (Dev)',
         description: ["Intercept a fresh independent Chromium window"],
