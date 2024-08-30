@@ -118,7 +118,6 @@ jobs:
     name: Deploy to Scaleway
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    container: httptoolkit/act-build-base
     needs: publish-docker
     steps:
       - name: Redeploy container
