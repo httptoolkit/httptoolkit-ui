@@ -6,12 +6,12 @@ import * as serializr from 'serializr';
 import { hasSerializrSchema, serializeAsTag } from '../serialization';
 
 import { RulesStore } from './rules-store';
-import { HtkMockRule, MatcherLookup, HandlerLookup, getRulePartKey } from './rules';
+import { HtkRule, MatcherLookup, HandlerLookup, getRulePartKey } from './rules';
 import {
-    HtkMockItem,
-    HtkMockRuleRoot,
+    HtkRuleItem,
+    HtkRuleRoot,
     isRuleGroup,
-    HtkMockRuleGroup
+    HtkRuleGroup
 } from './rules-structure';
 import { migrateRuleData } from './rule-migrations';
 
@@ -36,8 +36,8 @@ const deserializeByType = <T extends { type: string, uiType?: string }>(
     }
 }
 
-const MockRuleSerializer = serializr.custom(
-    (rule: HtkMockRule): HtkMockRule => {
+const RuleSerializer = serializr.custom(
+    (rule: HtkRule): HtkRule => {
         const data = _.cloneDeep(toJS(rule));
 
         // Allow matchers & handlers to override default serialization using serializr
@@ -69,7 +69,7 @@ const MockRuleSerializer = serializr.custom(
 
         return data;
     },
-    (data: HtkMockRule, context: { args: DeserializationArgs }) => {
+    (data: HtkRule, context: { args: DeserializationArgs }) => {
         return {
             id: data.id,
             type: data.type,
@@ -97,51 +97,51 @@ const MockRuleSerializer = serializr.custom(
     }
 );
 
-const MockItemSerializer: serializr.PropSchema = serializr.custom(
-    (item: HtkMockItem) => {
+const RuleItemSerializer: serializr.PropSchema = serializr.custom(
+    (item: HtkRuleItem) => {
         if (isRuleGroup(item)) {
-            return serializr.serialize(MockRuleGroupSchema, item);
+            return serializr.serialize(RuleGroupSchema, item);
         } else {
-            return MockRuleSerializer.serializer(item);
+            return RuleSerializer.serializer(item);
         }
     },
-    (data: HtkMockItem, context: any, oldValue: any, done: (err: any, result: any) => any) => {
+    (data: HtkRuleItem, context: any, oldValue: any, done: (err: any, result: any) => any) => {
         if (isRuleGroup(data)) {
-            const group = serializr.deserialize(MockRuleGroupSchema, data, done, context.args);
+            const group = serializr.deserialize(RuleGroupSchema, data, done, context.args);
             group.collapsed = true; // Groups always start collapsed when unpersisted/imported.
             return group;
         } else {
-            return MockRuleSerializer.deserializer(data, done, context, oldValue);
+            return RuleSerializer.deserializer(data, done, context, oldValue);
         }
     }
 );
 
-const MockRuleGroupSchema = serializr.createSimpleSchema<HtkMockRuleGroup>({
+const RuleGroupSchema = serializr.createSimpleSchema<HtkRuleGroup>({
     id: serializr.primitive(),
     title: serializr.primitive(),
-    items: serializr.list(MockItemSerializer)
+    items: serializr.list(RuleItemSerializer)
 });
 
-interface MockRuleset extends HtkMockRuleRoot {
+interface HtkRuleset extends HtkRuleRoot {
     version: undefined;
 }
 
-export const MockRulesetSchema = serializr.createSimpleSchema<MockRuleset>({
+export const HtkRulesetSchema = serializr.createSimpleSchema<HtkRuleset>({
     id: serializr.primitive(),
     title: serializr.primitive(),
     version: serializeAsTag(() => undefined), // All compatible, so we don't version yet, but we _could_.
     isRoot: serializr.optional(serializr.primitive()),
-    items: serializr.list(MockItemSerializer)
+    items: serializr.list(RuleItemSerializer)
 });
 
-export const serializeRules = (rules: HtkMockRuleRoot): MockRuleset => {
-    return serializr.serialize(MockRulesetSchema, rules);
+export const serializeRules = (rules: HtkRuleRoot): HtkRuleset => {
+    return serializr.serialize(HtkRulesetSchema, rules);
 }
 
-export const deserializeRules = (data: any, args: DeserializationArgs): HtkMockRuleRoot => {
+export const deserializeRules = (data: any, args: DeserializationArgs): HtkRuleRoot => {
     return (
-        serializr.deserialize(MockRulesetSchema, migrateRuleData(data), undefined, args)
-    ) as HtkMockRuleRoot;
+        serializr.deserialize(HtkRulesetSchema, migrateRuleData(data), undefined, args)
+    ) as HtkRuleRoot;
 }
 
 export const SERIALIZED_RULES_MIME_TYPE = 'application/htkrules+json;charset=utf-8';

@@ -21,8 +21,8 @@ import {
 import { Pill } from '../../common/pill';
 import {
     SendReceiveGraph,
-    SentDataColour,
-    ReceivedDataColour
+    SentDataColor,
+    ReceivedDataColor
 } from '../../common/send-recieve-graph';
 import { CollapsingButtons } from '../../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../../common/expand-shrink-button';
@@ -49,10 +49,10 @@ export const RTCMediaCard = observer((props: RTCMediaCardProps) => {
                 />
             </CollapsingButtons>
 
-            <Pill color={SentDataColour}>
+            <Pill color={SentDataColor}>
                 { getReadableSize(mediaTrack.totalBytesSent) } sent
             </Pill>
-            <Pill color={ReceivedDataColour}>
+            <Pill color={ReceivedDataColor}>
                 { getReadableSize(mediaTrack.totalBytesReceived) } received
             </Pill>
             <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>

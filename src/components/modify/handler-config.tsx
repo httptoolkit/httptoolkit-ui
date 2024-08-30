@@ -247,6 +247,7 @@ const SectionLabel = styled.h2`
     }
 
     text-transform: uppercase;
+    font-family: ${p => p.theme.titleTextFamily};
     opacity: ${p => p.theme.lowlightTextOpacity};
     width: 100%;
 `;
@@ -291,7 +292,7 @@ const BodyContainer = styled.div<{ isInvalid?: boolean }>`
             ? p.theme.warningColor
             : p.theme.containerBorder
         };
-        padding: 1px;
+        padding-right: 1px;
     }
 `;
 
@@ -953,6 +954,7 @@ const MethodTransformConfig = (props: {
 }) => {
     return <TransformConfig active={!!props.replacementMethod}>
         <SelectTransform
+            aria-label='Select how the method should be transformed'
             value={props.replacementMethod ?? 'none'}
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
                 const value = event.target.value as 'none' | MethodName;
@@ -986,6 +988,7 @@ const StatusTransformConfig = (props: {
 
     return <TransformConfig active={selected !== 'none'}>
         <SelectTransform
+            aria-label='Select how the status should be transformed'
             value={selected ?? 'none'}
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
                 const value = event.target.value as 'none' | 'replace';
@@ -1050,6 +1053,7 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
 
         return <TransformConfig active={selected !== 'none'}>
             <SelectTransform
+                aria-label={`Select how the ${type} headers should be transformed`}
                 value={selected}
                 onChange={onTransformTypeChange}
             >
@@ -1145,6 +1149,7 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
 
         return <TransformConfig active={selected !== 'none'}>
             <SelectTransform
+                aria-label={`Select how the ${type} body should be transformed`}
                 value={selected}
                 onChange={onTransformTypeChange}>
                 <option value='none'>Pass through the real { type } body</option>

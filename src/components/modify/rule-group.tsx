@@ -15,7 +15,7 @@ import { Icon } from '../../icons';
 import {
     isRuleGroup,
     ItemPath,
-    HtkMockRuleGroup,
+    HtkRuleGroup,
     mapRules,
     flattenRules
 } from '../../model/rules/rules-structure';
@@ -23,8 +23,8 @@ import { getMethodColor } from '../../model/events/categorization';
 
 import { clickOnEnter, noPropagation } from '../component-utils';
 import { TextInput } from '../common/inputs';
-import { DragHandle } from './mock-drag-handle';
-import { IconMenu, IconMenuButton } from './mock-item-menu';
+import { DragHandle } from './rule-drag-handle';
+import { IconMenu, IconMenuButton } from './rule-icon-menu';
 
 const CollapsedItemPlaceholder = styled.div<{
     index: number,
@@ -186,11 +186,11 @@ const extendGroupDraggableStyles = (
     };
 };
 
-const isFullyActiveGroup = (group: HtkMockRuleGroup) =>
+const isFullyActiveGroup = (group: HtkRuleGroup) =>
     flattenRules(group).every(r => r.activated);
 
 export const GroupHeader = observer((p: {
-    group: HtkMockRuleGroup,
+    group: HtkRuleGroup,
     path: ItemPath,
     index: number,
     collapsed: boolean,
@@ -336,7 +336,7 @@ const GroupTailPlaceholder = styled.div`
     margin-bottom: -20px;
 `;
 
-export const GroupTail = (p: { group: HtkMockRuleGroup, index: number }) =>
+export const GroupTail = (p: { group: HtkRuleGroup, index: number }) =>
     <Draggable
         draggableId={p.group.id + '-tail'}
         index={p.index}

@@ -9,11 +9,11 @@ export const interactiveMouseoverStyles = css`
     &:not([disabled]) {
         cursor: pointer;
         &:hover {
-            background-image: linear-gradient(transparent, rgba(0,0,0,.05) 40%, rgba(0,0,0,.1));
+            background-image: linear-gradient(transparent, rgba(0,0,0,.1) 40%, rgba(0,0,0,.2));
         }
 
         &:active {
-            background-image: linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.05) 40%, transparent);
+            background-image: linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.1) 40%, transparent);
         }
 
         &:focus {
@@ -120,6 +120,10 @@ const invalidTextCss = css`
         border-color: ${p => p.theme.mainColor};
         background-color: ${p => p.theme.warningBackground};
     }
+
+    &::placeholder {
+        color: ${p => p.theme.inputWarningPlaceholder};
+    }
 `;
 
 type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -149,6 +153,10 @@ export const TextInput = styled.input.attrs((p: { type?: string }) => ({
 
     &:disabled {
         opacity: 0.6;
+    }
+
+    &::placeholder {
+        color: ${p => p.theme.inputPlaceholderColor};
     }
 
     &:invalid {

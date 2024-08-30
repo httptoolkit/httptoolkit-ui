@@ -7,7 +7,7 @@ import { Method } from 'mockttp';
 import { BreakpointRequestResult, HttpExchange, RawHeaders } from '../../../types';
 import { styled } from '../../../styles';
 
-import { getSummaryColour } from '../../../model/events/categorization';
+import { getSummaryColor } from '../../../model/events/categorization';
 import { withHeaderValue } from '../../../util/headers';
 
 import {
@@ -61,7 +61,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
         return <CollapsibleCard {...cardProps} direction='right'>
             <header>
                 <SourceIcon source={request.source} />
-                <Pill color={getSummaryColour(exchange)}>
+                <Pill color={getSummaryColor(exchange)}>
                     { method } {
                         (request.hostname || '')
                         // Add some tiny spaces to split up parts of the hostname

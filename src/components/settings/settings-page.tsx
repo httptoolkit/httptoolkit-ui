@@ -59,6 +59,7 @@ const SettingPageContainer = styled.section`
 
 const SettingsHeading = styled.h1`
     font-size: ${p => p.theme.loudHeadingSize};
+    font-family: ${p => p.theme.titleTextFamily};
     font-weight: bold;
     margin-bottom: 40px;
 `;
@@ -192,10 +193,10 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         <ContentValue>
                             {
                                 subscriptionPlans.state === 'fulfilled'
-                                ? (subscriptionPlans.value as SubscriptionPlans)[sub.plan]?.name
+                                ? (subscriptionPlans.value as SubscriptionPlans)[sub.sku]?.name
                                 // If the accounts API is unavailable for plan metadata for some reason, we can just
                                 // format the raw SKU to get something workable, no worries:
-                                : _.startCase(sub.plan)
+                                : _.startCase(sub.sku)
                             }
                         </ContentValue>
 
@@ -356,7 +357,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
             throw new Error("Can't cancel without a subscription");
         }
 
-        const planName = SubscriptionPlans[subscription.plan].name;
+        const planName = SubscriptionPlans[subscription.sku].name;
 
         let cancelEffect: string;
 

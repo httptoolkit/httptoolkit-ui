@@ -271,7 +271,7 @@ export type EthereumInitialMatcher = InstanceType<typeof EthereumInitialMatcherC
 type EthereumHandlerClass = typeof EthereumHandlerLookup[keyof typeof EthereumHandlerLookup];
 type EthereumHandler = InstanceType<EthereumHandlerClass>;
 
-export interface EthereumMockRule extends Omit<RequestRuleData, 'matchers'> {
+export interface EthereumRule extends Omit<RequestRuleData, 'matchers'> {
     id: string;
     type: 'ethereum';
     activated: boolean;

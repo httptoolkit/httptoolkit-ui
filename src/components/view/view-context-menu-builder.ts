@@ -74,7 +74,7 @@ export class ViewEventContextMenuBuilder {
                     {
                         type: 'option',
                         enabled: isPaidUser,
-                        label: `Create Matching Mock Rule`,
+                        label: `Create Matching Modify Rule`,
                         callback: this.onBuildRuleFromExchange
                     },
                     {

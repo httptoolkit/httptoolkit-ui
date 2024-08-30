@@ -58,7 +58,7 @@ export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
 
 // Notable server versions:
 export const PORT_RANGE_SERVER_RANGE = '^0.1.14 || ^1.0.0';
-export const MOCK_SERVER_RANGE = '^0.1.21 || ^1.0.0';
+export const MODIFY_RULE_SERVER_RANGE = '^0.1.21 || ^1.0.0';
 export const HOST_MATCHER_SERVER_RANGE = '^0.1.22 || ^1.0.0';
 export const CLIENT_CERT_SERVER_RANGE = '^0.1.26 || ^1.0.0';
 export const FROM_FILE_HANDLER_SERVER_RANGE = '^0.1.28 || ^1.0.0';

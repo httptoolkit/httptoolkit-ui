@@ -2,20 +2,15 @@ import * as React from 'react';
 import * as _ from 'lodash';
 
 import { styled } from '../../styles'
-import { Icon, IconProp } from '../../icons';
+import { IconKey, PhosphorIcon } from '../../icons';
 
 export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & {
     className?: string,
-    icon: IconProp,
-    spin?: true | 'slow',
+    icon: IconKey,
     children?: React.ReactNode
 }) => (
-    <div {..._.omit(props, ['message', 'icon', 'spin'])}>
-        <Icon
-            icon={props.icon}
-            spin={props.spin === true}
-            className={props.spin === 'slow' ? 'slow-spin' : undefined}
-        />
+    <div className={props.className}>
+        <PhosphorIcon icon={props.icon} />
         { props.children && <>
             <br/>
             { props.children }
@@ -27,8 +22,10 @@ export const EmptyState = styled((props: React.HTMLAttributes<HTMLDivElement> & 
     align-items: center;
     justify-content: center;
 
-    color: ${props => props.theme.containerWatermark};
-    font-size: 40px;
+    color: ${p => p.theme.containerWatermark};
+    font-size: ${p => p.theme.loudHeadingSize};
+    letter-spacing: -1px;
+
     text-align: center;
 
     box-sizing: border-box;

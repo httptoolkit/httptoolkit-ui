@@ -156,7 +156,7 @@ export const MANUALLY_SENT_SOURCE = {
     summary: 'HTTP Toolkit (Send)',
     description: 'Sent manually from HTTP Toolkit',
     icon: {
-        icon: ['far', 'paper-plane'],
+        icon: 'PaperPlaneTilt',
         color: popColor
     }
 };

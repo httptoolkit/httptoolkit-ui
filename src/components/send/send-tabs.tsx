@@ -20,7 +20,8 @@ const TabsContainer = styled.div.attrs(() => ({
     height: ${TAB_BAR_HEIGHT};
     box-sizing: border-box;
 
-    background-color: ${p => p.theme.containerBackground};
+    color: ${p => p.theme.mainColor};
+    background-color: ${p => p.theme.mainLowlightBackground};
 
     font-size: ${p => p.theme.textSize};
 

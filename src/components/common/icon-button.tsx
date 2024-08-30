@@ -1,14 +1,15 @@
 import * as React from 'react';
 
 import { styled } from '../../styles'
-import { Icon, IconProp } from '../../icons';
+import { Icon, IconProp, IconKey, PhosphorIcon } from '../../icons';
 
 import { UnstyledButton, UnstyledButtonLink } from './inputs';
 
 export const IconButton = styled((p: {
     className?: string,
     title: string,
-    icon: IconProp,
+    icon: IconProp | IconKey,
+    iconSize?: string,
     disabled?: boolean,
     fixedWidth?: boolean,
     tabIndex?: number,
@@ -23,10 +24,17 @@ export const IconButton = styled((p: {
         onClick={p.onClick}
         onKeyDown={p.onKeyDown}
     >
-        <Icon
-            icon={p.icon}
-            fixedWidth={p.fixedWidth ? true : false}
-        />
+        { Array.isArray(p.icon)
+            ? <Icon
+                icon={p.icon}
+                size={p.iconSize}
+                fixedWidth={p.fixedWidth ? true : false}
+            />
+            : <PhosphorIcon
+                icon={p.icon as IconKey}
+                size={p.iconSize || '1.25em'}
+            />
+        }
     </UnstyledButton>
 )`
     color: ${p => p.theme.mainColor};
@@ -42,6 +50,10 @@ export const IconButton = styled((p: {
             outline: none;
             color: ${p => p.theme.popColor};
         }
+    }
+
+    .phosphor-icon {
+        margin: 0 -3px; /* Fix alignment with FontAwesome in rows e.g. View right footer */
     }
 `;
 

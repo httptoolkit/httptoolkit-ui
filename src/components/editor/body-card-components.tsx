@@ -3,7 +3,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import { Headers, RawHeaders } from '../../types';
-import { styled } from '../../styles';
+import { styled, css } from '../../styles';
 import { WarningIcon } from '../../icons';
 
 import { asHeaderArray, getHeaderValue, getHeaderValues } from '../../util/headers';
@@ -31,9 +31,20 @@ import { FormatButton } from '../common/format-button';
 // HTTP, but not always) but exported individually so they can be recombined & tweaked
 // in slightly different ways in each case.
 
-export const EditorCardContent = styled.div`
+export const EditorCardContent = styled.div<{ showFullBorder: boolean }>`
     margin: 0 -20px -20px -20px;
-    border-top: solid 1px ${p => p.theme.containerBorder};
+
+    ${p => p.showFullBorder
+        ? css`
+            border: solid 1px ${p => p.theme.containerBorder};
+            padding-right: 1px; /* Seemingly required to show right border */
+            border-radius: 0 0 3px 3px;
+        `
+        : css`
+            border-top: solid 1px ${p => p.theme.containerBorder};
+        `
+    }
+
     background-color: ${p => p.theme.highlightBackground};
     color: ${p => p.theme.highlightColor};
 
@@ -49,10 +60,6 @@ export const EditorCardContent = styled.div`
     scrollable URL param content
     */
     min-height: 0;
-`;
-
-export const ContainerSizedEditorCardContent = styled(EditorCardContent)`
-    flex-shrink: 1;
 `;
 
 export function getBodyDownloadFilename(url: string, headers: Headers | RawHeaders): string | undefined {

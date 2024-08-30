@@ -9,14 +9,14 @@ import { AxisLeft } from '@vx/axis';
 
 import { styled } from '../../styles';
 
-import { getSummaryColour } from '../../model/events/categorization';
+import { getSummaryColor } from '../../model/events/categorization';
 import { getReadableSize } from '../../util/buffer';
 
 // Somewhat arbitrary colour selections, but picking from our existing category
 // pallet for vaugely related colours, that work together and which don't have
 // accessibility issues for colourblind usersL
-export const SentDataColour = getSummaryColour('data');
-export const ReceivedDataColour = getSummaryColour('rtc-media');
+export const SentDataColor = getSummaryColor('data');
+export const ReceivedDataColor = getSummaryColor('rtc-media');
 
 const GraphSvg = styled.svg`
     background-color: ${p => p.theme.mainLowlightBackground};
@@ -77,14 +77,14 @@ export const SendReceiveGraph = ({
                 data={receivedData}
                 xScale={xScale}
                 yScale={receivedYScale}
-                fill={ReceivedDataColour}
+                fill={ReceivedDataColor}
             />
             <GraphArea
                 label='Sent'
                 data={sentData}
                 xScale={xScale}
                 yScale={sentYScale}
-                fill={SentDataColour}
+                fill={SentDataColor}
             />
         </Group>
     </GraphSvg>;

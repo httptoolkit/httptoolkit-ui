@@ -2,34 +2,34 @@ import * as _ from 'lodash';
 import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 
-import { HtkMockRule } from './rules';
+import { HtkRule } from './rules';
 
-export type HtkMockItem =
-    | HtkMockRule
-    | HtkMockRuleGroup
-    | HtkMockRuleRoot;
+export type HtkRuleItem =
+    | HtkRule
+    | HtkRuleGroup
+    | HtkRuleRoot;
 
-export type HtkMockRuleGroup = {
+export type HtkRuleGroup = {
     id: string;
     title: string;
-    items: HtkMockItem[];
+    items: HtkRuleItem[];
     collapsed?: boolean;
 };
 
-export interface HtkMockRuleRoot extends HtkMockRuleGroup {
+export interface HtkRuleRoot extends HtkRuleGroup {
     id: 'root';
     title: 'HTTP Toolkit Rules';
     isRoot: true;
-    items: HtkMockItem[];
+    items: HtkRuleItem[];
 }
 
 export type ItemPath = number[];
 
-export function isRuleGroup(item: HtkMockItem | undefined): item is HtkMockRuleGroup {
+export function isRuleGroup(item: HtkRuleItem | undefined): item is HtkRuleGroup {
     return _.isObject(item) && 'items' in (item || {});
 };
 
-export function isRuleRoot(item: HtkMockItem): item is HtkMockRuleRoot {
+export function isRuleRoot(item: HtkRuleItem): item is HtkRuleRoot {
     return isRuleGroup(item) && 'isRoot' in item && item.isRoot === true;
 }
 
@@ -55,12 +55,12 @@ export function comparePaths(pathA: ItemPath, pathB: ItemPath): number {
     return 0;
 }
 
-export function getItemParentByPath(rules: HtkMockRuleGroup, path: ItemPath) {
-    return getItemAtPath(rules, path.slice(0, -1)) as HtkMockRuleGroup;
+export function getItemParentByPath(rules: HtkRuleGroup, path: ItemPath) {
+    return getItemAtPath(rules, path.slice(0, -1)) as HtkRuleGroup;
 }
 
-export function getItemAtPath(rules: HtkMockRuleGroup, path: ItemPath): HtkMockItem {
-    return path.reduce<HtkMockItem>((result, step, index) => {
+export function getItemAtPath(rules: HtkRuleGroup, path: ItemPath): HtkRuleItem {
+    return path.reduce<HtkRuleItem>((result, step, index) => {
         if (!isRuleGroup(result)) {
             throw new Error(`Invalid path ${path} at step #${index}, found ${result}`);
         }
@@ -69,15 +69,15 @@ export function getItemAtPath(rules: HtkMockRuleGroup, path: ItemPath): HtkMockI
 };
 
 export function updateItemAtPath(
-    rules: HtkMockRuleGroup,
+    rules: HtkRuleGroup,
     path: ItemPath,
-    newItem: HtkMockItem
+    newItem: HtkRuleItem
 ) {
     const parentPath = path.slice(0, -1);
     const childIndex = _.last(path)!;
 
     const parentItems = parentPath.length
-        ? getItemAtPath(rules, parentPath) as HtkMockRuleGroup
+        ? getItemAtPath(rules, parentPath) as HtkRuleGroup
         : rules;
 
     parentItems.items[childIndex] = newItem;
@@ -85,7 +85,7 @@ export function updateItemAtPath(
 };
 
 export function deleteItemAtPath(
-    rules: HtkMockRuleGroup,
+    rules: HtkRuleGroup,
     path: ItemPath
 ) {
     const parent = getItemParentByPath(rules, path);
@@ -99,12 +99,12 @@ export function deleteItemAtPath(
 }
 
 export function findItem(
-    rules: HtkMockRuleGroup,
-    match: ((value: HtkMockItem) => boolean) | Partial<HtkMockItem>
-): HtkMockItem | undefined {
+    rules: HtkRuleGroup,
+    match: ((value: HtkRuleItem) => boolean) | Partial<HtkRuleItem>
+): HtkRuleItem | undefined {
     if (_.isMatch(rules, match)) return rules;
 
-    return _.reduce(rules.items, (result: HtkMockItem | undefined, item: HtkMockItem) => {
+    return _.reduce(rules.items, (result: HtkRuleItem | undefined, item: HtkRuleItem) => {
         if (result) return result;
 
         if (isRuleGroup(item)) {
@@ -116,13 +116,13 @@ export function findItem(
 };
 
 export function findItemPath(
-    rules: HtkMockRuleGroup,
-    match: ((value: HtkMockItem) => boolean) | Partial<HtkMockItem>,
+    rules: HtkRuleGroup,
+    match: ((value: HtkRuleItem) => boolean) | Partial<HtkRuleItem>,
     currentPath: ItemPath = []
 ): ItemPath | undefined {
     if (_.isMatch(rules, match)) return currentPath;
 
-    return _.reduce(rules.items, (result: ItemPath | undefined, item: HtkMockItem, index: number) => {
+    return _.reduce(rules.items, (result: ItemPath | undefined, item: HtkRuleItem, index: number) => {
         if (result) return result;
 
         if (isRuleGroup(item)) {
@@ -133,11 +133,11 @@ export function findItemPath(
     }, undefined);
 };
 
-export const flattenRules = (rules: HtkMockRuleGroup) => mapRules(rules, r => r);
+export const flattenRules = (rules: HtkRuleGroup) => mapRules(rules, r => r);
 
 export function mapRules<R>(
-    rules: HtkMockRuleGroup,
-    fn: (rule: HtkMockRule, path: ItemPath, index: number) => R,
+    rules: HtkRuleGroup,
+    fn: (rule: HtkRule, path: ItemPath, index: number) => R,
     currentPath: number[] = [],
     currentIndex = 0
 ): Array<R> {
@@ -155,15 +155,15 @@ export function mapRules<R>(
     }, []);
 };
 
-export function cloneItem<I extends HtkMockRuleGroup | HtkMockRule>(item: I): I {
+export function cloneItem<I extends HtkRuleGroup | HtkRule>(item: I): I {
     if (isRuleGroup(item)) {
-        return cloneRuleGroup<I & HtkMockRuleGroup>(item);
+        return cloneRuleGroup<I & HtkRuleGroup>(item);
     } else {
-        return cloneRule(item as I & HtkMockRule);
+        return cloneRule(item as I & HtkRule);
     }
 }
 
-export function cloneRule<R extends HtkMockRule>(rule: R): R {
+export function cloneRule<R extends HtkRule>(rule: R): R {
     return observable({
         ...rule, // All handler/matcher/checker state is immutable
         matchers: [...rule.matchers], // Except the matcher array itself
@@ -171,7 +171,7 @@ export function cloneRule<R extends HtkMockRule>(rule: R): R {
     });
 };
 
-export function cloneRuleGroup<G extends HtkMockRuleGroup>(group: HtkMockRuleGroup): G {
+export function cloneRuleGroup<G extends HtkRuleGroup>(group: HtkRuleGroup): G {
     return {
         ...group,
         items: group.items.map(i => cloneItem(i)),
@@ -180,7 +180,7 @@ export function cloneRuleGroup<G extends HtkMockRuleGroup>(group: HtkMockRuleGro
     } as G;
 }
 
-export const areItemsEqual = (a: HtkMockItem | undefined, b: HtkMockItem | undefined) => {
+export const areItemsEqual = (a: HtkRuleItem | undefined, b: HtkRuleItem | undefined) => {
     if (isRuleGroup(a)) {
         if (isRuleGroup(b)) {
             return areGroupsEqual(a, b);
@@ -196,7 +196,7 @@ export const areItemsEqual = (a: HtkMockItem | undefined, b: HtkMockItem | undef
     }
 };
 
-const areGroupsEqual = (a: HtkMockRuleGroup, b: HtkMockRuleGroup) => {
+const areGroupsEqual = (a: HtkRuleGroup, b: HtkRuleGroup) => {
     return a.id === b.id &&
         a.title === b.title &&
         _.isEqualWith(a.items, b.items, areItemsEqual);

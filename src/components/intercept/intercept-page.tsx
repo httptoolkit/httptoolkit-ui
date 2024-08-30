@@ -13,7 +13,8 @@ import { MANUAL_INTERCEPT_ID } from '../../model/interception/interceptors';
 
 import { ConnectedSources } from './connected-sources';
 import { InterceptOption } from './intercept-option';
-import { SearchBox } from '../common/search-box';
+import { TextInput } from '../common/inputs';
+import { IconButton } from '../common/icon-button';
 
 interface InterceptPageProps {
     className?: string;
@@ -86,12 +87,50 @@ const InterceptInstructions = styled.div`
     }
 `;
 
-const InterceptSearchBox = styled(SearchBox).attrs(() => ({
-    autoFocus: true,
-    placeholder: 'Browsers, mobile, docker...',
-    'aria-label': "Filter the list of intercept options below",
-    iconSize: '2x'
-}))`
+const SearchInput = styled(TextInput)`
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+
+    box-shadow: inset 0 2px 4px 1px rgba(0, 0, 0, ${p => p.theme.boxShadowAlpha / 2});
+
+    font-size: ${p => p.theme.headingSize};
+`;
+
+const ClearSearchButton = styled(IconButton)`
+    position: absolute;
+
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+`;
+
+const SearchBox = styled((props: {
+    className?: string,
+    value: string,
+    onSearch: (input: string) => void
+}) =>
+    <div className={props.className}>
+        <SearchInput
+            autoFocus={true}
+            value={props.value}
+            placeholder='Browsers, mobile, docker...'
+            aria-label='Filter the list of intercept options below'
+            onChange={(e) => props.onSearch(e.currentTarget.value)}
+        />
+        { !!props.value &&
+            <ClearSearchButton
+                icon={['fas', 'times']}
+                iconSize={'2x'}
+                onClick={() => props.onSearch('')}
+                title='Clear search input'
+            />
+        }
+    </div>
+)`
+    position: relative;
+
     @media (min-width: ${NARROW_LAYOUT_BREAKPOINT}px) {
         margin: 20px 0 0;
     }
@@ -138,7 +177,7 @@ class InterceptPage extends React.Component<InterceptPageProps> {
                         Click an option below to connect a traffic source, or
                         search for connectors that could work for you:
                     </p>
-                    <InterceptSearchBox
+                    <SearchBox
                         value={this.filter || ''}
                         onSearch={this.onSearchInput}
                     />

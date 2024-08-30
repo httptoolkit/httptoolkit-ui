@@ -50,7 +50,7 @@ export class SDPCard extends React.Component<RtcSdpCardProps> {
                 </CollapsibleCardHeading>
             </header>
 
-            <EditorCardContent>
+            <EditorCardContent showFullBorder={!cardProps.expanded}>
                 <ContentViewer
                     contentId={`${connection.id}:${type}:${sessionDescription.type}:sdp`}
                     editorNode={this.props.editorNode}

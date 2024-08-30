@@ -5,7 +5,7 @@ import { Link, Match } from '@reach/router';
 import * as dedent from 'dedent';
 
 import { styled, css, Theme } from '../styles';
-import { Icon, IconProp } from '../icons';
+import { IconKey, PhosphorIcon } from '../icons';
 import { UI_VERSION, desktopVersion, serverVersion } from '../services/service-versions';
 
 import { UnstyledButton } from './common/inputs';
@@ -13,7 +13,7 @@ import logo from '../images/logo-icon.svg';
 
 export interface SidebarItem {
     name: string;
-    icon: IconProp;
+    icon: IconKey;
     position: 'top' | 'bottom';
     highlight?: true;
 
@@ -42,15 +42,15 @@ const SidebarNav = styled.nav`
     box-shadow: 0 0 30px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 
     font-size: ${p => p.theme.textSize};
-    letter-spacing: -0.4px;
+    letter-spacing: -0.3px;
 
     display: flex;
     flex-direction: column;
 `
 
 const sidebarItemStyles = css`
-    width: 70px;
-    height: 70px;
+    width: 72px;
+    height: 72px;
     margin: 0 auto;
 
     display: flex;
@@ -67,7 +67,8 @@ const SidebarLogo = styled.img.attrs(() => ({
     alt: 'HTTP Toolkit logo'
 }))`
     ${sidebarItemStyles}
-    padding: 8px;
+    padding: 13px;
+    margin: 3px auto 4px;
 `
 
 const SidebarSelectableItem = styled(Link)`
@@ -85,13 +86,14 @@ const SidebarSelectableItem = styled(Link)`
     &:hover, &:focus {
         outline: none;
         color: ${p => p.theme.popColor};
+        opacity: 1;
     }
 
-    border-width: 0 5px;
+    border-width: 0 4px;
     border-style: solid;
     border-color: transparent;
 
-    opacity: 0.6;
+    opacity: 0.8;
 
     ${(p: { selected: boolean }) => p.selected && css`{
         opacity: 1;
@@ -149,8 +151,8 @@ const SidebarButton = styled(
 export const Sidebar = observer((props: SidebarProps) => {
     const items = props.items.map((item, i) => {
         const itemContent = <>
-            <Icon size='2x' icon={item.icon} />
-            {item.name}
+            <PhosphorIcon icon={item.icon} size={34} />
+            { item.name }
         </>;
 
         if (item.type === 'web') {

@@ -1,6 +1,53 @@
 import * as React from 'react';
 import { styled, warningColor } from './styles';
 
+// Import required Phosphor icons:
+import {
+    type IconProps as PhosphorIconProps,
+
+    // Sidebar icons
+    Plugs,
+    MagnifyingGlass,
+    Pencil,
+    PaperPlaneTilt,
+    GearSix,
+    Star,
+    ChatText,
+
+    // Functional icons
+    Pause,
+    Plug,
+    QuestionMark,
+    ArrowLeft,
+} from '@phosphor-icons/react';
+
+export type IconKey = keyof typeof Icons;
+
+export const PhosphorIcon = React.memo((props: { icon: IconKey } & PhosphorIconProps) => {
+    const { icon, ...otherProps } = props;
+    const PIcon = Icons[props.icon];
+
+    return <PIcon
+        {...otherProps}
+        className={'phosphor-icon ' + (props.className || '')}
+    />;
+});
+
+const Icons = {
+    Plugs,
+    MagnifyingGlass,
+    Pencil,
+    PaperPlaneTilt,
+    GearSix,
+    Star,
+    ChatText,
+
+    Pause,
+    Plug,
+    QuestionMark,
+    ArrowLeft,
+} as const;
+
 // Import required FA icons:
 import {
     library,
@@ -168,7 +215,7 @@ library.add(
 );
 
 export interface IconProps {
-    icon: ExtendedIconProp;
+    icon: ExtendedIconProp | IconKey;
     color: string;
     size?: SizeProp;
 }
@@ -234,18 +281,52 @@ export const SourceIcons = {
     Unknown: { icon: ['fas', 'question'], color: '#888' }
 } as const;
 
-import { FontAwesomeIcon, Props as FAIProps } from '@fortawesome/react-fontawesome';
+import * as FA from '@fortawesome/react-fontawesome';
 type ExtendedIconProp = IconProp | readonly ['fac', string] | readonly [IconPrefix, IconName];
-export const Icon = React.memo(
-    FontAwesomeIcon as (props: Omit<FAIProps, 'icon'> & {
+const FAIcon = React.memo(
+    FA.FontAwesomeIcon as (props: Omit<FA.FontAwesomeIconProps, 'icon'> & {
         icon: ExtendedIconProp,
         onClick?: (event: React.MouseEvent) => void,
         onKeyPress?: (event: React.KeyboardEvent) => void
     }) => JSX.Element
 );
+
+export const Icon = (props: {
+    icon: ExtendedIconProp | IconKey,
+    onClick?: (event: React.MouseEvent) => void,
+    onKeyPress?: (event: React.KeyboardEvent) => void,
+
+    spin?: boolean,
+    color?: string,
+    size?: string,
+    fixedWidth?: boolean,
+    className?: string,
+    title?: string
+}): JSX.Element => {
+    if (Array.isArray(props.icon)) {
+        return <FAIcon
+            {...props}
+            size={props.size as FA.FontAwesomeIconProps['size']}
+            icon={props.icon as ExtendedIconProp}
+        />
+    } else {
+        return <PhosphorIcon
+            icon={props.icon as IconKey}
+
+            onClick={props.onClick}
+            onKeyPress={props.onKeyPress}
+
+            color={props.color}
+            size={props.size || '1.25em'}
+            className={props.className}
+            alt={props.title}
+        />
+    }
+};
+
 export type { ExtendedIconProp as IconProp, SizeProp };
 
-export const SuggestionIcon = styled(Icon).attrs(() => ({
+export const SuggestionIcon = styled(FAIcon).attrs(() => ({
     icon: ['fas', 'lightbulb']
 }))`
     margin: 0 6px;
@@ -262,7 +343,7 @@ export const suggestionIconHtml = iconHtml(
     }
 );
 
-export const WarningIcon = styled(Icon).attrs(() => ({
+export const WarningIcon = styled(FAIcon).attrs(() => ({
     icon: ['fas', 'exclamation-triangle']
 }))`
     margin: 0 6px;
@@ -279,7 +360,7 @@ export const warningIconHtml = iconHtml(
     }
 );
 
-export const ArrowIcon = styled(Icon).attrs(() => ({
+export const ArrowIcon = styled(FAIcon).attrs(() => ({
     fixedWidth: true,
     icon: ['fas', 'arrow-left']
 }))`

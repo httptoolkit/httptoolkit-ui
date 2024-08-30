@@ -4,6 +4,7 @@ import { css, styled } from "../../styles";
 
 import { CollapsibleCard, CollapsibleCardProps } from "../common/card";
 import { LoadingCardContent } from '../common/loading-card';
+import { EditorCardContent } from '../editor/body-card-components';
 
 export const SendCardContainer = styled.section<{
     hasExpandedChild: boolean
@@ -92,4 +93,8 @@ export const SendBodyCardSection = styled(SendCardSection)`
         /* Fixed size required to avoid editor resize thrashing */
         flex-basis: 60%;
     `}
+`;
+
+export const SendEditorCardContent = styled(EditorCardContent)`
+    flex-shrink: 1;
 `;

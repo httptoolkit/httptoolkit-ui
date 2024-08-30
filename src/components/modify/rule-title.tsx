@@ -4,7 +4,7 @@ import { styled } from '../../styles';
 import { noPropagation } from '../component-utils';
 
 import { TextInput } from '../common/inputs';
-import { IconMenuButton } from './mock-item-menu';
+import { IconMenuButton } from './rule-icon-menu';
 
 export const RuleTitle = styled.h2`
     white-space: nowrap;

@@ -148,10 +148,10 @@ export function getEventCategory(event: HTKEventBase): EventCategory {
 };
 
 export function describeEventCategory(category: EventCategory) {
-    const categoryColour = getSummaryColour(category);
-    const colourName = _.startCase(_.findKey(highlights, (c) => c === categoryColour)!);
+    const categoryColor = getSummaryColor(category);
+    const colorName = _.startCase(_.findKey(highlights, (c) => c === categoryColor)!);
 
-    return `${colourName}: ${({
+    return `${colorName}: ${({
         "mutative": "a request that might affect the server state (unlike a GET request)",
         "incomplete": "an incomplete request",
         "aborted": "an aborted request",
@@ -182,7 +182,7 @@ const highlights = {
     pink: '#dd3a96'
 };
 
-export function getSummaryColour(exchangeOrCategory: HttpExchange | EventCategory): string {
+export function getSummaryColor(exchangeOrCategory: HttpExchange | EventCategory): string {
     const category = typeof exchangeOrCategory === 'string' ?
         exchangeOrCategory : exchangeOrCategory.category;
 

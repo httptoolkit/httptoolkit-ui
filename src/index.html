@@ -13,7 +13,7 @@
             height: 100%;
             overflow: hidden;
 
-            font-family: Lato, Arial, sans-serif;
+            font-family: "DM Sans", Arial, sans-serif;
         }
 
         #app-loading-placeholder {
@@ -32,6 +32,7 @@
 
         #initial-logo, #progress-logo {
             position: absolute;
+            max-width: 80%;
         }
 
         #initial-logo {
@@ -40,7 +41,7 @@
 
         #progress-logo {
             clip-path: inset(0 100% 0 0);
-            transition: clip-path 0.5s;
+            transition: clip-path 0.2s;
         }
 
         #app-loading-error {
@@ -59,20 +60,27 @@
             height: 100%;
         }
     </style>
+
+    <script>
+        const bgColor = localStorage.getItem('theme-background-color') || (
+            // Use dark/light theme containerBackground
+            window.matchMedia("(prefers-color-scheme: dark)")
+                ? '#1e2028'
+                : '#e4e8ed'
+        );
+        document.querySelector('html').style.backgroundColor = bgColor;
+    </script>
   </head>
   <body>
     <div id="app"></div>
     <div id="app-loading-placeholder">
-      <img id="initial-logo" src="<%=require('./images/logo-large.png')%>">
-      <img id="progress-logo" src="<%=require('./images/logo-large.png')%>">
+      <img id="initial-logo" src="<%=require('./images/loading-logo.png')%>">
+      <img id="progress-logo" src="<%=require('./images/loading-logo.png')%>">
       <div id="app-loading-error"></div>
       <div id="app-loading-error-details"></div>
     </div>
 
     <script>
-        const bgColor = localStorage.getItem('theme-background-color') || '#d8e2e6';
-        document.querySelector('html').style.backgroundColor = bgColor;
-
         let progressElement = document.getElementById('progress-logo');
         let errorElement = document.getElementById('app-loading-error');
         let errorDetailsElement = document.getElementById('app-loading-error-details');

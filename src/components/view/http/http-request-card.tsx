@@ -3,12 +3,12 @@ import { inject, observer } from 'mobx-react';
 
 import { HttpExchange, HtkRequest } from '../../../types';
 import { styled } from '../../../styles';
-import { Icon } from '../../../icons';
+import { PhosphorIcon } from '../../../icons';
 
 import { aOrAn, uppercaseFirst } from '../../../util/text';
 
 import { UiStore } from '../../../model/ui/ui-store';
-import { getSummaryColour } from '../../../model/events/categorization';
+import { getSummaryColor } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
 import { nameHandlerClass } from '../../../model/rules/rule-descriptions';
 import { HandlerClassKey } from '../../../model/rules/rules';
@@ -51,7 +51,7 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
         : nameHandlerClass(stepTypes[0]);
 
     return <PillButton
-        color={getSummaryColour('mutative')} // Conceptually similar - we've modified traffic
+        color={getSummaryColor('mutative')} // Conceptually similar - we've modified traffic
         className={p.className}
 
         // For now we show modified as unchanged, but we could highlight this later:
@@ -69,12 +69,12 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
                 : ''
             }.${
                 p.ruleData.status !== 'deleted'
-                    ? '\nClick here to jump to the rule on the Mock page.'
+                    ? '\nClick here to jump to the rule on the Modify page.'
                     : ''
             }`
         }
     >
-        <Icon icon={['fas', 'theater-masks']} />
+        <PhosphorIcon icon='Pencil' size='16px' />
         { uppercaseFirst(stepDescription) }
     </PillButton>;
 }))`
@@ -84,7 +84,7 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
     word-spacing: 0;
 
     > svg {
-        margin-right: 5px;
+        margin: -1px 5px 0 -1px;
     }
 `;
 
@@ -173,7 +173,7 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
             }
             <SourceIcon source={request.source} />
             <HttpVersionPill request={request} />
-            <Pill color={getSummaryColour(exchange)}>
+            <Pill color={getSummaryColor(exchange)}>
                 { exchange.isWebSocket() ? 'WebSocket ' : '' }
                 { request.method } {
                     (request.hostname || '')

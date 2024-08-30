@@ -117,6 +117,8 @@ const PlanPickerButtons = styled.div`
 `;
 
 const PlanSecondaryButton = styled(SecondaryButton)`
+    letter-spacing: -0.5px;
+
     &:not(:last-child) {
         margin-bottom: 10px;
     }
@@ -170,7 +172,7 @@ const PricingTier = styled.section<{ highlighted?: boolean }>`
     `}
 `;
 
-const TierHeader = styled.div`
+const TierHeader = styled.h2`
     width: 100%;
     padding: 30px 0;
     color: ${p => p.theme.popColor};
@@ -293,7 +295,7 @@ const SpinnerModal = styled.div`
     }
 
     > p, > svg {
-        color: #fff;
+        color: ${p => p.theme.mainBackground};
         margin: 20px auto;
     }
 
@@ -405,11 +407,11 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
                     </TierPriceBlock>
                     <TierFeatures>
                         <Feature>
-                            <strong>Automated HTTP mocking & rewriting rules</strong>, including traffic redirection,
-                            mock responses, and errors & timeouts.
+                            <strong>Automated HTTP rewriting rules</strong>, including traffic
+                            redirection, mock responses, and errors & timeouts.
                         </Feature>
                         <Feature>
-                            <strong>Reusable Mock & Send tools</strong>. Persistent by default, plus
+                            <strong>Reusable Modify & Send tools</strong>. Persistent by default, plus
                             import/export so you can store, reuse & share your rules & requests.
                         </Feature>
                         <Feature>

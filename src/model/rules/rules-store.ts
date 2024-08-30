@@ -40,13 +40,13 @@ import { getDesktopInjectedValue } from '../../services/desktop-api';
 import { RTC_RULES_SUPPORTED, WEBSOCKET_RULE_RANGE } from '../../services/service-versions';
 
 import {
-    HtkMockRule,
+    HtkRule,
     isHttpBasedRule,
     isWebSocketRule,
     isRTCRule
 } from './rules';
 import {
-    HtkMockRuleGroup,
+    HtkRuleGroup,
     flattenRules,
     ItemPath,
     isRuleGroup,
@@ -56,9 +56,9 @@ import {
     deleteItemAtPath,
     findItem,
     findItemPath,
-    HtkMockRuleRoot,
+    HtkRuleRoot,
     isRuleRoot,
-    HtkMockItem,
+    HtkRuleItem,
     areItemsEqual,
 } from './rules-structure';
 import {
@@ -70,7 +70,7 @@ import {
 import {
     serializeRules,
     deserializeRules,
-    MockRulesetSchema,
+    HtkRulesetSchema,
     DeserializationArgs
 } from './rule-serialization';
 import { migrateRuleData } from './rule-migrations';
@@ -88,7 +88,7 @@ const clientCertificateSchema = serializr.createSimpleSchema({
     pfx: serializr.custom(encodeBase64, decodeBase64)
 });
 
-const reloadRules = (ruleRoot: HtkMockRuleRoot, rulesStore: RulesStore) => {
+const reloadRules = (ruleRoot: HtkRuleRoot, rulesStore: RulesStore) => {
     return deserializeRules(serializeRules(ruleRoot), { rulesStore });
 };
 
@@ -395,11 +395,11 @@ export class RulesStore {
     @persist('list') @observable
     additionalCaCertificates: Array<ParsedCertificate> = [];
 
-    @persist('object', MockRulesetSchema) @observable
-    rules!: HtkMockRuleRoot;
+    @persist('object', HtkRulesetSchema) @observable
+    rules!: HtkRuleRoot;
 
     @observable
-    draftRules!: HtkMockRuleRoot;
+    draftRules!: HtkRuleRoot;
 
     @action.bound
     saveRules() {
@@ -452,7 +452,7 @@ export class RulesStore {
 
         const activeParent = getItemParentByPath(activeRules, activeRulePath);
         const currentDraftParent = getItemParentByPath(draftRules, draftItemPath);
-        let targetDraftParent = findItem(draftRules, { id: activeParent.id }) as HtkMockRuleGroup;
+        let targetDraftParent = findItem(draftRules, { id: activeParent.id }) as HtkRuleGroup;
 
         if (!targetDraftParent) {
             let missingParents = [activeParent];
@@ -462,7 +462,7 @@ export class RulesStore {
                 const missingParentsActivePath = activeRulePath.slice(0, -missingParents.length);
                 const nextActiveParent = getItemParentByPath(activeRules, missingParentsActivePath);
 
-                const targetDraftParentParent = findItem(draftRules, { id: nextActiveParent.id }) as HtkMockRuleGroup;
+                const targetDraftParentParent = findItem(draftRules, { id: nextActiveParent.id }) as HtkRuleGroup;
 
                 if (targetDraftParentParent) {
                     targetDraftParent = missingParents.reduce(({ draftParent, activeParent }, missingGroup) => {
@@ -559,23 +559,23 @@ export class RulesStore {
         const draftItem = getItemAtPath(draftRules, draftItemPath);
         const draftParent = getItemParentByPath(draftRules, draftItemPath);
 
-        let targetActiveParent = findItem(activeRules, { id: draftParent.id }) as HtkMockRuleGroup;
+        let targetActiveParent = findItem(activeRules, { id: draftParent.id }) as HtkRuleGroup;
         if (!targetActiveParent) {
-            targetActiveParent = this.saveItem(draftItemPath.slice(0, -1)) as HtkMockRuleGroup;
+            targetActiveParent = this.saveItem(draftItemPath.slice(0, -1)) as HtkRuleGroup;
         }
 
         const id = draftItem.id;
         const activeItemPath = findItemPath(activeRules, { id });
 
-        const updatedItem = observable(_.cloneDeep(_.omit(draftItem, 'items')) as HtkMockItem);
+        const updatedItem = observable(_.cloneDeep(_.omit(draftItem, 'items')) as HtkRuleItem);
 
         // When saving a single group, save the group itself, don't change the contents
         if (isRuleGroup(draftItem)) {
             if (activeItemPath) {
-                const activeItem = getItemAtPath(activeRules, activeItemPath) as HtkMockRuleGroup;
-                (updatedItem as HtkMockRuleGroup).items = _.cloneDeep(activeItem.items);
+                const activeItem = getItemAtPath(activeRules, activeItemPath) as HtkRuleGroup;
+                (updatedItem as HtkRuleGroup).items = _.cloneDeep(activeItem.items);
             } else {
-                (updatedItem as HtkMockRuleGroup).items = [];
+                (updatedItem as HtkRuleGroup).items = [];
             }
         }
 
@@ -636,7 +636,7 @@ export class RulesStore {
     }
 
     @action.bound
-    addDraftItem(draftItem: HtkMockItem, targetPath?: ItemPath) {
+    addDraftItem(draftItem: HtkRuleItem, targetPath?: ItemPath) {
         if (!targetPath) {
             // By default, we just append them at the top level
             this.draftRules.items.unshift(draftItem);
@@ -692,9 +692,9 @@ export class RulesStore {
 
     @action.bound
     updateGroupTitle(groupId: string, newTitle: string) {
-        const draftGroup = findItem(this.draftRules, { id: groupId }) as HtkMockRuleGroup;
+        const draftGroup = findItem(this.draftRules, { id: groupId }) as HtkRuleGroup;
         const activeGroup = findItem(this.rules, { id: groupId }) as (
-            HtkMockRuleGroup | undefined
+            HtkRuleGroup | undefined
         );
 
         draftGroup.title = newTitle;
@@ -702,15 +702,15 @@ export class RulesStore {
     }
 
     @action.bound
-    ensureRuleExists(rule: HtkMockItem) {
+    ensureRuleExists(rule: HtkRuleItem) {
         const activeRulePath = findItemPath(this.rules, { id: rule.id });
         const activeRule = activeRulePath
-            ? getItemAtPath(this.rules, activeRulePath) as HtkMockRule
+            ? getItemAtPath(this.rules, activeRulePath) as HtkRule
             : undefined;
 
         const draftRulePath = findItemPath(this.draftRules, { id: rule.id });
         const draftRule = draftRulePath
-            ? getItemAtPath(this.draftRules, draftRulePath) as HtkMockRule
+            ? getItemAtPath(this.draftRules, draftRulePath) as HtkRule
             : undefined;
 
         if (areItemsEqual(rule, activeRule) && areItemsEqual(rule, draftRule)) {
@@ -734,7 +734,7 @@ export class RulesStore {
             this.draftRules.items.push(buildDefaultGroupWrapper([rule]));
             draftDefaultGroupPath = [this.draftRules.items.length - 1];
         } else {
-            const draftDefaultGroup = getItemAtPath(this.draftRules, draftDefaultGroupPath) as HtkMockRuleGroup;
+            const draftDefaultGroup = getItemAtPath(this.draftRules, draftDefaultGroupPath) as HtkRuleGroup;
             draftDefaultGroup.items.unshift(rule);
         }
 

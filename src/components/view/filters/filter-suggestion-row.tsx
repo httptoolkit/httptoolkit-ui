@@ -21,6 +21,10 @@ const SuggestionRowContainer = styled.div<{ isHighlighted: boolean }>`
         ? p.theme.highlightBackground
         : p.theme.mainBackground
     };
+    color: ${p => p.isHighlighted
+        ? p.theme.highlightColor
+        : p.theme.mainColor
+    };
 
     ${p => p.isHighlighted && css`
         ${SuggestedText} {
@@ -62,6 +66,7 @@ const SuggestionDeleteButton = styled(IconButton).attrs(() => ({
 
 const SuggestionDescription = styled(SuggestionRowPart)`
     background-color: ${p => p.theme.mainLowlightBackground};
+    color: ${p => p.theme.mainColor};
     box-shadow:
         inset 0px 12px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha}),
         inset 0px -8px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
@@ -69,6 +74,7 @@ const SuggestionDescription = styled(SuggestionRowPart)`
     white-space: pre; /* Nowrap + show spaces accurately */
     overflow: hidden;
     text-overflow: ellipsis;
+    font-style: italic;
 `;
 
 export const FilterSuggestionRow = (props: {

@@ -118,7 +118,7 @@ export const WebSocketHandlerLookup = {
 type WebSocketHandlerClass = typeof WebSocketHandlerLookup[keyof typeof WebSocketHandlerLookup];
 type WebSocketHandler = InstanceType<WebSocketHandlerClass>;
 
-export interface WebSocketMockRule extends Omit<WebSocketRuleData, 'matchers'> {
+export interface WebSocketRule extends Omit<WebSocketRuleData, 'matchers'> {
     id: string;
     type: 'websocket';
     activated: boolean;

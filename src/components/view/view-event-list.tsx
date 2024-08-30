@@ -6,8 +6,8 @@ import { action, computed } from 'mobx';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
-import { css, highContrastTheme, styled } from '../../styles'
-import { ArrowIcon, Icon, WarningIcon } from '../../icons';
+import { styled } from '../../styles'
+import { ArrowIcon, Icon, PhosphorIcon, WarningIcon } from '../../icons';
 
 import {
     CollectedEvent,
@@ -19,7 +19,7 @@ import {
 } from '../../types';
 
 import {
-    getSummaryColour,
+    getSummaryColor,
     EventCategory,
     describeEventCategory
 } from '../../model/events/categorization';
@@ -123,7 +123,7 @@ const RowPin = styled(
 
 const RowMarker = styled(Column)`
     transition: color 0.2s;
-    color: ${(p: { category: EventCategory }) => getSummaryColour(p.category)};
+    color: ${(p: { category: EventCategory }) => getSummaryColor(p.category)};
 
     background-color: currentColor;
 
@@ -163,7 +163,10 @@ const Source = styled(Column)`
     flex-basis: 49px;
     flex-shrink: 0;
     flex-grow: 0;
-    text-align: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 `;
 
 const Host = styled(Column)`
@@ -233,15 +236,14 @@ const EventListRow = styled.div<{ role: 'row' }>`
 
     &.selected {
         background-color: ${p => p.theme.highlightBackground};
-        color: ${p => p.theme.highlightColor};
         font-weight: bold;
 
-        ${(p): any => p.theme === highContrastTheme &&
-            css`
-                ${StatusCode} {
-                    color: ${p => p.theme.highlightColor};
-                }
-            `
+        color: ${p => p.theme.highlightColor};
+        fill: ${p => p.theme.highlightColor};
+        * {
+            /* Override status etc colours to ensure contrast & give row max visibility */
+            color: ${p => p.theme.highlightColor};
+            fill: ${p => p.theme.highlightColor};
         }
     }
 
@@ -463,15 +465,15 @@ const ExchangeRow = inject('uiStore')(observer(({
                 exchange.matchedRule.handlerStepTypes.some(t =>
                     t !== 'passthrough' && t !== 'ws-passthrough' && t !== 'rtc-dynamic-proxy'
                 ) &&
-                <Icon
-                    title={`Handled by ${
+                <PhosphorIcon
+                    icon='Pencil'
+                    alt={`Handled by ${
                         exchange.matchedRule.handlerStepTypes.length === 1
                         ? nameHandlerClass(exchange.matchedRule.handlerStepTypes[0])
                         : 'multi-step'
                     } rule`}
-                    icon={['fas', 'theater-masks']}
-                    color={getSummaryColour('mutative')}
-                    fixedWidth={true}
+                    size='20px'
+                    color={getSummaryColor('mutative')}
                 />
             }
         </Source>
@@ -792,16 +794,16 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             {
                 events.length === 0
                 ? (isPaused
-                    ? <EmptyStateOverlay icon={['fas', 'pause']}>
+                    ? <EmptyStateOverlay icon='Pause'>
                         Interception is paused, resume it to collect intercepted requests
                     </EmptyStateOverlay>
-                    : <EmptyStateOverlay icon={['fas', 'plug']}>
+                    : <EmptyStateOverlay icon='Plug'>
                         Connect a client and intercept some requests, and they'll appear here
                     </EmptyStateOverlay>
                 )
 
                 : filteredEvents.length === 0
-                ? <EmptyStateOverlay icon={['fas', 'question']}>
+                ? <EmptyStateOverlay icon='QuestionMark'>
                         No requests match this search filter{
                             isPaused ? ' and interception is paused' : ''
                         }

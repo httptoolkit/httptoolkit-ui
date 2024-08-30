@@ -44,7 +44,7 @@ const SearchFilterBox = styled.div<{ hasContents: boolean }>`
 
     border: 1px solid ${p => p.theme.containerBorder};
     box-shadow: inset 0 2px 4px 1px rgba(0, 0, 0, ${p => p.theme.boxShadowAlpha / 2});
-    background-color: ${p => p.theme.highlightBackground};
+    background-color: ${p => p.theme.inputBackground};
     color: ${p => p.theme.highlightColor};
 
     font-size: ${p => p.theme.textSize};
@@ -74,7 +74,7 @@ const SearchFilterBox = styled.div<{ hasContents: boolean }>`
         background: linear-gradient(
             to right,
             transparent 0%,
-            ${p => polished.rgba(p.theme.highlightBackground, 0.9)} 25%
+            ${p => polished.rgba(p.theme.inputBackground, 0.9)} 25%
         );
     }
 

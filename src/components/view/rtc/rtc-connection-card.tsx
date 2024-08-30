@@ -10,7 +10,7 @@ import { observer } from 'mobx-react';
 
 import { UNKNOWN_SOURCE } from '../../../model/http/sources';
 import { RTCConnection } from '../../../model/webrtc/rtc-connection';
-import { getSummaryColour } from '../../../model/events/categorization';
+import { getSummaryColor } from '../../../model/events/categorization';
 
 import {
     CollapsibleCard,
@@ -70,15 +70,15 @@ export class RTCConnectionCard extends React.Component<RTCConnectionCardProps> {
                 <SourceIcon source={connection.source} />
 
                 { this.hasData &&
-                    <Pill color={getSummaryColour('data')}>Data</Pill>
+                    <Pill color={getSummaryColor('data')}>Data</Pill>
                 }
 
                 { this.hasVideo &&
-                    <Pill color={getSummaryColour('image')}>Video</Pill>
+                    <Pill color={getSummaryColor('image')}>Video</Pill>
                 }
 
                 { this.hasAudio &&
-                    <Pill color={getSummaryColour('css')}>Audio</Pill>
+                    <Pill color={getSummaryColor('css')}>Audio</Pill>
                 }
 
                 <CollapsibleCardHeading onCollapseToggled={cardProps.onCollapseToggled}>

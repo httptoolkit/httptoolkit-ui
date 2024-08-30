@@ -15,9 +15,9 @@ import { styled, css } from '../../styles';
 import { Icon } from '../../icons';
 import { UnreachableCheck } from '../../util/error';
 
-import { getMethodColor, getSummaryColour } from '../../model/events/categorization';
+import { getMethodColor, getSummaryColor } from '../../model/events/categorization';
 import {
-    HtkMockRule,
+    HtkRule,
     Matcher,
     Handler,
     AvailableHandler,
@@ -55,9 +55,9 @@ import {
 } from './matcher-selection';
 import { HandlerSelector } from './handler-selection';
 import { HandlerConfiguration } from './handler-config';
-import { DragHandle } from './mock-drag-handle';
-import { IconMenu, IconMenuButton } from './mock-item-menu';
-import { RuleTitle, EditableRuleTitle } from './mock-rule-title';
+import { DragHandle } from './rule-drag-handle';
+import { IconMenu, IconMenuButton } from './rule-icon-menu';
+import { RuleTitle, EditableRuleTitle } from './rule-title';
 
 const RowContainer = styled(LittleCard)<{
     deactivated?: boolean,
@@ -139,7 +139,7 @@ export const AddRuleRow = styled((p: {
     </RowContainer>
 )`
     > svg {
-        margin: 0 5px;
+        margin: 0 10px;
     }
 
     margin-top: 20px;
@@ -295,7 +295,7 @@ export class RuleRow extends React.Component<{
 
     index: number;
     path: ItemPath;
-    rule: HtkMockRule;
+    rule: HtkRule;
     isNewRule: boolean;
     hasUnsavedChanges: boolean;
     collapsed: boolean;
@@ -335,23 +335,23 @@ export class RuleRow extends React.Component<{
         const ruleType = rule.type;
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;
 
-        let ruleColour: string;
+        let ruleColor: string;
         if (ruleType === 'http') {
             if (initialMatcher instanceof matchers.MethodMatcher) {
-                ruleColour = getMethodColor(Method[initialMatcher.method]);
+                ruleColor = getMethodColor(Method[initialMatcher.method]);
             } else if (initialMatcher !== undefined) {
-                ruleColour = getMethodColor('unknown');
+                ruleColor = getMethodColor('unknown');
             } else {
-                ruleColour = 'transparent';
+                ruleColor = 'transparent';
             }
         } else if (ruleType === 'websocket') {
-            ruleColour = getSummaryColour('websocket');
+            ruleColor = getSummaryColor('websocket');
         } else if (ruleType === 'ethereum') {
-            ruleColour = getSummaryColour('mutative');
+            ruleColor = getSummaryColor('mutative');
         } else if (ruleType === 'ipfs') {
-            ruleColour = getSummaryColour('html');
+            ruleColor = getSummaryColor('html');
         } else if (ruleType === 'webrtc') {
-            ruleColour = getSummaryColour('rtc-data');
+            ruleColor = getSummaryColor('rtc-data');
         } else {
             throw new UnreachableCheck(ruleType);
         }
@@ -380,7 +380,7 @@ export class RuleRow extends React.Component<{
         >{ (provided, snapshot) => <Observer>{ () =>
             <RowContainer
                 {...provided.draggableProps}
-                borderColor={ruleColour}
+                borderColor={ruleColor}
                 ref={(ref: HTMLElement | null) => {
                     provided.innerRef(ref);
                     this.containerRef = ref;

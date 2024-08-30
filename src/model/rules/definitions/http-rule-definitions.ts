@@ -347,7 +347,7 @@ export type HttpInitialMatcher = InstanceType<typeof HttpInitialMatcherClasses[n
 type HttpHandlerClass = typeof HttpHandlerLookup[keyof typeof HttpHandlerLookup];
 type HttpHandler = InstanceType<HttpHandlerClass>;
 
-export interface HttpMockRule extends Omit<RequestRuleData, 'matchers'> {
+export interface HttpRule extends Omit<RequestRuleData, 'matchers'> {
     id: string;
     type: 'http';
     activated: boolean;

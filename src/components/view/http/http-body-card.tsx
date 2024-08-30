@@ -117,7 +117,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                         isPaidUser={isPaidUser}
                     />
                 </header>
-                <EditorCardContent>
+                <EditorCardContent showFullBorder={!expanded}>
                     <ContentViewer
                         contentId={`${message.id}-${direction}`}
                         editorNode={this.props.editorNode}
@@ -174,7 +174,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                     headers={message.rawHeaders}
                 />
                 { encodedBody &&
-                    <EditorCardContent>
+                    <EditorCardContent showFullBorder={!expanded}>
                         <ContentViewer
                             contentId={`${message.id}-${direction}`}
                             editorNode={this.props.editorNode}

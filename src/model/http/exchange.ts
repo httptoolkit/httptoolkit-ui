@@ -34,7 +34,7 @@ import { MANUALLY_SENT_SOURCE, parseSource } from './sources';
 import { getContentType } from '../events/content-types';
 import { HTKEventBase } from '../events/event-base';
 
-import { HandlerClassKey, HtkMockRule, getRulePartKey } from '../rules/rules';
+import { HandlerClassKey, HtkRule, getRulePartKey } from '../rules/rules';
 
 import { ApiStore } from '../api/api-store';
 import { ApiExchange } from '../api/api-interfaces';
@@ -272,7 +272,7 @@ export class HttpExchange extends HTKEventBase {
     @observable
     public abortMessage: string | undefined;
 
-    updateFromCompletedRequest(request: InputCompletedRequest, matchedRule: HtkMockRule | false) {
+    updateFromCompletedRequest(request: InputCompletedRequest, matchedRule: HtkRule | false) {
         if (request.body instanceof HttpBody) {
             // If this request was used in new HttpExchange, it's mutated in some ways, and this
             // will cause problems. Shouldn't happen, but we check against it here just in case:
