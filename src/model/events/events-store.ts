@@ -149,6 +149,8 @@ export class EventsStore {
 
         mockttpEventTypes.forEach(<T extends MockttpEventType>(eventName: T) => {
             this.proxyStore.onMockttpEvent(eventName, ((eventData: EventTypesMap[T]) => {
+                console.log('Noder')
+                console.log(eventData)
                 if (this.isPaused) return;
                 this.eventQueue.push({ type: eventName, event: eventData } as any);
                 this.queueEventFlush();
