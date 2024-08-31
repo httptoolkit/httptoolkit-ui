@@ -165,7 +165,7 @@ export class EventsStore {
             }));
         });
 
-        console.log('Events store initialized');
+        console.log('Events store initialized noder check');
     });
 
     @observable
