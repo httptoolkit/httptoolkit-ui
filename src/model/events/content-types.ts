@@ -8,17 +8,31 @@ import {
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
     const typeWithoutParams = (mimeType || '').split(';')[0];
-    const [type, combinedSubTypes] = typeWithoutParams.split(/\/(.+)/);
 
+    let [type, combinedSubTypes] = typeWithoutParams.split(/\/(.+)/);
     if (!combinedSubTypes) return type;
 
-    // A list of types from most specific to most generic: [svg, xml] for image/svg+xml
-    const subTypes = combinedSubTypes.split('+');
+    if (DEFAULT_SUBTYPE[combinedSubTypes]) {
+        combinedSubTypes = `${combinedSubTypes}+${DEFAULT_SUBTYPE[combinedSubTypes]}`;
+    }
 
+    // If this is a known type with an exact match, return that directly:
+    if (mimeTypeToContentTypeMap[type + '/' + combinedSubTypes]) {
+        return type + '/' + combinedSubTypes;
+    }
+
+    // Otherwise, wr collect a list of types from most specific to most generic: [svg, xml] for image/svg+xml
+    // and then look through in order to see if there are any matches here:
+    const subTypes = combinedSubTypes.split('+');
     const possibleTypes = subTypes.map(st => type + '/' + st);
-    return _.find(possibleTypes, t => !!mimeTypeToContentTypeMap[t]) ||
+
+    return _.find(possibleTypes, t => !!mimeTypeToContentTypeMap[t]) || // Subtype match
         _.last(possibleTypes)!; // If we recognize none - return the most generic
 }
+
+const DEFAULT_SUBTYPE: { [type: string]: string } = {
+    'grpc': 'proto' // Protobuf is the default gRPC content type (but not the only one!)
+};
 
 export type ViewableContentType =
     | 'raw'
@@ -33,7 +47,8 @@ export type ViewableContentType =
     | 'markdown'
     | 'yaml'
     | 'image'
-    | 'protobuf';
+    | 'protobuf'
+    | 'grpc-proto';
 
 export const EditableContentTypes = [
     'text',
@@ -94,6 +109,9 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/vnd.google.protobuf': 'protobuf',
     'application/x-google-protobuf': 'protobuf',
     'application/proto': 'protobuf', // N.b. this covers all application/XXX+proto values
+    'application/x-protobuffer': 'protobuf', // Commonly seen in Google apps
+
+    'application/grpc+proto': 'grpc-proto', // Used in GRPC requests (protobuf but with special headers)
 
     'application/octet-stream': 'raw'
 } as const;
@@ -120,6 +138,7 @@ export function getContentEditorName(contentType: ViewableContentType): string {
         : contentType === 'json' ? 'JSON'
         : contentType === 'css' ? 'CSS'
         : contentType === 'url-encoded' ? 'URL-Encoded'
+        : contentType === 'grpc-proto' ? 'gRPC'
         : _.capitalize(contentType);
 }
 
@@ -161,10 +180,15 @@ export function getCompatibleTypes(
         types.add('xml');
     }
 
+    if (!types.has('grpc-proto') && rawContentType === 'application/grpc') {
+        types.add('grpc-proto')
+    }
+
     if (
         body &&
         isProbablyProtobuf(body) &&
         !types.has('protobuf') &&
+        !types.has('grpc-proto') &&
         // If it's probably unmarked protobuf, and it's a manageable size, try
         // parsing it just to check:
         (body.length < 100_000 && isValidProtobuf(body))

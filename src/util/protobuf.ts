@@ -28,6 +28,28 @@ export function isProbablyProtobuf(input: Uint8Array) {
 
 export const parseRawProtobuf = parseRawProto;
 
+// GRPC message structure:
+// The repeated sequence of Length-Prefixed-Message items is delivered in DATA frames
+// Length-Prefixed-Message → Compressed-Flag Message-Length Message
+// Compressed-Flag → 0 / 1 ; encoded as 1 byte unsigned integer
+// Message-Length → {length of Message} ; encoded as 4 byte unsigned integer (big endian)
+// Message → *{binary octet}
+export const extractProtobufFromGrpc = (input: Buffer) => {
+    const protobufMessasges: Buffer[] = [];
+
+    while (input.length > 0) {
+        if (input.readInt8() != 0) {
+            throw new Error("Compressed gRPC messages not yet supported")
+        }
+
+        const length = input.readInt32BE(1);
+        protobufMessasges.push(input.slice(5, 5 + length));
+        input = input.subarray(5 + length);
+    }
+
+    return protobufMessasges;
+}
+
 export const isValidProtobuf = (input: Uint8Array) => {
     try {
         parseRawProtobuf(input);

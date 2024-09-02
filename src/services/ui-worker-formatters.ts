@@ -6,7 +6,7 @@ import {
 import * as beautifyXml from 'xml-beautifier';
 
 import { bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
-import { parseRawProtobuf } from '../util/protobuf';
+import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -77,6 +77,27 @@ const WorkerFormatters = {
         const data = parseRawProtobuf(content, {
             prefix: ''
         });
+
+        return JSON.stringify(data, (_key, value) => {
+            // Buffers have toJSON defined, so arrive here in JSONified form:
+            if (value.type === 'Buffer' && Array.isArray(value.data)) {
+                const buffer = Buffer.from(value.data);
+
+                return {
+                    "Type": `Buffer (${getReadableSize(buffer)})`,
+                    "As string": bufferToString(buffer, 'detect-encoding'),
+                    "As hex": bufferToHex(buffer)
+                }
+            } else {
+                return value;
+            }
+        }, 2);
+    },
+    'grpc-proto': (content: Buffer) => {
+        const protobufMessages = extractProtobufFromGrpc(content);
+
+        let data = protobufMessages.map((msg) => parseRawProtobuf(msg, { prefix: '' }));
+        if (data.length === 1) data = data[0];
 
         return JSON.stringify(data, (_key, value) => {
             // Buffers have toJSON defined, so arrive here in JSONified form:
