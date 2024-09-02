@@ -49,6 +49,21 @@ describe('Content type parsing', () => {
             expect(ct).to.equal('raw');
         });
 
+        it('should render application/grpc as protobuf grpc', () => {
+            const ct = getContentType('application/grpc');
+            expect(ct).to.equal('grpc-proto');
+        });
+
+        it('should render application/grpc+proto as protobuf grpc', () => {
+            const ct = getContentType('application/grpc+proto');
+            expect(ct).to.equal('grpc-proto');
+        });
+
+        it('should render application/grpc+json as JSON', () => {
+            const ct = getContentType('application/grpc+json');
+            expect(ct).to.equal('json');
+        });
+
         it('should return undefined for unknown content', () => {
             const ct = getContentType('application/unknownsomething');
             expect(ct).to.equal(undefined);

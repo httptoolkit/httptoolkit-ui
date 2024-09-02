@@ -142,11 +142,11 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         isEditApplicable: false,
         render: buildAsyncRenderer('protobuf')
     },
-    grpc: {
-        language: 'grpc',
-        cacheKey: Symbol('grpc'),
+    'grpc-proto': {
+        language: 'protobuf',
+        cacheKey: Symbol('grpc-proto'),
         isEditApplicable: false,
-        render: buildAsyncRenderer('grpc')
+        render: buildAsyncRenderer('grpc-proto')
     },
     'url-encoded': {
         layout: 'scrollable',

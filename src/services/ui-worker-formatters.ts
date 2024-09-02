@@ -93,7 +93,7 @@ const WorkerFormatters = {
             }
         }, 2);
     },
-    grpc: (content: Buffer) => {
+    'grpc-proto': (content: Buffer) => {
         const data = parseGrpcProtobuf(content);
 
         return JSON.stringify(data, (_key, value) => {
