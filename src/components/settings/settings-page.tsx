@@ -10,6 +10,7 @@ import { SubscriptionPlans } from '@httptoolkit/accounts';
 import { WithInjected } from '../../types';
 import { styled, Theme, ThemeName } from '../../styles';
 import { Icon, WarningIcon } from '../../icons';
+import { uploadFile } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui/ui-store';
@@ -290,14 +291,23 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                         </header>
                         <TabbedOptionsContainer>
                             <TabsContainer
-                                onClick={(value: ThemeName | 'automatic' | Theme) => uiStore.setTheme(value)}
-                                isSelected={(value: ThemeName | 'automatic' | Theme) => {
-                                    if (typeof value === 'string') {
-                                        return uiStore.themeName === value;
+                                onClick={async (value: ThemeName | 'automatic' | 'custom') => {
+                                    if (value === 'custom') {
+                                        const themeFile = await uploadFile('text', ['.htktheme', '.htk-theme', '.json']);
+                                        if (!themeFile) return;
+                                        try {
+                                            const customTheme = uiStore.buildCustomTheme(themeFile);
+                                            uiStore.setTheme(customTheme);
+                                        } catch (e: any) {
+                                            alert(e.message || e);
+                                        }
                                     } else {
-                                        return _.isEqual(value, uiStore.theme);
+                                        uiStore.setTheme(value);
                                     }
                                 }}
+                                isSelected={(value: ThemeName | 'automatic' | 'custom') =>
+                                    uiStore.themeName === value
+                                }
                             >
                                 <Tab
                                     icon='MagicWand'
@@ -322,6 +332,12 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                     value='high-contrast'
                                 >
                                     High Contrast
+                                </Tab>
+                                <Tab
+                                    icon='Swatches'
+                                    value='custom'
+                                >
+                                    Custom
                                 </Tab>
                             </TabsContainer>
                             <ThemeColors>

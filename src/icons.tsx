@@ -22,7 +22,8 @@ import {
     MagicWand,
     Sun,
     Moon,
-    CircleHalf
+    CircleHalf,
+    Swatches
 } from '@phosphor-icons/react';
 
 export type IconKey = keyof typeof Icons;
@@ -53,7 +54,8 @@ const Icons = {
     MagicWand,
     Sun,
     Moon,
-    CircleHalf
+    CircleHalf,
+    Swatches
 } as const;
 
 // Import required FA icons:

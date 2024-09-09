@@ -16,6 +16,7 @@ import {
     ContextMenuOption,
     buildNativeContextMenuItems
 } from './context-menu';
+import { tryParseJson } from '../../util';
 
 const VIEW_CARD_KEYS = [
     'api',
@@ -93,6 +94,11 @@ const SETTINGS_CARD_KEYS =[
 ] as const;
 type SettingsCardKey = typeof SETTINGS_CARD_KEYS[number];
 
+type CustomTheme = Partial<Theme> & {
+    name: string;
+    extends: ThemeName;
+};
+
 export class UiStore {
 
     constructor(
@@ -144,6 +150,20 @@ export class UiStore {
             this._themeName = 'custom';
             this.customTheme = themeNameOrObject;
         }
+    }
+
+    buildCustomTheme(themeFile: string) {
+        const themeData: Partial<CustomTheme> | undefined = tryParseJson(themeFile);
+        if (!themeData) throw new Error("Could not parse theme JSON");
+
+        if (!themeData.name) throw new Error('Theme must contain a `name` field');
+        if (!themeData.extends) throw new Error('Theme must contain an `extends` field with a built-in theme name (dark/light/high-contrast)');
+
+        const baseTheme = Themes[themeData.extends];
+        return {
+            ...baseTheme,
+            ...themeData
+        } as Theme;
     }
 
     @persist @observable
