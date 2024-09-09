@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { Icon, IconProp } from '../../icons';
+import { Icon, IconKey } from '../../icons';
 import { styled, css } from '../../styles';
 import { omit } from 'lodash';
 import { UnstyledButton } from './inputs';
@@ -45,7 +45,7 @@ export const TabsContainer = styled((p: {
 export const Tab = styled((p: {
     className?: string,
     selected?: boolean,
-    icon: IconProp,
+    icon: IconKey,
     value: any,
     children: React.ReactNode
 }) =>
@@ -56,7 +56,7 @@ export const Tab = styled((p: {
             event.tabValue = p.value;
         }}
     >
-        <Icon icon={p.icon} size='2x' />
+        <Icon icon={p.icon} />
         { p.children }
     </UnstyledButton>
 )`
@@ -89,5 +89,7 @@ export const Tab = styled((p: {
 
     > svg {
         margin-bottom: 10px;
+        width: 2em;
+        height: auto;
     }
 `;

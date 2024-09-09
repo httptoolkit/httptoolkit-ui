@@ -300,25 +300,25 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 }}
                             >
                                 <Tab
-                                    icon={['fas', 'magic']}
+                                    icon='MagicWand'
                                     value='automatic'
                                 >
                                     Automatic
                                 </Tab>
                                 <Tab
-                                    icon={['fas', 'sun']}
+                                    icon='Sun'
                                     value='light'
                                 >
                                     Light
                                 </Tab>
                                 <Tab
-                                    icon={['fas', 'moon']}
+                                    icon='Moon'
                                     value='dark'
                                 >
                                     Dark
                                 </Tab>
                                 <Tab
-                                    icon={['fas', 'adjust']}
+                                    icon='CircleHalf'
                                     value='high-contrast'
                                 >
                                     High Contrast
