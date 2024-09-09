@@ -157,7 +157,12 @@ export class UiStore {
         if (!themeData) throw new Error("Could not parse theme JSON");
 
         if (!themeData.name) throw new Error('Theme must contain a `name` field');
-        if (!themeData.extends) throw new Error('Theme must contain an `extends` field with a built-in theme name (dark/light/high-contrast)');
+        if (
+            !themeData.extends ||
+            Themes[themeData.extends as ThemeName] === undefined
+        ) {
+            throw new Error('Theme must contain an `extends` field with a built-in theme name (dark/light/high-contrast)');
+        }
 
         const baseTheme = Themes[themeData.extends];
         return {
