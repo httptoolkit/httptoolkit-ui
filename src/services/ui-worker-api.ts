@@ -21,7 +21,7 @@ import type {
     ParseCertResponse
 } from './ui-worker';
 
-import { Omit } from '../types';
+import { Headers, Omit } from '../types';
 import type { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
 import { WorkerFormatterKey } from './ui-worker-formatters';
 
@@ -149,10 +149,11 @@ export async function parseCert(buffer: ArrayBuffer) {
     })).result;
 }
 
-export async function formatBufferAsync(buffer: ArrayBuffer, format: WorkerFormatterKey) {
+export async function formatBufferAsync(buffer: ArrayBuffer, format: WorkerFormatterKey, headers?: Headers) {
     return (await callApi<FormatRequest, FormatResponse>({
         type: 'format',
         buffer,
-        format
+        format,
+        headers,
     })).formatted;
 }

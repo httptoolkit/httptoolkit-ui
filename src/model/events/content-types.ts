@@ -1,8 +1,11 @@
 import * as _ from 'lodash';
-import { MessageBody } from '../../types';
+
+import { Headers, MessageBody } from '../../types';
 import {
     isProbablyProtobuf,
-    isValidProtobuf
+    isValidProtobuf,
+    isProbablyGrpcProto,
+    isValidGrpcProto,
 } from '../../util/protobuf';
 
 // Simplify a mime type as much as we can, without throwing any errors
@@ -21,7 +24,7 @@ export const getBaseContentType = (mimeType: string | undefined) => {
         return type + '/' + combinedSubTypes;
     }
 
-    // Otherwise, wr collect a list of types from most specific to most generic: [svg, xml] for image/svg+xml
+    // Otherwise, we collect a list of types from most specific to most generic: [svg, xml] for image/svg+xml
     // and then look through in order to see if there are any matches here:
     const subTypes = combinedSubTypes.split('+');
     const possibleTypes = subTypes.map(st => type + '/' + st);
@@ -112,6 +115,9 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/x-protobuffer': 'protobuf', // Commonly seen in Google apps
 
     'application/grpc+proto': 'grpc-proto', // Used in GRPC requests (protobuf but with special headers)
+    'application/grpc+protobuf': 'grpc-proto',
+    'application/grpc-proto': 'grpc-proto',
+    'application/grpc-protobuf': 'grpc-proto',
 
     'application/octet-stream': 'raw'
 } as const;
@@ -169,7 +175,8 @@ function isValidURLSafeBase64Byte(byte: number) {
 export function getCompatibleTypes(
     contentType: ViewableContentType,
     rawContentType: string | undefined,
-    body: MessageBody | Buffer | undefined
+    body: MessageBody | Buffer | undefined,
+    headers?: Headers,
 ): ViewableContentType[] {
     let types = new Set([contentType]);
 
@@ -190,20 +197,27 @@ export function getCompatibleTypes(
         types.add('xml');
     }
 
-    if (!types.has('grpc-proto') && rawContentType === 'application/grpc') {
-        types.add('grpc-proto')
-    }
-
     if (
         body &&
-        isProbablyProtobuf(body) &&
         !types.has('protobuf') &&
         !types.has('grpc-proto') &&
+        isProbablyProtobuf(body) &&
         // If it's probably unmarked protobuf, and it's a manageable size, try
         // parsing it just to check:
         (body.length < 100_000 && isValidProtobuf(body))
     ) {
         types.add('protobuf');
+    }
+
+    if (
+        body &&
+        !types.has('grpc-proto') &&
+        isProbablyGrpcProto(body, headers ?? {}) &&
+        // If it's probably unmarked gRPC, and it's a manageable size, try
+        // parsing it just to check:
+        (body.length < 100_000 && isValidGrpcProto(body, headers ?? {}))
+    ) {
+        types.add('grpc-proto');
     }
 
     // SVGs can always be shown as XML
