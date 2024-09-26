@@ -51,15 +51,15 @@ interface HarLog extends HarFormat.Log {
 export type RequestContentData = {
     text: string;
     size: number;
-    encoding?: 'base64';
+    encoding: 'base64';
     comment?: string;
 };
 
 export interface ExtendedHarRequest extends HarFormat.Request {
     _requestBodyStatus?:
-        | 'discarded:too-large'
-        | 'discarded:not-representable'
-        | 'discarded:not-decodable';
+    | 'discarded:too-large'
+    | 'discarded:not-representable' // to indicate that extended field `_content` is populated with base64 `postData`
+    | 'discarded:not-decodable';
     _content?: RequestContentData;
     _trailers?: HarFormat.Header[];
 }
@@ -302,7 +302,7 @@ async function generateHarResponse(
 
     const decoded = await response.body.decodedPromise;
 
-    let responseContent: { text: string, encoding?: string } | { comment: string};
+    let responseContent: { text: string, encoding?: string } | { comment: string };
     try {
         if (!decoded || decoded.byteLength > options.bodySizeLimit) {
             // If no body or the body is too large, don't include it
@@ -435,10 +435,10 @@ function generateHarWebSocketMessage(
     return {
         // Note that msg.direction is from the perspective of Mockttp, not the client.
         type: message.direction === 'sent'
-                ? 'receive'
+            ? 'receive'
             : message.direction === 'received'
                 ? 'send'
-            : unreachableCheck(message.direction),
+                : unreachableCheck(message.direction),
 
         opcode: message.isBinary ? 2 : 1,
         data: message.isBinary
@@ -751,7 +751,7 @@ function parseHttpVersion(
 }
 
 function parseHarRequestContents(data: RequestContentData): Buffer {
-    if (data.encoding && Buffer.isEncoding(data.encoding)) {
+    if (Buffer.isEncoding(data.encoding)) {
         return Buffer.from(data.text, data.encoding);
     }
 

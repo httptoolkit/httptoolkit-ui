@@ -1,6 +1,6 @@
 import { expect } from '../../../test-setup';
 
-import { getContentType, getEditableContentType } from '../../../../src/model/events/content-types';
+import { getContentType, getEditableContentType, getCompatibleTypes } from '../../../../src/model/events/content-types';
 
 describe('Content type parsing', () => {
     describe('getContentType', () => {
@@ -79,6 +79,23 @@ describe('Content type parsing', () => {
         it('should not allow editing image/gif as an image', () => {
             const ct = getEditableContentType('image/gif');
             expect(ct).to.equal(undefined);
+        });
+    });
+
+    describe('getCompatibleTypes', () => {
+        it('should detect standard base64 text', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('FWTkm2+ZvMo=', 'ascii'));
+            expect(cts).to.deep.equal(['text', 'base64', 'raw']);
+        });
+
+        it('should detect URL-safe (without padding) base64 text', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('FWTkm2-ZvMo', 'ascii'));
+            expect(cts).to.deep.equal(['text', 'base64', 'raw']);
+        });
+
+        it('should work even if first character is not ASCII', () => {
+            const cts = getCompatibleTypes('raw', 'application/octet-stream', Buffer.from('1f8d08', 'hex')); // GZIP magic bytes
+            expect(cts).to.deep.equal(['raw', 'text']);
         });
     });
 });

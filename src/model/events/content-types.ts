@@ -147,13 +147,23 @@ export function getDefaultMimeType(contentType: ViewableContentType): string {
     return _.findKey(mimeTypeToContentTypeMap, (c) => c === contentType)!;
 }
 
-function isValidBase64Byte(byte: number) {
+function isValidAlphaNumOrSpace(byte: number) {
     return (byte >= 65 && byte <= 90) || // A-Z
         (byte >= 97 && byte <= 122) ||   // a-z
         (byte >= 48 && byte <= 57) ||    // 0-9
-        byte === 43 ||                   // +
-        byte === 47 ||                   // /
         byte === 61;                     // =
+}
+
+function isValidStandardBase64Byte(byte: number) {
+    // + / (standard)
+    return byte === 43 || byte === 47
+        || isValidAlphaNumOrSpace(byte);
+}
+
+function isValidURLSafeBase64Byte(byte: number) {
+    // - _ (URL-safe version)
+    return byte === 45 || byte === 95
+        || isValidAlphaNumOrSpace(byte);
 }
 
 export function getCompatibleTypes(
@@ -203,10 +213,11 @@ export function getCompatibleTypes(
 
     if (
         body &&
-        body.length > 0 &&
-        body.length % 4 === 0 && // Multiple of 4 bytes
-        body.length < 1000 * 100 && // < 100 KB of content
-        body.every(isValidBase64Byte)
+        !types.has('base64') &&
+        body.length >= 8 &&
+        // body.length % 4 === 0 && // Multiple of 4 bytes (final padding may be omitted)
+        body.length < 100_000 && // < 100 KB of content
+        (body.every(isValidStandardBase64Byte) || body.every(isValidURLSafeBase64Byte))
     ) {
         types.add('base64');
     }
