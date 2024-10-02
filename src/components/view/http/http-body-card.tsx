@@ -82,7 +82,8 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
         const compatibleContentTypes = getCompatibleTypes(
             message.contentType,
             lastHeader(message.headers['content-type']),
-            message.body
+            message.body,
+            message.headers,
         );
         const decodedContentType = compatibleContentTypes.includes(this.selectedContentType!)
             ? this.selectedContentType!
@@ -121,7 +122,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                     <ContentViewer
                         contentId={`${message.id}-${direction}`}
                         editorNode={this.props.editorNode}
-                        rawContentType={lastHeader(message.headers['content-type'])}
+                        headers={message.headers}
                         contentType={decodedContentType}
                         schema={apiBodySchema}
                         expanded={!!expanded}

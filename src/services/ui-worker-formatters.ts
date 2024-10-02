@@ -5,6 +5,7 @@ import {
 } from 'js-beautify/js/lib/beautifier';
 import * as beautifyXml from 'xml-beautifier';
 
+import { Headers } from '../types';
 import { bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
 
@@ -13,9 +14,24 @@ const FIVE_MB = 1024 * 1024 * 5;
 
 export type WorkerFormatterKey = keyof typeof WorkerFormatters;
 
-export function formatBuffer(buffer: ArrayBuffer, format: WorkerFormatterKey): string {
-    return WorkerFormatters[format](Buffer.from(buffer));
+export function formatBuffer(buffer: ArrayBuffer, format: WorkerFormatterKey, headers?: Headers): string {
+    return WorkerFormatters[format](Buffer.from(buffer), headers);
 }
+
+const prettyProtobufView = (data: any) => JSON.stringify(data, (_key, value) => {
+    // Buffers have toJSON defined, so arrive here in JSONified form:
+    if (value.type === 'Buffer' && Array.isArray(value.data)) {
+        const buffer = Buffer.from(value.data);
+
+        return {
+            "Type": `Buffer (${getReadableSize(buffer)})`,
+            "As string": bufferToString(buffer, 'detect-encoding'),
+            "As hex": bufferToHex(buffer)
+        }
+    } else {
+        return value;
+    }
+}, 2);
 
 // A subset of all possible formatters (those allowed by body-formatting), which require
 // non-trivial processing, and therefore need to be processed async.
@@ -39,7 +55,8 @@ const WorkerFormatters = {
         }
     },
     base64: (content: Buffer) => {
-        return Buffer.from(content.toString('utf8'), 'base64').toString('utf8');
+        const b64 = content.toString('ascii');
+        return Buffer.from(b64, 'base64').toString('utf8');
     },
     markdown: (content: Buffer) => {
         return content.toString('utf8');
@@ -74,44 +91,15 @@ const WorkerFormatters = {
         });
     },
     protobuf: (content: Buffer) => {
-        const data = parseRawProtobuf(content, {
-            prefix: ''
-        });
-
-        return JSON.stringify(data, (_key, value) => {
-            // Buffers have toJSON defined, so arrive here in JSONified form:
-            if (value.type === 'Buffer' && Array.isArray(value.data)) {
-                const buffer = Buffer.from(value.data);
-
-                return {
-                    "Type": `Buffer (${getReadableSize(buffer)})`,
-                    "As string": bufferToString(buffer, 'detect-encoding'),
-                    "As hex": bufferToHex(buffer)
-                }
-            } else {
-                return value;
-            }
-        }, 2);
+        const data = parseRawProtobuf(content, { prefix: '' });
+        return prettyProtobufView(data);
     },
-    'grpc-proto': (content: Buffer) => {
-        const protobufMessages = extractProtobufFromGrpc(content);
+    'grpc-proto': (content: Buffer, headers?: Headers) => {
+        const protobufMessages = extractProtobufFromGrpc(content, headers ?? {});
 
         let data = protobufMessages.map((msg) => parseRawProtobuf(msg, { prefix: '' }));
         if (data.length === 1) data = data[0];
 
-        return JSON.stringify(data, (_key, value) => {
-            // Buffers have toJSON defined, so arrive here in JSONified form:
-            if (value.type === 'Buffer' && Array.isArray(value.data)) {
-                const buffer = Buffer.from(value.data);
-
-                return {
-                    "Type": `Buffer (${getReadableSize(buffer)})`,
-                    "As string": bufferToString(buffer, 'detect-encoding'),
-                    "As hex": bufferToHex(buffer)
-                }
-            } else {
-                return value;
-            }
-        }, 2);
+        return prettyProtobufView(data);
     }
 } as const;

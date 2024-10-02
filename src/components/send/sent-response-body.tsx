@@ -81,7 +81,8 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
             ? getCompatibleTypes(
                 message.contentType,
                 lastHeader(message.headers['content-type']),
-                message.body
+                message.body,
+                message.headers,
             )
             : ['text'] as const;
 
@@ -121,7 +122,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
                     <ContentViewer
                         contentId={message.id}
                         editorNode={this.props.editorNode}
-                        rawContentType={lastHeader(message.headers['content-type'])}
+                        headers={message.headers}
                         contentType={decodedContentType}
                         expanded={!!expanded}
                         cache={message.cache}

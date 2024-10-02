@@ -62,7 +62,7 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
                             id: 'protobuf-decoding-header',
                             command: {
                                 id: '', // No actual command defined here
-                                title: "Automatically decoded from raw Protobuf data",
+                                title: "Automatically decoded from raw Protobuf/gRPC data",
                             },
                         },
                     ],

@@ -1,8 +1,11 @@
 import * as _ from 'lodash';
-import { MessageBody } from '../../types';
+
+import { Headers, MessageBody } from '../../types';
 import {
     isProbablyProtobuf,
-    isValidProtobuf
+    isValidProtobuf,
+    isProbablyGrpcProto,
+    isValidGrpcProto,
 } from '../../util/protobuf';
 
 // Simplify a mime type as much as we can, without throwing any errors
@@ -21,7 +24,7 @@ export const getBaseContentType = (mimeType: string | undefined) => {
         return type + '/' + combinedSubTypes;
     }
 
-    // Otherwise, wr collect a list of types from most specific to most generic: [svg, xml] for image/svg+xml
+    // Otherwise, we collect a list of types from most specific to most generic: [svg, xml] for image/svg+xml
     // and then look through in order to see if there are any matches here:
     const subTypes = combinedSubTypes.split('+');
     const possibleTypes = subTypes.map(st => type + '/' + st);
@@ -112,6 +115,9 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/x-protobuffer': 'protobuf', // Commonly seen in Google apps
 
     'application/grpc+proto': 'grpc-proto', // Used in GRPC requests (protobuf but with special headers)
+    'application/grpc+protobuf': 'grpc-proto',
+    'application/grpc-proto': 'grpc-proto',
+    'application/grpc-protobuf': 'grpc-proto',
 
     'application/octet-stream': 'raw'
 } as const;
@@ -147,19 +153,32 @@ export function getDefaultMimeType(contentType: ViewableContentType): string {
     return _.findKey(mimeTypeToContentTypeMap, (c) => c === contentType)!;
 }
 
-function isValidBase64Byte(byte: number) {
+function isAlphaNumOrEquals(byte: number) {
     return (byte >= 65 && byte <= 90) || // A-Z
         (byte >= 97 && byte <= 122) ||   // a-z
         (byte >= 48 && byte <= 57) ||    // 0-9
-        byte === 43 ||                   // +
-        byte === 47 ||                   // /
         byte === 61;                     // =
+}
+
+function isValidStandardBase64Byte(byte: number) {
+    // + / (standard)
+    return byte === 43 ||
+        byte === 47 ||
+        isAlphaNumOrEquals(byte);
+}
+
+function isValidURLSafeBase64Byte(byte: number) {
+    // - _ (URL-safe version)
+    return byte === 45 ||
+        byte === 95 ||
+        isAlphaNumOrEquals(byte);
 }
 
 export function getCompatibleTypes(
     contentType: ViewableContentType,
     rawContentType: string | undefined,
-    body: MessageBody | Buffer | undefined
+    body: MessageBody | Buffer | undefined,
+    headers?: Headers,
 ): ViewableContentType[] {
     let types = new Set([contentType]);
 
@@ -180,20 +199,27 @@ export function getCompatibleTypes(
         types.add('xml');
     }
 
-    if (!types.has('grpc-proto') && rawContentType === 'application/grpc') {
-        types.add('grpc-proto')
-    }
-
     if (
         body &&
-        isProbablyProtobuf(body) &&
         !types.has('protobuf') &&
         !types.has('grpc-proto') &&
+        isProbablyProtobuf(body) &&
         // If it's probably unmarked protobuf, and it's a manageable size, try
         // parsing it just to check:
         (body.length < 100_000 && isValidProtobuf(body))
     ) {
         types.add('protobuf');
+    }
+
+    if (
+        body &&
+        !types.has('grpc-proto') &&
+        isProbablyGrpcProto(body, headers ?? {}) &&
+        // If it's probably unmarked gRPC, and it's a manageable size, try
+        // parsing it just to check:
+        (body.length < 100_000 && isValidGrpcProto(body, headers ?? {}))
+    ) {
+        types.add('grpc-proto');
     }
 
     // SVGs can always be shown as XML
@@ -203,10 +229,11 @@ export function getCompatibleTypes(
 
     if (
         body &&
-        body.length > 0 &&
-        body.length % 4 === 0 && // Multiple of 4 bytes
-        body.length < 1000 * 100 && // < 100 KB of content
-        body.every(isValidBase64Byte)
+        !types.has('base64') &&
+        body.length >= 8 &&
+        // body.length % 4 === 0 && // Multiple of 4 bytes (final padding may be omitted)
+        body.length < 100_000 && // < 100 KB of content
+        (body.every(isValidStandardBase64Byte) || body.every(isValidURLSafeBase64Byte))
     ) {
         types.add('base64');
     }

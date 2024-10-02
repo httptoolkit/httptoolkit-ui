@@ -1,3 +1,4 @@
+import { Headers } from '../../types';
 import { styled } from '../../styles';
 
 import { ViewableContentType } from '../events/content-types';
@@ -13,7 +14,7 @@ export interface EditorFormatter {
     language: string;
     cacheKey: Symbol;
     isEditApplicable: boolean; // Can you apply this manually during editing to format an input?
-    render(content: Buffer): string | ObservablePromise<string>;
+    render(content: Buffer, headers?: Headers): string | ObservablePromise<string>;
 }
 
 type FormatComponentProps = {
@@ -35,8 +36,8 @@ export function isEditorFormatter(input: any): input is EditorFormatter {
 }
 
 const buildAsyncRenderer = (formatKey: WorkerFormatterKey) =>
-    (input: Buffer) => observablePromise(
-        formatBufferAsync(input, formatKey)
+    (input: Buffer, headers?: Headers) => observablePromise(
+        formatBufferAsync(input, formatKey, headers)
     );
 
 export const Formatters: { [key in ViewableContentType]: Formatter } = {
@@ -44,8 +45,8 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         language: 'text',
         cacheKey: Symbol('raw'),
         isEditApplicable: false,
-        render: (input: Buffer) => {
-            if (input.byteLength < 2000) {
+        render: (input: Buffer, headers?: Headers) => {
+            if (input.byteLength < 2_000) {
                 try {
                     // For short-ish inputs, we return synchronously - conveniently this avoids
                     // showing the loading spinner that churns the layout in short content cases.
@@ -55,7 +56,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                 }
             } else {
                 return observablePromise(
-                    formatBufferAsync(input, 'raw')
+                    formatBufferAsync(input, 'raw', headers)
                 );
             }
         }
@@ -102,8 +103,8 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         language: 'json',
         cacheKey: Symbol('json'),
         isEditApplicable: true,
-        render: (input: Buffer) => {
-            if (input.byteLength < 10000) {
+        render: (input: Buffer, headers?: Headers) => {
+            if (input.byteLength < 10_000) {
                 const inputAsString = bufferToString(input);
 
                 try {
@@ -111,7 +112,9 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                     // showing the loading spinner that churns the layout in short content cases.
                     return JSON.stringify(
                         JSON.parse(inputAsString),
-                    null, 2);
+                        null,
+                        2
+                    );
                     // ^ Same logic as in UI-worker-formatter
                 } catch (e) {
                     // Fallback to showing the raw un-formatted JSON:
@@ -119,7 +122,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                 }
             } else {
                 return observablePromise(
-                    formatBufferAsync(input, 'json')
+                    formatBufferAsync(input, 'json', headers)
                 );
             }
         }

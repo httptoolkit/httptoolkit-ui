@@ -13,6 +13,7 @@ import {
 } from 'http-encoding';
 import { OpenAPIObject } from 'openapi-directory';
 
+import { Headers } from '../types';
 import { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
 import { buildOpenApiMetadata, buildOpenRpcMetadata } from '../model/api/build-api-metadata';
 import { parseCert, ParsedCertificate, validatePKCS12, ValidationResult } from '../model/crypto';
@@ -91,6 +92,7 @@ export interface FormatRequest extends Message {
     type: 'format';
     buffer: ArrayBuffer;
     format: WorkerFormatterKey;
+    headers?: Headers;
 }
 
 export interface FormatResponse extends Message {
@@ -217,7 +219,7 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
                 break;
 
             case 'format':
-                const formatted = formatBuffer(event.data.buffer, event.data.format);
+                const formatted = formatBuffer(event.data.buffer, event.data.format, event.data.headers);
                 ctx.postMessage({ id: event.data.id, formatted });
                 break;
 

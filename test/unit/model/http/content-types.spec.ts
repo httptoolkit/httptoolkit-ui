@@ -1,6 +1,6 @@
 import { expect } from '../../../test-setup';
 
-import { getContentType, getEditableContentType } from '../../../../src/model/events/content-types';
+import { getContentType, getEditableContentType, getCompatibleTypes } from '../../../../src/model/events/content-types';
 
 describe('Content type parsing', () => {
     describe('getContentType', () => {
@@ -59,6 +59,21 @@ describe('Content type parsing', () => {
             expect(ct).to.equal('grpc-proto');
         });
 
+        it('should render application/grpc+protobuf as protobuf grpc', () => {
+            const ct = getContentType('application/grpc+protobuf');
+            expect(ct).to.equal('grpc-proto');
+        });
+
+        it('should render application/grpc-proto as protobuf grpc', () => {
+            const ct = getContentType('application/grpc-proto');
+            expect(ct).to.equal('grpc-proto');
+        });
+
+        it('should render application/grpc-protobuf as protobuf grpc', () => {
+            const ct = getContentType('application/grpc-protobuf');
+            expect(ct).to.equal('grpc-proto');
+        });
+
         it('should render application/grpc+json as JSON', () => {
             const ct = getContentType('application/grpc+json');
             expect(ct).to.equal('json');
@@ -79,6 +94,43 @@ describe('Content type parsing', () => {
         it('should not allow editing image/gif as an image', () => {
             const ct = getEditableContentType('image/gif');
             expect(ct).to.equal(undefined);
+        });
+    });
+
+    describe('getCompatibleTypes', () => {
+        it('should detect standard base64 text', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('FWTkm2+ZvMo=', 'ascii'));
+            expect(cts).to.deep.equal(['text', 'base64', 'raw']);
+        });
+
+        it('should detect URL-safe (without padding) base64 text', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('FWTkm2-ZvMo', 'ascii'));
+            expect(cts).to.deep.equal(['text', 'base64', 'raw']);
+        });
+
+        it('should work even if first character is not ASCII', () => {
+            const cts = getCompatibleTypes('raw', 'application/octet-stream', Buffer.from('1f8d08', 'hex')); // GZIP magic bytes
+            expect(cts).to.deep.equal(['raw', 'text']);
+        });
+
+        it('should flag application/grpc as compatible with [grpc-proto,text,raw]', () => {
+            const cts = getCompatibleTypes('grpc-proto', 'application/grpc', undefined);
+            expect(cts).to.deep.equal(['grpc-proto', 'text', 'raw']);
+        });
+
+        it('should flag application/grpc+proto as compatible with [grpc-proto,text,raw]', () => {
+            const cts = getCompatibleTypes('grpc-proto', 'application/grpc+proto', undefined);
+            expect(cts).to.deep.equal(['grpc-proto', 'text', 'raw']);
+        });
+
+        it('should flag application/grpc+json as compatible with [grpc-proto,text,raw]', () => {
+            const cts = getCompatibleTypes('json', 'application/grpc+json', undefined);
+            expect(cts).to.deep.equal(['json', 'text', 'raw']);
+        });
+
+        it('should detect undeclared grpc+proto', () => {
+            const cts = getCompatibleTypes('raw', 'application/octet-stream', Buffer.from('AAAAAAIIAQ==', 'base64'));
+            expect(cts).to.deep.equal(['raw', 'grpc-proto', 'text']);
         });
     });
 });

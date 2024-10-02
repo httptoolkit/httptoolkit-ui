@@ -5,10 +5,12 @@ import { observer } from 'mobx-react';
 import { SchemaObject } from 'openapi3-ts';
 import * as portals from 'react-reverse-portal';
 
+import { Headers } from '../../types';
 import { styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
 import { asError, unreachableCheck } from '../../util/error';
 import { stringToBuffer } from '../../util/buffer';
+import { lastHeader } from '../../util/headers';
 
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
@@ -22,7 +24,7 @@ interface ContentViewerProps {
     children: Buffer | string;
     schema?: SchemaObject;
     expanded: boolean;
-    rawContentType?: string;
+    headers?: Headers;
     contentType: ViewableContentType;
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor | typeof ContainerSizedEditor>;
     cache: Map<Symbol, unknown>;
@@ -199,7 +201,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
             return <FormatterContainer expanded={this.props.expanded}>
                 <formatterConfig.Component
                     content={this.contentBuffer}
-                    rawContentType={this.props.rawContentType}
+                    rawContentType={lastHeader(this.props.headers?.['content-type'])}
                 />
             </FormatterContainer>;
         }
