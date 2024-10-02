@@ -56,8 +56,7 @@ const WorkerFormatters = {
     },
     base64: (content: Buffer) => {
         const b64 = content.toString('ascii');
-        const encoding = b64.match(/[-_]/) ? 'base64url' : 'base64';
-        return Buffer.from(b64, encoding).toString('utf8');
+        return Buffer.from(b64, 'base64').toString('utf8');
     },
     markdown: (content: Buffer) => {
         return content.toString('utf8');

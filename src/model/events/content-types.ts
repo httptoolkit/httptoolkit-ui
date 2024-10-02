@@ -153,7 +153,7 @@ export function getDefaultMimeType(contentType: ViewableContentType): string {
     return _.findKey(mimeTypeToContentTypeMap, (c) => c === contentType)!;
 }
 
-function isValidAlphaNumOrSpace(byte: number) {
+function isAlphaNumOrEquals(byte: number) {
     return (byte >= 65 && byte <= 90) || // A-Z
         (byte >= 97 && byte <= 122) ||   // a-z
         (byte >= 48 && byte <= 57) ||    // 0-9
@@ -162,14 +162,16 @@ function isValidAlphaNumOrSpace(byte: number) {
 
 function isValidStandardBase64Byte(byte: number) {
     // + / (standard)
-    return byte === 43 || byte === 47
-        || isValidAlphaNumOrSpace(byte);
+    return byte === 43 ||
+        byte === 47 ||
+        isAlphaNumOrEquals(byte);
 }
 
 function isValidURLSafeBase64Byte(byte: number) {
     // - _ (URL-safe version)
-    return byte === 45 || byte === 95
-        || isValidAlphaNumOrSpace(byte);
+    return byte === 45 ||
+        byte === 95 ||
+        isAlphaNumOrEquals(byte);
 }
 
 export function getCompatibleTypes(

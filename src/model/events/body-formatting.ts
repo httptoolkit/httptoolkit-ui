@@ -19,7 +19,7 @@ export interface EditorFormatter {
 
 type FormatComponentProps = {
     content: Buffer;
-    headers?: Headers;
+    rawContentType: string | undefined;
 };
 
 type FormatComponent = React.ComponentType<FormatComponentProps>;
@@ -65,7 +65,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         language: 'text',
         cacheKey: Symbol('text'),
         isEditApplicable: false,
-        render: (input: Buffer, headers?: Headers) => {
+        render: (input: Buffer) => {
             return bufferToString(input);
         }
     },
@@ -112,7 +112,9 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                     // showing the loading spinner that churns the layout in short content cases.
                     return JSON.stringify(
                         JSON.parse(inputAsString),
-                        null, 2);
+                        null,
+                        2
+                    );
                     // ^ Same logic as in UI-worker-formatter
                 } catch (e) {
                     // Fallback to showing the raw un-formatted JSON:
