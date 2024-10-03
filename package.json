@@ -47,7 +47,7 @@
     "@open-rpc/meta-schema": "^1.14.2",
     "@phosphor-icons/react": "^2.1.5",
     "@reach/router": "^1.2.1",
-    "@sentry/browser": "^7.112.2",
+    "@sentry/browser": "^8.33.0",
     "@sentry/webpack-plugin": "^2.16.1",
     "@types/auth0-js": "^8.11.8",
     "@types/auth0-lock": "^11.4.10",
