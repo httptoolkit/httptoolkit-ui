@@ -37,6 +37,7 @@ import { lazyObservablePromise } from '../util/observable';
 import { persist, hydrate } from '../util/mobx-persist/persist';
 import { isValidPort } from './network';
 import { serverVersion } from '../services/service-versions';
+import { DesktopApi } from '../services/desktop-api';
 
 type HtkAdminClient =
     // WebRTC is only supported for new servers:
@@ -224,16 +225,29 @@ export class ProxyStore {
     });
 
     private monitorRemoteClientConnection(client: PluggableAdmin.AdminClient<{}>) {
-        client.on('admin-client:stream-error', (err) => {
+        client.on('stream-error', (err) => {
             console.log('Admin client stream error');
             logError(err.message ? err : new Error('Client stream error'), { cause: err });
         });
-        client.on('admin-client:subscription-error', (err) => {
+        client.on('subscription-error', (err) => {
             console.log('Admin client subscription error');
             logError(err.message ? err : new Error('Client subscription error'), { cause: err });
         });
-        client.on('admin-client:stream-reconnect-failed', (err) => {
+        client.on('stream-reconnect-failed', (err) => {
             logError(err.message ? err : new Error('Client reconnect error'), { cause: err });
+
+            alert("Server disconnected unexpectedly, app restart required.\n\nPlease report this at github.com/httptoolkit/httptoolkit.");
+            setTimeout(() => { // Tiny wait for any other UI events to fire (error reporting/logging/other UI responsiveness)
+                if (DesktopApi.restartApp) {
+                    // Where possible (recent desktop release) we restart the whole app directly
+                    DesktopApi.restartApp();
+                } else if (!navigator.platform?.startsWith('Mac')) {
+                    // If not, on Windows & Linux we just close the window (which restarts)
+                    window.close();
+                }
+                // On Mac, app exit is independent from window exit, so we can't force that here,
+                // but hopefully this alert will lead the user to do so themselves.
+            }, 10);
         });
     }
 

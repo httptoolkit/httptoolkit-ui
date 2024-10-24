@@ -30,6 +30,7 @@ declare global {
 interface DesktopApi {
     selectApplication?: () => Promise<string | undefined>;
     openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
+    restartApp?: () => Promise<void>;
 }
 
 interface NativeContextMenuDefinition {
