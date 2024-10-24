@@ -4,8 +4,7 @@ import {
     action,
     flow,
     computed,
-    observe,
-    runInAction,
+    observe
 } from 'mobx';
 
 import {
@@ -226,12 +225,10 @@ export class ProxyStore {
 
     private monitorRemoteClientConnection(client: PluggableAdmin.AdminClient<{}>) {
         client.on('stream-error', (err) => {
-            console.log('Admin client stream error');
-            logError(err.message ? err : new Error('Client stream error'), { cause: err });
+            console.log('Admin client stream error', err);
         });
         client.on('subscription-error', (err) => {
-            console.log('Admin client subscription error');
-            logError(err.message ? err : new Error('Client subscription error'), { cause: err });
+            console.log('Admin client subscription error', err);
         });
         client.on('stream-reconnect-failed', (err) => {
             logError(err.message ? err : new Error('Client reconnect error'), { cause: err });
