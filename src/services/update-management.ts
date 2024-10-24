@@ -2,9 +2,21 @@ import { triggerServerUpdate } from './server-api';
 
 import packageMetadata from '../../package.json';
 import { desktopVersion, serverVersion, versionSatisfies } from './service-versions';
+import { logError } from '../errors';
 
 export const attemptServerUpdate = () =>
     triggerServerUpdate().catch(console.warn);
+
+let swFailureAlerted = false;
+const alertFailedSWStartup = (e: any) => {
+    if (swFailureAlerted) return; // Only alert once
+    swFailureAlerted = true;
+
+    const msg = "Initialization failed - background updates & cached/offline startup will be unavailable";
+
+    logError(msg, { cause: e });
+    alert(msg);
+};
 
 // Set up a SW in the background, to add offline support & instant startup.
 // This also checks for new UI & server versions at intervals.
@@ -19,14 +31,19 @@ export async function runBackgroundUpdates() {
 
     try {
         if (!navigator?.serviceWorker?.register) {
-            console.warn('Service worker not supported - cached & offline startup will not be available');
+            console.warn('Service worker not supported');
+            alertFailedSWStartup("Not supported");
             return;
         }
 
         const registration = await navigator.serviceWorker.register(
             '/ui-update-worker.js',
             { scope: '/' }
-        );
+        ).catch((e) => {
+            console.warn('Service worker registration failed');
+            alertFailedSWStartup(e);
+            throw e;
+        });
 
         console.log('Service worker loaded');
         registration.update().catch(console.log);
