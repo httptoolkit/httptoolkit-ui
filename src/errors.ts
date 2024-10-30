@@ -18,6 +18,7 @@ export function initSentry(dsn: string | undefined) {
             'ResizeObserver loop limit exceeded', // No visible effect: https://stackoverflow.com/a/50387233/68051
             'ResizeObserver loop completed with undelivered notifications.'
         ],
+        autoSessionTracking: false, // Don't send requests for every session (URL change)
         integrations: [
             Sentry.dedupeIntegration(),
             Sentry.extraErrorDataIntegration(),
