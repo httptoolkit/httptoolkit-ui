@@ -221,7 +221,7 @@ export const SendTabs = observer((props: {
             {
                 type: 'option',
                 label: 'Duplicate Tab',
-                callback: () => props.onAddTab(_.cloneDeep(request.request))
+                callback: () => props.onAddTab(new RequestInput(request.request))
             },
             {
                 type: 'option',

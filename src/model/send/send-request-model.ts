@@ -39,7 +39,7 @@ export class RequestInput {
             url: string,
             headers: RawHeaders,
             requestContentType: EditableContentType,
-            rawBody: Buffer
+            rawBody: Buffer | EditableBody
         }
     ) {
         // When deserializing, we need to ensure the body is provided directly
@@ -49,8 +49,13 @@ export class RequestInput {
             this.url = existingData.url;
             this.headers = existingData.headers;
             this.requestContentType = existingData.requestContentType;
+
+            const rawBody = existingData.rawBody instanceof EditableBody
+                ? existingData.rawBody.decoded
+                : existingData.rawBody;
+
             this.rawBody = new EditableBody(
-                existingData.rawBody,
+                rawBody,
                 undefined,
                 () => this.headers
             );
