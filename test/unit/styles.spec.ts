@@ -34,7 +34,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -44,7 +44,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -54,7 +54,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -64,7 +64,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -84,7 +84,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -94,7 +94,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -104,7 +104,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -115,7 +115,7 @@ import { expect } from '../test-setup';
                 const contrast = polished.getContrast(mainColor, bgColor);
                 // Lower target as these are usually icons (so generally only require 3:1)
                 expect(contrast).to.be.greaterThan(lowerContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -125,7 +125,7 @@ import { expect } from '../test-setup';
 
                 const contrast = polished.getContrast(mainColor, bgColor);
                 expect(contrast).to.be.greaterThan(normalContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -136,7 +136,7 @@ import { expect } from '../test-setup';
                 const contrast = polished.getContrast(mainColor, bgColor);
                 // Lower target as this is enormous (and non-critical) background text
                 expect(contrast).to.be.greaterThan(lowerContrastTarget,
-                    `Constrast for ${mainColor}/${bgColor} was only ${contrast}`
+                    `Contrast for ${mainColor}/${bgColor} was only ${contrast}`
                 );
             });
 
@@ -147,7 +147,7 @@ import { expect } from '../test-setup';
             EventCategories.forEach((category) => {
                 const categoryColor = getSummaryColor(category);
 
-                it(`should generate sufficient constrast for the ${category} category (${categoryColor})`, () => {
+                it(`should generate sufficient contrast for the ${category} category (${categoryColor})`, () => {
                     const mainColor = getTextColor(categoryColor, theme.mainColor, theme.pillContrast);
                     const bgColor = getBackgroundColor(categoryColor, theme.mainBackground);
 
@@ -161,7 +161,7 @@ import { expect } from '../test-setup';
 
             MethodNames.forEach((method) => {
                 const methodColor = getMethodColor(method);
-                it(`should generate sufficient constrast for ${method} methods (${methodColor})`, () => {
+                it(`should generate sufficient contrast for ${method} methods (${methodColor})`, () => {
                     const mainColor = getTextColor(methodColor, theme.mainColor, theme.pillContrast);
                     const bgColor = getBackgroundColor(methodColor, theme.mainBackground);
 
@@ -172,7 +172,7 @@ import { expect } from '../test-setup';
                 });
             });
 
-            it(`should generate sufficient constrast for the default pill colours`, () => {
+            it(`should generate sufficient contrast for the default pill colours`, () => {
                 const mainColor = getTextColor(theme.pillDefaultColor, theme.mainColor, theme.pillContrast);
                 const bgColor = getBackgroundColor(theme.pillDefaultColor, theme.mainBackground);
 

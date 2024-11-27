@@ -79,7 +79,7 @@ const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
         : undefined;
 
     // When exporting code snippets the primary goal is to generate convenient code to send the
-    // request that's *sematantically* equivalent to the original request, not to force every
+    // request that's *semantically* equivalent to the original request, not to force every
     // tool to produce byte-for-byte identical requests (that's effectively impossible). To do
     // this, we drop headers that tools can produce automatically for themselves:
     return {

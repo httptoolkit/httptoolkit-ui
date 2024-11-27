@@ -994,7 +994,7 @@ class HeaderFilter extends Filter {
             new StringSyntax("header value", {
                 allowedChars: [[0, 255]], // Any ASCII! Wrapper guards against spaces for us.
                 suggestionGenerator: (value, index, events: CollectedEvent[]) => {
-                    // Find the start of the wrapped header name text that preceeds this
+                    // Find the start of the wrapped header name text that precedes this
                     const headerNameIndex = value.slice(0, index - 1).lastIndexOf('[');
 
                     const headerNamePart = HeaderFilter.filterSyntax[1];

@@ -3,7 +3,7 @@ import { expect } from "../../test-setup";
 import { getReadableIP } from "../../../src/model/network";
 
 describe("IP formatting", () => {
-    it("should return unrecoginized ips untouched", () => {
+    it("should return unrecognized ips untouched", () => {
         expect(getReadableIP('93.184.216.34')).to.equal('93.184.216.34');
     });
 

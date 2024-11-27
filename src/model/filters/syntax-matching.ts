@@ -299,7 +299,7 @@ export type SyntaxPartMatch = {
     }) => {
         // We want to get suggestions from the last part that consumed any input. That means
         // for a last-part half-match, we want that partial last part, but for a last part
-        // 0-char-match, we want the preceeding full part, because there might still be
+        // 0-char-match, we want the preceding full part, because there might still be
         // useful suggestions there to extend that part.
         const syntaxPartIndex = match!.lastConsumingPartSyntaxIndex;
         const stringIndex = match!.lastConsumingPartStringIndex;

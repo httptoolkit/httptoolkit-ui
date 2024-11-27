@@ -50,7 +50,7 @@ function getBody(message: MockttpBreakpointedRequest | MockttpBreakpointedRespon
     });
 }
 
-const omitPsuedoHeaders = (headers: Headers) =>
+const omitPseudoHeaders = (headers: Headers) =>
     _.omitBy(headers, (_v, key) => key.startsWith(':')) as Headers;
 
 export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) {
@@ -203,9 +203,9 @@ export abstract class Breakpoint<T extends BreakpointInProgress> {
                 : { body: await this.editableBody.encodingBestEffortPromise }
             ),
 
-            // Psuedo-headers those will be generated automatically from the other,
+            // Pseudo-headers those will be generated automatically from the other,
             // fields, as part of the rest of the request process.
-            headers: omitPsuedoHeaders(rawHeadersToHeaders(this.resultMetadata.rawHeaders))
+            headers: omitPseudoHeaders(rawHeadersToHeaders(this.resultMetadata.rawHeaders))
         } as unknown as BreakpointResumeType<T>);
     }
 

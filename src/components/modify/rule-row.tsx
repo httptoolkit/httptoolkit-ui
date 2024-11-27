@@ -192,7 +192,7 @@ const DetailsHeader = styled.div`
 
 const HighPriorityMarker = styled(Icon).attrs(() => ({
     icon: ['fas', 'exclamation'],
-    title: 'High-priority rule: this rule overrides all non-high-prority rules'
+    title: 'High-priority rule: this rule overrides all non-high-priority rules'
 }))`
     margin-right: 10px;
     align-self: baseline;

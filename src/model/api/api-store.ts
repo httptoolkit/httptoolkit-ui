@@ -41,7 +41,7 @@ const apiMetadataSchema = serializr.createSimpleSchema({
 });
 
 // In addition to the public OpenAPI directory, we have a few extra APIs (stored in
-// this repo in /extra-apis) that we match seprately:
+// this repo in /extra-apis) that we match separately:
 const EXTRA_APIS: { [urlPrefix: string]: 'ipfs' | 'ethereum' } = {
     // See the 'servers' field in /extra-apis/ipfs.json:
     'localhost:5001/api/v0': 'ipfs',
