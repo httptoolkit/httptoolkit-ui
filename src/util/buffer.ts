@@ -60,7 +60,7 @@ export function stringToBuffer(input: string, encoding: 'utf8' | 'binary' = 'utf
     } else if (encoding === 'binary') {
         return Buffer.from(input, encoding); // Slower, but we have no option as TextEncoder is UTF8 only
     } else {
-        throw new Error(`Cannot decode string from unrecogized encoding: ${encoding}`);
+        throw new Error(`Cannot decode string from unrecognized encoding: ${encoding}`);
     }
 }
 
@@ -77,7 +77,7 @@ export function bufferToString(
     } else if (encoding === 'binary') {
         return binaryLaxDecoder.decode(input);
     } else {
-        throw new Error(`Cannot convert buffer to unrecogized encoding: ${encoding}`);
+        throw new Error(`Cannot convert buffer to unrecognized encoding: ${encoding}`);
     }
 }
 

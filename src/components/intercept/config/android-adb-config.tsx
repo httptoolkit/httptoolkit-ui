@@ -175,7 +175,7 @@ class AndroidAdbConfig extends React.Component<{
         } = this;
 
         // Ensure the config rule is in place before we start any activation. This listens for the
-        // next config request, and uses that to track succesful setup (by calling onSuccess).
+        // next config request, and uses that to track successful setup (by calling onSuccess).
         setUpAndroidCertificateRule(
             proxyStore!.certContent!,
             rulesStore!,

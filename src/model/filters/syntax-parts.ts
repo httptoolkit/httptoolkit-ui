@@ -569,7 +569,7 @@ export class SyntaxRepeaterSyntax<
                     value: ''
                 }];
             } else if (wrappedMatch.type === 'partial') {
-                // We have a partial match on our contents, so suggest continuining it
+                // We have a partial match on our contents, so suggest continuing it
                 const suggestions = wrappedSyntax.getSuggestions(value, index, context);
                 if (matchCount + 1 < minimumRepetitions) {
                     return suggestions.map(suggestion => ({

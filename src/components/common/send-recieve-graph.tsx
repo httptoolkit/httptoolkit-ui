@@ -13,7 +13,7 @@ import { getSummaryColor } from '../../model/events/categorization';
 import { getReadableSize } from '../../util/buffer';
 
 // Somewhat arbitrary colour selections, but picking from our existing category
-// pallet for vaugely related colours, that work together and which don't have
+// pallet for vaguely related colours, that work together and which don't have
 // accessibility issues for colourblind usersL
 export const SentDataColor = getSummaryColor('data');
 export const ReceivedDataColor = getSummaryColor('rtc-media');

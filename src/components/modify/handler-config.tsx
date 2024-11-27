@@ -229,7 +229,7 @@ export function HandlerConfiguration(props: {
         case 'wait-for-rtc-data-channel':
             return <RTCWaitForChannelConfig {...configProps} />;
         case 'wait-for-rtc-message':
-            return <RTCWaitForDataMessaageConfig {...configProps} />;
+            return <RTCWaitForDataMessageConfig {...configProps} />;
         case 'create-rtc-data-channel':
             return <RTCCreateChannelStepConfig {...configProps} />;
         case 'send-rtc-data-message':
@@ -2511,7 +2511,7 @@ class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition
 }
 
 @observer
-class RTCWaitForDataMessaageConfig extends HandlerConfig<WaitForMessageStepDefinition> {
+class RTCWaitForDataMessageConfig extends HandlerConfig<WaitForMessageStepDefinition> {
 
     render() {
         const { channelLabel } = this.props.handler;

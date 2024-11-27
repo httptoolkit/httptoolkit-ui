@@ -132,7 +132,7 @@ describe("Editable bodies", () => {
         const body = new EditableBody(
             Buffer.from('hello'),
             undefined,
-            () => headers.get(), // <-- these headesr will fail to encode initially
+            () => headers.get(), // <-- these headers will fail to encode initially
             { throttleDuration: 0 }
         );
 

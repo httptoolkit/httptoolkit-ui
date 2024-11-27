@@ -233,7 +233,7 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'ipns-resolve-result':
             return "Return a fixed IPNS resolved address";
         case 'ipns-publish-result':
-            return "Return a fixed succesful IPNS result";
+            return "Return a fixed successful IPNS result";
         case 'ipfs-pins-result':
             return "Return a fixed IPFS pinning result";
         case 'ipfs-pin-ls-result':
