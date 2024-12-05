@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import { parse as parseCookie, Cookie } from 'set-cookie-parser';
 import {
     isFuture,
     addSeconds,
@@ -8,6 +7,7 @@ import {
     distanceInWordsToNow
 } from 'date-fns';
 
+import { Cookie, parseSetCookieHeader } from '../../../model/http/cookies'
 import { Content } from '../../common/text-content';
 
 function getExpiryExplanation(date: Date) {
@@ -26,17 +26,15 @@ function getExpiryExplanation(date: Date) {
 }
 
 export const CookieHeaderDescription = (p: { value: string, requestUrl: URL }) => {
-    const cookies = parseCookie(p.value);
+    const cookies = parseSetCookieHeader(p.value);
 
     // The effective path at which cookies will be set by default.
     const requestPath = p.requestUrl.pathname.replace(/\/[^\/]*$/, '') || '/';
 
     return <>{
         // In 99% of cases there is only one cookie here, but we can play it safe.
-        cookies.map((
-            cookie: Cookie & { sameSite?: 'Strict' | 'Lax' | 'None' }
-        ) => {
-            if (cookie.sameSite?.toLowerCase() === 'none' && !cookie.secure) {
+        cookies.map((cookie: Cookie) => {
+            if (cookie.samesite?.toLowerCase() === 'none' && !cookie.secure) {
                 return <Content key={cookie.name}>
                     <p>
                         This attempts to set cookie '<code>{cookie.name}</code>' to
@@ -75,29 +73,29 @@ export const CookieHeaderDescription = (p: { value: string, requestUrl: URL }) =
                 </p>
                 <p>
                     The cookie is {
-                        cookie.httpOnly ?
+                        cookie.httponly ?
                             'not accessible from client-side scripts' :
                             'accessible from client-side scripts running on matching pages'
                     }
-                    { (cookie.sameSite === undefined || cookie.sameSite.toLowerCase() === 'lax')
+                    { (cookie.samesite === undefined || cookie.samesite.toLowerCase() === 'lax')
                         // Lax is default for modern browsers (e.g. Chrome 80+)
                         ? <>
                             . Matching requests triggered from other origins will {
-                                cookie.httpOnly ? 'however' : 'also'
+                                cookie.httponly ? 'however' : 'also'
                             } include this cookie, if they are top-level navigations (not subresources).
                         </>
-                    : cookie.sameSite.toLowerCase() === 'strict' && cookie.httpOnly
+                    : cookie.samesite.toLowerCase() === 'strict' && cookie.httponly
                         ? <>
                             , or sent in requests triggered from other origins.
                         </>
-                    : cookie.sameSite.toLowerCase() === 'strict' && !cookie.httpOnly
+                    : cookie.samesite.toLowerCase() === 'strict' && !cookie.httponly
                         ? <>
                             , but will not be sent in requests triggered from other origins.
                         </>
-                    : cookie.sameSite.toLowerCase() === 'none' && cookie.secure
+                    : cookie.samesite.toLowerCase() === 'none' && cookie.secure
                         ? <>
                             . Matching requests triggered from other origins will {
-                                cookie.httpOnly ? 'however' : 'also'
+                                cookie.httponly ? 'however' : 'also'
                             } include this cookie.
                         </>
                     : <>
@@ -108,12 +106,12 @@ export const CookieHeaderDescription = (p: { value: string, requestUrl: URL }) =
 
                 <p>
                     The cookie {
-                        cookie.maxAge ? <>
-                            { getExpiryExplanation(addSeconds(new Date(), cookie.maxAge)) }
+                        cookie['max-age'] ? <>
+                            { getExpiryExplanation(addSeconds(new Date(), parseInt(cookie['max-age'], 10))) }
                             { cookie.expires && ` ('max-age' overrides 'expires')` }
                         </> :
                         cookie.expires ?
-                            getExpiryExplanation(cookie.expires)
+                            getExpiryExplanation(new Date(cookie.expires))
                         : 'expires at the end of the current session'
                     }.
                 </p>
