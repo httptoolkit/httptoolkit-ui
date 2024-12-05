@@ -19,7 +19,7 @@ import {
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
-import { lastHeader } from '../../util/headers';
+import { getHeaderValues, lastHeader } from '../../util/headers';
 import { ObservablePromise } from '../../util/observable';
 import { unreachableCheck } from '../../util/error';
 
@@ -27,6 +27,7 @@ import { UI_VERSION } from '../../services/service-versions';
 import { getStatusMessage } from './http-docs';
 import { StreamMessage } from '../events/stream-message';
 import { QueuedEvent } from '../events/events-store';
+import { parseCookieHeader, parseSetCookieHeader } from './cookies';
 
 // We only include request/response bodies that are under 500KB
 const HAR_BODY_SIZE_LIMIT = 500000;
@@ -143,6 +144,36 @@ function asHtkHeaders(headers: HarFormat.Header[]) {
         .value() as Headers;
 }
 
+function asHarRequestCookies(headers: Headers) {
+    const combinedHeader = getHeaderValues(headers, 'cookie').join('; ');
+    try {
+        return parseCookieHeader(combinedHeader);
+    } catch (e) {
+        console.warn('Could not parse request cookies for HAR', combinedHeader);
+        return [];
+    }
+}
+
+function asHarResponseCookies(headers: Headers) {
+    const setCookieHeaders = getHeaderValues(headers, 'set-cookie');
+    try {
+        // HAR has specific opinions about which fields to include and their casing
+        return parseSetCookieHeader(setCookieHeaders).map((cookie) => ({
+            name: cookie.name,
+            value: cookie.value,
+            path: cookie.path,
+            domain: cookie.domain,
+            expires: cookie.expires,
+            httpOnly: cookie.httponly,
+            secure: cookie.secure,
+            sameSite: cookie.samesite
+        }));
+    } catch (e) {
+        console.warn('Could not parse response cookies for HAR', setCookieHeaders);
+        return [];
+    }
+}
+
 export function generateHarRequest(
     request: HtkRequest,
     waitForDecoding: false,
@@ -171,7 +202,7 @@ export function generateHarRequest(
         method: request.method,
         url: request.parsedUrl.toString(),
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
-        cookies: [],
+        cookies: asHarRequestCookies(request.headers),
         headers: asHarHeaders(request.headers),
         ...(request.trailers ? {
             _trailers: asHarHeaders(request.trailers)
@@ -327,7 +358,7 @@ async function generateHarResponse(
         status: response.statusCode,
         statusText: response.statusMessage,
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
-        cookies: [],
+        cookies: asHarResponseCookies(response.headers),
         headers: asHarHeaders(response.headers),
         content: Object.assign(
             {

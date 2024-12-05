@@ -4,6 +4,9 @@
 export interface Cookie {
     name: string;
     value: string;
+}
+
+export interface SetCookie extends Cookie {
     path?: string;
     httponly?: boolean;
     secure?: boolean;
@@ -16,12 +19,12 @@ export interface Cookie {
 
 export function parseSetCookieHeader(
     headers: string | string[]
-) {
+): SetCookie[] {
     if (!Array.isArray(headers)) {
         headers = [headers];
     }
 
-    const cookies: Array<Cookie> = [];
+    const cookies: Array<SetCookie> = [];
 
     for (const header of headers) {
         const [cookieKV, ...parts] = header.split(";");
@@ -29,7 +32,7 @@ export function parseSetCookieHeader(
         const [name, value] = (cookieKV?.split("=") ?? []);
         if (!name || value === undefined) continue;
 
-        const cookie: Cookie = {
+        const cookie: SetCookie = {
             name,
             value
         };

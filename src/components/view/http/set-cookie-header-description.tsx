@@ -7,7 +7,7 @@ import {
     distanceInWordsToNow
 } from 'date-fns';
 
-import { Cookie, parseSetCookieHeader } from '../../../model/http/cookies'
+import { SetCookie, parseSetCookieHeader } from '../../../model/http/cookies'
 import { Content } from '../../common/text-content';
 
 function getExpiryExplanation(date: Date) {
@@ -33,7 +33,7 @@ export const CookieHeaderDescription = (p: { value: string, requestUrl: URL }) =
 
     return <>{
         // In 99% of cases there is only one cookie here, but we can play it safe.
-        cookies.map((cookie: Cookie) => {
+        cookies.map((cookie: SetCookie) => {
             if (cookie.samesite?.toLowerCase() === 'none' && !cookie.secure) {
                 return <Content key={cookie.name}>
                     <p>
