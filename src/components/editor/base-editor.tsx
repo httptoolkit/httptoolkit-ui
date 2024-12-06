@@ -402,6 +402,7 @@ class BaseEditor extends React.Component<EditorProps> {
             scrollBeyondLastLine: false,
             colorDecorators: false,
             renderValidationDecorations: 'on',
+            fixedOverflowWidgets: true,
 
             // TODO: Would like to set a fontFace here, but due to
             // https://github.com/Microsoft/monaco-editor/issues/392
