@@ -14,6 +14,7 @@ export const ImageViewer = styled((p: {
 />)`
     display: block;
     max-width: 100%;
+    max-height: 100%;
     margin: 0 auto;
     object-fit: scale-down;
 `;
