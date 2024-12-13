@@ -106,7 +106,8 @@ const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
             if (header.name.toLowerCase() === 'content-encoding') return false;
 
             return true;
-        })
+        }),
+        cookies: [] // There are included separately in the headers, it's unhelpful to duplicate that
     };
 };
 
