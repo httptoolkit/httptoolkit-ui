@@ -3,6 +3,7 @@ import { format as formatDate } from 'date-fns';
 
 import { serverVersion, desktopVersion, UI_VERSION } from './services/service-versions';
 import { delay } from './util/promise';
+import { DesktopApi } from './services/desktop-api';
 
 const POSTHOG_KEY = process.env.POSTHOG_KEY;
 const enabled = !!POSTHOG_KEY && navigator.doNotTrack !== "1";
@@ -36,7 +37,10 @@ export function initMetrics() {
         // every single page separately, who cares. Try to wait for initialization first though,
         // so we can see the server version etc. We might not track <10s sessions - again who cares.
         Promise.race([
-            serverVersion,
+            Promise.all([
+                DesktopApi.waitUntilDesktopApiReady?.(),
+                serverVersion
+            ]),
             delay(10_000)
         ]).then(() => {
             posthog.capture('$pageview', {
@@ -69,13 +73,34 @@ if (isFirstRunToday) localStorage.setItem('last-run-date', today);
 // This is passed via $set_once on all Posthog events, and the session collects metadata once it's
 // available. These values never change as all metrics are anonymous - there's no connection between
 // sessions, so the desktop/server version is always fixed.
-const sessionData = () => ({
-    'first-run': isFirstRun,
-    'first-run-today': isFirstRunToday,
-    'ui-version': UI_VERSION,
-    'server-version': serverVersion.state === 'fulfilled' ? serverVersion.value : undefined,
-    'desktop-version': desktopVersion.state === 'fulfilled' ? desktopVersion.value : undefined,
-});
+const sessionData = () => {
+    const desktopDetails = DesktopApi.getDeviceInfo?.();
+
+    // We collect some data here, but we do our best to make sure it's anonymous and we couldn't
+    // track users by the data here even if we wanted to. We're looking for very general patterns
+    // (there's still lots of Windows 10 users, most Mac users are on ARM now) and we don't want
+    // any particularly unique values in here.
+
+    return {
+        // These are booleans - not dates, just used to work out a rough daily new/existing user count.
+        'first-run': isFirstRun,
+        'first-run-today': isFirstRunToday,
+
+        // Current app versions - not a fingerprinting vector since they change very frequently and
+        // in concert across the whole userbase.
+        'ui-version': UI_VERSION,
+        'server-version': serverVersion.state === 'fulfilled' ? serverVersion.value : undefined,
+        'desktop-version': desktopVersion.state === 'fulfilled' ? desktopVersion.value : undefined,
+
+        // Various platform details we use to judge which platforms to support/drop. These should
+        // not be a significant fingerprinting vector - there's relatively few values in practice,
+        // and we actively simplify them (to drop patch versions etc) in the desktop app.
+        'platform': desktopDetails?.platform, // E.g. Windows
+        'platform-release': desktopDetails?.release, // E.g. Windows 10
+        'runtime-arch': desktopDetails?.runtimeArch, // E.g. x64
+        'real-arch': desktopDetails?.realArch // E.g. actually ARM64 (on Mac with Rosetta)
+    };
+};
 
 const normalizeUrl = (url: string) =>
     url

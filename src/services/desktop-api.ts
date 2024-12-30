@@ -28,7 +28,20 @@ declare global {
 }
 
 interface DesktopApi {
+    waitUntilDesktopApiReady?: () => Promise<void>;
+
+    getDesktopVersion?: () => string | undefined;
+    getServerAuthToken?: () => string | undefined;
+    getDeviceInfo?: () => {
+        platform?: string;
+        release?: string;
+        runtimeArch?: string;
+        realArch?: string;
+    } | undefined;
+
     selectApplication?: () => Promise<string | undefined>;
+    selectFilePath?: () => Promise<string | undefined>;
+
     openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
     restartApp?: () => Promise<void>;
 }
