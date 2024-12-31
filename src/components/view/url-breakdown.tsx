@@ -3,19 +3,19 @@ import * as React from 'react';
 import { styled } from '../../styles';
 import { ContentLabel } from '../common/text-content';
 
-const BreakdownContainer = styled.div`
+const BreakdownContainer = styled.dl`
     display: grid;
     grid-template-columns: fit-content(50%) auto;
     grid-gap: 5px;
 `;
 
-const BreakdownKey = styled.div`
+const BreakdownKey = styled.dt`
     font-family: ${p => p.theme.monoFontFamily};
     word-break: break-all;
     text-align: right;
 `;
 
-const BreakdownValue = styled.pre`
+const BreakdownValue = styled.dd`
     font-family: ${p => p.theme.monoFontFamily};
     word-break: break-all;
     white-space: pre-wrap;
@@ -36,7 +36,7 @@ export const UrlBreakdown = (p: { url: URL }) => {
         decodedPathname = p.url.pathname;
     }
 
-    return <BreakdownContainer>
+    return <BreakdownContainer role='region'>
         <BreakdownKey>Protocol:</BreakdownKey> <BreakdownValue>{ p.url.protocol.slice(0, -1) }</BreakdownValue>
 
         { (p.url.username || p.url.password) && <>
