@@ -203,7 +203,10 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
 
     return <HeadersGrid>
         {
-            pseudoHeaders.length > 0 && <CollapsibleSection withinGrid={true}>
+            pseudoHeaders.length > 0 && <CollapsibleSection
+                withinGrid={true}
+                contentName='pseudo headers'
+            >
                 <CollapsibleSectionSummary>
                     <PseudoHeadersHiddenMessage>
                         HTTP/{props.httpVersion} pseudo-headers
@@ -227,7 +230,11 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
                 props.accountStore!.isPaidUser
             )
 
-            return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
+            return <CollapsibleSection
+                contentName='header details'
+                withinGrid={true}
+                key={`${key}-${i}`}
+            >
                 <HeaderKeyValue headerKey={key} headerValue={value} />
 
                 { description && <HeaderDescriptionContainer>
@@ -246,7 +253,10 @@ const PseudoHeaderDetails = observer((props: {
 }) => {
     return <HeadersGrid>
         { _.flatMap(props.headers, ([key, value], i) => {
-            return <CollapsibleSection withinGrid={true} key={`${key}-${i}`}>
+            return <CollapsibleSection
+                contentName='header details'
+                withinGrid={true}
+                key={`${key}-${i}`}>
                 <HeaderKeyValue headerKey={key} headerValue={value} />
             </CollapsibleSection>;
         }) }

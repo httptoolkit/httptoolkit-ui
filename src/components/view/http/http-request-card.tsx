@@ -104,7 +104,7 @@ const RawRequestDetails = (p: {
     ].filter(d => !!d);
 
     return <div>
-        <CollapsibleSection>
+        <CollapsibleSection contentName='method details'>
             <CollapsibleSectionSummary>
                 <ContentLabel>Method:</ContentLabel> { p.request.method }
             </CollapsibleSectionSummary>
@@ -120,7 +120,10 @@ const RawRequestDetails = (p: {
 
         <ContentLabelBlock>URL</ContentLabelBlock>
 
-        <CollapsibleSection prefixTrigger={true}>
+        <CollapsibleSection
+            contentName='URL components'
+            prefixTrigger={true}
+        >
             <CollapsibleSectionSummary>
                 <ContentMonoValueInline>{
                     p.request.parsedUrl.parseable

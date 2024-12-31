@@ -307,7 +307,11 @@ const CachingPerformance = observer((p: { exchange: HttpExchange }) => {
             Caching
         </ContentLabelBlock>
         { cacheDetails.map((details, i) =>
-            <CollapsibleSection prefixTrigger={true} key={i}>
+            <CollapsibleSection
+                contentName='detailed explanation'
+                prefixTrigger={true}
+                key={i}
+            >
                 <CollapsibleSectionSummary>
                     { details.summary }{' '}
                     { details.type === 'warning' && <WarningIcon /> }

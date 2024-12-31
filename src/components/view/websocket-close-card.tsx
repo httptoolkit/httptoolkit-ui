@@ -75,7 +75,7 @@ export const WebSocketCloseCard = observer((props: WebSocketCloseCardProps) => {
                 </CollapsibleCardHeading>
             </header>
 
-            <CollapsibleSection>
+            <CollapsibleSection contentName='close code details'>
                 <CollapsibleSectionSummary>
                     <ContentLabel>Close code: </ContentLabel>
                     { closeCode

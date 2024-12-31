@@ -71,7 +71,7 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
         </header>
 
         <div>
-            <CollapsibleSection>
+            <CollapsibleSection contentName='status details'>
                 <CollapsibleSectionSummary>
                     <ContentLabel>Status:</ContentLabel>{' '}
                     {response.statusCode} {response.statusMessage || getStatusMessage(response.statusCode)}

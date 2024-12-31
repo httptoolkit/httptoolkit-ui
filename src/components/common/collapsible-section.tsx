@@ -12,6 +12,7 @@ interface CollapsibleSectionProps {
     className?: string;
     withinGrid?: boolean;
     prefixTrigger?: boolean;
+    contentName: string;
 }
 
 const CollapsibleSectionWrapper = styled.section`
@@ -95,6 +96,7 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
             canOpen={hasBody}
             withinGrid={withinGrid}
             onClick={this.toggleOpen}
+            targetName={this.props.contentName}
         />;
 
         const summary = React.cloneElement(
@@ -150,12 +152,18 @@ const OPEN_ICON: IconProp = ['fas', 'minus'];
 const CLOSED_ICON: IconProp = ['fas', 'plus'];
 
 const CollapsibleTrigger = styled((p: {
+    targetName: string,
     open: boolean,
     canOpen: boolean,
     withinGrid: boolean,
     onClick: (e: React.SyntheticEvent) => void
 }) =>
-    <button {..._.omit(p, ['open', 'canOpen', 'withinGrid'])}>
+    <button
+        aria-hidden={!p.canOpen}
+        aria-label={`${p.open ? 'Hide' : 'Show'} ${p.targetName}`}
+        aria-expanded={p.open}
+        {..._.omit(p, ['open', 'canOpen', 'withinGrid'])}
+    >
         <Icon icon={p.open ? OPEN_ICON : CLOSED_ICON} />
     </button>
 )`

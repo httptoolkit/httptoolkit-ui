@@ -176,7 +176,7 @@ const ApiRequestDetails = (props: {
     const hasOperationDetails = !!operationDetails.length;
 
     return <>
-        <CollapsibleSection>
+        <CollapsibleSection contentName='service description'>
             <CollapsibleSectionSummary>
                 <ContentLabel>Service:</ContentLabel> { api.service.name }
                 { !api.service.description &&
@@ -195,7 +195,7 @@ const ApiRequestDetails = (props: {
             }
         </CollapsibleSection>
 
-        <CollapsibleSection>
+        <CollapsibleSection contentName='operation description'>
             <CollapsibleSectionSummary>
                 <ContentLabel>Operation:</ContentLabel> { api.operation.name }
                 { !hasOperationDetails &&
@@ -220,7 +220,11 @@ const ApiRequestDetails = (props: {
             </ContentLabelBlock>
             <ParametersGrid>
                 { relevantParameters.map((param) =>
-                    <CollapsibleSection withinGrid={true} key={param.name}>
+                    <CollapsibleSection
+                        contentName='parameter description'
+                        withinGrid={true}
+                        key={param.name}
+                    >
                         <ParameterKeyValue>
                             <ParamName>{ param.name }: </ParamName>
 
