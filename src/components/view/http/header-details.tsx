@@ -231,7 +231,7 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
             )
 
             return <CollapsibleSection
-                contentName='header details'
+                contentName={`${key} header details`}
                 withinGrid={true}
                 key={`${key}-${i}`}
             >
@@ -254,7 +254,7 @@ const PseudoHeaderDetails = observer((props: {
     return <HeadersGrid>
         { _.flatMap(props.headers, ([key, value], i) => {
             return <CollapsibleSection
-                contentName='header details'
+                contentName={`${key} header details`}
                 withinGrid={true}
                 key={`${key}-${i}`}>
                 <HeaderKeyValue headerKey={key} headerValue={value} />

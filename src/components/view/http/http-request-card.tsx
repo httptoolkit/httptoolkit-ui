@@ -104,7 +104,7 @@ const RawRequestDetails = (p: {
     ].filter(d => !!d);
 
     return <div>
-        <CollapsibleSection contentName='method details'>
+        <CollapsibleSection contentName={`${p.request.method} method documentation`}>
             <CollapsibleSectionSummary>
                 <ContentLabel>Method:</ContentLabel> { p.request.method }
             </CollapsibleSectionSummary>
