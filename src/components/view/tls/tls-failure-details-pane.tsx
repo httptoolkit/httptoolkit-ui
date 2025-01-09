@@ -76,7 +76,7 @@ export class TlsFailureDetailsPane extends React.Component<{
                                 This means that the client hasn't yet been fully configured
                                 to work with HTTP Toolkit. It has the proxy settings,
                                 but it doesn't trust our certificate authority (CA), so we
-                                can't we can't intercept its HTTPS traffic.
+                                can't intercept its HTTPS traffic.
                             </p>
                         : failure.failureCause === 'no-shared-cipher'
                             ? <>
