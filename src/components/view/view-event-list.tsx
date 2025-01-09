@@ -78,6 +78,10 @@ const ListContainer = styled.div<{ role: 'table' }>`
         box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 30px inset;
         pointer-events: none;
     }
+
+    & > div > div[tabindex="0"]:focus {
+        outline: thin dotted ${p => p.theme.popColor};
+    }
 `;
 
 const Column = styled.div<{ role: 'cell' | 'columnheader' }>`
