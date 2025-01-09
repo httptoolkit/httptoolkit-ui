@@ -12,7 +12,6 @@ import * as portals from 'react-reverse-portal';
 import { AccountStore } from '../../../model/account/account-store';
 import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 
-import { PaneOuterContainer } from '../view-details-pane';
 import { SelfSizedEditor } from '../../editor/base-editor';
 import { RTCDataChannelCard } from './rtc-data-channel-card';
 import { RTCConnectionHeader } from './rtc-connection-header';
@@ -49,7 +48,7 @@ export class RTCDataChannelDetailsPane extends React.Component<{
             accountStore
         } = this.props;
 
-        return <PaneOuterContainer>
+        return <>
             { !this.isConnectionHidden &&
                 <RTCConnectionHeader
                     connection={dataChannel.rtcConnection}
@@ -68,7 +67,7 @@ export class RTCDataChannelDetailsPane extends React.Component<{
                 onCollapseToggled={undefined} // Hide the collapse button
                 ariaLabel='RTC Data Messages Section'
             />
-        </PaneOuterContainer>;
+        </>;
 
     }
 

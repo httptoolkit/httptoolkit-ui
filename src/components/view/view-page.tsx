@@ -15,7 +15,7 @@ import * as portals from 'react-reverse-portal';
 
 import { WithInjected, CollectedEvent } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
-import { useHotkeys, isEditable, windowSize } from '../../util/ui';
+import { useHotkeys, isEditable, windowSize, AriaCtrlCmd, Ctrl } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 import { UnreachableCheck } from '../../util/error';
 
@@ -38,6 +38,7 @@ import { SelfSizedEditor } from '../editor/base-editor';
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
 import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
+import { PaneOuterContainer } from './view-details-pane';
 import { HttpDetailsPane } from './http/http-details-pane';
 import { TlsFailureDetailsPane } from './tls/tls-failure-details-pane';
 import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
@@ -60,6 +61,8 @@ interface ViewPageProps {
 const ViewPageKeyboardShortcuts = (props: {
     isPaidUser: boolean,
     selectedEvent: CollectedEvent | undefined,
+    onFocusLeft: () => void,
+    onFocusRight: () => void,
     moveSelection: (distance: number) => void,
     onPin: (event: HttpExchange) => void,
     onResend: (event: HttpExchange) => void,
@@ -69,6 +72,16 @@ const ViewPageKeyboardShortcuts = (props: {
     onStartSearch: () => void
 }) => {
     const selectedEvent = props.selectedEvent;
+
+    useHotkeys('Ctrl+[, Cmd+[', (event) => {
+        event.preventDefault();
+        props.onFocusLeft();
+    }, [props.onFocusLeft]);
+
+    useHotkeys('Ctrl+], Cmd+]', (event) => {
+        event.preventDefault();
+        props.onFocusRight();
+    }, [props.onFocusRight]);
 
     useHotkeys('j', (event) => {
         if (isEditable(event.target)) return;
@@ -157,6 +170,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     searchInputRef = React.createRef<HTMLInputElement>();
 
     private listRef = React.createRef<ViewEventList>();
+    private splitPaneRef = React.createRef<SplitPane>();
 
     @observable
     private searchFiltersUnderConsideration: FilterSet | undefined;
@@ -370,6 +384,8 @@ class ViewPage extends React.Component<ViewPageProps> {
                 isPaidUser={isPaidUser}
                 selectedEvent={this.selectedEvent}
                 moveSelection={this.moveSelection}
+                onFocusLeft={this.focusLeftPane}
+                onFocusRight={this.focusRightPane}
                 onPin={this.onPin}
                 onResend={this.onPrepareToResendRequest}
                 onBuildRuleFromExchange={this.onBuildRuleFromExchange}
@@ -379,6 +395,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             />
 
             <SplitPane
+                ref={this.splitPaneRef}
                 split={this.splitDirection}
                 primary='second'
                 defaultSize='50%'
@@ -386,7 +403,10 @@ class ViewPage extends React.Component<ViewPageProps> {
                 maxSize={-minSize}
                 hiddenPane={rightPane === null ? '2' : undefined}
             >
-                <LeftPane>
+                <LeftPane
+                    aria-label='The collected events list pane'
+                    aria-keyshortcuts={`${AriaCtrlCmd}+[`}
+                >
                     <ViewEventListFooter // Footer above the list to ensure correct tab order
                         searchInputRef={this.searchInputRef}
                         allEvents={events}
@@ -410,11 +430,12 @@ class ViewPage extends React.Component<ViewPageProps> {
                         ref={this.listRef}
                     />
                 </LeftPane>
-                {
-                    rightPane ?? <div />
-                    // The <div/> is hidden by hiddenPane, so does nothing, but avoids
-                    // a React error in react-split-pane for undefined children
-                }
+                <PaneOuterContainer
+                    aria-label='The selected event details pane'
+                    aria-keyshortcuts={`${AriaCtrlCmd}+]`}
+                >
+                    { rightPane }
+                </PaneOuterContainer>
             </SplitPane>
 
             {Object.values(this.editors).map((node, i) =>
@@ -426,6 +447,19 @@ class ViewPage extends React.Component<ViewPageProps> {
             )}
         </div>;
     }
+
+    focusLeftPane = () => {
+        this.listRef.current?.focusList();
+    };
+
+    focusRightPane = () => {
+        const rightPane = this.splitPaneRef.current?.pane2;
+        const firstFocusableElem = rightPane?.querySelector(
+            '[tabindex]:not([tabindex="-1"])'
+        ) as HTMLElement | null;
+
+        firstFocusableElem?.focus();
+    };
 
     @action.bound
     onSearchFiltersConsidered(filters: FilterSet | undefined) {

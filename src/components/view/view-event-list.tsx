@@ -864,6 +864,16 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         this.focusEvent(this.props.selectedEvent);
     }
 
+    focusList() {
+        const { selectedEvent } = this.props;
+        if (selectedEvent) {
+            this.scrollToEvent(selectedEvent);
+        } else {
+            const listWindow = this.listBodyRef.current?.parentElement;
+            listWindow?.focus();
+        }
+    }
+
     private isListAtBottom() {
         const listWindow = this.listBodyRef.current?.parentElement;
         if (!listWindow) return true; // This means no rows, so we are effectively at the bottom

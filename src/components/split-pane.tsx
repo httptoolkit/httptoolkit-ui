@@ -3,6 +3,11 @@ import { default as ReactSplitPane } from 'react-split-pane';
 
 import { styled } from '../styles';
 
+export type SplitPane = ReactSplitPane & {
+    pane1: HTMLElement | undefined;
+    pane2: HTMLElement | undefined;
+};
+
 // Styles original taken from
 // https://github.com/tomkp/react-split-pane/blob/master/README.md#example-styling
 export const SplitPane = styled(ReactSplitPane)<{

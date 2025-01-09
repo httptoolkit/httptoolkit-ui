@@ -19,12 +19,18 @@ window.addEventListener('resize', action(() => {
     windowSize.width = window.innerWidth;
 }));
 
-export const Ctrl = navigator.platform.startsWith('Mac')
+const isMac = navigator.platform.startsWith('Mac');
+
+export const Ctrl = isMac
     ? '⌘'
     : 'Ctrl';
 
+export const AriaCtrlCmd = isMac
+    ? 'meta'
+    : 'control';
+
 export function isCmdCtrlPressed(event: React.KeyboardEvent<unknown>) {
-    return navigator.platform.startsWith('Mac')
+    return isMac
         ? event.metaKey
         : event.ctrlKey;
 }

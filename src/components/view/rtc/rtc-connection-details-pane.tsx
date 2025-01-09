@@ -15,7 +15,7 @@ import { RTCDataChannel } from '../../../model/webrtc/rtc-data-channel';
 import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
 
 import { SelfSizedEditor } from '../../editor/base-editor';
-import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
+import { PaneScrollContainer } from '../view-details-pane';
 
 import { RTCConnectionCard } from './rtc-connection-card';
 import { SDPCard } from './sdp-card';
@@ -102,71 +102,69 @@ export class RTCConnectionDetailsPane extends React.Component<{
             direction: locallyInitiated ? 'left' : 'right'
         } as const;
 
-        return <PaneOuterContainer>
-            <PaneScrollContainer>
-                <RTCConnectionCard
-                    {...uiStore!.viewCardProps.rtcConnection}
-                    connection={connection}
-                />
-                <SDPCard
-                    {...offerCardProps}
-                    connection={connection}
-                    type={locallyInitiated ? 'local' : 'remote'}
-                    sessionDescription={offerDescription}
-                    editorNode={offerEditor}
-                />
-                <SDPCard
-                    {...answerCardProps}
-                    connection={connection}
-                    type={locallyInitiated ? 'remote' : 'local'}
-                    sessionDescription={answerDescription}
-                    editorNode={answerEditor}
-                />
+        return <PaneScrollContainer>
+            <RTCConnectionCard
+                {...uiStore!.viewCardProps.rtcConnection}
+                connection={connection}
+            />
+            <SDPCard
+                {...offerCardProps}
+                connection={connection}
+                type={locallyInitiated ? 'local' : 'remote'}
+                sessionDescription={offerDescription}
+                editorNode={offerEditor}
+            />
+            <SDPCard
+                {...answerCardProps}
+                connection={connection}
+                type={locallyInitiated ? 'remote' : 'local'}
+                sessionDescription={answerDescription}
+                editorNode={answerEditor}
+            />
 
-                {
-                    this.mediaTracks.map((mediaTrack) =>
-                        <RTCMediaCard
-                            // Link the key to the track, to ensure selected-message state gets
-                            // reset when we switch between traffic:
-                            key={mediaTrack.id}
+            {
+                this.mediaTracks.map((mediaTrack) =>
+                    <RTCMediaCard
+                        // Link the key to the track, to ensure selected-message state gets
+                        // reset when we switch between traffic:
+                        key={mediaTrack.id}
 
-                            mediaTrack={mediaTrack}
+                        mediaTrack={mediaTrack}
 
-                            expanded={false}
-                            collapsed={!!this.streamCardState[mediaTrack.id]?.collapsed}
-                            onCollapseToggled={this.toggleCollapse.bind(this, mediaTrack.id)}
-                            onExpandToggled={this.expandStream.bind(this, mediaTrack.id)}
-                            ariaLabel='RTC Media Stream Section'
-                        />
-                    )
-                }
+                        expanded={false}
+                        collapsed={!!this.streamCardState[mediaTrack.id]?.collapsed}
+                        onCollapseToggled={this.toggleCollapse.bind(this, mediaTrack.id)}
+                        onExpandToggled={this.expandStream.bind(this, mediaTrack.id)}
+                        ariaLabel='RTC Media Stream Section'
+                    />
+                )
+            }
 
-                {
-                    this.dataChannels.map((dataChannel, i) =>
-                        <RTCDataChannelCard
-                            key={dataChannel.id}
-                            dataChannel={dataChannel}
-                            isPaidUser={accountStore!.isPaidUser}
-                            streamMessageEditor={this.dataChannelEditors[i]}
+            {
+                this.dataChannels.map((dataChannel, i) =>
+                    <RTCDataChannelCard
+                        key={dataChannel.id}
+                        dataChannel={dataChannel}
+                        isPaidUser={accountStore!.isPaidUser}
+                        streamMessageEditor={this.dataChannelEditors[i]}
 
-                            expanded={false}
-                            collapsed={!!this.streamCardState[dataChannel.id]?.collapsed}
-                            onCollapseToggled={this.toggleCollapse.bind(this, dataChannel.id)}
-                            onExpandToggled={this.expandStream.bind(this, dataChannel.id)}
-                            ariaLabel='RTC Data Messages Section'
-                        />
-                    )
-                }
+                        expanded={false}
+                        collapsed={!!this.streamCardState[dataChannel.id]?.collapsed}
+                        onCollapseToggled={this.toggleCollapse.bind(this, dataChannel.id)}
+                        onExpandToggled={this.expandStream.bind(this, dataChannel.id)}
+                        ariaLabel='RTC Data Messages Section'
+                    />
+                )
+            }
 
-                { this.dataChannelEditors.map((node, i) =>
-                    <portals.InPortal key={i} node={node}>
-                        <SelfSizedEditor
-                            contentId={null}
-                        />
-                    </portals.InPortal>
-                )}
-            </PaneScrollContainer>
-        </PaneOuterContainer>;
+            { this.dataChannelEditors.map((node, i) =>
+                <portals.InPortal key={i} node={node}>
+                    <SelfSizedEditor
+                        contentId={null}
+                    />
+                </portals.InPortal>
+            )}
+        </PaneScrollContainer>;
     }
 
 }

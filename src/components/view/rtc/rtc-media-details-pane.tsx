@@ -10,7 +10,6 @@ import { observer } from 'mobx-react';
 
 import { RTCMediaTrack } from '../../../model/webrtc/rtc-media-track';
 
-import { PaneOuterContainer } from '../view-details-pane';
 import { RTCMediaCard } from './rtc-media-card';
 import { RTCConnectionHeader } from './rtc-connection-header';
 
@@ -38,7 +37,7 @@ export class RTCMediaDetailsPane extends React.Component<{
             mediaTrack
         } = this.props;
 
-        return <PaneOuterContainer>
+        return <>
             { !this.isConnectionHidden &&
                 <RTCConnectionHeader
                     connection={mediaTrack.rtcConnection}
@@ -59,7 +58,7 @@ export class RTCMediaDetailsPane extends React.Component<{
 
                 mediaTrack={mediaTrack}
             />
-        </PaneOuterContainer>;
+        </>;
 
     }
 

@@ -18,7 +18,7 @@ import { HtkRule, getRulePartKey } from '../../../model/rules/rules';
 import { WebSocketStream } from '../../../model/websockets/websocket-stream';
 import { tagsToErrorType } from '../../../model/http/error-types';
 
-import { PaneOuterContainer, PaneScrollContainer } from '../view-details-pane';
+import { PaneScrollContainer } from '../view-details-pane';
 import { StreamMessageListCard } from '../stream-message-list-card';
 import { WebSocketCloseCard } from '../websocket-close-card';
 
@@ -115,17 +115,17 @@ export class HttpDetailsPane extends React.Component<{
         const headerCard = this.renderHeaderCard(exchange);
 
         if (expandedViewCard) {
-            return <PaneOuterContainer>
+            return <>
                 { headerCard }
                 { this.renderExpandedCard(expandedViewCard, exchange, apiExchange) }
-            </PaneOuterContainer>;
+            </>;
         }
 
         const cards = (requestBreakpoint || responseBreakpoint)
             ? this.renderBreakpointCards(exchange, apiName, apiExchange)
             : this.renderNormalCards(exchange, apiName, apiExchange);
 
-        return <PaneOuterContainer>
+        return <>
             <PaneScrollContainer>
                 { headerCard }
                 { cards }
@@ -139,7 +139,7 @@ export class HttpDetailsPane extends React.Component<{
                 navigate={navigate}
                 isPaidUser={isPaidUser}
             />
-        </PaneOuterContainer>;
+        </>;
     }
 
     renderHeaderCard(exchange: HttpExchange): JSX.Element | null {
