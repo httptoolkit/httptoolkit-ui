@@ -19,7 +19,7 @@ import {
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
-import { getHeaderValues, lastHeader } from '../../util/headers';
+import { getHeaderValues, getHeaderValue } from '../../util/headers';
 import { ObservablePromise } from '../../util/observable';
 import { unreachableCheck } from '../../util/error';
 
@@ -227,7 +227,7 @@ export function generateHarRequest(
             try {
                 requestEntry.postData = generateHarPostBody(
                     UTF8Decoder.decode(request.body.decoded),
-                    lastHeader(request.headers['content-type']) || 'application/octet-stream'
+                    getHeaderValue(request.headers, 'content-type') || 'application/octet-stream'
                 );
             } catch (e) {
                 if (e instanceof TypeError) {
@@ -362,7 +362,7 @@ async function generateHarResponse(
         headers: asHarHeaders(response.headers),
         content: Object.assign(
             {
-                mimeType: lastHeader(response.headers['content-type']) ||
+                mimeType: getHeaderValue(response.headers, 'content-type') ||
                     'application/octet-stream',
                 size: response.body.decoded?.byteLength || 0
             },

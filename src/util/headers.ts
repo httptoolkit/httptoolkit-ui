@@ -43,15 +43,18 @@ export const rawHeadersToHeaders = (headers: RawHeaders): Headers =>
 
 /**
  * Get the header value for the given header key. Case insensitive. If there are multiple values,
- * this will return the last value. If there are no values this returns undefined.
+ * this will return the last value. If there are no values or the headers themselves aren't defined,
+ * this returns undefined.
  */
-export const getHeaderValue = (headers: Headers | RawHeaders, headerKey: string): string | undefined => {
+export function getHeaderValue(
+    headers: Headers | RawHeaders | undefined,
+    headerKey: Lowercase<string>
+): string | undefined {
     if (Array.isArray(headers)) {
-        headerKey = headerKey.toLowerCase();
         const headerPair = _.findLast(headers, ([key]) => key.toLowerCase() === headerKey);
         return headerPair?.[1];
     } else {
-        const headerValue = headers[headerKey];
+        const headerValue = headers?.[headerKey];
 
         if (Array.isArray(headerValue)) {
             return headerValue[headerValue.length - 1];
@@ -144,15 +147,6 @@ export const withHeaderValue = <T extends Headers | RawHeaders>(headers: T, head
         setHeaderValue(headers, key, value)
     );
     return headers;
-}
-
-// This fairly meaningless override combo seems to be
-// required to make it ok to use this when T = X | undefined.
-export function lastHeader<T>(val: T | T[]): T;
-export function lastHeader<T>(val: T | T[] | undefined): T | undefined;
-export function lastHeader<T>(val: T | T[] | undefined): T | undefined {
-    if (Array.isArray(val)) return val[val.length - 1];
-    else return val;
 }
 
 export function asHeaderArray(val: string | string[] | undefined, sep = ','): string[] {

@@ -21,7 +21,7 @@ import {
     Html
 } from "../../types";
 import { firstMatch, empty } from '../../util';
-import { lastHeader } from '../../util/headers';
+import { getHeaderValue } from '../../util/headers';
 import { formatAjvError } from '../../util/json-schema';
 
 import {
@@ -235,7 +235,7 @@ export function getBodySchema(
 ): SchemaObject {
     if (!bodyDefinition || !message || message === 'aborted') return {};
 
-    const contentType = lastHeader(message.headers['content-type']) || '*/*';
+    const contentType = getHeaderValue(message.headers, 'content-type') || '*/*';
 
     const schemasByType = bodyDefinition.content;
     if (!schemasByType) return {};
@@ -352,7 +352,7 @@ export function matchOpenApiOperation(api: OpenApiMetadata, request: HtkRequest)
     }
 
     const method = (
-        lastHeader(request.headers['x-http-method-override']) || request.method
+        getHeaderValue(request.headers, 'x-http-method-override') || request.method
     ).toLowerCase();
 
     let operation: OperationObject | undefined = get(pathSpec, method);

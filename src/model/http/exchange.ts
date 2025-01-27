@@ -25,7 +25,7 @@ import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 import {
     asHeaderArray,
-    lastHeader
+    getHeaderValue
 } from '../../util/headers';
 
 import { logError } from '../../errors';
@@ -86,7 +86,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
                 ? MANUALLY_SENT_SOURCE
                 : parseSource(request.headers['user-agent']),
             body: new HttpBody(request, request.headers),
-            contentType: getContentType(lastHeader(request.headers['content-type'])) || 'text',
+            contentType: getContentType(getHeaderValue(request.headers, 'content-type')) || 'text',
             cache: observable.map(new Map<symbol, unknown>(), { deep: false })
         }) as HtkRequest;
     } catch (e) {
@@ -98,10 +98,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
 function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
         body: new HttpBody(response, response.headers),
-        contentType: getContentType(
-            // There should only ever be one. If we get multiple though, just use the last.
-            lastHeader(response.headers['content-type'])
-        ) || 'text',
+        contentType: getContentType(getHeaderValue(response.headers, 'content-type')) || 'text',
         cache: observable.map(new Map<symbol, unknown>(), { deep: false })
     }) as HtkResponse;
 }

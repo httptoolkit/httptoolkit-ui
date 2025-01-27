@@ -8,7 +8,7 @@ import {
 } from 'date-fns';
 
 import { HttpExchange, ExchangeMessage } from '../../types';
-import { lastHeader, asHeaderArray } from '../../util/headers';
+import { getHeaderValue, asHeaderArray } from '../../util/headers';
 import { joinAnd } from '../../util/text';
 import { escapeForMarkdownEmbedding } from '../ui/markdown';
 
@@ -106,7 +106,7 @@ export function explainCacheability(exchange: HttpExchange): (
             // This is a CORS preflight request - it's not really cacheable, but the CORS
             // headers specifically (probably the only interesting bit) are, via their
             // own separate funky mechanism.
-            const maxAgeHeader = lastHeader(response.headers['access-control-max-age']);
+            const maxAgeHeader = getHeaderValue(response.headers, 'access-control-max-age');
             const maxAge = maxAgeHeader ? parseInt(maxAgeHeader, 10) : undefined;
 
             if (maxAge !== undefined && maxAge >= 1) {
@@ -238,7 +238,7 @@ export function explainCacheability(exchange: HttpExchange): (
         `;
 
         const contentLocationUrl = response.headers['content-location'] ?
-            new URL(lastHeader(response.headers['content-location']!), request.url) : undefined;
+            new URL(getHeaderValue(response.headers, 'content-location')!, request.url) : undefined;
 
         const hasFreshnessInfo =
             !!responseCCDirectives['max-age'] ||
@@ -272,7 +272,7 @@ export function explainCacheability(exchange: HttpExchange): (
         let warning: string | undefined;
 
         const responseDateHeader = response.headers['date'] ?
-            parseDate(lastHeader(response.headers['date'])!)
+            parseDate(getHeaderValue(response.headers, 'date')!)
             : undefined;
 
         if (!responseDateHeader) {
@@ -287,7 +287,7 @@ export function explainCacheability(exchange: HttpExchange): (
                 predictably.
             `;
         } else if (response.headers['expires'] && Math.abs(differenceInSeconds(
-            parseDate(lastHeader(response.headers['expires']!)),
+            parseDate(getHeaderValue(response.headers, 'expires')!),
             addSeconds(responseDateHeader, responseCCDirectives['max-age'])
         )) > 60) {
             warning = dedent`
@@ -318,7 +318,7 @@ export function explainCacheability(exchange: HttpExchange): (
         };
     }
 
-    if (lastHeader(response.headers['expires']) !== undefined) {
+    if (getHeaderValue(response.headers, 'expires') !== undefined) {
         // Expires set, but not max-age (checked above).
         return {
             cacheable: true,
@@ -649,7 +649,7 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
     const responseCCDirectives = parseCCDirectives(response);
 
     if (request.method === 'OPTIONS') {
-        const maxAgeHeader = lastHeader(response.headers['access-control-max-age']);
+        const maxAgeHeader = getHeaderValue(response.headers, 'access-control-max-age');
 
         if (maxAgeHeader) {
             const maxAge = parseInt(maxAgeHeader!, 10);
@@ -694,8 +694,8 @@ export function explainCacheLifetime(exchange: HttpExchange): Explanation | unde
         };
     }
 
-    const dateHeader = lastHeader(response.headers['date']);
-    const expiresHeader = lastHeader(response.headers['expires']);
+    const dateHeader = getHeaderValue(response.headers, 'date');
+    const expiresHeader = getHeaderValue(response.headers, 'expires');
     const maxAge = responseCCDirectives['max-age'];
     const sharedMaxAge = responseCCDirectives['s-maxage'] !== undefined ?
         responseCCDirectives['s-maxage'] : maxAge;

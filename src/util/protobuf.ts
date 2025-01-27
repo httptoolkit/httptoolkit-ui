@@ -2,7 +2,7 @@ import parseRawProto from 'rawprotoparse';
 import { gunzipSync, inflateSync } from 'zlib';
 
 import { Headers } from '../types';
-import { lastHeader } from './headers';
+import { getHeaderValue } from './headers';
 
 export function isProbablyProtobuf(input: Uint8Array) {
     // Protobuf data starts with a varint, consisting of a
@@ -52,7 +52,9 @@ export const parseRawProtobuf = parseRawProto;
 // A value of 0 indicates that no encoding of Message bytes has occurred.
 // If the Message-Encoding header is omitted then the Compressed-Flag must be 0.
 export const extractProtobufFromGrpc = (input: Buffer, headers: Headers) => {
-    const grpcEncoding = lastHeader(headers['grpc-encoding'] ?? 'identity').toLocaleLowerCase();
+    const grpcEncoding = (
+        getHeaderValue(headers, 'grpc-encoding') ?? 'identity'
+    ).toLocaleLowerCase();
     const grpcDecoder = grpcEncoding == 'gzip' ? gunzipSync : grpcEncoding == 'deflate' ? inflateSync : undefined;
     const protobufMessages: Buffer[] = [];
 

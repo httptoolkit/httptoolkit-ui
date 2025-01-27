@@ -7,7 +7,7 @@ import * as portals from 'react-reverse-portal';
 import { ExchangeMessage } from '../../types';
 
 import { ErrorLike } from '../../util/error';
-import { getHeaderValue, lastHeader } from '../../util/headers';
+import { getHeaderValue } from '../../util/headers';
 
 import { ViewableContentType, getCompatibleTypes } from '../../model/events/content-types';
 
@@ -80,7 +80,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
         const compatibleContentTypes = message
             ? getCompatibleTypes(
                 message.contentType,
-                lastHeader(message.headers['content-type']),
+                getHeaderValue(message.headers, 'content-type'),
                 message.body,
                 message.headers,
             )
