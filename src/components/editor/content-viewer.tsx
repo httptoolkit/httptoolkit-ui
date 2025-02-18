@@ -143,7 +143,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
         const cachedValue = cache.get(cacheKey) as ObservablePromise<string> | string | undefined;
 
         const renderingContent = cachedValue ||
-            this.formatter.render(this.contentBuffer) as ObservablePromise<string> | string;
+            this.formatter.render(this.contentBuffer, this.props.headers) as ObservablePromise<string> | string;
         if (!cachedValue) cache.set(cacheKey, renderingContent);
 
         if (typeof renderingContent === 'string') {
