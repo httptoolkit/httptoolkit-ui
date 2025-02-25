@@ -209,9 +209,14 @@ class FridaConfig extends React.Component<{
             yield getDetailedInterceptorMetadata(this.props.interceptor.id, this.selectedHost?.id)
         );
 
-        this.fridaTargets = result?.targets?.filter(
-            target => !INCOMPATIBLE_APP_IDS.includes(target.id)
-        ) ?? [];
+        this.fridaTargets = (
+            result?.targets
+            ?.filter(target => !INCOMPATIBLE_APP_IDS.includes(target.id))
+            ?.map((target) => ({
+                ...target,
+                name: target.name === 'App' ? target.id : target.name
+            }))
+        ?? []);
     }.bind(this));
 
     @observable private inProgressTargetIds: string[] = [];
@@ -443,7 +448,9 @@ class FridaConfig extends React.Component<{
 
                             return {
                                 id,
-                                title: `${this.deviceClassName} app: ${name} (${id})`,
+                                title: name !== id
+                                    ? `${this.deviceClassName} app: ${name} (${id})`
+                                    : `${this.deviceClassName} app: ${name}`,
                                 status: activating
                                         ? 'activating'
                                         : 'available',
