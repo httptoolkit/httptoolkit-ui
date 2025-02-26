@@ -11,10 +11,6 @@ export const HttpVersionPill = styled(({ request, className }: {
 }) => request.httpVersion
     ? <Pill
         title={`The client sent this request using HTTP ${request.httpVersion}`}
-    >HTTP/{
-        request.httpVersion === '2.0'
-        ? '2'
-        : request.httpVersion
-    }</Pill>
+    >HTTP/{request.httpVersion.replace('.0', '')}</Pill>
     : null
 )``;

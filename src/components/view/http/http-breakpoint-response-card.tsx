@@ -81,7 +81,7 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
 
     @action.bound
     onStatusChange(statusCode: number | undefined, statusMessage: string | undefined) {
-        if (this.props.exchange.httpVersion === 2) {
+        if (this.props.exchange.httpVersion >= 2) {
             const { rawHeaders } = this.props.exchange.responseBreakpoint!.inProgressResult;
             this.props.onChange({
                 statusCode: statusCode || NaN,

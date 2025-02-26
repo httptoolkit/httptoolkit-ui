@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
-import { HttpExchange, HtkRequest } from '../../../types';
+import { HttpExchange, HtkRequest, HttpVersion } from '../../../types';
 import { styled } from '../../../styles';
 import { PhosphorIcon } from '../../../icons';
 
@@ -90,7 +90,7 @@ const MatchedRulePill = styled(inject('uiStore')((p: {
 
 const RawRequestDetails = (p: {
     request: HtkRequest,
-    httpVersion: 1 | 2
+    httpVersion: HttpVersion
 }) => {
     const methodDocs = getMethodDocs(p.request.method);
     const methodDetails = [

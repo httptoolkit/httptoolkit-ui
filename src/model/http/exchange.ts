@@ -56,9 +56,18 @@ import {
 } from './exchange-breakpoint';
 import { UpstreamHttpExchange } from './upstream-exchange';
 
-export type HttpVersion = 2 | 1;
+const HTTP_VERSIONS = [0.9, 1.0, 1.1, 2.0, 3.0] as const;
+export type HttpVersion = typeof HTTP_VERSIONS[number];
+
 export function parseHttpVersion(version: string | undefined): HttpVersion {
-    return version === '2.0' ? 2 : 1;
+    if (version === '0.9') return 0.9;
+    if (version === '1.0' || version === '1') return 1.0;
+    if (version === '1.1') return 1.1;
+    if (version === '2.0' || version === '2') return 2.0;
+    if (version === '3.0' || version === '3') return 3.0;
+
+    console.log('Unknown HTTP version:', version);
+    return 1.1;
 }
 
 function tryParseUrl(request: InputRequest): ParsedUrl | undefined  {
@@ -224,7 +233,7 @@ export interface ViewableHttpExchange extends HTKEventBase {
     get abortMessage(): string | undefined;
     get api(): ApiExchange | undefined;
 
-    get httpVersion(): 1 | 2;
+    get httpVersion(): HttpVersion;
     get matchedRule(): { id: string, handlerStepTypes: HandlerClassKey[] } | false | undefined;
     get tags(): string[];
     get timingEvents(): TimingEvents;

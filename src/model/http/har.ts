@@ -739,7 +739,7 @@ function parseHarRequest(
         timingEvents,
         tags: [],
         matchedRuleId: false,
-        httpVersion: parseHttpVersion(request.httpVersion, request.headers),
+        httpVersion: parseHarHttpVersion(request.httpVersion, request.headers),
         protocol: request.url.split(':')[0],
         method: request.method,
         url: request.url,
@@ -760,7 +760,7 @@ function parseHarRequest(
     }
 }
 
-function parseHttpVersion(
+function parseHarHttpVersion(
     versionString: string | undefined,
     headers: HarFormat.Header[]
 ) {
@@ -772,6 +772,8 @@ function parseHttpVersion(
             return '1.1';
         }
     }
+
+    if (versionString === 'h3') return '3.0';
 
     const regexMatch = /^(HTTP\/)?([\d\.]+)$/i.exec(versionString);
     if (regexMatch) {

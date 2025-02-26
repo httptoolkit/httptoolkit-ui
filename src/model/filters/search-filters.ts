@@ -518,7 +518,7 @@ class HttpVersionFilter extends Filter {
     static filterSyntax = [
         new FixedStringSyntax("httpVersion"),
         new FixedStringSyntax("="), // Separate, so initial suggestions are names only
-        new StringOptionsSyntax(["1", "2"])
+        new StringOptionsSyntax(["1", "2", "3"])
     ] as const;
 
     static filterName = "httpVersion";
@@ -543,7 +543,7 @@ class HttpVersionFilter extends Filter {
 
     matches(event: CollectedEvent): boolean {
         return event.isHttp() &&
-            event.httpVersion === this.expectedVersion;
+            Math.round(event.httpVersion) === this.expectedVersion;
     }
 
     toString() {

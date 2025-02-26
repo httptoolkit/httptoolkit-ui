@@ -10,6 +10,7 @@ import {
     BreakpointRequestResult,
     BreakpointResponseResult,
     MockttpBreakpointResponseResult,
+    HttpVersion,
 } from "../../types";
 import { logError } from "../../errors";
 
@@ -69,12 +70,12 @@ export async function getRequestBreakpoint(request: MockttpBreakpointedRequest) 
     );
 }
 
-export function getDummyResponseBreakpoint(httpVersion: 1 | 2) {
+export function getDummyResponseBreakpoint(httpVersion: HttpVersion) {
     const breakpoint = new ResponseBreakpoint(
         {
             statusCode: 200,
             statusMessage: undefined,
-            rawHeaders: httpVersion === 2 ? [[':status', '200']] : [],
+            rawHeaders: httpVersion >= 2 ? [[':status', '200']] : [],
         },
         stringToBuffer(''),
         stringToBuffer('')

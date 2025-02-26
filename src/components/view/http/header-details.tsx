@@ -3,7 +3,7 @@ import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../../styles';
-import { RawHeaders } from '../../../types';
+import { HttpVersion, RawHeaders } from '../../../types';
 import { Icon } from '../../../icons';
 import { copyToClipboard } from '../../../util/ui';
 
@@ -181,7 +181,7 @@ const getHeaderDescription = (
 };
 
 export const HeaderDetails = inject('accountStore')(observer((props: {
-    httpVersion: 1 | 2;
+    httpVersion: HttpVersion,
     headers: RawHeaders,
     requestUrl: URL,
     accountStore?: AccountStore
@@ -209,7 +209,9 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
             >
                 <CollapsibleSectionSummary>
                     <PseudoHeadersHiddenMessage>
-                        HTTP/{props.httpVersion} pseudo-headers
+                        HTTP/{
+                            props.httpVersion.toString().replace('.0', '')
+                        } pseudo-headers
                     </PseudoHeadersHiddenMessage>
                 </CollapsibleSectionSummary>
 

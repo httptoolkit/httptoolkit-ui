@@ -119,7 +119,7 @@ export async function buildRequestInputFromExchange(exchange: HttpExchange): Pro
         Buffer.from('!!! ORIGINAL REQUEST BODY COULD NOT BE DECODED !!!');
 
     // For now, all sent requests are HTTP/1, so we need to make sure we convert:
-    const headers = exchange.httpVersion === 2
+    const headers = exchange.httpVersion >= 2
         ? h2HeadersToH1(exchange.request.rawHeaders)
         : exchange.request.rawHeaders;
 
