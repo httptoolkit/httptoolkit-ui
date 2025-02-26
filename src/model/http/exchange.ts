@@ -15,6 +15,8 @@ import {
     MockttpBreakpointedResponse,
     InputCompletedRequest,
     MockttpBreakpointResponseResult,
+    InputRuleEventDataMap,
+    RawHeaders
 } from "../../types";
 import {
     fakeBuffer,
@@ -25,8 +27,10 @@ import { UnreachableCheck } from '../../util/error';
 import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 import {
     asHeaderArray,
-    getHeaderValue
+    getHeaderValue,
+    getHeaderValues
 } from '../../util/headers';
+import { ParsedUrl } from '../../util/url';
 
 import { logError } from '../../errors';
 
@@ -50,8 +54,14 @@ import {
     getResponseBreakpoint,
     getDummyResponseBreakpoint
 } from './exchange-breakpoint';
+import { UpstreamHttpExchange } from './upstream-exchange';
 
-function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undefined  {
+export type HttpVersion = 2 | 1;
+export function parseHttpVersion(version: string | undefined): HttpVersion {
+    return version === '2.0' ? 2 : 1;
+}
+
+function tryParseUrl(request: InputRequest): ParsedUrl | undefined  {
     try {
         return Object.assign(
             new URL(request.url, `${request.protocol}://${request.hostname || 'unknown.invalid'}`),
@@ -64,7 +74,7 @@ function tryParseUrl(request: InputRequest): (URL & { parseable: true }) | undef
     }
 }
 
-function getFallbackUrl(request: InputRequest): URL & { parseable: false } {
+function getFallbackUrl(request: InputRequest): ParsedUrl {
     try {
         return Object.assign(
             new URL("/[unparseable]", `${request.protocol}://${request.hostname || 'unknown.invalid'}`),
@@ -106,8 +116,8 @@ function addResponseMetadata(response: InputResponse): HtkResponse {
 export class HttpBody implements MessageBody {
 
     constructor(
-        message: InputMessage,
-        headers: Headers
+        message: InputMessage | { body: Uint8Array },
+        headers: Headers | RawHeaders
     ) {
         if (!('body' in message) || !message.body) {
             this._encoded = stringToBuffer("");
@@ -118,7 +128,7 @@ export class HttpBody implements MessageBody {
             this._decoded = message.body.decoded;
         }
 
-        this._contentEncoding = asHeaderArray(headers['content-encoding']);
+        this._contentEncoding = asHeaderArray(getHeaderValues(headers, 'content-encoding'));
     }
 
     private _contentEncoding: string[];
@@ -179,17 +189,61 @@ export class HttpBody implements MessageBody {
     }
 }
 
-export type CompletedRequest = Omit<HttpExchange, 'request'> & {
+export type CompletedRequest = Omit<ViewableHttpExchange, 'request'> & {
     matchedRule: { id: string, handlerRype: HandlerClassKey } | false
 };
-export type CompletedExchange = Omit<HttpExchange, 'response'> & {
+export type CompletedExchange = Omit<ViewableHttpExchange, 'response'> & {
     response: HtkResponse | 'aborted'
 };
-export type SuccessfulExchange = Omit<HttpExchange, 'response'> & {
+export type SuccessfulExchange = Omit<ViewableHttpExchange, 'response'> & {
     response: HtkResponse
 };
 
-export class HttpExchange extends HTKEventBase {
+/**
+ * HttpExchanges actually come in two types: downstream (client input to Mockttp)
+ * and upstream (Mockttp extra data for what we really forwarded - e.g. after transform).
+ * The events actually stored in the event store's list are always downstream
+ * exchanges, but in many cases elsewhere either can be provided.
+ *
+ * Both define the exact same interface, and various higher-layer components
+ * may switch which is passed to the final view components depending on user
+ * configuration. Any code that just reads exchange data (i.e. which doesn't
+ * update it from events, create/import exchanges, handle breakpoints, etc)
+ * should generally use the ViewableHttpExchange readonly interface where possible.
+ */
+export interface ViewableHttpExchange extends HTKEventBase {
+
+    get downstream(): HttpExchange;
+    /**
+     * Upstream is set if forwarded, but otherwise undefined
+     */
+    get upstream(): UpstreamHttpExchange | undefined;
+
+    get request(): HtkRequest;
+    get response(): HtkResponse | 'aborted' | undefined;
+    get abortMessage(): string | undefined;
+    get api(): ApiExchange | undefined;
+
+    get httpVersion(): 1 | 2;
+    get matchedRule(): { id: string, handlerStepTypes: HandlerClassKey[] } | false | undefined;
+    get tags(): string[];
+    get timingEvents(): TimingEvents;
+
+    isHttp(): this is ViewableHttpExchange;
+    isCompletedRequest(): this is CompletedRequest;
+    isCompletedExchange(): this is CompletedExchange;
+    isSuccessfulExchange(): this is SuccessfulExchange;
+    hasRequestBody(): this is CompletedRequest;
+    hasResponseBody(): this is SuccessfulExchange;
+
+    get requestBreakpoint(): RequestBreakpoint | undefined;
+    get responseBreakpoint(): ResponseBreakpoint | undefined;
+
+    hideErrors: boolean;
+
+}
+
+export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
 
     constructor(apiStore: ApiStore, request: InputRequest) {
         super();
@@ -217,8 +271,12 @@ export class HttpExchange extends HTKEventBase {
         this._apiMetadataPromise = apiStore.getApi(this.request);
     }
 
-    public readonly request: HtkRequest;
     public readonly id: string;
+
+    public readonly request: HtkRequest;
+
+    public readonly downstream = this;
+    public upstream: UpstreamHttpExchange | undefined;
 
     @observable
     // Undefined initially, defined for completed requests, false for 'not available'
@@ -232,7 +290,7 @@ export class HttpExchange extends HTKEventBase {
 
     @computed
     get httpVersion() {
-        return this.request.httpVersion === '2.0' ? 2 : 1;
+        return parseHttpVersion(this.request.httpVersion);
     }
 
     isHttp(): this is HttpExchange {
@@ -261,7 +319,7 @@ export class HttpExchange extends HTKEventBase {
     }
 
     @observable
-    public readonly timingEvents: Partial<TimingEvents>; // May be {} if using an old server (<0.1.7)
+    public readonly timingEvents: TimingEvents;
 
     @observable.ref
     public response: HtkResponse | 'aborted' | undefined;
@@ -293,6 +351,20 @@ export class HttpExchange extends HTKEventBase {
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);
+    }
+
+    updateFromUpstreamRequestHead(head: InputRuleEventDataMap['passthrough-request-head']) {
+        if (!this.upstream) {
+            this.upstream = new UpstreamHttpExchange(this);
+        }
+        this.upstream.updateWithRequestHead(head);
+    }
+
+    updateFromUpstreamRequestBody(body: InputRuleEventDataMap['passthrough-request-body']) {
+        if (!this.upstream) {
+            this.upstream = new UpstreamHttpExchange(this);
+        }
+        this.upstream.updateWithRequestBody(body);
     }
 
     markAborted(request: InputFailedRequest) {
@@ -357,6 +429,10 @@ export class HttpExchange extends HTKEventBase {
             this.response.cache.clear();
             this.response.body.cleanup();
         }
+
+        if (this.upstream) {
+            this.upstream.cleanup();
+        }
     }
 
     // API metadata:
@@ -366,7 +442,7 @@ export class HttpExchange extends HTKEventBase {
 
     // Parsed API info for this specific request, loaded & parsed lazily, only if it's used
     @observable.ref
-    private _apiPromise = lazyObservablePromise(async () => {
+    private _apiPromise = lazyObservablePromise(async (): Promise<ApiExchange | undefined> => {
         const apiMetadata = await this._apiMetadataPromise;
 
         if (apiMetadata) {

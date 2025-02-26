@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import { observable, action } from 'mobx';
 
 import {
-    InputInitiatedRequest,
     InputRequest,
     InputResponse,
     InputWebSocketMessage,

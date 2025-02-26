@@ -31,10 +31,11 @@ import type {
 import * as MockRTC from 'mockrtc';
 
 import type { ObservablePromise } from './util/observable';
+import type { ParsedUrl } from './util/url';
 
 import type { FailedTlsConnection } from './model/tls/failed-tls-connection';
 import type { TlsTunnel } from './model/tls/tls-tunnel';
-import type { HttpExchange } from './model/http/exchange';
+import type { HttpExchange, ViewableHttpExchange } from './model/http/exchange';
 import type { WebSocketStream } from './model/websockets/websocket-stream';
 import type { RTCConnection } from './model/webrtc/rtc-connection';
 import type { RTCDataChannel } from './model/webrtc/rtc-data-channel';
@@ -95,6 +96,55 @@ export type InputRTCMediaTrackClosed = InputRTCEventData['media-track-closed'];
 
 export type InputStreamMessage = InputRTCMessage | InputWebSocketMessage;
 
+interface InputRuleEventStructure<K, T> {
+    requestId: string;
+    ruleId: string;
+    eventType: K;
+    eventData: T;
+}
+
+export type InputRuleEventDataMap = {
+    'passthrough-request-head': {
+        method: string,
+        protocol: string,
+        hostname: string,
+        port: string,
+        path: string,
+        rawHeaders: RawHeaders
+    },
+    'passthrough-request-body': {
+        overridden: boolean,
+        rawBody?: Uint8Array
+    },
+    'passthrough-response-head': {
+        statusCode: number,
+        statusMessage: string | undefined,
+        httpVersion: string,
+        rawHeaders: RawHeaders
+    },
+    'passthrough-response-body': {
+        overridden: boolean,
+        rawBody?: Uint8Array
+    },
+    'passthrough-abort': {
+        downstreamAborted: boolean,
+        tags: string[],
+        error: {
+            name?: string;
+            code?: string;
+            message?: string,
+            stack?: string
+        }
+    }
+};
+
+export type InputRuleEvent = ({
+    [K in keyof InputRuleEventDataMap]: InputRuleEventStructure<
+        K,
+        InputRuleEventDataMap[K]
+    >
+})[keyof InputRuleEventDataMap];
+
 // Define the restricted form of request BP result we'll use internally
 export type BreakpointRequestResult = {
     method: string,
@@ -124,7 +174,7 @@ export {
 };
 
 export type HtkRequest = Omit<InputRequest, 'body' | 'path'> & {
-    parsedUrl: URL & { parseable: boolean },
+    parsedUrl: ParsedUrl,
     source: TrafficSource,
     contentType: ViewableContentType,
     cache: Map<symbol, unknown>,
@@ -151,6 +201,7 @@ export type {
     FailedTlsConnection,
     TlsTunnel,
     HttpExchange,
+    ViewableHttpExchange,
     WebSocketStream,
     RTCConnection,
     RTCDataChannel,

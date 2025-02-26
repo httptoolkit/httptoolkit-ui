@@ -75,7 +75,4 @@ export class RTCDataChannel extends HTKEventBase {
         this.messages.length = 0;
     }
 
-    @observable
-    public pinned: boolean = false;
-
 }

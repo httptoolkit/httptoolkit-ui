@@ -16,6 +16,7 @@ import { getObservableDeferred, lazyObservablePromise } from '../../util/observa
 import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { ErrorLike, unreachableWarning } from '../../util/error';
 import { rawHeadersToHeaders } from '../../util/headers';
+import { getEffectivePort } from '../../util/url';
 import { trackEvent } from '../../metrics';
 
 import { EventsStore } from '../events/events-store';
@@ -222,7 +223,7 @@ export class SendStore {
                         timingEvents: {
                             startTimestamp,
                             abortedTimestamp,
-                            ...exchange.timingEvents,
+                            ...exchange.timingEvents as Partial<TimingEvents>,
                             ...error.timingEvents
                         } as TimingEvents,
                         tags: ['client-error:ECONNABORTED']
@@ -333,16 +334,6 @@ const trackResponseEvents = flow(function * (
         }
     }
 });
-
-export const getEffectivePort = (url: { protocol: string | null, port: string | null }) => {
-    if (url.port) {
-        return parseInt(url.port, 10);
-    } else if (url.protocol === 'https:' || url.protocol === 'wss:') {
-        return 443;
-    } else {
-        return 80;
-    }
-}
 
 function getProxyConfig(proxyConfig: RulesStore['proxyConfig']): ClientProxyConfig {
     if (!proxyConfig) return undefined;

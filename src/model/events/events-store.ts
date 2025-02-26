@@ -28,6 +28,7 @@ import {
     InputRTCMediaStats,
     InputRTCMediaTrackClosed,
     InputRTCExternalPeerAttached,
+    InputRuleEvent,
     TimingEvents
 } from '../../types';
 
@@ -68,6 +69,7 @@ type EventTypesMap = {
     'tls-passthrough-opened': InputTlsPassthrough,
     'tls-passthrough-closed': InputTlsPassthrough,
     'client-error': InputClientError,
+    'rule-event': InputRuleEvent
 } & {
     // MockRTC:
     [K in InputRTCEvent]: InputRTCEventData[K];
@@ -86,7 +88,8 @@ const mockttpEventTypes = [
     'tls-client-error',
     'tls-passthrough-opened',
     'tls-passthrough-closed',
-    'client-error'
+    'client-error',
+    'rule-event'
 ] as const;
 
 const mockRTCEventTypes = [
@@ -259,6 +262,9 @@ export class EventsStore {
                     return this.addFailedTlsRequest(queuedEvent.event);
                 case 'client-error':
                     return this.addClientError(queuedEvent.event);
+
+                case 'rule-event':
+                    return this.addRuleEvent(queuedEvent.event);
 
                 case 'peer-connected':
                     return this.addRTCPeerConnection(queuedEvent.event);
@@ -492,6 +498,31 @@ export class EventsStore {
         }
 
         this.events.push(exchange);
+    }
+
+    @action
+    private addRuleEvent(event: InputRuleEvent) {
+        const exchange = _.find(this.exchanges, { id: event.requestId });
+
+        if (!exchange) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[event.requestId] = { type: 'rule-event', event };
+            return;
+        };
+
+        switch (event.eventType) {
+            case 'passthrough-request-head':
+                exchange.updateFromUpstreamRequestHead(event.eventData);
+                break;
+            case 'passthrough-request-body':
+                exchange.updateFromUpstreamRequestBody(event.eventData);
+                break;
+            // Only request events handled for now
+            case 'passthrough-response-head':
+            case 'passthrough-response-body':
+            case 'passthrough-abort':
+                break;
+        }
     }
 
     @action
