@@ -74,6 +74,10 @@ const AppKeyboardShortcuts = (props: {
         props.navigate('/modify');
         e.preventDefault();
     }, [props.navigate]);
+    useHotkeys('Ctrl+4,Cmd+4', (e) => {
+        props.navigate('/send');
+        e.preventDefault();
+    }, [props.navigate]);
     useHotkeys('Ctrl+9,Cmd+9', (e) => {
         if (props.canVisitSettings) props.navigate('/settings');
         e.preventDefault();
