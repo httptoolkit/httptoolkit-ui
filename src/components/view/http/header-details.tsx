@@ -192,37 +192,11 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
         return <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
     }
 
-    let [pseudoHeaders, normalHeaders] = _.partition(sortedHeaders, ([key]) =>
-        props.httpVersion >= 2 && key.startsWith(':')
-    );
-
-    if (normalHeaders.length === 0) {
-        normalHeaders = pseudoHeaders;
-        pseudoHeaders = [];
-    }
+    // Filter out HTTP/2 pseudo-headers - they're not relevant, as all details (URL,
+    // method, status, etc) are shown elsewhere.
+    const normalHeaders = sortedHeaders.filter(([key]) => !key.startsWith(':'));
 
     return <HeadersGrid>
-        {
-            pseudoHeaders.length > 0 && <CollapsibleSection
-                withinGrid={true}
-                contentName='pseudo headers'
-            >
-                <CollapsibleSectionSummary>
-                    <PseudoHeadersHiddenMessage>
-                        HTTP/{
-                            props.httpVersion.toString().replace('.0', '')
-                        } pseudo-headers
-                    </PseudoHeadersHiddenMessage>
-                </CollapsibleSectionSummary>
-
-                <PseudoHeadersContent>
-                    <PseudoHeaderDetails
-                        headers={pseudoHeaders}
-                    />
-                </PseudoHeadersContent>
-            </CollapsibleSection>
-        }
-
         { _.flatMap(normalHeaders, ([key, value], i) => {
             const docs = getHeaderDocs(key);
             const description = getHeaderDescription(
@@ -249,18 +223,3 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
         }) }
     </HeadersGrid>;
 }));
-
-const PseudoHeaderDetails = observer((props: {
-    headers: RawHeaders
-}) => {
-    return <HeadersGrid>
-        { _.flatMap(props.headers, ([key, value], i) => {
-            return <CollapsibleSection
-                contentName={`${key} header details`}
-                withinGrid={true}
-                key={`${key}-${i}`}>
-                <HeaderKeyValue headerKey={key} headerValue={value} />
-            </CollapsibleSection>;
-        }) }
-    </HeadersGrid>;
-});
