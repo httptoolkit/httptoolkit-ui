@@ -4,32 +4,19 @@ import { observable, computed, action, runInAction, when } from 'mobx';
 import {
     HtkRequest,
     HtkResponse,
-    Headers,
-    MessageBody,
     InputRequest,
     InputResponse,
     InputFailedRequest,
     TimingEvents,
-    InputMessage,
     MockttpBreakpointedRequest,
     MockttpBreakpointedResponse,
     InputCompletedRequest,
     MockttpBreakpointResponseResult,
-    InputRuleEventDataMap,
-    RawHeaders
+    InputRuleEventDataMap
 } from "../../types";
-import {
-    fakeBuffer,
-    FakeBuffer,
-    stringToBuffer,
-} from '../../util/buffer';
 import { UnreachableCheck } from '../../util/error';
-import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
-import {
-    asHeaderArray,
-    getHeaderValue,
-    getHeaderValues
-} from '../../util/headers';
+import { lazyObservablePromise } from "../../util/observable";
+import { getHeaderValue } from '../../util/headers';
 import { ParsedUrl } from '../../util/url';
 
 import { logError } from '../../errors';
@@ -46,7 +33,7 @@ import { OpenApiExchange } from '../api/openapi';
 import { parseRpcApiExchange } from '../api/jsonrpc';
 import { ApiMetadata } from '../api/api-interfaces';
 
-import { decodeBody } from '../../services/ui-worker-api';
+import { HttpBody } from './http-body';
 import {
     RequestBreakpoint,
     ResponseBreakpoint,
@@ -120,82 +107,6 @@ function addResponseMetadata(response: InputResponse): HtkResponse {
         contentType: getContentType(getHeaderValue(response.headers, 'content-type')) || 'text',
         cache: observable.map(new Map<symbol, unknown>(), { deep: false })
     }) as HtkResponse;
-}
-
-export class HttpBody implements MessageBody {
-
-    constructor(
-        message: InputMessage | { body: Uint8Array },
-        headers: Headers | RawHeaders
-    ) {
-        if (!('body' in message) || !message.body) {
-            this._encoded = stringToBuffer("");
-        } else if ('buffer' in message.body) {
-            this._encoded = message.body.buffer;
-        } else {
-            this._encoded = fakeBuffer(message.body.encodedLength);
-            this._decoded = message.body.decoded;
-        }
-
-        this._contentEncoding = asHeaderArray(getHeaderValues(headers, 'content-encoding'));
-    }
-
-    private _contentEncoding: string[];
-    private _encoded: FakeBuffer | Buffer;
-    get encoded() {
-        return this._encoded;
-    }
-
-    private _decoded: Buffer | undefined;
-
-    @observable
-    decodingError: Error | undefined;
-
-    decodedPromise: ObservablePromise<Buffer | undefined> = lazyObservablePromise(async () => {
-        // Exactly one of _encoded & _decoded is a buffer, never neither/both.
-        if (this._decoded) return this._decoded;
-        const encodedBuffer = this.encoded as Buffer;
-
-        // Temporarily change to a fake buffer, while the web worker takes the data to decode
-        const encodedLength = encodedBuffer.byteLength;
-        this._encoded = fakeBuffer(encodedLength);
-
-        try {
-            const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
-            this._encoded = encoded;
-            return decoded;
-        } catch (e: any) {
-            logError(e);
-
-            // In most cases, we get the encoded data back regardless, so recapture it here:
-            if (e.inputBuffer) {
-                this._encoded = e.inputBuffer;
-            }
-            runInAction(() => {
-                this.decodingError = e;
-            });
-
-            return undefined;
-        }
-    });
-
-    get decoded() {
-        // We exclude 'Error' from the value - errors should always become undefined
-        return this.decodedPromise.value as Buffer | undefined;
-    }
-
-    // Must only be called when the exchange & body will no longer be used. Ensures that large data is
-    // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
-    // Important: for safety, this leaves the body in a *VALID* but reset state - not a totally blank one.
-    cleanup() {
-        const emptyBuffer = Buffer.from([]);
-
-        // Set to a valid state for an un-decoded but totally empty body.
-        this._decoded = undefined;
-        this._encoded = emptyBuffer;
-        this.decodingError = undefined;
-        this.decodedPromise = observablePromise(Promise.resolve(emptyBuffer));
-    }
 }
 
 export type CompletedRequest = Omit<ViewableHttpExchange, 'request'> & {

@@ -10,10 +10,11 @@ import {
 
 import { getHeaderValue, rawHeadersToHeaders } from '../../util/headers';
 import { ParsedUrl } from '../../util/url';
+import { asBuffer } from '../../util/buffer';
 
 import { getContentType } from '../events/content-types';
+import { HttpBody } from './http-body';
 import {
-    HttpBody,
     ViewableHttpExchange,
     HttpExchange,
     parseHttpVersion,
@@ -185,7 +186,7 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
             headers: rawHeadersToHeaders(rawHeaders),
             body: body ||
                 downstreamResData.body ||
-                new HttpBody({ body: new Uint8Array() }, rawHeaders),
+                new HttpBody({ body: Buffer.alloc(0) }, rawHeaders),
 
             // We don't support transforming trailers:
             trailers: downstreamResData.trailers || {},
@@ -237,7 +238,9 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
         if (!upstreamRequestBody.overridden) return;
 
         const headers = this.upstreamRequestData!.rawHeaders;
-        this.upstreamRequestData!.body = new HttpBody({ body: upstreamRequestBody.rawBody! }, headers);
+        this.upstreamRequestData!.body = new HttpBody({
+            body: asBuffer(upstreamRequestBody.rawBody!)
+        }, headers);
     }
 
     updateWithResponseBody(upstreamResponseData: InputRuleEventDataMap['passthrough-response-body']) {
@@ -246,7 +249,9 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
         const headers = this.upstreamResponseData!.rawHeaders;
         // We're storing a full copy of the response body here, but only in the case it was actually
         // overridden, so this shouldn't happen much.
-        this.upstreamResponseData!.body = new HttpBody({ body: upstreamResponseData.rawBody! }, headers);
+        this.upstreamResponseData!.body = new HttpBody({
+            body: asBuffer(upstreamResponseData.rawBody!)
+        }, headers);
     }
 
     isHttp() {
