@@ -28,8 +28,7 @@ import {
     InputRTCMediaStats,
     InputRTCMediaTrackClosed,
     InputRTCExternalPeerAttached,
-    InputRuleEvent,
-    TimingEvents
+    InputRuleEvent
 } from '../../types';
 
 import { lazyObservablePromise } from '../../util/observable';
@@ -114,9 +113,11 @@ type EventType =
     | MockttpEventType
     | MockRTCEventType;
 
-export type QueuedEvent = ({
-    [T in EventType]: { type: T, event: EventTypesMap[T] }
-}[EventType]);
+export type QueuedEvent =
+    | ({ // Received Mockttp event data:
+        [T in EventType]: { type: T, event: EventTypesMap[T] }
+    }[EventType])
+    | { type: 'queued-callback', cb: () => void } // Or a callback to run after data is processed
 
 type OrphanableQueuedEvent<T extends
     | 'response'
@@ -136,6 +137,8 @@ type OrphanableQueuedEvent<T extends
     | 'media-track-closed'
     | 'tls-passthrough-closed'
 > = { type: T, event: EventTypesMap[T] };
+
+const LARGE_QUEUE_BATCH_SIZE = 1033; // Off by 33 for a new ticking UI effect
 
 export class EventsStore {
 
@@ -204,8 +207,18 @@ export class EventsStore {
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
 
-        this.eventQueue.forEach(this.updateFromQueuedEvent);
-        this.eventQueue = [];
+        if (this.eventQueue.length > LARGE_QUEUE_BATCH_SIZE) {
+            // If there's a lot of events in the queue (only ever likely to happen
+            // in an import of a large file) we break it up to keep the UI responsive.
+            this.eventQueue.slice(0, LARGE_QUEUE_BATCH_SIZE).forEach(this.updateFromQueuedEvent);
+            this.eventQueue = this.eventQueue.slice(LARGE_QUEUE_BATCH_SIZE);
+            setTimeout(() => {
+                this.queueEventFlush();
+            }, 10);
+        } else {
+            this.eventQueue.forEach(this.updateFromQueuedEvent);
+            this.eventQueue = [];
+        }
     }
 
     private updateFromQueuedEvent = (queuedEvent: QueuedEvent) => {
@@ -263,6 +276,10 @@ export class EventsStore {
                     return this.addRTCMediaTrackStats(queuedEvent.event);
                 case 'media-track-closed':
                     return this.markRTCMediaTrackClosed(queuedEvent.event);
+
+                case 'queued-callback':
+                    queuedEvent.cb();
+                    return;
             }
         } catch (e) {
             // It's possible we might fail to parse an input event. This shouldn't happen, but if it
@@ -643,31 +660,18 @@ export class EventsStore {
 
         // We now take each of these input items, and put them on the queue to be added
         // to the UI like any other seen request data. Arguably we could call addRequest &
-        // setResponse etc directly, but this is nicer if the UI thread is already under strain.
+        // setResponse etc directly, but this is nicer in case the UI thread is already under strain.
+        this.eventQueue.push(...events);
 
-        // First, we run through the request & TLS error events together, in order, since these
-        // define the initial event ordering
-        const [initialEvents, updateEvents] = _.partition(events, ({ type }) =>
-            type === 'request' ||
-            type === 'websocket-request' ||
-            type === 'tls-client-error'
-        );
-        this.eventQueue.push(..._.sortBy(initialEvents, (e) =>
-            (e.event as { timingEvents: TimingEvents }).timingEvents.startTime
-        ));
-
-        // Then we add everything else (responses & aborts). They just update, so order doesn't matter:
-        this.eventQueue.push(...updateEvents);
+        // After all events are handled, set the required pins:
+        this.eventQueue.push({
+            type: 'queued-callback',
+            cb: action(() => pinnedIds.forEach((id) => {
+                this.events.find(e => e.id === id)!.pinned = true;
+            }))
+        });
 
         this.queueEventFlush();
-
-        if (pinnedIds.length) {
-            // This rAF will be scheduled after the queued flush, so the event should
-            // always be fully imported by this stage:
-            requestAnimationFrame(action(() => pinnedIds.forEach((id) => {
-                this.events.find(e => e.id === id)!.pinned = true;
-            })));
-        }
     }
 
     @action

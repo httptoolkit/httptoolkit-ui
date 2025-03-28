@@ -527,7 +527,13 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
     const events: QueuedEvent[] = [];
     const pinnedIds: string[] = []
 
-    har.log.entries.forEach((entry, i) => {
+    har.log.entries
+    .sort((a, b) => {
+        const aStartTime = dateFns.parse(a.startedDateTime).getTime();
+        const bStartTime = dateFns.parse(b.startedDateTime).getTime();
+        return aStartTime - bStartTime;
+    })
+    .forEach((entry, i) => {
         const id = baseId + i;
         const isWebSocket = entry._resourceType === 'websocket';
 
