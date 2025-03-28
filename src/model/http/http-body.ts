@@ -90,12 +90,13 @@ export class HttpBody implements MessageBody {
     // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
     // Important: for safety, this leaves the body in a *VALID* but reset state - not a totally blank one.
     cleanup() {
-        const emptyBuffer = Buffer.from([]);
-
         // Set to a valid state for an un-decoded but totally empty body.
         this._decoded = undefined;
-        this._encoded = emptyBuffer;
+        this._encoded = EMPTY_BUFFER;
         this.decodingError = undefined;
-        this.decodedPromise = observablePromise(Promise.resolve(emptyBuffer));
+        this.decodedPromise = PROMISE_FOR_EMPTY_BUFFER;
     }
 }
+
+const EMPTY_BUFFER = Buffer.from([]);
+const PROMISE_FOR_EMPTY_BUFFER = observablePromise(Promise.resolve(EMPTY_BUFFER));
