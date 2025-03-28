@@ -18,7 +18,7 @@ const ConnectedSource = styled.div`
     }
 `;
 
-export const ConnectedSources = styled((props: { activeSources: TrafficSource[], className?: string }) =>
+export const ConnectedSources = styled((props: { activeSources: ReadonlyArray<TrafficSource>, className?: string }) =>
     <BigCard className={props.className}>
         <h1>Connected Sources</h1>
         {

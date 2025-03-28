@@ -187,7 +187,7 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @debounceComputed(10) // Debounce slightly - most important for body filtering performance
     get filteredEventState(): {
-        filteredEvents: CollectedEvent[],
+        filteredEvents: ReadonlyArray<CollectedEvent>,
         filteredEventCount: [filtered: number, fromTotal: number]
     } {
         const { events } = this.props.eventsStore;
@@ -300,7 +300,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                     oldFilteredEvents !== newFilteredEvents &&
                     oldFilteredEvents !== this.props.eventsStore.events
                 ) {
-                    oldFilteredEvents.length = 0;
+                    (oldFilteredEvents as CollectedEvent[]).length = 0;
                 }
             })
         );

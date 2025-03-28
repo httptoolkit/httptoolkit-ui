@@ -100,7 +100,7 @@ export type HarTlsErrorEntry = {
 }
 
 export async function generateHar(
-    events: CollectedEvent[],
+    events: ReadonlyArray<CollectedEvent>,
     options: HarGenerationOptions = { bodySizeLimit: HAR_BODY_SIZE_LIMIT }
 ): Promise<Har> {
     const [exchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [

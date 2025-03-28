@@ -62,8 +62,8 @@ export const ViewEventListFooter = styled(observer((props: {
     onFiltersConsidered: (filters: FilterSet | undefined) => void,
     onScrollToEnd: () => void,
 
-    allEvents: CollectedEvent[],
-    filteredEvents: CollectedEvent[],
+    allEvents: ReadonlyArray<CollectedEvent>,
+    filteredEvents: ReadonlyArray<CollectedEvent>,
 
     // We track this separately because it's not 100% accurate to show it
     // live from the events above, because filteredEvents is debounced. If

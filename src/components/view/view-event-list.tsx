@@ -48,8 +48,8 @@ const EmptyStateOverlay = styled(EmptyState)`
 
 interface ViewEventListProps {
     className?: string;
-    events: CollectedEvent[];
-    filteredEvents: CollectedEvent[];
+    events: ReadonlyArray<CollectedEvent>;
+    filteredEvents: ReadonlyArray<CollectedEvent>;
     selectedEvent: CollectedEvent | undefined;
     isPaused: boolean;
 
@@ -328,7 +328,7 @@ export const TableHeaderRow = styled.div<{ role: 'row' }>`
 interface EventRowProps extends ListChildComponentProps {
     data: {
         selectedEvent: CollectedEvent | undefined;
-        events: CollectedEvent[];
+        events: ReadonlyArray<CollectedEvent>;
         contextMenuBuilder: ViewEventContextMenuBuilder;
     }
 }

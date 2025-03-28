@@ -40,6 +40,8 @@ import { ApiStore } from '../api/api-store';
 import { RulesStore } from '../rules/rules-store';
 import { findItem, isRuleGroup } from '../rules/rules-structure';
 
+import { ObservableEventsList } from './observable-events-list';
+
 import { parseHar } from '../http/har';
 
 import { FailedTlsConnection } from '../tls/failed-tls-connection';
@@ -183,40 +185,16 @@ export class EventsStore {
         }
     }
 
-    readonly events = observable.array<CollectedEvent>([], { deep: false });
+    readonly eventsList = new ObservableEventsList();
 
-    @computed.struct
-    get exchanges(): Array<HttpExchange> {
-        return this.events.filter((e): e is HttpExchange => e.isHttp());
-    }
-
-    @computed.struct
-    get websockets(): Array<WebSocketStream> {
-        return this.exchanges.filter((e): e is WebSocketStream => e.isWebSocket());
-    }
-
-    @computed.struct
-    get rtcConnections(): Array<RTCConnection> {
-        return this.events.filter((e): e is RTCConnection => e.isRTCConnection());
-    }
-
-    @computed.struct
-    get rtcDataChannels(): Array<RTCDataChannel> {
-        return this.events.filter((e): e is RTCDataChannel => e.isRTCDataChannel());
-    }
-
-    @computed.struct
-    get rtcMediaTracks(): Array<RTCMediaTrack> {
-        return this.events.filter((e): e is RTCMediaTrack => e.isRTCMediaTrack());
-    }
-
-    @computed.struct
-    get activeSources() {
-        return _(this.exchanges)
-            .map(e => e.request.source)
-            .uniqBy(s => s.summary)
-            .value();
-    }
+    get events() { return this.eventsList.events; }
+    get exchanges() { return this.eventsList.exchanges; }
+    get websockets() { return this.eventsList.websockets; }
+    get tlsFailures() { return this.eventsList.tlsFailures; }
+    get rtcConnections() { return this.eventsList.rtcConnections; }
+    get rtcDataChannels() { return this.eventsList.rtcDataChannels; }
+    get rtcMediaTracks() { return this.eventsList.rtcMediaTracks; }
+    get activeSources() { return this.eventsList.activeSources; }
 
     @action.bound
     private flushQueuedUpdates() {
@@ -316,11 +294,11 @@ export class EventsStore {
     private addInitiatedRequest(request: InputInitiatedRequest) {
         // Due to race conditions, it's possible this request already exists. If so,
         // we just skip this - the existing data will be more up to date.
-        const existingEventIndex = _.findIndex(this.events, { id: request.id });
-        if (existingEventIndex === -1) {
-            const exchange = new HttpExchange(this.apiStore, request);
-            this.events.push(exchange);
-        }
+        const existingEvent = this.eventsList.getById(request.id);
+        if (existingEvent) return;
+
+        const exchange = new HttpExchange(this.apiStore, request);
+        this.eventsList.push(exchange);
     }
 
     private getMatchedRule(request: InputCompletedRequest) {
@@ -343,15 +321,15 @@ export class EventsStore {
         // are received, and this one later when the full body is received.
         // We add the request from scratch if it's somehow missing, which can happen given
         // races or if the server doesn't support request-initiated events.
-        const existingEventIndex = _.findIndex(this.events, { id: request.id });
+        const existingEvent = this.eventsList.getById(request.id);
 
         let event: HttpExchange;
-        if (existingEventIndex >= 0) {
-            event = this.events[existingEventIndex] as HttpExchange;
+        if (existingEvent) {
+            event = existingEvent as HttpExchange
         } else {
             event = new HttpExchange(this.apiStore, { ...request });
             // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
-            this.events.push(event);
+            this.eventsList.push(event);
         }
 
         event.updateFromCompletedRequest(request, this.getMatchedRule(request));
@@ -359,7 +337,7 @@ export class EventsStore {
 
     @action
     private markRequestAborted(request: InputFailedRequest) {
-        const exchange = _.find(this.exchanges, { id: request.id });
+        const exchange = this.eventsList.getExchangeById(request.id);
 
         if (!exchange) {
             // Handle this later, once the request has arrived
@@ -372,7 +350,7 @@ export class EventsStore {
 
     @action
     private setResponse(response: InputResponse) {
-        const exchange = _.find(this.exchanges, { id: response.id });
+        const exchange = this.eventsList.getExchangeById(response.id);
 
         if (!exchange) {
             // Handle this later, once the request has arrived
@@ -389,12 +367,12 @@ export class EventsStore {
         // ^ This mutates request to use it, so we have to shallow-clone to use it below too
 
         stream.updateFromCompletedRequest(request, this.getMatchedRule(request));
-        this.events.push(stream);
+        this.eventsList.push(stream);
     }
 
     @action
     private addAcceptedWebSocketResponse(response: InputResponse) {
-        const stream = _.find(this.websockets, { id: response.id });
+        const stream = this.eventsList.getWebSocketById(response.id);
 
         if (!stream) {
             // Handle this later, once the request has arrived
@@ -408,7 +386,7 @@ export class EventsStore {
 
     @action
     private addWebSocketMessage(message: InputWebSocketMessage) {
-        const stream = _.find(this.websockets, { id: message.streamId });
+        const stream = this.eventsList.getWebSocketById(message.streamId);
 
         if (!stream) {
             // Handle this later, once the request has arrived
@@ -424,7 +402,7 @@ export class EventsStore {
 
     @action
     private markWebSocketClosed(close: InputWebSocketClose) {
-        const stream = _.find(this.websockets, { id: close.streamId });
+        const stream = this.eventsList.getWebSocketById(close.streamId);
 
         if (!stream) {
             // Handle this later, once the request has arrived
@@ -439,12 +417,12 @@ export class EventsStore {
 
     @action
     private addTlsTunnel(openEvent: InputTlsPassthrough) {
-        this.events.push(new TlsTunnel(openEvent));
+        this.eventsList.push(new TlsTunnel(openEvent));
     }
 
     @action
     private markTlsTunnelClosed(closeEvent: InputTlsPassthrough) {
-        const tunnel = _.find(this.events, { id: closeEvent.id }) as TlsTunnel | undefined;
+        const tunnel = this.eventsList.getTlsTunnelById(closeEvent.id);
 
         if (!tunnel) {
             // Handle this later, once the tunnel open event has arrived
@@ -459,13 +437,12 @@ export class EventsStore {
 
     @action
     private addFailedTlsRequest(request: InputTlsFailure) {
-        if (_.some(this.events, (event) =>
-            event.isTlsFailure() &&
-            event.upstreamHostname === request.hostname &&
-            event.remoteIpAddress === request.remoteIpAddress
+        if (this.tlsFailures.some((failure) =>
+            failure.upstreamHostname === request.hostname &&
+            failure.remoteIpAddress === request.remoteIpAddress
         )) return; // Drop duplicate TLS failures
 
-        this.events.push(new FailedTlsConnection(request));
+        this.eventsList.push(new FailedTlsConnection(request));
     }
 
     @action
@@ -497,12 +474,12 @@ export class EventsStore {
             exchange.setResponse(error.response);
         }
 
-        this.events.push(exchange);
+        this.eventsList.push(exchange);
     }
 
     @action
     private addRuleEvent(event: InputRuleEvent) {
-        const exchange = _.find(this.exchanges, { id: event.requestId });
+        const exchange = this.eventsList.getExchangeById(event.requestId);
 
         if (!exchange) {
             // Handle this later, once the request has arrived
@@ -527,12 +504,12 @@ export class EventsStore {
 
     @action
     private addRTCPeerConnection(event: InputRTCPeerConnected) {
-        this.events.push(new RTCConnection(event));
+        this.eventsList.push(new RTCConnection(event));
     }
 
     @action
     private attachExternalRTCPeer(event: InputRTCExternalPeerAttached) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         const otherHalf = this.rtcConnections.find(c => c.isOtherHalfOf(event));
 
         if (conn) {
@@ -545,7 +522,7 @@ export class EventsStore {
 
     @action
     private markRTCPeerDisconnected(event: InputRTCPeerDisconnected) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
             conn.markClosed(event);
         } else {
@@ -555,10 +532,10 @@ export class EventsStore {
 
     @action
     private addRTCDataChannel(event: InputRTCDataChannelOpened) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
             const dc = new RTCDataChannel(event, conn);
-            this.events.push(dc);
+            this.eventsList.push(dc);
             conn.addStream(dc);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'data-channel-opened', event };
@@ -587,10 +564,10 @@ export class EventsStore {
 
     @action
     private addRTCMediaTrack(event: InputRTCMediaTrackOpened) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
             const track = new RTCMediaTrack(event, conn);
-            this.events.push(track);
+            this.eventsList.push(track);
             conn.addStream(track);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'media-track-opened', event };
@@ -619,7 +596,7 @@ export class EventsStore {
 
     @action.bound
     deleteEvent(event: CollectedEvent) {
-        this.events.remove(event);
+        this.eventsList.remove(event);
 
         if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
             event.rtcConnection.removeStream(event);
@@ -638,10 +615,10 @@ export class EventsStore {
             clearPinned ? () => false : (ex) => ex.pinned
         );
 
-        this.events.clear();
+        this.eventsList.clear();
         unpinnedEvents.forEach((event) => { if ('cleanup' in event) event.cleanup() });
 
-        this.events.push(...pinnedEvents);
+        this.eventsList.push(...pinnedEvents);
         this.orphanedEvents = {};
 
         // If GC is exposed (desktop 0.1.22+), trigger it when data is cleared,
@@ -699,7 +676,7 @@ export class EventsStore {
         // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
         exchange.updateFromCompletedRequest(request, false);
 
-        this.events.push(exchange);
+        this.eventsList.push(exchange);
         return exchange;
     }
 

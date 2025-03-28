@@ -29,7 +29,7 @@ export const ClearAllButton = observer((props: {
 export const ExportAsHarButton = inject('accountStore')(observer((props: {
     className?: string,
     accountStore?: AccountStore,
-    events: CollectedEvent[]
+    events: ReadonlyArray<CollectedEvent>
 }) => {
     const { isPaidUser } = props.accountStore!;
 
