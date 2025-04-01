@@ -167,7 +167,7 @@ export function explainCacheability(exchange: HttpExchange): (
     const revalidationSuggestion =
         !hasRevalidationOptions &&
         // Revalidation makes no sense without a body
-        response.body.encoded.byteLength &&
+        response.body.encodedByteLength &&
         !responseCCDirectives['immutable'] ?
         dedent`
             :suggestion: This response doesn't however include any validation headers. That

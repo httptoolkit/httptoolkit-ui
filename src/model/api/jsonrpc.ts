@@ -36,7 +36,7 @@ export async function parseRpcApiExchange(
     exchange: HttpExchange
 ): Promise<JsonRpcApiExchange> {
     try {
-        const body = await exchange.request.body.decodedPromise;
+        const body = await exchange.request.body.waitForDecoding();
 
         if (!body?.length) throw new Error(`No JSON-RPC request body`);
 

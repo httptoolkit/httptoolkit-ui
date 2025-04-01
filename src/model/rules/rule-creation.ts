@@ -112,18 +112,18 @@ export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Ha
 };
 
 function buildRequestMatchers(request: HtkRequest) {
-    const hasBody = !!request.body.decoded &&
-        request.body.decoded.length < 10_000;
+    const hasBody = !!request.body.decodedData &&
+        request.body.decodedData.length < 10_000;
     const hasJsonBody = hasBody &&
         request.contentType === 'json' &&
-        !!tryParseJson(request.body.decoded!.toString());
+        !!tryParseJson(request.body.decodedData!.toString());
 
     const bodyMatcher = hasJsonBody
         ? [new matchers.JsonBodyMatcher(
-            tryParseJson(request.body.decoded!.toString())!
+            tryParseJson(request.body.decodedData!.toString())!
         )]
     : hasBody
-        ? [new matchers.RawBodyMatcher(request.body.decoded!.toString())]
+        ? [new matchers.RawBodyMatcher(request.body.decodedData!.toString())]
     : [];
 
     const urlParts = request.parsedUrl.toString().split('?');
@@ -164,12 +164,12 @@ export function buildRuleFromExchange(exchange: HttpExchange): HtkRule {
         exchange.isSuccessfulExchange() &&
         // Don't include automatically include the body if it's too large
         // for manual editing (> 1MB), just for UX reasons
-        exchange.response.body.encoded.byteLength <= 1024 * 1024 &&
-        !!exchange.response.body.decoded // If we can't decode it, don't include it
+        exchange.response.body.encodedByteLength <= 1024 * 1024 &&
+        !!exchange.response.body.decodedData // If we can't decode it, don't include it
     );
 
     const bodyContent = useResponseBody
-        ? (exchange.response as HtkResponse).body.decoded!
+        ? (exchange.response as HtkResponse).body.decodedData!
         : "A mock response";
 
     // Copy headers so we can mutate them independently:

@@ -10,7 +10,7 @@ type EncodedSizesCache = Map<typeof EncodedSizesCacheKey,
 >;
 
 export function testEncodings(message: ExchangeMessage): EncodedBodySizes | undefined {
-    if (!message.body.decoded) return;
+    if (!message.body.isDecoded()) return;
 
     const encodedSizesCache = <EncodedSizesCache> message.cache;
     const existingObservable = encodedSizesCache.get(EncodedSizesCacheKey);
@@ -20,7 +20,7 @@ export function testEncodings(message: ExchangeMessage): EncodedBodySizes | unde
         const sizesObservable = observable.box<EncodedBodySizes | undefined>();
         encodedSizesCache.set(EncodedSizesCacheKey, sizesObservable);
 
-        testEncodingsAsync(message.body.decoded)
+        testEncodingsAsync(message.body.decodedData)
         .then(action((testResults: EncodedBodySizes) => {
             sizesObservable.set(testResults)
         }))

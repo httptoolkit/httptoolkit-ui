@@ -215,12 +215,11 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
         const message = p.exchange[messageType];
         const encodings = getEncodings(message);
 
-        if (typeof message !== 'object' || !message.body.encoded.byteLength) return null;
+        if (typeof message !== 'object' || !message.body.encodedByteLength) return null;
 
-        const encodedBody = message.body.encoded;
-        const decodedBody = message.body.decoded;
+        const encodedBodySize = message.body.encodedByteLength;
+        const decodedBody = message.body.decodedData;
         const decodedBodySize = decodedBody ? decodedBody.byteLength : 0;
-        const encodedBodySize = encodedBody.byteLength;
 
         const encodingTestResults = _.mapKeys(testEncodings(message),
             (_size, encoding) => getEncodingName(encoding)

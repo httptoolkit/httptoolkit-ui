@@ -3,7 +3,7 @@ import { SourceIcons } from '../../src/icons';
 import { HttpExchange } from '../../src/model/http/exchange';
 import { HttpBody } from '../../src/model/http/http-body';
 import { FailedTlsConnection } from '../../src/model/tls/failed-tls-connection';
-import { HtkRequest, HtkResponse } from '../../src/types';
+import { HtkRequest, HtkResponse, TimingEvents } from '../../src/types';
 
 let nextId = 0;
 
@@ -51,7 +51,7 @@ export const getExchangeData = ({
         ),
         contentType: 'text',
         source: { ua: '', summary: 'Unknown client', icon: SourceIcons.Unknown },
-        timingEvents: { startTime: Date.now() },
+        timingEvents: timingEvents(),
         tags: requestTags,
         cache: new Map() as any
     } as HtkRequest,
@@ -74,8 +74,10 @@ export const getExchangeData = ({
             } as any,
             responseHeaders
         ),
+        trailers: {},
+        rawTrailers: [],
         contentType: 'text',
-        timingEvents: { startTime: Date.now() },
+        timingEvents: timingEvents(),
         tags: responseTags,
         cache: new Map()  as any
     } as HtkResponse,
@@ -96,6 +98,11 @@ export const getFailedTls = ({
     upstreamHostname,
     tags: [] as string[]
 }) as FailedTlsConnection;
+
+const timingEvents = (): TimingEvents => ({
+    startTime: Date.now(),
+    startTimestamp: 0
+});
 
 export function httpDate(date: Date) {
     const utcDate = dateFns.addMinutes(date, date.getTimezoneOffset());

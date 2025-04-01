@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 
 import { saveFile } from "../../util/ui";
-import { ObservablePromise } from '../../util/observable';
 
 import { HttpExchange } from "../http/exchange";
 import { generateHarRequest, generateHar, ExtendedHarRequest } from '../http/har';
@@ -26,7 +25,7 @@ export function generateCodeSnippet(
     exchange: HttpExchange,
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding: true }
-): ObservablePromise<string>;
+): Promise<string>;
 export function generateCodeSnippet(
     exchange: HttpExchange,
     snippetFormat: SnippetOption,
@@ -36,14 +35,11 @@ export function generateCodeSnippet(
     exchange: HttpExchange,
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding?: boolean } = {}
-): string | ObservablePromise<string> {
+): string | Promise<string> {
     // If the body isn't decoded yet, and it should be, wait for that decoding first.
-    if (options.waitForBodyDecoding && (
-        exchange.request.body.decodedPromise.state === 'pending' ||
-        exchange.request.body.decodedPromise.state === undefined
-    )) {
+    if (options.waitForBodyDecoding && exchange.request.body.isPending()) {
         // Doesn't matter if this errors - we'll make that explicit in the export later.
-        return exchange.request.body.decodedPromise.catch(() => {})
+        return exchange.request.body.waitForDecoding().catch(() => {})
             .then(() => generateCodeSnippet(exchange, snippetFormat, options));
     }
 

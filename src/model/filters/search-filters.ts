@@ -1160,8 +1160,8 @@ class BodySizeFilter extends Filter {
         const responseBody = event.isSuccessfulExchange()
             ? event.response.body
             : undefined;
-        const totalSize = requestBody.encoded.byteLength +
-            (responseBody?.encoded.byteLength || 0);
+        const totalSize = requestBody.encodedByteLength +
+            (responseBody?.encodedByteLength || 0);
 
         return event.isHttp() &&
             this.predicate(totalSize, this.expectedSize);
@@ -1223,10 +1223,10 @@ class BodyFilter extends Filter {
         if (!event.isHttp()) return false;
         if (!event.hasRequestBody() && !event.hasResponseBody()) return false; // No body, no match
 
-        // Accessing .decoded on both of these touches a lazy promise, starting decoding for all bodies:
-        const requestBody = event.request.body.decoded;
+        // Accessing .decodedData on both of these starts decoding for all bodies async:
+        const requestBody = event.request.body.decodedData;
         const responseBody = event.isSuccessfulExchange()
-            ? event.response.body.decoded
+            ? event.response.body.decodedData
             : undefined;
 
         const matchesRequestBody = !!requestBody && requestBody.byteLength > 0 &&
@@ -1286,8 +1286,8 @@ class ContainsFilter extends Filter {
                 ...Object.entries(
                     event.request.rawHeaders
                 ).map(([key, value]) => `${key}: ${value}`),
-                // Accessing .decoded touches a lazy promise, starting decoding:
-                event.request.body.decoded,
+                // Accessing .decodedData here starts decoding async:
+                event.request.body.decodedData,
 
                 ...(event.isSuccessfulExchange()
                     ? [
@@ -1296,8 +1296,8 @@ class ContainsFilter extends Filter {
                         ...Object.entries(
                             event.response.rawHeaders
                         ).map(([key, value]) => `${key}: ${value}`),
-                        // Accessing .decoded touches a lazy promise, starting decoding:
-                        event.response.body.decoded
+                        // Accessing .decodedData here starts decoding async:
+                        event.response.body.decodedData
                     ] : []
                 ),
 

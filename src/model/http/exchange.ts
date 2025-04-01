@@ -230,12 +230,12 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
     }
 
     hasRequestBody(): this is CompletedRequest {
-        return this.isCompletedRequest() && this.request.body.encoded.byteLength > 0;
+        return this.isCompletedRequest() && this.request.body.encodedByteLength > 0;
     }
 
     hasResponseBody(): this is SuccessfulExchange {
         return this.isSuccessfulExchange() &&
-            (this.response as HtkResponse).body.encoded.byteLength > 0;
+            (this.response as HtkResponse).body.encodedByteLength > 0;
     }
 
     @observable

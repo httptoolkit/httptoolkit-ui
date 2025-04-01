@@ -12,7 +12,6 @@ import {
     FakeBuffer,
     stringToBuffer,
 } from '../../util/buffer';
-import { lazyObservablePromise, ObservablePromise, observablePromise } from "../../util/observable";
 import {
     asHeaderArray,
     getHeaderValues
@@ -21,13 +20,14 @@ import {
 import { logError } from '../../errors';
 import { decodeBody } from '../../services/ui-worker-api';
 
-
 export class HttpBody implements MessageBody {
 
     constructor(
         message: InputMessage | { body: Buffer },
         headers: Headers | RawHeaders
     ) {
+        this._contentEncoding = asHeaderArray(getHeaderValues(headers, 'content-encoding'));
+
         if (!('body' in message) || !message.body) {
             this._encoded = stringToBuffer("");
         } else if (Buffer.isBuffer(message.body)) {
@@ -38,52 +38,118 @@ export class HttpBody implements MessageBody {
             this._encoded = fakeBuffer(message.body.encodedLength);
             this._decoded = message.body.decoded;
         }
-
-        this._contentEncoding = asHeaderArray(getHeaderValues(headers, 'content-encoding'));
     }
 
-    private _contentEncoding: string[];
-    private _encoded: FakeBuffer | Buffer;
-    get encoded() {
-        return this._encoded;
-    }
+    private readonly _contentEncoding: string[];
 
-    private _decoded: Buffer | undefined;
-
-    @observable
-    decodingError: Error | undefined;
-
-    decodedPromise: ObservablePromise<Buffer | undefined> = lazyObservablePromise(async () => {
-        // Exactly one of _encoded & _decoded is a buffer, never neither/both.
-        if (this._decoded) return this._decoded;
-        const encodedBuffer = this.encoded as Buffer;
-
-        // Temporarily change to a fake buffer, while the web worker takes the data to decode
-        const encodedLength = encodedBuffer.byteLength;
-        this._encoded = fakeBuffer(encodedLength);
-
-        try {
-            const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
-            this._encoded = encoded;
-            return decoded;
-        } catch (e: any) {
-            logError(e);
-
-            // In most cases, we get the encoded data back regardless, so recapture it here:
-            if (e.inputBuffer) {
-                this._encoded = e.inputBuffer;
-            }
-            runInAction(() => {
-                this.decodingError = e;
-            });
-
-            return undefined;
+    private _encoded: FakeBuffer | Buffer; // Not readonly - replaced with FakeBuffer on decode
+    get encodedData() {
+        // We only allow accessing this after a failed decoding (enforced type-level by the
+        // MessageBody interfaces), and the data isn't necessarily _always_ available regardless.
+        if (this._decodingError && Buffer.isBuffer(this._encoded)) {
+            return this._encoded;
         }
-    });
+    }
 
-    get decoded() {
-        // We exclude 'Error' from the value - errors should always become undefined
-        return this.decodedPromise.value as Buffer | undefined;
+    get encodedByteLength() {
+        return this._encoded.byteLength;
+    }
+
+    private startDecodingAsync() {
+        if (!this._decodedPromise) {
+            this.waitForDecoding().catch(() => {});
+        }
+    }
+
+    @observable.ref
+    private _decoded: Buffer | undefined;
+    get decodedData() {
+        // Any attempt to read pending decoded data will trigger the decoding process,
+        // if it hasn't already started.
+        if (!this._decoded) this.startDecodingAsync();
+        return this._decoded;
+    }
+
+    isPending() {
+        return !this._decoded && !this._decodingError;
+    }
+
+    isDecoded() {
+        // Any attempt to check whether decoded data is available yet will trigger the decoding
+        // process, if it hasn't already started.
+        if (!this._decoded) this.startDecodingAsync();
+        return !!this._decoded;
+    }
+
+    isFailed() {
+        return !!this._decodingError;
+    }
+
+    // Note that exactly one of _encoded & _decoded is a buffer, never neither/both. We set the
+    // available buffer in the constructor. After successful encoding, we clear the encoded data
+    // and replace it with a fake buffer that just stores the original length. Adding some edge
+    // cases, possible states are:
+    // * Usual initial state: _encoded set, nothing else
+    // * Encoding: _encoded is fake, _decodedPromise is pending, nothing else
+    // * Encoded: _encoded is fake, _decoded is set, nothing else
+    // * Failed: _encoded is buffer, _decodingError is set, nothing else
+    // * Very hard unusual failure: _encoded is fake, _decodingError is set
+
+
+
+    // While errors are never thrown, they're stored here, so we can show them in the UI where
+    // appropriate (body section, explaining the failure alongside the encoded data for debugging).
+    @observable.ref
+    private _decodingError: Error | undefined;
+    get decodingError() { return this._decodingError; }
+
+    // Not populated until it's read, to reduce memory usage in large sessions
+    _decodedPromise: Promise<Buffer | undefined> | undefined;
+    waitForDecoding(): Promise<Buffer | undefined> {
+        if (this._decoded) return Promise.resolve(this._decoded);
+        if (this._decodingError) return Promise.resolve(undefined);
+
+        // If we have no result and no error, we need to do the decoding ourselves (or use
+        // an existing pending decoding promise, if already set)
+        if (!this._decodedPromise) {
+            this._decodedPromise = (async (): Promise<Buffer | undefined> => {
+                // One is always set - so if _decoded is not set, _encoded must be.
+                const encodedBuffer = this._encoded as Buffer;
+
+                // Temporarily change to a fake buffer, while the web worker takes the data to decode
+                const encodedLength = encodedBuffer.byteLength;
+                this._encoded = fakeBuffer(encodedLength);
+
+                try {
+                    const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
+                    this._encoded = encoded;
+
+                    runInAction(() => {
+                        this._decoded = decoded;
+                    });
+
+                    return decoded;
+                } catch (e: any) {
+                    logError(e);
+
+                    // In most cases, we get the encoded data back regardless, so recapture it here:
+                    if (e.inputBuffer) {
+                        this._encoded = e.inputBuffer;
+                    }
+                    runInAction(() => {
+                        this._decodingError = e;
+                    });
+
+                    return undefined;
+                } finally {
+                    // Once the promise is done, we drop it to save memory (sometimes we store
+                    // 10s or 100s of thousands of these objects, so extra data isn't cheap).
+                    this._decodedPromise = undefined;
+                }
+
+            })();
+        }
+        return this._decodedPromise;
     }
 
     // Must only be called when the exchange & body will no longer be used. Ensures that large data is
@@ -91,12 +157,11 @@ export class HttpBody implements MessageBody {
     // Important: for safety, this leaves the body in a *VALID* but reset state - not a totally blank one.
     cleanup() {
         // Set to a valid state for an un-decoded but totally empty body.
-        this._decoded = undefined;
+        this._decoded = EMPTY_BUFFER;
         this._encoded = EMPTY_BUFFER;
-        this.decodingError = undefined;
-        this.decodedPromise = PROMISE_FOR_EMPTY_BUFFER;
+        this._decodingError = undefined;
+        this._decodedPromise = undefined;;
     }
 }
 
 const EMPTY_BUFFER = Buffer.from([]);
-const PROMISE_FOR_EMPTY_BUFFER = observablePromise(Promise.resolve(EMPTY_BUFFER));

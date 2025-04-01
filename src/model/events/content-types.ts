@@ -183,7 +183,7 @@ export function getCompatibleTypes(
     let types = new Set([contentType]);
 
     if (body && !Buffer.isBuffer(body)) {
-        body = body.decoded;
+        body = body.decodedData;
     }
 
     // Examine the first char of the body, assuming it's ascii

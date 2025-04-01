@@ -20,7 +20,7 @@ import {
 
 import { stringToBuffer } from '../../util/buffer';
 import { getHeaderValues, getHeaderValue } from '../../util/headers';
-import { ObservablePromise } from '../../util/observable';
+import { ObservablePromise, observablePromise } from '../../util/observable';
 import { unreachableCheck } from '../../util/error';
 
 import { UI_VERSION } from '../../services/service-versions';
@@ -189,13 +189,10 @@ export function generateHarRequest(
     waitForDecoding: boolean,
     options: HarGenerationOptions
 ): ExtendedHarRequest | ObservablePromise<ExtendedHarRequest> {
-    if (waitForDecoding && (
-        !request.body.decodedPromise.state ||
-        request.body.decodedPromise.state === 'pending'
-    )) {
-        return request.body.decodedPromise.then(() =>
+    if (waitForDecoding && request.body.isPending()) {
+        return observablePromise(request.body.waitForDecoding().then(() =>
             generateHarRequest(request, false, options)
-        );
+        ));
     }
 
     const requestEntry: ExtendedHarRequest = {
@@ -214,11 +211,11 @@ export function generateHarRequest(
             })
         ),
         headersSize: -1,
-        bodySize: request.body.encoded.byteLength
+        bodySize: request.body.encodedByteLength
     };
 
-    if (request.body.decoded) {
-        if (request.body.decoded.byteLength > options.bodySizeLimit) {
+    if (request.body.isDecoded()) {
+        if (request.body.decodedData.byteLength > options.bodySizeLimit) {
             requestEntry._requestBodyStatus = 'discarded:too-large';
             requestEntry.comment = `Body discarded during HAR generation: longer than limit of ${
                 options.bodySizeLimit
@@ -226,15 +223,15 @@ export function generateHarRequest(
         } else {
             try {
                 requestEntry.postData = generateHarPostBody(
-                    UTF8Decoder.decode(request.body.decoded),
+                    UTF8Decoder.decode(request.body.decodedData),
                     getHeaderValue(request.headers, 'content-type') || 'application/octet-stream'
                 );
             } catch (e) {
                 if (e instanceof TypeError) {
                     requestEntry._requestBodyStatus = 'discarded:not-representable';
                     requestEntry._content = {
-                        text: request.body.decoded.toString('base64'),
-                        size: request.body.decoded.byteLength,
+                        text: request.body.decodedData.toString('base64'),
+                        size: request.body.decodedData.byteLength,
                         encoding: 'base64',
                     }
                 } else {
@@ -331,7 +328,7 @@ async function generateHarResponse(
         };
     }
 
-    const decoded = await response.body.decodedPromise;
+    const decoded = await response.body.waitForDecoding();
 
     let responseContent: { text: string, encoding?: string } | { comment: string };
     try {
@@ -364,13 +361,13 @@ async function generateHarResponse(
             {
                 mimeType: getHeaderValue(response.headers, 'content-type') ||
                     'application/octet-stream',
-                size: response.body.decoded?.byteLength || 0
+                size: decoded?.byteLength || 0
             },
             responseContent
         ),
         redirectURL: "",
         headersSize: -1,
-        bodySize: response.body.encoded.byteLength || 0
+        bodySize: response.body.encodedByteLength || 0
     };
 }
 

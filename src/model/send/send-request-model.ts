@@ -115,7 +115,7 @@ export const sendRequestSchema = serializr.createSimpleSchema({
 });
 
 export async function buildRequestInputFromExchange(exchange: HttpExchange): Promise<RequestInput> {
-    const body = await exchange.request.body.decodedPromise ??
+    const body = await exchange.request.body.waitForDecoding() ??
         Buffer.from('!!! ORIGINAL REQUEST BODY COULD NOT BE DECODED !!!');
 
     // For now, all sent requests are HTTP/1, so we need to make sure we convert:

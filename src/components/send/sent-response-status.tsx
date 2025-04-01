@@ -63,7 +63,7 @@ export const ResponseStatusSection = (props: {
             </Pill>
             <DurationPill timingEvents={props.exchange.timingEvents} />
             <Pill title="The size of the raw encoded response body">
-                { getReadableSize(response.body.encoded.byteLength) }
+                { getReadableSize(response.body.encodedByteLength) }
             </Pill>
             { props.showRequestOnViewPage &&
                 <ShowRequestButton onClick={props.showRequestOnViewPage} />

@@ -1,12 +1,13 @@
 import * as _ from 'lodash';
 import * as zlib from 'zlib';
+import { computed } from 'mobx';
 
 import { expect } from '../../../test-setup';
 
 import { delay } from '../../../../src/util/promise';
 import { decodeBody } from '../../../../src/services/ui-worker-api';
 
-import { CollectedEvent } from '../../../../src/types';
+import { CollectedEvent, HtkResponse } from '../../../../src/types';
 import { FailedTlsConnection } from '../../../../src/model/tls/failed-tls-connection';
 import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
 
@@ -51,6 +52,16 @@ function getSuggestionDescriptions(input: string) {
             .filterClass
             .filterDescription(input, s.matchType === 'template')
         );
+}
+
+async function decodeBodies(events: CollectedEvent[]) {
+    events.forEach(e => {
+        if (e.isHttp()) {
+            e.request.body.decodedData;
+            if (e.isSuccessfulExchange()) e.response.body.decodedData;
+        }
+    });
+    await delay(1);
 }
 
 describe("Search filter model integration test:", () => {
@@ -1078,16 +1089,6 @@ describe("Search filter model integration test:", () => {
             // ^ Take from worker-decoding tests
         });
 
-        const decodeBodies = async (events: CollectedEvent[]) => {
-            events.forEach(e => {
-                if (e.isHttp()) {
-                    e.request.body.decoded;
-                    if (e.isSuccessfulExchange()) e.response.body.decoded;
-                }
-            });
-            await delay(1);
-        };
-
         it("should correctly filter for a given substring", async () => {
             const filter = createFilter("body*=big");
 
@@ -1114,17 +1115,17 @@ describe("Search filter model integration test:", () => {
 
             expect(
                 matchedEvents.map((e) =>
-                    e.request.body.encoded.toString('utf8') +
+                    e.request.body.decodedData!.toString('utf8') + ':' +
                     (e.isSuccessfulExchange()
-                        ? e.response.body.encoded.toString('utf8')
+                        ? e.response.body.decodedData!.toString('utf8')
                         : ''
                     )
                 )
             ).to.deep.equal([
-                "very-bigvery-big",
-                "big-aborted-request",
-                "big-pending-request",
-                "very-big-response"
+                "very-big:very-big",
+                "big-aborted-request:",
+                "big-pending-request:",
+                ":very-big-response"
             ]);
         });
 
@@ -1154,18 +1155,18 @@ describe("Search filter model integration test:", () => {
 
             expect(
                 matchedEvents.map((e) =>
-                    e.request.body.encoded.toString('utf8') +
+                    e.request.body.decodedData!.toString('utf8') + ':' +
                     (e.isSuccessfulExchange()
-                        ? e.response.body.encoded.toString('utf8')
+                        ? e.response.body.decodedData!.toString('utf8')
                         : ''
                     )
                 )
             ).to.deep.equal([
-                "NOT АЅСІІЖ Cyrillic chars"
+                "NOT АЅСІІ:Ж Cyrillic chars"
             ]);
         });
 
-        it("should wait for and use decoded bodies", async () => {
+        it("should observe and use async-decoded bodies", async () => {
             const filter = createFilter("body^=hello");
 
             const exampleEvents = [
@@ -1183,23 +1184,26 @@ describe("Search filter model integration test:", () => {
                 })
             ];
 
-            let matchedEvents = exampleEvents.filter(e =>
-                filter.matches(e)
-            ) as HttpExchange[];
+            const filterComputed = computed(() => {
+                return exampleEvents.filter(e =>
+                    filter.matches(e)
+                ) as HttpExchange[];
+            });
+
+            let matchedEvents: HttpExchange[] = [];
+            const disposeSubscription = filterComputed.observe((result) => {
+                matchedEvents = result.newValue;
+            }, true);
 
             expect(matchedEvents).to.deep.equal([]);
-
-            await delay(100); // Wait for decode that filter will have triggered
-
-            matchedEvents = exampleEvents.filter(e =>
-                filter.matches(e)
-            ) as HttpExchange[];
-
-            expect(matchedEvents.map((e: any) =>
-                e.response.body.decoded.toString()
+            await delay(10); // Wait for the decode that filter will have triggered
+            expect(matchedEvents.map((e: HttpExchange) =>
+                (e.response as HtkResponse).body.decodedData?.toString()
             )).to.deep.equal([
                 "hello world"
             ]);
+
+            disposeSubscription();
         });
 
         it("should correctly format descriptions", () => {
@@ -1217,7 +1221,7 @@ describe("Search filter model integration test:", () => {
     });
 
     describe("Body size filters", () => {
-        it("should correctly filter for a given size", () => {
+        it("should correctly filter for a given size", async () => {
             const filter = createFilter("bodySize>10");
 
             const exampleEvents = [
@@ -1239,19 +1243,23 @@ describe("Search filter model integration test:", () => {
                 filter.matches(e)
             ) as HttpExchange[];
 
+            // We filter without decoding - just useful here to get the data itself
+            // to assert on afterwards:
+            await decodeBodies(matchedEvents);
+
             expect(
                 matchedEvents.map((e) =>
-                    e.request.body.encoded.toString('utf8') +
+                    e.request.body.decodedData?.toString('utf8') + ':' +
                     (e.isSuccessfulExchange()
-                        ? e.response.body.encoded.toString('utf8')
+                        ? e.response.body.decodedData?.toString('utf8')
                         : ''
                     )
                 )
             ).to.deep.equal([
-                "very-bigvery-big",
-                "big-aborted-request",
-                "big-pending-request",
-                "very-big-response"
+                "very-big:very-big",
+                "big-aborted-request:",
+                "big-pending-request:",
+                ":very-big-response"
             ]);
         });
 
