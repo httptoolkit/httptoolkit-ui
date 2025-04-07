@@ -42,6 +42,7 @@ import {
     getDummyResponseBreakpoint
 } from './exchange-breakpoint';
 import { UpstreamHttpExchange } from './upstream-exchange';
+import { ObservableCache } from '../observable-cache';
 
 const HTTP_VERSIONS = [0.9, 1.0, 1.1, 2.0, 3.0] as const;
 export type HttpVersion = typeof HTTP_VERSIONS[number];
@@ -93,7 +94,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
                 : parseSource(request.headers['user-agent']),
             body: new HttpBody(request, request.headers),
             contentType: getContentType(getHeaderValue(request.headers, 'content-type')) || 'text',
-            cache: observable.map(new Map<symbol, unknown>(), { deep: false })
+            cache: new ObservableCache()
         }) as HtkRequest;
     } catch (e) {
         console.log(`Failed to parse request for ${request.url} (${request.protocol}://${request.hostname})`);
@@ -105,7 +106,7 @@ function addResponseMetadata(response: InputResponse): HtkResponse {
     return Object.assign(response, {
         body: new HttpBody(response, response.headers),
         contentType: getContentType(getHeaderValue(response.headers, 'content-type')) || 'text',
-        cache: observable.map(new Map<symbol, unknown>(), { deep: false })
+        cache: new ObservableCache()
     }) as HtkResponse;
 }
 
@@ -340,8 +341,6 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
     // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
     // Important: for safety, this leaves the exchange in a *VALID* but reset state - not a totally blank one.
     cleanup() {
-        this.cache.clear();
-
         this.request.cache.clear();
         this.request.body.cleanup();
 

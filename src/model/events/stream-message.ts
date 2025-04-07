@@ -2,13 +2,14 @@ import { computed, observable } from 'mobx';
 
 import { InputStreamMessage } from "../../types";
 import { asBuffer } from '../../util/buffer';
+import { ObservableCache } from '../observable-cache';
 
 export class StreamMessage {
 
     @observable
     private inputMessage: InputStreamMessage;
 
-    public readonly cache = observable.map(new Map<symbol, unknown>(), { deep: false });
+    public readonly cache = new ObservableCache();
 
     constructor(
         inputMessage: InputStreamMessage,

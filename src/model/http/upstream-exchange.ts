@@ -24,6 +24,7 @@ import {
 } from './exchange';
 import { parseSource } from './sources';
 import { HTKEventBase } from '../events/event-base';
+import { ObservableCache } from '../observable-cache';
 
 const upstreamRequestToUrl = (request: InputRuleEventDataMap['passthrough-request-head']): ParsedUrl => {
     const portString = request.port ? `:${request.port}` : '';
@@ -135,7 +136,7 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
             timingEvents: this.timingEvents,
             tags: downstreamReq.tags,
 
-            cache: observable.map(new Map<symbol, unknown>(), { deep: false }),
+            cache: new ObservableCache(),
 
             parsedUrl: url || downstreamReq.parsedUrl,
             url: url?.toString() || downstreamReq.url,
@@ -177,7 +178,7 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
             timingEvents: this.timingEvents,
             tags: this.tags,
 
-            cache: observable.map(new Map<symbol, unknown>(), { deep: false }),
+            cache: new ObservableCache(),
             contentType: getContentType(getHeaderValue(rawHeaders, 'content-type')) || 'text',
 
             statusCode,
@@ -319,8 +320,6 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
     }
 
     cleanup() {
-        this.cache.clear();
-
         this.request.cache.clear();
         this.request.body.cleanup();
 

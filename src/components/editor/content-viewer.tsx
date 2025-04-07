@@ -14,6 +14,7 @@ import { getHeaderValue } from '../../util/headers';
 
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
+import { ObservableCache } from '../../model/observable-cache';
 
 import { ContainerSizedEditor, SelfSizedEditor } from './base-editor';
 import { LoadingCardContent } from '../common/loading-card';
@@ -27,7 +28,7 @@ interface ContentViewerProps {
     headers?: Headers;
     contentType: ViewableContentType;
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor | typeof ContainerSizedEditor>;
-    cache: Map<Symbol, unknown>;
+    cache: ObservableCache;
 
     // See BaseEditor.props.contentid
     contentId: string | null;

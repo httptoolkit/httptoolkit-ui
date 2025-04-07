@@ -48,6 +48,7 @@ import type { RTCMediaTrack } from './model/webrtc/rtc-media-track';
 import type { TrafficSource } from './model/http/sources';
 import type { EditableBody } from './model/http/editable-body';
 import type { ViewableContentType } from './model/events/content-types';
+import type { ObservableCache } from './model/observable-cache';
 
 // These are the HAR types as returned from parseHar(), not the raw types as defined in the HAR itself
 export type HarBody = { encodedLength: number, decoded: Buffer };
@@ -181,7 +182,7 @@ export type HtkRequest = Omit<InputRequest, 'body' | 'path'> & {
     parsedUrl: ParsedUrl,
     source: TrafficSource,
     contentType: ViewableContentType,
-    cache: Map<symbol, unknown>,
+    cache: ObservableCache,
     body: MessageBody,
     trailers?: Trailers,
     rawTrailers?: RawTrailers
@@ -189,7 +190,7 @@ export type HtkRequest = Omit<InputRequest, 'body' | 'path'> & {
 
 export type HtkResponse = Omit<InputResponse, 'body'> & {
     contentType: ViewableContentType,
-    cache: Map<symbol, unknown>,
+    cache: ObservableCache,
     body: MessageBody
 };
 

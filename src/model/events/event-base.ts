@@ -42,9 +42,4 @@ export abstract class HTKEventBase {
     public get pinned(): boolean { return this._pinned; }
     public set pinned(value: boolean) { this._pinned = value; }
 
-    // Logic elsewhere can put values into these caches to cache calculations
-    // about this event weakly, so they GC with the event.
-    // Keyed by symbols only, so we know we never have conflicts.
-    public cache = observable.map(new Map<symbol, unknown>(), { deep: false });
-
 }

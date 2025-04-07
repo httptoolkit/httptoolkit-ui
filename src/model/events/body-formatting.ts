@@ -12,7 +12,7 @@ import { ImageViewer } from '../../components/editor/image-viewer';
 
 export interface EditorFormatter {
     language: string;
-    cacheKey: Symbol;
+    cacheKey: symbol;
     isEditApplicable: boolean; // Can you apply this manually during editing to format an input?
     render(content: Buffer, headers?: Headers): string | ObservablePromise<string>;
 }
