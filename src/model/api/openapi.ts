@@ -449,9 +449,11 @@ class OpenApiResponse implements ApiResponse {
             )
             : undefined;
 
-        this.description = bodySpec && bodySpec.description !== response.statusMessage
-            ? fromMarkdown(bodySpec.description, { linkify: true })
-            : undefined;
+        this.description = bodySpec?.description &&
+            bodySpec.description !== response.statusMessage && // Ignore description "Not Found" and similar
+            bodySpec.description.split(' ').filter(Boolean).length! > 2 // Ignore pointlessly short (Response/Error Response) descriptions
+                ? fromMarkdown(bodySpec.description, { linkify: true })
+                : undefined;
         this.bodySchema = getBodySchema(spec, bodySpec, response);
     }
 
