@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { get } from 'typesafe-get';
+import { action, observable } from 'mobx';
 
 import type {
     OpenAPIObject,
@@ -14,7 +15,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
 import {
-    HttpExchange,
+    ViewableHttpExchange,
     ExchangeMessage,
     HtkRequest,
     HtkResponse,
@@ -286,9 +287,7 @@ function stripTags(input: string | undefined): string | undefined {
 }
 
 export class OpenApiExchange implements ApiExchange {
-    constructor(api: OpenApiMetadata, exchange: HttpExchange) {
-        this.isBuiltInApi = api.spec.info['x-httptoolkit-builtin-api'] === true;
-
+    constructor(api: OpenApiMetadata, exchange: ViewableHttpExchange) {
         const { request } = exchange;
         this.service = new OpenApiService(api.spec);
 
@@ -306,14 +305,14 @@ export class OpenApiExchange implements ApiExchange {
     private _spec: OpenAPIObject;
     private _opSpec: MatchedOperation;
 
-    public readonly isBuiltInApi: boolean;
-
     public readonly service: ApiService;
     public readonly operation: ApiOperation;
     public readonly request: ApiRequest;
 
+    @observable.ref
     public response: ApiResponse | undefined;
 
+    @action
     updateWithResponse(response: HtkResponse | 'aborted' | undefined): void {
         if (response === 'aborted' || response === undefined) return;
         this.response = new OpenApiResponse(this._spec, this._opSpec, response);

@@ -13,6 +13,7 @@ import { OpenRpcDocument, OpenRpcMetadata } from './jsonrpc';
 export interface OpenApiMetadata {
     type: 'openapi';
     spec: OpenAPIObject;
+    isBuiltInApi: boolean;
     serverMatcher: RegExp;
     requestMatchers: Map<OpenApiRequestMatcher, Path>;
 }
@@ -167,6 +168,7 @@ export async function buildOpenApiMetadata(
     return {
         type: 'openapi',
         spec,
+        isBuiltInApi: spec.info['x-httptoolkit-builtin-api'] === true,
         serverMatcher,
         requestMatchers
     };
@@ -201,6 +203,7 @@ export function buildOpenRpcMetadata(spec: OpenRpcDocument, baseUrlOverrides?: s
     return {
         type: 'openrpc',
         spec,
+        isBuiltInApi: spec.info['x-httptoolkit-builtin-api'] === true,
         serverMatcher,
         requestMatchers: _.keyBy(spec.methods, 'name') as _.Dictionary<MethodObject> // Dereferenced
     };

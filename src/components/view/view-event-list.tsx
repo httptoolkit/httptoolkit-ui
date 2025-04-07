@@ -348,7 +348,7 @@ const EventRow = observer((props: EventRowProps) => {
             tlsEvent={event}
         />;
     } else if (event.isHttp()) {
-        if (event.api?.isBuiltInApi && event.api.matchedOperation()) {
+        if (event.apiSpec?.isBuiltInApi && event.api?.matchedOperation()) {
             return <BuiltInApiRow
                 index={index}
                 isSelected={isSelected}

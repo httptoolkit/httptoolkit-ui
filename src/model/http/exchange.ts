@@ -14,12 +14,9 @@ import {
     MockttpBreakpointResponseResult,
     InputRuleEventDataMap
 } from "../../types";
-import { UnreachableCheck } from '../../util/error';
-import { lazyObservablePromise } from "../../util/observable";
 import { getHeaderValue } from '../../util/headers';
 import { ParsedUrl } from '../../util/url';
 
-import { logError } from '../../errors';
 
 import { MANUALLY_SENT_SOURCE, parseSource } from './sources';
 import { getContentType } from '../events/content-types';
@@ -29,9 +26,7 @@ import { HandlerClassKey, HtkRule, getRulePartKey } from '../rules/rules';
 
 import { ApiStore } from '../api/api-store';
 import { ApiExchange } from '../api/api-interfaces';
-import { OpenApiExchange } from '../api/openapi';
-import { parseRpcApiExchange } from '../api/jsonrpc';
-import { ApiMetadata } from '../api/api-interfaces';
+import { ApiDetector } from './api-detector';
 
 import { HttpBody } from './http-body';
 import {
@@ -189,7 +184,7 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
         .toLowerCase();
 
         // Start loading the relevant Open API specs for this request, if any.
-        this._apiMetadataPromise = apiStore.getApi(this.request);
+        this._apiDetector = new ApiDetector(this, apiStore);
     }
 
     public readonly id: string;
@@ -326,15 +321,6 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
             ..._.map(response.headers, (value, key) => `${key}: ${value}`),
             ..._.map(response.trailers, (value, key) => `${key}: ${value}`)
         ].join('\n').toLowerCase();
-
-        // Wrap the API promise to also add this response data (but lazily)
-        const requestApiPromise = this._apiPromise;
-        this._apiPromise = lazyObservablePromise(() =>
-            requestApiPromise.then((api) => {
-                if (api) api.updateWithResponse(this.response!);
-                return api;
-            })
-        );
     }
 
     // Must only be called when the exchange will no longer be used. Ensures that large data is
@@ -356,43 +342,13 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
 
     // API metadata:
 
-    // A convenient reference to the service-wide spec for this API - starts loading immediately
-    private _apiMetadataPromise: Promise<ApiMetadata | undefined>;
-
-    // Parsed API info for this specific request, loaded & parsed lazily, only if it's used
-    @observable.ref
-    private _apiPromise = lazyObservablePromise(async (): Promise<ApiExchange | undefined> => {
-        const apiMetadata = await this._apiMetadataPromise;
-
-        if (apiMetadata) {
-            // We load the spec, but we don't try to parse API requests until we've received
-            // the whole thing (because e.g. JSON-RPC requests aren't parseable without the body)
-            await when(() => this.isCompletedRequest());
-
-            try {
-                if (apiMetadata.type === 'openapi') {
-                    return new OpenApiExchange(apiMetadata, this);
-                } else if (apiMetadata.type === 'openrpc') {
-                    return await parseRpcApiExchange(apiMetadata, this);
-                } else {
-                    console.log('Unknown API metadata type for host', this.request.parsedUrl.hostname);
-                    console.log(apiMetadata);
-                    throw new UnreachableCheck(apiMetadata, m => m.type);
-                }
-            } catch (e) {
-                logError(e);
-                throw e;
-            }
-        } else {
-            return undefined;
-        }
-    });
-
-    // Fixed value for the parsed API data - returns the data or undefined, observably.
+    private _apiDetector: ApiDetector;
     get api() {
-        if (this._apiPromise.state === 'fulfilled') {
-            return this._apiPromise.value as ApiExchange | undefined;
-        }
+        return this._apiDetector.parsedApi;
+    }
+
+    get apiSpec() {
+        return this._apiDetector.apiMetadata;
     }
 
     // Breakpoint data:

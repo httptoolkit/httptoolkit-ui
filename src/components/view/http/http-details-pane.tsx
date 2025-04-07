@@ -101,7 +101,7 @@ export class HttpDetailsPane extends React.Component<{
         // The full API details - for paid APIs, and non-paid users, we don't show
         // the detailed API data in any of the cards, we just show the name (below)
         // in a collapsed API card.
-        const apiExchange = (isPaidUser || exchange.api?.isBuiltInApi)
+        const apiExchange = (isPaidUser || exchange.apiSpec?.isBuiltInApi)
             ? exchange.api
             : undefined;
 
