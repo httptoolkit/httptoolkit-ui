@@ -167,6 +167,12 @@ export class ApiStore {
             publicApiCache[specId] = fetchApiMetadata(specId)
                 .then(buildApiMetadataAsync)
                 .catch((e) => {
+                    if (e.message === 'Failed to fetch') {
+                        // This is a network error, not a spec error. Don't log it.
+                        console.warn('Failed to fetch API spec', specId, e);
+                        throw e;
+                    }
+
                     console.log(`Failed to build API ${specId}`);
                     logError(e, {
                         apiSpecId: specId
