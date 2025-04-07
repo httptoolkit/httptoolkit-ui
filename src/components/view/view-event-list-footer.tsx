@@ -41,6 +41,9 @@ const RequestCounter = styled(observer((props: {
         font-size: 20px;
         font-weight: bold;
         white-space: nowrap;
+
+        font-variant-numeric: tabular-nums;
+        font-family: ${p => p.theme.monoFontFamily}
     }
 
     .label {
