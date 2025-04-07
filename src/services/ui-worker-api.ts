@@ -24,6 +24,7 @@ import type {
 import { Headers, Omit } from '../types';
 import type { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
 import { WorkerFormatterKey } from './ui-worker-formatters';
+import { decodingRequired } from '../model/events/bodies';
 
 const worker = new Worker(new URL('./ui-worker', import.meta.url));
 
@@ -68,11 +69,7 @@ function callApi<
  * original encoded data (transferred back) in a new buffer.
  */
 export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
-    if (
-        encodings.length === 0 || // No encoding
-        (encodings.length === 1 && encodings[0] === 'identity') || // No-op only encoding
-        encodedBuffer.length === 0 // Empty body (e.g. HEAD, 204, etc)
-    ) {
+    if (!decodingRequired(encodedBuffer, encodings)) {
         // Shortcut to skip decoding when we know it's not required:
         return { encoded: encodedBuffer, decoded: encodedBuffer };
     }

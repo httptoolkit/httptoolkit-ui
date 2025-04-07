@@ -32,3 +32,11 @@ export function testEncodings(message: ExchangeMessage): EncodedBodySizes | unde
         return sizesObservable.get();
     }
 }
+
+export function decodingRequired(encodedBuffer: Buffer, encodings: string[]): boolean {
+    return !(
+        encodings.length === 0 || // No encoding
+        (encodings.length === 1 && encodings[0] === 'identity') || // No-op only encoding
+        encodedBuffer.length === 0 // Empty body (e.g. HEAD, 204, etc)
+    );
+}

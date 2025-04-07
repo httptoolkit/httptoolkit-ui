@@ -19,6 +19,7 @@ import {
 
 import { logError } from '../../errors';
 import { decodeBody } from '../../services/ui-worker-api';
+import { decodingRequired } from '../events/bodies';
 
 export class HttpBody implements MessageBody {
 
@@ -116,13 +117,17 @@ export class HttpBody implements MessageBody {
                 // One is always set - so if _decoded is not set, _encoded must be.
                 const encodedBuffer = this._encoded as Buffer;
 
-                // Temporarily change to a fake buffer, while the web worker takes the data to decode
+                // Change to a fake buffer, while the web worker takes the data to decode. If we
+                // decoded successfully, we never put this back (to avoid duplicting the data).
                 const encodedLength = encodedBuffer.byteLength;
                 this._encoded = fakeBuffer(encodedLength);
 
                 try {
-                    const { decoded, encoded } = await decodeBody(encodedBuffer, this._contentEncoding);
-                    this._encoded = encoded;
+                    // We short-circuit (to avoid the render+async+re-render) if we know that
+                    // decoding is not actually required here.
+                    const { decoded } = decodingRequired(encodedBuffer, this._contentEncoding)
+                        ? await decodeBody(encodedBuffer, this._contentEncoding)
+                        : { decoded: encodedBuffer };
 
                     runInAction(() => {
                         this._decoded = decoded;
