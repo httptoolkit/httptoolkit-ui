@@ -184,6 +184,11 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
                         decodeResult.decodedBuffer
                     ]);
                 } catch (e: any) {
+                    // Can happen for some Brotli decoding errors:
+                    if (typeof e === 'string') {
+                        e = new Error(e);
+                    }
+
                     // Special case for decoding errors: we send the encoded data back with the error, so the user can debug it:
                     ctx.postMessage({
                         id: event.data.id,
