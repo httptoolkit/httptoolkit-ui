@@ -100,15 +100,16 @@ const CompressionDescription = observer((p: {
 }) => {
     const { encodings, encodedBodyLength, decodedBodyLength } = p;
 
-    const compressionRatio = decodedBodyLength ? Math.round(100 * (
-        1 - (encodedBodyLength / decodedBodyLength)
-    )) : undefined;
+    const compressionRatio = decodedBodyLength
+        ? Math.round(100 * (1 - (encodedBodyLength / decodedBodyLength)))
+        : undefined;
 
     return <>
         { encodings.length ? <>
             compressed with <strong>{joinAnd(encodings, ', ', ' and then ')}</strong>,
             making it {
-                compressionRatio !== undefined && decodedBodyLength ? <>
+                compressionRatio !== undefined && decodedBodyLength
+                ? <>
                     <strong>
                         { compressionRatio >= 0 ?
                             `${compressionRatio}% smaller`
@@ -120,7 +121,8 @@ const CompressionDescription = observer((p: {
                     } to {
                         getReadableSize(encodedBodyLength)
                     })
-                </> : <Icon icon={['fas', 'spinner']} spin />
+                </>
+                : <Icon icon={['fas', 'spinner']} spin />
             }
         </> :
             <strong>not compressed</strong>
@@ -213,10 +215,15 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
 
     return <>{ messageTypes.map((messageType) => {
         const message = p.exchange[messageType];
+
+        if (
+            typeof message !== 'object' ||
+            !message?.body ||
+            !message.body.encodedByteLength ||
+            message.body.isFailed()
+        ) return null;
+
         const encodings = getEncodings(message);
-
-        if (typeof message !== 'object' || !message.body.encodedByteLength) return null;
-
         const encodedBodySize = message.body.encodedByteLength;
         const decodedBody = message.body.decodedData;
         const decodedBodySize = decodedBody ? decodedBody.byteLength : 0;
