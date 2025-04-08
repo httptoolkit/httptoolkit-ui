@@ -54,16 +54,6 @@ function getSuggestionDescriptions(input: string) {
         );
 }
 
-async function decodeBodies(events: CollectedEvent[]) {
-    events.forEach(e => {
-        if (e.isHttp()) {
-            e.request.body.decodedData;
-            if (e.isSuccessfulExchange()) e.response.body.decodedData;
-        }
-    });
-    await delay(1);
-}
-
 describe("Search filter model integration test:", () => {
     describe("Simple filter usage", () => {
         it("should suggest all filter names given no input", () => {
@@ -1107,8 +1097,6 @@ describe("Search filter model integration test:", () => {
                 getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
             ];
 
-            await decodeBodies(exampleEvents);
-
             const matchedEvents = exampleEvents.filter(e =>
                 filter.matches(e)
             ) as HttpExchange[];
@@ -1146,8 +1134,6 @@ describe("Search filter model integration test:", () => {
                 }),
                 getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
             ];
-
-            await decodeBodies(exampleEvents);
 
             const matchedEvents = exampleEvents.filter(e =>
                 filter.matches(e)
@@ -1242,10 +1228,6 @@ describe("Search filter model integration test:", () => {
             const matchedEvents = exampleEvents.filter(e =>
                 filter.matches(e)
             ) as HttpExchange[];
-
-            // We filter without decoding - just useful here to get the data itself
-            // to assert on afterwards:
-            await decodeBodies(matchedEvents);
 
             expect(
                 matchedEvents.map((e) =>
