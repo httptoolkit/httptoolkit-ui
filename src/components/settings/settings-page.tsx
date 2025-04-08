@@ -3,7 +3,7 @@ import * as React from 'react';
 import { observer, inject } from "mobx-react";
 import * as dedent from 'dedent';
 import {
-    distanceInWordsStrict, distanceInWordsToNow, format
+    distanceInWordsStrict, distanceInWordsToNow, format, isFuture
 } from 'date-fns';
 import { SubscriptionPlans } from '@httptoolkit/accounts';
 
@@ -180,7 +180,9 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                             If retried payments fail your subscription will be cancelled.
                                         `}
                                     >Past due <WarningIcon /></strong>,
-                                    'deleted': 'Cancelled'
+                                    'deleted': sub.expiry && isFuture(sub.expiry)
+                                        ? `Active (until ${sub.expiry.toLocaleDateString()})`
+                                        : 'Cancelled'
                                 }[sub.status]) || 'Unknown'
                             }
                             { isAccountUpdateInProcess &&
