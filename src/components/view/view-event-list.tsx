@@ -412,7 +412,7 @@ const ExchangeRow = inject('uiStore')(observer(({
             } request ${
                 response === 'aborted' || exchange.isWebSocket()
                     ? '' // Stated by the category already
-                : exchange.isBreakpointed
+                : exchange.downstream.isBreakpointed
                     ? 'waiting at a breakpoint'
                 : !response
                     ? 'waiting for a response'
@@ -439,7 +439,7 @@ const ExchangeRow = inject('uiStore')(observer(({
             {
                 response === 'aborted'
                     ? <StatusCode status={'aborted'} />
-                : exchange.isBreakpointed
+                : exchange.downstream.isBreakpointed
                     ? <WarningIcon title='Breakpointed, waiting to be resumed' />
                 : exchange.isWebSocket() && response?.statusCode === 101
                     ? <StatusCode // Special UI for accepted WebSockets

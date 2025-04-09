@@ -2,11 +2,10 @@ import * as React from 'react';
 import { action } from 'mobx';
 import { observer, inject } from 'mobx-react';
 
-import { CollectedEvent } from '../../../types';
+import { CollectedEvent, ViewableEvent, HttpExchangeView } from '../../../types';
 import { styled, css } from '../../../styles';
 import { Ctrl } from '../../../util/ui';
 
-import { HttpExchange } from '../../../model/http/exchange';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 
@@ -120,20 +119,26 @@ export const HttpDetailsFooter = inject('rulesStore')(
         (props: {
             rulesStore?: RulesStore,
 
-            event: CollectedEvent,
+            event: ViewableEvent,
             onDelete: (event: CollectedEvent) => void,
             onScrollToEvent: (event: CollectedEvent) => void,
-            onBuildRuleFromExchange: (event: HttpExchange) => void,
-            onPrepareToResendRequest?: (event: HttpExchange) => void,
+            onBuildRuleFromExchange: (event: HttpExchangeView) => void,
+            onPrepareToResendRequest?: (event: HttpExchangeView) => void,
             isPaidUser: boolean,
             navigate: (url: string) => void
         }) => {
             const { event } = props;
             const { pinned } = event;
 
+            // Some actions require the collected event, not just the
+            // current view.
+            const collectedEvent = 'downstream' in event
+                ? event.downstream
+                : event;
+
             return <ButtonsContainer>
                 <ScrollToButton
-                    onClick={() => props.onScrollToEvent(props.event)}
+                    onClick={() => props.onScrollToEvent(collectedEvent)}
                 />
                 <PinButton
                     pinned={pinned}
@@ -143,7 +148,7 @@ export const HttpDetailsFooter = inject('rulesStore')(
                 />
                 <DeleteButton
                     pinned={pinned}
-                    onClick={() => props.onDelete(event)}
+                    onClick={() => props.onDelete(collectedEvent)}
                 />
 
                 {
@@ -154,13 +159,15 @@ export const HttpDetailsFooter = inject('rulesStore')(
                 <ModifyButton
                     isExchange={event.isHttp() && !event.isWebSocket()}
                     isPaidUser={props.isPaidUser}
-                    onClick={() => props.onBuildRuleFromExchange(props.event as HttpExchange)}
+                    onClick={() => props.onBuildRuleFromExchange(props.event as HttpExchangeView)}
                 />
                 { props.onPrepareToResendRequest &&
                     <SendButton
                         isExchange={event.isHttp() && !event.isWebSocket()}
                         isPaidUser={props.isPaidUser}
-                        onClick={() => props.onPrepareToResendRequest!(props.event as HttpExchange)}
+                        onClick={() => props.onPrepareToResendRequest!(
+                            props.event as HttpExchangeView
+                        )}
                     />
                 }
             </ButtonsContainer>;

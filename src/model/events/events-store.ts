@@ -45,7 +45,7 @@ import { parseHar } from '../http/har';
 
 import { FailedTlsConnection } from '../tls/failed-tls-connection';
 import { TlsTunnel } from '../tls/tls-tunnel';
-import { HttpExchange } from '../http/exchange';
+import { HttpExchange } from '../http/http-exchange';
 import { WebSocketStream } from '../websockets/websocket-stream';
 import { RTCConnection } from '../webrtc/rtc-connection';
 import { RTCDataChannel } from '../webrtc/rtc-data-channel';
@@ -314,7 +314,7 @@ export class EventsStore {
         const existingEvent = this.eventsList.getById(request.id);
         if (existingEvent) return;
 
-        const exchange = new HttpExchange(this.apiStore, request);
+        const exchange = new HttpExchange(request, this.apiStore);
         this.eventsList.push(exchange);
     }
 
@@ -344,7 +344,7 @@ export class EventsStore {
         if (existingEvent) {
             event = existingEvent as HttpExchange
         } else {
-            event = new HttpExchange(this.apiStore, { ...request });
+            event = new HttpExchange({ ...request }, this.apiStore);
             // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
             this.eventsList.push(event);
         }
@@ -380,7 +380,7 @@ export class EventsStore {
 
     @action
     private addWebSocketRequest(request: InputCompletedRequest) {
-        const stream = new WebSocketStream(this.apiStore, { ...request });
+        const stream = new WebSocketStream({ ...request }, this.apiStore);
         // ^ This mutates request to use it, so we have to shallow-clone to use it below too
 
         stream.updateFromCompletedRequest(request, this.getMatchedRule(request));
@@ -476,14 +476,14 @@ export class EventsStore {
             return;
         }
 
-        const exchange = new HttpExchange(this.apiStore, {
+        const exchange = new HttpExchange({
             ...error.request,
             protocol: error.request.protocol || '',
             method: error.request.method || '',
             url: error.request.url || `${error.request.protocol || 'http'}://`,
             path: error.request.path || '/',
             headers: error.request.headers
-        });
+        }, this.apiStore);
 
         if (error.response === 'aborted') {
             exchange.markAborted(error.request);
@@ -511,9 +511,12 @@ export class EventsStore {
             case 'passthrough-request-body':
                 exchange.updateFromUpstreamRequestBody(event.eventData);
                 break;
-            // Only request events handled for now
             case 'passthrough-response-head':
+                exchange.updateFromUpstreamResponseHead(event.eventData);
+                break;
             case 'passthrough-response-body':
+                exchange.updateFromUpstreamResponseBody(event.eventData);
+                break;
             case 'passthrough-abort':
                 break;
         }
@@ -676,7 +679,7 @@ export class EventsStore {
 
     @action
     recordSentRequest(request: InputCompletedRequest): HttpExchange {
-        const exchange = new HttpExchange(this.apiStore, { ...request });
+        const exchange = new HttpExchange({ ...request }, this.apiStore);
         // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
         exchange.updateFromCompletedRequest(request, false);
 

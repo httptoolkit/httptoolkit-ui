@@ -4,7 +4,7 @@ import { observer, inject } from 'mobx-react';
 import { get } from 'typesafe-get';
 
 import { styled } from '../../../styles';
-import { HttpExchange, ExchangeMessage } from '../../../types';
+import { ExchangeMessage, HttpExchangeView } from '../../../types';
 
 import { getReadableSize } from '../../../util/buffer';
 import { asHeaderArray } from '../../../util/headers';
@@ -36,7 +36,7 @@ import { ContentLabelBlock, Markdown } from '../../common/text-content';
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 
 interface HttpPerformanceCardProps extends CollapsibleCardProps {
-    exchange: HttpExchange;
+    exchange: HttpExchangeView;
     accountStore?: AccountStore;
 }
 
@@ -208,7 +208,7 @@ const CompressionOptionsTips = styled(PerformanceExplanation)`
     font-style: italic;
 `;
 
-const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
+const CompressionPerformance = observer((p: { exchange: HttpExchangeView }) => {
     const messageTypes: Array<'request' | 'response'> = ['request', 'response'];
     const clientAcceptedEncodings = asHeaderArray(p.exchange.request.headers['accept-encoding'])
         .map(getEncodingName);
@@ -292,7 +292,7 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
     }) }</>;
 });
 
-const CachingPerformance = observer((p: { exchange: HttpExchange }) => {
+const CachingPerformance = observer((p: { exchange: HttpExchangeView }) => {
     if (typeof p.exchange.response !== 'object') return null;
 
     const cacheability = explainCacheability(p.exchange);

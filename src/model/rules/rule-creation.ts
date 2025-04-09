@@ -8,10 +8,10 @@ import {
 import * as querystring from 'querystring';
 
 import {
-    HttpExchange,
     HtkRequest,
     HtkResponse,
     Headers,
+    HttpExchangeView,
 } from '../../types';
 import { tryParseJson } from '../../util';
 import { byteLength } from '../../util/buffer';
@@ -155,7 +155,7 @@ export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest
     };
 }
 
-export function buildRuleFromExchange(exchange: HttpExchange): HtkRule {
+export function buildRuleFromExchange(exchange: HttpExchangeView): HtkRule {
     const { statusCode, statusMessage, headers } = exchange.isSuccessfulExchange()
         ? exchange.response
         : { statusCode: 200, statusMessage: "OK", headers: {} as Headers };

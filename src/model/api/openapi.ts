@@ -15,7 +15,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
 import {
-    ViewableHttpExchange,
+    HttpExchangeView,
     ExchangeMessage,
     HtkRequest,
     HtkResponse,
@@ -287,7 +287,7 @@ function stripTags(input: string | undefined): string | undefined {
 }
 
 export class OpenApiExchange implements ApiExchange {
-    constructor(api: OpenApiMetadata, exchange: ViewableHttpExchange) {
+    constructor(api: OpenApiMetadata, exchange: HttpExchangeView) {
         const { request } = exchange;
         this.service = new OpenApiService(api.spec);
 

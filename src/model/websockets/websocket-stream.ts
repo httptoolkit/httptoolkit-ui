@@ -11,14 +11,14 @@ import {
 
 import { ApiStore } from '../api/api-store';
 import { StreamMessage } from '../events/stream-message';
-import { HttpExchange } from '../http/exchange';
+import { HttpExchange } from '../http/http-exchange';
 
 // A websocket stream is an HTTP exchange (the initial setup, or even rejection), but
 // may include a series of many ongoing messages and a final websocket close event,
 // if the initial websocket connection is successful.
 export class WebSocketStream extends HttpExchange {
-    constructor(apiStore: ApiStore, request: InputRequest) {
-        super(apiStore, request);
+    constructor(request: InputRequest, apiStore: ApiStore) {
+        super(request, apiStore);
         this.searchIndex += '\nwebsocket';
     }
 

@@ -3,7 +3,7 @@ import { action, observable, runInAction, when } from 'mobx';
 import { logError } from '../../errors';
 import { UnreachableCheck } from '../../util/error';
 
-import { ViewableHttpExchange } from '../../types';
+import { HttpExchangeView } from '../../types';
 
 import { OpenApiExchange } from '../api/openapi';
 import { parseRpcApiExchange } from '../api/jsonrpc';
@@ -13,7 +13,7 @@ import { ApiStore } from '../api/api-store';
 export class ApiDetector {
 
     constructor(
-        private exchange: ViewableHttpExchange,
+        private exchange: HttpExchangeView,
         apiStore: ApiStore
     ) {
         apiStore.getApi(exchange.request)

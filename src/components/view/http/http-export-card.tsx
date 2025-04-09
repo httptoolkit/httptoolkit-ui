@@ -3,7 +3,7 @@ import { action, computed } from "mobx";
 import { inject, observer } from "mobx-react";
 import dedent from 'dedent';
 
-import { HttpExchange } from '../../../types';
+import { HttpExchangeView } from '../../../types';
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 import { logError } from '../../../errors';
@@ -33,7 +33,7 @@ import { DocsLink } from '../../common/docs-link';
 import { SelfSizedEditor } from '../../editor/base-editor';
 
 interface ExportCardProps extends CollapsibleCardProps  {
-    exchange: HttpExchange;
+    exchange: HttpExchangeView;
     accountStore?: AccountStore;
     uiStore?: UiStore;
 }
@@ -69,7 +69,7 @@ const snippetEditorOptions = {
 };
 
 const ExportSnippetEditor = observer((p: {
-    exchange: HttpExchange
+    exchange: HttpExchangeView
     exportOption: SnippetOption
 }) => {
     const { target, client, link, description } = p.exportOption;
@@ -122,7 +122,7 @@ const ExportSnippetEditor = observer((p: {
 
 const ExportHarPill = styled(observer((p: {
     className?: string,
-    exchange: HttpExchange
+    exchange: HttpExchangeView
 }) =>
     <PillButton
         className={p.className}

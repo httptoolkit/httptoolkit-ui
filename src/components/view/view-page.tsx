@@ -13,7 +13,7 @@ import {
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { WithInjected, CollectedEvent } from '../../types';
+import { WithInjected, CollectedEvent, HttpExchangeView } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 import { useHotkeys, isEditable, windowSize, AriaCtrlCmd, Ctrl } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
@@ -27,7 +27,7 @@ import { EventsStore } from '../../model/events/events-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 import { SendStore } from '../../model/send/send-store';
-import { HttpExchange } from '../../model/http/exchange';
+import { HttpExchange } from '../../model/http/http-exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
@@ -503,7 +503,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onBuildRuleFromExchange(exchange: HttpExchange) {
+    onBuildRuleFromExchange(exchange: HttpExchangeView) {
         const { rulesStore, navigate } = this.props;
 
         if (!this.props.accountStore!.isPaidUser) return;
@@ -514,7 +514,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    async onPrepareToResendRequest(exchange: HttpExchange) {
+    async onPrepareToResendRequest(exchange: HttpExchangeView) {
         const { sendStore, navigate } = this.props;
 
         if (!this.props.accountStore!.isPaidUser) return;
@@ -558,9 +558,9 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onClear(confirmRequired = true) {
         const { events } = this.props.eventsStore;
-        const someEventsPinned = _.some(events, { pinned: true });
+        const someEventsPinned = events.some(e => e.pinned === true);
         const allEventsPinned = events.length > 0 &&
-            _.every(events, { pinned: true });
+            events.every(e => e.pinned === true);
 
         if (allEventsPinned) {
             // We always confirm deletion of pinned exchanges:

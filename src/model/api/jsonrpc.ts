@@ -10,7 +10,7 @@ import {
     OpenrpcDocument
 } from "@open-rpc/meta-schema";
 import { SchemaObject } from "openapi-directory";
-import { HtkResponse, Html, ViewableHttpExchange } from "../../types";
+import { HtkResponse, Html, HttpExchangeView } from "../../types";
 import { ErrorLike, isErrorLike } from "../../util/error";
 import { fromMarkdown } from "../ui/markdown";
 import {
@@ -34,7 +34,7 @@ export interface OpenRpcMetadata {
 
 export async function parseRpcApiExchange(
     api: OpenRpcMetadata,
-    exchange: ViewableHttpExchange
+    exchange: HttpExchangeView
 ): Promise<JsonRpcApiExchange> {
     try {
         const body = await exchange.request.body.waitForDecoding();
@@ -78,7 +78,7 @@ export class JsonRpcApiExchange implements ApiExchange {
 
     constructor(
         _api: OpenRpcMetadata,
-        _exchange: ViewableHttpExchange,
+        _exchange: HttpExchangeView,
         private _rpcMethod: MatchedOperation | ErrorLike
     ) {
         this.service = new JsonRpcApiService(_api);

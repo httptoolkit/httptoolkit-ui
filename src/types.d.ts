@@ -35,11 +35,9 @@ import type { ParsedUrl } from './util/url';
 
 import type { FailedTlsConnection } from './model/tls/failed-tls-connection';
 import type { TlsTunnel } from './model/tls/tls-tunnel';
-import type {
-    HttpExchange,
-    ViewableHttpExchange,
-    HttpVersion
-} from './model/http/exchange';
+import type { HttpExchange, HttpVersion } from './model/http/http-exchange';
+import type { HttpExchangeView } from './model/http/http-exchange-views';
+
 import type { WebSocketStream } from './model/websockets/websocket-stream';
 import type { RTCConnection } from './model/webrtc/rtc-connection';
 import type { RTCDataChannel } from './model/webrtc/rtc-data-channel';
@@ -224,7 +222,7 @@ export type {
     FailedTlsConnection,
     TlsTunnel,
     HttpExchange,
-    ViewableHttpExchange,
+    HttpExchangeView,
     WebSocketStream,
     RTCConnection,
     RTCDataChannel,
@@ -238,6 +236,10 @@ export type CollectedEvent =
     | RTCConnection
     | RTCDataChannel
     | RTCMediaTrack;
+
+export type ViewableEvent =
+    | CollectedEvent
+    | HttpExchangeView;
 
 export type ExchangeMessage = HtkRequest | HtkResponse;
 export type RTCStream = RTCDataChannel | RTCMediaTrack;

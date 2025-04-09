@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { observer, inject } from 'mobx-react';
 
-import { HttpExchange } from '../../../types';
+import { HttpExchangeView } from '../../../types';
 import { styled } from '../../../styles';
 
 import { UiStore } from '../../../model/ui/ui-store';
@@ -21,7 +21,7 @@ const ErrorContent = styled(ContentMonoValue)`
 
 export const HttpAbortedResponseCard = inject('uiStore')(observer((p: {
     cardProps: CollapsibleCardProps,
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     uiStore?: UiStore
 }) =>
     <CollapsibleCard {...p.cardProps} direction='left'>

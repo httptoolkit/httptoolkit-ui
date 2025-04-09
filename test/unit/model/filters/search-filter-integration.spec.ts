@@ -7,9 +7,10 @@ import { expect } from '../../../test-setup';
 import { delay } from '../../../../src/util/promise';
 import { decodeBody } from '../../../../src/services/ui-worker-api';
 
-import { CollectedEvent, HtkResponse } from '../../../../src/types';
+import { HtkResponse } from '../../../../src/types';
 import { FailedTlsConnection } from '../../../../src/model/tls/failed-tls-connection';
-import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
+import { HttpExchange } from '../../../../src/model/http/http-exchange';
+import { SuccessfulExchange } from '../../../../src/model/http/http-exchange-views';
 
 import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
 

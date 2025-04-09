@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
-import { observable, computed, action, runInAction, when } from 'mobx';
+import { observable, computed, action, runInAction, when, autorun } from 'mobx';
 
 import {
+    HttpExchangeView,
     HtkRequest,
     HtkResponse,
     InputRequest,
@@ -25,7 +26,6 @@ import { HTKEventBase } from '../events/event-base';
 import { HandlerClassKey, HtkRule, getRulePartKey } from '../rules/rules';
 
 import { ApiStore } from '../api/api-store';
-import { ApiExchange } from '../api/api-interfaces';
 import { ApiDetector } from './api-detector';
 
 import { HttpBody } from './http-body';
@@ -37,6 +37,13 @@ import {
     getDummyResponseBreakpoint
 } from './exchange-breakpoint';
 import { UpstreamHttpExchange } from './upstream-exchange';
+import {
+    CompletedExchange,
+    CompletedRequest,
+    HttpExchangeOriginalView,
+    HttpExchangeTransformedView,
+    SuccessfulExchange
+} from './http-exchange-views';
 import { ObservableCache } from '../observable-cache';
 
 const HTTP_VERSIONS = [0.9, 1.0, 1.1, 2.0, 3.0] as const;
@@ -105,63 +112,13 @@ function addResponseMetadata(response: InputResponse): HtkResponse {
     }) as HtkResponse;
 }
 
-export type CompletedRequest = Omit<ViewableHttpExchange, 'request'> & {
-    matchedRule: { id: string, handlerRype: HandlerClassKey } | false
-};
-export type CompletedExchange = Omit<ViewableHttpExchange, 'response'> & {
-    response: HtkResponse | 'aborted'
-};
-export type SuccessfulExchange = Omit<ViewableHttpExchange, 'response'> & {
-    response: HtkResponse
-};
 
-/**
- * HttpExchanges actually come in two types: downstream (client input to Mockttp)
- * and upstream (Mockttp extra data for what we really forwarded - e.g. after transform).
- * The events actually stored in the event store's list are always downstream
- * exchanges, but in many cases elsewhere either can be provided.
- *
- * Both define the exact same interface, and various higher-layer components
- * may switch which is passed to the final view components depending on user
- * configuration. Any code that just reads exchange data (i.e. which doesn't
- * update it from events, create/import exchanges, handle breakpoints, etc)
- * should generally use the ViewableHttpExchange readonly interface where possible.
- */
-export interface ViewableHttpExchange extends HTKEventBase {
+export class HttpExchange extends HTKEventBase implements HttpExchangeView {
 
-    get downstream(): HttpExchange;
-    /**
-     * Upstream is set if forwarded, but otherwise undefined
-     */
-    get upstream(): UpstreamHttpExchange | undefined;
-
-    get request(): HtkRequest;
-    get response(): HtkResponse | 'aborted' | undefined;
-    get abortMessage(): string | undefined;
-    get api(): ApiExchange | undefined;
-
-    get httpVersion(): HttpVersion;
-    get matchedRule(): { id: string, handlerStepTypes: HandlerClassKey[] } | false | undefined;
-    get tags(): string[];
-    get timingEvents(): TimingEvents;
-
-    isHttp(): this is ViewableHttpExchange;
-    isCompletedRequest(): this is CompletedRequest;
-    isCompletedExchange(): this is CompletedExchange;
-    isSuccessfulExchange(): this is SuccessfulExchange;
-    hasRequestBody(): this is CompletedRequest;
-    hasResponseBody(): this is SuccessfulExchange;
-
-    get requestBreakpoint(): RequestBreakpoint | undefined;
-    get responseBreakpoint(): ResponseBreakpoint | undefined;
-
-    hideErrors: boolean;
-
-}
-
-export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
-
-    constructor(apiStore: ApiStore, request: InputRequest) {
+    constructor(
+        request: InputRequest,
+        private readonly apiStore: ApiStore
+    ) {
         super();
 
         this.request = addRequestMetadata(request);
@@ -192,7 +149,41 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
     public readonly request: HtkRequest;
 
     public readonly downstream = this;
+
+    @observable
     public upstream: UpstreamHttpExchange | undefined;
+
+    // These are the same as HttpExchangeViewBase, but need to be copied here (because we're not a _view_,
+    // we're original, and TS has no proper mixin support).
+    @computed
+    get original(): HttpExchangeView {
+        if (!this.upstream) return this;
+
+        // If the request is original, then upstream generally is original`
+        if (!this.upstream.wasRequestTransformed) {
+            return this.upstream;
+        } else {
+            return new HttpExchangeOriginalView(this.downstream, this.apiStore);
+        }
+    }
+
+    @computed
+    get transformed(): HttpExchangeView {
+        if (!this.upstream) return this;
+
+        // If the response is original, then down generally is original
+        if (!this.upstream?.wasResponseTransformed) {
+            return this.upstream;
+        } else {
+            return new HttpExchangeTransformedView(this.downstream, this.apiStore);
+        }
+    }
+
+    // An autorun, which ensures the transformed & original views are kept observed & updated, for as long
+    // as this upstream exchange exists (until cleanup);
+    private computedKeepAlive = {
+        dispose: autorun(() => { this.original; this.transformed; })
+    };
 
     @observable
     // Undefined initially, defined for completed requests, false for 'not available'
@@ -271,14 +262,14 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
 
     updateFromUpstreamRequestHead(head: InputRuleEventDataMap['passthrough-request-head']) {
         if (!this.upstream) {
-            this.upstream = new UpstreamHttpExchange(this);
+            this.upstream = new UpstreamHttpExchange(this, this.apiStore);
         }
         this.upstream.updateWithRequestHead(head);
     }
 
     updateFromUpstreamRequestBody(body: InputRuleEventDataMap['passthrough-request-body']) {
         if (!this.upstream) {
-            this.upstream = new UpstreamHttpExchange(this);
+            this.upstream = new UpstreamHttpExchange(this, this.apiStore);
         }
         this.upstream.updateWithRequestBody(body);
     }
@@ -321,12 +312,29 @@ export class HttpExchange extends HTKEventBase implements ViewableHttpExchange {
             ..._.map(response.headers, (value, key) => `${key}: ${value}`),
             ..._.map(response.trailers, (value, key) => `${key}: ${value}`)
         ].join('\n').toLowerCase();
+
+        this.upstream?.updateAfterDownstreamResponse(this.response);
+    }
+
+    updateFromUpstreamResponseHead(head: InputRuleEventDataMap['passthrough-response-head']) {
+        if (!this.upstream) {
+            this.upstream = new UpstreamHttpExchange(this, this.apiStore);
+        }
+        this.upstream.updateWithResponseHead(head);
+    }
+
+    updateFromUpstreamResponseBody(body: InputRuleEventDataMap['passthrough-response-body']) {
+        if (!this.upstream) {
+            this.upstream = new UpstreamHttpExchange(this, this.apiStore);
+        }
+        this.upstream.updateWithResponseBody(body);
     }
 
     // Must only be called when the exchange will no longer be used. Ensures that large data is
     // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
     // Important: for safety, this leaves the exchange in a *VALID* but reset state - not a totally blank one.
     cleanup() {
+        this.computedKeepAlive.dispose();
         this.request.cache.clear();
         this.request.body.cleanup();
 

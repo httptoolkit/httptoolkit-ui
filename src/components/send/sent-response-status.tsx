@@ -9,7 +9,7 @@ import { getReadableSize } from '../../util/buffer';
 
 import { getStatusColor } from '../../model/events/categorization';
 import { getStatusMessage } from '../../model/http/http-docs';
-import { CompletedExchange, SuccessfulExchange } from '../../model/http/exchange';
+import { CompletedExchange, SuccessfulExchange } from '../../model/http/http-exchange-views';
 import { ErrorType } from '../../model/http/error-types';
 
 import { SendCardSection } from './send-card-section';

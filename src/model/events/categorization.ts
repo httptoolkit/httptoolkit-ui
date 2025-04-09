@@ -7,7 +7,7 @@ import { getHeaderValue } from '../../util/headers';
 import { getBaseContentType } from './content-types';
 
 import { HTKEventBase } from './event-base';
-import { ViewableHttpExchange, SuccessfulExchange } from '../http/exchange';
+import { HttpExchangeView, SuccessfulExchange } from '../http/http-exchange-views';
 
 export const getMessageBaseAcceptTypes = (message: ExchangeMessage) =>
     (getHeaderValue(message.headers, 'accept')?.split(',') || [])
@@ -16,7 +16,7 @@ export const getMessageBaseAcceptTypes = (message: ExchangeMessage) =>
 export const getMessageBaseContentType = (message: ExchangeMessage) =>
     getBaseContentType(getHeaderValue(message.headers, 'content-type'));
 
-const isMutatativeExchange = (exchange: ViewableHttpExchange) => _.includes([
+const isMutatativeExchange = (exchange: HttpExchangeView) => _.includes([
     'POST',
     'PATCH',
     'PUT',
@@ -183,7 +183,7 @@ const highlights = {
 };
 
 export function getSummaryColor(
-    exchangeOrCategory: ViewableHttpExchange | EventCategory
+    exchangeOrCategory: HttpExchangeView | EventCategory
 ): string {
     const category = typeof exchangeOrCategory === 'string' ?
         exchangeOrCategory : exchangeOrCategory.category;

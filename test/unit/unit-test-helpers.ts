@@ -1,6 +1,6 @@
 import * as dateFns from 'date-fns';
 import { SourceIcons } from '../../src/icons';
-import { HttpExchange } from '../../src/model/http/exchange';
+import { HttpExchange } from '../../src/model/http/http-exchange';
 import { HttpBody } from '../../src/model/http/http-body';
 import { FailedTlsConnection } from '../../src/model/tls/failed-tls-connection';
 import { HtkRequest, HtkResponse, TimingEvents } from '../../src/types';

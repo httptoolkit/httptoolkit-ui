@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
-import { HttpExchange, HtkRequest, HttpVersion } from '../../../types';
+import { HttpExchange, HtkRequest, HttpVersion, HttpExchangeView } from '../../../types';
 import { styled } from '../../../styles';
 import { PhosphorIcon } from '../../../icons';
 
@@ -149,7 +149,7 @@ const RawRequestDetails = (p: {
 }
 
 interface HttpRequestCardProps extends CollapsibleCardProps {
-    exchange: HttpExchange;
+    exchange: HttpExchangeView;
     matchedRuleData: {
         stepTypes: HandlerClassKey[],
         status: 'unchanged' | 'modified-types' | 'deleted'

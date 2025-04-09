@@ -41,6 +41,9 @@ export const rawHeadersToHeaders = (headers: RawHeaders): Headers =>
         return headersObj;
     }, {});
 
+export const withoutPseudoHeaders = (headers: RawHeaders): RawHeaders =>
+    headers.filter(([key]) => !key.startsWith(':'));
+
 /**
  * Get the header value for the given header key. Case insensitive. If there are multiple values,
  * this will return the last value. If there are no values or the headers themselves aren't defined,

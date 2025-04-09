@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { CollectedEvent } from '../../types';
+import { CollectedEvent, ViewableEvent } from '../../types';
 import { joinAnd } from '../../util/text';
 import { stringToBuffer } from '../../util/buffer';
 
@@ -32,7 +32,7 @@ import {
 
 export abstract class Filter {
 
-    abstract matches(event: CollectedEvent): boolean;
+    abstract matches(event: ViewableEvent): boolean;
     abstract toString(): string;
 
     constructor(

@@ -3,10 +3,10 @@ import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 
 import { saveFile } from "../../util/ui";
 
-import { HttpExchange } from "../http/exchange";
+import { HttpExchangeView } from "../../types";
 import { generateHarRequest, generateHar, ExtendedHarRequest } from '../http/har';
 
-export const exportHar = async (exchange: HttpExchange) => {
+export const exportHar = async (exchange: HttpExchangeView) => {
     const harContent = JSON.stringify(
         await generateHar([exchange], {
             bodySizeLimit: Infinity
@@ -22,17 +22,17 @@ export const exportHar = async (exchange: HttpExchange) => {
 };
 
 export function generateCodeSnippet(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding: true }
 ): Promise<string>;
 export function generateCodeSnippet(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     snippetFormat: SnippetOption,
     options?: { waitForBodyDecoding?: boolean }
 ): string;
 export function generateCodeSnippet(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding?: boolean } = {}
 ): string | Promise<string> {

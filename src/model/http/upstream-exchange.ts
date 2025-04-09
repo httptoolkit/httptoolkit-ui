@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { computed, observable } from 'mobx';
+import { IReactionDisposer, autorun, computed, observable } from 'mobx';
 
 import {
     HtkRequest,
@@ -8,23 +8,17 @@ import {
     HtkResponse
 } from '../../types';
 
-import { getHeaderValue, rawHeadersToHeaders } from '../../util/headers';
+import { getHeaderValue, rawHeadersToHeaders, withoutPseudoHeaders } from '../../util/headers';
 import { ParsedUrl } from '../../util/url';
 import { asBuffer } from '../../util/buffer';
 
 import { getContentType } from '../events/content-types';
 import { HttpBody } from './http-body';
-import {
-    ViewableHttpExchange,
-    HttpExchange,
-    parseHttpVersion,
-    CompletedRequest,
-    SuccessfulExchange,
-    CompletedExchange
-} from './exchange';
+import { HttpExchange, parseHttpVersion } from './http-exchange';
+import { HttpExchangeViewBase, HttpExchangeView } from './http-exchange-views';
 import { parseSource } from './sources';
-import { HTKEventBase } from '../events/event-base';
 import { ObservableCache } from '../observable-cache';
+import { ApiStore } from '../api/api-store';
 
 const upstreamRequestToUrl = (request: InputRuleEventDataMap['passthrough-request-head']): ParsedUrl => {
     const portString = request.port ? `:${request.port}` : '';
@@ -47,32 +41,39 @@ const upstreamRequestToUrl = (request: InputRuleEventDataMap['passthrough-reques
  * This class stores only the differences (to avoid duplicating message bodies etc in memory),
  * but exposes the result as a full HtkRequest/HtkResponse pair for easy usage elsewhere.
  */
-export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpExchange {
+export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpExchangeView {
 
-    constructor(
-        public readonly downstream: HttpExchange
-    ) {
-        super();
+    constructor(downstream: HttpExchange, apiStore: ApiStore) {
+        super(downstream, apiStore);
     }
 
-    readonly upstream: UpstreamHttpExchange = this;
+    // An autorun, which ensures the request & response are kept observed & updated for as long
+    // as this upstream exchange exists (until cleanup);
+    private computedKeepAlive = {
+        dispose: autorun(() => { this.request; this.response; })
+    };
+
+    get upstream(): UpstreamHttpExchange {
+        return this;
+    }
 
     @observable
     private upstreamHttpVersion: string | undefined;
 
     @observable
     private upstreamRequestData: {
-        url: ParsedUrl,
-        method: string,
-        rawHeaders: RawHeaders,
+        // Fields here are undefined if they're the same as the downstream request
+        url?: ParsedUrl,
+        method?: string,
+        rawHeaders?: RawHeaders,
         body?: HttpBody
     } | undefined;
 
     @observable
     private upstreamResponseData: {
-        statusCode: number,
-        statusMessage: string | undefined,
-        rawHeaders: RawHeaders,
+        statusCode?: number,
+        statusMessage?: string | undefined,
+        rawHeaders?: RawHeaders,
         body?: HttpBody
     } | undefined;
 
@@ -80,14 +81,8 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
     public get wasRequestTransformed() {
         if (!this.upstreamRequestData) return false;
 
-        const downstreamReq = this.downstream.request;
         const { url, method, rawHeaders, body } = this.upstreamRequestData;
-
-        if (url !== downstreamReq.parsedUrl) return true;
-        if (method !== downstreamReq.method) return true;
-        if (rawHeaders !== downstreamReq.rawHeaders) return true;
-
-        return false;
+        return !!(url || method || rawHeaders || body);
     }
 
     @computed
@@ -96,16 +91,13 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
 
         const downstreamRes = this.downstream.response;
         if (downstreamRes === undefined) return false; // Really: we don't know yet.
+
         if (downstreamRes === 'aborted') {
             return !!this.upstreamResponseData;
         }
 
         const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData;
-        if (statusCode !== downstreamRes.statusCode) return true;
-        if (statusMessage !== downstreamRes.statusMessage) return true;
-        if (!_.isEqual(rawHeaders, downstreamRes.rawHeaders)) return true;
-
-        return false;
+        return !!(statusCode || statusMessage || rawHeaders || body);
     }
 
     public get wasTransformed() {
@@ -162,38 +154,58 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
         const downstreamRes = this.downstream.response;
         if (!this.upstreamResponseData) return downstreamRes;
 
-        if (downstreamRes === undefined) return;
-        if (downstreamRes === 'aborted' && !this.wasResponseTransformed) {
-            return 'aborted';
+        if (downstreamRes === undefined) {
+            return;
+        } else if (downstreamRes === 'aborted') {
+            // Downstream was aborted, so upstream data (if any) is all we have
+
+            if (!this.wasRequestTransformed) return 'aborted';
+            const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData as
+                Required<typeof this.upstreamResponseData>; // If downstream is aborted, upstream data is complete
+
+            return {
+                id: this.id,
+                timingEvents: this.timingEvents,
+                tags: this.tags,
+
+                cache: new ObservableCache(),
+                contentType: getContentType(getHeaderValue(rawHeaders, 'content-type')) || 'text',
+
+                statusCode: statusCode,
+                statusMessage: statusMessage || '',
+                rawHeaders,
+                headers: rawHeadersToHeaders(rawHeaders),
+                body: body || new HttpBody({ body: Buffer.alloc(0) }, rawHeaders),
+                trailers: {},
+                rawTrailers: []
+            };
+        } else {
+            // We have downstream data, and upstream just for the cases that differ:
+            const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData;
+
+            return {
+                id: this.id,
+                timingEvents: this.timingEvents,
+                tags: this.tags,
+
+                cache: new ObservableCache(),
+                contentType: getContentType(getHeaderValue(rawHeaders, 'content-type')) || 'text',
+
+                statusCode: statusCode || downstreamRes.statusCode,
+                statusMessage: statusMessage || '',
+                rawHeaders: rawHeaders || downstreamRes.rawHeaders,
+                headers: rawHeaders
+                    ? rawHeadersToHeaders(rawHeaders)
+                    : downstreamRes.headers,
+                body: body ||
+                    downstreamRes.body ||
+                    new HttpBody({ body: Buffer.alloc(0) }, rawHeaders || downstreamRes.rawHeaders),
+
+                // We don't support transforming trailers:
+                trailers: downstreamRes.trailers || {},
+                rawTrailers: downstreamRes.rawTrailers || [],
+            };
         }
-
-        const downstreamResData = downstreamRes === 'aborted'
-            ? {} as Partial<HtkResponse>
-            : downstreamRes;
-
-        const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData;
-
-        return {
-            id: this.id,
-            timingEvents: this.timingEvents,
-            tags: this.tags,
-
-            cache: new ObservableCache(),
-            contentType: getContentType(getHeaderValue(rawHeaders, 'content-type')) || 'text',
-
-            statusCode,
-            statusMessage: statusMessage || '',
-            rawHeaders,
-            headers: rawHeadersToHeaders(rawHeaders),
-            body: body ||
-                downstreamResData.body ||
-                new HttpBody({ body: Buffer.alloc(0) }, rawHeaders),
-
-            // We don't support transforming trailers:
-            trailers: downstreamResData.trailers || {},
-            rawTrailers: downstreamResData.rawTrailers || [],
-
-        };
     }
 
     updateWithRequestHead(upstreamRequest: InputRuleEventDataMap['passthrough-request-head']) {
@@ -207,17 +219,24 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
 
         // If headers are equivalent, store the exact originals (saves memory, makes it easy to
         // detect if there was a difference later).
-        const rawHeaders = _.isEqual(upstreamRequest.rawHeaders, effectiveDownstreamRawHeaders)
-            ? effectiveDownstreamRawHeaders
-            : upstreamRequest.rawHeaders;
+        const rawHeaders = !_.isEqual(
+            withoutPseudoHeaders(upstreamRequest.rawHeaders),
+            withoutPseudoHeaders(effectiveDownstreamRawHeaders)
+        )
+            ? upstreamRequest.rawHeaders
+            : undefined; // If unchanged, we drop the duplicate and just read through to downstream
 
-        const url = upstreamUrl.toString() === this.downstream.request.parsedUrl.toString()
-            ? this.downstream.request.parsedUrl
-            : upstreamUrl;
+        const url = upstreamUrl.toString() !== this.downstream.request.parsedUrl.toString()
+            ? upstreamUrl
+            : undefined
+
+        const method = upstreamRequest.method !== this.downstream.request.method
+            ? upstreamRequest.method
+            : undefined;
 
         this.upstreamRequestData = {
             url,
-            method: upstreamRequest.method,
+            method,
             rawHeaders
         };
     }
@@ -225,8 +244,8 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
     updateWithResponseHead(upstreamResponse: InputRuleEventDataMap['passthrough-response-head']) {
         // This is trickier than the request case, because it arrives before the downstream data!
         // Worse still, we can't tell which bits of the head are overridden initially - not until
-        // the real response arrives! How inconvenient.
-
+        // the real response arrives! How inconvenient. To handle this, we initially store everything,
+        // and then we clear it up once the downstream response arrives.
         this.upstreamResponseData = {
             statusCode: upstreamResponse.statusCode,
             statusMessage: upstreamResponse.statusMessage || '',
@@ -238,7 +257,8 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
     updateWithRequestBody(upstreamRequestBody: InputRuleEventDataMap['passthrough-request-body']) {
         if (!upstreamRequestBody.overridden) return;
 
-        const headers = this.upstreamRequestData!.rawHeaders;
+        const headers = this.upstreamRequestData!.rawHeaders
+            ?? this.downstream.request.rawHeaders;
         this.upstreamRequestData!.body = new HttpBody({
             body: asBuffer(upstreamRequestBody.rawBody!)
         }, headers);
@@ -247,7 +267,10 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
     updateWithResponseBody(upstreamResponseData: InputRuleEventDataMap['passthrough-response-body']) {
         if (!upstreamResponseData.overridden) return;
 
-        const headers = this.upstreamResponseData!.rawHeaders;
+        const headers = this.upstreamResponseData?.rawHeaders
+            || (this.downstream.isSuccessfulExchange() && this.downstream.response.rawHeaders)
+            || [];
+
         // We're storing a full copy of the response body here, but only in the case it was actually
         // overridden, so this shouldn't happen much.
         this.upstreamResponseData!.body = new HttpBody({
@@ -255,77 +278,44 @@ export class UpstreamHttpExchange extends HTKEventBase implements ViewableHttpEx
         }, headers);
     }
 
-    isHttp() {
-        return true;
+
+    // Once the downstream response arrives, we can clear up our upstream data to store
+    // only the data that's actually different.
+    updateAfterDownstreamResponse(response: HtkResponse | 'aborted') {
+        if (!this.upstreamResponseData) return;
+        if (response === 'aborted') return;
+
+        if (this.upstreamResponseData.statusCode === response.statusCode) {
+            delete this.upstreamResponseData.statusCode;
+        }
+
+        if (this.upstreamResponseData.statusMessage === response.statusMessage) {
+            delete this.upstreamResponseData.statusMessage;
+        }
+
+        if (_.isEqual(
+            withoutPseudoHeaders(this.upstreamResponseData.rawHeaders ?? []),
+            withoutPseudoHeaders(response.rawHeaders)
+        )) {
+            delete this.upstreamResponseData.rawHeaders;
+        }
     }
 
-    isCompletedRequest(): this is CompletedRequest {
-        return this.downstream.isCompletedRequest();
-    }
-
-    isCompletedExchange(): this is CompletedExchange {
-        return !!this.response;
-    }
-
-    isSuccessfulExchange(): this is SuccessfulExchange {
-        return this.isCompletedExchange() && this.response !== 'aborted';
-    }
-
-    hasRequestBody(): this is CompletedRequest {
-        return this.isCompletedRequest() && this.request.body.encodedByteLength > 0;
-    }
-
-    hasResponseBody(): this is SuccessfulExchange {
-        return this.isSuccessfulExchange() &&
-            (this.response as HtkResponse).body.encodedByteLength > 0;
-    }
 
     get abortMessage() {
         return this.downstream.abortMessage;
     }
 
-    // Various stub/mirror fields used for compatibility with downstream exchanges:
 
-    get id() {
-        return this.downstream.id;
-    }
-
-    get matchedRule() {
-        return this.downstream.matchedRule;
-    }
-
-    get searchIndex() {
-        return this.downstream.searchIndex;
-    }
-
-    get tags() {
-        return this.downstream.tags;
-    }
-
-    get timingEvents() {
-        return this.downstream.timingEvents;
-    }
-
-    get pinned() { return this.downstream.pinned; }
-    set pinned(value: boolean) { this.downstream.pinned = value; }
-
-    get hideErrors() { return this.downstream.hideErrors; }
-    set hideErrors(value: boolean) { this.downstream.hideErrors = value; }
-
-    readonly requestBreakpoint = undefined;
-    readonly responseBreakpoint = undefined;
-
-    get api() {
-        return this.downstream.api;
-    }
 
     cleanup() {
+        this.computedKeepAlive.dispose();
         this.request.cache.clear();
         this.request.body.cleanup();
 
         if (this.isSuccessfulExchange()) {
-            this.response.cache.clear();
-            this.response.body.cleanup();
+            this.response?.cache.clear();
+            this.response?.body.cleanup();
         }
     }
 

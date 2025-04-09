@@ -10,12 +10,13 @@ import {
     HtkRequest,
     HarRequest,
     HarResponse,
-    HttpExchange,
     CollectedEvent,
     TimingEvents,
     FailedTlsConnection,
     InputWebSocketMessage,
-    TlsSocketMetadata
+    TlsSocketMetadata,
+    ViewableEvent,
+    HttpExchangeView
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
@@ -100,11 +101,11 @@ export type HarTlsErrorEntry = {
 }
 
 export async function generateHar(
-    events: ReadonlyArray<CollectedEvent>,
+    events: readonly ViewableEvent[],
     options: HarGenerationOptions = { bodySizeLimit: HAR_BODY_SIZE_LIMIT }
 ): Promise<Har> {
     const [exchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [
-        HttpExchange[], CollectedEvent[]
+        HttpExchangeView[], CollectedEvent[]
     ];
 
     const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
@@ -309,7 +310,7 @@ function generateHarParamsFromParsedQuery(query: querystring.ParsedUrlQuery): Ha
 }
 
 async function generateHarResponse(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     options: HarGenerationOptions
 ): Promise<HarFormat.Response> {
     const { request, response } = exchange;
@@ -371,7 +372,7 @@ async function generateHarResponse(
     };
 }
 
-function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
+function getSourcesAsHarPages(exchanges: HttpExchangeView[]): HarFormat.Page[] {
     const exchangesBySource = _.groupBy(exchanges, (e) =>
         e.request.source.summary
     );
@@ -391,7 +392,7 @@ function getSourcesAsHarPages(exchanges: HttpExchange[]): HarFormat.Page[] {
 }
 
 async function generateHarHttpEntry(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     options: HarGenerationOptions
 ): Promise<HarEntry> {
     const { timingEvents } = exchange;

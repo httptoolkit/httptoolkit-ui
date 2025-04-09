@@ -64,6 +64,12 @@ const isSendRequestCard = (key: SendCardKey): key is 'requestHeaders' | 'request
 const isSentResponseCard = (key: SendCardKey): key is 'responseHeaders' | 'responseBody' =>
     key.startsWith('response');
 
+export type ContentPerspective =
+    | 'client' // What did the client send (original) & receive (after transform)
+    | 'server' // What did the server receive (after transform) & send (original)?
+    | 'transformed' // What was the request & resposne after both transforms?
+    | 'original' // What was the request & response before transforms?
+
 const SEND_REQUEST_CARD_KEYS = SEND_CARD_KEYS.filter(isSendRequestCard);
 const SENT_RESPONSE_CARD_KEYS = SEND_CARD_KEYS.filter(isSentResponseCard);
 
@@ -209,6 +215,14 @@ export class UiStore {
     // applied, not always (to avoid animating expanded cards when they're rendered e.g. when selecting a request).
     @observable
     private animatedExpansionCard: string | undefined;
+
+    /**
+     * For both requests & responses, there are two different ways to look at them (=4 perspectives in total). It
+     * depends on the use case (mostly: are you collecting data, or exploring behaviours) but this field changes which
+     * format is shown in the right-hand UI pane. Note that the list view always still shows the original values.
+     */
+    @observable
+    contentPerspective: ContentPerspective = 'original';
 
     // Store the view details cards state here, so that they persist
     // when moving away from the page or deselecting all traffic.
