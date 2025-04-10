@@ -149,7 +149,7 @@ export default merge(common, {
                     'connect-src': [
                         "'self'", 'data:',
                         'http://127.0.0.1:45456', 'http://127.0.0.1:45457', 'ws://127.0.0.1:45456',
-                        'https://*.httptoolkit.tech', 'https://*.sentry.io'
+                        'https://*.httptoolkit.tech'
                     ],
                     'report-uri': CSP_REPORT_URL,
                     'report-to': 'csp-endpoint'
