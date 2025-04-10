@@ -129,9 +129,9 @@ export class AccountStore {
         this.user = yield getLatestUserData();
         this.accountDataLastUpdated = Date.now();
 
-        // Include the user email in error reports whilst they're logged in.
+        // Include the user id in error reports whilst they're logged in.
         // Useful generally, but especially for checkout/subscription issues.
-        logErrorsAsUser(this.user.email);
+        logErrorsAsUser(this.user.userId);
 
         if (this.user.banned) {
             alert('Your account has been blocked for abuse. Please contact help@httptoolkit.com.');
