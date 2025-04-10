@@ -1,4 +1,6 @@
 {$DOMAIN:http://localhost} {
+    log
+
     encode zstd gzip
 
     header *.wasm Content-Type "application/wasm"
