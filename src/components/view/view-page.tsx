@@ -114,7 +114,7 @@ const ViewPageKeyboardShortcuts = (props: {
         }
     }, [selectedEvent, props.onBuildRuleFromExchange, props.isPaidUser]);
 
-    useHotkeys('Ctrl+Delete, Cmd+Delete', (event) => {
+    useHotkeys('Ctrl+Delete, Cmd+Delete, Ctrl+Backspace, Cmd+Backspace', (event) => {
         if (isEditable(event.target)) return;
 
         if (selectedEvent) {
@@ -122,7 +122,7 @@ const ViewPageKeyboardShortcuts = (props: {
         }
     }, [selectedEvent, props.onDelete]);
 
-    useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete', (event) => {
+    useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete, Ctrl+Shift+Backspace, Cmd+Shift+Backspace', (event) => {
         props.onClear();
         event.preventDefault();
     }, [props.onClear]);
