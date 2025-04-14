@@ -381,7 +381,6 @@ export class UiStore {
     toggleSettingsCardCollapsed(key: SettingsCardKey) {
         const cardState = this.settingsCardStates[key];
         cardState.collapsed = !cardState.collapsed;
-        this.expandedViewCard = undefined;
     }
 
     @action.bound
