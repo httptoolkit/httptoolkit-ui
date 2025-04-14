@@ -222,7 +222,7 @@ export class UiStore {
      * format is shown in the right-hand UI pane. Note that the list view always still shows the original values.
      */
     @observable
-    contentPerspective: ContentPerspective = 'original';
+    contentPerspective: ContentPerspective = 'transformed';
 
     // Store the view details cards state here, so that they persist
     // when moving away from the page or deselecting all traffic.

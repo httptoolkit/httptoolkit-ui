@@ -159,7 +159,8 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
     get original(): HttpExchangeView {
         if (!this.upstream) return this;
 
-        // If the request is original, then upstream generally is original`
+        // If the request is original, then upstream data matches original data
+        // I.e. only possible transform was after all upstream data
         if (!this.upstream.wasRequestTransformed) {
             return this.upstream;
         } else {
@@ -171,7 +172,8 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
     get transformed(): HttpExchangeView {
         if (!this.upstream) return this;
 
-        // If the response is original, then down generally is original
+        // If the response is original, then upstream data matches transformed data
+        // I.e. all transforms happened before any upstream data
         if (!this.upstream?.wasResponseTransformed) {
             return this.upstream;
         } else {
@@ -282,7 +284,12 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
         this.tags = _.union(this.tags, request.tags);
 
         if ('error' in request && request.error?.message) {
-            this.abortMessage = request.error.message;
+            this.abortMessage = request.error.message ?? 'Unknown error';
+
+            // Prefix the code if not already present (often happens e.g. ECONNRESET)
+            if (request.error?.code && !this.abortMessage?.includes(request.error.code)) {
+                this.abortMessage = `${request.error.code}: ${this.abortMessage}`;
+            }
         }
 
         if (this.requestBreakpoint) {
@@ -328,6 +335,13 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
             this.upstream = new UpstreamHttpExchange(this, this.apiStore);
         }
         this.upstream.updateWithResponseBody(body);
+    }
+
+    updateFromUpstreamAbort(abort: InputRuleEventDataMap['passthrough-abort']) {
+        if (!this.upstream) {
+            this.upstream = new UpstreamHttpExchange(this, this.apiStore);
+        }
+        this.upstream.updateFromUpstreamAbort(abort);
     }
 
     // Must only be called when the exchange will no longer be used. Ensures that large data is

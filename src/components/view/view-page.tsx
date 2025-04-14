@@ -17,7 +17,7 @@ import { WithInjected, CollectedEvent, HttpExchangeView } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 import { useHotkeys, isEditable, windowSize, AriaCtrlCmd, Ctrl } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
-import { UnreachableCheck } from '../../util/error';
+import { UnreachableCheck, unreachableCheck } from '../../util/error';
 
 import { SERVER_SEND_API_SUPPORTED, serverVersion, versionSatisfies } from '../../services/service-versions';
 
@@ -211,6 +211,23 @@ class ViewPage extends React.Component<ViewPageProps> {
         });
     }
 
+    @computed
+    get selectedExchange() {
+        const { contentPerspective } = this.props.uiStore;
+        if (!this.selectedEvent) return undefined;
+        if (!this.selectedEvent.isHttp()) return undefined;
+
+        return contentPerspective === 'client'
+            ? this.selectedEvent.downstream
+        : contentPerspective === 'server'
+            ? (this.selectedEvent.upstream ?? this.selectedEvent.downstream)
+        : contentPerspective === 'original'
+            ? this.selectedEvent.original
+        : contentPerspective === 'transformed'
+            ? this.selectedEvent.transformed
+        : unreachableCheck(contentPerspective)
+    }
+
     private readonly contextMenuBuilder = new ViewEventContextMenuBuilder(
         this.props.accountStore,
         this.props.uiStore,
@@ -257,26 +274,27 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
 
             const { expandedViewCard } = this.props.uiStore;
-
             if (!expandedViewCard) return;
 
+            const selectedHttpExchange = this.selectedExchange;
+
             // If you have a pane expanded, and select an event with no data
-            // for that pane, then disable the expansion
+            // for that pane, then disable the expansion:
             if (
-                !(selectedEvent.isHttp()) ||
+                !selectedHttpExchange ||
                 (
                     expandedViewCard === 'requestBody' &&
-                    !selectedEvent.hasRequestBody() &&
-                    !selectedEvent.requestBreakpoint
+                    !selectedHttpExchange.hasRequestBody() &&
+                    !selectedHttpExchange.downstream.requestBreakpoint
                 ) ||
                 (
                     expandedViewCard === 'responseBody' &&
-                    !selectedEvent.hasResponseBody() &&
-                    !selectedEvent.responseBreakpoint
+                    !selectedHttpExchange.hasResponseBody() &&
+                    !selectedHttpExchange.downstream.responseBreakpoint
                 ) ||
                 (
                     expandedViewCard === 'webSocketMessages' &&
-                    !(selectedEvent.isWebSocket() && selectedEvent.wasAccepted())
+                    !(selectedHttpExchange.isWebSocket() && selectedHttpExchange.wasAccepted())
                 )
             ) {
                 runInAction(() => {
@@ -328,7 +346,8 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
         } else if (this.selectedEvent.isHttp()) {
             rightPane = <HttpDetailsPane
-                exchange={this.selectedEvent}
+                exchange={this.selectedExchange!}
+                perspective={this.props.uiStore.contentPerspective}
 
                 requestEditor={this.editors.request}
                 responseEditor={this.editors.response}

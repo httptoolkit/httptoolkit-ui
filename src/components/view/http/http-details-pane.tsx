@@ -8,7 +8,7 @@ import { CollectedEvent, HtkResponse, HttpExchange, HttpExchangeView } from '../
 import { styled } from '../../../styles';
 import { logError } from '../../../errors';
 
-import { ExpandableViewCardKey, UiStore } from '../../../model/ui/ui-store';
+import { ContentPerspective, ExpandableViewCardKey, UiStore } from '../../../model/ui/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { ApiExchange } from '../../../model/api/api-interfaces';
@@ -37,6 +37,7 @@ import { HttpRequestBreakpointHeader, HttpResponseBreakpointHeader } from './htt
 import { HttpBreakpointRequestCard } from './http-breakpoint-request-card';
 import { HttpBreakpointResponseCard } from './http-breakpoint-response-card';
 import { HttpBreakpointBodyCard } from './http-breakpoint-body-card';
+import { TransformCard } from './transform-card';
 
 // Used to push all cards below it to the bottom (when less than 100% height)
 const CardDivider = styled.div`
@@ -61,6 +62,7 @@ const makeFriendlyApiName = (rawName: string) => {
 @observer
 export class HttpDetailsPane extends React.Component<{
     exchange: HttpExchangeView,
+    perspective: ContentPerspective,
 
     requestEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
     responseEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
@@ -121,7 +123,7 @@ export class HttpDetailsPane extends React.Component<{
         }
 
         const cards = (exchange.downstream.isBreakpointed)
-            ? this.renderBreakpointCards(exchange.downstream, apiName, apiExchange)
+            ? this.renderBreakpointCards(exchange, apiName, apiExchange)
             : this.renderNormalCards(exchange, apiName, apiExchange);
 
         return <>
@@ -235,30 +237,38 @@ export class HttpDetailsPane extends React.Component<{
     }
 
     private renderBreakpointCards(
-        exchange: HttpExchange,
+        exchange: HttpExchangeView,
         apiName: string | undefined,
         apiExchange: ApiExchange | undefined
     ) {
         const { uiStore } = this.props;
-        const { requestBreakpoint } = exchange;
+        const { requestBreakpoint } = exchange.downstream;
 
         const cards: Array<JSX.Element | null> = [];
 
         if (requestBreakpoint) {
             cards.push(<HttpBreakpointRequestCard
                 {...this.cardProps.request}
-                exchange={exchange}
+                exchange={exchange.downstream}
                 onChange={requestBreakpoint.updateMetadata}
             />);
 
             cards.push(this.renderRequestBody(exchange, apiExchange));
         } else {
-            const responseBreakpoint = exchange.responseBreakpoint!;
+            const responseBreakpoint = exchange.downstream.responseBreakpoint!;
+            const transformCard = this.renderTransformCard();
+            if (transformCard) cards.push(transformCard);
 
             cards.push(this.renderApiCard(apiName, apiExchange));
             cards.push(<HttpRequestCard
                 {...this.cardProps.request}
-                matchedRuleData={this.matchedRuleData}
+                matchedRuleData={
+                    // Matched rule data is shown inline here only when there
+                    // was not any substantial proxy transformation.
+                    !transformCard
+                    ? this.matchedRuleData
+                    : undefined
+                }
                 onRuleClicked={this.jumpToRule}
                 exchange={exchange}
             />);
@@ -269,7 +279,7 @@ export class HttpDetailsPane extends React.Component<{
 
             cards.push(<HttpBreakpointResponseCard
                 {...this.cardProps.response}
-                exchange={exchange}
+                exchange={exchange.downstream}
                 onChange={responseBreakpoint.updateMetadata}
                 theme={uiStore!.theme}
             />);
@@ -290,11 +300,19 @@ export class HttpDetailsPane extends React.Component<{
 
         const cards: Array<JSX.Element | null> = [];
 
+        const transformCard = this.renderTransformCard();
+        if (transformCard) cards.push(transformCard);
         cards.push(this.renderApiCard(apiName, apiExchange));
 
         cards.push(<HttpRequestCard
             {...this.cardProps.request}
-            matchedRuleData={this.matchedRuleData}
+            matchedRuleData={
+                // Matched rule data is shown inline here only when there
+                // was not any substantial proxy transformation.
+                !transformCard
+                ? this.matchedRuleData
+                : undefined
+            }
             onRuleClicked={this.jumpToRule}
             exchange={exchange}
         />);
@@ -377,6 +395,19 @@ export class HttpDetailsPane extends React.Component<{
         return cards;
     }
 
+    private renderTransformCard() {
+        const { uiStore } = this.props;
+
+        if (!this.props.exchange.upstream?.wasTransformed) return false;
+
+        return <TransformCard
+            key='transform'
+            matchedRuleData={this.matchedRuleData}
+            onRuleClicked={this.jumpToRule}
+            uiStore={uiStore!}
+        />;
+    }
+
     private renderRequestBody(exchange: HttpExchangeView, apiExchange: ApiExchange | undefined) {
         const { request } = exchange;
         const { requestBreakpoint } = exchange.downstream;
@@ -384,7 +415,6 @@ export class HttpDetailsPane extends React.Component<{
         return requestBreakpoint
             ? <HttpBreakpointBodyCard
                 {...this.requestBodyParams()}
-                exchangeId={exchange.id}
                 body={requestBreakpoint.inProgressResult.body}
                 rawHeaders={requestBreakpoint.inProgressResult.rawHeaders}
                 onChange={requestBreakpoint.updateBody}
@@ -405,7 +435,6 @@ export class HttpDetailsPane extends React.Component<{
         return responseBreakpoint
             ? <HttpBreakpointBodyCard
                 {...this.responseBodyParams()}
-                exchangeId={exchange.id}
                 body={responseBreakpoint.inProgressResult.body}
                 rawHeaders={responseBreakpoint.inProgressResult.rawHeaders}
                 onChange={responseBreakpoint.updateBody}
@@ -449,6 +478,7 @@ export class HttpDetailsPane extends React.Component<{
             ...this.cardProps.requestBody,
             title: 'Request Body',
             direction: 'right' as const,
+            editorKey: `${this.props.exchange.id}-${this.props.perspective}-request`,
             editorNode: this.props.requestEditor
         };
     }
@@ -459,6 +489,7 @@ export class HttpDetailsPane extends React.Component<{
             ...this.cardProps.responseBody,
             title: 'Response Body',
             direction: 'left' as const,
+            editorKey: `${this.props.exchange.id}-${this.props.perspective}-response`,
             editorNode: this.props.responseEditor
         };
     }

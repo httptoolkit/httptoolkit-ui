@@ -7,7 +7,6 @@ import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../../types';
 
-import { ErrorLike } from '../../../util/error';
 import { getHeaderValue } from '../../../util/headers';
 
 import { ViewableContentType, getCompatibleTypes } from '../../../model/events/content-types';
@@ -38,6 +37,8 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
     url: string,
     message: ExchangeMessage,
     apiBodySchema?: SchemaObject,
+
+    editorKey: string,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
 }> {
 
@@ -76,7 +77,9 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
             expanded,
             onCollapseToggled,
             onExpandToggled,
-            ariaLabel
+            ariaLabel,
+            editorKey,
+            editorNode
         } = this.props;
 
         const compatibleContentTypes = getCompatibleTypes(
@@ -118,8 +121,8 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                 </header>
                 <EditorCardContent showFullBorder={!expanded}>
                     <ContentViewer
-                        contentId={`${message.id}-${direction}`}
-                        editorNode={this.props.editorNode}
+                        contentId={editorKey}
+                        editorNode={editorNode}
                         headers={message.headers}
                         contentType={decodedContentType}
                         schema={apiBodySchema}

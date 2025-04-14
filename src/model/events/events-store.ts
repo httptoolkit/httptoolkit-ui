@@ -518,6 +518,7 @@ export class EventsStore {
                 exchange.updateFromUpstreamResponseBody(event.eventData);
                 break;
             case 'passthrough-abort':
+                exchange.updateFromUpstreamAbort(event.eventData);
                 break;
         }
     }

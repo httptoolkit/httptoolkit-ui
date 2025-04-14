@@ -70,12 +70,18 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
     } | undefined;
 
     @observable
-    private upstreamResponseData: {
-        statusCode?: number,
-        statusMessage?: string | undefined,
-        rawHeaders?: RawHeaders,
-        body?: HttpBody
-    } | undefined;
+    private upstreamResponseData:
+        | {
+            statusCode?: number,
+            statusMessage?: string | undefined,
+            rawHeaders?: RawHeaders,
+            body?: HttpBody
+        }
+        | 'aborted'
+        | undefined;
+
+    @observable
+    private upstreamAbortMessage: string | undefined; // Only set if upstream response is aborted
 
     @computed
     public get wasRequestTransformed() {
@@ -93,7 +99,9 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
         if (downstreamRes === undefined) return false; // Really: we don't know yet.
 
         if (downstreamRes === 'aborted') {
-            return !!this.upstreamResponseData;
+            return this.upstreamResponseData !== 'aborted';
+        } else if (this.upstreamResponseData === 'aborted') {
+            return true;
         }
 
         const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData;
@@ -154,12 +162,12 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
         const downstreamRes = this.downstream.response;
         if (!this.upstreamResponseData) return downstreamRes;
 
-        if (downstreamRes === undefined) {
-            return;
-        } else if (downstreamRes === 'aborted') {
+        if (this.upstreamResponseData === 'aborted') {
+            return 'aborted';
+        } else if (downstreamRes === 'aborted' || !downstreamRes) {
             // Downstream was aborted, so upstream data (if any) is all we have
 
-            if (!this.wasRequestTransformed) return 'aborted';
+            if (!this.wasResponseTransformed) return 'aborted';
             const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData as
                 Required<typeof this.upstreamResponseData>; // If downstream is aborted, upstream data is complete
 
@@ -183,23 +191,25 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
             // We have downstream data, and upstream just for the cases that differ:
             const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData;
 
+            const headers = rawHeaders
+                ? rawHeadersToHeaders(rawHeaders)
+                : downstreamRes.headers;
+
             return {
                 id: this.id,
                 timingEvents: this.timingEvents,
                 tags: this.tags,
 
                 cache: new ObservableCache(),
-                contentType: getContentType(getHeaderValue(rawHeaders, 'content-type')) || 'text',
+                contentType: getContentType(getHeaderValue(headers, 'content-type')) || 'text',
 
                 statusCode: statusCode || downstreamRes.statusCode,
                 statusMessage: statusMessage || '',
                 rawHeaders: rawHeaders || downstreamRes.rawHeaders,
-                headers: rawHeaders
-                    ? rawHeadersToHeaders(rawHeaders)
-                    : downstreamRes.headers,
+                headers: headers,
                 body: body ||
                     downstreamRes.body ||
-                    new HttpBody({ body: Buffer.alloc(0) }, rawHeaders || downstreamRes.rawHeaders),
+                    new HttpBody({ body: Buffer.alloc(0) }, headers),
 
                 // We don't support transforming trailers:
                 trailers: downstreamRes.trailers || {},
@@ -265,7 +275,7 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
     }
 
     updateWithResponseBody(upstreamResponseData: InputRuleEventDataMap['passthrough-response-body']) {
-        if (!upstreamResponseData.overridden) return;
+        if (!upstreamResponseData.overridden || this.upstreamResponseData === 'aborted') return;
 
         const headers = this.upstreamResponseData?.rawHeaders
             || (this.downstream.isSuccessfulExchange() && this.downstream.response.rawHeaders)
@@ -279,11 +289,14 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
     }
 
 
-    // Once the downstream response arrives, we can clear up our upstream data to store
+    // Once the downstream response arrives, we can clear up our upstream data, to store
     // only the data that's actually different.
     updateAfterDownstreamResponse(response: HtkResponse | 'aborted') {
-        if (!this.upstreamResponseData) return;
-        if (response === 'aborted') return;
+        if (
+            !this.upstreamResponseData ||
+            this.upstreamResponseData === 'aborted' ||
+            response === 'aborted'
+        ) return;
 
         if (this.upstreamResponseData.statusCode === response.statusCode) {
             delete this.upstreamResponseData.statusCode;
@@ -301,9 +314,26 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
         }
     }
 
+    updateFromUpstreamAbort(abort: InputRuleEventDataMap['passthrough-abort']) {
+        this.upstreamResponseData = 'aborted';
+
+        const { error } = abort;
+
+        this.upstreamAbortMessage = error.message ?? 'Unknown error';
+
+        // Prefix the code if not already present (often happens e.g. ECONNRESET)
+        if (error.code && !this.upstreamAbortMessage?.includes(error.code)) {
+            this.upstreamAbortMessage = `${error.code}: ${this.upstreamAbortMessage}`;
+        }
+    }
 
     get abortMessage() {
-        return this.downstream.abortMessage;
+        return this.upstreamResponseData === 'aborted'
+            ? this.upstreamAbortMessage!
+        : this.wasResponseTransformed
+            ? undefined
+        // Not transformed/aborted - just mirror downstream
+            : this.downstream.abortMessage;
     }
 
 

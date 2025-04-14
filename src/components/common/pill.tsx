@@ -9,7 +9,9 @@ import {
     getBackgroundColor
 } from '../../util/colors';
 
-function getNonTransparentBackground(baseColor: string, theme: Theme) {
+// Returns a non-transparent but transparency-like background color for
+// a pill shown on top of the main background.
+function getPillBackground(baseColor: string, theme: Theme) {
     return polished.mix(0.3, baseColor, theme.mainBackground);
 }
 
@@ -51,7 +53,7 @@ export const PillButton = styled(UnstyledButton)`
     }
 `;
 
-const Select = styled(Pill.withComponent('select'))`
+export const PillSelect = styled(Pill.withComponent('select'))`
     text-align: left;
     border: none;
 
@@ -65,7 +67,7 @@ const Select = styled(Pill.withComponent('select'))`
 
     * {
         background-color: ${(p: { color?: string, theme?: Theme }) =>
-            getNonTransparentBackground(
+            getPillBackground(
                 p.color || p.theme!.pillDefaultColor,
                 p.theme!
             )
@@ -86,7 +88,7 @@ export const PillSelector = <
     const asKey = props.keyFormatter || ((k: T) => k.toString() as K);
     const asName = props.nameFormatter || ((k: T) => k.toString());
 
-    return <Select
+    return <PillSelect
         onChange={(e) => props.onChange(e.target.value as K)}
         value={asKey(props.value)}
     >
@@ -106,5 +108,5 @@ export const PillSelector = <
                 }</optgroup>
             )
         }
-    </Select>
+    </PillSelect>
 };

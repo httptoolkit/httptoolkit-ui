@@ -1,24 +1,17 @@
 import * as React from 'react';
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 
 import { HttpExchange, HtkRequest, HttpVersion, HttpExchangeView } from '../../../types';
-import { styled } from '../../../styles';
-import { PhosphorIcon } from '../../../icons';
 
-import { aOrAn, uppercaseFirst } from '../../../util/text';
-
-import { UiStore } from '../../../model/ui/ui-store';
 import { getSummaryColor } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
-import { nameHandlerClass } from '../../../model/rules/rule-descriptions';
-import { HandlerClassKey } from '../../../model/rules/rules';
 
 import {
     CollapsibleCardHeading,
     CollapsibleCard,
     CollapsibleCardProps
 } from '../../common/card';
-import { Pill, PillButton } from '../../common/pill';
+import { Pill } from '../../common/pill';
 import {
     CollapsibleSection,
     CollapsibleSectionSummary,
@@ -35,58 +28,8 @@ import { SourceIcon } from '../../common/source-icon';
 import { HttpVersionPill } from '../../common/http-version-pill';
 import { HeaderDetails } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
-
-const MatchedRulePill = styled(inject('uiStore')((p: {
-    className?: string,
-    uiStore?: UiStore,
-    ruleData: {
-        stepTypes: HandlerClassKey[],
-        status: 'unchanged' | 'modified-types' | 'deleted'
-    },
-    onClick: () => void
-}) => {
-    const { stepTypes } = p.ruleData;
-    const stepDescription = stepTypes.length !== 1
-        ? 'multi-step'
-        : nameHandlerClass(stepTypes[0]);
-
-    return <PillButton
-        color={getSummaryColor('mutative')} // Conceptually similar - we've modified traffic
-        className={p.className}
-
-        // For now we show modified as unchanged, but we could highlight this later:
-        disabled={p.ruleData.status === 'deleted'}
-        onClick={p.ruleData.status !== 'deleted' ? p.onClick : undefined}
-
-        title={
-            `This request was handled by ${
-                aOrAn(stepDescription)
-             } ${stepDescription} rule${
-                p.ruleData.status === 'deleted'
-                    ? ' which has since been deleted'
-                : p.ruleData.status === 'modified-types'
-                    ? ' (which has since been modified)'
-                : ''
-            }.${
-                p.ruleData.status !== 'deleted'
-                    ? '\nClick here to jump to the rule on the Modify page.'
-                    : ''
-            }`
-        }
-    >
-        <PhosphorIcon icon='Pencil' size='16px' />
-        { uppercaseFirst(stepDescription) }
-    </PillButton>;
-}))`
-    margin-right: auto;
-
-    text-decoration: none;
-    word-spacing: 0;
-
-    > svg {
-        margin: -1px 5px 0 -1px;
-    }
-`;
+import { HandlerClassKey } from '../../../model/rules/rules';
+import { MatchedRulePill } from './matched-rule-pill';
 
 const RawRequestDetails = (p: {
     request: HtkRequest,
