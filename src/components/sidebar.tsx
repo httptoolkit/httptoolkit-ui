@@ -60,6 +60,9 @@ const sidebarItemStyles = css`
     text-align: center;
 
     box-sizing: border-box;
+
+    user-select: none;
+    -webkit-user-drag: none;
 `;
 
 const SidebarLogo = styled.img.attrs(() => ({
