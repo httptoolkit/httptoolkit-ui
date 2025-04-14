@@ -5,11 +5,10 @@ import { observer } from 'mobx-react-lite';
 import { styled } from '../../../styles';
 
 import { ContentPerspective, UiStore } from '../../../model/ui/ui-store';
-import { HandlerClassKey } from '../../../model/rules/rules';
 
 import { PillSelect } from '../../common/pill';
 import { MediumCard } from '../../common/card';
-import { MatchedRulePill } from './matched-rule-pill';
+import { MatchedRuleData, MatchedRulePill, shouldShowRuleDetails } from './matched-rule-pill';
 
 const DropdownContainer = styled.div`
     display: inline-block;
@@ -41,20 +40,11 @@ const PerspectiveSelector = observer((p: {
 });
 
 export const TransformCard = (p: {
-    matchedRuleData?: {
-        stepTypes: HandlerClassKey[],
-        status: 'unchanged' | 'modified-types' | 'deleted'
-    } | undefined,
+    matchedRuleData?: MatchedRuleData | undefined,
     onRuleClicked: () => void,
     uiStore: UiStore
 }) => {
-    // We consider passthrough as a no-op, and so don't show anything in that case.
-    const noopRule = p.matchedRuleData?.stepTypes.every(
-        type => type === 'passthrough' || type === 'ws-passthrough'
-    );
-
-    // // Show nothing when there's no rule data available or the traffic was no-op'd
-    if (noopRule || !p.matchedRuleData) return null;
+    if (!shouldShowRuleDetails(p.matchedRuleData)) return null;
 
     return <MediumCard>
         <MatchedRulePill

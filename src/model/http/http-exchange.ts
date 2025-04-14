@@ -117,7 +117,7 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
 
     constructor(
         request: InputRequest,
-        private readonly apiStore: ApiStore
+        protected readonly apiStore: ApiStore
     ) {
         super();
 

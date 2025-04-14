@@ -12,13 +12,25 @@ import { getSummaryColor } from '../../../model/events/categorization';
 import { aOrAn, uppercaseFirst } from '../../../util/text';
 import { PillButton } from '../../common/pill';
 
+export interface MatchedRuleData {
+    stepTypes: HandlerClassKey[];
+    status: 'unchanged' | 'modified-types' | 'deleted';
+}
+
+export const shouldShowRuleDetails = (
+    matchedRuleData: MatchedRuleData | undefined
+): matchedRuleData is MatchedRuleData => {
+    // We never bother showing rule details for pure-passthrough rules
+    return !!matchedRuleData?.stepTypes.length &&
+        !matchedRuleData?.stepTypes.every(
+            type => type === 'passthrough' || type === 'ws-passthrough'
+        );
+}
+
 export const MatchedRulePill = styled(inject('uiStore')((p: {
     className?: string,
     uiStore?: UiStore,
-    ruleData: {
-        stepTypes: HandlerClassKey[],
-        status: 'unchanged' | 'modified-types' | 'deleted'
-    },
+    ruleData: MatchedRuleData,
     onClick: () => void
 }) => {
     const { stepTypes } = p.ruleData;

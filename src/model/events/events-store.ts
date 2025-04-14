@@ -520,6 +520,12 @@ export class EventsStore {
             case 'passthrough-abort':
                 exchange.updateFromUpstreamAbort(event.eventData);
                 break;
+
+            case 'passthrough-websocket-connect':
+                if (!exchange.isWebSocket()) throw new Error('Received WS connect event for non-WS');
+                const webSocket = exchange as WebSocketStream;
+                webSocket.updateWithUpstreamConnect(event.eventData);
+                break;
         }
     }
 

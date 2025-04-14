@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { HttpExchange, HtkRequest, HttpVersion, HttpExchangeView } from '../../../types';
+import { HtkRequest, HttpVersion, HttpExchangeView } from '../../../types';
 
 import { getSummaryColor } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
@@ -29,7 +29,7 @@ import { HttpVersionPill } from '../../common/http-version-pill';
 import { HeaderDetails } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
 import { HandlerClassKey } from '../../../model/rules/rules';
-import { MatchedRulePill } from './matched-rule-pill';
+import { MatchedRulePill, shouldShowRuleDetails } from './matched-rule-pill';
 
 const RawRequestDetails = (p: {
     request: HtkRequest,
@@ -104,14 +104,9 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
     const { exchange, matchedRuleData, onRuleClicked } = props;
     const { request } = exchange;
 
-    // We consider passthrough as a no-op, and so don't show anything in that case.
-    const noopRule = matchedRuleData?.stepTypes.every(
-        type => type === 'passthrough' || type === 'ws-passthrough'
-    )
-
     return <CollapsibleCard {...props} direction='right'>
         <header>
-            { matchedRuleData && !noopRule &&
+            { shouldShowRuleDetails(matchedRuleData) &&
                 <MatchedRulePill
                     ruleData={matchedRuleData}
                     onClick={onRuleClicked}

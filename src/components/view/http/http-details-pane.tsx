@@ -227,7 +227,7 @@ export class HttpDetailsPane extends React.Component<{
         } else if (
             expandedCard === 'webSocketMessages' &&
             exchange.isWebSocket() &&
-            exchange.wasAccepted()
+            exchange.wasAccepted
         ) {
             return this.renderWebSocketMessages(exchange);
         } else {
@@ -363,7 +363,7 @@ export class HttpDetailsPane extends React.Component<{
         }
 
         if (exchange.isWebSocket()) {
-            if (exchange.wasAccepted()) {
+            if (exchange.wasAccepted) {
                 cards.push(this.renderWebSocketMessages(exchange));
 
                 if (exchange.closeState) {

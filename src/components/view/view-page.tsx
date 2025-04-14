@@ -294,7 +294,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 ) ||
                 (
                     expandedViewCard === 'webSocketMessages' &&
-                    !(selectedHttpExchange.isWebSocket() && selectedHttpExchange.wasAccepted())
+                    !(selectedHttpExchange.isWebSocket() && selectedHttpExchange.wasAccepted)
                 )
             ) {
                 runInAction(() => {

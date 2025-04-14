@@ -138,6 +138,9 @@ export type InputRuleEventDataMap = {
             message?: string,
             stack?: string
         }
+    },
+    'passthrough-websocket-connect': InputRuleEventDataMap['passthrough-request-head'] & {
+        subprotocols: string[]
     }
 };
 
