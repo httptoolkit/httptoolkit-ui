@@ -95,8 +95,8 @@ export type HarTlsErrorEntry = {
 
     tlsMetadata?: TlsSocketMetadata;
 
-    clientIPAddress: string;
-    clientPort: number;
+    clientIPAddress?: string;
+    clientPort?: number;
 }
 
 export async function generateHar(

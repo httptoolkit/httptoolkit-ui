@@ -27,9 +27,13 @@ export class TlsFailureDetailsPane extends React.Component<{
     render() {
         const { failure, certPath } = this.props;
 
-        const sourceDetailParts = getReadableIP(failure.remoteIpAddress).split(' ');
-        const sourceIp = sourceDetailParts[0];
-        const sourceDetails = sourceDetailParts.slice(1).join(' ');
+        // This _should_ always be available, but due to some awkward & unclear Node issues it isn't,
+        // so we need to be a little careful here.
+        const sourceDetailParts = failure.remoteIpAddress
+            ? getReadableIP(failure.remoteIpAddress).split(' ')
+            : undefined;
+        const sourceIp = sourceDetailParts?.[0];
+        const sourceDetails = sourceDetailParts?.slice(1).join(' ');
 
         return <PaneScrollContainer>
             <MediumCard>
@@ -61,11 +65,11 @@ export class TlsFailureDetailsPane extends React.Component<{
                             </>,
                         } as _.Dictionary<JSX.Element>)[failure.failureCause]
                     }</p>
-                    <p>
+                    { sourceIp && sourceDetails && <p>
                         The request was sent by <CopyableMonoValue>
                             { sourceIp }
                         </CopyableMonoValue> { sourceDetails }.
-                    </p>
+                    </p> }
                 </Content>
 
                 <ContentLabelBlock>Cause</ContentLabelBlock>
