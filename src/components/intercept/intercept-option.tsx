@@ -241,6 +241,8 @@ export class InterceptOption extends React.Component<InterceptOptionProps> {
             uiConfig={uiConfig}
             gridWidth={gridWidth}
 
+            data-interceptor-id={interceptor.id}
+
             role={!this.expanded ? 'button' : 'section'}
             aria-expanded={isExpandable
                 ? this.expanded
