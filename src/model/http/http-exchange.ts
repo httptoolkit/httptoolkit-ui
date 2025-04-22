@@ -181,6 +181,12 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
         }
     }
 
+    @computed
+    get wasTransformed() {
+        if (!this.upstream) return false;
+        return this.upstream.wasTransformed;
+    }
+
     // An autorun, which ensures the transformed & original views are kept observed & updated, for as long
     // as this upstream exchange exists (until cleanup);
     private computedKeepAlive = {

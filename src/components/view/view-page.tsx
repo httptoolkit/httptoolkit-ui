@@ -194,9 +194,13 @@ class ViewPage extends React.Component<ViewPageProps> {
 
         const filteredEvents = (this.currentSearchFilters.length === 0)
             ? events
-            : events.filter((event) =>
-                this.currentSearchFilters.every((f) => f.matches(event))
-            );
+            : events.filter((event) => {
+                if (event.isHttp() && event.wasTransformed) {
+                    return this.currentSearchFilters.every((f) => f.matches(event.downstream) || f.matches(event.upstream!))
+                } else {
+                    return this.currentSearchFilters.every((f) => f.matches(event))
+                }
+            });
 
         return {
             filteredEvents,
