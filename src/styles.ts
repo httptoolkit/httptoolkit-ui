@@ -321,6 +321,11 @@ export const GlobalStyles = createGlobalStyle`
                 font-size: ${fontSizes.textSize} !important;
             }
         }
+        
+        /* Override auth0 text entry foreground to avoid black text against a dark background */
+        .auth0-lock-input {
+            color: rgba(255, 255, 255, 1) !important;
+        }
     }
 
     /* Override some Monaco CSS internals */
