@@ -322,9 +322,10 @@ export const GlobalStyles = createGlobalStyle`
             }
         }
         
-        /* Override auth0 text entry foreground to avoid black text against a dark background */
+        /* Override auth0 input to fix unreadable text */
         .auth0-lock-input {
-            color: rgba(255, 255, 255, 1) !important;
+            background-color: rgba(255, 255, 255, 1); !important
+            color: rgba(0, 0, 0, 1) !important;
         }
     }
 
