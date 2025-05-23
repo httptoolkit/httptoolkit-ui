@@ -321,6 +321,12 @@ export const GlobalStyles = createGlobalStyle`
                 font-size: ${fontSizes.textSize} !important;
             }
         }
+        
+        /* Override auth0 input to fix unreadable text */
+        .auth0-lock-input {
+            background-color: rgba(255, 255, 255, 1); !important
+            color: rgba(0, 0, 0, 1) !important;
+        }
     }
 
     /* Override some Monaco CSS internals */
