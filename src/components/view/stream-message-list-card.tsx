@@ -45,6 +45,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
     streamLabel?: string,
     messages: Array<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
+    onClearMessages?: () => void,
 }> {
 
     @observable
@@ -67,6 +68,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
             expanded,
             onCollapseToggled,
             onExpandToggled,
+            onClearMessages,
             ariaLabel
         } = this.props;
 
@@ -92,6 +94,12 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                         disabled={!isPaidUser}
                         onClick={this.exportMessages}
                     />
+                    { onClearMessages &&
+                        <IconButton
+                            icon={['fas', 'ban']}
+                            title="Clear all messages"
+                            onClick={onClearMessages}
+                        /> }
                 </CollapsingButtons>
                 { streamLabel && <Pill
                     color={getSummaryColor('data')}
