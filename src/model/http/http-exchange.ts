@@ -23,7 +23,7 @@ import { MANUALLY_SENT_SOURCE, parseSource } from './sources';
 import { getContentType } from '../events/content-types';
 import { HTKEventBase } from '../events/event-base';
 
-import { HandlerClassKey, HtkRule, getRulePartKey } from '../rules/rules';
+import { StepClassKey, HtkRule, getRulePartKey } from '../rules/rules';
 
 import { ApiStore } from '../api/api-store';
 import { ApiDetector } from './api-detector';
@@ -60,37 +60,28 @@ export function parseHttpVersion(version: string | undefined): HttpVersion {
     return 1.1;
 }
 
-function tryParseUrl(request: InputRequest): ParsedUrl | undefined  {
+function tryParseUrl(url: string): ParsedUrl | undefined  {
     try {
         return Object.assign(
-            new URL(request.url, `${request.protocol}://${request.hostname || 'unknown.invalid'}`),
+            new URL(url),
             { parseable: true } as const
         );
     } catch (e) {
-        console.log('Unparseable URL:', request.url);
+        console.log('Unparseable URL:', url);
         // There are many unparseable URLs, especially when unintentionally intercepting traffic
         // from non-HTTP sources, so we don't report this - we just log locally & return undefined.
+        return unparseableUrl;
     }
 }
 
-function getFallbackUrl(request: InputRequest): ParsedUrl {
-    try {
-        return Object.assign(
-            new URL("/[unparseable]", `${request.protocol}://${request.hostname || 'unknown.invalid'}`),
-            { parseable: false } as const
-        );
-    } catch (e) {
-        return Object.assign(
-            new URL("http://unparseable.invalid/"),
-            { parseable: false } as const
-        );
-    }
-}
+const unparseableUrl = Object.assign(new URL("unknown://unparseable.invalid/"), { parseable: false } as const);
 
 function addRequestMetadata(request: InputRequest): HtkRequest {
     try {
         return Object.assign(request, {
-            parsedUrl: tryParseUrl(request) || getFallbackUrl(request),
+            parsedUrl: request.url
+                ? tryParseUrl(request.url)
+                : unparseableUrl,
             source: request.tags.includes('httptoolkit:manually-sent-request')
                 ? MANUALLY_SENT_SOURCE
                 : parseSource(request.headers['user-agent']),
@@ -99,7 +90,7 @@ function addRequestMetadata(request: InputRequest): HtkRequest {
             cache: new ObservableCache()
         }) as HtkRequest;
     } catch (e) {
-        console.log(`Failed to parse request for ${request.url} (${request.protocol}://${request.hostname})`);
+        console.log(`Failed to build request for ${request.url}`);
         throw e;
     }
 }
@@ -195,7 +186,7 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
 
     @observable
     // Undefined initially, defined for completed requests, false for 'not available'
-    public matchedRule: { id: string, handlerStepTypes: HandlerClassKey[] } | false | undefined;
+    public matchedRule: { id: string, stepTypes: StepClassKey[] } | false | undefined;
 
     @observable
     public tags: string[];
@@ -253,16 +244,10 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
 
         this.matchedRule = !matchedRule
                 ? false
-            : 'handler' in matchedRule
-                ? {
-                    id: matchedRule.id,
-                    handlerStepTypes: [getRulePartKey(matchedRule.handler)] as HandlerClassKey[]
-                }
-            // MatchedRule has multiple steps
-                : {
-                    id: matchedRule.id,
-                    handlerStepTypes: matchedRule.steps.map(getRulePartKey) as HandlerClassKey[]
-                };
+            : {
+                id: matchedRule.id,
+                stepTypes: matchedRule.steps.map(getRulePartKey) as StepClassKey[]
+            };
 
         Object.assign(this.timingEvents, request.timingEvents);
         this.tags = _.union(this.tags, request.tags);

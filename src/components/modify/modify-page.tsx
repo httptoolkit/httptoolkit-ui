@@ -14,7 +14,7 @@ import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 
 import { RuleType } from '../../model/rules/rules';
-import { getNewRule, getRuleDefaultHandler } from '../../model/rules/rule-creation';
+import { getNewRule, getRuleDefaultStep } from '../../model/rules/rule-creation';
 import {
     cloneItem,
     getItemAtPath,
@@ -222,7 +222,7 @@ class ModifyPage extends React.Component<ModifyPageProps> {
                     deleteItem={deleteDraftItem}
                     toggleRuleCollapsed={this.toggleRuleCollapsed}
                     updateGroupTitle={updateGroupTitle}
-                    getRuleDefaultHandler={this.getRuleDefaultHandler}
+                    getRuleDefaultStep={this.getRuleDefaultStep}
 
                     moveRule={moveDraftRule}
                     combineRulesAsGroup={combineDraftRulesAsGroup}
@@ -316,8 +316,8 @@ class ModifyPage extends React.Component<ModifyPageProps> {
         this.collapsedRulesMap[ruleId] = !this.collapsedRulesMap[ruleId];
     }
 
-    getRuleDefaultHandler = (type: RuleType) => {
-        return getRuleDefaultHandler(type, this.props.rulesStore);
+    getRuleDefaultStep = (type: RuleType) => {
+        return getRuleDefaultStep(type, this.props.rulesStore);
     };
 
     readonly importRules = async () => {

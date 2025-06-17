@@ -1,12 +1,13 @@
 import * as _ from 'lodash';
 
 import {
-    requestHandlers,
+    requestSteps,
     MOCKTTP_PARAM_REF,
-    ProxyConfig,
+    PassThroughStepConnectionOptions,
     ProxySetting,
     RuleParameterReference,
-    ProxySettingSource
+    ProxySettingSource,
+    webSocketSteps
 } from 'mockttp';
 import * as MockRTC from 'mockrtc';
 
@@ -171,7 +172,7 @@ export class RulesStore {
                                 ? [
                                     setRTCRules(...rules.filter(isRTCRule).map(({ matchers, steps }) => ({
                                         // We skip the first matcher, which is always an unused wildcard:
-                                        matchers: matchers.slice(1) as MockRTC.MatcherDefinitions.MatcherDefinition[],
+                                        matchers: matchers.slice(1) as MockRTC.matchers.MatcherDefinition[],
                                         steps
                                     })))
                                 ] : []
@@ -290,8 +291,8 @@ export class RulesStore {
     // This is live updated as the corresponding fields change, and so the resulting rules are
     // updated immediately as this changes too.
     @computed.struct
-    get activePassthroughOptions(): requestHandlers.PassThroughHandlerOptions {
-        const options: requestHandlers.PassThroughHandlerOptions = { // Check the type to catch changes
+    get activePassthroughOptions(): PassThroughStepConnectionOptions {
+        const options: PassThroughStepConnectionOptions = { // Check the type to catch changes
             ignoreHostHttpsErrors: this.whitelistedCertificateHosts,
             additionalTrustedCAs: this.additionalCaCertificates.map((cert) => ({ cert: cert.rawPEM })),
             clientCertificateHostMap: _.mapValues(this.clientCertificateHostMap, (cert) => ({

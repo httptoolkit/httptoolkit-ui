@@ -61,7 +61,36 @@ function migrateRule(rule: any) {
         // Handle the targetHost -> forwarding object change from Mockttp 0.18.1:
         if (handler.forwardToLocation && !handler.forwarding) {
             handler.forwarding = { targetHost: handler.forwardToLocation, updateHostHeader: true };
+            delete handler.forwardToLocation;
         }
+
+        // Handle the forwarding -> transformRequest change from Mockttp v4:
+        if (handler.forwarding) {
+            const { targetHost, updateHostHeader } = handler.forwarding;
+            const locationParts = targetHost.split('://');
+            const [protocol, host] = locationParts.length > 1
+                ? locationParts
+                : [undefined, locationParts[0]];
+
+            handler.transformRequest = {
+                ...handler.transformRequest,
+                replaceHost: {
+                    targetHost: host,
+                    updateHostHeader: updateHostHeader ?? true
+                },
+                ...(protocol ? {
+                    setProtocol: protocol
+                } : {})
+            }
+
+            delete handler.forwarding;
+        }
+    }
+
+    // Handle the handler -> steps[] change from Mockttp v4:
+    if (handler) {
+        rule.steps ??= [handler];
+        delete rule.handler;
     }
 
     return rule;

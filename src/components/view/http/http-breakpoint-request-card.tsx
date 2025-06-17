@@ -63,7 +63,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
                 <SourceIcon source={request.source} />
                 <Pill color={getSummaryColor(exchange)}>
                     { method } {
-                        (request.hostname || '')
+                        (request.parsedUrl.hostname || '')
                         // Add some tiny spaces to split up parts of the hostname
                         .replace(/\./g, '\u2008.\u2008')
                     }

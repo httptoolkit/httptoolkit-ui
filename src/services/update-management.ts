@@ -66,7 +66,7 @@ function showPleaseUpdateMessage() {
         "You can continue to use HTTP Toolkit, but you may experience issues & " +
         "instability." +
         "\n\n" +
-        "Please update to the latest version from httptoolkit.com when you can, " +
+        "Please update to the latest version from httptoolkit.com when you can " +
         "to access the many new features, bug fixes & performance improvements " +
         "available there."
     );

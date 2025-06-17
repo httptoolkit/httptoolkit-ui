@@ -748,7 +748,6 @@ function parseHarRequest(
         method: request.method,
         url: request.url,
         path: parsedUrl.pathname,
-        hostname: parsedUrl.hostname,
         // We need to promise it has a 'host' header (i.e. the headers are
         // legal for an HTTP request):
         headers: asHtkHeaders(request.headers) as Headers & { host: string },

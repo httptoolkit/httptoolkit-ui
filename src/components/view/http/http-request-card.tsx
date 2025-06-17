@@ -28,7 +28,7 @@ import { SourceIcon } from '../../common/source-icon';
 import { HttpVersionPill } from '../../common/http-version-pill';
 import { HeaderDetails } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
-import { HandlerClassKey } from '../../../model/rules/rules';
+import { StepClassKey } from '../../../model/rules/rules';
 import { MatchedRulePill, shouldShowRuleDetails } from './matched-rule-pill';
 
 const RawRequestDetails = (p: {
@@ -94,7 +94,7 @@ const RawRequestDetails = (p: {
 interface HttpRequestCardProps extends CollapsibleCardProps {
     exchange: HttpExchangeView;
     matchedRuleData: {
-        stepTypes: HandlerClassKey[],
+        stepTypes: StepClassKey[],
         status: 'unchanged' | 'modified-types' | 'deleted'
     } | undefined;
     onRuleClicked: () => void;
@@ -117,7 +117,7 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
             <Pill color={getSummaryColor(exchange)}>
                 { exchange.isWebSocket() ? 'WebSocket ' : '' }
                 { request.method } {
-                    (request.hostname || '')
+                    (request.parsedUrl.hostname || '')
                     // Add some tiny spaces to split up parts of the hostname
                     .replace(/\./g, '\u2008.\u2008')
                 }

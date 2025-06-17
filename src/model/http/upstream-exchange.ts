@@ -140,7 +140,6 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
 
             parsedUrl: url || downstreamReq.parsedUrl,
             url: url?.toString() || downstreamReq.url,
-            protocol: url?.protocol || downstreamReq.parsedUrl.protocol,
             method: method || downstreamReq.method,
             headers: headers,
             rawHeaders: rawHeaders || downstreamReq.rawHeaders,

@@ -18,7 +18,7 @@ import { EventsStore } from '../../../model/events/events-store';
 
 import {
     MethodMatchers,
-    StaticResponseHandler
+    StaticResponseStep
 } from '../../../model/rules/definitions/http-rule-definitions';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { RulePriority } from '../../../model/rules/rules';
@@ -89,16 +89,16 @@ export function setUpAndroidCertificateRule(
         priority: RulePriority.OVERRIDE,
         matchers: [
             new MethodMatchers.GET(),
-            new matchers.SimplePathMatcher(
+            new matchers.FlexiblePathMatcher(
                 "http://android.httptoolkit.tech/config"
             )
         ],
         completionChecker: new completionCheckers.Always(),
-        handler: new StaticResponseHandler(200, undefined, JSON.stringify({
+        steps: [new StaticResponseStep(200, undefined, JSON.stringify({
             certificate: certContent
         }), {
             'content-type': 'application/json'
-        })
+        })]
     });
 
     // When the next Android config request comes in:

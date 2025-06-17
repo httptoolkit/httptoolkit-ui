@@ -4,7 +4,7 @@ import { ApiExchange, ApiMetadata } from "../api/api-interfaces";
 import { ApiStore } from "../api/api-store";
 import { ApiDetector } from "./api-detector";
 
-import { HandlerClassKey } from "../rules/rules";
+import { StepClassKey } from "../rules/rules";
 import { HTKEventBase } from "../events/event-base";
 
 import { HttpExchange, HttpVersion } from "./http-exchange";
@@ -41,7 +41,7 @@ export interface HttpExchangeView extends HTKEventBase {
     get apiSpec(): ApiMetadata | undefined;
 
     get httpVersion(): HttpVersion;
-    get matchedRule(): { id: string, handlerStepTypes: HandlerClassKey[] } | false | undefined;
+    get matchedRule(): { id: string, stepTypes: StepClassKey[] } | false | undefined;
     get tags(): string[];
     get timingEvents(): TimingEvents;
 
@@ -57,7 +57,7 @@ export interface HttpExchangeView extends HTKEventBase {
 }
 
 export type CompletedRequest = Omit<HttpExchangeView, 'request'> & {
-    matchedRule: { id: string, handlerRype: HandlerClassKey } | false
+    matchedRule: { id: string, stepType: StepClassKey } | false
 };
 export type CompletedExchange = Omit<HttpExchangeView, 'response'> & {
     response: HtkResponse | 'aborted'

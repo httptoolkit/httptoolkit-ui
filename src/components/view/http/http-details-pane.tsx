@@ -512,19 +512,16 @@ export class HttpDetailsPane extends React.Component<{
 
         const currentRuleDraft = findItem(rulesStore!.draftRules, { id: matchedRule.id }) as HtkRule | undefined;
         if (!currentRuleDraft) {
-            return { stepTypes: matchedRule.handlerStepTypes, status: 'deleted' } as const;
+            return { stepTypes: matchedRule.stepTypes, status: 'deleted' } as const;
         }
 
-        const currentStepTypes = ('handler' in currentRuleDraft
-            ? [currentRuleDraft.handler]
-            : currentRuleDraft.steps
-        ).map(s => getRulePartKey(s));
+        const currentStepTypes = currentRuleDraft.steps.map(s => getRulePartKey(s));
 
-        if (!_.isEqual(currentStepTypes, matchedRule.handlerStepTypes)) {
-            return { stepTypes: matchedRule.handlerStepTypes, status: 'modified-types' } as const;
+        if (!_.isEqual(currentStepTypes, matchedRule.stepTypes)) {
+            return { stepTypes: matchedRule.stepTypes, status: 'modified-types' } as const;
         }
 
-        return { stepTypes: matchedRule.handlerStepTypes, status: 'unchanged' } as const;
+        return { stepTypes: matchedRule.stepTypes, status: 'unchanged' } as const;
     }
 
     @action.bound

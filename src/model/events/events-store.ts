@@ -28,7 +28,8 @@ import {
     InputRTCMediaStats,
     InputRTCMediaTrackClosed,
     InputRTCExternalPeerAttached,
-    InputRuleEvent
+    InputRuleEvent,
+    InputRequest
 } from '../../types';
 
 import { lazyObservablePromise } from '../../util/observable';
@@ -455,7 +456,11 @@ export class EventsStore {
     @action
     private addFailedTlsRequest(request: InputTlsFailure) {
         if (this.tlsFailures.some((failure) =>
-            failure.upstreamHostname === request.hostname &&
+            failure.upstreamHostname === (
+                request.tlsMetadata.sniHostname ??
+                request.destination?.hostname ??
+                request.hostname
+            ) &&
             failure.remoteIpAddress === request.remoteIpAddress
         )) return; // Drop duplicate TLS failures
 
@@ -476,17 +481,18 @@ export class EventsStore {
             return;
         }
 
-        const exchange = new HttpExchange({
+        const request = {
             ...error.request,
-            protocol: error.request.protocol || '',
+            matchedRuleId: false,
             method: error.request.method || '',
             url: error.request.url || `${error.request.protocol || 'http'}://`,
-            path: error.request.path || '/',
             headers: error.request.headers
-        }, this.apiStore);
+        } satisfies InputRequest;
+
+        const exchange = new HttpExchange(request, this.apiStore);
 
         if (error.response === 'aborted') {
-            exchange.markAborted(error.request);
+            exchange.markAborted(request);
         } else {
             exchange.setResponse(error.response);
         }

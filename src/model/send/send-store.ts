@@ -195,7 +195,6 @@ export class SendStore {
                 url: requestInput.url,
                 protocol: url.protocol.slice(0, -1),
                 path: url.pathname,
-                hostname: url.hostname,
                 headers: rawHeadersToHeaders(requestInput.headers),
                 rawHeaders: _.cloneDeep(requestInput.headers),
                 body: { buffer: encodedBody },
