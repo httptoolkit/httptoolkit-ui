@@ -34,14 +34,12 @@ function getFilename(
     }.${extension}`;
 }
 
-export type StreamType = 'WebSocket' | 'DataChannel';
-
 @observer
 export class StreamMessageListCard extends React.Component<ExpandableCardProps & {
     isPaidUser: boolean,
     filenamePrefix: string,
     streamId: string,
-    streamType: StreamType,
+    cardHeading: string,
     streamLabel?: string,
     messages: ReadonlyArray<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
@@ -59,7 +57,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
     render() {
         const {
             streamId,
-            streamType,
+            cardHeading,
             streamLabel,
             messages,
             isPaidUser,
@@ -88,7 +86,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                         icon={['fas', 'download']}
                         title={
                             isPaidUser
-                                ? "Save these message as a file"
+                                ? "Save these messages as a file"
                                 : "With Pro: Save these messages as a file"
                         }
                         disabled={!isPaidUser}
@@ -115,7 +113,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                 <CollapsibleCardHeading
                     onCollapseToggled={onCollapseToggled}
                 >
-                    { streamType } messages
+                    { cardHeading }
                 </CollapsibleCardHeading>
             </header>
             <StreamMessagesList expanded={!!expanded}>

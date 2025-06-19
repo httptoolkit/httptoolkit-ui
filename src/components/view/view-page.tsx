@@ -13,7 +13,7 @@ import {
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { WithInjected, CollectedEvent, HttpExchangeView } from '../../types';
+import { WithInjected, CollectedEvent, HttpExchangeView, RawTunnel } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 import { useHotkeys, isEditable, windowSize, AriaCtrlCmd, Ctrl } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
@@ -45,6 +45,7 @@ import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
+import { RawTunnelDetailsPane } from './raw-tunnel-details-pane';
 
 interface ViewPageProps {
     className?: string;
@@ -403,6 +404,12 @@ class ViewPage extends React.Component<ViewPageProps> {
                 offerEditor={this.editors.request}
                 answerEditor={this.editors.response}
                 navigate={this.props.navigate}
+            />
+        } else if (this.selectedEvent.isRawTunnel()) {
+            rightPane = <RawTunnelDetailsPane
+                tunnel={this.selectedEvent}
+                streamMessageEditor={this.editors.streamMessage}
+                isPaidUser={isPaidUser}
             />
         } else {
             throw new UnreachableCheck(this.selectedEvent);

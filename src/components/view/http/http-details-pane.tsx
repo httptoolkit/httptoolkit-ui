@@ -462,7 +462,7 @@ export class HttpDetailsPane extends React.Component<{
             // reset when we switch between exchanges:
             key={`${this.cardProps.webSocketMessages.key}-${this.props.exchange.id}`}
             streamId={this.props.exchange.id}
-            streamType='WebSocket'
+            cardHeading='WebSocket Messages'
 
             editorNode={this.props.streamMessageEditor}
 

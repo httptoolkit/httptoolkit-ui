@@ -16,7 +16,9 @@ import type {
     TlsHandshakeFailure,
     TlsPassthroughEvent,
     TlsSocketMetadata,
-    ClientError
+    ClientError,
+    RawPassthroughEvent,
+    RawPassthroughDataEvent
 } from 'mockttp';
 import type { PortRange } from 'mockttp/dist/mockttp';
 
@@ -33,6 +35,7 @@ import type { ParsedUrl } from './util/url';
 
 import type { FailedTlsConnection } from './model/tls/failed-tls-connection';
 import type { TlsTunnel } from './model/tls/tls-tunnel';
+import type { RawTunnel, RawTunnelMessage } from './model/raw-tunnel';
 import type { HttpExchange, HttpVersion } from './model/http/http-exchange';
 import type { HttpExchangeView } from './model/http/http-exchange-views';
 
@@ -118,7 +121,10 @@ export type InputRTCMediaTrackOpened = InputRTCEventData['media-track-opened'];
 export type InputRTCMediaStats = InputRTCEventData['media-track-stats'];
 export type InputRTCMediaTrackClosed = InputRTCEventData['media-track-closed'];
 
-export type InputStreamMessage = InputRTCMessage | InputWebSocketMessage;
+export type InputStreamMessage =
+    | InputRTCMessage
+    | InputWebSocketMessage
+    | RawTunnelMessage;
 
 interface InputRuleEventStructure<K, T> {
     requestId: string;
@@ -245,6 +251,7 @@ export interface FailedDecodeMessageBody extends MessageBody {
 export type {
     FailedTlsConnection,
     TlsTunnel,
+    RawTunnel,
     HttpExchange,
     HttpExchangeView,
     WebSocketStream,
@@ -256,6 +263,7 @@ export type {
 export type CollectedEvent =
     | FailedTlsConnection
     | TlsTunnel
+    | RawTunnel
     | HttpExchange
     | WebSocketStream
     | RTCConnection
