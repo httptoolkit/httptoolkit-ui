@@ -115,10 +115,19 @@ export function byteLength(input: string | Buffer | MockttpSerializedBuffer | Ui
     }
 }
 
+// We sometimes do hex encoding of large buffers, so we need it to be quick! We handle that by
+// precalculating hex pairs, so we can do it in a simple for loop + join. This is nearly 5x
+// faster than just toString('hex') (before thinking about splitting & spaces) or map(toString(16)).
+const HEX_LOOKUP = Array.from({ length: 256 }, (_, i) =>
+  i.toString(16).padStart(2, '0').toUpperCase()
+);
+
 export function bufferToHex(input: Buffer) {
-    return input.toString('hex')
-        .replace(/(\w\w)/g, '$1 ')
-        .trimRight();
+    const hexPairs = new Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+        hexPairs[i] = HEX_LOOKUP[input[i]];
+    }
+    return hexPairs.join(' ');
 }
 
 export function getReadableSize(input: number | Buffer | string, siUnits = true) {
