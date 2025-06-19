@@ -469,6 +469,7 @@ export class HttpDetailsPane extends React.Component<{
             isPaidUser={this.props.accountStore!.isPaidUser}
             filenamePrefix={filenamePrefix}
             messages={exchange.messages}
+            onClearMessages={() => exchange.downstream.cleanupMessages()}
         />;
     }
 

@@ -127,11 +127,15 @@ export class WebSocketStream extends HttpExchange implements WebSocketView {
         this.upstream.updateWithRequestHead(params);
     }
 
-    cleanup() {
-        super.cleanup();
-
+    @action
+    cleanupMessages() {
         // Clear all websocket message data too
         this.messages.forEach(msg => msg.cleanup());
         this.messages.length = 0;
+    }
+
+    cleanup() {
+        super.cleanup();
+        this.cleanupMessages();
     }
 }
