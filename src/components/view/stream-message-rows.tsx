@@ -62,7 +62,7 @@ export const StreamMessageCollapsedRow = React.memo((p: {
                 p.message.content
                 // Limit the length - no point showing huge messages here. On a typical UI, we show about
                 // 100 chars here, so this should give us a good bit of buffer
-                .slice(0, 200)
+                .subarray(0, 200)
             )
         }
     </CollapsedStreamContent>

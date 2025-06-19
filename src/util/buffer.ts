@@ -31,7 +31,7 @@ export function isProbablyUtf8(buffer: Buffer) {
         // decode everything up to that point.
 
         const lastUtf8IndexBefore1024 = buffer
-            .slice(1024, 1028) // 4 bytes should be enough - max length of UTF8 char
+            .subarray(1024, 1028) // 4 bytes should be enough - max length of UTF8 char
             .findIndex((byte) =>
                 (byte & 0xC0) != 0x80 // 0x80 === 0b10... => continuation byte
             );
@@ -40,7 +40,7 @@ export function isProbablyUtf8(buffer: Buffer) {
         if (lastUtf8IndexBefore1024 === -1) return false;
         const cleanEndOfUtf8Data = 1024 + lastUtf8IndexBefore1024;
 
-        dataToCheck = buffer.slice(0, cleanEndOfUtf8Data);
+        dataToCheck = buffer.subarray(0, cleanEndOfUtf8Data);
     } else {
         dataToCheck = buffer;
     }

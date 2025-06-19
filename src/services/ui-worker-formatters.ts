@@ -43,7 +43,7 @@ const WorkerFormatters = {
         // available by downloading the whole body.
         const needsTruncation = content.length > FIVE_MB;
         if (needsTruncation) {
-            content = content.slice(0, FIVE_MB)
+            content = content.subarray(0, FIVE_MB)
         }
 
         const formattedContent = bufferToHex(content);

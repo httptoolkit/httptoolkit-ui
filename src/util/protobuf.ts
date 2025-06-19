@@ -66,7 +66,7 @@ export const extractProtobufFromGrpc = (input: Buffer, headers: Headers) => {
         const errorPrefix = `gRPC message #${msgIndex} @${offset}: `
         const compressionFlag = input.readUInt8();
         const length = input.readUInt32BE(1);
-        let message = input.slice(5, 5 + length);
+        let message = input.subarray(5, 5 + length);
         if (message.length != length) {
             throw new Error(`${errorPrefix}length of message is corrupted`);
         }
@@ -103,7 +103,7 @@ export const isProbablyGrpcProto = (input: Buffer, headers: Headers) => {
     }
     const compressionFlag = input.readUInt8();
     const length = input.readUInt32BE(1);
-    const firstMessage = input.slice(5, 5 + length);
+    const firstMessage = input.subarray(5, 5 + length);
     return length >= 2 &&  // at least two bytes for Protobuf message (tag & value)
         firstMessage.length == length &&
         (
