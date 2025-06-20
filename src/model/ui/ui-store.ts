@@ -251,6 +251,13 @@ export class UiStore {
     @observable
     expandedViewCard: ExpandableViewCardKey | undefined;
 
+    // Store view list scroll position and selected entry to persist when switching tabs
+    @observable
+    viewScrollPosition: number = 0;
+
+    @observable
+    selectedEventId: string | undefined;
+
     @computed
     get viewCardProps() {
         return _.mapValues(this.viewCardStates, (state, key) => ({
@@ -435,6 +442,17 @@ export class UiStore {
 
     @persist @observable
     exportSnippetFormat: string | undefined;
+
+    // Actions for persisting view state when switching tabs
+    @action.bound
+    setViewScrollPosition(position: number) {
+        this.viewScrollPosition = position;
+    }
+
+    @action.bound
+    setSelectedEventId(eventId: string | undefined) {
+        this.selectedEventId = eventId;
+    }
 
     /**
      * This tracks the context menu state *only if it's not handled natively*. This state

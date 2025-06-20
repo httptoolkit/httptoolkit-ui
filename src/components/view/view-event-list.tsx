@@ -17,6 +17,7 @@ import {
     RTCConnection,
     TlsTunnel
 } from '../../types';
+import { UiStore } from '../../model/ui/ui-store';
 
 import {
     getSummaryColor,
@@ -54,6 +55,7 @@ interface ViewEventListProps {
     isPaused: boolean;
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
+    uiStore: UiStore;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
@@ -879,19 +881,37 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         if (!listWindow) return true; // This means no rows, so we are effectively at the bottom
         else return (listWindow.scrollTop + SCROLL_BOTTOM_MARGIN) >= (listWindow.scrollHeight - listWindow.offsetHeight);
     }
-
     private wasListAtBottom = true;
     private updateScrolledState = () => {
         requestAnimationFrame(() => { // Measure async, once the scroll has actually happened
             this.wasListAtBottom = this.isListAtBottom();
+            
+            // Only save scroll position after we've restored the initial state
+            if (this.hasRestoredInitialState) {
+                const listWindow = this.listBodyRef.current?.parentElement;
+                if (listWindow) {
+                    this.props.uiStore.setViewScrollPosition(listWindow.scrollTop);
+                }
+            }
         });
     }
 
+    private hasRestoredInitialState = false;    
     componentDidMount() {
-        this.updateScrolledState();
+        // Don't save scroll state immediately - wait until we've restored first
+        
+        // Use a more aggressive delay to ensure DOM is fully ready
+        setTimeout(() => {
+            this.restoreScrollPosition();
+            
+            // Only start tracking scroll changes after we've restored
+            setTimeout(() => {
+                this.hasRestoredInitialState = true;
+            }, 100);
+        }, 100);
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps: ViewEventListProps) {
         if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
             // If we previously had something here focused, and we've updated, update
             // the focus too, to make sure it's in the right place.
@@ -901,7 +921,29 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         // If we previously were scrolled to the bottom of the list, but now we're not,
         // scroll there again ourselves now.
         if (this.wasListAtBottom && !this.isListAtBottom()) {
-            this.listRef.current?.scrollToItem(this.props.events.length - 1);
+            this.listRef.current?.scrollToItem(this.props.events.length - 1);        
+        } else if (prevProps.selectedEvent !== this.props.selectedEvent && this.props.selectedEvent) {
+            // If the selected event changed and we have a selected event, scroll to it
+            // This handles restoring the selected event when returning to the tab
+            this.scrollToEvent(this.props.selectedEvent);
+        } else if (prevProps.filteredEvents.length !== this.props.filteredEvents.length) {
+            // If the filtered events changed (e.g., new events loaded), try to restore scroll position
+            setTimeout(() => {
+                this.restoreScrollPosition();
+            }, 50);
+        }
+    }
+
+    private restoreScrollPosition = () => {
+        // Only restore if we have a saved position
+        const savedPosition = this.props.uiStore.viewScrollPosition;
+        if (savedPosition > 0) {
+            const listWindow = this.listBodyRef.current?.parentElement;
+            if (listWindow) {                // Only restore if we're not close to the current position (avoid unnecessary scrolling)
+                if (Math.abs(listWindow.scrollTop - savedPosition) > 10) {
+                    listWindow.scrollTop = savedPosition;
+                }
+            }
         }
     }
 
@@ -1005,5 +1047,12 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         }
 
         event.preventDefault();
+    }    // Public method to force scroll and selection restoration
+    public restoreViewState = () => {
+        if (this.props.selectedEvent) {
+            this.scrollToEvent(this.props.selectedEvent);
+        } else {
+            this.restoreScrollPosition();
+        }
     }
 }

@@ -207,11 +207,13 @@ class ViewPage extends React.Component<ViewPageProps> {
             filteredEventCount: [filteredEvents.length, events.length]
         };
     }
-
     @computed
     get selectedEvent() {
+        // First try to use the URL-based eventId, then fallback to the persisted selection
+        const targetEventId = this.props.eventId || this.props.uiStore.selectedEventId;
+        
         return _.find(this.props.eventsStore.events, {
-            id: this.props.eventId
+            id: targetEventId
         });
     }
 
@@ -240,12 +242,16 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.onBuildRuleFromExchange,
         this.onPrepareToResendRequest
     );
-
     componentDidMount() {
         // After first render, scroll to the selected event (or the end of the list) by default:
         requestAnimationFrame(() => {
             if (this.props.eventId && this.selectedEvent) {
                 this.onScrollToCenterEvent(this.selectedEvent);
+            } else if (!this.props.eventId && this.props.uiStore.selectedEventId) {
+                // If no URL eventId but we have a persisted selection, restore it
+                setTimeout(() => {
+                    this.listRef.current?.restoreViewState();
+                }, 100);
             } else {
                 this.onScrollToEnd();
             }
@@ -326,6 +332,18 @@ class ViewPage extends React.Component<ViewPageProps> {
                 }
             })
         );
+    }
+    componentWillUnmount() {
+        // Component is unmounting
+    }
+
+    componentDidUpdate(prevProps: ViewPageProps) {
+        // Only clear persisted selection if we're explicitly navigating to a different event via URL
+        // Don't clear it when going from eventId to no eventId (which happens when clearing selection)
+        if (this.props.eventId && prevProps.eventId && this.props.eventId !== prevProps.eventId) {
+            // Clear persisted selection only when explicitly navigating between different events via URL
+            this.props.uiStore.setSelectedEventId(undefined);
+        }
     }
 
     isSendAvailable() {
@@ -447,8 +465,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
-
                         contextMenuBuilder={this.contextMenuBuilder}
+                        uiStore={this.props.uiStore}
 
                         ref={this.listRef}
                     />
@@ -488,9 +506,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     onSearchFiltersConsidered(filters: FilterSet | undefined) {
         this.searchFiltersUnderConsideration = filters;
     }
-
     @action.bound
     onSelected(event: CollectedEvent | undefined) {
+        // Persist the selected event to UiStore for tab switching
+        this.props.uiStore.setSelectedEventId(event?.id);
+        
         this.props.navigate(event
             ? `/view/${event.id}`
             : '/view'
