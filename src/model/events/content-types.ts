@@ -118,6 +118,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/grpc+protobuf': 'grpc-proto',
     'application/grpc-proto': 'grpc-proto',
     'application/grpc-protobuf': 'grpc-proto',
+    'application/grpc-web': 'grpc-proto',
 
     'application/octet-stream': 'raw'
 } as const;
