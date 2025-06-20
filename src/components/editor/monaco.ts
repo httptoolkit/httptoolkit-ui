@@ -6,6 +6,7 @@ import { defineMonacoThemes } from '../../styles';
 import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
 import { observable, runInAction } from 'mobx';
+import { setupXMLValidation } from './xml-validation';
 
 export type {
     MonacoTypes,
@@ -73,6 +74,8 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
                 return codeLens;
             },
         });
+
+        setupXMLValidation(monaco);
 
         MonacoEditor = rmeModule.default;
     } catch (err) {
