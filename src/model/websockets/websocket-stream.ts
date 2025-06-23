@@ -128,7 +128,7 @@ export class WebSocketStream extends HttpExchange implements WebSocketView {
     }
 
     @action
-    cleanupMessages() {
+    clearMessages() {
         // Clear all websocket message data too
         this.messages.forEach(msg => msg.cleanup());
         this.messages.length = 0;
@@ -136,6 +136,6 @@ export class WebSocketStream extends HttpExchange implements WebSocketView {
 
     cleanup() {
         super.cleanup();
-        this.cleanupMessages();
+        this.clearMessages();
     }
 }

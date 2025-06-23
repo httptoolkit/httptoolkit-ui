@@ -43,7 +43,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
     streamId: string,
     streamType: StreamType,
     streamLabel?: string,
-    messages: Array<StreamMessage>,
+    messages: ReadonlyArray<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
     onClearMessages?: () => void,
 }> {
@@ -96,7 +96,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                     />
                     { onClearMessages &&
                         <IconButton
-                            icon={['fas', 'ban']}
+                            icon={['far', 'trash-alt']}
                             title="Clear all messages"
                             onClick={onClearMessages}
                         /> }

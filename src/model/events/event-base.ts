@@ -4,10 +4,10 @@ import {
     FailedTlsConnection,
     TlsTunnel,
     HttpExchangeView,
+    WebSocketView,
     RTCConnection,
     RTCDataChannel,
-    RTCMediaTrack,
-    WebSocketStream
+    RTCMediaTrack
 } from '../../types';
 
 import { getEventCategory } from './categorization';
@@ -18,7 +18,7 @@ export abstract class HTKEventBase {
 
     // These can be overriden by subclasses to allow easy type narrowing:
     isHttp(): this is HttpExchangeView { return false; }
-    isWebSocket(): this is WebSocketStream { return false; }
+    isWebSocket(): this is WebSocketView { return false; }
 
     isTlsFailure(): this is FailedTlsConnection { return false; }
     isTlsTunnel(): this is TlsTunnel { return false; }
