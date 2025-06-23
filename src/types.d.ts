@@ -37,6 +37,7 @@ import type { HttpExchange, HttpVersion } from './model/http/http-exchange';
 import type { HttpExchangeView } from './model/http/http-exchange-views';
 
 import type { WebSocketStream } from './model/websockets/websocket-stream';
+import type { WebSocketView } from './model/websockets/websocket-views';
 import type { RTCConnection } from './model/webrtc/rtc-connection';
 import type { RTCDataChannel } from './model/webrtc/rtc-data-channel';
 import type { RTCMediaTrack } from './model/webrtc/rtc-media-track';
@@ -247,6 +248,7 @@ export type {
     HttpExchange,
     HttpExchangeView,
     WebSocketStream,
+    WebSocketView,
     RTCConnection,
     RTCDataChannel,
     RTCMediaTrack

@@ -4,7 +4,7 @@ import { action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { CollectedEvent, HtkResponse, HttpExchange, HttpExchangeView } from '../../../types';
+import { CollectedEvent, HtkResponse, HttpExchangeView } from '../../../types';
 import { styled } from '../../../styles';
 import { logError } from '../../../errors';
 
@@ -15,7 +15,7 @@ import { ApiExchange } from '../../../model/api/api-interfaces';
 import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
 import { findItem } from '../../../model/rules/rules-structure';
 import { HtkRule, getRulePartKey } from '../../../model/rules/rules';
-import { WebSocketStream } from '../../../model/websockets/websocket-stream';
+import { WebSocketView } from '../../../model/websockets/websocket-views';
 import { tagsToErrorType } from '../../../model/http/error-types';
 
 import { PaneScrollContainer } from '../view-details-pane';
@@ -448,7 +448,7 @@ export class HttpDetailsPane extends React.Component<{
             />;
     }
 
-    private renderWebSocketMessages(exchange: WebSocketStream) {
+    private renderWebSocketMessages(exchange: WebSocketView) {
         const urlParts = exchange.request.url.split('/');
         const domain = urlParts[2].split(':')[0];
         const baseName = urlParts.length >= 2 ? urlParts[urlParts.length - 1] : undefined;
@@ -469,6 +469,7 @@ export class HttpDetailsPane extends React.Component<{
             isPaidUser={this.props.accountStore!.isPaidUser}
             filenamePrefix={filenamePrefix}
             messages={exchange.messages}
+            onClearMessages={this.clearMessages}
         />;
     }
 
@@ -536,6 +537,13 @@ export class HttpDetailsPane extends React.Component<{
     private ignoreError() {
         const { exchange } = this.props;
         exchange.hideErrors = true;
+    }
+
+    @action.bound
+    private clearMessages() {
+        const { exchange } = this.props;
+        if (!exchange.isWebSocket()) return;
+        exchange.downstream.clearMessages();
     }
 
 };
