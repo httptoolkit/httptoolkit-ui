@@ -769,6 +769,17 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     private listBodyRef = React.createRef<HTMLDivElement>();
     private listRef = React.createRef<List>();
 
+    private setListBodyRef = (element: HTMLDivElement | null) => {
+        // Update the ref
+        (this.listBodyRef as any).current = element;
+        
+        // If the element is being mounted and we haven't restored state yet, do it now
+        if (element && !this.hasRestoredInitialState) {
+            this.restoreScrollPosition();
+            this.hasRestoredInitialState = true;
+        }
+    };
+
     private KeyBoundListWindow = observer(
         React.forwardRef<HTMLDivElement>(
             (props: any, ref) => <div
@@ -818,7 +829,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 : <AutoSizer>{({ height, width }) =>
                     <Observer>{() =>
                         <List
-                            innerRef={this.listBodyRef}
+                            innerRef={this.setListBodyRef}
                             outerElementType={this.KeyBoundListWindow}
                             ref={this.listRef}
 
@@ -896,21 +907,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         });
     }
 
-    private hasRestoredInitialState = false;    
-    componentDidMount() {
-        // Don't save scroll state immediately - wait until we've restored first
-        
-        // Use a more aggressive delay to ensure DOM is fully ready
-        setTimeout(() => {
-            this.restoreScrollPosition();
-            
-            // Only start tracking scroll changes after we've restored
-            setTimeout(() => {
-                this.hasRestoredInitialState = true;
-            }, 100);
-        }, 100);
-    }
-
+    private hasRestoredInitialState = false;
+    
     componentDidUpdate(prevProps: ViewEventListProps) {
         if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
             // If we previously had something here focused, and we've updated, update

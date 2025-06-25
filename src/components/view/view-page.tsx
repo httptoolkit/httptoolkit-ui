@@ -171,6 +171,9 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private listRef = React.createRef<ViewEventList>();
     private splitPaneRef = React.createRef<SplitPane>();
+    
+    @observable
+    private shouldRestoreViewStateOnRefSet = false;
 
     @observable
     private searchFiltersUnderConsideration: FilterSet | undefined;
@@ -248,10 +251,8 @@ class ViewPage extends React.Component<ViewPageProps> {
             if (this.props.eventId && this.selectedEvent) {
                 this.onScrollToCenterEvent(this.selectedEvent);
             } else if (!this.props.eventId && this.props.uiStore.selectedEventId) {
-                // If no URL eventId but we have a persisted selection, restore it
-                setTimeout(() => {
-                    this.listRef.current?.restoreViewState();
-                }, 100);
+                // If no URL eventId but we have a persisted selection, restore it when ref is set
+                this.shouldRestoreViewStateOnRefSet = true;
             } else {
                 this.onScrollToEnd();
             }
@@ -332,9 +333,6 @@ class ViewPage extends React.Component<ViewPageProps> {
                 }
             })
         );
-    }
-    componentWillUnmount() {
-        // Component is unmounting
     }
 
     componentDidUpdate(prevProps: ViewPageProps) {
@@ -468,7 +466,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                         contextMenuBuilder={this.contextMenuBuilder}
                         uiStore={this.props.uiStore}
 
-                        ref={this.listRef}
+                        ref={this.setListRef}
                     />
                 </LeftPane>
                 <PaneOuterContainer
@@ -642,6 +640,19 @@ class ViewPage extends React.Component<ViewPageProps> {
     onScrollToEnd() {
         this.listRef.current?.scrollToEnd();
     }
+
+    @action.bound
+    setListRef = (ref: ViewEventList | null) => {
+        if (ref) {
+            (this.listRef as any).current = ref;
+            if (this.shouldRestoreViewStateOnRefSet) {
+                this.shouldRestoreViewStateOnRefSet = false;
+                ref.restoreViewState();
+            }
+        } else {
+            (this.listRef as any).current = null;
+        }
+    };
 }
 
 const LeftPane = styled.div`
