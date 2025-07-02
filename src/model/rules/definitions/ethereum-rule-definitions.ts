@@ -10,7 +10,7 @@ import {
     RequestRuleData
 } from 'mockttp';
 import {
-    HttpHandlerLookup
+    HttpStepLookup
 } from './http-rule-definitions';
 import { encodeAbi } from './ethereum-abi';
 
@@ -63,7 +63,7 @@ export class EthereumParamsMatcher extends matchers.JsonBodyFlexibleMatcher {
 
 }
 
-export class EthereumCallResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+export class EthereumCallResultStep extends HttpStepLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-call-result';
 
@@ -86,7 +86,7 @@ export class EthereumCallResultHandler extends HttpHandlerLookup['json-rpc-respo
 
 }
 
-export class EthereumNumberResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+export class EthereumNumberResultStep extends HttpStepLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-number-result';
 
@@ -104,7 +104,7 @@ export class EthereumNumberResultHandler extends HttpHandlerLookup['json-rpc-res
 
 }
 
-export class EthereumHashResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+export class EthereumHashResultStep extends HttpStepLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-hash-result';
 
@@ -122,7 +122,7 @@ export class EthereumHashResultHandler extends HttpHandlerLookup['json-rpc-respo
 
 }
 
-export class EthereumReceiptResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+export class EthereumReceiptResultStep extends HttpStepLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-receipt-result';
 
@@ -155,7 +155,7 @@ export class EthereumReceiptResultHandler extends HttpHandlerLookup['json-rpc-re
 
 }
 
-export class EthereumBlockResultHandler extends HttpHandlerLookup['json-rpc-response'] {
+export class EthereumBlockResultStep extends HttpStepLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-block-result';
 
@@ -197,7 +197,7 @@ export class EthereumBlockResultHandler extends HttpHandlerLookup['json-rpc-resp
 
 }
 
-export class EthereumErrorHandler extends HttpHandlerLookup['json-rpc-response'] {
+export class EthereumErrorStep extends HttpStepLookup['json-rpc-response'] {
 
     readonly uiType = 'eth-error';
 
@@ -235,7 +235,7 @@ export const EthereumMatcherLookup = {
     'host': matchers.HostMatcher,
     'hostname': matchers.HostnameMatcher,
     'port': matchers.PortMatcher,
-    'simple-path': matchers.SimplePathMatcher,
+    'simple-path': matchers.FlexiblePathMatcher,
     'regex-path': matchers.RegexPathMatcher,
     'header': matchers.HeaderMatcher,
     'query': matchers.QueryMatcher,
@@ -247,35 +247,35 @@ export const EthereumInitialMatcherClasses = [
     EthereumMethodMatcher
 ];
 
-export const EthereumHandlerLookup = {
-    'eth-call-result': EthereumCallResultHandler,
-    'eth-number-result': EthereumNumberResultHandler,
-    'eth-hash-result': EthereumHashResultHandler,
-    'eth-receipt-result': EthereumReceiptResultHandler,
-    'eth-block-result': EthereumBlockResultHandler,
-    'eth-error': EthereumErrorHandler,
+export const EthereumStepLookup = {
+    'eth-call-result': EthereumCallResultStep,
+    'eth-number-result': EthereumNumberResultStep,
+    'eth-hash-result': EthereumHashResultStep,
+    'eth-receipt-result': EthereumReceiptResultStep,
+    'eth-block-result': EthereumBlockResultStep,
+    'eth-error': EthereumErrorStep,
 
-    'passthrough': HttpHandlerLookup['passthrough'],
-    'forward-to-host': HttpHandlerLookup['forward-to-host'],
-    'timeout': HttpHandlerLookup['timeout'],
-    'close-connection': HttpHandlerLookup['close-connection'],
-    'request-breakpoint': HttpHandlerLookup['request-breakpoint'],
-    'response-breakpoint': HttpHandlerLookup['response-breakpoint'],
-    'request-and-response-breakpoint': HttpHandlerLookup['request-and-response-breakpoint']
+    'passthrough': HttpStepLookup['passthrough'],
+    'forward-to-host': HttpStepLookup['forward-to-host'],
+    'timeout': HttpStepLookup['timeout'],
+    'close-connection': HttpStepLookup['close-connection'],
+    'request-breakpoint': HttpStepLookup['request-breakpoint'],
+    'response-breakpoint': HttpStepLookup['response-breakpoint'],
+    'request-and-response-breakpoint': HttpStepLookup['request-and-response-breakpoint']
 };
 
 type EthereumMatcherClass = typeof EthereumMatcherLookup[keyof typeof EthereumMatcherLookup];
 export type EthereumMatcher = InstanceType<EthereumMatcherClass>;
 export type EthereumInitialMatcher = InstanceType<typeof EthereumInitialMatcherClasses[number]>;
 
-type EthereumHandlerClass = typeof EthereumHandlerLookup[keyof typeof EthereumHandlerLookup];
-type EthereumHandler = InstanceType<EthereumHandlerClass>;
+type EthereumStepClass = typeof EthereumStepLookup[keyof typeof EthereumStepLookup];
+type EthereumStep = InstanceType<EthereumStepClass>;
 
 export interface EthereumRule extends Omit<RequestRuleData, 'matchers'> {
     id: string;
     type: 'ethereum';
     activated: boolean;
     matchers: Array<EthereumMatcher> & { 0?: EthereumMethodMatcher };
-    handler: EthereumHandler;
+    steps: Array<EthereumStep>;
     completionChecker: completionCheckers.Always; // HTK rules all *always* match
 }

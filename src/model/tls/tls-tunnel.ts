@@ -10,7 +10,7 @@ export class TlsTunnel extends HTKEventBase {
     ) {
         super();
 
-        this.searchIndex = [openEvent.hostname, openEvent.remoteIpAddress]
+        this.searchIndex = [this.upstreamHostname, openEvent.remoteIpAddress]
             .filter((x): x is string => !!x)
             .join('\n');
     }
@@ -20,8 +20,9 @@ export class TlsTunnel extends HTKEventBase {
     readonly remoteIpAddress = this.openEvent.remoteIpAddress;
     readonly remotePort = this.openEvent.remotePort;
 
-    readonly upstreamHostname = this.openEvent.hostname;
-    readonly upstreamPort = this.openEvent.upstreamPort;
+    // With backward compat for old servers:
+    readonly upstreamHostname = this.openEvent.destination?.hostname ?? this.openEvent.hostname;
+    readonly upstreamPort = this.openEvent.destination?.port ?? this.openEvent.upstreamPort;
 
     readonly tags = this.openEvent.tags;
     readonly timingEvents = this.openEvent.timingEvents;

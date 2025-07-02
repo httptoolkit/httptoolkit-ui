@@ -24,7 +24,7 @@ import { getStatusMessage } from '../http/http-docs';
 
 import { RulesStore } from './rules-store';
 import {
-    Handler,
+    Step,
     HtkRule,
     RulePriority,
     InitialMatcher,
@@ -47,11 +47,11 @@ import * as RtcRule from './definitions/rtc-rule-definitions';
 export function getNewRule(rulesStore: RulesStore): HtkRule {
     return observable({
         id: uuid(),
-        type: 'http', // New rules default to HTTP (i.e. they show HTTP handler options)
+        type: 'http', // New rules default to HTTP (i.e. they show HTTP step options)
         activated: true,
         matchers: [],
         completionChecker: new completionCheckers.Always(),
-        handler: getRuleDefaultHandler('http', rulesStore)
+        steps: [getRuleDefaultStep('http', rulesStore)]
     });
 }
 
@@ -90,24 +90,24 @@ export function updateRuleAfterInitialMatcherChange(
     }
 }
 
-export function getRuleDefaultHandler(type: 'http', ruleStore: RulesStore): HttpRule.HttpRule['handler'];
-export function getRuleDefaultHandler(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketRule['handler'];
-export function getRuleDefaultHandler(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumRule['handler'];
-export function getRuleDefaultHandler(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsRule['handler'];
-export function getRuleDefaultHandler(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCRule['steps'][0];
-export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler;
-export function getRuleDefaultHandler(type: RuleType, ruleStore: RulesStore): Handler {
+export function getRuleDefaultStep(type: 'http', ruleStore: RulesStore): HttpRule.HttpRule['steps'][0];
+export function getRuleDefaultStep(type: 'websocket', ruleStore: RulesStore): WsRule.WebSocketRule['steps'][0];
+export function getRuleDefaultStep(type: 'ethereum', ruleStore: RulesStore): EthRule.EthereumRule['steps'][0];
+export function getRuleDefaultStep(type: 'ipfs', ruleStore: RulesStore): IpfsRule.IpfsRule['steps'][0];
+export function getRuleDefaultStep(type: 'webrtc', ruleStore: RulesStore): RtcRule.RTCRule['steps'][0];
+export function getRuleDefaultStep(type: RuleType, ruleStore: RulesStore): Step;
+export function getRuleDefaultStep(type: RuleType, ruleStore: RulesStore): Step {
     switch (type) {
         case 'http':
-            return new HttpRule.PassThroughHandler(ruleStore);
+            return new HttpRule.PassThroughStep(ruleStore);
         case 'websocket':
-            return new WsRule.WebSocketPassThroughHandler(ruleStore);
+            return new WsRule.WebSocketPassThroughStep(ruleStore);
         case 'ethereum':
-            return new HttpRule.PassThroughHandler(ruleStore);
+            return new HttpRule.PassThroughStep(ruleStore);
         case 'ipfs':
-            return new HttpRule.PassThroughHandler(ruleStore);
+            return new HttpRule.PassThroughStep(ruleStore);
         case 'webrtc':
-           return new RtcRule.DynamicProxyStepDefinition();
+           return new RtcRule.DynamicProxyStep();
     }
 };
 
@@ -138,7 +138,7 @@ function buildRequestMatchers(request: HtkRequest) {
 
     return [
         new (HttpRule.MethodMatchers[request.method as MethodName] || HttpRule.WildcardMatcher)(),
-        new matchers.SimplePathMatcher(path),
+        new matchers.FlexiblePathMatcher(path),
         ...queryMatcher,
         ...bodyMatcher
     ];
@@ -150,7 +150,7 @@ export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest
         type: 'http',
         activated: true,
         matchers: buildRequestMatchers(request),
-        handler: new HttpRule.RequestBreakpointHandler(rulesStore),
+        steps: [new HttpRule.RequestBreakpointStep(rulesStore)],
         completionChecker: new completionCheckers.Always(),
     };
 }
@@ -191,12 +191,12 @@ export function buildRuleFromExchange(exchange: HttpExchangeView): HtkRule {
         type: 'http',
         activated: true,
         matchers: buildRequestMatchers(exchange.request),
-        handler: new HttpRule.StaticResponseHandler(
+        steps: [new HttpRule.StaticResponseStep(
             statusCode,
             statusMessage || getStatusMessage(statusCode),
             bodyContent,
             ruleHeaderMatch
-        ),
+        )],
         completionChecker: new completionCheckers.Always(),
     };
 }
@@ -223,11 +223,11 @@ export const buildDefaultGroupRules = (
             new HttpRule.AmIUsingMatcher()
         ],
         completionChecker: new completionCheckers.Always(),
-        handler: new HttpRule.StaticResponseHandler(200, undefined, amIUsingHtml, {
+        steps: [new HttpRule.StaticResponseStep(200, undefined, amIUsingHtml, {
             'content-type': 'text/html',
             'cache-control': 'no-store',
             'httptoolkit-active': 'true'
-        })
+        })]
     },
 
     // Share the server certificate on a convenient URL, assuming it supports that
@@ -239,12 +239,12 @@ export const buildDefaultGroupRules = (
             priority: RulePriority.OVERRIDE,
             matchers: [
                 new HttpRule.MethodMatchers.GET(),
-                new matchers.SimplePathMatcher("amiusing.httptoolkit.tech/certificate")
+                new matchers.FlexiblePathMatcher("amiusing.httptoolkit.tech/certificate")
             ],
             completionChecker: new completionCheckers.Always(),
-            handler: new HttpRule.FromFileResponseHandler(200, undefined, proxyStore.certPath, {
+            steps: [new HttpRule.FromFileResponseStep(200, undefined, proxyStore.certPath, {
                 'content-type': 'application/x-x509-ca-cert'
-            })
+            })]
         }] : []
     ),
 
@@ -255,7 +255,7 @@ export const buildDefaultGroupRules = (
         activated: true,
         matchers: [new HttpRule.DefaultWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
-        handler: new HttpRule.PassThroughHandler(rulesStore)
+        steps: [new HttpRule.PassThroughStep(rulesStore)]
     },
     {
         id: 'default-ws-wildcard',
@@ -263,7 +263,7 @@ export const buildDefaultGroupRules = (
         activated: true,
         matchers: [new WsRule.DefaultWebSocketWildcardMatcher()],
         completionChecker: new completionCheckers.Always(),
-        handler: new WsRule.WebSocketPassThroughHandler(rulesStore)
+        steps: [new WsRule.WebSocketPassThroughStep(rulesStore)]
     }
 ];
 
@@ -291,5 +291,5 @@ export const buildForwardingRuleIntegration = (
         new matchers.HostMatcher(sourceHost)
     ],
     completionChecker: new completionCheckers.Always(),
-    handler: new HttpRule.ForwardToHostHandler(targetHost, true, rulesStore)
+    steps: [new HttpRule.ForwardToHostStep(undefined, targetHost, true, rulesStore)]
 });

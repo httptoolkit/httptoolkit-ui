@@ -5,15 +5,15 @@ import { styled } from '../../../styles';
 import { PhosphorIcon } from '../../../icons';
 
 import { UiStore } from '../../../model/ui/ui-store';
-import { nameHandlerClass } from '../../../model/rules/rule-descriptions';
-import { HandlerClassKey } from '../../../model/rules/rules';
+import { nameStepClass } from '../../../model/rules/rule-descriptions';
+import { StepClassKey } from '../../../model/rules/rules';
 import { getSummaryColor } from '../../../model/events/categorization';
 
 import { aOrAn, uppercaseFirst } from '../../../util/text';
 import { PillButton } from '../../common/pill';
 
 export interface MatchedRuleData {
-    stepTypes: HandlerClassKey[];
+    stepTypes: StepClassKey[];
     status: 'unchanged' | 'modified-types' | 'deleted';
 }
 
@@ -36,7 +36,7 @@ export const MatchedRulePill = styled(inject('uiStore')((p: {
     const { stepTypes } = p.ruleData;
     const stepDescription = stepTypes.length !== 1
         ? 'multi-step'
-        : nameHandlerClass(stepTypes[0]);
+        : nameStepClass(stepTypes[0]);
 
     return <PillButton
         color={getSummaryColor('mutative')} // Conceptually similar - we've modified traffic

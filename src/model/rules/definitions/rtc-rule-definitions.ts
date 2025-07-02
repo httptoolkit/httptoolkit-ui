@@ -7,8 +7,8 @@ import {
     PluggableAdmin
 } from 'mockttp';
 import {
-    MatcherDefinitions,
-    HandlerStepDefinitions
+    matchers,
+    steps
 } from 'mockrtc';
 
 export const { Serializable } = PluggableAdmin.Serialization;
@@ -25,18 +25,18 @@ export class RTCWildcardMatcher extends Serializable {
 
 // Convenient re-export for various built-in matcher definitions:
 export const {
-    HasDataChannelMatcherDefinition,
-    HasVideoTrackMatcherDefinition,
-    HasAudioTrackMatcherDefinition,
-    HasMediaTrackMatcherDefinition
-} = MatcherDefinitions;
-export type HasDataChannelMatcherDefinition = MatcherDefinitions.HasDataChannelMatcherDefinition;
-export type HasVideoTrackMatcherDefinition = MatcherDefinitions.HasVideoTrackMatcherDefinition;
-export type HasAudioTrackMatcherDefinition = MatcherDefinitions.HasAudioTrackMatcherDefinition;
-export type HasMediaTrackMatcherDefinition = MatcherDefinitions.HasMediaTrackMatcherDefinition;
+    HasDataChannelMatcher,
+    HasVideoTrackMatcher,
+    HasAudioTrackMatcher,
+    HasMediaTrackMatcher
+} = matchers;
+export type HasDataChannelMatcher = matchers.HasDataChannelMatcher;
+export type HasVideoTrackMatcher = matchers.HasVideoTrackMatcher;
+export type HasAudioTrackMatcher = matchers.HasAudioTrackMatcher;
+export type HasMediaTrackMatcher = matchers.HasMediaTrackMatcher;
 
 export const RTCMatcherLookup = {
-    ...MatcherDefinitions.MatcherDefinitionLookup,
+    ...matchers.MatcherDefinitionLookup,
 
     'rtc-wildcard': RTCWildcardMatcher
 };
@@ -47,28 +47,28 @@ export const RTCInitialMatcherClasses = [
 
 // Convenient re-export for various built-in step definitions:
 export const {
-    DynamicProxyStepDefinition,
-    EchoStepDefinition,
-    CloseStepDefinition,
-    WaitForMediaStepDefinition,
-    WaitForDurationStepDefinition,
-    WaitForChannelStepDefinition,
-    WaitForMessageStepDefinition,
-    CreateChannelStepDefinition,
-    SendStepDefinition
-} = HandlerStepDefinitions;
-export type DynamicProxyStepDefinition = HandlerStepDefinitions.DynamicProxyStepDefinition;
-export type EchoStepDefinition = HandlerStepDefinitions.EchoStepDefinition;
-export type CloseStepDefinition = HandlerStepDefinitions.CloseStepDefinition;
-export type WaitForMediaStepDefinition = HandlerStepDefinitions.WaitForMediaStepDefinition;
-export type WaitForDurationStepDefinition = HandlerStepDefinitions.WaitForDurationStepDefinition;
-export type WaitForChannelStepDefinition = HandlerStepDefinitions.WaitForChannelStepDefinition;
-export type WaitForMessageStepDefinition = HandlerStepDefinitions.WaitForMessageStepDefinition;
-export type CreateChannelStepDefinition = HandlerStepDefinitions.CreateChannelStepDefinition;
-export type SendStepDefinition = HandlerStepDefinitions.SendStepDefinition;
+    DynamicProxyStep,
+    EchoStep,
+    CloseStep,
+    WaitForMediaStep,
+    WaitForDurationStep,
+    WaitForChannelStep,
+    WaitForMessageStep,
+    CreateChannelStep,
+    SendStep
+} = steps;
+export type DynamicProxyStep = steps.DynamicProxyStep;
+export type EchoStep = steps.EchoStep;
+export type CloseStep = steps.CloseStep;
+export type WaitForMediaStep = steps.WaitForMediaStep;
+export type WaitForDurationStep = steps.WaitForDurationStep;
+export type WaitForChannelStep = steps.WaitForChannelStep;
+export type WaitForMessageStep = steps.WaitForMessageStep;
+export type CreateChannelStep = steps.CreateChannelStep;
+export type SendStep = steps.SendStep;
 
 export const RTCStepLookup = {
-    ...HandlerStepDefinitions.StepDefinitionLookup
+    ...steps.StepDefinitionLookup
 };
 
 type RTCMatcherClass = typeof RTCMatcherLookup[keyof typeof RTCMatcherLookup];

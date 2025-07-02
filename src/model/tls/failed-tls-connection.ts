@@ -10,14 +10,16 @@ export class FailedTlsConnection extends HTKEventBase {
     ) {
         super();
 
-        this.searchIndex = [failureEvent.hostname, failureEvent.remoteIpAddress]
+        this.searchIndex = [this.upstreamHostname, failureEvent.remoteIpAddress]
             .filter((x): x is string => !!x)
             .join('\n');
     }
 
     readonly id = uuid();
 
-    readonly upstreamHostname = this.failureEvent.hostname;
+    readonly upstreamHostname = this.failureEvent.tlsMetadata.sniHostname ??
+        this.failureEvent.destination?.hostname ??
+        this.failureEvent.hostname;
     readonly remoteIpAddress = this.failureEvent.remoteIpAddress;
     readonly remotePort = this.failureEvent.remotePort;
     readonly failureCause = this.failureEvent.failureCause;

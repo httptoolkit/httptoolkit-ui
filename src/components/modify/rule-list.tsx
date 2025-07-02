@@ -18,7 +18,7 @@ import {
     getItemAtPath,
     findItem,
 } from '../../model/rules/rules-structure';
-import { Handler, HtkRule, RuleType } from '../../model/rules/rules';
+import { Step, HtkRule, RuleType } from '../../model/rules/rules';
 
 import { GroupHeader, GroupTail } from './rule-group';
 import { AddRuleRow, RuleRow } from './rule-row';
@@ -113,7 +113,7 @@ export class RuleList extends React.Component<{
     deleteItem: (path: ItemPath) => void,
     toggleRuleCollapsed: (id: string) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
-    getRuleDefaultHandler: (ruleType: RuleType) => Handler,
+    getRuleDefaultStep: (ruleType: RuleType) => Step,
 
     moveRule: (currentPath: ItemPath, targetPath: ItemPath) => void,
     combineRulesAsGroup: (sourcePath: ItemPath, targetPath: ItemPath) => void,
@@ -207,7 +207,7 @@ export class RuleList extends React.Component<{
             cloneItem,
             toggleRuleCollapsed,
             updateGroupTitle,
-            getRuleDefaultHandler,
+            getRuleDefaultStep,
 
             collapsedRulesMap
         } = this.props;
@@ -229,7 +229,7 @@ export class RuleList extends React.Component<{
             cloneItem,
             deleteItem,
             updateGroupTitle,
-            getRuleDefaultHandler
+            getRuleDefaultStep
         );
 
         return <DragDropContext
@@ -272,19 +272,19 @@ function buildRuleRows(
     cloneItem: (path: ItemPath) => void,
     deleteItem: (path: ItemPath) => void,
     updateGroupTitle: (groupId: string, title: string) => void,
-    getRuleDefaultHandler: (ruleType: RuleType) => Handler,
+    getRuleDefaultStep: (ruleType: RuleType) => Step,
 
     ruleGroup: HtkRuleGroup = allDraftRules,
     ruleGroupPath: ItemPath = [],
     overallStartIndex = 0,
 ): RuleRowsData {
-    const rowEventHandlers = {
+    const rowEventSteps = {
         toggleRuleCollapsed,
         saveRule,
         resetRule,
         cloneRule: cloneItem,
         deleteRule: deleteItem,
-        getRuleDefaultHandler
+        getRuleDefaultStep
     };
 
     return ruleGroup.items.reduce<RuleRowsData>((result, item, index) => {
@@ -320,7 +320,7 @@ function buildRuleRows(
                 cloneItem,
                 deleteItem,
                 updateGroupTitle,
-                getRuleDefaultHandler,
+                getRuleDefaultStep,
 
                 item,
                 itemPath,
@@ -360,7 +360,7 @@ function buildRuleRows(
                     currentlyDraggingRuleId !== item.id
                 }
 
-                {...rowEventHandlers}
+                {...rowEventSteps}
             />);
 
             result.indexMapping.push(itemPath);

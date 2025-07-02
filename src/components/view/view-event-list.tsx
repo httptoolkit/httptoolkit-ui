@@ -23,7 +23,7 @@ import {
     EventCategory,
     describeEventCategory
 } from '../../model/events/categorization';
-import { nameHandlerClass } from '../../model/rules/rule-descriptions';
+import { nameStepClass } from '../../model/rules/rule-descriptions';
 import { getReadableSize } from '../../util/buffer';
 
 import { UnreachableCheck } from '../../util/error';
@@ -466,14 +466,14 @@ const ExchangeRow = inject('uiStore')(observer(({
             />
             {
                 exchange.matchedRule &&
-                exchange.matchedRule.handlerStepTypes.some(t =>
+                exchange.matchedRule.stepTypes.some(t =>
                     t !== 'passthrough' && t !== 'ws-passthrough' && t !== 'rtc-dynamic-proxy'
                 ) &&
                 <PhosphorIcon
                     icon='Pencil'
                     alt={`Handled by ${
-                        exchange.matchedRule.handlerStepTypes.length === 1
-                        ? nameHandlerClass(exchange.matchedRule.handlerStepTypes[0])
+                        exchange.matchedRule.stepTypes.length === 1
+                        ? nameStepClass(exchange.matchedRule.stepTypes[0])
                         : 'multi-step'
                     } rule`}
                     size='20px'

@@ -52,7 +52,7 @@ export class StreamMessage {
         }
 
         // prefix+JSON is very common, so we try to parse anything JSON-ish optimistically:
-        const startOfMessage = this.content.slice(0, 10).toString('utf-8').trim();
+        const startOfMessage = this.content.subarray(0, 10).toString('utf-8').trim();
         if (
             startOfMessage.includes('{') ||
             startOfMessage.includes('[') ||

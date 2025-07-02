@@ -33,61 +33,61 @@ import {
 } from '../../services/service-versions';
 
 import {
-    Handler,
+    Step,
     RuleType,
     getRulePartKey,
-    AvailableHandlerKey,
+    AvailableStepKey,
     isHttpCompatibleType
 } from '../../model/rules/rules';
 import {
-    StaticResponseHandler,
-    ForwardToHostHandler,
-    PassThroughHandler,
-    TransformingHandler,
+    StaticResponseStep,
+    ForwardToHostStep,
+    PassThroughStep,
+    TransformingStep,
     RequestTransform,
     ResponseTransform,
-    RequestBreakpointHandler,
-    ResponseBreakpointHandler,
-    RequestAndResponseBreakpointHandler,
-    TimeoutHandler,
-    CloseConnectionHandler,
-    ResetConnectionHandler,
-    FromFileResponseHandler
+    RequestBreakpointStep,
+    ResponseBreakpointStep,
+    RequestAndResponseBreakpointStep,
+    TimeoutStep,
+    CloseConnectionStep,
+    ResetConnectionStep,
+    FromFileResponseStep
 } from '../../model/rules/definitions/http-rule-definitions';
 import {
-    WebSocketPassThroughHandler,
-    EchoWebSocketHandlerDefinition,
-    RejectWebSocketHandlerDefinition,
-    ListenWebSocketHandlerDefinition,
-    WebSocketForwardToHostHandler
+    WebSocketPassThroughStep,
+    EchoWebSocketStep,
+    RejectWebSocketStep,
+    ListenWebSocketStep,
+    WebSocketForwardToHostStep
 } from '../../model/rules/definitions/websocket-rule-definitions';
 import {
-    EthereumCallResultHandler,
-    EthereumNumberResultHandler,
-    EthereumHashResultHandler,
-    EthereumReceiptResultHandler,
-    EthereumBlockResultHandler,
-    EthereumErrorHandler
+    EthereumCallResultStep,
+    EthereumNumberResultStep,
+    EthereumHashResultStep,
+    EthereumReceiptResultStep,
+    EthereumBlockResultStep,
+    EthereumErrorStep
 } from '../../model/rules/definitions/ethereum-rule-definitions';
 import {
-    IpfsCatTextHandler,
-    IpfsCatFileHandler,
-    IpfsAddResultHandler,
-    IpnsResolveResultHandler,
-    IpnsPublishResultHandler,
-    IpfsPinsResultHandler,
-    IpfsPinLsResultHandler
+    IpfsCatTextStep,
+    IpfsCatFileStep,
+    IpfsAddResultStep,
+    IpnsResolveResultStep,
+    IpnsPublishResultStep,
+    IpfsPinsResultStep,
+    IpfsPinLsResultStep
 } from '../../model/rules/definitions/ipfs-rule-definitions';
 import {
-    DynamicProxyStepDefinition,
-    EchoStepDefinition,
-    CloseStepDefinition,
-    WaitForMediaStepDefinition,
-    WaitForDurationStepDefinition,
-    WaitForChannelStepDefinition,
-    WaitForMessageStepDefinition,
-    CreateChannelStepDefinition,
-    SendStepDefinition
+    DynamicProxyStep,
+    EchoStep,
+    CloseStep,
+    WaitForMediaStep,
+    WaitForDurationStep,
+    WaitForChannelStep,
+    WaitForMessageStep,
+    CreateChannelStep,
+    SendStep
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { getStatusMessage } from '../../model/http/http-docs';
@@ -108,17 +108,17 @@ import { FormatButton } from '../common/format-button';
 import { EditablePairs, PairsArray } from '../common/editable-pairs';
 import { ContentMonoValue } from '../common/text-content';
 
-type HandlerConfigProps<H extends Handler> = {
+type StepConfigProps<H extends Step> = {
     ruleType: RuleType;
-    handler: H;
-    onChange: (handler: H) => void;
+    step: H;
+    onChange: (step: H) => void;
     onInvalidState: () => void;
 };
 
-abstract class HandlerConfig<
-    H extends Handler,
+abstract class StepConfig<
+    H extends Step,
     P extends {} = {}
-> extends React.Component<HandlerConfigProps<H> & P> { }
+> extends React.Component<StepConfigProps<H> & P> { }
 
 const ConfigContainer = styled.div`
     margin-top: 10px;
@@ -137,91 +137,91 @@ const ConfigExplanation = styled.p`
     }
 `;
 
-export function HandlerConfiguration(props: {
+export function StepConfiguration(props: {
     ruleType: RuleType,
-    handler: Handler,
-    onChange: (handler: Handler) => void,
+    step: Step,
+    onChange: (step: Step) => void,
     onInvalidState?: () => void // Currently unused - intended to improve invalid entry UX later on
 }) {
-    const { handler, onChange, onInvalidState } = props;
+    const { step, onChange, onInvalidState } = props;
 
     const configProps = {
         ruleType: props.ruleType,
-        handler: handler as any,
+        step: step as any,
         onChange,
         onInvalidState: onInvalidState || _.noop
     };
 
-    const handlerKey = getRulePartKey(handler) as AvailableHandlerKey;
+    const stepKey = getRulePartKey(step) as AvailableStepKey;
 
-    switch (handlerKey) {
+    switch (stepKey) {
         case 'simple':
-            return <StaticResponseHandlerConfig {...configProps} />;
+            return <StaticResponseStepConfig {...configProps} />;
         case 'file':
-            return <FromFileResponseHandlerConfig {...configProps} />;
+            return <FromFileResponseStepConfig {...configProps} />;
         case 'forward-to-host':
         case 'ws-forward-to-host':
-            return <ForwardToHostHandlerConfig
+            return <ForwardToHostStepConfig
                 {...configProps}
-                handlerKey={handlerKey}
+                stepKey={stepKey}
             />;
         case 'passthrough':
         case 'ws-passthrough':
-            return <PassThroughHandlerConfig {...configProps} />;
+            return <PassThroughStepConfig {...configProps} />;
         case 'req-res-transformer':
-            return <TransformingHandlerConfig {...configProps} />;
+            return <TransformingStepConfig {...configProps} />;
         case 'request-breakpoint':
-            return <RequestBreakpointHandlerConfig {...configProps} />;
+            return <RequestBreakpointStepConfig {...configProps} />;
         case 'response-breakpoint':
-            return <ResponseBreakpointHandlerConfig {...configProps} />;
+            return <ResponseBreakpointStepConfig {...configProps} />;
         case 'request-and-response-breakpoint':
-            return <RequestAndResponseBreakpointHandlerConfig {...configProps} />;
+            return <RequestAndResponseBreakpointStepConfig {...configProps} />;
         case 'timeout':
-            return <TimeoutHandlerConfig {...configProps} />;
+            return <TimeoutStepConfig {...configProps} />;
         case 'close-connection':
-            return <CloseConnectionHandlerConfig {...configProps} />;
+            return <CloseConnectionStepConfig {...configProps} />;
         case 'reset-connection':
-            return <ResetConnectionHandlerConfig {...configProps} />;
+            return <ResetConnectionStepConfig {...configProps} />;
 
         case 'ws-echo':
-            return <WebSocketEchoHandlerConfig {...configProps} />;
+            return <WebSocketEchoStepConfig {...configProps} />;
         case 'ws-reject':
-            return <StaticResponseHandlerConfig {...configProps} />;
+            return <StaticResponseStepConfig {...configProps} />;
         case 'ws-listen':
-            return <WebSocketListenHandlerConfig {...configProps} />;
+            return <WebSocketListenStepConfig {...configProps} />;
         case 'eth-call-result':
-            return <EthCallResultHandlerConfig {...configProps} />;
+            return <EthCallResultStepConfig {...configProps} />;
         case 'eth-number-result':
-            return <EthNumberResultHandlerConfig {...configProps} />;
+            return <EthNumberResultStepConfig {...configProps} />;
         case 'eth-hash-result':
-            return <EthHashResultHandlerConfig {...configProps} />;
+            return <EthHashResultStepConfig {...configProps} />;
         case 'eth-receipt-result':
-            return <EthReceiptResultHandlerConfig {...configProps} />;
+            return <EthReceiptResultStepConfig {...configProps} />;
         case 'eth-block-result':
-            return <EthBlockResultHandlerConfig {...configProps} />;
+            return <EthBlockResultStepConfig {...configProps} />;
         case 'eth-error':
-            return <EthErrorHandlerConfig {...configProps} />;
+            return <EthErrorStepConfig {...configProps} />;
         case 'ipfs-cat-text':
-            return <IpfsCatTextHandlerConfig {...configProps} />;
+            return <IpfsCatTextStepConfig {...configProps} />;
         case 'ipfs-cat-file':
-            return <IpfsCatFileHandlerConfig {...configProps} />;
+            return <IpfsCatFileStepConfig {...configProps} />;
         case 'ipfs-add-result':
-            return <IpfsAddResultHandlerConfig {...configProps} />;
+            return <IpfsAddResultStepConfig {...configProps} />;
         case 'ipns-resolve-result':
-            return <IpnsResolveResultHandlerConfig {...configProps} />;
+            return <IpnsResolveResultStepConfig {...configProps} />;
         case 'ipns-publish-result':
-            return <IpnsPublishResultHandlerConfig {...configProps} />;
+            return <IpnsPublishResultStepConfig {...configProps} />;
         case 'ipfs-pins-result':
-            return <IpfsPinsResultHandlerConfig {...configProps} />;
+            return <IpfsPinsResultStepConfig {...configProps} />;
         case 'ipfs-pin-ls-result':
-            return <IpfsPinLsResultHandlerConfig {...configProps} />;
+            return <IpfsPinLsResultStepConfig {...configProps} />;
 
         case 'rtc-dynamic-proxy':
-            return <PassThroughHandlerConfig {...configProps} />;
+            return <PassThroughStepConfig {...configProps} />;
         case 'echo-rtc':
-            return <RTCEchoHandlerConfig {...configProps} />;
+            return <RTCEchoStepConfig {...configProps} />;
         case 'close-rtc-connection':
-            return <RTCCloseHandlerConfig {...configProps} />;
+            return <RTCCloseStepConfig {...configProps} />;
         case 'wait-for-rtc-media':
             return <RTCWaitForMediaConfig {...configProps} />;
         case 'wait-for-duration':
@@ -236,7 +236,7 @@ export function HandlerConfiguration(props: {
             return <RTCSendMessageStepConfig {...configProps} />;
 
         default:
-            throw new UnreachableCheck(handlerKey);
+            throw new UnreachableCheck(stepKey);
     }
 }
 
@@ -297,20 +297,20 @@ const BodyContainer = styled.div<{ isInvalid?: boolean }>`
 `;
 
 @observer
-class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | RejectWebSocketHandlerDefinition> {
+class StaticResponseStepConfig extends StepConfig<StaticResponseStep | RejectWebSocketStep> {
 
     @observable
-    statusCode: number | undefined = (this.props.handler instanceof StaticResponseHandler)
-        ? this.props.handler.status
-        : this.props.handler.statusCode;
+    statusCode: number | undefined = (this.props.step instanceof StaticResponseStep)
+        ? this.props.step.status
+        : this.props.step.statusCode;
 
     @observable
-    statusMessage = this.props.handler.statusMessage;
+    statusMessage = this.props.step.statusMessage;
 
-    // We have to model raw header data here (even though handlers use header objects) because want to mutate
+    // We have to model raw header data here (even though steps use header objects) because want to mutate
     // the headers (e.g. appending content-type) without losing object-unrepresentable (e.g. dupe key order) UI state.
     @observable
-    rawHeaders = headersToRawHeaders(this.props.handler.headers || {});
+    rawHeaders = headersToRawHeaders(this.props.step.headers || {});
 
     @computed
     get headers(): Headers {
@@ -326,22 +326,22 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
     contentType: EditableContentType = 'text';
 
     @observable
-    body = asBuffer(this.props.handler instanceof StaticResponseHandler
-        ? this.props.handler.data
-        : this.props.handler.body
+    body = asBuffer(this.props.step instanceof StaticResponseStep
+        ? this.props.step.data
+        : this.props.step.body
     );
 
     componentDidMount() {
-        // If any of our data fields change, rebuild & update the handler
+        // If any of our data fields change, rebuild & update the step
         disposeOnUnmount(this, reaction(() => {
             return JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'body']));
-        }, () => this.updateHandler()));
+        }, () => this.updateStep()));
 
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { status, statusMessage } = this.props.handler instanceof StaticResponseHandler
-                ? this.props.handler
-                : { ...this.props.handler, status: this.props.handler.statusCode };
+            const { status, statusMessage } = this.props.step instanceof StaticResponseStep
+                ? this.props.step
+                : { ...this.props.step, status: this.props.step.statusCode };
 
             runInAction(() => {
                 this.statusCode = status;
@@ -349,16 +349,16 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
             });
         }));
         disposeOnUnmount(this, autorun(() => {
-            const { data } = this.props.handler instanceof StaticResponseHandler
-                ? this.props.handler
-                : { data: this.props.handler.body };
+            const { data } = this.props.step instanceof StaticResponseStep
+                ? this.props.step
+                : { data: this.props.step.body };
 
             runInAction(() => {
                 this.body = asBuffer(data); // Usually returns data directly, since we set it as a buffer anyway
             });
         }));
         disposeOnUnmount(this, autorun(() => {
-            const { headers } = this.props.handler;
+            const { headers } = this.props.step;
 
             runInAction(() => {
                 this.headers = headers;
@@ -498,7 +498,7 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
         this.body = stringToBuffer(body, this.textEncoding);
     }
 
-    updateHandler() {
+    updateStep() {
         if (
             !this.statusCode ||
             this.statusCode < 100 ||
@@ -509,13 +509,13 @@ class StaticResponseHandlerConfig extends HandlerConfig<StaticResponseHandler | 
 
         this.props.onChange(
             this.props.ruleType === 'http'
-            ? new StaticResponseHandler(
+            ? new StaticResponseStep(
                 this.statusCode,
                 this.statusMessage,
                 this.body,
                 this.headers
             )
-            : new RejectWebSocketHandlerDefinition(
+            : new RejectWebSocketStep(
                 this.statusCode,
                 this.statusMessage ?? getStatusMessage(this.statusCode),
                 this.headers,
@@ -549,29 +549,29 @@ const BodyFilePath = styled.div`
 `;
 
 @observer
-class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
+class FromFileResponseStepConfig extends StepConfig<FromFileResponseStep> {
 
     @observable
-    statusCode: number | undefined = this.props.handler.status;
+    statusCode: number | undefined = this.props.step.status;
 
     @observable
-    statusMessage = this.props.handler.statusMessage;
+    statusMessage = this.props.step.statusMessage;
 
     @observable
-    headers = this.props.handler.headers || {};
+    headers = this.props.step.headers || {};
 
     @observable
-    filePath = (this.props.handler.filePath || '').toString();
+    filePath = (this.props.step.filePath || '').toString();
 
     componentDidMount() {
-        // If any of our data fields change, rebuild & update the handler
+        // If any of our data fields change, rebuild & update the step
         disposeOnUnmount(this, reaction(() => (
             JSON.stringify(_.pick(this, ['statusCode', 'statusMessage', 'headers', 'filePath']))
-        ), () => this.updateHandler()));
+        ), () => this.updateStep()));
 
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { status, statusMessage, headers, filePath } = this.props.handler;
+            const { status, statusMessage, headers, filePath } = this.props.step;
             runInAction(() => {
                 this.statusCode = status;
                 this.statusMessage = statusMessage;
@@ -647,7 +647,7 @@ class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandle
         }
     }
 
-    updateHandler() {
+    updateStep() {
         if (
             !this.statusCode ||
             this.statusCode < 100 ||
@@ -656,7 +656,7 @@ class FromFileResponseHandlerConfig extends HandlerConfig<FromFileResponseHandle
         ) return this.props.onInvalidState();
 
         this.props.onChange(
-            new FromFileResponseHandler(
+            new FromFileResponseStep(
                 this.statusCode,
                 this.statusMessage,
                 this.filePath,
@@ -674,12 +674,12 @@ const UrlInput = styled(TextInput)`
 
 @inject('rulesStore')
 @observer
-class ForwardToHostHandlerConfig extends HandlerConfig<
-    | ForwardToHostHandler
-    | WebSocketForwardToHostHandler,
+class ForwardToHostStepConfig extends StepConfig<
+    | ForwardToHostStep
+    | WebSocketForwardToHostStep,
     {
         rulesStore?: RulesStore,
-        handlerKey: 'forward-to-host' | 'ws-forward-to-host'
+        stepKey: 'forward-to-host' | 'ws-forward-to-host'
     }
 > {
 
@@ -687,40 +687,55 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
     private error: Error | undefined;
 
     @observable
-    private targetHost: string | undefined;
+    private target: string | undefined;
 
     @observable
     private updateHostHeader: true | false = true;
 
     componentDidMount() {
         disposeOnUnmount(this, autorun(() => {
-            const targetHost = this.props.handler ? this.props.handler.forwarding!.targetHost : '';
-            const updateHostHeader = this.props.handler ? this.props.handler.forwarding!.updateHostHeader : true;
+            const savedTarget = this.savedTarget;
+            const { updateHostHeader } = this.props.step.transformRequest?.replaceHost || {};
             runInAction(() => {
-                this.targetHost = targetHost
-                this.updateHostHeader = !!updateHostHeader;
+                this.target = savedTarget;
+                this.updateHostHeader = !!updateHostHeader ?? true;
             });
         }));
     }
 
+    @computed
+    get savedTarget() {
+        const { targetHost: savedTargetHost } = this.props.step.transformRequest?.replaceHost || {};
+        const savedProtocol = this.props.step.transformRequest?.setProtocol || '';
+
+        return savedProtocol
+            ? `${savedProtocol}://${savedTargetHost}`
+            : savedTargetHost;
+    }
+
     render() {
         const {
-            targetHost,
+            target,
             updateHostHeader,
             error,
             onTargetChange,
             onUpdateHeaderChange
         } = this;
-        const { targetHost: savedTargetHost } = this.props.handler.forwarding!;
+        const { targetHost: savedTargetHost } = this.props.step.transformRequest?.replaceHost || {};
+        const savedProtocol = this.props.step.transformRequest?.setProtocol || '';
 
-        const messageType = this.props.handlerKey === 'ws-forward-to-host'
+        const savedTarget = savedProtocol
+            ? `${savedProtocol}://${savedTargetHost}`
+            : savedTargetHost;
+
+        const messageType = this.props.stepKey === 'ws-forward-to-host'
             ? 'WebSocket'
             : 'request';
 
         return <ConfigContainer>
             <SectionLabel>Replacement host</SectionLabel>
             <UrlInput
-                value={targetHost || ''}
+                value={target || ''}
                 invalid={!!error}
                 spellCheck={false}
                 onChange={onTargetChange}
@@ -739,11 +754,11 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
                 <option value={'true'}>Update the host header automatically (recommended)</option>
                 <option value={'false'}>Leave the host header untouched</option>
             </ConfigSelect>
-            { savedTargetHost &&
+            { savedTarget &&
                 <ConfigExplanation>
-                    All matching {messageType}s will be forwarded to {savedTargetHost},
+                    All matching {messageType}s will be forwarded to {savedTarget},
                     keeping their existing path{
-                        !savedTargetHost.includes('://') ? ', protocol,' : ''
+                        !savedTarget.includes('://') ? ', protocol,' : ''
                     } and query string.{
                         updateHostHeader
                         ? ' Their host header will be automatically updated to match.'
@@ -754,15 +769,15 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
         </ConfigContainer>;
     }
 
-    updateHandler() {
+    updateStep() {
         try {
-            if (!this.targetHost) throw new Error('A target host is required');
+            if (!this.target) throw new Error('A target host is required');
 
             let urlWithoutProtocol: string;
 
-            const protocolMatch = this.targetHost.match(/^(\w+):\/\//);
+            const protocolMatch = this.target.match(/^(\w+):\/\//);
             if (protocolMatch) {
-                const validProtocols = this.props.handlerKey === 'ws-forward-to-host'
+                const validProtocols = this.props.stepKey === 'ws-forward-to-host'
                     ? ['ws', 'wss']
                     : ['http', 'https'];
 
@@ -772,9 +787,9 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
                     );
                 }
 
-                urlWithoutProtocol = this.targetHost.slice(protocolMatch[0].length);
+                urlWithoutProtocol = this.target.slice(protocolMatch[0].length);
             } else {
-                urlWithoutProtocol = this.targetHost;
+                urlWithoutProtocol = this.target;
             }
 
             if (urlWithoutProtocol.includes('/')) {
@@ -788,13 +803,14 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
                 );
             }
 
-            const HandlerClass = this.props.handlerKey === 'ws-forward-to-host'
-                ? WebSocketForwardToHostHandler
-                : ForwardToHostHandler;
+            const StepClass = this.props.stepKey === 'ws-forward-to-host'
+                ? WebSocketForwardToHostStep
+                : ForwardToHostStep;
 
             this.props.onChange(
-                new HandlerClass(
-                    this.targetHost,
+                new StepClass(
+                    protocolMatch ? protocolMatch[1] : undefined,
+                    urlWithoutProtocol,
                     this.updateHostHeader,
                     this.props.rulesStore!
                 )
@@ -810,10 +826,10 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
 
     @action.bound
     onTargetChange(event: React.ChangeEvent<HTMLInputElement>) {
-        this.targetHost = event.target.value;
+        this.target = event.target.value;
 
         try {
-            this.updateHandler();
+            this.updateStep();
             event.target.setCustomValidity('');
         } catch (e) {
             event.target.setCustomValidity(asError(e).message);
@@ -826,7 +842,7 @@ class ForwardToHostHandlerConfig extends HandlerConfig<
         this.updateHostHeader = event.target.value === 'true';
 
         try {
-            this.updateHandler();
+            this.updateStep();
         } catch (e) {
             // If there's an error, it must be in the host name, so it's reported elsewhere
         }
@@ -878,13 +894,13 @@ const SelectTransform = styled(Select)`
 
 @inject('rulesStore')
 @observer
-class TransformingHandlerConfig extends HandlerConfig<TransformingHandler, { rulesStore?: RulesStore }> {
+class TransformingStepConfig extends StepConfig<TransformingStep, { rulesStore?: RulesStore }> {
 
     @observable
-    transformRequest = this.props.handler.transformRequest || {};
+    transformRequest = this.props.step.transformRequest || {};
 
     @observable
-    transformResponse = this.props.handler.transformResponse || {};
+    transformResponse = this.props.step.transformResponse || {};
 
     render() {
         return <ConfigContainer>
@@ -935,12 +951,12 @@ class TransformingHandlerConfig extends HandlerConfig<TransformingHandler, { rul
                 [key]: value
             };
 
-            this.updateHandler();
+            this.updateStep();
         }
     );
 
-    updateHandler() {
-        this.props.onChange(new TransformingHandler(
+    updateStep() {
+        this.props.onChange(new TransformingStep(
             this.props.rulesStore!,
             this.transformRequest,
             this.transformResponse
@@ -1465,10 +1481,10 @@ const validateRegexMatcher = (value: string) => {
 }
 
 @observer
-class PassThroughHandlerConfig extends HandlerConfig<
-    | PassThroughHandler
-    | WebSocketPassThroughHandler
-    | DynamicProxyStepDefinition
+class PassThroughStepConfig extends StepConfig<
+    | PassThroughStep
+    | WebSocketPassThroughStep
+    | DynamicProxyStep
 > {
     render() {
         return <ConfigContainer>
@@ -1492,7 +1508,7 @@ class PassThroughHandlerConfig extends HandlerConfig<
 }
 
 @observer
-class RequestBreakpointHandlerConfig extends HandlerConfig<RequestBreakpointHandler> {
+class RequestBreakpointStepConfig extends StepConfig<RequestBreakpointStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1508,7 +1524,7 @@ class RequestBreakpointHandlerConfig extends HandlerConfig<RequestBreakpointHand
 }
 
 @observer
-class ResponseBreakpointHandlerConfig extends HandlerConfig<ResponseBreakpointHandler> {
+class ResponseBreakpointStepConfig extends StepConfig<ResponseBreakpointStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1523,7 +1539,7 @@ class ResponseBreakpointHandlerConfig extends HandlerConfig<ResponseBreakpointHa
 }
 
 @observer
-class RequestAndResponseBreakpointHandlerConfig extends HandlerConfig<RequestAndResponseBreakpointHandler> {
+class RequestAndResponseBreakpointStepConfig extends StepConfig<RequestAndResponseBreakpointStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1544,7 +1560,7 @@ class RequestAndResponseBreakpointHandlerConfig extends HandlerConfig<RequestAnd
 }
 
 @observer
-class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
+class TimeoutStepConfig extends StepConfig<TimeoutStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1565,7 +1581,7 @@ class TimeoutHandlerConfig extends HandlerConfig<TimeoutHandler> {
 }
 
 @observer
-class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler> {
+class CloseConnectionStepConfig extends StepConfig<CloseConnectionStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1584,7 +1600,7 @@ class CloseConnectionHandlerConfig extends HandlerConfig<CloseConnectionHandler>
 }
 
 @observer
-class ResetConnectionHandlerConfig extends HandlerConfig<ResetConnectionHandler> {
+class ResetConnectionStepConfig extends StepConfig<ResetConnectionStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1604,7 +1620,7 @@ class ResetConnectionHandlerConfig extends HandlerConfig<ResetConnectionHandler>
 }
 
 @observer
-class WebSocketEchoHandlerConfig extends HandlerConfig<EchoWebSocketHandlerDefinition> {
+class WebSocketEchoStepConfig extends StepConfig<EchoWebSocketStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1617,7 +1633,7 @@ class WebSocketEchoHandlerConfig extends HandlerConfig<EchoWebSocketHandlerDefin
 }
 
 @observer
-class WebSocketListenHandlerConfig extends HandlerConfig<ListenWebSocketHandlerDefinition> {
+class WebSocketListenStepConfig extends StepConfig<ListenWebSocketStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
@@ -1631,7 +1647,7 @@ class WebSocketListenHandlerConfig extends HandlerConfig<ListenWebSocketHandlerD
 const NATIVE_ETH_TYPES_PATTERN = `(${NATIVE_ETH_TYPES.join('|')})(\\[\\])?`;
 
 @observer
-class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler> {
+class EthCallResultStepConfig extends StepConfig<EthereumCallResultStep> {
 
     @observable
     typeValuePairs: PairsArray = [];
@@ -1639,9 +1655,9 @@ class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler
     @observable error: Error | undefined;
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { outputTypes, values } = this.props.handler;
+            const { outputTypes, values } = this.props.step;
 
             const stringValues = values.map(v => {
                 if (Array.isArray(v)) return v.join(', ');
@@ -1657,7 +1673,7 @@ class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler
 
     render() {
         const { typeValuePairs } = this;
-        const encodedData = this.props.handler.result.result;
+        const encodedData = this.props.step.result.result;
 
         return <ConfigContainer>
             <SectionLabel>Eth_Call return values</SectionLabel>
@@ -1711,7 +1727,7 @@ class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler
 
         try {
             this.props.onChange(
-                new EthereumCallResultHandler(
+                new EthereumCallResultStep(
                     parsedValues.map(({ key }) => key),
                     parsedValues.map(({ value }) => value)
                 )
@@ -1744,15 +1760,15 @@ class EthCallResultHandlerConfig extends HandlerConfig<EthereumCallResultHandler
 }
 
 @observer
-class EthNumberResultHandlerConfig extends HandlerConfig<EthereumNumberResultHandler> {
+class EthNumberResultStepConfig extends StepConfig<EthereumNumberResultStep> {
 
     @observable
-    value: number | '' = this.props.handler.value;
+    value: number | '' = this.props.step.value;
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { value } = this.props.handler;
+            const { value } = this.props.step;
             runInAction(() => {
                 if (value === 0 && this.value === '') return; // Allows clearing the input, making it *implicitly* 0
                 this.value = value;
@@ -1793,21 +1809,21 @@ class EthNumberResultHandlerConfig extends HandlerConfig<EthereumNumberResultHan
         this.value = newValue;
 
         this.props.onChange(
-            new EthereumNumberResultHandler(newValue || 0)
+            new EthereumNumberResultStep(newValue || 0)
         );
     }
 }
 
 @observer
-class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler> {
+class EthHashResultStepConfig extends StepConfig<EthereumHashResultStep> {
 
     @observable
-    value = this.props.handler.value;
+    value = this.props.step.value;
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { value } = this.props.handler;
+            const { value } = this.props.step;
             runInAction(() => { this.value = value; });
         }));
     }
@@ -1843,41 +1859,41 @@ class EthHashResultHandlerConfig extends HandlerConfig<EthereumHashResultHandler
         if (!/^0x[0-9a-fA-F]*$/.test(newValue)) return; // Ignore anything that's not a valid hash
 
         this.props.onChange(
-            new EthereumHashResultHandler(event.target.value)
+            new EthereumHashResultStep(event.target.value)
         );
     }
 }
 
-// Base component, used to build the various "JSON input into a JSON-wrapping handler" configs
+// Base component, used to build the various "JSON input into a JSON-wrapping step" configs
 @observer
-class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
+class JsonBasedStepConfig<H extends Step> extends StepConfig<H, {
     name: string,
     explanation: string[],
-    handlerFactory: (body: any) => H,
-    valueGetter: (handler: H) => unknown
+    stepFactory: (body: any) => H,
+    valueGetter: (step: H) => unknown
 }> {
 
     @observable
-    valueString: string = JSON.stringify(this.props.valueGetter(this.props.handler), null, 2);
+    valueString: string = JSON.stringify(this.props.valueGetter(this.props.step), null, 2);
 
     @observable
     error: Error | undefined;
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, reaction(
-            () => JSON.stringify(this.props.valueGetter(this.props.handler), null, 2),
-            (handlerStringValue) => {
+            () => JSON.stringify(this.props.valueGetter(this.props.step), null, 2),
+            (stepStringValue) => {
                 let normalizedCurrentValue: {} | undefined;
                 try {
                     normalizedCurrentValue = JSON.stringify(JSON.parse(this.valueString), null, 2);
                 } catch (err) { }
 
-                // If the handler value changes, and either it doesn't match the existing value here,
+                // If the step value changes, and either it doesn't match the existing value here,
                 // or the existing value isn't parseable at all, we reset the editor value:
-                if (handlerStringValue !== normalizedCurrentValue) {
+                if (stepStringValue !== normalizedCurrentValue) {
                     runInAction(() => {
-                        this.valueString = handlerStringValue;
+                        this.valueString = stepStringValue;
                         this.error = undefined;
                     });
                 }
@@ -1924,7 +1940,7 @@ class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
         try {
             const newValue = JSON.parse(newContent);
             this.props.onChange(
-                this.props.handlerFactory(newValue)
+                this.props.stepFactory(newValue)
             );
             this.error = undefined;
         } catch (e) {
@@ -1936,17 +1952,17 @@ class JsonBasedHandlerConfig<H extends Handler> extends HandlerConfig<H, {
 }
 
 @observer
-class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultHandler> {
+class EthReceiptResultStepConfig extends StepConfig<EthereumReceiptResultStep> {
 
     render() {
-        return <JsonBasedHandlerConfig
+        return <JsonBasedStepConfig
             name='Ethereum Transaction Receipt'
             explanation={[
                 'All matching Ethereum JSON-RPC requests will be intercepted, and this transaction ' +
                 'receipt will returned directly, without forwarding the call to the real Ethereum node.'
             ]}
-            handlerFactory={(data) => new EthereumReceiptResultHandler(data)}
-            valueGetter={handler => handler.receiptValue}
+            stepFactory={(data) => new EthereumReceiptResultStep(data)}
+            valueGetter={step => step.receiptValue}
             { ...this.props }
         />;
     }
@@ -1954,17 +1970,17 @@ class EthReceiptResultHandlerConfig extends HandlerConfig<EthereumReceiptResultH
 }
 
 @observer
-class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandler> {
+class EthBlockResultStepConfig extends StepConfig<EthereumBlockResultStep> {
 
     render() {
-        return <JsonBasedHandlerConfig
+        return <JsonBasedStepConfig
             name='Ethereum Block Data'
             explanation={[
                 'All matching Ethereum JSON-RPC requests will be intercepted, and this fixed block data ' +
                 'will returned directly, without forwarding the call to the real Ethereum node.'
             ]}
-            handlerFactory={(data) => new EthereumBlockResultHandler(data)}
-            valueGetter={handler => handler.blockValue}
+            stepFactory={(data) => new EthereumBlockResultStep(data)}
+            valueGetter={step => step.blockValue}
             { ...this.props }
         />;
     }
@@ -1972,32 +1988,32 @@ class EthBlockResultHandlerConfig extends HandlerConfig<EthereumBlockResultHandl
 }
 
 @observer
-class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
+class EthErrorStepConfig extends StepConfig<EthereumErrorStep> {
 
     @observable
-    inputError: Error | undefined; // A form error - not error data for the handler, unlike the rest
+    inputError: Error | undefined; // A form error - not error data for the step, unlike the rest
 
     @observable
-    errorMessage = this.props.handler.message;
+    errorMessage = this.props.step.message;
 
     @observable
-    errorCode: '' | number = this.props.handler.code || '';
+    errorCode: '' | number = this.props.step.code || '';
 
     @observable
-    errorData = this.props.handler.data;
+    errorData = this.props.step.data;
 
     @observable
-    errorName = this.props.handler.name;
+    errorName = this.props.step.name;
 
     componentDidMount() {
-        // If any of our data fields change, rebuild & update the handler
+        // If any of our data fields change, rebuild & update the step
         disposeOnUnmount(this, reaction(() => (
             JSON.stringify(_.pick(this, ['errorMessage', 'errorCode', 'errorData', 'errorName']))
-        ), () => this.updateHandler()));
+        ), () => this.updateStep()));
 
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { message, code, data, name } = this.props.handler;
+            const { message, code, data, name } = this.props.step;
 
             runInAction(() => {
                 this.errorMessage = message;
@@ -2086,9 +2102,9 @@ class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
         this.errorName = event.target.value;
     }
 
-    updateHandler() {
+    updateStep() {
         this.props.onChange(
-            new EthereumErrorHandler(
+            new EthereumErrorStep(
                 this.errorMessage,
                 this.errorData,
                 this.errorCode || 0,
@@ -2099,18 +2115,18 @@ class EthErrorHandlerConfig extends HandlerConfig<EthereumErrorHandler> {
 }
 
 @observer
-class IpfsCatTextHandlerConfig extends HandlerConfig<IpfsCatTextHandler> {
+class IpfsCatTextStepConfig extends StepConfig<IpfsCatTextStep> {
 
     @observable
     contentType: EditableContentType = 'text';
 
     @observable
-    body = asBuffer(this.props.handler.data);
+    body = asBuffer(this.props.step.data);
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { data } = this.props.handler;
+            const { data } = this.props.step;
             runInAction(() => {
                 this.body = asBuffer(data);
             });
@@ -2169,22 +2185,22 @@ class IpfsCatTextHandlerConfig extends HandlerConfig<IpfsCatTextHandler> {
     setBody(body: string) {
         this.body = stringToBuffer(body, this.textEncoding);
         this.props.onChange(
-            new IpfsCatTextHandler(this.body)
+            new IpfsCatTextStep(this.body)
         );
     }
 }
 
 
 @observer
-class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
+class IpfsCatFileStepConfig extends StepConfig<FromFileResponseStep> {
 
     @observable
-    filePath = (this.props.handler.filePath || '').toString();
+    filePath = (this.props.step.filePath || '').toString();
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { filePath } = this.props.handler;
+            const { filePath } = this.props.step;
             runInAction(() => {
                 this.filePath = filePath;
             });
@@ -2227,7 +2243,7 @@ class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
             });
 
             this.props.onChange(
-                new IpfsCatFileHandler(
+                new IpfsCatFileStep(
                     this.filePath
                 )
             );
@@ -2236,15 +2252,15 @@ class IpfsCatFileHandlerConfig extends HandlerConfig<FromFileResponseHandler> {
 }
 
 @observer
-class IpfsAddResultHandlerConfig extends HandlerConfig<IpfsAddResultHandler> {
+class IpfsAddResultStepConfig extends StepConfig<IpfsAddResultStep> {
 
     @observable
     resultPairs: PairsArray = [];
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { result } = this.props.handler;
+            const { result } = this.props.step;
 
             runInAction(() => {
                 this.resultPairs = result.map(({ Name, Hash }) => ({ key: Name, value: Hash }));
@@ -2276,7 +2292,7 @@ class IpfsAddResultHandlerConfig extends HandlerConfig<IpfsAddResultHandler> {
         this.resultPairs = newPairs;
 
         this.props.onChange(
-            new IpfsAddResultHandler(
+            new IpfsAddResultStep(
                 this.resultPairs.map(({ key, value }) => ({ Name: key, Hash: value }))
             )
         );
@@ -2285,16 +2301,16 @@ class IpfsAddResultHandlerConfig extends HandlerConfig<IpfsAddResultHandler> {
 }
 
 @observer
-class IpnsResolveResultHandlerConfig extends HandlerConfig<IpnsResolveResultHandler> {
+class IpnsResolveResultStepConfig extends StepConfig<IpnsResolveResultStep> {
 
     render() {
-        return <JsonBasedHandlerConfig
+        return <JsonBasedStepConfig
             name='IPNS Resolve Result'
             explanation={[
                 'All matching requests will be receive this data as a successful IPNS resolution.'
             ]}
-            handlerFactory={(data) => new IpnsResolveResultHandler(data)}
-            valueGetter={handler => handler.result}
+            stepFactory={(data) => new IpnsResolveResultStep(data)}
+            valueGetter={step => step.result}
             { ...this.props }
         />;
     }
@@ -2302,16 +2318,16 @@ class IpnsResolveResultHandlerConfig extends HandlerConfig<IpnsResolveResultHand
 }
 
 @observer
-class IpnsPublishResultHandlerConfig extends HandlerConfig<IpnsPublishResultHandler> {
+class IpnsPublishResultStepConfig extends StepConfig<IpnsPublishResultStep> {
 
     render() {
-        return <JsonBasedHandlerConfig
+        return <JsonBasedStepConfig
             name='IPNS Publish Result'
             explanation={[
                 'All matching requests will be receive this data as a successful IPNS publish result.'
             ]}
-            handlerFactory={(data) => new IpnsPublishResultHandler(data)}
-            valueGetter={handler => handler.result}
+            stepFactory={(data) => new IpnsPublishResultStep(data)}
+            valueGetter={step => step.result}
             { ...this.props }
         />;
     }
@@ -2319,16 +2335,16 @@ class IpnsPublishResultHandlerConfig extends HandlerConfig<IpnsPublishResultHand
 }
 
 @observer
-class IpfsPinsResultHandlerConfig extends HandlerConfig<IpfsPinsResultHandler> {
+class IpfsPinsResultStepConfig extends StepConfig<IpfsPinsResultStep> {
 
     render() {
-        return <JsonBasedHandlerConfig
+        return <JsonBasedStepConfig
             name='IPFS Pinning Result'
             explanation={[
                 'All matching requests will be receive this data as a successful response.'
             ]}
-            handlerFactory={(data) => new IpfsPinsResultHandler(data)}
-            valueGetter={handler => handler.result}
+            stepFactory={(data) => new IpfsPinsResultStep(data)}
+            valueGetter={step => step.result}
             { ...this.props }
         />;
     }
@@ -2336,15 +2352,15 @@ class IpfsPinsResultHandlerConfig extends HandlerConfig<IpfsPinsResultHandler> {
 }
 
 @observer
-class IpfsPinLsResultHandlerConfig extends HandlerConfig<IpfsPinLsResultHandler> {
+class IpfsPinLsResultStepConfig extends StepConfig<IpfsPinLsResultStep> {
 
     @observable
     resultPairs: PairsArray = [];
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { result } = this.props.handler;
+            const { result } = this.props.step;
 
             runInAction(() => {
                 this.resultPairs = result.map(({ Type, Cid }) => ({ key: Type, value: Cid }));
@@ -2376,7 +2392,7 @@ class IpfsPinLsResultHandlerConfig extends HandlerConfig<IpfsPinLsResultHandler>
         this.resultPairs = newPairs;
 
         this.props.onChange(
-            new IpfsPinLsResultHandler(
+            new IpfsPinLsResultStep(
                 this.resultPairs.map(({ key, value }) => ({ Type: key, Cid: value }))
             )
         );
@@ -2385,7 +2401,7 @@ class IpfsPinLsResultHandlerConfig extends HandlerConfig<IpfsPinLsResultHandler>
 }
 
 @observer
-class RTCEchoHandlerConfig extends HandlerConfig<EchoStepDefinition> {
+class RTCEchoStepConfig extends StepConfig<EchoStep> {
 
     render() {
         return <ConfigContainer>
@@ -2404,7 +2420,7 @@ class RTCEchoHandlerConfig extends HandlerConfig<EchoStepDefinition> {
 }
 
 @observer
-class RTCCloseHandlerConfig extends HandlerConfig<CloseStepDefinition> {
+class RTCCloseStepConfig extends StepConfig<CloseStep> {
 
     render() {
         return <ConfigContainer>
@@ -2418,7 +2434,7 @@ class RTCCloseHandlerConfig extends HandlerConfig<CloseStepDefinition> {
 }
 
 @observer
-class RTCWaitForMediaConfig extends HandlerConfig<WaitForMediaStepDefinition> {
+class RTCWaitForMediaConfig extends StepConfig<WaitForMediaStep> {
 
     render() {
         return <ConfigContainer>
@@ -2431,15 +2447,15 @@ class RTCWaitForMediaConfig extends HandlerConfig<WaitForMediaStepDefinition> {
 }
 
 @observer
-class RTCWaitForDurationConfig extends HandlerConfig<WaitForDurationStepDefinition> {
+class RTCWaitForDurationConfig extends StepConfig<WaitForDurationStep> {
 
     @observable
-    duration: number | '' = this.props.handler.durationMs;
+    duration: number | '' = this.props.step.durationMs;
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { durationMs } = this.props.handler;
+            const { durationMs } = this.props.step;
             runInAction(() => {
                 if (durationMs === 0 && this.duration === '') return; // Allows clearing the input, making it *implicitly* 0
                 this.duration = durationMs;
@@ -2472,16 +2488,16 @@ class RTCWaitForDurationConfig extends HandlerConfig<WaitForDurationStepDefiniti
         if (_.isNaN(newValue)) return; // I.e. reject the edit
 
         this.duration = newValue;
-        this.props.onChange(new WaitForDurationStepDefinition(newValue || 0));
+        this.props.onChange(new WaitForDurationStep(newValue || 0));
     }
 
 }
 
 @observer
-class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition> {
+class RTCWaitForChannelConfig extends StepConfig<WaitForChannelStep> {
 
     render() {
-        const { channelLabel } = this.props.handler;
+        const { channelLabel } = this.props.step;
 
         return <ConfigContainer>
             <SectionLabel>Channel Label</SectionLabel>
@@ -2504,17 +2520,17 @@ class RTCWaitForChannelConfig extends HandlerConfig<WaitForChannelStepDefinition
     onChange(event: React.ChangeEvent<HTMLInputElement>) {
         const inputValue = event.target.value;
         this.props.onChange(
-            new WaitForChannelStepDefinition(inputValue || '')
+            new WaitForChannelStep(inputValue || '')
         );
     }
 
 }
 
 @observer
-class RTCWaitForDataMessageConfig extends HandlerConfig<WaitForMessageStepDefinition> {
+class RTCWaitForDataMessageConfig extends StepConfig<WaitForMessageStep> {
 
     render() {
-        const { channelLabel } = this.props.handler;
+        const { channelLabel } = this.props.step;
 
         return <ConfigContainer>
             <SectionLabel>Channel Label</SectionLabel>
@@ -2537,17 +2553,17 @@ class RTCWaitForDataMessageConfig extends HandlerConfig<WaitForMessageStepDefini
     onChange(event: React.ChangeEvent<HTMLInputElement>) {
         const inputValue = event.target.value;
         this.props.onChange(
-            new WaitForMessageStepDefinition(inputValue || '')
+            new WaitForMessageStep(inputValue || '')
         );
     }
 
 }
 
 @observer
-class RTCCreateChannelStepConfig extends HandlerConfig<CreateChannelStepDefinition> {
+class RTCCreateChannelStepConfig extends StepConfig<CreateChannelStep> {
 
     render() {
-        const { channelLabel } = this.props.handler;
+        const { channelLabel } = this.props.step;
 
         return <ConfigContainer>
             <SectionLabel>Channel Label</SectionLabel>
@@ -2567,27 +2583,27 @@ class RTCCreateChannelStepConfig extends HandlerConfig<CreateChannelStepDefiniti
     @action.bound
     onChange(event: React.ChangeEvent<HTMLInputElement>) {
         const inputValue = event.target.value;
-        this.props.onChange(new CreateChannelStepDefinition(inputValue));
+        this.props.onChange(new CreateChannelStep(inputValue));
     }
 
 }
 
 @observer
-class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
+class RTCSendMessageStepConfig extends StepConfig<SendStep> {
 
     @observable
-    channelLabel: string | undefined = this.props.handler.channelLabel;
+    channelLabel: string | undefined = this.props.step.channelLabel;
 
     @observable
     contentType: EditableContentType = 'text';
 
     @observable
-    message = asBuffer(this.props.handler.message);
+    message = asBuffer(this.props.step.message);
 
     componentDidMount() {
-        // If the handler changes (or when its set initially), update our data fields
+        // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { channelLabel, message } = this.props.handler;
+            const { channelLabel, message } = this.props.step;
             runInAction(() => {
                 this.channelLabel = channelLabel;
                 this.message = asBuffer(message);
@@ -2663,18 +2679,18 @@ class RTCSendMessageStepConfig extends HandlerConfig<SendStepDefinition> {
     setChannelLabel(event: React.ChangeEvent<HTMLInputElement>) {
         const inputValue = event.target.value;
         this.channelLabel = inputValue || undefined;
-        this.updateHandler();
+        this.updateStep();
     }
 
     @action.bound
     setMessage(message: string) {
         this.message = stringToBuffer(message, this.textEncoding);
-        this.updateHandler();
+        this.updateStep();
     }
 
-    updateHandler() {
+    updateStep() {
         this.props.onChange(
-            new SendStepDefinition(
+            new SendStep(
                 this.channelLabel,
                 this.message.toString(this.textEncoding) // MockRTC currently (0.3.0) has a bug with sending buffer data
             )

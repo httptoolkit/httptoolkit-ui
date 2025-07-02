@@ -19,14 +19,12 @@ import type {
     ClientError
 } from 'mockttp';
 import type { PortRange } from 'mockttp/dist/mockttp';
-import type {
-    PassThroughResponse as MockttpBreakpointedResponse,
-    CallbackRequestResult as MockttpBreakpointRequestResult,
-    CallbackResponseResult as MockttpBreakpointResponseResult
-} from 'mockttp/dist/rules/requests/request-handlers';
-import type {
-    SerializedBuffer as MockttpSerializedBuffer
-} from 'mockttp/dist/rules/requests/request-handler-definitions';
+
+import type { requestSteps as MockttpRequestSteps } from 'mockttp';
+type MockttpBreakpointedResponse = MockttpRequestSteps.PassThroughResponse;
+type MockttpBreakpointRequestResult = MockttpRequestSteps.CallbackRequestResult;
+type MockttpBreakpointResponseResult = MockttpRequestSteps.CallbackResponseResult;
+type MockttpSerializedBuffer = MockttpRequestSteps.SerializedBuffer;
 
 import * as MockRTC from 'mockrtc';
 
@@ -39,6 +37,7 @@ import type { HttpExchange, HttpVersion } from './model/http/http-exchange';
 import type { HttpExchangeView } from './model/http/http-exchange-views';
 
 import type { WebSocketStream } from './model/websockets/websocket-stream';
+import type { WebSocketView } from './model/websockets/websocket-views';
 import type { RTCConnection } from './model/webrtc/rtc-connection';
 import type { RTCDataChannel } from './model/webrtc/rtc-data-channel';
 import type { RTCMediaTrack } from './model/webrtc/rtc-media-track';
@@ -50,12 +49,12 @@ import type { ObservableCache } from './model/observable-cache';
 
 // These are the HAR types as returned from parseHar(), not the raw types as defined in the HAR itself
 export type HarBody = { encodedLength: number, decoded: Buffer };
-export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId'> &
+export type HarRequest = Omit<MockttpCompletedRequest, 'body' | 'timingEvents' | 'matchedRuleId' | 'destination'> &
     { body: HarBody; timingEvents: TimingEvents, matchedRuleId: false };
 export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
-export type SentRequest = Omit<MockttpInitiatedRequest, 'matchedRuleId' | 'body'> &
+export type SentRequest = Omit<MockttpInitiatedRequest, 'matchedRuleId' | 'body' | 'destination'> &
     { matchedRuleId: false, body: { buffer: Buffer } };
 export type SentRequestResponse = Omit<MockttpResponse, 'body'> &
     { body: { buffer: Buffer } };
@@ -67,16 +66,38 @@ export type SentRequestError = Pick<MockttpAbortedRequest, 'id' | 'timingEvents'
     };
 }
 
+export type ClientErrorRequest = ClientError['request'] & { matchedRuleId: false };
+
 export type InputHTTPEvent = MockttpEvent;
 export type InputClientError = ClientError;
-export type InputTlsFailure = TlsHandshakeFailure;
-export type InputTlsPassthrough = TlsPassthroughEvent;
+export type InputTlsFailure = TlsHandshakeFailure &
+    { hostname?: string }; // Backward compat for old servers;
+export type InputTlsPassthrough = TlsPassthroughEvent &
+    { hostname?: string, upstreamPort?: number }; // Backward compat for old servers
+export type InputRawPassthrough = RawPassthroughEvent;
+export type InputRawPassthroughData = RawPassthroughDataEvent;
 export type InputInitiatedRequest = MockttpInitiatedRequest | HarRequest;
 export type InputCompletedRequest = MockttpCompletedRequest | HarRequest | SentRequest;
-export type InputRequest = InputInitiatedRequest | InputCompletedRequest;
-export type InputFailedRequest = MockttpAbortedRequest | ClientError['request'] | SentRequestError;
+export type InputFailedRequest = MockttpAbortedRequest | ClientErrorRequest | SentRequestError;
 export type InputResponse = MockttpResponse | HarResponse | SentRequestResponse;
 export type InputMessage = InputRequest | InputResponse;
+
+export interface InputRequest {
+    id: string;
+    matchedRuleId?: string | false | undefined;
+
+    httpVersion: string;
+    method: string;
+    url: string;
+    headers: Headers;
+    rawHeaders: RawHeaders;
+
+    remoteIpAddress?: string;
+    remotePort?: number;
+
+    tags: string[];
+    timingEvents: TimingEvents;
+}
 
 export type InputWebSocketMessage = MockttpWebSocketMessage;
 export type InputWebSocketClose = MockttpWebSocketClose;
@@ -227,6 +248,7 @@ export type {
     HttpExchange,
     HttpExchangeView,
     WebSocketStream,
+    WebSocketView,
     RTCConnection,
     RTCDataChannel,
     RTCMediaTrack

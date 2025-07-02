@@ -3,7 +3,7 @@ import {
     RequestRuleData,
     Method,
     matchers as httpMatchers,
-    requestHandlerDefinitions as httpHandlers,
+    requestSteps as httpSteps,
     completionCheckers
 } from 'mockttp';
 import * as serializr from 'serializr';
@@ -77,7 +77,7 @@ export class AmIUsingMatcher extends httpMatchers.RegexPathMatcher {
     }
 }
 
-export class StaticResponseHandler extends httpHandlers.SimpleHandlerDefinition {
+export class StaticResponseStep extends httpSteps.FixedResponseStep {
     explain() {
         return `respond with status ${this.status}${
             byteLength(this.data) ? ' and static content' : ''
@@ -86,9 +86,9 @@ export class StaticResponseHandler extends httpHandlers.SimpleHandlerDefinition 
 }
 
 // Ensure that JSON-ified buffers deserialize as real buffers
-serializr.createModelSchema(StaticResponseHandler, {
+serializr.createModelSchema(StaticResponseStep, {
     data: serializr.custom(
-        (data: StaticResponseHandler['data']): string | MockttpSerializedBuffer | undefined => {
+        (data: StaticResponseStep['data']): string | MockttpSerializedBuffer | undefined => {
             if (!data || typeof data === 'string' || isSerializedBuffer(data)) {
                 return data;
             } else {
@@ -112,16 +112,16 @@ serializr.createModelSchema(StaticResponseHandler, {
         ),
         { pattern: { test: (key: string) => key !== 'data' } }
     )
-}, () => new StaticResponseHandler(200));
+}, () => new StaticResponseStep(200));
 
 
-export class FromFileResponseHandler extends httpHandlers.FileHandlerDefinition {
+export class FromFileResponseStep extends httpSteps.FileStep {
     explain() {
         return `respond with status ${this.status} and content from ${this.filePath || 'a file'}`;
     }
 }
 
-export class PassThroughHandler extends httpHandlers.PassThroughHandlerDefinition {
+export class PassThroughStep extends httpSteps.PassThroughStep {
 
     constructor(rulesStore: RulesStore) {
         super(rulesStore.activePassthroughOptions);
@@ -129,43 +129,56 @@ export class PassThroughHandler extends httpHandlers.PassThroughHandlerDefinitio
 
 }
 
-serializr.createModelSchema(PassThroughHandler, {
+serializr.createModelSchema(PassThroughStep, {
     type: serializr.primitive()
-}, (context) => new PassThroughHandler(context.args.rulesStore));
+}, (context) => new PassThroughStep(context.args.rulesStore));
 
-export class ForwardToHostHandler extends httpHandlers.PassThroughHandlerDefinition {
+export class ForwardToHostStep extends httpSteps.PassThroughStep {
 
     readonly uiType = 'forward-to-host';
 
-    constructor(forwardToLocation: string, updateHostHeader: boolean, rulesStore: RulesStore) {
+    constructor(protocol: string | undefined, host: string, updateHostHeader: boolean, rulesStore: RulesStore) {
         super({
             ...rulesStore.activePassthroughOptions,
-            forwarding: {
-                targetHost: forwardToLocation,
-                updateHostHeader: updateHostHeader
+            transformRequest: {
+                ...rulesStore.activePassthroughOptions.transformRequest,
+                replaceHost: {
+                    targetHost: host,
+                    updateHostHeader: updateHostHeader
+                },
+                // If a protocol is specified, we separately redirect to that too:
+                ...(protocol ? {
+                    setProtocol: protocol as 'http' | 'https'
+                } : {})
             }
         });
     }
 
 }
 
-serializr.createModelSchema(ForwardToHostHandler, {
+serializr.createModelSchema(ForwardToHostStep, {
     uiType: serializeAsTag(() => 'forward-to-host'),
     type: serializr.primitive(),
-    forwarding: serializr.map(serializr.primitive())
+    transformRequest: serializr.object(
+        serializr.createSimpleSchema({
+            replaceHost: serializr.raw(),
+            setProtocol: serializr.primitive(),
+        })
+    )
 }, (context) => {
     const data = context.json;
-    return new ForwardToHostHandler(
-        data.forwarding.targetHost,
-        data.forwarding.updateHostHeader,
+    return new ForwardToHostStep(
+        data.transformRequest.setProtocol,
+        data.transformRequest.replaceHost.targetHost,
+        data.transformRequest.replaceHost.updateHostHeader,
         context.args.rulesStore
     );
 });
 
-export type RequestTransform = httpHandlers.RequestTransform;
-export type ResponseTransform = httpHandlers.ResponseTransform;
+export type RequestTransform = httpSteps.RequestTransform;
+export type ResponseTransform = httpSteps.ResponseTransform;
 
-export class TransformingHandler extends httpHandlers.PassThroughHandlerDefinition {
+export class TransformingStep extends httpSteps.PassThroughStep {
 
     readonly uiType = 'req-res-transformer';
 
@@ -198,14 +211,14 @@ export class TransformingHandler extends httpHandlers.PassThroughHandlerDefiniti
 
     // We override rule equality checks, to simplify them to treat undefined and missing
     // properties as different, because that matters for various transform properties.
-    [CUSTOM_RULE_EQUALS](handlerA: TransformingHandler, handlerB: TransformingHandler): boolean {
-        return _.isEqual(handlerA.transformRequest, handlerB.transformRequest) &&
-            _.isEqual(handlerA.transformResponse, handlerB.transformResponse);
+    [CUSTOM_RULE_EQUALS](stepA: TransformingStep, stepB: TransformingStep): boolean {
+        return _.isEqual(stepA.transformRequest, stepB.transformRequest) &&
+            _.isEqual(stepA.transformResponse, stepB.transformResponse);
     }
 
 }
 
-serializr.createModelSchema(TransformingHandler, {
+serializr.createModelSchema(TransformingStep, {
     uiType: serializeAsTag(() => 'req-res-transformer'),
     transformRequest: serializr.object(
         serializr.createSimpleSchema({
@@ -241,14 +254,14 @@ serializr.createModelSchema(TransformingHandler, {
     )
 }, (context) => {
     const data = context.json;
-    return new TransformingHandler(
+    return new TransformingStep(
         context.args.rulesStore,
         data.transformRequest,
         data.transformResponse
     );
 });
 
-export class RequestBreakpointHandler extends httpHandlers.PassThroughHandlerDefinition {
+export class RequestBreakpointStep extends httpSteps.PassThroughStep {
 
     readonly uiType = 'request-breakpoint';
 
@@ -264,12 +277,12 @@ export class RequestBreakpointHandler extends httpHandlers.PassThroughHandlerDef
     }
 }
 
-serializr.createModelSchema(RequestBreakpointHandler, {
+serializr.createModelSchema(RequestBreakpointStep, {
     uiType: serializeAsTag(() => 'request-breakpoint'),
     type: serializr.primitive()
-}, (context) => new RequestBreakpointHandler(context.args.rulesStore));
+}, (context) => new RequestBreakpointStep(context.args.rulesStore));
 
-export class ResponseBreakpointHandler extends httpHandlers.PassThroughHandlerDefinition {
+export class ResponseBreakpointStep extends httpSteps.PassThroughStep {
 
     readonly uiType = 'response-breakpoint';
 
@@ -285,13 +298,13 @@ export class ResponseBreakpointHandler extends httpHandlers.PassThroughHandlerDe
     }
 }
 
-serializr.createModelSchema(ResponseBreakpointHandler, {
+serializr.createModelSchema(ResponseBreakpointStep, {
     uiType: serializeAsTag(() => 'response-breakpoint'),
     type: serializr.primitive()
-}, (context) => new ResponseBreakpointHandler(context.args.rulesStore));
+}, (context) => new ResponseBreakpointStep(context.args.rulesStore));
 
 
-export class RequestAndResponseBreakpointHandler extends httpHandlers.PassThroughHandlerDefinition {
+export class RequestAndResponseBreakpointStep extends httpSteps.PassThroughStep {
 
     readonly uiType = 'request-and-response-breakpoint';
 
@@ -308,17 +321,17 @@ export class RequestAndResponseBreakpointHandler extends httpHandlers.PassThroug
     }
 }
 
-serializr.createModelSchema(RequestAndResponseBreakpointHandler, {
+serializr.createModelSchema(RequestAndResponseBreakpointStep, {
     uiType: serializeAsTag(() => 'request-and-response-breakpoint'),
     type: serializr.primitive()
-}, (context) => new RequestAndResponseBreakpointHandler(context.args.rulesStore));
+}, (context) => new RequestAndResponseBreakpointStep(context.args.rulesStore));
 
-export type TimeoutHandler = httpHandlers.TimeoutHandlerDefinition;
-export const TimeoutHandler = httpHandlers.TimeoutHandlerDefinition;
-export type CloseConnectionHandler = httpHandlers.CloseConnectionHandlerDefinition;
-export const CloseConnectionHandler = httpHandlers.CloseConnectionHandlerDefinition;
-export type ResetConnectionHandler = httpHandlers.ResetConnectionHandlerDefinition;
-export const ResetConnectionHandler = httpHandlers.ResetConnectionHandlerDefinition;
+export type TimeoutStep = httpSteps.TimeoutStep;
+export const TimeoutStep = httpSteps.TimeoutStep;
+export type CloseConnectionStep = httpSteps.CloseConnectionStep;
+export const CloseConnectionStep = httpSteps.CloseConnectionStep;
+export type ResetConnectionStep = httpSteps.ResetConnectionStep;
+export const ResetConnectionStep = httpSteps.ResetConnectionStep;
 
 export const HttpMatcherLookup = {
     ..._.omit(httpMatchers.MatcherLookup, ['method']), // We skip method to use per-method matchers instead
@@ -336,30 +349,30 @@ export const HttpInitialMatcherClasses = [
     ...Object.values(MethodMatchers)
 ];
 
-export const HttpHandlerLookup = {
-    ...httpHandlers.HandlerDefinitionLookup,
-    'passthrough': PassThroughHandler,
-    'simple': StaticResponseHandler,
-    'file': FromFileResponseHandler,
-    'forward-to-host': ForwardToHostHandler,
-    'req-res-transformer': TransformingHandler,
-    'request-breakpoint': RequestBreakpointHandler,
-    'response-breakpoint': ResponseBreakpointHandler,
-    'request-and-response-breakpoint': RequestAndResponseBreakpointHandler
+export const HttpStepLookup = {
+    ...httpSteps.StepDefinitionLookup,
+    'passthrough': PassThroughStep,
+    'simple': StaticResponseStep,
+    'file': FromFileResponseStep,
+    'forward-to-host': ForwardToHostStep,
+    'req-res-transformer': TransformingStep,
+    'request-breakpoint': RequestBreakpointStep,
+    'response-breakpoint': ResponseBreakpointStep,
+    'request-and-response-breakpoint': RequestAndResponseBreakpointStep
 };
 
 type HttpMatcherClass = typeof HttpMatcherLookup[keyof typeof HttpMatcherLookup];
 export type HttpMatcher = InstanceType<HttpMatcherClass>;
 export type HttpInitialMatcher = InstanceType<typeof HttpInitialMatcherClasses[number]>;
 
-type HttpHandlerClass = typeof HttpHandlerLookup[keyof typeof HttpHandlerLookup];
-type HttpHandler = InstanceType<HttpHandlerClass>;
+type HttpStepClass = typeof HttpStepLookup[keyof typeof HttpStepLookup];
+type HttpStep = InstanceType<HttpStepClass>;
 
 export interface HttpRule extends Omit<RequestRuleData, 'matchers'> {
     id: string;
     type: 'http';
     activated: boolean;
     matchers: Array<HttpMatcher> & { 0?: HttpInitialMatcher };
-    handler: HttpHandler;
+    steps: Array<HttpStep>;
     completionChecker: completionCheckers.Always; // HTK rules all *always* match
 };

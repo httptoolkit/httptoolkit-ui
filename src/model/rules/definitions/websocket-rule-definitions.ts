@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import {
     WebSocketRuleData,
-    webSocketHandlerDefinitions as wsHandlers,
+    webSocketSteps as wsSteps,
     matchers,
     completionCheckers,
     Method
@@ -18,15 +18,15 @@ import {
     WildcardMatcher
 } from './http-rule-definitions';
 
-// Convenient re-export for various built-in handler definitions:
+// Convenient re-export for various built-in step definitions:
 export const {
-    EchoWebSocketHandlerDefinition,
-    RejectWebSocketHandlerDefinition,
-    ListenWebSocketHandlerDefinition
-} = wsHandlers;
-export type EchoWebSocketHandlerDefinition = wsHandlers.EchoWebSocketHandlerDefinition;
-export type RejectWebSocketHandlerDefinition = wsHandlers.RejectWebSocketHandlerDefinition;
-export type ListenWebSocketHandlerDefinition = wsHandlers.ListenWebSocketHandlerDefinition;
+    EchoWebSocketStep,
+    RejectWebSocketStep,
+    ListenWebSocketStep
+} = wsSteps;
+export type EchoWebSocketStep = wsSteps.EchoWebSocketStep;
+export type RejectWebSocketStep = wsSteps.RejectWebSocketStep;
+export type ListenWebSocketStep = wsSteps.ListenWebSocketStep;
 
 export class WebSocketWildcardMatcher extends WildcardMatcher {
 
@@ -55,7 +55,7 @@ export class WebSocketMethodMatcher extends matchers.MethodMatcher {
 
 }
 
-export class WebSocketPassThroughHandler extends wsHandlers.PassThroughWebSocketHandlerDefinition {
+export class WebSocketPassThroughStep extends wsSteps.PassThroughWebSocketStep {
 
     constructor(rulesStore: RulesStore) {
         super(rulesStore.activePassthroughOptions);
@@ -63,35 +63,48 @@ export class WebSocketPassThroughHandler extends wsHandlers.PassThroughWebSocket
 
 }
 
-serializr.createModelSchema(WebSocketPassThroughHandler, {
+serializr.createModelSchema(WebSocketPassThroughStep, {
     type: serializr.primitive()
-}, (context) => new WebSocketPassThroughHandler(context.args.rulesStore));
+}, (context) => new WebSocketPassThroughStep(context.args.rulesStore));
 
-export class WebSocketForwardToHostHandler extends wsHandlers.PassThroughWebSocketHandlerDefinition {
+export class WebSocketForwardToHostStep extends wsSteps.PassThroughWebSocketStep {
 
     readonly uiType = 'ws-forward-to-host';
 
-    constructor(forwardToLocation: string, updateHostHeader: boolean, rulesStore: RulesStore) {
+    constructor(protocol: string | undefined, host: string, updateHostHeader: boolean, rulesStore: RulesStore) {
         super({
             ...rulesStore.activePassthroughOptions,
-            forwarding: {
-                targetHost: forwardToLocation,
-                updateHostHeader: updateHostHeader
+            transformRequest: {
+                ...rulesStore.activePassthroughOptions.transformRequest,
+                replaceHost: {
+                    targetHost: host,
+                    updateHostHeader: updateHostHeader
+                },
+                // If a protocol is specified, we separately redirect to that too:
+                ...(protocol ? {
+                    setProtocol: protocol as 'ws' | 'wss'
+                } : {})
             }
         });
     }
 
 }
 
-serializr.createModelSchema(WebSocketForwardToHostHandler, {
+serializr.createModelSchema(WebSocketForwardToHostStep, {
     uiType: serializeAsTag(() => 'ws-forward-to-host'),
     type: serializr.primitive(),
-    forwarding: serializr.map(serializr.primitive())
+    transformRequest: serializr.object(
+        serializr.createSimpleSchema({
+            setProtocol: serializr.primitive(),
+            replaceHost: serializr.raw()
+        })
+    )
 }, (context) => {
     const data = context.json;
-    return new WebSocketForwardToHostHandler(
-        data.forwarding.targetHost,
-        data.forwarding.updateHostHeader,
+    return new WebSocketForwardToHostStep(
+        data.transformRequest.setProtocol,
+        data.transformRequest.replaceHost.targetHost,
+        data.transformRequest.replaceHost.updateHostHeader,
         context.args.rulesStore
     );
 });
@@ -109,14 +122,14 @@ export const WebSocketInitialMatcherClasses = [
     WebSocketWildcardMatcher
 ];
 
-export const WebSocketHandlerLookup = {
-    ...wsHandlers.WsHandlerDefinitionLookup,
-    'ws-passthrough': WebSocketPassThroughHandler,
-    'ws-forward-to-host': WebSocketForwardToHostHandler
+export const WebSocketStepLookup = {
+    ...wsSteps.WsStepDefinitionLookup,
+    'ws-passthrough': WebSocketPassThroughStep,
+    'ws-forward-to-host': WebSocketForwardToHostStep
 };
 
-type WebSocketHandlerClass = typeof WebSocketHandlerLookup[keyof typeof WebSocketHandlerLookup];
-type WebSocketHandler = InstanceType<WebSocketHandlerClass>;
+type WebSocketStepClass = typeof WebSocketStepLookup[keyof typeof WebSocketStepLookup];
+type WebSocketStep = InstanceType<WebSocketStepClass>;
 
 export interface WebSocketRule extends Omit<WebSocketRuleData, 'matchers'> {
     id: string;
@@ -126,6 +139,6 @@ export interface WebSocketRule extends Omit<WebSocketRuleData, 'matchers'> {
     matchers: Array<HttpMatcher> & {
         0?: WebSocketWildcardMatcher | DefaultWebSocketWildcardMatcher
     };
-    handler: WebSocketHandler;
+    steps: Array<WebSocketStep>;
     completionChecker: completionCheckers.Always; // HTK rules all *always* match
 };

@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 
-import { ViewableEvent } from '../../types';
+import { HttpExchangeView, ViewableEvent } from '../../types';
 import { joinAnd } from '../../util/text';
 import { stringToBuffer } from '../../util/buffer';
 
-import { getStatusDocs } from '../http/http-docs';
+import { getStatusDocs, METHOD_NAMES } from '../http/http-docs';
 import { getReadableSize } from '../../util/buffer';
 import { EventCategories } from '../events/categorization';
 import { WebSocketStream } from '../websockets/websocket-stream';
@@ -461,9 +461,15 @@ class MethodFilter extends Filter {
             allowedChars: ALPHABETICAL,
             suggestionGenerator: (_v, _i, events: ViewableEvent[]) =>
                 _(events)
-                .map(e => e.isHttp() && e.request.method)
+                .filter(e =>
+                    e.isHttp() &&
+                    !!e.request.method &&
+                    METHOD_NAMES.includes(e.request.method.toUpperCase())
+                )
+                .map((e) =>
+                    (e as HttpExchangeView).request.method.toUpperCase()
+            )
                 .uniq()
-                .filter(Boolean)
                 .valueOf() as string[]
         })
     ] as const;

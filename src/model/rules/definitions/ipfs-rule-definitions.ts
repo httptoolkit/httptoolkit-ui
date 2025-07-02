@@ -13,7 +13,7 @@ import * as serializr from 'serializr';
 
 import { byteLength } from '../../../util/buffer';
 import {
-    HttpHandlerLookup
+    HttpStepLookup
 } from './http-rule-definitions';
 
 export const IpfsInteractions = {
@@ -28,7 +28,7 @@ export const IpfsInteractions = {
 
 export type IpfsInteraction = keyof typeof IpfsInteractions;
 
-export class IpfsInteractionMatcher extends matchers.SimplePathMatcher {
+export class IpfsInteractionMatcher extends matchers.FlexiblePathMatcher {
 
     readonly uiType = 'ipfs-interaction';
 
@@ -116,12 +116,12 @@ const buildIpfsStreamDefaultHeaders = () => ({
     'x-chunked-output': '1'
 });
 
-// When extending simple handlers, we need to provide a schema to avoid this being deserialized using
-// StaticResponseHandler's explicit schema, which is required to handle buffers nicely, but results
+// When extending simple steps, we need to provide a schema to avoid this being deserialized using
+// StaticResponseStep's explicit schema, which is required to handle buffers nicely, but results
 // in the wrong class for the deserialized instances.
-const simpleHandlerSchema = serializr.getDefaultModelSchema(HttpHandlerLookup['simple']);
+const simpleStepSchema = serializr.getDefaultModelSchema(HttpStepLookup['simple']);
 
-export class IpfsCatTextHandler extends HttpHandlerLookup['simple'] {
+export class IpfsCatTextStep extends HttpStepLookup['simple'] {
 
     readonly uiType = 'ipfs-cat-text';
 
@@ -141,9 +141,9 @@ export class IpfsCatTextHandler extends HttpHandlerLookup['simple'] {
     }
 
 }
-serializr.createModelSchema(IpfsCatTextHandler, simpleHandlerSchema.props, () => new IpfsCatTextHandler(''));
+serializr.createModelSchema(IpfsCatTextStep, simpleStepSchema.props, () => new IpfsCatTextStep(''));
 
-export class IpfsCatFileHandler extends HttpHandlerLookup['file'] {
+export class IpfsCatFileStep extends HttpStepLookup['file'] {
 
     readonly uiType = 'ipfs-cat-file';
 
@@ -164,7 +164,7 @@ export class IpfsCatFileHandler extends HttpHandlerLookup['file'] {
 
 }
 
-export class IpfsAddResultHandler extends HttpHandlerLookup['simple'] {
+export class IpfsAddResultStep extends HttpStepLookup['simple'] {
 
     readonly uiType = 'ipfs-add-result';
 
@@ -196,9 +196,9 @@ export class IpfsAddResultHandler extends HttpHandlerLookup['simple'] {
 
 }
 
-serializr.createModelSchema(IpfsAddResultHandler, simpleHandlerSchema.props, () => new IpfsAddResultHandler());
+serializr.createModelSchema(IpfsAddResultStep, simpleStepSchema.props, () => new IpfsAddResultStep());
 
-export class IpnsResolveResultHandler extends HttpHandlerLookup['simple'] {
+export class IpnsResolveResultStep extends HttpStepLookup['simple'] {
 
     readonly uiType = 'ipns-resolve-result';
 
@@ -221,9 +221,9 @@ export class IpnsResolveResultHandler extends HttpHandlerLookup['simple'] {
 
 }
 
-serializr.createModelSchema(IpnsResolveResultHandler, simpleHandlerSchema.props, () => new IpnsResolveResultHandler());
+serializr.createModelSchema(IpnsResolveResultStep, simpleStepSchema.props, () => new IpnsResolveResultStep());
 
-export class IpnsPublishResultHandler extends HttpHandlerLookup['simple'] {
+export class IpnsPublishResultStep extends HttpStepLookup['simple'] {
 
     readonly uiType = 'ipns-publish-result';
 
@@ -247,9 +247,9 @@ export class IpnsPublishResultHandler extends HttpHandlerLookup['simple'] {
 
 }
 
-serializr.createModelSchema(IpnsPublishResultHandler, simpleHandlerSchema.props, () => new IpnsPublishResultHandler());
+serializr.createModelSchema(IpnsPublishResultStep, simpleStepSchema.props, () => new IpnsPublishResultStep());
 
-export class IpfsPinsResultHandler extends HttpHandlerLookup['simple'] {
+export class IpfsPinsResultStep extends HttpStepLookup['simple'] {
 
     readonly uiType = 'ipfs-pins-result';
 
@@ -274,9 +274,9 @@ export class IpfsPinsResultHandler extends HttpHandlerLookup['simple'] {
 
 }
 
-serializr.createModelSchema(IpfsPinsResultHandler, simpleHandlerSchema.props, () => new IpfsPinsResultHandler());
+serializr.createModelSchema(IpfsPinsResultStep, simpleStepSchema.props, () => new IpfsPinsResultStep());
 
-export class IpfsPinLsResultHandler extends HttpHandlerLookup['simple'] {
+export class IpfsPinLsResultStep extends HttpStepLookup['simple'] {
 
     readonly uiType = 'ipfs-pin-ls-result';
 
@@ -299,7 +299,7 @@ export class IpfsPinLsResultHandler extends HttpHandlerLookup['simple'] {
 
 }
 
-serializr.createModelSchema(IpfsPinLsResultHandler, simpleHandlerSchema.props, () => new IpfsPinLsResultHandler());
+serializr.createModelSchema(IpfsPinLsResultStep, simpleStepSchema.props, () => new IpfsPinLsResultStep());
 
 export const IpfsMatcherLookup = {
     'ipfs-interaction': IpfsInteractionMatcher,
@@ -320,36 +320,36 @@ export const IpfsInitialMatcherClasses = [
     IpfsInteractionMatcher
 ];
 
-export const IpfsHandlerLookup = {
-    'ipfs-cat-text': IpfsCatTextHandler,
-    'ipfs-cat-file': IpfsCatFileHandler,
-    'ipfs-add-result': IpfsAddResultHandler,
-    'ipns-publish-result': IpnsPublishResultHandler,
-    'ipns-resolve-result': IpnsResolveResultHandler,
-    'ipfs-pins-result': IpfsPinsResultHandler,
-    'ipfs-pin-ls-result': IpfsPinLsResultHandler,
+export const IpfsStepLookup = {
+    'ipfs-cat-text': IpfsCatTextStep,
+    'ipfs-cat-file': IpfsCatFileStep,
+    'ipfs-add-result': IpfsAddResultStep,
+    'ipns-publish-result': IpnsPublishResultStep,
+    'ipns-resolve-result': IpnsResolveResultStep,
+    'ipfs-pins-result': IpfsPinsResultStep,
+    'ipfs-pin-ls-result': IpfsPinLsResultStep,
 
-    'passthrough': HttpHandlerLookup['passthrough'],
-    'forward-to-host': HttpHandlerLookup['forward-to-host'],
-    'timeout': HttpHandlerLookup['timeout'],
-    'close-connection': HttpHandlerLookup['close-connection'],
-    'request-breakpoint': HttpHandlerLookup['request-breakpoint'],
-    'response-breakpoint': HttpHandlerLookup['response-breakpoint'],
-    'request-and-response-breakpoint': HttpHandlerLookup['request-and-response-breakpoint']
+    'passthrough': HttpStepLookup['passthrough'],
+    'forward-to-host': HttpStepLookup['forward-to-host'],
+    'timeout': HttpStepLookup['timeout'],
+    'close-connection': HttpStepLookup['close-connection'],
+    'request-breakpoint': HttpStepLookup['request-breakpoint'],
+    'response-breakpoint': HttpStepLookup['response-breakpoint'],
+    'request-and-response-breakpoint': HttpStepLookup['request-and-response-breakpoint']
 };
 
 type IpfsMatcherClass = typeof IpfsMatcherLookup[keyof typeof IpfsMatcherLookup];
 export type IpfsMatcher = InstanceType<IpfsMatcherClass>;
 export type IpfsInitialMatcher = InstanceType<typeof IpfsInitialMatcherClasses[number]>;
 
-type IpfsHandlerClass = typeof IpfsHandlerLookup[keyof typeof IpfsHandlerLookup];
-type IpfsHandler = InstanceType<IpfsHandlerClass>;
+type IpfsStepClass = typeof IpfsStepLookup[keyof typeof IpfsStepLookup];
+type IpfsStep = InstanceType<IpfsStepClass>;
 
 export interface IpfsRule extends Omit<RequestRuleData, 'matchers'> {
     id: string;
     type: 'ipfs';
     activated: boolean;
     matchers: Array<IpfsMatcher> & { 0?: IpfsInteractionMatcher };
-    handler: IpfsHandler;
+    steps: Array<IpfsStep>;
     completionChecker: completionCheckers.Always; // HTK rules all *always* match
 }

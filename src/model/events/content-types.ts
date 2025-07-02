@@ -187,7 +187,7 @@ export function getCompatibleTypes(
     }
 
     // Examine the first char of the body, assuming it's ascii
-    const firstChar = body && body.slice(0, 1).toString('ascii');
+    const firstChar = body && body.subarray(0, 1).toString('ascii');
 
     // Allow optionally formatting non-JSON as JSON, if it looks like it might be
     if (firstChar === '{' || firstChar === '[') {
