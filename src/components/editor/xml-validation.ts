@@ -3,11 +3,6 @@ import { XMLValidator } from 'fast-xml-parser'
 
 export function setupXMLValidation(monaco: typeof MonacoTypes) {
     const markerId = 'xml-validation'
-    const contentChangeListeners = new Map<MonacoTypes.editor.ITextModel, MonacoTypes.IDisposable>()
-
-    monaco.editor.onWillDisposeModel(model => {
-        contentChangeListeners.delete(model)
-    })
 
     function validate(model: MonacoTypes.editor.ITextModel) {
         const markers: MonacoTypes.editor.IMarkerData[] = []
@@ -33,7 +28,8 @@ export function setupXMLValidation(monaco: typeof MonacoTypes) {
         monaco.editor.setModelMarkers(model, markerId, markers)
     }
 
-    monaco.editor.onDidChangeModelLanguage(({ model }) => {
+    const contentChangeListeners = new Map<MonacoTypes.editor.ITextModel, MonacoTypes.IDisposable>()
+    function manageContentChangeListener(model: MonacoTypes.editor.ITextModel) {
         const isXml = model.getModeId() === 'xml'
         const listener = contentChangeListeners.get(model)
 
@@ -48,5 +44,15 @@ export function setupXMLValidation(monaco: typeof MonacoTypes) {
             contentChangeListeners.delete(model)
             monaco.editor.setModelMarkers(model, markerId, [])
         }
+    }
+
+    monaco.editor.onWillDisposeModel(model => {
+        contentChangeListeners.delete(model)
+    })
+    monaco.editor.onDidChangeModelLanguage(({ model }) => {
+        manageContentChangeListener(model)
+    })
+    monaco.editor.onDidCreateModel(model => {
+        manageContentChangeListener(model)
     })
 }
