@@ -892,11 +892,13 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         if (!listWindow) return true; // This means no rows, so we are effectively at the bottom
         else return (listWindow.scrollTop + SCROLL_BOTTOM_MARGIN) >= (listWindow.scrollHeight - listWindow.offsetHeight);
     }
+
     private wasListAtBottom = true;
+
     private updateScrolledState = () => {
         requestAnimationFrame(() => { // Measure async, once the scroll has actually happened
             this.wasListAtBottom = this.isListAtBottom();
-            
+
             // Only save scroll position after we've restored the initial state
             if (this.hasRestoredInitialState) {
                 const listWindow = this.listBodyRef.current?.parentElement;
@@ -908,7 +910,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     }
 
     private hasRestoredInitialState = false;
-    
+
     componentDidUpdate(prevProps: ViewEventListProps) {
         if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
             // If we previously had something here focused, and we've updated, update
@@ -919,7 +921,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         // If we previously were scrolled to the bottom of the list, but now we're not,
         // scroll there again ourselves now.
         if (this.wasListAtBottom && !this.isListAtBottom()) {
-            this.listRef.current?.scrollToItem(this.props.events.length - 1);        
+            this.listRef.current?.scrollToItem(this.props.events.length - 1);
         } else if (prevProps.selectedEvent !== this.props.selectedEvent && this.props.selectedEvent) {
             // If the selected event changed and we have a selected event, scroll to it
             // This handles restoring the selected event when returning to the tab
@@ -937,7 +939,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const savedPosition = this.props.uiStore.viewScrollPosition;
         if (savedPosition > 0) {
             const listWindow = this.listBodyRef.current?.parentElement;
-            if (listWindow) {                // Only restore if we're not close to the current position (avoid unnecessary scrolling)
+            if (listWindow) {
+                // Only restore if we're not close to the current position (avoid unnecessary scrolling)
                 if (Math.abs(listWindow.scrollTop - savedPosition) > 10) {
                     listWindow.scrollTop = savedPosition;
                 }
@@ -1045,7 +1048,9 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         }
 
         event.preventDefault();
-    }    // Public method to force scroll and selection restoration
+    }
+
+    // Public method to force scroll and selection restoration
     public restoreViewState = () => {
         if (this.props.selectedEvent) {
             this.scrollToEvent(this.props.selectedEvent);
