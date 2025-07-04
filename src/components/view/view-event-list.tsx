@@ -926,11 +926,6 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
             // If the selected event changed and we have a selected event, scroll to it
             // This handles restoring the selected event when returning to the tab
             this.scrollToEvent(this.props.selectedEvent);
-        } else if (prevProps.filteredEvents.length !== this.props.filteredEvents.length) {
-            // If the filtered events changed (e.g., new events loaded), try to restore scroll position
-            setTimeout(() => {
-                this.restoreScrollPosition();
-            }, 50);
         }
     }
 
