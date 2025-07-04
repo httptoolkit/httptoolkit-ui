@@ -117,6 +117,7 @@ export class ObservableEventsList {
 
         this._exchanges.clear();
         this._websockets.clear();
+        this._tlsFailures.clear();
         this._rtcConnections.clear();
         this._rtcDataChannels.clear();
         this._rtcMediaTracks.clear();
