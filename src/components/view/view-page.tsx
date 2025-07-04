@@ -171,9 +171,6 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     private listRef = React.createRef<ViewEventList>();
     private splitPaneRef = React.createRef<SplitPane>();
-    
-    @observable
-    private shouldRestoreViewStateOnRefSet = false;
 
     @observable
     private searchFiltersUnderConsideration: FilterSet | undefined;
@@ -214,7 +211,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     get selectedEvent() {
         // First try to use the URL-based eventId, then fallback to the persisted selection
         const targetEventId = this.props.eventId || this.props.uiStore.selectedEventId;
-        
+
         return _.find(this.props.eventsStore.events, {
             id: targetEventId
         });
@@ -245,15 +242,13 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.onBuildRuleFromExchange,
         this.onPrepareToResendRequest
     );
+
     componentDidMount() {
         // After first render, scroll to the selected event (or the end of the list) by default:
         requestAnimationFrame(() => {
-            if (this.props.eventId && this.selectedEvent) {
+            if ((this.props.eventId || this.props.uiStore.selectedEventId) && this.selectedEvent) {
                 this.onScrollToCenterEvent(this.selectedEvent);
-            } else if (!this.props.eventId && this.props.uiStore.selectedEventId) {
-                // If no URL eventId but we have a persisted selection, restore it when ref is set
-                this.shouldRestoreViewStateOnRefSet = true;
-            } else {
+            } else if (!this.props.uiStore.viewScrollPosition) {
                 this.onScrollToEnd();
             }
         });
@@ -466,7 +461,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                         contextMenuBuilder={this.contextMenuBuilder}
                         uiStore={this.props.uiStore}
 
-                        ref={this.setListRef}
+                        ref={this.listRef}
                     />
                 </LeftPane>
                 <PaneOuterContainer
@@ -508,7 +503,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     onSelected(event: CollectedEvent | undefined) {
         // Persist the selected event to UiStore for tab switching
         this.props.uiStore.setSelectedEventId(event?.id);
-        
+
         this.props.navigate(event
             ? `/view/${event.id}`
             : '/view'
@@ -640,19 +635,6 @@ class ViewPage extends React.Component<ViewPageProps> {
     onScrollToEnd() {
         this.listRef.current?.scrollToEnd();
     }
-
-    @action.bound
-    setListRef = (ref: ViewEventList | null) => {
-        if (ref) {
-            (this.listRef as any).current = ref;
-            if (this.shouldRestoreViewStateOnRefSet) {
-                this.shouldRestoreViewStateOnRefSet = false;
-                ref.restoreViewState();
-            }
-        } else {
-            (this.listRef as any).current = null;
-        }
-    };
 }
 
 const LeftPane = styled.div`
