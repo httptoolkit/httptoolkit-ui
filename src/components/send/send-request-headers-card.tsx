@@ -42,6 +42,7 @@ export const SendRequestHeadersCard = observer(({
         </header>
         <SendCardScrollableWrapper>
             <EditableRawHeaders
+                preserveKeyCase={true}
                 headers={headers}
                 onChange={updateHeaders}
             />
