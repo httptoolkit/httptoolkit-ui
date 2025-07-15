@@ -251,9 +251,8 @@ export class UiStore {
     @observable
     expandedViewCard: ExpandableViewCardKey | undefined;
 
-    // Store view list scroll position and selected entry to persist when switching tabs
     @observable
-    viewScrollPosition: number = 0;
+    viewScrollPosition: number | 'end' = 'end';
 
     @observable
     selectedEventId: string | undefined;
@@ -445,7 +444,7 @@ export class UiStore {
 
     // Actions for persisting view state when switching tabs
     @action.bound
-    setViewScrollPosition(position: number) {
+    setViewScrollPosition(position: number | 'end') {
         this.viewScrollPosition = position;
     }
 

@@ -244,12 +244,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
-        // After first render, scroll to the selected event (or the end of the list) by default:
+        // After first render, if we're jumping to an event, then scroll to it:
         requestAnimationFrame(() => {
-            if ((this.props.eventId || this.props.uiStore.selectedEventId) && this.selectedEvent) {
+            if (this.props.eventId && this.selectedEvent) {
+                this.props.uiStore.setSelectedEventId(this.props.eventId);
                 this.onScrollToCenterEvent(this.selectedEvent);
-            } else if (!this.props.uiStore.viewScrollPosition) {
-                this.onScrollToEnd();
             }
         });
 
@@ -499,9 +498,9 @@ class ViewPage extends React.Component<ViewPageProps> {
     onSearchFiltersConsidered(filters: FilterSet | undefined) {
         this.searchFiltersUnderConsideration = filters;
     }
+
     @action.bound
     onSelected(event: CollectedEvent | undefined) {
-        // Persist the selected event to UiStore for tab switching
         this.props.uiStore.setSelectedEventId(event?.id);
 
         this.props.navigate(event
