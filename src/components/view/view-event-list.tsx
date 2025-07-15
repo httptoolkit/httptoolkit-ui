@@ -17,6 +17,7 @@ import {
     RTCConnection,
     TlsTunnel
 } from '../../types';
+import { UiStore } from '../../model/ui/ui-store';
 
 import {
     getSummaryColor,
@@ -54,6 +55,7 @@ interface ViewEventListProps {
     isPaused: boolean;
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
+    uiStore: UiStore;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
@@ -767,6 +769,17 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     private listBodyRef = React.createRef<HTMLDivElement>();
     private listRef = React.createRef<List>();
 
+    private setListBodyRef = (element: HTMLDivElement | null) => {
+        // Update the ref
+        (this.listBodyRef as any).current = element;
+
+        // If the element is being mounted and we haven't restored state yet, do it now
+        if (element && !this.hasRestoredScrollState) {
+            this.restoreScrollPosition();
+            this.hasRestoredScrollState = true;
+        }
+    };
+
     private KeyBoundListWindow = observer(
         React.forwardRef<HTMLDivElement>(
             (props: any, ref) => <div
@@ -816,7 +829,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 : <AutoSizer>{({ height, width }) =>
                     <Observer>{() =>
                         <List
-                            innerRef={this.listBodyRef}
+                            innerRef={this.setListBodyRef}
                             outerElementType={this.KeyBoundListWindow}
                             ref={this.listRef}
 
@@ -881,17 +894,28 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     }
 
     private wasListAtBottom = true;
+
     private updateScrolledState = () => {
         requestAnimationFrame(() => { // Measure async, once the scroll has actually happened
             this.wasListAtBottom = this.isListAtBottom();
+
+            // Only save scroll position after we've restored the initial state
+            if (this.hasRestoredScrollState) {
+                const listWindow = this.listBodyRef.current?.parentElement;
+
+                const scrollPosition = this.wasListAtBottom
+                    ? 'end'
+                    : (listWindow?.scrollTop ?? 'end');
+                if (listWindow) {
+                    this.props.uiStore.setViewScrollPosition(scrollPosition);
+                }
+            }
         });
     }
 
-    componentDidMount() {
-        this.updateScrolledState();
-    }
+    private hasRestoredScrollState = false;
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps: ViewEventListProps) {
         if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
             // If we previously had something here focused, and we've updated, update
             // the focus too, to make sure it's in the right place.
@@ -902,6 +926,25 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         // scroll there again ourselves now.
         if (this.wasListAtBottom && !this.isListAtBottom()) {
             this.listRef.current?.scrollToItem(this.props.events.length - 1);
+        } else if (prevProps.selectedEvent !== this.props.selectedEvent && this.props.selectedEvent) {
+            // If the selected event changed and we have a selected event, scroll to it
+            // This handles restoring the selected event when returning to the tab
+            this.scrollToEvent(this.props.selectedEvent);
+        }
+    }
+
+    private restoreScrollPosition = () => {
+        const savedPosition = this.props.uiStore.viewScrollPosition;
+        const listWindow = this.listBodyRef.current?.parentElement;
+        if (listWindow) {
+            if (savedPosition === 'end') {
+                listWindow.scrollTop = listWindow.scrollHeight;
+            } else {
+                // Only restore if we're not close to the current position (avoid unnecessary scrolling)
+                if (Math.abs(listWindow.scrollTop - savedPosition) > 10) {
+                    listWindow.scrollTop = savedPosition;
+                }
+            }
         }
     }
 

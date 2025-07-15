@@ -207,11 +207,13 @@ class ViewPage extends React.Component<ViewPageProps> {
             filteredEventCount: [filteredEvents.length, events.length]
         };
     }
-
     @computed
     get selectedEvent() {
+        // First try to use the URL-based eventId, then fallback to the persisted selection
+        const targetEventId = this.props.eventId || this.props.uiStore.selectedEventId;
+
         return _.find(this.props.eventsStore.events, {
-            id: this.props.eventId
+            id: targetEventId
         });
     }
 
@@ -242,12 +244,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
-        // After first render, scroll to the selected event (or the end of the list) by default:
+        // After first render, if we're jumping to an event, then scroll to it:
         requestAnimationFrame(() => {
             if (this.props.eventId && this.selectedEvent) {
+                this.props.uiStore.setSelectedEventId(this.props.eventId);
                 this.onScrollToCenterEvent(this.selectedEvent);
-            } else {
-                this.onScrollToEnd();
             }
         });
 
@@ -326,6 +327,15 @@ class ViewPage extends React.Component<ViewPageProps> {
                 }
             })
         );
+    }
+
+    componentDidUpdate(prevProps: ViewPageProps) {
+        // Only clear persisted selection if we're explicitly navigating to a different event via URL
+        // Don't clear it when going from eventId to no eventId (which happens when clearing selection)
+        if (this.props.eventId && prevProps.eventId && this.props.eventId !== prevProps.eventId) {
+            // Clear persisted selection only when explicitly navigating between different events via URL
+            this.props.uiStore.setSelectedEventId(undefined);
+        }
     }
 
     isSendAvailable() {
@@ -447,8 +457,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
-
                         contextMenuBuilder={this.contextMenuBuilder}
+                        uiStore={this.props.uiStore}
 
                         ref={this.listRef}
                     />
@@ -491,6 +501,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onSelected(event: CollectedEvent | undefined) {
+        this.props.uiStore.setSelectedEventId(event?.id);
+
         this.props.navigate(event
             ? `/view/${event.id}`
             : '/view'
