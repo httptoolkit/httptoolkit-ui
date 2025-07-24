@@ -85,3 +85,4 @@ export const CONNECTION_RESET_SUPPORTED = '^1.12.0';
 export const SERVER_REST_API_SUPPORTED = '^1.13.0';
 export const SERVER_SEND_API_SUPPORTED = '^1.13.0';
 export const ADVANCED_PATCH_TRANSFORMS = '^1.18.0';
+export const WILDCARD_CLIENT_CERTS = '^1.22.0';
