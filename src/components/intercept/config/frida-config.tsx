@@ -253,7 +253,7 @@ class FridaConfig extends React.Component<{
         }));
 
         this.updateTargets();
-        const updateInterval = setInterval(this.updateTargets, 2000);
+        const updateInterval = setInterval(this.updateTargets, 4000);
         disposeOnUnmount(this, () => clearInterval(updateInterval));
     }
 
