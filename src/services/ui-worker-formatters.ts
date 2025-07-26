@@ -82,21 +82,18 @@ const WorkerFormatters = {
         }
     },
     'json-records': (content: Buffer) => {
-        const asString = content.toString('utf8');
-        
         try {
             let records = new Array();
-            jsonRecordsSeparators.forEach((separator) => {
-                    splitBuffer(content, separator).forEach((recordBuffer: Buffer) => {
-                    if (recordBuffer.length > 0) {
-                        const record = recordBuffer.toString('utf-8');
-                        records.push(JSON.parse(record.trim()));
-                    }
-                });
+            const separator = content[content.length - 1];
+            splitBuffer(content, separator).forEach((recordBuffer: Buffer) => {
+                if (recordBuffer.length > 0) {
+                    const record = recordBuffer.toString('utf-8');
+                    records.push(JSON.parse(record.trim()));
+                }
             });
             return JSON.stringify(records, null, 2);
         } catch (e) {
-            return asString;
+            return content.toString('utf8');
         }
     },
     javascript: (content: Buffer) => {

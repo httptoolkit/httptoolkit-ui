@@ -133,17 +133,14 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         isEditApplicable: false,
         render: (input: Buffer, headers?: Headers) => {
             if (input.byteLength < 10_000) {
-                const inputAsString = bufferToString(input);
-                
                 try {
                     let records = new Array();
-                    jsonRecordsSeparators.forEach((separator) => {
-                         splitBuffer(input, separator).forEach((recordBuffer: Buffer) => {
-                            if (recordBuffer.length > 0) {
-                                const record = recordBuffer.toString('utf-8');
-                                records.push(JSON.parse(record.trim()));
-                            }
-                        });
+                    const separator = input[input.length - 1];
+                    splitBuffer(input, separator).forEach((recordBuffer: Buffer) => {
+                        if (recordBuffer.length > 0) {
+                            const record = recordBuffer.toString('utf-8');
+                            records.push(JSON.parse(record.trim()));
+                        }
                     });
                     // For short-ish inputs, we return synchronously - conveniently this avoids
                     // showing the loading spinner that churns the layout in short content cases.
@@ -155,7 +152,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                     // ^ Same logic as in UI-worker-formatter
                 } catch (e) {
                     // Fallback to showing the raw un-formatted:
-                    return inputAsString;
+                    return bufferToString(input);
                 }
             } else {
                 return observablePromise(
