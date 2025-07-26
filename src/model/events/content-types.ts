@@ -51,7 +51,9 @@ export type ViewableContentType =
     | 'yaml'
     | 'image'
     | 'protobuf'
-    | 'grpc-proto';
+    | 'grpc-proto'
+    | 'json-records'
+    ;
 
 export const EditableContentTypes = [
     'text',
@@ -122,6 +124,10 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/octet-stream': 'raw'
 } as const;
 
+export const jsonRecordsSeparators = [
+    0x1E
+];
+
 export function getContentType(mimeType: string | undefined): ViewableContentType | undefined {
     const baseContentType = getBaseContentType(mimeType);
     return mimeTypeToContentTypeMap[baseContentType!];
@@ -141,6 +147,7 @@ export function getEditableContentType(mimeType: string | undefined): EditableCo
 
 export function getContentEditorName(contentType: ViewableContentType): string {
     return contentType === 'raw' ? 'Hex'
+        : contentType === 'json-records' ? 'JSON Records'
         : contentType === 'json' ? 'JSON'
         : contentType === 'css' ? 'CSS'
         : contentType === 'url-encoded' ? 'URL-Encoded'
@@ -188,6 +195,16 @@ export function getCompatibleTypes(
 
     // Examine the first char of the body, assuming it's ascii
     const firstChar = body && body.subarray(0, 1).toString('ascii');
+
+    // Allow optionally formatting non-JSON-records as JSON-records, if it looks like it might be
+    if (body && body.length > 2 && firstChar === '{' 
+            && jsonRecordsSeparators.indexOf(body[body.length - 1]) > -1
+    ) {
+        const secondToLastChar = body.subarray(body.length - 2, body.length - 1).toString('ascii');
+        if (secondToLastChar === '}') {
+            types.add('json-records');
+        }
+    }
 
     // Allow optionally formatting non-JSON as JSON, if it looks like it might be
     if (firstChar === '{' || firstChar === '[') {

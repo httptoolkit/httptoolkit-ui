@@ -3,6 +3,7 @@ import { computed, observable } from 'mobx';
 import { InputStreamMessage } from "../../types";
 import { asBuffer } from '../../util/buffer';
 import { ObservableCache } from '../observable-cache';
+import { jsonRecordsSeparators } from './content-types';
 
 export class StreamMessage {
 
@@ -57,7 +58,12 @@ export class StreamMessage {
             startOfMessage.includes('{') ||
             startOfMessage.includes('[') ||
             this.subprotocol?.includes('json')
-        ) return 'json';
+        ) {
+            if (jsonRecordsSeparators.indexOf(this.content[this.content.length - 1]) > -1)
+                return 'json-records';
+            else
+                return 'json';
+        }
 
         else return 'text';
     }
