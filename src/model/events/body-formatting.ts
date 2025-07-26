@@ -1,7 +1,7 @@
 import { Headers } from '../../types';
 import { styled } from '../../styles';
 
-import { jsonRecordsSeparators, ViewableContentType } from '../events/content-types';
+import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
 import { bufferToString, bufferToHex, splitBuffer } from '../../util/buffer';
 

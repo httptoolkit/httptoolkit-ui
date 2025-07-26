@@ -8,7 +8,6 @@ import * as beautifyXml from 'xml-beautifier';
 import { Headers } from '../types';
 import { bufferToHex, bufferToString, getReadableSize, splitBuffer } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
-import { jsonRecordsSeparators } from '../model/events/content-types';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
