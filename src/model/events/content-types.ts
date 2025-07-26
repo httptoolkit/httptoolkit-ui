@@ -125,7 +125,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
 } as const;
 
 export const jsonRecordsSeparators = [
-    0x1E
+    0x1E, // SignalR record separator https://github.com/dotnet/aspnetcore/blob/v8.0.0/src/SignalR/docs/specs/HubProtocol.md#json-encoding
 ];
 
 export function getContentType(mimeType: string | undefined): ViewableContentType | undefined {
