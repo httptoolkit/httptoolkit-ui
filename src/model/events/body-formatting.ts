@@ -3,7 +3,7 @@ import { styled } from '../../styles';
 
 import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
-import { bufferToString, bufferToHex } from '../../util/buffer';
+import { bufferToString, bufferToHex, splitBuffer } from '../../util/buffer';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
@@ -119,6 +119,40 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                 } catch (e) {
                     // Fallback to showing the raw un-formatted JSON:
                     return inputAsString;
+                }
+            } else {
+                return observablePromise(
+                    formatBufferAsync(input, 'json', headers)
+                );
+            }
+        }
+    },
+    'json-records': {
+        language: 'json',
+        cacheKey: Symbol('json-records'),
+        isEditApplicable: false,
+        render: (input: Buffer, headers?: Headers) => {
+            if (input.byteLength < 10_000) {
+                try {
+                    let records = new Array();
+                    const separator = input[input.length - 1];
+                    splitBuffer(input, separator).forEach((recordBuffer: Buffer) => {
+                        if (recordBuffer.length > 0) {
+                            const record = recordBuffer.toString('utf-8');
+                            records.push(JSON.parse(record.trim()));
+                        }
+                    });
+                    // For short-ish inputs, we return synchronously - conveniently this avoids
+                    // showing the loading spinner that churns the layout in short content cases.
+                    return JSON.stringify(
+                        records,
+                        null,
+                        2
+                    );
+                    // ^ Same logic as in UI-worker-formatter
+                } catch (e) {
+                    // Fallback to showing the raw un-formatted:
+                    return bufferToString(input);
                 }
             } else {
                 return observablePromise(
