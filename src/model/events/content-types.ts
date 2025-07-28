@@ -207,7 +207,7 @@ export function getCompatibleTypes(
     }
 
     // Allow optionally formatting non-JSON as JSON, if it looks like it might be
-    if (firstChar === '{' || firstChar === '[') {
+    if ((firstChar === '{' && !types.has('json-records')) || firstChar === '[') {
         types.add('json');
     }
 
