@@ -21,7 +21,7 @@ import { UnreachableCheck, unreachableCheck } from '../../util/error';
 
 import { SERVER_SEND_API_SUPPORTED, serverVersion, versionSatisfies } from '../../services/service-versions';
 
-import { UiStore } from '../../model/ui/ui-store';
+import { ExpandableViewCardKey, UiStore } from '../../model/ui/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
 import { RulesStore } from '../../model/rules/rules-store';
@@ -142,6 +142,19 @@ const EDITOR_KEYS = [
     'streamMessage'
 ] as const;
 type EditorKey = typeof EDITOR_KEYS[number];
+
+const paneExpansionRequirements: { [key in ExpandableViewCardKey]: (event: CollectedEvent) => boolean } = {
+    requestBody: (event: CollectedEvent) =>
+        event.isHttp() &&
+        (event.hasRequestBody() || !!event.downstream.requestBreakpoint),
+    responseBody: (event: CollectedEvent) =>
+        event.isHttp() &&
+        (event.hasResponseBody() || !!event.downstream.responseBreakpoint),
+    webSocketMessages: (event: CollectedEvent) =>
+        event.isWebSocket() && event.wasAccepted,
+    rawTunnelPackets: (event: CollectedEvent) =>
+        event.isRawTunnel()
+};
 
 @inject('eventsStore')
 @inject('proxyStore')
@@ -280,33 +293,14 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
 
             const { expandedViewCard } = this.props.uiStore;
-            if (!expandedViewCard) return;
-
-            const selectedHttpExchange = this.selectedExchange;
-
-            // If you have a pane expanded, and select an event with no data
-            // for that pane, then disable the expansion:
-            if (
-                !selectedHttpExchange ||
-                (
-                    expandedViewCard === 'requestBody' &&
-                    !selectedHttpExchange.hasRequestBody() &&
-                    !selectedHttpExchange.downstream.requestBreakpoint
-                ) ||
-                (
-                    expandedViewCard === 'responseBody' &&
-                    !selectedHttpExchange.hasResponseBody() &&
-                    !selectedHttpExchange.downstream.responseBreakpoint
-                ) ||
-                (
-                    expandedViewCard === 'webSocketMessages' &&
-                    !(selectedHttpExchange.isWebSocket() && selectedHttpExchange.wasAccepted)
-                )
-            ) {
-                runInAction(() => {
-                    this.props.uiStore.expandedViewCard = undefined;
-                });
-                return;
+            if (expandedViewCard) {
+                // If you have a pane expanded, and select an event with no data
+                // for that pane, then disable the expansion:
+                if (!paneExpansionRequirements[expandedViewCard](selectedEvent)) {
+                    runInAction(() => {
+                        this.props.uiStore.expandedViewCard = undefined;
+                    });
+                }
             }
         }));
 

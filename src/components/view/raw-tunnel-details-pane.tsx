@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as portals from 'react-reverse-portal';
+import { inject, observer } from 'mobx-react';
 
 import { getReadableIP } from '../../model/network';
 import { RawTunnel } from '../../model/raw-tunnel';
+import { UiStore } from '../../model/ui/ui-store';
 
 import { MediumCard } from '../common/card';
 import { ContentLabelBlock, Content, CopyableMonoValue } from '../common/text-content';
@@ -11,10 +13,13 @@ import { PaneScrollContainer } from './view-details-pane';
 import { StreamMessageListCard } from './stream-message-list-card';
 import { SelfSizedEditor } from '../editor/base-editor';
 
+@inject('uiStore')
+@observer
 export class RawTunnelDetailsPane extends React.Component<{
     tunnel: RawTunnel,
     streamMessageEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
-    isPaidUser: boolean
+    isPaidUser: boolean,
+    uiStore?: UiStore
 }> {
     render() {
         const { tunnel } = this.props;
@@ -22,6 +27,22 @@ export class RawTunnelDetailsPane extends React.Component<{
         const sourceDetailParts = getReadableIP(tunnel.remoteIpAddress).split(' ');
         const sourceIp = sourceDetailParts[0];
         const sourceDetails = sourceDetailParts.slice(1).join(' ');
+
+        const packetCardProps = this.props.uiStore!.viewCardProps['rawTunnelPackets'];
+
+        const packetsListCard = <StreamMessageListCard
+            isPaidUser={this.props.isPaidUser}
+            {...packetCardProps}
+
+            streamId={tunnel.id}
+            cardHeading='Raw Data'
+            streamLabel={tunnel.upstreamHostname}
+            editorNode={this.props.streamMessageEditor}
+            filenamePrefix={`Raw Tunnel ${tunnel.upstreamHostname} ${tunnel.id}`}
+            messages={tunnel.packets}
+        />;
+
+        if (packetCardProps.expanded) return packetsListCard;
 
         return <PaneScrollContainer>
             <MediumCard>
@@ -50,23 +71,7 @@ export class RawTunnelDetailsPane extends React.Component<{
                     </p>
                 </Content>
             </MediumCard>
-            <StreamMessageListCard
-                isPaidUser={this.props.isPaidUser}
-                ariaLabel='Raw tunnel data'
-
-                collapsed={false}
-                expanded={true}
-                onExpandToggled={() => {}}
-                onCollapseToggled={() => {}}
-
-                streamId={tunnel.id}
-                cardHeading='Raw Data'
-                streamLabel={tunnel.upstreamHostname}
-                editorNode={this.props.streamMessageEditor}
-                filenamePrefix={`Raw Tunnel ${tunnel.upstreamHostname} ${tunnel.id}`}
-                messages={tunnel.packets}
-            />
-
+            { packetsListCard }
         </PaneScrollContainer>;
     }
 }
