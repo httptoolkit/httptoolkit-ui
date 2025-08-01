@@ -394,7 +394,8 @@ class FridaConfig extends React.Component<{
         this.props.activateInterceptor({
             action: 'intercept',
             hostId: host.id,
-            targetId
+            targetId,
+            enableSocks: this.props.accountStore!.featureFlags.includes('raw-tunnels')
         })
         .catch((e) => alertActivationError(`intercept ${targetId}`, e))
         .then(() => {
