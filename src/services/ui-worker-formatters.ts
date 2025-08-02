@@ -84,13 +84,16 @@ const WorkerFormatters = {
         try {
             let records = new Array();
             const separator = content[content.length - 1];
+            const separatorString = Buffer.of(separator).toString('utf8');
+
             splitBuffer(content, separator).forEach((recordBuffer: Buffer) => {
                 if (recordBuffer.length > 0) {
                     const record = recordBuffer.toString('utf-8');
-                    records.push(JSON.parse(record.trim()));
+                    records.push(record + separatorString);
                 }
             });
-            return JSON.stringify(records, null, 2);
+
+            return records.join('');
         } catch (e) {
             return content.toString('utf8');
         }

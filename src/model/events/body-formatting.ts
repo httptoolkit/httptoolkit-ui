@@ -9,6 +9,7 @@ import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
 import { ReadOnlyParams } from '../../components/common/editable-params';
 import { ImageViewer } from '../../components/editor/image-viewer';
+import { Buffer } from 'buffer';
 
 export interface EditorFormatter {
     language: string;
@@ -128,27 +129,24 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         }
     },
     'json-records': {
-        language: 'json',
+        language: 'json-records',
         cacheKey: Symbol('json-records'),
         isEditApplicable: false,
         render: (input: Buffer, headers?: Headers) => {
             if (input.byteLength < 10_000) {
                 try {
-                    let records = new Array();
+                    let records = new Array<string>();
                     const separator = input[input.length - 1];
+                    const separatorString = Buffer.of(separator).toString('utf8');
+
                     splitBuffer(input, separator).forEach((recordBuffer: Buffer) => {
                         if (recordBuffer.length > 0) {
                             const record = recordBuffer.toString('utf-8');
-                            records.push(JSON.parse(record.trim()));
+                            records.push(record + separatorString);
                         }
                     });
-                    // For short-ish inputs, we return synchronously - conveniently this avoids
-                    // showing the loading spinner that churns the layout in short content cases.
-                    return JSON.stringify(
-                        records,
-                        null,
-                        2
-                    );
+
+                    return records.join('');
                     // ^ Same logic as in UI-worker-formatter
                 } catch (e) {
                     // Fallback to showing the raw un-formatted:
@@ -156,7 +154,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                 }
             } else {
                 return observablePromise(
-                    formatBufferAsync(input, 'json', headers)
+                    formatBufferAsync(input, 'json-records', headers)
                 );
             }
         }

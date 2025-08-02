@@ -7,6 +7,7 @@ import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
 import { observable, runInAction } from 'mobx';
 import { setupXMLValidation } from './xml-validation';
+import { setupJsonRecordsValidation } from './json-records-validation';
 
 export type {
     MonacoTypes,
@@ -75,7 +76,12 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
             },
         });
 
+        monaco.languages.register({
+            id: 'json-records'
+        });
+
         setupXMLValidation(monaco);
+        setupJsonRecordsValidation(monaco);
 
         MonacoEditor = rmeModule.default;
     } catch (err) {
