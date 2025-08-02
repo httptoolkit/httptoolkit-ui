@@ -22,9 +22,9 @@ export function setupJsonRecordsValidation(monaco: typeof MonacoTypes) {
                         errors.forEach((err) => {
                             markers.push({
                                 severity: monaco.MarkerSeverity.Error,
-                                startLineNumber: 0,
-                                startColumn: offset, // +1 for the separator
-                                endLineNumber: 0,
+                                startLineNumber: i,
+                                startColumn: offset,
+                                endLineNumber: i,
                                 endColumn: offset + err.length,
                                 message: err.error.toString(),
                             })

@@ -93,7 +93,7 @@ const WorkerFormatters = {
                 }
             });
 
-            return records.join('');
+            return records.join('\n');
         } catch (e) {
             return content.toString('utf8');
         }

@@ -146,7 +146,7 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
                         }
                     });
 
-                    return records.join('');
+                    return records.join('\n');
                     // ^ Same logic as in UI-worker-formatter
                 } catch (e) {
                     // Fallback to showing the raw un-formatted:
