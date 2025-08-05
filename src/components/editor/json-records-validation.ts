@@ -11,28 +11,24 @@ export function setupJsonRecordsValidation(monaco: typeof MonacoTypes) {
         if (text) {
             const separator = text[text.length - 1];
             const splits = text.split(separator);
-            let offset = 0;
+
             for (let i = 0; i < splits.length; i++) {
                 const part = splits[i];
                 if (part) {
-                    let errors: json_parser.ParseError[] = []
-                    json_parser.parse(part, errors, { allowTrailingComma: false, disallowComments: true });
-                    console.log(`Validating JSON record part [${i}] `, part, `error ${JSON.stringify(errors)}`);
-                    if (errors) {
-                        errors.forEach((err) => {
-                            markers.push({
-                                severity: monaco.MarkerSeverity.Error,
-                                startLineNumber: i,
-                                startColumn: offset,
-                                endLineNumber: i,
-                                endColumn: offset + err.length,
-                                message: err.error.toString(),
-                            })
+                    let errors: ParserError[] = [];
+                    parseJson(part, errors, { allowTrailingComma: false, disallowComments: true });
+                    if (errors.length) {
+                        const firstError = errors[0];
+                        markers.push({
+                            severity: monaco.MarkerSeverity.Error,
+                            startLineNumber: i + 1,
+                            startColumn: firstError.startCharacter + 1,
+                            endLineNumber: i + 1,
+                            endColumn: firstError.startCharacter + firstError.length + 1,
+                            message: json_parser.printParseErrorCode(firstError.error)
                         });
                     }
                 }
-
-                offset += part.length + 1; // +1 for the separator
             }
         }
 
@@ -66,4 +62,56 @@ export function setupJsonRecordsValidation(monaco: typeof MonacoTypes) {
     monaco.editor.onDidCreateModel(model => {
         manageContentChangeListener(model)
     })
+}
+
+
+interface ParserError extends json_parser.ParseError {
+	startLine: number;
+	startCharacter: number;
+}
+
+function parseJson(text: string, errors: ParserError[] = [], options: json_parser.ParseOptions = {}): any {
+	let currentProperty: string | null = null;
+	let currentParent: any = [];
+	const previousParents: any[] = [];
+
+	function onValue(value: any) {
+		if (Array.isArray(currentParent)) {
+			(<any[]>currentParent).push(value);
+		} else if (currentProperty !== null) {
+			currentParent[currentProperty] = value;
+		}
+	}
+
+	const visitor: json_parser.JSONVisitor = {
+		onObjectBegin: () => {
+			const object = {};
+			onValue(object);
+			previousParents.push(currentParent);
+			currentParent = object;
+			currentProperty = null;
+		},
+		onObjectProperty: (name: string) => {
+			currentProperty = name;
+		},
+		onObjectEnd: () => {
+			currentParent = previousParents.pop();
+		},
+		onArrayBegin: () => {
+			const array: any[] = [];
+			onValue(array);
+			previousParents.push(currentParent);
+			currentParent = array;
+			currentProperty = null;
+		},
+		onArrayEnd: () => {
+			currentParent = previousParents.pop();
+		},
+		onLiteralValue: onValue,
+		onError: (error: json_parser.ParseErrorCode, offset: number, length: number, startLine: number, startCharacter: number) => {
+			errors.push({ error, offset, length, startLine, startCharacter });
+		}
+	};
+	json_parser.visit(text, visitor, options);
+	return currentParent[0];
 }
