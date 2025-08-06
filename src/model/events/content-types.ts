@@ -7,6 +7,7 @@ import {
     isProbablyGrpcProto,
     isValidGrpcProto,
 } from '../../util/protobuf';
+import { isProbablyJson, isProbablyJsonRecords } from '../../util/json';
 
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
@@ -121,12 +122,16 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/grpc-proto': 'grpc-proto',
     'application/grpc-protobuf': 'grpc-proto',
 
+    // Nobody can quite agree on the names for the various sequence-of-JSON formats:
+    'application/jsonlines': 'json-records',
+    'application/json-lines': 'json-records',
+    'application/x-jsonlines': 'json-records',
+    'application/jsonl': 'json-records',
+    'application/x-ndjson': 'json-records',
+    'application/json-seq': 'json-records',
+
     'application/octet-stream': 'raw'
 } as const;
-
-export const jsonRecordsSeparators = [
-    0x1E, // SignalR record separator https://github.com/dotnet/aspnetcore/blob/v8.0.0/src/SignalR/docs/specs/HubProtocol.md#json-encoding
-];
 
 export function getContentType(mimeType: string | undefined): ViewableContentType | undefined {
     const baseContentType = getBaseContentType(mimeType);
@@ -193,26 +198,18 @@ export function getCompatibleTypes(
         body = body.decodedData;
     }
 
-    // Examine the first char of the body, assuming it's ascii
-    const firstChar = body && body.subarray(0, 1).toString('ascii');
-
     // Allow optionally formatting non-JSON-records as JSON-records, if it looks like it might be
-    if (body && body.length > 2 && firstChar === '{' 
-            && jsonRecordsSeparators.indexOf(body[body.length - 1]) > -1
-    ) {
-        const secondToLastChar = body.subarray(body.length - 2, body.length - 1).toString('ascii');
-        if (secondToLastChar === '}') {
-            types.add('json-records');
-        }
+    if (!types.has('json-records') && isProbablyJsonRecords(body)) {
+        types.add('json-records');
     }
 
-    // Allow optionally formatting non-JSON as JSON, if it looks like it might be
-    if ((firstChar === '{' && !types.has('json-records')) || firstChar === '[') {
+    if (!types.has('json-records') && isProbablyJson(body)) {
+        // Allow optionally formatting non-JSON as JSON, if it's anything remotely close
         types.add('json');
     }
 
     // Allow optionally formatting non-XML as XML, if it looks like it might be
-    if (firstChar === '<') {
+    if (body?.subarray(0, 1).toString('ascii') === '<') {
         types.add('xml');
     }
 

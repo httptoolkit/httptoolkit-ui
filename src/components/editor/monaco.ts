@@ -1,13 +1,13 @@
 import type * as MonacoTypes from 'monaco-editor';
 import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-editor';
+import { observable, runInAction } from 'mobx';
 
 import { defineMonacoThemes } from '../../styles';
 
 import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
-import { observable, runInAction } from 'mobx';
-import { setupXMLValidation } from './xml-validation';
-import { setupJsonRecordsValidation } from './json-records-validation';
+
+import { ContentValidator, validateJsonRecords, validateXml } from '../../model/events/content-validation';
 
 export type {
     MonacoTypes,
@@ -80,8 +80,8 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
             id: 'json-records'
         });
 
-        setupXMLValidation(monaco);
-        setupJsonRecordsValidation(monaco);
+        addValidator(monaco, 'xml', validateXml);
+        addValidator(monaco, 'json-records', validateJsonRecords);
 
         MonacoEditor = rmeModule.default;
     } catch (err) {
@@ -93,6 +93,43 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
 
         return loadMonacoEditor(retries - 1);
     }
+}
+
+function addValidator(monaco: typeof MonacoTypes, modeId: string, validator: ContentValidator) {
+    function validate(model: MonacoTypes.editor.ITextModel) {
+        const text = model.getValue();
+        const markers = validator(text, model);
+        monaco.editor.setModelMarkers(model, modeId, markers);
+    }
+
+    const contentChangeListeners = new Map<MonacoTypes.editor.ITextModel, MonacoTypes.IDisposable>();
+
+    function manageContentChangeListener(model: MonacoTypes.editor.ITextModel) {
+        const isActiveMode = model.getModeId() === modeId;
+        const listener = contentChangeListeners.get(model);
+
+        if (isActiveMode && !listener) {
+            contentChangeListeners.set(model, model.onDidChangeContent(() =>
+                validate(model)
+            ));
+            validate(model);
+        } else if (!isActiveMode && listener) {
+            listener.dispose();
+            contentChangeListeners.delete(model);
+            monaco.editor.setModelMarkers(model, modeId, []);
+        }
+    }
+
+    monaco.editor.onWillDisposeModel(model => {
+        contentChangeListeners.delete(model);
+    });
+    monaco.editor.onDidChangeModelLanguage(({ model }) => {
+        manageContentChangeListener(model);
+    });
+    monaco.editor.onDidCreateModel(model => {
+        manageContentChangeListener(model);
+    });
+
 }
 
 export function reloadMonacoEditor() {
