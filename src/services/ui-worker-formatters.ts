@@ -6,8 +6,9 @@ import {
 import * as beautifyXml from 'xml-beautifier';
 
 import { Headers } from '../types';
-import { bufferToHex, bufferToString, getReadableSize, splitBuffer } from '../util/buffer';
+import { bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
+import { formatJson } from '../util/json';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -74,29 +75,11 @@ const WorkerFormatters = {
     },
     json: (content: Buffer) => {
         const asString = content.toString('utf8');
-        try {
-            return JSON.stringify(JSON.parse(asString), null, 2);
-        } catch (e) {
-            return asString;
-        }
+        return formatJson(asString, { formatRecords: false });
     },
     'json-records': (content: Buffer) => {
-        try {
-            let records = new Array();
-            const separator = content[content.length - 1];
-            const separatorString = Buffer.of(separator).toString('utf8');
-
-            splitBuffer(content, separator).forEach((recordBuffer: Buffer) => {
-                if (recordBuffer.length > 0) {
-                    const record = recordBuffer.toString('utf-8');
-                    records.push(record + separatorString);
-                }
-            });
-
-            return records.join('\n');
-        } catch (e) {
-            return content.toString('utf8');
-        }
+        const asString = content.toString('utf8');
+        return formatJson(asString, { formatRecords: true });
     },
     javascript: (content: Buffer) => {
         return beautifyJs(content.toString('utf8'), {
