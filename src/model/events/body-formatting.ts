@@ -3,7 +3,7 @@ import { styled } from '../../styles';
 
 import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
-import { bufferToString, bufferToHex, splitBuffer } from '../../util/buffer';
+import { bufferToString, bufferToHex } from '../../util/buffer';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';

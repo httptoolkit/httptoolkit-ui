@@ -150,32 +150,3 @@ export function getReadableSize(input: number | Buffer | string, siUnits = true)
 
     return (bytes / Math.pow(thresh, unitIndex)).toFixed(1).replace(/\.0$/, '') + ' ' + unitName;
 }
-
-/**
- * Splits a Buffer into an array of Buffers using a specified separator.
- * @param buffer The Buffer to split.
- * @param separator The byte or Buffer sequence to split by.
- * @returns An array of Buffers.
- */
-export function splitBuffer(buffer: Buffer, separator: number | Buffer): Buffer[] {
-    const result: Buffer[] = [];
-    let currentOffset = 0;
-    let separatorIndex: number;
-
-    // Handle single byte separator vs. multi-byte separator
-    const separatorLength = typeof separator === 'number' ? 1 : separator.length;
-
-    while ((separatorIndex = buffer.indexOf(separator, currentOffset)) !== -1) {
-        // Add the chunk before the separator
-        result.push(buffer.slice(currentOffset, separatorIndex));
-        // Move the offset past the separator
-        currentOffset = separatorIndex + separatorLength;
-    }
-
-    // Add the last chunk (or the whole buffer if no separator was found)
-    if (currentOffset <= buffer.length) {
-        result.push(buffer.slice(currentOffset));
-    }
-
-    return result;
-}
