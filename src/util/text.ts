@@ -21,3 +21,10 @@ export function aOrAn(value: string) {
 export function uppercaseFirst(value: string) {
     return value[0].toUpperCase() + value.slice(1);
 }
+
+export function camelToSentenceCase(value: string) {
+    return uppercaseFirst(
+        value.replace(/([a-z])([A-Z])/g, '$1 $2')
+            .toLowerCase()
+    );
+}

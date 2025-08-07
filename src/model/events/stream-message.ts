@@ -3,6 +3,7 @@ import { computed, observable } from 'mobx';
 import { InputStreamMessage } from "../../types";
 import { asBuffer } from '../../util/buffer';
 import { ObservableCache } from '../observable-cache';
+import { isProbablyJson, isProbablyJsonRecords } from '../../util/json';
 
 export class StreamMessage {
 
@@ -52,12 +53,11 @@ export class StreamMessage {
         }
 
         // prefix+JSON is very common, so we try to parse anything JSON-ish optimistically:
-        const startOfMessage = this.content.subarray(0, 10).toString('utf-8').trim();
-        if (
-            startOfMessage.includes('{') ||
-            startOfMessage.includes('[') ||
-            this.subprotocol?.includes('json')
-        ) return 'json';
+        if (isProbablyJsonRecords(this.content)) {
+            return 'json-records';
+        } else if (isProbablyJson(this.content) || this.subprotocol?.includes('json')) {
+            return 'json';
+        }
 
         else return 'text';
     }
