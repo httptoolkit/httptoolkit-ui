@@ -38,7 +38,7 @@ export const isProbablyJsonRecords = (text: Buffer | undefined) => {
 
     if (SIGNALR_HUB_START_REGEX.test(startChunk) && SIGNALR_HUB_END_REGEX.test(endChunk)) {
         // SignalR hub protocol:
-        // https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/HubProtocol.md#json-encoding
+        // https://github.com/dotnet/aspnetcore/blob/v9.0.8/src/SignalR/docs/specs/HubProtocol.md
         return true;
     }
 
