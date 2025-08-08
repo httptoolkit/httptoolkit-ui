@@ -27,8 +27,10 @@ export class ViewEventContextMenuBuilder {
         private onPin: (event: CollectedEvent) => void,
         private onDelete: (event: CollectedEvent) => void,
         private onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
-        private onPrepareToResendRequest?: (exchange: HttpExchangeView) => void
-    ) {}
+        private onPrepareToResendRequest?: (exchange: HttpExchangeView) => void,
+        private onHeaderColumnOptionChange?: (columnName: string, show: boolean) => void,
+    ) {
+    }
 
     private readonly BaseOptions = {
         Pin: {
@@ -142,4 +144,28 @@ export class ViewEventContextMenuBuilder {
         };
     }
 
+    getHeaderContextMenuCallback(enabledColumns: Map<string, boolean>) {
+        let menuOptions: ContextMenuItem<void>[] = [];
+
+        enabledColumns.forEach((enabled, columnName) => {
+            menuOptions.push({
+                type: 'option',
+                label: (!enabled ? "Show " : "Hide ") + columnName,
+                callback: () => {
+                    this.onHeaderColumnOptionChange ? this.onHeaderColumnOptionChange(columnName, !enabled) : console.log('onHeaderColumnOptionChange callback not set');
+                }
+            });
+        });
+
+        return (mouseEvent: React.MouseEvent) => {
+            const sortedOptions = _.sortBy(menuOptions, (o: ContextMenuItem<void>) =>
+                o.type === 'separator' || !(o.enabled ?? true)
+            ) as Array<ContextMenuItem<void>>;
+
+            this.uiStore.handleContextMenuEvent(
+                mouseEvent,
+                sortedOptions
+            )
+        };
+    }
 }
