@@ -7,6 +7,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 
 import { styled } from '../../styles'
+import { css } from "styled-components";
 import { ArrowIcon, Icon, PhosphorIcon, WarningIcon } from '../../icons';
 
 import {
@@ -86,12 +87,16 @@ const ListContainer = styled.div<{ role: 'table' }>`
     }
 `;
 
-const Column = styled.div<{ role: 'cell' | 'columnheader' }>`
+const columnStyles = css`
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     padding: 3px 0;
+`;
+
+const Column = styled.div<{ role: 'cell' | 'columnheader' }>`
+    ${columnStyles}
 `;
 
 const RowPin = styled(
@@ -145,6 +150,26 @@ const RowMarker = styled(Column)`
 const MarkerHeader = styled.div<{ role: 'columnheader' }>`
     flex-basis: 10px;
     flex-shrink: 0;
+`;
+
+const BaseTimestamp = ({ timestamp, role = 'cell', className, children }: {
+    timestamp?: number,
+    role?: 'columnheader' | 'cell',
+    className?: string,
+    children?: React.ReactNode
+}) => {
+    return (
+        <div role={role} className={className}>
+            {timestamp != null ? (new Date(timestamp).toLocaleTimeString()) : (children ?? '-')}
+        </div>
+    );
+};
+
+const Timestamp = styled(BaseTimestamp)`
+    ${columnStyles};
+    transition: flex-basis 0.1s;
+    flex-shrink: 0;
+    flex-grow: 0;
 `;
 
 const Method = styled(Column)`
@@ -434,30 +459,31 @@ const ExchangeRow = inject('uiStore')(observer(({
         className={isSelected ? 'selected' : ''}
         style={style}
     >
-        <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
+        <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned} />
         <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
-        <Method role='cell' pinned={pinned}>{ request.method }</Method>
+        <Timestamp role='cell' timestamp={request.timingEvents.startTime} />
+        <Method role='cell' pinned={pinned}>{request.method}</Method>
         <Status role='cell'>
             {
                 response === 'aborted'
                     ? <StatusCode status={'aborted'} />
-                : exchange.downstream.isBreakpointed
-                    ? <WarningIcon title='Breakpointed, waiting to be resumed' />
-                : exchange.isWebSocket() && response?.statusCode === 101
-                    ? <StatusCode // Special UI for accepted WebSockets
-                        status={exchange.closeState
-                            ? 'WS:closed'
-                            : 'WS:open'
-                        }
-                        message={`${exchange.closeState
-                            ? 'A closed'
-                            : 'An open'
-                        } WebSocket connection`}
-                    />
-                : <StatusCode
-                    status={response?.statusCode}
-                    message={response?.statusMessage}
-                />
+                    : exchange.downstream.isBreakpointed
+                        ? <WarningIcon title='Breakpointed, waiting to be resumed' />
+                        : exchange.isWebSocket() && response?.statusCode === 101
+                            ? <StatusCode // Special UI for accepted WebSockets
+                                status={exchange.closeState
+                                    ? 'WS:closed'
+                                    : 'WS:open'
+                                }
+                                message={`${exchange.closeState
+                                    ? 'A closed'
+                                    : 'An open'
+                                    } WebSocket connection`}
+                            />
+                            : <StatusCode
+                                status={response?.statusCode}
+                                message={response?.statusMessage}
+                            />
             }
         </Status>
         <Source role='cell'>
@@ -473,21 +499,21 @@ const ExchangeRow = inject('uiStore')(observer(({
                 ) &&
                 <PhosphorIcon
                     icon='Pencil'
-                    alt={`Handled by ${
-                        exchange.matchedRule.stepTypes.length === 1
-                        ? nameStepClass(exchange.matchedRule.stepTypes[0])
-                        : 'multi-step'
-                    } rule`}
+                    alt={`Handled by 
+                        ${exchange.matchedRule.stepTypes.length === 1 ?
+                            nameStepClass(exchange.matchedRule.stepTypes[0])
+                            : 'multi-step'
+                        } rule`}
                     size='20px'
                     color={getSummaryColor('mutative')}
                 />
             }
         </Source>
-        <Host role='cell' title={ request.parsedUrl.host }>
-            { request.parsedUrl.host }
+        <Host role='cell' title={request.parsedUrl.host}>
+            {request.parsedUrl.host}
         </Host>
-        <PathAndQuery role='cell' title={ request.parsedUrl.pathname + request.parsedUrl.search }>
-            { request.parsedUrl.pathname + request.parsedUrl.search }
+        <PathAndQuery role='cell' title={request.parsedUrl.pathname + request.parsedUrl.search}>
+            {request.parsedUrl.pathname + request.parsedUrl.search}
         </PathAndQuery>
     </TrafficEventListRow>;
 }));
@@ -801,6 +827,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         return <ListContainer role="table">
             <TableHeaderRow role="row">
                 <MarkerHeader role="columnheader" aria-label="Category" />
+                <Timestamp role="columnheader">Timestamp</Timestamp>}
                 <Method role="columnheader">Method</Method>
                 <Status role="columnheader">Status</Status>
                 <Source role="columnheader">Source</Source>
@@ -810,41 +837,41 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
             {
                 events.length === 0
-                ? (isPaused
-                    ? <EmptyStateOverlay icon='Pause'>
-                        Interception is paused, resume it to collect intercepted requests
-                    </EmptyStateOverlay>
-                    : <EmptyStateOverlay icon='Plug'>
-                        Connect a client and intercept some requests, and they'll appear here
-                    </EmptyStateOverlay>
-                )
+                    ? (isPaused
+                        ? <EmptyStateOverlay icon='Pause'>
+                            Interception is paused, resume it to collect intercepted requests
+                        </EmptyStateOverlay>
+                        : <EmptyStateOverlay icon='Plug'>
+                            Connect a client and intercept some requests, and they'll appear here
+                        </EmptyStateOverlay>
+                    )
 
-                : filteredEvents.length === 0
-                ? <EmptyStateOverlay icon='QuestionMark'>
-                        No requests match this search filter{
-                            isPaused ? ' and interception is paused' : ''
-                        }
-                </EmptyStateOverlay>
+                    : filteredEvents.length === 0
+                        ? <EmptyStateOverlay icon='QuestionMark'>
+                            No requests match this search filter{
+                                isPaused ? ' and interception is paused' : ''
+                            }
+                        </EmptyStateOverlay>
 
-                : <AutoSizer>{({ height, width }) =>
-                    <Observer>{() =>
-                        <List
-                            innerRef={this.setListBodyRef}
-                            outerElementType={this.KeyBoundListWindow}
-                            ref={this.listRef}
+                        : <AutoSizer>{({ height, width }) =>
+                            <Observer>{() =>
+                                <List
+                                    innerRef={this.setListBodyRef}
+                                    outerElementType={this.KeyBoundListWindow}
+                                    ref={this.listRef}
 
-                            height={height - HEADER_FOOTER_HEIGHT}
-                            width={width}
-                            itemCount={filteredEvents.length}
-                            itemSize={32}
-                            itemData={this.listItemData}
+                                    height={height - HEADER_FOOTER_HEIGHT}
+                                    width={width}
+                                    itemCount={filteredEvents.length}
+                                    itemSize={32}
+                                    itemData={this.listItemData}
 
-                            onScroll={this.updateScrolledState}
-                        >
-                            { EventRow }
-                        </List>
-                    }</Observer>
-                }</AutoSizer>
+                                    onScroll={this.updateScrolledState}
+                                >
+                                    {EventRow}
+                                </List>
+                            }</Observer>
+                        }</AutoSizer>
             }
         </ListContainer>;
     }
