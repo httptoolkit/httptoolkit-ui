@@ -28,7 +28,7 @@ export class ViewEventContextMenuBuilder {
         private onDelete: (event: CollectedEvent) => void,
         private onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
         private onPrepareToResendRequest?: (exchange: HttpExchangeView) => void,
-        private onHeaderColumnOptionChange?: (columnName: string, show: boolean) => void,
+        private onHeaderColumnOptionChange?: (visibleViewColumns: Map<string, boolean>, columnName: string, show: boolean) => void,
     ) {
     }
 
@@ -144,7 +144,7 @@ export class ViewEventContextMenuBuilder {
         };
     }
 
-    getHeaderContextMenuCallback(enabledColumns: Map<string, boolean>) {
+    getHeaderToggleContextMenu(enabledColumns: Map<string, boolean>) {
         let menuOptions: ContextMenuItem<void>[] = [];
 
         enabledColumns.forEach((enabled, columnName) => {
@@ -152,7 +152,7 @@ export class ViewEventContextMenuBuilder {
                 type: 'option',
                 label: (!enabled ? "Show " : "Hide ") + columnName,
                 callback: () => {
-                    this.onHeaderColumnOptionChange ? this.onHeaderColumnOptionChange(columnName, !enabled) : console.log('onHeaderColumnOptionChange callback not set');
+                    this.onHeaderColumnOptionChange ? this.onHeaderColumnOptionChange(enabledColumns, columnName, !enabled) : console.log('onHeaderColumnOptionChange callback not set');
                 }
             });
         });

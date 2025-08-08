@@ -854,9 +854,12 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const { events, filteredEvents, isPaused } = this.props;
 
         return <ListContainer role="table">
-            <TableHeaderRow role="row">
+            <TableHeaderRow
+                role="row"
+                onContextMenu={this.props.contextMenuBuilder.getHeaderToggleContextMenu(this.props.uiStore.visibleViewColumns)}
+            >
                 <MarkerHeader role="columnheader" aria-label="Category" />
-                <Timestamp role="columnheader">Timestamp</Timestamp>}
+                <Timestamp role="columnheader">Timestamp</Timestamp>
                 <Method role="columnheader">Method</Method>
                 <Status role="columnheader">Status</Status>
                 <Source role="columnheader">Source</Source>

@@ -225,13 +225,13 @@ class ViewPage extends React.Component<ViewPageProps> {
 
         return contentPerspective === 'client'
             ? this.selectedEvent.downstream
-        : contentPerspective === 'server'
-            ? (this.selectedEvent.upstream ?? this.selectedEvent.downstream)
-        : contentPerspective === 'original'
-            ? this.selectedEvent.original
-        : contentPerspective === 'transformed'
-            ? this.selectedEvent.transformed
-        : unreachableCheck(contentPerspective)
+            : contentPerspective === 'server'
+                ? (this.selectedEvent.upstream ?? this.selectedEvent.downstream)
+                : contentPerspective === 'original'
+                    ? this.selectedEvent.original
+                    : contentPerspective === 'transformed'
+                        ? this.selectedEvent.transformed
+                        : unreachableCheck(contentPerspective)
     }
 
     private readonly contextMenuBuilder = new ViewEventContextMenuBuilder(
@@ -240,7 +240,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.onPin,
         this.onDelete,
         this.onBuildRuleFromExchange,
-        this.onPrepareToResendRequest
+        this.onPrepareToResendRequest,
+        this.onHeaderColumnOptionChange
     );
 
     componentDidMount() {
@@ -556,6 +557,11 @@ class ViewPage extends React.Component<ViewPageProps> {
 
         await sendStore.addRequestInputFromExchange(exchange);
         navigate(`/send`);
+    }
+
+    @action.bound
+    async onHeaderColumnOptionChange(visibleViewColumns: Map<string, boolean>, columnName: string, show: boolean) {
+        visibleViewColumns.set(columnName, show);
     }
 
     @action.bound
