@@ -116,12 +116,12 @@ const RowPin = styled(
 
     ${(p: { pinned: boolean }) =>
         p.pinned
-        ? `
+            ? `
             width: auto;
             padding: 8px 7px;
             && { margin-right: -3px; }
         `
-        : `
+            : `
             padding: 8px 0;
             width: 0 !important;
             margin: 0 !important;
@@ -177,8 +177,8 @@ const Method = styled(Column)`
     transition: flex-basis 0.1s;
     ${(p: { pinned?: boolean }) =>
         p.pinned
-        ? 'flex-basis: 50px;'
-        : 'flex-basis: 71px;'
+            ? 'flex-basis: 50px;'
+            : 'flex-basis: 71px;'
     }
 
     flex-shrink: 0;
@@ -246,8 +246,8 @@ const EventTypeColumn = styled(Column)`
     transition: flex-basis 0.1s;
     ${(p: { pinned?: boolean }) =>
         p.pinned
-        ? 'flex-basis: 109px;'
-        : 'flex-basis: 130px;'
+            ? 'flex-basis: 109px;'
+            : 'flex-basis: 130px;'
     }
 
     margin-right: 6px !important;
@@ -299,6 +299,7 @@ const EventListRow = styled.div<{ role: 'row' }>`
 
         color: ${p => p.theme.highlightColor};
         fill: ${p => p.theme.highlightColor};
+
         * {
             /* Override status etc colours to ensure contrast & give row max visibility */
             color: ${p => p.theme.highlightColor};
@@ -331,13 +332,7 @@ const TrafficEventListRow = styled(EventListRow)`
 
 const TlsListRow = styled(EventListRow)`
     height: 28px !important; /* Important required to override react-window's style attr */
-    margin: 2px 0;
-
-    font-style: italic;
-    justify-content: center;
-    text-align: center;
-
-    opacity: 0.7;
+    margin: 2px 0 2px 20px;
 
     &:hover {
         opacity: 1;
@@ -350,6 +345,13 @@ const TlsListRow = styled(EventListRow)`
     }
 `;
 
+const TlsRowDescription = styled(Column)`
+    flex-grow: 1;
+    font-style: italic;
+    justify-content: center;
+    text-align: center;
+    opacity: 0.7;
+`;
 export const TableHeaderRow = styled.div<{ role: 'row' }>`
     height: 38px;
     overflow: hidden;
@@ -588,8 +590,9 @@ const RTCConnectionRow = observer(({
         className={isSelected ? 'selected' : ''}
         style={style}
     >
-        <RowPin pinned={pinned}/>
+        <RowPin pinned={pinned} />
         <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <Timestamp role='cell' /> //TODO: Expose timingEvents
         <EventTypeColumn role='cell'>
             { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC
         </EventTypeColumn>
@@ -656,8 +659,9 @@ const RTCStreamRow = observer(({
         className={isSelected ? 'selected' : ''}
         style={style}
     >
-        <RowPin pinned={pinned}/>
+        <RowPin pinned={pinned} />
         <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <Timestamp role='cell' /> //TODO: Expose timingEvents
         <EventTypeColumn role='cell'>
             { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC {
                 event.isRTCDataChannel()
@@ -746,10 +750,11 @@ const BuiltInApiRow = observer((p: {
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
     >
-        <RowPin pinned={pinned}/>
+        <RowPin pinned={pinned} />
         <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
+        <Timestamp role='cell' timestamp={request.timingEvents.startTime} />
         <EventTypeColumn role='cell'>
-            { api.service.shortName }: { apiOperationName }
+            {api.service.shortName}: {apiOperationName}
         </EventTypeColumn>
         <Source role='cell' title={request.source.summary}>
             <Icon
@@ -758,8 +763,9 @@ const BuiltInApiRow = observer((p: {
             />
         </Source>
         <BuiltInApiRequestDetails role='cell'>
-            { apiRequestDescription }
+            {apiRequestDescription}
         </BuiltInApiRequestDetails>
+        <Duration role='cell' exchange={p.exchange} />
     </TrafficEventListRow>
 });
 
@@ -783,24 +789,29 @@ const TlsRow = observer((p: {
 
     const connectionTarget = tlsEvent.upstreamHostname || 'unknown domain';
 
-    return <TlsListRow
-        role="row"
-        aria-label={`${description} connection to ${connectionTarget}`}
-        aria-rowindex={p.index + 1}
-        data-event-id={tlsEvent.id}
-        tabIndex={p.isSelected ? 0 : -1}
+    return (
+        <TlsListRow
+            role="row"
+            aria-label={`${description} connection to ${connectionTarget}`}
+            aria-rowindex={p.index + 1}
+            data-event-id={tlsEvent.id}
+            tabIndex={p.isSelected ? 0 : -1}
+            className={p.isSelected ? 'selected' : ''}
+            style={p.style}
 
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
-    >
-        {
-            tlsEvent.isTlsTunnel() &&
-            tlsEvent.isOpen() &&
-                <ConnectedSpinnerIcon />
-        } {
-            description
-        } connection to { connectionTarget }
-    </TlsListRow>
+        >
+            <Timestamp role='cell' timestamp={tlsEvent.timingEvents.startTime} />
+            <TlsRowDescription role='cell'>
+                {
+                    tlsEvent.isTlsTunnel() &&
+                    tlsEvent.isOpen() &&
+                    <ConnectedSpinnerIcon />
+                } {
+                    description
+                } connection to {connectionTarget}
+            </TlsRowDescription>
+        </TlsListRow>
+    );
 });
 
 @observer
