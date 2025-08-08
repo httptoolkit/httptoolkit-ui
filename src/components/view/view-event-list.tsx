@@ -27,6 +27,7 @@ import {
 } from '../../model/events/categorization';
 import { nameStepClass } from '../../model/rules/rule-descriptions';
 import { getReadableSize } from '../../util/buffer';
+import { calculateAndFormatDuration } from "../../util/utils";
 
 import { UnreachableCheck } from '../../util/error';
 import { filterProps } from '../component-utils';
@@ -211,6 +212,33 @@ const PathAndQuery = styled(Column)`
     flex-grow: 0;
     flex-basis: 1000px;
 `;
+
+const BaseDuration = observer(({ exchange, role = 'cell', className, children }: {
+    exchange?: HttpExchange, role?: 'columnheader' | 'cell',
+    className?: string,
+    children?: React.ReactNode
+}) => {
+    let duration: string | null | undefined;
+    if (exchange != null) {
+        duration = calculateAndFormatDuration({ timingEvents: exchange.timingEvents });
+    }
+    return (
+        <div role={role} className={className}>
+            {duration ?
+                duration :
+                (children ?? 'Duration')
+            }
+        </div>
+    );
+});
+
+const Duration = styled(BaseDuration)`
+    ${columnStyles};
+    flex-basis: 71px;
+    flex-shrink: 0;
+    flex-grow: 0;
+`;
+
 
 // Match Method + Status, but shrink right margin slightly so that
 // spinner + "WebRTC Media" fits OK.
@@ -515,6 +543,7 @@ const ExchangeRow = inject('uiStore')(observer(({
         <PathAndQuery role='cell' title={request.parsedUrl.pathname + request.parsedUrl.search}>
             {request.parsedUrl.pathname + request.parsedUrl.search}
         </PathAndQuery>
+        <Duration role='cell' exchange={exchange} />
     </TrafficEventListRow>;
 }));
 
@@ -833,6 +862,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 <Source role="columnheader">Source</Source>
                 <Host role="columnheader">Host</Host>
                 <PathAndQuery role="columnheader">Path and query</PathAndQuery>
+                <Duration role="columnheader">Duration</Duration>
             </TableHeaderRow>
 
             {
