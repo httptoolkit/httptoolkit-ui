@@ -100,6 +100,26 @@ const Column = styled.div<{ role: 'cell' | 'columnheader' }>`
     ${columnStyles}
 `;
 
+const ColumnVisibilityToggle = inject('uiStore')(observer(({ columnName, uiStore, children }: {
+    columnName: string,
+    uiStore?: UiStore,
+    children?: React.ReactNode
+}) => {
+    //Render by default
+    let renderComponent = true;
+
+    if (uiStore) {
+        const { visibleViewColumns } = uiStore;
+        renderComponent = visibleViewColumns.get(columnName) === true
+    }
+
+    return (
+        <>
+            {renderComponent && (children ?? children)}
+        </>
+    )
+}));
+
 const RowPin = styled(
     filterProps(Icon, 'pinned')
 ).attrs((p: { pinned: boolean }) => ({
@@ -160,9 +180,11 @@ const BaseTimestamp = ({ timestamp, role = 'cell', className, children }: {
     children?: React.ReactNode
 }) => {
     return (
-        <div role={role} className={className}>
-            {timestamp != null ? (new Date(timestamp).toLocaleTimeString()) : (children ?? '-')}
-        </div>
+        <ColumnVisibilityToggle columnName='Timestamp'>
+            <div role={role} className={className}>
+                {timestamp != null ? (new Date(timestamp).toLocaleTimeString()) : (children ?? '-')}
+            </div>
+        </ColumnVisibilityToggle>
     );
 };
 
@@ -223,12 +245,14 @@ const BaseDuration = observer(({ exchange, role = 'cell', className, children }:
         duration = calculateAndFormatDuration({ timingEvents: exchange.timingEvents });
     }
     return (
-        <div role={role} className={className}>
-            {duration ?
-                duration :
-                (children ?? 'Duration')
-            }
-        </div>
+        <ColumnVisibilityToggle columnName='Duration'>
+            <div role={role} className={className}>
+                {duration ?
+                    duration :
+                    (children ?? 'Duration')
+                }
+            </div>
+        </ColumnVisibilityToggle>
     );
 });
 
