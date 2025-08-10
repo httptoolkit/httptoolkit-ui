@@ -724,7 +724,9 @@ const RawTunnelRow = observer((p: {
 }) => {
     const { event } = p;
 
-    const connectionTarget = event.upstreamHostname || 'unknown domain';
+    const connectionTarget = event.upstreamHostname
+        ? `${event.upstreamHostname}:${event.upstreamPort}`
+        : 'unknown destination';
 
     return <TlsListRow
         role="row"

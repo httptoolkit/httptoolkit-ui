@@ -7,12 +7,15 @@ import { getReadableIP } from '../../model/network';
 import { RawTunnel } from '../../model/raw-tunnel';
 import { UiStore } from '../../model/ui/ui-store';
 
+import { formatDuration } from '../../util/text';
+import { getReadableSize } from '../../util/buffer';
+
 import { MediumCard } from '../common/card';
+
 import { ContentLabelBlock, Content, CopyableMonoValue } from '../common/text-content';
 import { PaneScrollContainer } from './view-details-pane';
 import { StreamMessageListCard } from './stream-message-list-card';
 import { SelfSizedEditor } from '../editor/base-editor';
-import { formatDuration } from '../../util/text';
 
 @inject('uiStore')
 @observer
@@ -39,7 +42,7 @@ export class RawTunnelDetailsPane extends React.Component<{
             cardHeading='Raw Data'
             streamLabel={tunnel.upstreamHostname}
             editorNode={this.props.streamMessageEditor}
-            filenamePrefix={`Raw Tunnel ${tunnel.upstreamHostname} ${tunnel.id}`}
+            filenamePrefix={`Raw Tunnel ${tunnel.upstreamHostname} ${tunnel.upstreamPort} ${tunnel.id}`}
             messages={tunnel.packets}
         />;
 
