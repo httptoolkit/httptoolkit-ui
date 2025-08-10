@@ -12,6 +12,7 @@ import { ContentLabelBlock, Content, CopyableMonoValue } from '../common/text-co
 import { PaneScrollContainer } from './view-details-pane';
 import { StreamMessageListCard } from './stream-message-list-card';
 import { SelfSizedEditor } from '../editor/base-editor';
+import { formatDuration } from '../../util/text';
 
 @inject('uiStore')
 @observer
@@ -54,7 +55,7 @@ export class RawTunnelDetailsPane extends React.Component<{
                 <Content>
                     <p>
                         This connection was not intercepted by HTTP Toolkit, as it contains
-                        an unrecognized (non-HTTP) protocol.
+                        an unrecognized non-HTTP protocol, so was tunnelled directly to its destination.
                     </p>
                 </Content>
                 <Content>
@@ -72,6 +73,22 @@ export class RawTunnelDetailsPane extends React.Component<{
                 </Content>
             </MediumCard>
             { packetsListCard }
+            {
+                !tunnel.isOpen() &&
+                <MediumCard>
+                    <header>
+                        <h1>Connection Closed</h1>
+                    </header>
+                    <Content>
+                        This tunnel was closed {
+                            tunnel.timingEvents.disconnectTimestamp
+                            ? <>after {formatDuration(
+                                tunnel.timingEvents.disconnectTimestamp - tunnel.timingEvents.connectTimestamp
+                            )}</> : <></>
+                        }.
+                    </Content>
+                </MediumCard>
+            }
         </PaneScrollContainer>;
     }
 }

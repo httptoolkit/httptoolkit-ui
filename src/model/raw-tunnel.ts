@@ -74,7 +74,11 @@ export class RawTunnel extends HTKEventBase {
 
     @action
     markClosed(closeEvent: InputRawPassthrough) {
-        this.timingEvents.disconnectTimestamp = closeEvent.timingEvents.disconnectTimestamp;
+        this.timingEvents.disconnectTimestamp = (
+            // Work around for incorrect timing field name:
+            (closeEvent.timingEvents as any).disconnectedTimestamp ||
+            closeEvent.timingEvents.disconnectTimestamp
+        );
         this.open = false;
     }
 
