@@ -52,6 +52,7 @@ interface ViewEventListProps {
     events: ReadonlyArray<CollectedEvent>;
     filteredEvents: ReadonlyArray<CollectedEvent>;
     selectedEvent: CollectedEvent | undefined;
+    selectedEventIds: Set<string>;
     isPaused: boolean;
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
@@ -59,6 +60,7 @@ interface ViewEventListProps {
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
+    onEventToggled: (event: CollectedEvent) => void;
 }
 
 const ListContainer = styled.div<{ role: 'table' }>`
@@ -253,6 +255,18 @@ const EventListRow = styled.div<{ role: 'row' }>`
         }
     }
 
+    &.multi-selected {
+        background-color: ${p => p.theme.highlightBackground};
+        border: 2px solid ${p => p.theme.popColor};
+        color: ${p => p.theme.highlightColor};
+        fill: ${p => p.theme.highlightColor};
+        box-sizing: border-box;
+        * {
+            color: ${p => p.theme.highlightColor};
+            fill: ${p => p.theme.highlightColor};
+        }
+    }
+
     &:focus {
         outline: thin dotted ${p => p.theme.popColor};
     }
@@ -330,6 +344,7 @@ export const TableHeaderRow = styled.div<{ role: 'row' }>`
 interface EventRowProps extends ListChildComponentProps {
     data: {
         selectedEvent: CollectedEvent | undefined;
+        selectedEventIds: Set<string>;
         events: ReadonlyArray<CollectedEvent>;
         contextMenuBuilder: ViewEventContextMenuBuilder;
     }
@@ -337,15 +352,17 @@ interface EventRowProps extends ListChildComponentProps {
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent, contextMenuBuilder } = props.data;
+    const { events, selectedEvent, selectedEventIds, contextMenuBuilder } = props.data;
     const event = events[index];
 
     const isSelected = (selectedEvent === event);
+    const isMultiSelected = selectedEventIds.has(event.id);
 
     if (event.isTlsFailure() || event.isTlsTunnel()) {
         return <TlsRow
             index={index}
             isSelected={isSelected}
+            isMultiSelected={isMultiSelected}
             style={style}
             tlsEvent={event}
         />;
@@ -354,6 +371,7 @@ const EventRow = observer((props: EventRowProps) => {
             return <BuiltInApiRow
                 index={index}
                 isSelected={isSelected}
+                isMultiSelected={isMultiSelected}
                 style={style}
                 exchange={event}
                 contextMenuBuilder={contextMenuBuilder}
@@ -362,6 +380,7 @@ const EventRow = observer((props: EventRowProps) => {
             return <ExchangeRow
                 index={index}
                 isSelected={isSelected}
+                isMultiSelected={isMultiSelected}
                 style={style}
                 exchange={event}
                 contextMenuBuilder={contextMenuBuilder}
@@ -371,6 +390,7 @@ const EventRow = observer((props: EventRowProps) => {
         return <RTCConnectionRow
             index={index}
             isSelected={isSelected}
+            isMultiSelected={isMultiSelected}
             style={style}
             event={event}
         />;
@@ -378,6 +398,7 @@ const EventRow = observer((props: EventRowProps) => {
         return <RTCStreamRow
             index={index}
             isSelected={isSelected}
+            isMultiSelected={isMultiSelected}
             style={style}
             event={event}
         />;
@@ -389,12 +410,14 @@ const EventRow = observer((props: EventRowProps) => {
 const ExchangeRow = inject('uiStore')(observer(({
     index,
     isSelected,
+    isMultiSelected,
     style,
     exchange,
     contextMenuBuilder
 }: {
     index: number,
     isSelected: boolean,
+    isMultiSelected: boolean,
     style: {},
     exchange: HttpExchange,
     contextMenuBuilder: ViewEventContextMenuBuilder
@@ -405,6 +428,8 @@ const ExchangeRow = inject('uiStore')(observer(({
         pinned,
         category
     } = exchange;
+
+    const className = isSelected ? 'selected' : isMultiSelected ? 'multi-selected' : '';
 
     return <TrafficEventListRow
         role="row"
@@ -431,7 +456,7 @@ const ExchangeRow = inject('uiStore')(observer(({
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
         onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
-        className={isSelected ? 'selected' : ''}
+        className={className}
         style={style}
     >
         <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
@@ -503,15 +528,19 @@ const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
 const RTCConnectionRow = observer(({
     index,
     isSelected,
+    isMultiSelected,
     style,
     event
 }: {
     index: number,
     isSelected: boolean,
+    isMultiSelected: boolean,
     style: {},
     event: RTCConnection
 }) => {
     const { category, pinned } = event;
+
+    const className = isSelected ? 'selected' : isMultiSelected ? 'multi-selected' : '';
 
     return <TrafficEventListRow
         role="row"
@@ -530,7 +559,7 @@ const RTCConnectionRow = observer(({
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={className}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -557,15 +586,19 @@ const RTCConnectionRow = observer(({
 const RTCStreamRow = observer(({
     index,
     isSelected,
+    isMultiSelected,
     style,
     event
 }: {
     index: number,
     isSelected: boolean,
+    isMultiSelected: boolean,
     style: {},
     event: RTCStream
 }) => {
     const { category, pinned } = event;
+
+    const className = isSelected ? 'selected' : isMultiSelected ? 'multi-selected' : '';
 
     return <TrafficEventListRow
         role="row"
@@ -598,7 +631,7 @@ const RTCStreamRow = observer(({
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
-        className={isSelected ? 'selected' : ''}
+        className={className}
         style={style}
     >
         <RowPin pinned={pinned}/>
@@ -648,6 +681,7 @@ const BuiltInApiRow = observer((p: {
     index: number,
     exchange: HttpExchange,
     isSelected: boolean,
+    isMultiSelected: boolean,
     style: {},
     contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
@@ -667,6 +701,8 @@ const BuiltInApiRow = observer((p: {
         .filter(param => param.value !== undefined)
         .map(param => `${param.name}=${JSON.stringify(param.value)}`)
         .join(', ');
+
+    const className = p.isSelected ? 'selected' : p.isMultiSelected ? 'multi-selected' : '';
 
     return <TrafficEventListRow
         role="row"
@@ -688,7 +724,7 @@ const BuiltInApiRow = observer((p: {
         tabIndex={p.isSelected ? 0 : -1}
 
         onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
-        className={p.isSelected ? 'selected' : ''}
+        className={className}
         style={p.style}
     >
         <RowPin pinned={pinned}/>
@@ -712,6 +748,7 @@ const TlsRow = observer((p: {
     index: number,
     tlsEvent: FailedTlsConnection | TlsTunnel,
     isSelected: boolean,
+    isMultiSelected: boolean,
     style: {}
 }) => {
     const { tlsEvent } = p;
@@ -728,6 +765,8 @@ const TlsRow = observer((p: {
 
     const connectionTarget = tlsEvent.upstreamHostname || 'unknown domain';
 
+    const className = p.isSelected ? 'selected' : p.isMultiSelected ? 'multi-selected' : '';
+
     return <TlsListRow
         role="row"
         aria-label={`${description} connection to ${connectionTarget}`}
@@ -735,7 +774,7 @@ const TlsRow = observer((p: {
         data-event-id={tlsEvent.id}
         tabIndex={p.isSelected ? 0 : -1}
 
-        className={p.isSelected ? 'selected' : ''}
+        className={className}
         style={p.style}
     >
         {
@@ -761,6 +800,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     @computed get listItemData(): EventRowProps['data'] {
         return {
             selectedEvent: this.props.selectedEvent,
+            selectedEventIds: this.props.selectedEventIds,
             events: this.props.filteredEvents,
             contextMenuBuilder: this.props.contextMenuBuilder
         };
@@ -1002,11 +1042,18 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
         const event = this.props.filteredEvents[eventIndex];
-        if (event !== this.props.selectedEvent) {
-            this.onEventSelected(eventIndex);
+
+        // Handle multi-selection with Ctrl+Click (or Cmd+Click on Mac)
+        if (mouseEvent.ctrlKey || mouseEvent.metaKey) {
+            this.onEventToggled(event);
         } else {
-            // Clicking the selected row deselects it
-            this.onEventDeselected();
+            // Normal single selection behavior
+            if (event !== this.props.selectedEvent) {
+                this.onEventSelected(eventIndex);
+            } else {
+                // Clicking the selected row deselects it
+                this.onEventDeselected();
+            }
         }
     }
 
@@ -1018,6 +1065,11 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     @action.bound
     onEventDeselected() {
         this.props.onSelected(undefined);
+    }
+
+    @action.bound
+    onEventToggled(event: CollectedEvent) {
+        this.props.onEventToggled(event);
     }
 
     @action.bound

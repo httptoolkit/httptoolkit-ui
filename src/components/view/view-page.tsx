@@ -45,6 +45,7 @@ import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
+import { MultiSelectionPanel } from './multi-selection-panel';
 
 interface ViewPageProps {
     className?: string;
@@ -350,7 +351,12 @@ class ViewPage extends React.Component<ViewPageProps> {
         const { filteredEvents, filteredEventCount } = this.filteredEventState;
 
         let rightPane: JSX.Element | null;
-        if (!this.selectedEvent) {
+        if (this.props.uiStore.hasMultipleSelectedEvents) {
+            // Show multi-selection panel
+            rightPane = <MultiSelectionPanel
+                selectedCount={this.props.uiStore.selectedEventIds.size}
+            />;
+        } else if (!this.selectedEvent) {
             if (this.splitDirection === 'vertical') {
                 rightPane = <EmptyState key='details' icon='ArrowLeft'>
                     Select an exchange to see the full details.
@@ -453,10 +459,12 @@ class ViewPage extends React.Component<ViewPageProps> {
                         events={events}
                         filteredEvents={filteredEvents}
                         selectedEvent={this.selectedEvent}
+                        selectedEventIds={this.props.uiStore.selectedEventIds}
                         isPaused={isPaused}
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
+                        onEventToggled={this.onEventToggled}
                         contextMenuBuilder={this.contextMenuBuilder}
                         uiStore={this.props.uiStore}
 
@@ -507,6 +515,11 @@ class ViewPage extends React.Component<ViewPageProps> {
             ? `/view/${event.id}`
             : '/view'
         );
+    }
+
+    @action.bound
+    onEventToggled(event: CollectedEvent) {
+        this.props.uiStore.toggleEventSelection(event.id);
     }
 
     @action.bound

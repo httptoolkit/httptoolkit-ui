@@ -442,6 +442,9 @@ export class UiStore {
     @persist @observable
     exportSnippetFormat: string | undefined;
 
+    @observable
+    selectedEventIds: Set<string> = new Set();
+
     // Actions for persisting view state when switching tabs
     @action.bound
     setViewScrollPosition(position: number | 'end') {
@@ -451,6 +454,31 @@ export class UiStore {
     @action.bound
     setSelectedEventId(eventId: string | undefined) {
         this.selectedEventId = eventId;
+        // Clear multi-selection when selecting a single event
+        this.selectedEventIds.clear();
+    }
+
+    @action.bound
+    setSelectedEventIds(eventIds: Set<string>) {
+        this.selectedEventIds = new Set(eventIds);
+        // Clear single selection when using multi-selection
+        this.selectedEventId = undefined;
+    }
+
+    @action.bound
+    toggleEventSelection(eventId: string) {
+        const newSelection = new Set(this.selectedEventIds);
+        if (newSelection.has(eventId)) {
+            newSelection.delete(eventId);
+        } else {
+            newSelection.add(eventId);
+        }
+        this.setSelectedEventIds(newSelection);
+    }
+
+    @computed
+    get hasMultipleSelectedEvents(): boolean {
+        return this.selectedEventIds.size > 1;
     }
 
     /**
