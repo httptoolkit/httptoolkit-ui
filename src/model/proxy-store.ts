@@ -190,7 +190,11 @@ export class ProxyStore {
                     http2: this._http2CurrentlyEnabled,
                     https: {
                         tlsPassthrough: this._currentTlsPassthroughConfig
-                    } as MockttpHttpsOptions // Cert/Key options are set by the server
+                    } as MockttpHttpsOptions, // Cert/Key options are set by the server
+                    socks: true,
+                    passthrough: this.accountStore.featureFlags.includes('raw-tunnels')
+                        ? ['unknown-protocol']
+                        : undefined
                 },
                 port: this.portConfig,
                 // We manage our own decoding client side - rules should not try to send

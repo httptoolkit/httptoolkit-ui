@@ -1,7 +1,7 @@
 import { computed, observable } from 'mobx';
 
 import { InputStreamMessage } from "../../types";
-import { asBuffer } from '../../util/buffer';
+import { asBuffer, isProbablyUtf8 } from '../../util/buffer';
 import { ObservableCache } from '../observable-cache';
 import { isProbablyJson, isProbablyJsonRecords } from '../../util/json';
 
@@ -44,7 +44,7 @@ export class StreamMessage {
     }
 
     get contentType() {
-        if (this.inputMessage.isBinary) {
+        if (this.inputMessage.isBinary && !isProbablyUtf8(this.inputMessage.content)) {
             if (this.subprotocol?.includes('proto')) {
                 return 'protobuf';
             } else {

@@ -7,7 +7,8 @@ import {
     WebSocketView,
     RTCConnection,
     RTCDataChannel,
-    RTCMediaTrack
+    RTCMediaTrack,
+    RawTunnel
 } from '../../types';
 
 import { getEventCategory } from './categorization';
@@ -22,6 +23,7 @@ export abstract class HTKEventBase {
 
     isTlsFailure(): this is FailedTlsConnection { return false; }
     isTlsTunnel(): this is TlsTunnel { return false; }
+    isRawTunnel(): this is RawTunnel { return false; }
 
     isRTCConnection(): this is RTCConnection { return false; }
     isRTCDataChannel(): this is RTCDataChannel { return false; }

@@ -15,7 +15,8 @@ import {
     RTCStream,
     FailedTlsConnection,
     RTCConnection,
-    TlsTunnel
+    TlsTunnel,
+    RawTunnel
 } from '../../types';
 import { UiStore } from '../../model/ui/ui-store';
 
@@ -381,6 +382,13 @@ const EventRow = observer((props: EventRowProps) => {
             style={style}
             event={event}
         />;
+    } else if (event.isRawTunnel()) {
+        return <RawTunnelRow
+            index={index}
+            isSelected={isSelected}
+            style={style}
+            event={event}
+        />;
     } else {
         throw new UnreachableCheck(event);
     }
@@ -706,6 +714,35 @@ const BuiltInApiRow = observer((p: {
             { apiRequestDescription }
         </BuiltInApiRequestDetails>
     </TrafficEventListRow>
+});
+
+const RawTunnelRow = observer((p: {
+    index: number,
+    event: RawTunnel,
+    isSelected: boolean,
+    style: {}
+}) => {
+    const { event } = p;
+
+    const connectionTarget = event.upstreamHostname
+        ? `${event.upstreamHostname}:${event.upstreamPort}`
+        : 'unknown destination';
+
+    return <TlsListRow
+        role="row"
+        aria-label={`Non-HTTP connection to ${connectionTarget}`}
+        aria-rowindex={p.index + 1}
+        data-event-id={event.id}
+        tabIndex={p.isSelected ? 0 : -1}
+
+        className={p.isSelected ? 'selected' : ''}
+        style={p.style}
+    >
+        {
+            event.isOpen() &&
+                <ConnectedSpinnerIcon />
+        } Non-HTTP connection to { connectionTarget }
+    </TlsListRow>
 });
 
 const TlsRow = observer((p: {

@@ -21,8 +21,8 @@ const binaryLaxDecoder = new TextDecoder('latin1', { fatal: false });
 // raw binary data). For viewing content as text we don't care (we just always show
 // as UTF8) but for _editing_ binary data we need a lossless encoding, not utf8.
 // (Monaco isn't perfectly lossless editing binary anyway, but we can try).
-export function isProbablyUtf8(buffer: Buffer) {
-    let dataToCheck: Buffer;
+export function isProbablyUtf8(buffer: Uint8Array) {
+    let dataToCheck: Uint8Array;
     if (buffer.byteLength > 1028) {
         // We want to trim the data to ~1KB, to avoid checking huge bodies in full.
         // Unfortunately, for UTF-8 this isn't safe: if a multibyte char crosses the

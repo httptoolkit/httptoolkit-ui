@@ -66,13 +66,15 @@ export const StreamMessageCollapsedRow = React.memo((p: {
             )
         }
     </CollapsedStreamContent>
-    {
-        p.message.isBinary &&
-            <Pill color={warningColor}>Binary</Pill>
-    }
-    <Pill>
-        { getReadableSize(p.message.content.byteLength) }
-    </Pill>
+    <RowTags>
+        {
+            p.message.isBinary &&
+                <Pill color={warningColor}>Binary</Pill>
+        }
+        <Pill>
+            { getReadableSize(p.message.content.byteLength) }
+        </Pill>
+    </RowTags>
 </CollapsedStreamRowContainer>);
 
 const MessageArrow = styled(React.memo((p: {
@@ -139,6 +141,12 @@ const CollapsedStreamContent = styled(ContentMonoValue)`
     flex-grow: 1;
     width: auto;
     padding: 3px 0 4px;
+`;
+
+const RowTags = styled.div`
+    display: flex;
+    gap: 8px;
+    flex-direction: row;
 `;
 
 interface MessageEditorRowProps {
