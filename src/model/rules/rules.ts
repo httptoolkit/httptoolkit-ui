@@ -58,6 +58,10 @@ import {
     RTCInitialMatcherClasses
 } from './definitions/rtc-rule-definitions';
 
+export type {
+    MatchReplacePairs
+} from 'mockttp';
+
 /// --- Part-generic logic ---
 
 export const getRulePartKey = (part: {
