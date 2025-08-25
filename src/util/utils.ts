@@ -1,5 +1,6 @@
 import { TimingEvents } from "../types";
 import { observableClock } from "./observable";
+import {formatDuration} from "./text";
 
 export type FormattedDurationProps =
     {
@@ -34,15 +35,5 @@ export const calculateAndFormatDuration = (props: FormattedDurationProps): strin
     if (duration === undefined)
         return null;
 
-    return (
-        duration < 100 ? sigFig(duration, 1) + 'ms' : // 22.3ms
-            duration < 1000 ? sigFig(duration, 0) + 'ms' : // 999ms
-                duration < 5000 ? sigFig(duration / 1000, 2) + 's' : // 3.04s
-                    duration < 59000 ? sigFig(duration / 1000, 1) + 's' : // 30.2s
-                        sigFig(duration / 60000, 1) + 'm' // 1.1m
-    );
+    return formatDuration(duration);
 };
-
-function sigFig(num: number, figs: number): string {
-    return num.toFixed(figs);
-}
