@@ -183,9 +183,24 @@ export class UiStore {
     @persist @observable
     private _themeName: ThemeName | 'automatic' | 'custom' = 'automatic';
 
+    @persist('map') @observable
+    private _visibleViewColumns = new Map<string, boolean>([
+        ['Timestamp', false],
+        ['Method', true],
+        ['Status', true],
+        ['Source', true],
+        ['Host', true],
+        ['PathAndQuery', true],
+        ['Duration', true]
+    ]); //TODO: implement a strict type
+
     get themeName() {
         return this._themeName;
     }
+
+    get visibleViewColumns() {
+        return this._visibleViewColumns
+    };
 
     /**
      * Stores if user prefers a dark color theme (for example when set in system settings).
