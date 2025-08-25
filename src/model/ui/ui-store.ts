@@ -188,8 +188,7 @@ export class UiStore {
         ['Source', true],
         ['Host', true],
         ['PathAndQuery', true],
-        ['Duration', true],
-        ['Size', true],
+        ['Duration', true]
     ]); //TODO: implement a strict type
 
     get themeName() {
