@@ -253,7 +253,7 @@ class FridaConfig extends React.Component<{
         }));
 
         this.updateTargets();
-        const updateInterval = setInterval(this.updateTargets, 2000);
+        const updateInterval = setInterval(this.updateTargets, 4000);
         disposeOnUnmount(this, () => clearInterval(updateInterval));
     }
 
@@ -394,7 +394,8 @@ class FridaConfig extends React.Component<{
         this.props.activateInterceptor({
             action: 'intercept',
             hostId: host.id,
-            targetId
+            targetId,
+            enableSocks: this.props.accountStore!.featureFlags.includes('raw-tunnels')
         })
         .catch((e) => alertActivationError(`intercept ${targetId}`, e))
         .then(() => {

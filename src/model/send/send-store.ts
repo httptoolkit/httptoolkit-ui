@@ -159,6 +159,7 @@ export class SendStore {
             const hostWithPort = `${url.hostname}:${effectivePort}`;
             const clientCertificate = passthroughOptions.clientCertificateHostMap?.[hostWithPort] ||
                 passthroughOptions.clientCertificateHostMap?.[url.hostname!] ||
+                passthroughOptions.clientCertificateHostMap?.['*'] ||
                 undefined;
 
             const additionalCACerts = this.rulesStore.additionalCaCertificates.map((cert) =>

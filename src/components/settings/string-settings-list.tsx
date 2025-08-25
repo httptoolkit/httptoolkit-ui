@@ -4,9 +4,8 @@ import { observer } from 'mobx-react';
 
 import { styled } from '../../styles';
 import { Icon } from '../../icons';
-import { isValidHost } from '../../model/network';
 
-import { inputValidation } from '../component-utils';
+import { InputValidationFunction } from '../component-utils';
 import { TextInput } from '../common/inputs';
 import { SettingsButton } from './settings-components';
 
@@ -36,8 +35,7 @@ export class StringSettingsList extends React.Component<{
     onDelete: (value: string) => void,
     onAdd: (value: string) => void,
     placeholder: string,
-
-    validationFn: (input: HTMLInputElement) => void
+    validationFn: InputValidationFunction
 }> {
 
     @observable
@@ -70,7 +68,7 @@ export class StringSettingsList extends React.Component<{
             />
             <SettingsButton
                 disabled={
-                    !isValidHost(this.inputValue) ||
+                    !this.props.validationFn(this.inputValue) ||
                     values.includes(this.inputValue)
                 }
                 onClick={this.addHost}

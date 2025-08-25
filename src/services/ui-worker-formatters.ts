@@ -8,6 +8,7 @@ import * as beautifyXml from 'xml-beautifier';
 import { Headers } from '../types';
 import { bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
+import { formatJson } from '../util/json';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -74,11 +75,11 @@ const WorkerFormatters = {
     },
     json: (content: Buffer) => {
         const asString = content.toString('utf8');
-        try {
-            return JSON.stringify(JSON.parse(asString), null, 2);
-        } catch (e) {
-            return asString;
-        }
+        return formatJson(asString, { formatRecords: false });
+    },
+    'json-records': (content: Buffer) => {
+        const asString = content.toString('utf8');
+        return formatJson(asString, { formatRecords: true });
     },
     javascript: (content: Buffer) => {
         return beautifyJs(content.toString('utf8'), {

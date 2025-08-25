@@ -218,21 +218,31 @@ export class TransformingStep extends httpSteps.PassThroughStep {
 
 }
 
+const MatchReplaceSerializer = serializr.list(
+    serializr.custom(
+        ([key, value]: [RegExp, string]) =>
+            [{ source: key.source, flags: key.flags }, value],
+        ([key, value]: [{ source: string, flags: string }, string]) =>
+            [new RegExp(key.source, key.flags), value]
+    )
+);
+
 serializr.createModelSchema(TransformingStep, {
     uiType: serializeAsTag(() => 'req-res-transformer'),
     transformRequest: serializr.object(
         serializr.createSimpleSchema({
+            matchReplaceHost: serializr.object(
+                serializr.createSimpleSchema({
+                    replacements: MatchReplaceSerializer,
+                    '*': Object.assign(serializr.raw(), { pattern: { test: () => true } })
+                })
+            ),
+            matchReplacePath: MatchReplaceSerializer,
+            matchReplaceQuery: MatchReplaceSerializer,
             updateHeaders: serializeWithUndefineds,
             updateJsonBody: serializeWithUndefineds,
             replaceBody: serializeBuffer,
-            matchReplaceBody: serializr.list(
-                serializr.custom(
-                    ([key, value]: [RegExp, string]) =>
-                        [{ source: key.source, flags: key.flags }, value],
-                    ([key, value]: [{ source: string, flags: string }, string]) =>
-                        [new RegExp(key.source, key.flags), value]
-                )
-            ),
+            matchReplaceBody: MatchReplaceSerializer,
             '*': Object.assign(serializr.raw(), { pattern: { test: () => true } })
         })
     ),

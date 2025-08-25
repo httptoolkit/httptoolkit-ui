@@ -32,6 +32,7 @@ interface EditablePairsProps<R = PairsArray> {
     keyTitle?: string;
     // Either a pattern string, or a validation function
     keyValidation?: string | ((key: string) => true | string);
+    valueValidation?: string | ((value: string) => true | string);
 
     keyPlaceholder: string;
     valuePlaceholder: string;
@@ -116,23 +117,30 @@ export class EditablePairs<R> extends React.Component<EditablePairsProps<R>> {
         ));
 
         disposeOnUnmount(this, autorun(() => {
-            const { keyValidation } = this.props;
-            if (!_.isFunction(keyValidation)) return;
+            let { keyValidation, valueValidation } = this.props;
+            if (!_.isFunction(keyValidation) && !_.isFunction(valueValidation)) return;
 
             const inputs = this.containerRef?.current?.querySelectorAll('input');
             if (!inputs) return;
 
             this.values.forEach((pair, i) => {
                 const keyInput = inputs?.[i * 2];
-                const validationResult = keyValidation(pair.key);
+                const valueInput = inputs?.[i * 2 + 1];
 
-                if (validationResult === true) {
-                    keyInput.setCustomValidity('');
-                    keyInput.reportValidity();
-                } else {
-                    keyInput.setCustomValidity(validationResult);
-                    keyInput.reportValidity();
-                }
+                ([
+                    [ keyInput, pair.key, keyValidation ],
+                    [ valueInput, pair.value, valueValidation ]
+                ] as const).forEach(([input, value, validation]) => {
+                    if (!input || !_.isFunction(validation)) return;
+                    const result = validation(value);
+                    if (result === true) {
+                        input.setCustomValidity('');
+                    } else {
+                        input.setCustomValidity(result);
+                    }
+
+                    input.reportValidity();
+                });
             });
         }));
     }

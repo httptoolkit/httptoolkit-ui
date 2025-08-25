@@ -260,7 +260,13 @@ class BaseEditor extends React.Component<EditorProps> {
                 new this.monaco.Selection(0, 0, 0, 0)
             );
 
-            this.relayout();
+            if (!this.props.value) {
+                // If we've been cleared, make sure that content update fires before we
+                // attempt to relayout, to ensure we don't bother laying out an empty editor.
+                requestAnimationFrame(() => this.relayout());
+            } else {
+                this.relayout();
+            }
 
             requestAnimationFrame(() => {
                 if (this.editor && this.monaco) {

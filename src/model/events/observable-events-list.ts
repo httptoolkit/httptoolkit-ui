@@ -10,6 +10,7 @@ import {
     RTCConnection,
     RTCDataChannel,
     RTCMediaTrack,
+    RawTunnel,
     TlsTunnel,
     WebSocketStream
 } from '../../types';
@@ -109,6 +110,7 @@ export class ObservableEventsList {
     getExchangeById = (id: string) => this.getById(id, (event): event is HttpExchange => event.isHttp());
     getWebSocketById = (id: string) => this.getById(id, (event): event is WebSocketStream => event.isWebSocket());
     getTlsTunnelById = (id: string) => this.getById(id, (event): event is TlsTunnel => event.isTlsTunnel());
+    getRawTunnelById = (id: string) => this.getById(id, (event): event is RawTunnel => event.isRawTunnel());
     getRTCConnectionById = (id: string) => this.getById(id, (event): event is RTCConnection => event.isRTCConnection());
 
     clear() {
@@ -117,6 +119,7 @@ export class ObservableEventsList {
 
         this._exchanges.clear();
         this._websockets.clear();
+        this._tlsFailures.clear();
         this._rtcConnections.clear();
         this._rtcDataChannels.clear();
         this._rtcMediaTracks.clear();

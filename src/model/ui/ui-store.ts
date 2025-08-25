@@ -35,6 +35,8 @@ const VIEW_CARD_KEYS = [
     'rtcSessionOffer',
     'rtcSessionAnswer',
 
+    'rawTunnelPackets',
+
     'performance',
     'export'
 ] as const;
@@ -43,7 +45,8 @@ type ViewCardKey = typeof VIEW_CARD_KEYS[number];
 const EXPANDABLE_VIEW_CARD_KEYS = [
     'requestBody',
     'responseBody',
-    'webSocketMessages'
+    'webSocketMessages',
+    'rawTunnelPackets'
 ] as const;
 export type ExpandableViewCardKey = typeof EXPANDABLE_VIEW_CARD_KEYS[number];
 
@@ -254,6 +257,8 @@ export class UiStore {
 
         'webSocketMessages': { collapsed: false },
         'webSocketClose': { collapsed: false },
+
+        'rawTunnelPackets': { collapsed: false },
 
         'rtcConnection': { collapsed: false },
         'rtcSessionOffer': { collapsed: false },

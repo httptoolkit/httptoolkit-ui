@@ -37,7 +37,8 @@ import {
     RuleType,
     getRulePartKey,
     AvailableStepKey,
-    isHttpCompatibleType
+    isHttpCompatibleType,
+    MatchReplacePairs
 } from '../../model/rules/rules';
 import {
     StaticResponseStep,
@@ -252,7 +253,7 @@ const SectionLabel = styled.h2`
     width: 100%;
 `;
 
-const ConfigSelect = styled(Select)`
+const ContentTypeSelect = styled(Select)`
     font-size: ${p => p.theme.textSize};
     width: auto;
 `;
@@ -456,14 +457,14 @@ class StaticResponseStepConfig extends StepConfig<StaticResponseStep | RejectWeb
                     content={body}
                     onFormatted={this.setBody}
                 />
-                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                <ContentTypeSelect value={this.contentType} onChange={this.setContentType}>
                     <option value="text">Plain text</option>
                     <option value="json">JSON</option>
                     <option value="xml">XML</option>
                     <option value="html">HTML</option>
                     <option value="css">CSS</option>
                     <option value="javascript">JavaScript</option>
-                </ConfigSelect>
+                </ContentTypeSelect>
             </BodyHeader>
             <BodyContainer>
                 <SelfSizedEditor
@@ -742,18 +743,13 @@ class ForwardToHostStepConfig extends StepConfig<
             />
 
             <SectionLabel>Host header</SectionLabel>
-            <ConfigSelect
-                value={updateHostHeader.toString()}
-                onChange={onUpdateHeaderChange}
-                title={dedent`
-                    Most servers will not accept ${messageType}s that arrive
-                    with the wrong host header, so it's typically useful
-                    to automatically change it to match the new host
-                `}
-            >
-                <option value={'true'}>Update the host header automatically (recommended)</option>
-                <option value={'false'}>Leave the host header untouched</option>
-            </ConfigSelect>
+
+            <HostHeaderSelector
+                updateHostHeader={updateHostHeader}
+                messageType={messageType}
+                onUpdateHeaderChange={onUpdateHeaderChange}
+            />
+
             { savedTarget &&
                 <ConfigExplanation>
                     All matching {messageType}s will be forwarded to {savedTarget},
@@ -838,8 +834,8 @@ class ForwardToHostStepConfig extends StepConfig<
     }
 
     @action.bound
-    onUpdateHeaderChange(event: React.ChangeEvent<HTMLSelectElement>) {
-        this.updateHostHeader = event.target.value === 'true';
+    onUpdateHeaderChange(value: boolean) {
+        this.updateHostHeader = value;
 
         try {
             this.updateStep();
@@ -847,6 +843,25 @@ class ForwardToHostStepConfig extends StepConfig<
             // If there's an error, it must be in the host name, so it's reported elsewhere
         }
     }
+}
+
+const HostHeaderSelector = (props: {
+    updateHostHeader: boolean,
+    messageType: 'request' | 'WebSocket',
+    onUpdateHeaderChange: (value: boolean) => void
+}) => {
+    return <Select
+        value={props.updateHostHeader.toString()}
+        onChange={e => props.onUpdateHeaderChange(e.target.value === 'true')}
+        title={dedent`
+            Most servers will not accept ${props.messageType}s that arrive
+            with the wrong host header, so it's typically useful
+            to automatically change it to match the new host
+        `}
+    >
+        <option value={'true'}>Update the host header automatically (recommended)</option>
+        <option value={'false'}>Leave the host header untouched</option>
+    </Select>
 }
 
 const TransformSectionLabel = styled(SectionLabel)`
@@ -861,7 +876,7 @@ const TransformSectionSeparator = styled.hr`
 `;
 
 const TransformConfig = styled.div`
-    margin: 0 0 5px;
+    margin: 0 0 5px 0;
 
     ${(p: { active: boolean }) => p.active && css`
         border-left: solid 5px ${p => p.theme.containerWatermark};
@@ -871,7 +886,16 @@ const TransformConfig = styled.div`
         }
 
         padding-left: 5px;
+
         margin: 10px 0 15px;
+
+        @supports selector(:has(*:nth-child(2))) {
+            margin: 0 0 15px 0;
+
+            &:has(> *:nth-child(2)) {
+                margin: 10px 0 15px;
+            }
+        }
     `}
 `;
 
@@ -908,6 +932,10 @@ class TransformingStepConfig extends StepConfig<TransformingStep, { rulesStore?:
             <MethodTransformConfig
                 replacementMethod={this.transformRequest?.replaceMethod}
                 onChange={this.transformField('transformRequest')('replaceMethod')}
+            />
+            <UrlTransformConfig
+                transform={this.transformRequest}
+                onChange={this.transformField('transformRequest')}
             />
             <HeadersTransformConfig
                 type='request'
@@ -982,7 +1010,7 @@ const MethodTransformConfig = (props: {
                 }
             }
         }>
-            <option value='none'>Pass through the real request method</option>
+            <option value='none'>Use the original request method</option>
             {
                 MethodNames.map((name) =>
                     <option key={name} value={name}>
@@ -991,6 +1019,219 @@ const MethodTransformConfig = (props: {
                 )
             }
         </SelectTransform>
+    </TransformConfig>;
+};
+
+const UrlTransformKeys = [
+    'setProtocol',
+    'replaceHost',
+    'matchReplaceHost',
+    'matchReplacePath',
+    'matchReplaceQuery'
+] as const;
+
+type UrlTransformKey = typeof UrlTransformKeys[number];
+
+const UrlTransformConfig = (props: {
+    transform: RequestTransform,
+    onChange: <F extends UrlTransformKey>(field: F) => (value: RequestTransform[F] | undefined) => void
+}) => {
+    const isActive = UrlTransformKeys.some(k => !!props.transform[k]);
+    const [modifyUrl, setModifyUrl] = React.useState(isActive);
+
+    return <TransformConfig active={modifyUrl}>
+        <SelectTransform
+            aria-label='Select whether the request URL should be transformed'
+            value={modifyUrl ? 'modify' : 'none'}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                const value = event.target.value as 'modify' | 'none';
+
+                if (value === 'none') {
+                    UrlTransformKeys.forEach((key) => props.onChange(key)(undefined));
+                    setModifyUrl(false);
+                } else {
+                    setModifyUrl(true);
+                }
+            }
+        }>
+            <option value='none'>Use the original URL</option>
+            <option value='modify'>Modify the request URL</option>
+        </SelectTransform>
+        { modifyUrl && <>
+            <TransformSectionLabel>Request URL modifications</TransformSectionLabel>
+
+            <TransformConfig active={!!props.transform.setProtocol}>
+                <SelectTransform
+                    aria-label='Select how the request protocol should be transformed'
+                    value={props.transform.setProtocol || 'none'}
+                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                        const value = event.target.value as 'none' | 'http' | 'https';
+
+                        if (value === 'none') {
+                            props.onChange('setProtocol')(undefined);
+                        } else {
+                            props.onChange('setProtocol')(value);
+                        }
+                    }
+                }>
+                    <option value='none'>Use the original request protocol</option>
+                    <option value='http'>Change the request protocol to HTTP</option>
+                    <option value='https'>Change the request protocol to HTTPS</option>
+                </SelectTransform>
+            </TransformConfig>
+
+            <UrlHostTransformDetails
+                transform={props.transform}
+                onChange={props.onChange}
+            />
+
+            <UrlTransformDetails
+                partName='path'
+                transform={props.transform.matchReplacePath}
+                onChange={props.onChange('matchReplacePath')}
+            />
+
+            <UrlTransformDetails
+                partName='query'
+                transform={props.transform.matchReplaceQuery}
+                onChange={props.onChange('matchReplaceQuery')}
+            />
+        </> }
+    </TransformConfig>
+}
+
+const UrlHostTransformDetails = (props: {
+    transform: RequestTransform,
+    onChange: <F extends 'replaceHost' | 'matchReplaceHost'>(field: F) => (value: RequestTransform[F] | undefined) => void
+}) => {
+    const hostTransform = props.transform.replaceHost ||
+        props.transform.matchReplaceHost;
+
+    const selected = props.transform.replaceHost
+            ? 'replaceHost'
+        : props.transform.matchReplaceHost
+            ? 'matchReplaceHost'
+        : 'none';
+
+
+    const [updateHostHeader, setUpdateHostHeader] = React.useState(
+        hostTransform?.updateHostHeader ?? true
+    );
+
+    return <TransformConfig active={selected !== 'none'}>
+        <SelectTransform
+            aria-label='Select how the request host should be transformed'
+            value={selected ?? 'none'}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                const value = event.target.value as 'none' | 'replaceHost' | 'matchReplaceHost';
+
+                if (value === 'none') {
+                    props.onChange('replaceHost')(undefined);
+                    props.onChange('matchReplaceHost')(undefined);
+                } else if (value === 'replaceHost') {
+                    props.onChange('matchReplaceHost')(undefined);
+                    props.onChange('replaceHost')({ targetHost: '', updateHostHeader: true });
+                } else {
+                    props.onChange('replaceHost')(undefined);
+                    props.onChange('matchReplaceHost')({ replacements: [], updateHostHeader: true });
+                }
+            }}
+        >
+            <option value='none'>Use the original request host</option>
+            <option value='replaceHost'>Replace the request host</option>
+            <option value='matchReplaceHost'>Match & replace parts of the request host</option>
+        </SelectTransform>
+        { selected === 'replaceHost' &&
+            <TransformDetails>
+                <TransformSectionLabel>Replacement host</TransformSectionLabel>
+                <WideTextInput
+                    placeholder='example.com'
+                    spellCheck={false}
+
+                    value={props.transform.replaceHost!.targetHost}
+                    onChange={(event) => {
+                        try {
+                            const value = event.target.value;
+                            props.onChange('replaceHost')({
+                                targetHost: event.target.value,
+                                updateHostHeader
+                            });
+
+                            if (!value) {
+                                throw new Error('A replacement host is required');
+                            }
+
+                            event.target.setCustomValidity('');
+                        } catch (e) {
+                            const message = asError(e).message;
+                            event.target.setCustomValidity(message);
+                        }
+                        event.target.reportValidity();
+                    }}
+                />
+            </TransformDetails>
+        }
+        { selected === 'matchReplaceHost' &&
+            <MatchReplaceTransformConfig
+                replacements={props.transform.matchReplaceHost!.replacements}
+                updateReplacements={(replacements) => {
+                    props.onChange('matchReplaceHost')({
+                        replacements,
+                        updateHostHeader
+                    });
+                }}
+                valueValidation={(hostValue) => {
+                    if (hostValue.includes('/')) {
+                        return `Request transform replacement hosts cannot include a path or protocol, but "${hostValue}" does`;
+                    } else {
+                        return true;
+                    }
+                }}
+            />
+        }
+        { selected !== 'none' && <TransformDetails>
+            <TransformSectionLabel>Host header</TransformSectionLabel>
+            <HostHeaderSelector
+                messageType='request'
+                updateHostHeader={!!updateHostHeader}
+                onUpdateHeaderChange={setUpdateHostHeader}
+            />
+        </TransformDetails> }
+    </TransformConfig>;
+}
+
+const UrlTransformDetails = (props: {
+    partName: 'path' | 'query',
+    transform: MatchReplacePairs | undefined,
+    onChange: (value: MatchReplacePairs | undefined) => void
+}) => {
+    const selected = props.transform !== undefined
+        ? 'matchReplace'
+        : 'none';
+
+    return <TransformConfig active={selected !== 'none'}>
+        <SelectTransform
+            aria-label={`Select how the ${props.partName} should be transformed`}
+            value={selected ?? 'none'}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                const value = event.target.value as 'none' | 'matchReplace';
+
+                if (value === 'none') {
+                    props.onChange(undefined);
+                } else {
+                    props.onChange([]);
+                }
+            }
+        }>
+            <option value='none'>Use the original request {props.partName}</option>
+            <option value='matchReplace'>Match & replace parts of the request {props.partName}</option>
+        </SelectTransform>
+        { selected === 'matchReplace' &&
+            <MatchReplaceTransformConfig
+                replacements={props.transform!}
+                updateReplacements={props.onChange}
+            />
+        }
     </TransformConfig>;
 };
 
@@ -1016,7 +1257,7 @@ const StatusTransformConfig = (props: {
                 }
             }
         }>
-            <option value='none'>Pass through the real response status</option>
+            <option value='none'>Use the original response status</option>
             <option value='replace'>Replace the response status</option>
         </SelectTransform>
         {
@@ -1073,7 +1314,7 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
                 value={selected}
                 onChange={onTransformTypeChange}
             >
-                <option value='none'>Pass through the real { type } headers</option>
+                <option value='none'>Use the original { type } headers</option>
                 <option value='updateHeaders'>Update the { type } headers</option>
                 <option value='replaceHeaders'>Replace the { type } headers</option>
             </SelectTransform>
@@ -1168,7 +1409,7 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
                 aria-label={`Select how the ${type} body should be transformed`}
                 value={selected}
                 onChange={onTransformTypeChange}>
-                <option value='none'>Pass through the real { type } body</option>
+                <option value='none'>Use the original { type } body</option>
                 <option value='replaceBody'>Replace the { type } body with a fixed value</option>
                 <option value='replaceBodyFromFile'>Replace the { type } body with a file</option>
                 <option value='updateJsonBody'>Update a JSON { type } body by merging data</option>
@@ -1213,8 +1454,7 @@ class BodyTransformConfig<T extends RequestTransform | ResponseTransform> extend
                         updateOperations={setJsonBodyPatch}
                     />
                 : selected === 'matchReplaceBody'
-                    ? <MatchReplaceBodyTransformConfig
-                        type={type}
+                    ? <MatchReplaceTransformConfig
                         replacements={transform.matchReplaceBody!}
                         updateReplacements={this.props.onChange('matchReplaceBody')}
                     />
@@ -1297,14 +1537,14 @@ const RawBodyTransformConfig = (props: {
                 content={props.body}
                 onFormatted={props.updateBody}
             />
-            <ConfigSelect value={contentType} onChange={onContentTypeChanged}>
+            <ContentTypeSelect value={contentType} onChange={onContentTypeChanged}>
                 <option value="text">Plain text</option>
                 <option value="json">JSON</option>
                 <option value="xml">XML</option>
                 <option value="html">HTML</option>
                 <option value="css">CSS</option>
                 <option value="javascript">JavaScript</option>
-            </ConfigSelect>
+            </ContentTypeSelect>
         </BodyHeader>
         <BodyContainer>
             <SelfSizedEditor
@@ -1412,10 +1652,10 @@ const JsonPatchTransformConfig = (props: {
     </TransformDetails>;
 };
 
-const MatchReplaceBodyTransformConfig = (props: {
-    type: 'request' | 'response',
-    replacements: Array<[RegExp | string, string]>,
-    updateReplacements: (replacements: Array<[RegExp | string, string]>) => void
+const MatchReplaceTransformConfig = (props: {
+    replacements: MatchReplacePairs,
+    updateReplacements: (replacements: MatchReplacePairs) => void,
+    valueValidation?: (value: string) => true | string
 }) => {
     const [error, setError] = React.useState<Error>();
 
@@ -1431,22 +1671,26 @@ const MatchReplaceBodyTransformConfig = (props: {
     );
 
     React.useEffect(() => {
-        const validPairs = replacementPairs.filter((pair) =>
-            validateRegexMatcher(pair.key) === true
-        );
-        const invalidCount = replacementPairs.length - validPairs.length;
+        try {
+            const validPairs = replacementPairs.filter((pair) =>
+                validateRegexMatcher(pair.key) === true
+            );
+            const invalidCount = replacementPairs.length - validPairs.length;
 
-        if (invalidCount > 0) {
-            setError(new Error(
-                `${invalidCount} regular expression${invalidCount === 1 ? ' is' : 's are'} invalid`
+            props.updateReplacements(validPairs.map(({ key, value }) =>
+                [new RegExp(key, 'g'), value]
             ));
-        } else {
-            setError(undefined);
-        }
 
-        props.updateReplacements(validPairs.map(({ key, value }) =>
-            [new RegExp(key, 'g'), value]
-        ));
+            if (invalidCount > 0) {
+                throw new Error(
+                    `${invalidCount} regular expression${invalidCount === 1 ? ' is' : 's are'} invalid`
+                );
+            }
+
+            setError(undefined);
+        } catch (e) {
+            setError(asError(e));
+        }
     }, [replacementPairs]);
 
     return <TransformDetails>
@@ -1458,8 +1702,9 @@ const MatchReplaceBodyTransformConfig = (props: {
             pairs={replacementPairs}
             onChange={updatePairs}
             keyPlaceholder='Regular expression to match'
-            keyValidation={validateRegexMatcher}
             valuePlaceholder='Replacement value'
+            keyValidation={validateRegexMatcher}
+            valueValidation={props.valueValidation}
             allowEmptyValues={true}
         />
     </TransformDetails>;
@@ -1471,7 +1716,7 @@ const MonoKeyEditablePairs = styled(EditablePairs<PairsArray>)`
     }
 `;
 
-const validateRegexMatcher = (value: string) => {
+const validateRegexMatcher = (value: string): true | string => {
     try {
         new RegExp(value, 'g');
         return true;
@@ -2155,14 +2400,14 @@ class IpfsCatTextStepConfig extends StepConfig<IpfsCatTextStep> {
                     content={body}
                     onFormatted={this.setBody}
                 />
-                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                <ContentTypeSelect value={this.contentType} onChange={this.setContentType}>
                     <option value="text">Plain text</option>
                     <option value="json">JSON</option>
                     <option value="xml">XML</option>
                     <option value="html">HTML</option>
                     <option value="css">CSS</option>
                     <option value="javascript">JavaScript</option>
-                </ConfigSelect>
+                </ContentTypeSelect>
             </BodyHeader>
             <BodyContainer>
                 <SelfSizedEditor
@@ -2640,11 +2885,11 @@ class RTCSendMessageStepConfig extends StepConfig<SendStep> {
                     content={message}
                     onFormatted={this.setMessage}
                 />
-                <ConfigSelect value={this.contentType} onChange={this.setContentType}>
+                <ContentTypeSelect value={this.contentType} onChange={this.setContentType}>
                     <option value="text">Plain text</option>
                     <option value="json">JSON</option>
                     <option value="xml">XML</option>
-                </ConfigSelect>
+                </ContentTypeSelect>
             </BodyHeader>
             <BodyContainer>
                 <SelfSizedEditor
