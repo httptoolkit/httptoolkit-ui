@@ -34,7 +34,7 @@ const sigFig = (num: number, figs: number): string =>
 
 export const formatDuration = (duration: number) =>
     duration < 100 ? sigFig(duration, 1) + 'ms' : // 22.3ms
-    duration < 1000 ? sigFig(duration, 0) + 'ms' : // 999ms
-    duration < 5000 ? sigFig(duration / 1000, 2) + ' seconds' : // 3.04 seconds
-    duration < 9900 ? sigFig(duration / 1000, 1) + ' seconds' : // 8.2 seconds
-    sigFig(duration / 1000, 0) + ' seconds'; // 30 seconds
+        duration < 1000 ? sigFig(duration, 0) + 'ms' : // 999ms
+            duration < 5000 ? sigFig(duration / 1000, 2) + 's' : // 3.04s
+                duration < 59000 ? sigFig(duration / 1000, 1) + 's' : // 30.2s
+                    sigFig(duration / 60000, 1) + 'm' // 1.1m
