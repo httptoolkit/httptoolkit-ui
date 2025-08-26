@@ -186,11 +186,6 @@ export class UiStore {
     @persist('map') @observable
     private _visibleViewColumns = new Map<string, boolean>([
         ['Timestamp', false],
-        ['Method', true],
-        ['Status', true],
-        ['Source', true],
-        ['Host', true],
-        ['PathAndQuery', true],
         ['Duration', true]
     ]); //TODO: implement a strict type
 
