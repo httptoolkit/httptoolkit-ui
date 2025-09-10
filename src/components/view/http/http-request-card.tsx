@@ -26,7 +26,7 @@ import {
 import { DocsLink } from '../../common/docs-link';
 import { SourceIcon } from '../../common/source-icon';
 import { HttpVersionPill } from '../../common/http-version-pill';
-import { HeaderDetails } from './header-details';
+import { HeaderDetails, HeaderHeadingContainer } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
 import { StepClassKey } from '../../../model/rules/rules';
 import { MatchedRulePill, shouldShowRuleDetails } from './matched-rule-pill';
@@ -82,12 +82,20 @@ const RawRequestDetails = (p: {
             }
         </CollapsibleSection>
 
-        <ContentLabelBlock>Headers</ContentLabelBlock>
-        <HeaderDetails
-            httpVersion={p.httpVersion}
-            headers={p.request.rawHeaders}
-            requestUrl={p.request.parsedUrl}
-        />
+        <CollapsibleSection
+            contentName='Headers'
+            collapsePersistKey='httpRequestHeaders'
+        >
+            <HeaderHeadingContainer>
+                <ContentLabelBlock>Headers</ContentLabelBlock>
+            </HeaderHeadingContainer>
+
+            <HeaderDetails
+                httpVersion={p.httpVersion}
+                headers={p.request.rawHeaders}
+                requestUrl={p.request.parsedUrl}
+            />
+        </CollapsibleSection>
     </div>;
 }
 

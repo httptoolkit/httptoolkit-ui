@@ -16,7 +16,7 @@ import {
     CollapsibleCardHeading
 } from '../../common/card';
 import { Pill } from '../../common/pill';
-import { HeaderDetails } from './header-details';
+import { HeaderDetails, HeaderHeadingContainer } from './header-details';
 import {
 } from '../../common/card';
 import {
@@ -86,12 +86,20 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
                 }
             </CollapsibleSection>
 
-            <ContentLabelBlock>Headers</ContentLabelBlock>
-            <HeaderDetails
-                httpVersion={httpVersion}
-                headers={response.rawHeaders}
-                requestUrl={requestUrl}
-            />
+            <CollapsibleSection
+                contentName='Headers'
+                collapsePersistKey='httpResponseHeaders'
+            >
+                <HeaderHeadingContainer>
+                    <ContentLabelBlock>Headers</ContentLabelBlock>
+                </HeaderHeadingContainer>
+
+                <HeaderDetails
+                    httpVersion={httpVersion}
+                    headers={response.rawHeaders}
+                    requestUrl={requestUrl}
+                />
+            </CollapsibleSection>
         </div>
     </CollapsibleCard>;
 });

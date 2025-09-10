@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observer } from 'mobx-react';
+import { inject, observer } from 'mobx-react';
 import { observable, action } from 'mobx';
 
 import { styled, css } from "../../styles";
+import { CollapsibleSectionKey, UiStore } from '../../model/ui/ui-store';
+
 import { isReactElement } from '../../util/ui';
 import { Icon, IconProp } from '../../icons';
 
@@ -13,6 +15,9 @@ interface CollapsibleSectionProps {
     withinGrid?: boolean;
     prefixTrigger?: boolean;
     contentName: string;
+
+    collapsePersistKey?: CollapsibleSectionKey;
+    uiStore?: UiStore;
 }
 
 const CollapsibleSectionWrapper = styled.section`
@@ -62,6 +67,7 @@ const SummaryAsSpacer = styled.div`
  * This component also works if there is no body provided - it falls back to just
  * showing the summary without the expand/collapse toggle.
  */
+@inject('uiStore')
 @observer
 export class CollapsibleSection extends React.Component<CollapsibleSectionProps> {
 
@@ -69,7 +75,9 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
     id = `collapsible-${CollapsibleSection.idCounter++}`;
 
     @observable
-    open = false;
+    open = this.props.collapsePersistKey
+        ? !!this.props.uiStore?.collapsibleSectionStates[this.props.collapsePersistKey]
+        : false;
 
     render() {
         const {
@@ -150,6 +158,10 @@ export class CollapsibleSection extends React.Component<CollapsibleSectionProps>
     toggleOpen(e: React.SyntheticEvent) {
         e.preventDefault();
         this.open = !this.open;
+
+        if (this.props.collapsePersistKey) {
+            this.props.uiStore!.collapsibleSectionStates[this.props.collapsePersistKey] = this.open;
+        }
     }
 }
 
