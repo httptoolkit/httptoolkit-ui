@@ -415,37 +415,50 @@ class CategoryFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("category"),
-        new FixedStringSyntax("="), // Separate, so initial suggestions are names only
+        new StringOptionsSyntax<EqualityOperation>([
+            "=",
+            "!="
+        ]),
         new StringOptionsSyntax(EventCategories)
     ] as const;
 
     static filterName = "category";
 
     static filterDescription(value: string) {
-        const [, , category] = tryParseFilter(CategoryFilter, value);
+        const [, op, category] = tryParseFilter(CategoryFilter, value);
 
-        if (!category) {
+        if (!op) {
             return "exchanges by their general category";
+        } else if (!category) {
+            return `exchanges ${op === '=' ? 'in' : 'not in'} a given category`;
         } else {
-            return `all ${category} exchanges`;
+            return op === '='
+                ? `all ${category} exchanges`
+                : `all except ${category} exchanges`;
         }
     }
 
     private expectedCategory: string;
+    private op: EqualityOperation;
+    private predicate: (category: string, expectedCategory: string) => boolean;
 
     constructor(filter: string) {
         super(filter);
-        const [,, categoryString] = parseFilter(CategoryFilter, filter);
+        const [, op, categoryString] = parseFilter(CategoryFilter, filter);
+        this.op = op;
+        this.predicate = operations[this.op];
         this.expectedCategory = categoryString;
     }
 
     matches(event: ViewableEvent): boolean {
         return event.isHttp() &&
-            event.category === this.expectedCategory
+            this.predicate(event.category, this.expectedCategory);
     }
 
     toString() {
-        return _.startCase(this.expectedCategory);
+        return this.op === '='
+            ? _.startCase(this.expectedCategory)
+            : `Not ${_.startCase(this.expectedCategory)}`;
     }
 }
 
