@@ -25,6 +25,7 @@ interface ContentViewerProps {
     children: Buffer | string;
     schema?: SchemaObject;
     expanded: boolean;
+    maxHeight?: string;
     headers?: Headers;
     contentType: ViewableContentType;
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor | typeof ContainerSizedEditor>;
@@ -179,6 +180,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                         value={content!}
                         schema={this.props.schema}
                         expanded={this.props.expanded}
+                        maxHeight={this.props.maxHeight}
                     />;
                 }
             } catch (e) {

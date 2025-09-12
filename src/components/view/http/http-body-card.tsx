@@ -127,6 +127,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                         contentType={decodedContentType}
                         schema={apiBodySchema}
                         expanded={!!expanded}
+                        maxHeight='70cqh'
                         cache={message.cache}
                     >
                         { message.body.decodedData }
@@ -181,6 +182,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                             contentType={encodedDataContentType}
                             expanded={!!expanded}
                             cache={message.cache}
+                            maxHeight='70cqh'
                         >
                             { encodedBody }
                         </ContentViewer>

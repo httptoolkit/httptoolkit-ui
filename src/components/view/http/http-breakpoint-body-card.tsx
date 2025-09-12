@@ -124,6 +124,7 @@ export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps 
                     value={bodyString}
                     onChange={this.onBodyChange}
                     expanded={!!expanded}
+                    maxHeight='50cqh'
                 />
             </EditorCardContent>
         </CollapsibleCard>;

@@ -41,20 +41,21 @@ interface SchemaMapping {
     readonly schema?: any;
 }
 
-const MAX_HEIGHT = 560;
+const DEFAULT_MAX_HEIGHT = 560;
 
-const EditorMaxHeightContainer = styled.div`
-    ${(p: { expanded: boolean }) => p.expanded
+const EditorContainer = styled.div<{
+    expanded: boolean;
+}>`
+    ${(p) => p.expanded
         ? `
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            height: auto !important;
-        `
-        : `
-            max-height: ${MAX_HEIGHT}px;
+            height: auto;
+        ` : `
+            max-height: ${DEFAULT_MAX_HEIGHT}px;
         `
     }
 `;
@@ -63,6 +64,7 @@ const EditorMaxHeightContainer = styled.div`
 @observer
 export class SelfSizedEditor extends React.Component<
     Omit<EditorProps, 'onContentSizeChange'> & {
+        maxHeight?: string;
         expanded?: boolean,
         uiStore?: UiStore // Injected automatically
     }
@@ -73,7 +75,7 @@ export class SelfSizedEditor extends React.Component<
 
     @action.bound
     onContentSizeChange(contentUpdate: MonacoTypes.editor.IContentSizeChangedEvent) {
-        this.contentHeight = Math.min(contentUpdate.contentHeight, MAX_HEIGHT);
+        this.contentHeight = contentUpdate.contentHeight;
     }
 
     onResize = _.throttle(() => {
@@ -101,10 +103,19 @@ export class SelfSizedEditor extends React.Component<
     @observable contentHeight: number = 0;
 
     render() {
-        return <EditorMaxHeightContainer
+        return <EditorContainer
             ref={this.container}
             expanded={!!this.props.expanded}
-            style={{ 'height': this.contentHeight + 'px' }}
+            style={
+                this.props.expanded
+                ? {}
+                : {
+                    'height': this.contentHeight + 'px',
+                    // Override the CSS default where required (body cards) but carefully because
+                    // we use cqh, which isn't supported in all cases yet.
+                    'maxHeight': this.props.maxHeight
+                }
+            }
             onContextMenu={buildContextMenuCallback(
                 this.props.uiStore!,
                 !!this.props.options?.readOnly,
@@ -117,7 +128,7 @@ export class SelfSizedEditor extends React.Component<
                 ref={this.editor}
                 onContentSizeChange={this.onContentSizeChange}
             />
-        </EditorMaxHeightContainer>
+        </EditorContainer>
     }
 }
 
