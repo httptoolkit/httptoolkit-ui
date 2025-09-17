@@ -288,7 +288,9 @@ const HiddenSteps = [
     'callback',
     'stream',
     'wait-for-rtc-track', // Not super useful here I think
-    'delay' // Not exposed yet until we have more multi-step options
+    'delay', // Not exposed yet until we have more multi-step options
+    'wait-for-request-body', // Not exposed yet until we have more multi-step options
+    'webhook' // Not exposed yet until we have more multi-step options
 ] as const;
 
 const MatcherLimitedSteps: {
