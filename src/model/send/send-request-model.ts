@@ -150,6 +150,7 @@ export interface RequestOptions {
     clientCertificate?: { pfx: Buffer, passphrase?: string };
     proxyConfig?: ClientProxyConfig;
     lookupOptions?: { servers?: string[] };
+    keyLogFile?: string;
 }
 
 export const RULE_PARAM_REF_KEY = '__rule_param_reference__';

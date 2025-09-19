@@ -19,7 +19,8 @@ window.addEventListener('resize', action(() => {
     windowSize.width = window.innerWidth;
 }));
 
-const isMac = navigator.platform.startsWith('Mac');
+export const isWindows = navigator.platform.startsWith('Win');
+export const isMac = navigator.platform.startsWith('Mac');
 
 export const Ctrl = isMac
     ? '⌘'

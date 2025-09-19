@@ -22,6 +22,7 @@ import { trackEvent } from '../../metrics';
 import { EventsStore } from '../events/events-store';
 import { RulesStore } from '../rules/rules-store';
 import { AccountStore } from '../account/account-store';
+import { ProxyStore } from '../proxy-store';
 import * as ServerApi from '../../services/server-api';
 
 import { HttpExchange } from '../http/http-exchange';
@@ -32,7 +33,8 @@ import {
     RequestInput,
     SendRequest,
     RULE_PARAM_REF_KEY,
-    sendRequestSchema
+    sendRequestSchema,
+    RequestOptions
 } from './send-request-model';
 
 export class SendStore {
@@ -40,14 +42,16 @@ export class SendStore {
     constructor(
         private accountStore: AccountStore,
         private eventStore: EventsStore,
-        private rulesStore: RulesStore
+        private rulesStore: RulesStore,
+        private proxyStore: ProxyStore
     ) {}
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
             this.accountStore.initialized,
             this.eventStore.initialized,
-            this.rulesStore.initialized
+            this.rulesStore.initialized,
+            this.proxyStore.initialized
         ]);
 
         if (this.accountStore.mightBePaidUser) {
@@ -166,13 +170,14 @@ export class SendStore {
                 ({ cert: cert.rawPEM })
             );
 
-            const requestOptions = {
+            const requestOptions: RequestOptions = {
                 ignoreHostHttpsErrors: passthroughOptions.ignoreHostHttpsErrors,
-                additionalCACerts: additionalCACerts,
+                additionalTrustedCAs: additionalCACerts,
                 trustAdditionalCAs: additionalCACerts, // Deprecated alias, here for backward compat
                 clientCertificate,
                 proxyConfig: getProxyConfig(this.rulesStore.proxyConfig),
-                lookupOptions: passthroughOptions.lookupOptions
+                lookupOptions: passthroughOptions.lookupOptions,
+                keyLogFile: this.proxyStore.keyLogFilePath
             };
 
             const encodedBody = await requestInput.rawBody.encodingBestEffortPromise;

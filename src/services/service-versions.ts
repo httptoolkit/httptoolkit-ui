@@ -86,3 +86,4 @@ export const SERVER_REST_API_SUPPORTED = '^1.13.0';
 export const SERVER_SEND_API_SUPPORTED = '^1.13.0';
 export const ADVANCED_PATCH_TRANSFORMS = '^1.18.0';
 export const WILDCARD_CLIENT_CERTS = '^1.22.0';
+export const KEY_LOG_FILE_SUPPORTED = '^1.23.0';

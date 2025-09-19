@@ -176,8 +176,11 @@ export class ProxyStore {
             adminServerUrl: 'http://127.0.0.1:45456'
         });
 
+        // These are persisted initially, so we know if the user updates them that we
+        // need to restart the proxy:
         this._http2CurrentlyEnabled = this.http2Enabled;
         this._currentTlsPassthroughConfig = _.cloneDeep(this.tlsPassthroughConfig);
+        this._currentKeyLogFilePath = this.keyLogFilePath;
 
         this.monitorRemoteClientConnection(this.adminClient);
 
@@ -189,7 +192,8 @@ export class ProxyStore {
                     // User configurable settings:
                     http2: this._http2CurrentlyEnabled,
                     https: {
-                        tlsPassthrough: this._currentTlsPassthroughConfig
+                        tlsPassthrough: this._currentTlsPassthroughConfig,
+                        keyLogFile: this._currentKeyLogFilePath
                     } as MockttpHttpsOptions, // Cert/Key options are set by the server
                     socks: true,
                     passthrough: this.accountStore.featureFlags.includes('raw-tunnels')
@@ -294,6 +298,13 @@ export class ProxyStore {
     private _currentTlsPassthroughConfig: Array<{ hostname: string }> = [];
     get currentTlsPassthroughConfig() {
         return this._currentTlsPassthroughConfig;
+    }
+
+    @persist @observable
+    keyLogFilePath: string | undefined = undefined;
+    private _currentKeyLogFilePath: string | undefined = this.keyLogFilePath;
+    get currentKeyLogFilePath() {
+        return this._currentKeyLogFilePath;
     }
 
     setRequestRules = (...rules: RequestRuleData[]) => {
