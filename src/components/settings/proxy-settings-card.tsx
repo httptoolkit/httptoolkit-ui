@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, computed } from 'mobx';
+import { observable, action, computed, runInAction } from 'mobx';
 import { observer, inject } from "mobx-react";
 
 import { styled } from '../../styles';
@@ -11,11 +11,14 @@ import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
 import { isValidHostname } from '../../model/network';
 import {
     serverVersion,
+    desktopVersion,
     versionSatisfies,
     INITIAL_HTTP2_RANGE,
     TLS_PASSTHROUGH_SUPPORTED,
-    KEY_LOG_FILE_SUPPORTED
+    KEY_LOG_FILE_SUPPORTED,
+    DESKTOP_SELECT_SAVE_FILE_SUPPORTED
 } from '../../services/service-versions';
+import { DesktopApi } from '../../services/desktop-api';
 
 import { inputValidation } from '../component-utils';
 import {
@@ -88,11 +91,19 @@ const Http2Select = styled(Select)`
     padding: 3px;
 `;
 
-const TlsKeyLogContainer = styled.div`
+const TlsKeyLogInputContainer = styled.div`
     margin: 10px 0;
     display: flex;
     flex-direction: column;
     position: relative;
+`;
+
+const TlsKeyLogButtonsContainer = styled.div`
+    display: grid;
+    grid-template-columns: auto min-content min-content;
+    grid-gap: 10px;
+    align-items: center;
+    font-family: ${p => p.theme.monoFontFamily};
 `;
 
 const InputClearButton = styled(IconButton)`
@@ -196,6 +207,16 @@ export class ProxySettingsCard extends React.Component<
         } else if (pathValidation(target)) {
             this.props.proxyStore!.keyLogFilePath = this.tlsKeyFileInput.trim();
         }
+    }
+
+    @action.bound
+    async setTlsKeyFilePathFromDialog() {
+        const path = await DesktopApi.selectSaveFilePath!();
+        if (!path) return; // Dialog cancelled, change nothing
+
+        runInAction(() => {
+            this.props.proxyStore!.keyLogFilePath = path;
+        });
     }
 
     @action.bound
@@ -335,24 +356,47 @@ export class ProxySettingsCard extends React.Component<
                         }
                     </SettingsSubheading>
 
-                    <TlsKeyLogContainer>
-                        <TextInput
-                            placeholder={
-                                navigator.platform.startsWith('Win')
-                                    ? 'C:\\tls-keys.log'
-                                    : '/tmp/tls-keys.log'
-                            }
-                            value={this.tlsKeyFileInput}
-                            onChange={this.setTlsKeyFilePath}
-                        />
-                        { !!keyLogFilePath && <>
-                            <InputClearButton
-                                title="Unset TLS key file"
-                                icon={['fas', 'times']}
-                                onClick={this.clearTlsKeyFilePath}
-                            />
-                        </> }
-                    </TlsKeyLogContainer>
+                    <TlsKeyLogInputContainer>
+                        { versionSatisfies(desktopVersion.value, DESKTOP_SELECT_SAVE_FILE_SUPPORTED)
+                            ? !keyLogFilePath
+                                ? <SettingsButton
+                                    onClick={this.setTlsKeyFilePathFromDialog}
+                                >
+                                    Select where to save the TLS keylog file
+                                </SettingsButton>
+                                : <TlsKeyLogButtonsContainer>
+                                    { keyLogFilePath }
+                                    <SettingsButton
+                                        onClick={this.setTlsKeyFilePathFromDialog}
+                                    >
+                                        <Icon icon={['fas', 'folder-open']} />
+                                    </SettingsButton>
+                                    <SettingsButton
+                                        onClick={this.clearTlsKeyFilePath}
+                                    >
+                                        <Icon icon={['far', 'trash-alt']} />
+                                    </SettingsButton>
+                                </TlsKeyLogButtonsContainer>
+                            : <>
+                                <TextInput
+                                    placeholder={
+                                        navigator.platform.startsWith('Win')
+                                            ? 'C:\\tls-keys.log'
+                                            : '/tmp/tls-keys.log'
+                                    }
+                                    value={this.tlsKeyFileInput}
+                                    onChange={this.setTlsKeyFilePath}
+                                />
+                                { !!this.tlsKeyFileInput &&
+                                    <InputClearButton
+                                        title="Unset TLS key file"
+                                        icon={['fas', 'times']}
+                                        onClick={this.clearTlsKeyFilePath}
+                                    />
+                                }
+                            </>
+                        }
+                    </TlsKeyLogInputContainer>
 
                     <SettingsExplanation>
                         If set, TLS keys for all client & server traffic will be logged to this file,

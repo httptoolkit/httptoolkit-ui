@@ -55,6 +55,7 @@ export function serverSupports(versionRequirement: string | undefined) {
 
 // Notable desktop versions:
 export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
+export const DESKTOP_SELECT_SAVE_FILE_SUPPORTED = "^1.23.0";
 
 // Notable server versions:
 export const PORT_RANGE_SERVER_RANGE = '^0.1.14 || ^1.0.0';

@@ -41,6 +41,7 @@ interface DesktopApi {
 
     selectApplication?: () => Promise<string | undefined>;
     selectFilePath?: () => Promise<string | undefined>;
+    selectSaveFilePath?: () => Promise<string | undefined>;
 
     openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
     restartApp?: () => Promise<void>;
