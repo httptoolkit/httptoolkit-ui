@@ -12,17 +12,14 @@ import {
 } from '../../services/service-versions';
 
 import {
-    StaticResponseStep,
-    ForwardToHostStep,
-    TimeoutStep,
-    CloseConnectionStep,
-    ResetConnectionStep,
-    FromFileResponseStep,
-    TransformingStep,
     HttpMatcherLookup,
     HttpStepLookup,
     HttpRule,
-    HttpInitialMatcherClasses
+    HttpInitialMatcherClasses,
+    RequestBreakpointStep,
+    ResponseBreakpointStep,
+    RequestAndResponseBreakpointStep,
+    PassThroughStep
 } from './definitions/http-rule-definitions';
 
 import {
@@ -30,9 +27,8 @@ import {
     WebSocketStepLookup,
     WebSocketRule,
     WebSocketInitialMatcherClasses,
-    EchoWebSocketStep,
-    RejectWebSocketStep,
-    ListenWebSocketStep
+    WebSocketForwardToHostStep,
+    WebSocketPassThroughStep
 } from './definitions/websocket-rule-definitions';
 
 import {
@@ -385,17 +381,16 @@ export const isFinalStep = (step: Step) => {
     return StepLookup[step.type].isFinal === true;
 }
 
-const PaidStepClasses: StepClass[] = [
-    StaticResponseStep,
-    FromFileResponseStep,
-    ForwardToHostStep,
-    TransformingStep,
-    TimeoutStep,
-    CloseConnectionStep,
-    ResetConnectionStep,
-    EchoWebSocketStep,
-    RejectWebSocketStep,
-    ListenWebSocketStep
+const NonPaidStepClasses: StepClass[] = [
+    // HTTP:
+    RequestBreakpointStep,
+    ResponseBreakpointStep,
+    RequestAndResponseBreakpointStep,
+    PassThroughStep,
+    // WS:
+    WebSocketPassThroughStep,
+    WebSocketForwardToHostStep,
+    // All non-HTTP/WS are free
 ];
 
 export const isPaidStep = (
@@ -403,7 +398,7 @@ export const isPaidStep = (
     step: Step
 ) => {
     if (ruleType !== 'http' && ruleType !== 'websocket') return false;
-    return _.some(PaidStepClasses, (cls) => step instanceof cls);
+    return !_.some(NonPaidStepClasses, (cls) => step instanceof cls);
 }
 
 export const isPaidStepClass = (
@@ -411,7 +406,7 @@ export const isPaidStepClass = (
     stepClass: StepClass
 ) => {
     if (ruleType !== 'http' && ruleType !== 'websocket') return false;
-    return PaidStepClasses.includes(stepClass);
+    return !NonPaidStepClasses.includes(stepClass);
 }
 
 /// --- Rules ---
