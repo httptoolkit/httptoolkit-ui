@@ -209,6 +209,11 @@ const InitialMatcherClasses = [
     ...RTCInitialMatcherClasses
 ];
 
+export const StableRuleTypes = [
+    'http',
+    'websocket'
+];
+
 export const getInitialMatchers = () => InitialMatcherClasses.filter((matcherCls) => {
     const matcherKey = MatcherClassKeyLookup.get(matcherCls)!;
     return serverSupports(PartVersionRequirements[matcherKey]);
