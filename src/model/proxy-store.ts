@@ -173,7 +173,8 @@ export class ProxyStore {
             http: any,
             webrtc: any
         }>({
-            adminServerUrl: 'http://127.0.0.1:45456'
+            adminServerUrl: 'http://127.0.0.1:45456',
+            adminStreamReconnectAttempts: Infinity
         });
 
         // These are persisted initially, so we know if the user updates them that we
@@ -237,7 +238,29 @@ export class ProxyStore {
         });
     });
 
-    private monitorRemoteClientConnection(client: PluggableAdmin.AdminClient<{}>) {
+    @observable
+    streamDisconnected: boolean = false;
+
+    private async monitorRemoteClientConnection(client: PluggableAdmin.AdminClient<{}>) {
+        // Track stream connect/disconnected state:
+        client.on('stream-reconnecting', action(() => {
+            console.log('Admin client stream reconnecting...');
+            this.streamDisconnected = true;
+        }));
+
+        client.on('stream-reconnected', action(() => {
+            console.log('Admin client reconnected');
+            this.streamDisconnected = false;
+        }));
+
+        // We show the below as disconnection, but we generally won't recover - this
+        // probably means the server has unexpectedly cleanly shut down.
+        client.on('stopped', action(() => {
+            console.log('Server stopped');
+            this.streamDisconnected = true;
+        }));
+
+        // Log various other related events for debugging:
         client.on('stream-error', (err) => {
             console.log('Admin client stream error', err);
         });
@@ -246,19 +269,6 @@ export class ProxyStore {
         });
         client.on('stream-reconnect-failed', (err) => {
             logError(err.message ? err : new Error('Client reconnect error'), { cause: err });
-
-            alert("Server disconnected unexpectedly, app restart required.\n\nPlease report this at github.com/httptoolkit/httptoolkit.");
-            setTimeout(() => { // Tiny wait for any other UI events to fire (error reporting/logging/other UI responsiveness)
-                if (DesktopApi.restartApp) {
-                    // Where possible (recent desktop release) we restart the whole app directly
-                    DesktopApi.restartApp();
-                } else if (!navigator.platform?.startsWith('Mac')) {
-                    // If not, on Windows & Linux we just close the window (which restarts)
-                    window.close();
-                }
-                // On Mac, app exit is independent from window exit, so we can't force that here,
-                // but hopefully this alert will lead the user to do so themselves.
-            }, 10);
         });
     }
 

@@ -1,8 +1,7 @@
 import * as _ from 'lodash';
 import {
     observable,
-    action,
-    computed,
+    action
 } from 'mobx';
 import { HarParseError } from 'har-validator';
 

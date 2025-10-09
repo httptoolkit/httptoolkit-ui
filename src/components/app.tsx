@@ -34,6 +34,7 @@ import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
 import { CheckoutSpinner } from './account/checkout-spinner';
 import { HtmlContextMenu } from './html-context-menu';
+import { DisconnectedWarning } from './disconnected-warning';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -229,6 +230,8 @@ class App extends React.Component<{
                     <Route path={'/send'} pageComponent={SendPage} />
                     <Route path={'/settings'} pageComponent={SettingsPage} />
                 </Router>
+
+                <DisconnectedWarning />
             </AppContainer>
 
             { !!modal && <ModalOverlay /> }
