@@ -170,11 +170,21 @@ const Summary = styled.h1`
     margin: -5px;
 `;
 
-const ArrowIcon = styled(Icon).attrs(() => ({
+const RightArrowIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'arrow-left']
 }))`
     transform: rotate(180deg);
-    padding: 0 15px;
+    padding: 0 10px;
+    align-self: start;
+}
+`;
+
+const NextStepArrowIcon = styled(Icon).attrs(() => ({
+    icon: ['fas', 'arrow-left'],
+    title: "Then..."
+}))`
+    margin: 10px auto;
+    transform: rotate(270deg);
 `;
 
 const Details = styled.div`
@@ -481,7 +491,7 @@ export class RuleRow extends React.Component<{
 
 
                 { shouldShowSummary &&
-                    <ArrowIcon />
+                    <RightArrowIcon />
                 }
 
                 <MatcherOrSteps>
@@ -495,7 +505,10 @@ export class RuleRow extends React.Component<{
                         !collapsed && <Details>
                             <DetailsHeader>Then:</DetailsHeader>
 
-                            { rule.steps.map((step, i) =>
+                            { rule.steps.map((step, i) => <>
+                                { i > 0 &&
+                                    <NextStepArrowIcon key={`then-${i}`} />
+                                }
                                 <StepSection
                                     key={i}
 
@@ -508,7 +521,7 @@ export class RuleRow extends React.Component<{
                                     availableSteps={availableSteps}
                                     updateStep={this.updateStep}
                                 />
-                            )}
+                            </>)}
                         </Details>
                     }
                 </MatcherOrSteps>

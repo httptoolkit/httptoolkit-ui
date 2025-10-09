@@ -336,6 +336,16 @@ serializr.createModelSchema(RequestAndResponseBreakpointStep, {
     type: serializr.primitive()
 }, (context) => new RequestAndResponseBreakpointStep(context.args.rulesStore));
 
+export type RequestWebhookEvents = httpSteps.RequestWebhookEvents;
+
+export class WebhookStep extends httpSteps.WebhookStep {
+    explain() {
+        return "enable webhooks";
+    }
+}
+
+export type DelayStep = httpSteps.DelayStep;
+export const DelayStep = httpSteps.DelayStep;
 export type TimeoutStep = httpSteps.TimeoutStep;
 export const TimeoutStep = httpSteps.TimeoutStep;
 export type CloseConnectionStep = httpSteps.CloseConnectionStep;
@@ -368,7 +378,8 @@ export const HttpStepLookup = {
     'req-res-transformer': TransformingStep,
     'request-breakpoint': RequestBreakpointStep,
     'response-breakpoint': ResponseBreakpointStep,
-    'request-and-response-breakpoint': RequestAndResponseBreakpointStep
+    'request-and-response-breakpoint': RequestAndResponseBreakpointStep,
+    'webhook': WebhookStep
 };
 
 type HttpMatcherClass = typeof HttpMatcherLookup[keyof typeof HttpMatcherLookup];

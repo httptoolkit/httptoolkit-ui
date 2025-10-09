@@ -20,6 +20,7 @@ import {
     stringToBuffer,
     bufferToString
 } from '../../util/buffer';
+import { formatDuration } from '../../util/text';
 import {
     getHeaderValue,
     headersToRawHeaders,
@@ -50,10 +51,13 @@ import {
     RequestBreakpointStep,
     ResponseBreakpointStep,
     RequestAndResponseBreakpointStep,
+    DelayStep,
     TimeoutStep,
     CloseConnectionStep,
     ResetConnectionStep,
-    FromFileResponseStep
+    FromFileResponseStep,
+    WebhookStep,
+    RequestWebhookEvents
 } from '../../model/rules/definitions/http-rule-definitions';
 import {
     WebSocketPassThroughStep,
@@ -177,12 +181,16 @@ export function StepConfiguration(props: {
             return <ResponseBreakpointStepConfig {...configProps} />;
         case 'request-and-response-breakpoint':
             return <RequestAndResponseBreakpointStepConfig {...configProps} />;
+        case 'delay':
+            return <WaitForDurationConfig {...configProps} />;
         case 'timeout':
             return <TimeoutStepConfig {...configProps} />;
         case 'close-connection':
             return <CloseConnectionStepConfig {...configProps} />;
         case 'reset-connection':
             return <ResetConnectionStepConfig {...configProps} />;
+        case 'webhook':
+            return <WebhookStepConfig {...configProps} />;
 
         case 'ws-echo':
             return <WebSocketEchoStepConfig {...configProps} />;
@@ -226,7 +234,7 @@ export function StepConfiguration(props: {
         case 'wait-for-rtc-media':
             return <RTCWaitForMediaConfig {...configProps} />;
         case 'wait-for-duration':
-            return <RTCWaitForDurationConfig {...configProps} />;
+            return <WaitForDurationConfig {...configProps} />;
         case 'wait-for-rtc-data-channel':
             return <RTCWaitForChannelConfig {...configProps} />;
         case 'wait-for-rtc-message':
@@ -1726,6 +1734,83 @@ const validateRegexMatcher = (value: string): true | string => {
 }
 
 @observer
+class WebhookStepConfig extends StepConfig<WebhookStep> {
+
+    @observable
+    private error: Error | undefined;
+
+    @observable
+    webhookUrl: string = this.props.step.url;
+
+    @observable
+    events: Array<RequestWebhookEvents> = this.props.step.events;
+
+    render() {
+        return <ConfigContainer>
+            <SectionLabel>Webhook target URL</SectionLabel>
+            <UrlInput
+                type="url"
+                value={this.webhookUrl}
+                invalid={!!this.error}
+                spellCheck={false}
+                onChange={this.onUrlChange}
+            />
+
+            <SectionLabel>Webhook events</SectionLabel>
+
+            <label>
+                <input type="checkbox"
+                    checked={this.events.includes('request')}
+                    onChange={(e) => this.setEvent('request', e.target.checked)}
+                />
+                Request received
+            </label>
+            <br />
+            <label>
+                <input
+                    type="checkbox"
+                    checked={this.events.includes('response')}
+                    onChange={(e) => this.setEvent('response', e.target.checked)}
+                />
+                Response sent
+            </label>
+        </ConfigContainer>;
+    }
+
+    @action.bound
+    onUrlChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.webhookUrl = event.target.value;
+        this.updateStep(event.target);
+    }
+
+    @action.bound
+    setEvent(event: RequestWebhookEvents, enabled: boolean) {
+        if (enabled && !this.events.includes(event)) {
+            this.events.push(event);
+        } else if (!enabled && this.events.includes(event)) {
+            this.events.splice(this.events.indexOf(event), 1);
+        }
+        this.updateStep();
+    }
+
+    updateStep(target?: HTMLInputElement) {
+        try {
+            if (!this.webhookUrl) throw new Error('A webhook URL is required');
+
+            this.props.onChange(new WebhookStep(this.webhookUrl, this.events));
+
+            this.error = undefined;
+            target?.setCustomValidity('');
+        } catch (e) {
+            this.error = asError(e);
+            target?.setCustomValidity(this.error.message);
+            if (this.props.onInvalidState) this.props.onInvalidState();
+        }
+        target?.reportValidity();
+    }
+}
+
+@observer
 class PassThroughStepConfig extends StepConfig<
     | PassThroughStep
     | WebSocketPassThroughStep
@@ -1809,7 +1894,7 @@ class TimeoutStepConfig extends StepConfig<TimeoutStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                When a matching {
+                The {
                     isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
                     : this.props.ruleType === 'websocket'
@@ -1817,7 +1902,7 @@ class TimeoutStepConfig extends StepConfig<TimeoutStep> {
                     : this.props.ruleType === 'webrtc'
                         ? (() => { throw new Error('Not compatible with WebRTC rules') })()
                     : unreachableCheck(this.props.ruleType)
-                } is received, the server will keep the connection open but do nothing.
+                } will receive no response, keeping the connection open but doing nothing.
                 With no data or response, most clients will time out and abort the
                 request after sufficient time has passed.
             </ConfigExplanation>
@@ -1830,7 +1915,7 @@ class CloseConnectionStepConfig extends StepConfig<CloseConnectionStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                As soon as a matching {
+                The {
                     isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
                     : this.props.ruleType === 'websocket'
@@ -1838,7 +1923,7 @@ class CloseConnectionStepConfig extends StepConfig<CloseConnectionStep> {
                     : this.props.ruleType === 'webrtc'
                         ? (() => { throw new Error('Not compatible with WebRTC rules') })()
                     : unreachableCheck(this.props.ruleType)
-                } is received, the connection will be cleanly closed, with no response.
+                }'s connection will be cleanly closed, with no response.
             </ConfigExplanation>
         </ConfigContainer>;
     }
@@ -1849,7 +1934,7 @@ class ResetConnectionStepConfig extends StepConfig<ResetConnectionStep> {
     render() {
         return <ConfigContainer>
             <ConfigExplanation>
-                As soon as a matching {
+                The {
                     isHttpCompatibleType(this.props.ruleType)
                         ? 'request'
                     : this.props.ruleType === 'websocket'
@@ -1857,8 +1942,8 @@ class ResetConnectionStepConfig extends StepConfig<ResetConnectionStep> {
                     : this.props.ruleType === 'webrtc'
                         ? (() => { throw new Error('Not compatible with WebRTC rules') })()
                     : unreachableCheck(this.props.ruleType)
-                } is received, the connection will be killed with a TCP RST packet (or a
-                RST_STREAM frame, for HTTP/2 requests).
+                }'s connection will be abruptly killed with a TCP RST packet (or a
+                RST_STREAM frame, for HTTP/2).
             </ConfigExplanation>
         </ConfigContainer>;
     }
@@ -2692,24 +2777,28 @@ class RTCWaitForMediaConfig extends StepConfig<WaitForMediaStep> {
 }
 
 @observer
-class RTCWaitForDurationConfig extends StepConfig<WaitForDurationStep> {
+class WaitForDurationConfig extends StepConfig<WaitForDurationStep | DelayStep> {
+
+    @computed
+    get stepDuration() {
+        return 'durationMs' in this.props.step
+            ? this.props.step.durationMs
+            : this.props.step.delayMs;
+    }
 
     @observable
-    duration: number | '' = this.props.step.durationMs;
+    inputDuration: number | '' = this.stepDuration;
 
     componentDidMount() {
         // If the step changes (or when its set initially), update our data fields
         disposeOnUnmount(this, autorun(() => {
-            const { durationMs } = this.props.step;
-            runInAction(() => {
-                if (durationMs === 0 && this.duration === '') return; // Allows clearing the input, making it *implicitly* 0
-                this.duration = durationMs;
-            });
+            if (this.stepDuration === 0 && this.inputDuration === '') return; // Allows clearing the input, making it *implicitly* 0
+            this.inputDuration = this.stepDuration;
         }));
     }
 
     render() {
-        const { duration } = this;
+        const { inputDuration: duration } = this;
 
         return <ConfigContainer>
             Wait for <TextInput
@@ -2718,7 +2807,10 @@ class RTCWaitForDurationConfig extends StepConfig<WaitForDurationStep> {
                 placeholder='Duration (ms)'
                 value={duration}
                 onChange={this.onChange}
-            /> milliseconds.
+            /> milliseconds{
+                duration !== '' && !formatDuration(duration).endsWith('ms') &&
+                    ` (${ formatDuration(duration) })`
+            }.
         </ConfigContainer>
     }
 
@@ -2728,12 +2820,16 @@ class RTCWaitForDurationConfig extends StepConfig<WaitForDurationStep> {
 
         const newValue = inputValue === ''
             ? ''
-            : parseInt(inputValue, 10);
+            : Math.max(parseInt(inputValue, 10) || 0, 0);
 
         if (_.isNaN(newValue)) return; // I.e. reject the edit
 
-        this.duration = newValue;
-        this.props.onChange(new WaitForDurationStep(newValue || 0));
+        this.inputDuration = newValue;
+
+        const step = this.props.ruleType === 'webrtc'
+            ? new WaitForDurationStep(newValue || 0)
+            : new DelayStep(newValue || 0);
+        this.props.onChange(step);
     }
 
 }

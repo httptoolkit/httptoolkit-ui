@@ -120,12 +120,16 @@ export function nameStepClass(key: StepClassKey): string {
         case 'response-breakpoint':
         case 'request-and-response-breakpoint':
             return "breakpoint";
+        case 'delay':
+            return "delay";
         case 'timeout':
             return "timeout";
         case 'close-connection':
             return "connection close";
         case 'reset-connection':
             return "connection reset";
+        case 'webhook':
+            return "webhook";
 
         case 'ws-reject':
             return "reject";
@@ -169,9 +173,7 @@ export function nameStepClass(key: StepClassKey): string {
         case 'rtc-peer-proxy':
         case 'callback':
         case 'stream':
-        case 'delay':
         case 'wait-for-request-body':
-        case 'webhook':
             throw new Error(`${key} step should not be used directly`);
         default:
             throw new UnreachableCheck(key);
@@ -196,12 +198,16 @@ export function summarizeStepClass(key: StepClassKey): string {
             return "Pause the response to manually edit it";
         case 'request-and-response-breakpoint':
             return "Pause the request & response to manually edit them";
+        case 'delay':
+            return "Wait before continuing";
         case 'timeout':
             return "Time out with no response";
         case 'close-connection':
             return "Close the connection";
         case 'reset-connection':
             return "Forcibly reset the connection";
+        case 'webhook':
+            return "Enable webhooks";
 
         case 'ws-passthrough':
             return "Pass the WebSocket through to its destination";
@@ -266,9 +272,7 @@ export function summarizeStepClass(key: StepClassKey): string {
         case 'rtc-peer-proxy':
         case 'callback':
         case 'stream':
-        case 'delay':
         case 'wait-for-request-body':
-        case 'webhook':
             throw new Error(`${key} step should not be used directly`);
         default:
             throw new UnreachableCheck(key);

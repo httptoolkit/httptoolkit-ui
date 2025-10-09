@@ -8,7 +8,8 @@ import {
     WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     JSONRPC_RESPONSE_RULE_SUPPORTED,
     RTC_RULES_SUPPORTED,
-    CONNECTION_RESET_SUPPORTED
+    CONNECTION_RESET_SUPPORTED,
+    WEBHOOK_AND_DELAY_RULES
 } from '../../services/service-versions';
 
 import {
@@ -90,7 +91,9 @@ const PartVersionRequirements: {
     'ws-echo': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     'ws-listen': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     'ws-reject': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
-    'reset-connection': CONNECTION_RESET_SUPPORTED
+    'reset-connection': CONNECTION_RESET_SUPPORTED,
+    'delay': WEBHOOK_AND_DELAY_RULES,
+    'webhook': WEBHOOK_AND_DELAY_RULES
 };
 
 /// --- Matchers ---
@@ -289,9 +292,7 @@ const HiddenSteps = [
     'callback',
     'stream',
     'wait-for-rtc-track', // Not super useful here I think
-    'delay', // Not exposed yet until we have more multi-step options
-    'wait-for-request-body', // Not exposed yet until we have more multi-step options
-    'webhook' // Not exposed yet until we have more multi-step options
+    'wait-for-request-body', // Not super useful here I think
 ] as const;
 
 const MatcherLimitedSteps: {
