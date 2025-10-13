@@ -141,7 +141,7 @@
     "ts-node": "^8.6.2",
     "typed-error": "^3.2.0",
     "typesafe-get": "^2.1.1",
-    "typescript": "^5.1.6",
+    "typescript": "~5.4.0",
     "ua-parser-js": "^0.7.33",
     "uuid": "^3.3.2",
     "xml-beautifier": "^0.4.0",
