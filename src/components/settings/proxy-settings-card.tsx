@@ -8,7 +8,7 @@ import { isWindows } from '../../util/ui';
 import { WarningIcon, Icon } from '../../icons';
 
 import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
-import { isValidHostname } from '../../model/network';
+import { isValidHostnamePattern } from '../../model/network';
 import {
     serverVersion,
     desktopVersion,
@@ -112,7 +112,7 @@ const InputClearButton = styled(IconButton)`
     right: 2px;
 `;
 
-const hostnameValidation = inputValidation(isValidHostname, "Should be a valid hostname");
+const hostnameValidation = inputValidation(isValidHostnamePattern, "Should be a valid hostname (with optional * wildcards)");
 
 const isAbsoluteWindowsPath = (path: string) => /^([a-zA-Z]:[\\\/]|[\\\/])((?:[^<>:"\/\\|?*]+)[\\\/]?)*$/.test(path);
 const isAbsolutePosixPath = (path: string) => /^\/(?:[^/]+\/?)*$/.test(path);
