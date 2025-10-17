@@ -610,7 +610,7 @@ class ProtocolFilter extends Filter {
 
     static filterName = "protocol";
 
-    static filterDescription(value: string) {
+    static filterDescription(value: string): string {
         const [, , protocol] = tryParseFilter(ProtocolFilter, value);
 
         if (!protocol) {

@@ -20,7 +20,7 @@ export class UpstreamWebSocket extends UpstreamHttpExchange implements WebSocket
         super(downstream, apiStore);
     }
 
-    isWebSocket() {
+    isWebSocket(): this is WebSocketView {
         return true;
     }
 

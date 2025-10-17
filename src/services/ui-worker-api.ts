@@ -146,10 +146,10 @@ export async function parseCert(buffer: ArrayBuffer) {
     })).result;
 }
 
-export async function formatBufferAsync(buffer: ArrayBuffer, format: WorkerFormatterKey, headers?: Headers) {
+export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterKey, headers?: Headers) {
     return (await callApi<FormatRequest, FormatResponse>({
         type: 'format',
-        buffer,
+        buffer: buffer.buffer as ArrayBuffer,
         format,
         headers,
     })).formatted;

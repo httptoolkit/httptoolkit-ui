@@ -101,7 +101,7 @@ export abstract class HttpExchangeViewBase extends HTKEventBase implements HttpE
         return this._apiDetector.apiMetadata;
     }
 
-    isHttp() {
+    isHttp(): this is HttpExchangeView {
         return true;
     }
 

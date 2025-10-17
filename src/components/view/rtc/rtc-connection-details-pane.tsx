@@ -62,7 +62,9 @@ export class RTCConnectionDetailsPane extends React.Component<{
     @action.bound
     toggleCollapse(streamId: string) {
         this.streamCardState[streamId] = {
-            collapsed: !this.streamCardState[streamId]?.collapsed ?? true
+            collapsed: this.streamCardState[streamId]?.collapsed !== undefined
+                ? !this.streamCardState[streamId]?.collapsed
+                : true
         };
     }
 

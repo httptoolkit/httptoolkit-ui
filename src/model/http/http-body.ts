@@ -5,7 +5,10 @@ import {
     Headers,
     MessageBody,
     InputMessage,
-    RawHeaders
+    RawHeaders,
+    PendingMessageBody,
+    DecodedMessageBody,
+    FailedDecodeMessageBody
 } from "../../types";
 import {
     fakeBuffer,
@@ -71,18 +74,18 @@ export class HttpBody implements MessageBody {
         return this._decoded;
     }
 
-    isPending() {
+    isPending(): this is PendingMessageBody {
         return !this._decoded && !this._decodingError;
     }
 
-    isDecoded() {
+    isDecoded(): this is DecodedMessageBody {
         // Any attempt to check whether decoded data is available yet will trigger the decoding
         // process, if it hasn't already started.
         if (!this._decoded) this.startDecodingAsync();
         return !!this._decoded;
     }
 
-    isFailed() {
+    isFailed(): this is FailedDecodeMessageBody {
         return !!this._decodingError;
     }
 

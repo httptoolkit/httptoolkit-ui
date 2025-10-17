@@ -32,7 +32,7 @@ export class WebSocketOriginalView extends HttpExchangeOriginalView implements W
 
     declare public readonly downstream: WebSocketStream;
 
-    isWebSocket() {
+    isWebSocket(): this is WebSocketView {
         return true;
     }
 
@@ -58,7 +58,7 @@ export class WebSocketTransformedView extends HttpExchangeTransformedView implem
 
     declare public readonly downstream: WebSocketStream;
 
-    isWebSocket() {
+    isWebSocket(): this is WebSocketView {
         return true;
     }
 

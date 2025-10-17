@@ -707,7 +707,9 @@ class ForwardToHostStepConfig extends StepConfig<
             const { updateHostHeader } = this.props.step.transformRequest?.replaceHost || {};
             runInAction(() => {
                 this.target = savedTarget;
-                this.updateHostHeader = !!updateHostHeader ?? true;
+                this.updateHostHeader = updateHostHeader !== undefined
+                    ? (!!updateHostHeader)
+                    : true;
             });
         }));
     }
