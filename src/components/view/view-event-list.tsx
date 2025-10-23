@@ -19,6 +19,7 @@ import {
     RawTunnel
 } from '../../types';
 import { UiStore } from '../../model/ui/ui-store';
+import { areStepsModifying } from '../../model/rules/rules';
 
 import {
     getSummaryColor,
@@ -476,9 +477,7 @@ const ExchangeRow = inject('uiStore')(observer(({
             />
             {
                 exchange.matchedRule &&
-                exchange.matchedRule.stepTypes.some(t =>
-                    t !== 'passthrough' && t !== 'ws-passthrough' && t !== 'rtc-dynamic-proxy'
-                ) &&
+                areStepsModifying(exchange.matchedRule.stepTypes) &&
                 <PhosphorIcon
                     icon='Pencil'
                     alt={`Handled by ${

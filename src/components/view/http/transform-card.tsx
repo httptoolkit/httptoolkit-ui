@@ -5,10 +5,11 @@ import { observer } from 'mobx-react-lite';
 import { styled } from '../../../styles';
 
 import { ContentPerspective, UiStore } from '../../../model/ui/ui-store';
+import { areStepsModifying } from '../../../model/rules/rules';
 
 import { Pill, PillSelect } from '../../common/pill';
 import { MediumCard } from '../../common/card';
-import { MatchedRuleData, MatchedRulePill, shouldShowRuleDetails } from './matched-rule-pill';
+import { MatchedRuleData, MatchedRulePill } from './matched-rule-pill';
 
 const DropdownContainer = styled.div`
     display: inline-block;
@@ -44,9 +45,9 @@ export const TransformCard = (p: {
     onRuleClicked: () => void,
     uiStore: UiStore
 }) => {
-    const rulePill = shouldShowRuleDetails(p.matchedRuleData)
+    const rulePill = areStepsModifying(p.matchedRuleData?.stepTypes)
         ? <MatchedRulePill
-            ruleData={p.matchedRuleData!}
+            ruleData={p.matchedRuleData}
             onClick={p.onRuleClicked}
         />
         // This can happen if e.g. upstream returns a response but

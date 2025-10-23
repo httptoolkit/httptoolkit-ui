@@ -5,6 +5,7 @@ import { HtkRequest, HttpVersion, HttpExchangeView } from '../../../types';
 
 import { getSummaryColor } from '../../../model/events/categorization';
 import { getMethodDocs } from '../../../model/http/http-docs';
+import { areStepsModifying } from '../../../model/rules/rules';
 
 import {
     CollapsibleCardHeading,
@@ -29,7 +30,7 @@ import { HttpVersionPill } from '../../common/http-version-pill';
 import { HeaderDetails, HeaderHeadingContainer } from './header-details';
 import { UrlBreakdown } from '../url-breakdown';
 import { StepClassKey } from '../../../model/rules/rules';
-import { MatchedRulePill, shouldShowRuleDetails } from './matched-rule-pill';
+import { MatchedRulePill } from './matched-rule-pill';
 
 const RawRequestDetails = (p: {
     request: HtkRequest,
@@ -114,7 +115,7 @@ export const HttpRequestCard = observer((props: HttpRequestCardProps) => {
 
     return <CollapsibleCard {...props} direction='right'>
         <header>
-            { shouldShowRuleDetails(matchedRuleData) &&
+            { areStepsModifying(matchedRuleData?.stepTypes) &&
                 <MatchedRulePill
                     ruleData={matchedRuleData}
                     onClick={onRuleClicked}

@@ -17,16 +17,6 @@ export interface MatchedRuleData {
     status: 'unchanged' | 'modified-types' | 'deleted';
 }
 
-export const shouldShowRuleDetails = (
-    matchedRuleData: MatchedRuleData | undefined
-): matchedRuleData is MatchedRuleData => {
-    // We never bother showing rule details for pure-passthrough rules
-    return !!matchedRuleData?.stepTypes.length &&
-        !matchedRuleData?.stepTypes.every(
-            type => type === 'passthrough' || type === 'ws-passthrough'
-        );
-}
-
 export const MatchedRulePill = styled(inject('uiStore')((p: {
     className?: string,
     uiStore?: UiStore,

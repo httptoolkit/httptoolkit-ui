@@ -410,6 +410,16 @@ export const isPaidStepClass = (
     return !NonPaidStepClasses.includes(stepClass);
 }
 
+export function areStepsModifying(stepTypes: StepClassKey[] | undefined): stepTypes is StepClassKey[] {
+    // We don't show rule details or edit markers for no-modification rules
+    return !!stepTypes?.length &&
+        !stepTypes?.every(
+            type => type === 'passthrough' ||
+                    type === 'ws-passthrough' ||
+                    type === 'webhook'
+        );
+}
+
 /// --- Rules ---
 
 export type HtkRule = (
