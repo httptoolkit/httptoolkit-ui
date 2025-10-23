@@ -340,7 +340,9 @@ export type RequestWebhookEvents = httpSteps.RequestWebhookEvents;
 
 export class WebhookStep extends httpSteps.WebhookStep {
     explain() {
-        return "enable webhooks";
+        return `enable ${
+            this.events.length === 1 ? this.events[0] : ''
+        } webhooks`;
     }
 }
 
