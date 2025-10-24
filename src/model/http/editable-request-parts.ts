@@ -1,7 +1,7 @@
 import { reaction } from 'mobx';
 
 import { RawHeaders } from '../../types';
-import { getHeaderValue, setHeaderValue, removeHeader } from '../../util/headers';
+import { getHeaderValue, setHeaderValue, removeHeader } from './headers';
 import { EditableBody } from './editable-body';
 import { EditableContentType, getDefaultMimeType, getEditableContentType } from '../events/content-types';
 

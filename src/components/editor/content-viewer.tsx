@@ -10,7 +10,7 @@ import { styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
 import { asError, unreachableCheck } from '../../util/error';
 import { stringToBuffer } from '../../util/buffer';
-import { getHeaderValue } from '../../util/headers';
+import { getHeaderValue } from '../../model/http/headers';
 
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';

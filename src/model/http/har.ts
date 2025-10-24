@@ -20,7 +20,7 @@ import {
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
-import { getHeaderValues, getHeaderValue } from '../../util/headers';
+import { getHeaderValues, getHeaderValue } from './headers';
 import { ObservablePromise, observablePromise } from '../../util/observable';
 import { unreachableCheck } from '../../util/error';
 

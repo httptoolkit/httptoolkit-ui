@@ -22,7 +22,7 @@ import {
     getHeaderValue,
     headersToRawHeaders,
     rawHeadersToHeaders
-} from '../../util/headers';
+} from './headers';
 
 import {
     RAW_BODY_SUPPORTED,

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 
 import { ExchangeMessage } from '../../types';
 import { Theme } from '../../styles';
-import { getHeaderValue } from '../../util/headers';
+import { getHeaderValue } from '../http/headers';
 
 import { getBaseContentType } from './content-types';
 

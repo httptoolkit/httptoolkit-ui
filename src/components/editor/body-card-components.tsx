@@ -6,7 +6,7 @@ import { Headers, RawHeaders } from '../../types';
 import { styled, css } from '../../styles';
 import { WarningIcon } from '../../icons';
 
-import { asHeaderArray, getHeaderValue, getHeaderValues } from '../../util/headers';
+import { asHeaderArray, getHeaderValue, getHeaderValues } from '../../model/http/headers';
 import { saveFile } from '../../util/ui';
 import { ErrorLike } from '../../util/error';
 

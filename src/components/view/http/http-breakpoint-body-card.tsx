@@ -9,7 +9,7 @@ import {
     bufferToString,
     stringToBuffer
 } from '../../../util/buffer';
-import { getHeaderValue } from '../../../util/headers';
+import { getHeaderValue } from '../../../model/http/headers';
 import {
     EditableContentType,
     EditableContentTypes,

@@ -22,7 +22,7 @@ import {
     Html
 } from "../../types";
 import { firstMatch, empty } from '../../util';
-import { getHeaderValue } from '../../util/headers';
+import { getHeaderValue } from '../http/headers';
 import { formatAjvError } from '../../util/json-schema';
 
 import {

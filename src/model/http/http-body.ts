@@ -18,7 +18,7 @@ import {
 import {
     asHeaderArray,
     getHeaderValues
-} from '../../util/headers';
+} from './headers';
 
 import { logError } from '../../errors';
 import { decodeBody } from '../../services/ui-worker-api';

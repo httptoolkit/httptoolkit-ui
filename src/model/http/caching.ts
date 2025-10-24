@@ -8,7 +8,7 @@ import {
 } from 'date-fns';
 
 import { ExchangeMessage, HttpExchangeView } from '../../types';
-import { getHeaderValue, asHeaderArray } from '../../util/headers';
+import { getHeaderValue, asHeaderArray } from './headers';
 import { joinAnd } from '../../util/text';
 import { escapeForMarkdownEmbedding } from '../ui/markdown';
 

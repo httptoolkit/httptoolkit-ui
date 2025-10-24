@@ -4,7 +4,7 @@ import { observable } from 'mobx';
 
 import { HttpExchange, RawHeaders, HttpExchangeView } from "../../types";
 import { ObservablePromise } from '../../util/observable';
-import { h2HeadersToH1 } from '../../util/headers';
+import { h2HeadersToH1 } from '../http/headers';
 
 import { EditableContentType, getEditableContentTypeFromViewable } from "../events/content-types";
 import { EditableBody } from '../http/editable-body';

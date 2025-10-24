@@ -27,7 +27,7 @@ import {
     rawHeadersToHeaders,
     HEADER_NAME_REGEX,
     setHeaderValue
-} from '../../util/headers';
+} from '../../model/http/headers';
 import {
     ADVANCED_PATCH_TRANSFORMS,
     serverSupports

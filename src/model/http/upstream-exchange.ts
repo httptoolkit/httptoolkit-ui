@@ -8,7 +8,7 @@ import {
     HtkResponse
 } from '../../types';
 
-import { getHeaderValue, rawHeadersToHeaders, withoutPseudoHeaders } from '../../util/headers';
+import { getHeaderValue, rawHeadersToHeaders, withoutPseudoHeaders } from './headers';
 import { ParsedUrl } from '../../util/url';
 import { asBuffer } from '../../util/buffer';
 

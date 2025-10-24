@@ -7,7 +7,7 @@ import { BreakpointResponseResult, HttpExchange, RawHeaders } from '../../../typ
 import { styled, Theme } from '../../../styles';
 
 import { getStatusColor } from '../../../model/events/categorization';
-import { withHeaderValue } from '../../../util/headers';
+import { withHeaderValue } from '../../../model/http/headers';
 
 import {
     CollapsibleCardHeading,

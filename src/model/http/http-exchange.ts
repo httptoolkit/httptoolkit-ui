@@ -15,7 +15,7 @@ import {
     MockttpBreakpointResponseResult,
     InputRuleEventDataMap
 } from "../../types";
-import { getHeaderValue } from '../../util/headers';
+import { getHeaderValue } from './headers';
 import { ParsedUrl } from '../../util/url';
 
 

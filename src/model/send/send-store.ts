@@ -15,7 +15,7 @@ import { logError } from '../../errors';
 import { getObservableDeferred, lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { ErrorLike, unreachableWarning } from '../../util/error';
-import { rawHeadersToHeaders } from '../../util/headers';
+import { rawHeadersToHeaders } from '../http/headers';
 import { getEffectivePort } from '../../util/url';
 import { trackEvent } from '../../metrics';
 

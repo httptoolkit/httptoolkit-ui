@@ -2,7 +2,7 @@ import parseRawProto from 'rawprotoparse';
 import { gunzipSync, inflateSync } from 'zlib';
 
 import { Headers } from '../types';
-import { getHeaderValue } from './headers';
+import { getHeaderValue } from '../model/http/headers';
 
 export function isProbablyProtobuf(input: Uint8Array) {
     // Protobuf data starts with a varint, consisting of a

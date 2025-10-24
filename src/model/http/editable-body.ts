@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { computed, observable, action, runInAction, reaction } from 'mobx';
 
 import { RawHeaders } from '../../types';
-import { asHeaderArray, getHeaderValues } from "../../util/headers";
+import { asHeaderArray, getHeaderValues } from "./headers";
 import {
     observablePromise,
     ObservablePromise,

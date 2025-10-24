@@ -7,7 +7,7 @@ import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../../types';
 
-import { getHeaderValue } from '../../../util/headers';
+import { getHeaderValue } from '../../../model/http/headers';
 
 import { ViewableContentType, getCompatibleTypes } from '../../../model/events/content-types';
 

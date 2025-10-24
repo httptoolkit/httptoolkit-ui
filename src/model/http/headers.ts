@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Headers, RawHeaders } from '../types';
+import { Headers, RawHeaders } from '../../types';
 
 export {
     h2HeadersToH1

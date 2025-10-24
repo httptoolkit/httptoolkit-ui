@@ -15,7 +15,7 @@ import {
     headersToFlatHeaders,
     headersToRawHeaders,
     rawHeadersToHeaders
-} from '../../util/headers';
+} from '../../model/http/headers';
 
 import {
     Matcher,
