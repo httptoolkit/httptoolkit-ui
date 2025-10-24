@@ -1,6 +1,8 @@
 import * as React from 'react';
+import { action } from 'mobx';
 import { inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
+import * as HarFormat from 'har-format';
 
 import { styled } from '../../styles';
 import { useHotkeys } from '../../util/ui';
@@ -9,6 +11,7 @@ import { WithInjected } from '../../types';
 import { ApiError } from '../../services/server-api-types';
 import { SendStore } from '../../model/send/send-store';
 import { UiStore } from '../../model/ui/ui-store';
+import { buildRequestInputFromHarRequest } from '../../model/send/send-request-model';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 
@@ -147,6 +150,7 @@ class SendPage extends React.Component<{
                             selectedRequest.pendingSend?.promise.state === 'pending'
                         }
                         editorNode={this.requestEditorNode}
+                        updateFromHar={this.updateFromHar}
                     />
                     <ResponsePane
                         requestInput={selectedRequest.request}
@@ -168,6 +172,12 @@ class SendPage extends React.Component<{
                 <ContainerSizedEditor contentId={null} />
             </portals.InPortal>
         </SendPageContainer>;
+    }
+
+    @action.bound
+    updateFromHar(harRequest: HarFormat.Request) {
+        const { selectedRequest } = this.props.sendStore;
+        selectedRequest.request = buildRequestInputFromHarRequest(harRequest);
     }
 
 }

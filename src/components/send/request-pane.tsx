@@ -1,8 +1,9 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, flow, observable, reaction } from 'mobx';
+import { action, reaction } from 'mobx';
 import { disposeOnUnmount, inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
+import * as HarFormat from 'har-format';
 
 import { RawHeaders } from '../../types';
 
@@ -57,7 +58,8 @@ export class RequestPane extends React.Component<{
 
     requestInput: RequestInput,
     sendRequest: () => void,
-    isSending: boolean
+    isSending: boolean,
+    updateFromHar: (harRequest: HarFormat.Request) => void
 }> {
 
     get cardProps() {
@@ -103,6 +105,7 @@ export class RequestPane extends React.Component<{
                 updateUrl={this.updateUrl}
                 isSending={isSending}
                 sendRequest={sendRequest}
+                updateFromHar={this.props.updateFromHar}
             />
             <SendRequestHeadersCard
                 {...this.cardProps.requestHeaders}

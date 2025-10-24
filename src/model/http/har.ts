@@ -731,7 +731,7 @@ function cleanRawHarData(harContents: any) {
     return harContents;
 }
 
-function parseHarRequest(
+export function parseHarRequest(
     id: string,
     request: ExtendedHarRequest,
     timingEvents: TimingEvents

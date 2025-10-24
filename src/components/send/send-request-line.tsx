@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { Method } from 'mockttp';
+import * as HarFormat from 'har-format';
+import { parseCurlCommand } from 'curl-as-har-request';
 
 import { styled } from '../../styles';
 import { Icon, ArrowIcon } from '../../icons';
@@ -110,6 +112,8 @@ const SendButton = styled(Button)`
 `;
 
 export const SendRequestLine = (props: {
+    updateFromHar: (harRequest: HarFormat.Request) => void;
+
     method: string;
     updateMethod: (method: string) => void;
 
@@ -138,6 +142,28 @@ export const SendRequestLine = (props: {
         return false;
     }, [props.sendRequest]);
 
+    const onPaste = React.useCallback((event: React.ClipboardEvent<HTMLInputElement>) => {
+        const pastedText = event.clipboardData.getData('text/plain');
+        if (pastedText.match(/^\s*curl /)) {
+            event.preventDefault();
+
+            // Looks like you've pasted a curl command, try to parse it to HAR, then
+            // generate a request from there:
+            try {
+                // For now we use the first command, we could pop into multiple tabs if
+                // we want to support multiple commands here later:
+                const harRequest = parseCurlCommand(pastedText)[0];
+                if (!harRequest.url) {
+                    throw new Error('Could not extract URL from pasted curl command.');
+                }
+                props.updateFromHar(harRequest);
+            } catch (e: any) {
+                console.log(e);
+                alert(`Could not parse pasted curl command:\n\n${e.message || e}`);
+            }
+        }
+    }, [props.updateFromHar]);
+
     const borderColor = getMethodColor(props.method);
 
     return <SendRequestLineContainer
@@ -164,12 +190,13 @@ export const SendRequestLine = (props: {
         <UrlInput
             type='url'
             spellCheck='false'
-            placeholder='https://example.com/hello?name=world'
+            placeholder='https://example.com/hello?name=world or paste a cURL command'
             required={true}
 
             value={props.url}
             onFocus={prepopulateUrl}
             onChange={updateUrlFromEvent}
+            onPaste={onPaste}
         />
         <SendButton
             type='submit'
