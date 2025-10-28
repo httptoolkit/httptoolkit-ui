@@ -164,9 +164,10 @@ export class UpstreamHttpExchange extends HttpExchangeViewBase implements HttpEx
         if (this.upstreamResponseData === 'aborted') {
             return 'aborted';
         } else if (downstreamRes === 'aborted' || !downstreamRes) {
-            // Downstream was aborted, so upstream data (if any) is all we have
+            // Downstream is aborted or pending, so upstream data (if any) is all we have
 
-            if (!this.wasResponseTransformed) return 'aborted';
+            if (downstreamRes && !this.wasResponseTransformed) return 'aborted';
+
             const { statusCode, statusMessage, rawHeaders, body } = this.upstreamResponseData as
                 Required<typeof this.upstreamResponseData>; // If downstream is aborted, upstream data is complete
 
