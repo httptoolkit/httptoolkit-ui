@@ -316,12 +316,14 @@ class CompletedFilter extends Filter {
     static filterName = "completed";
 
     static filterDescription(value: string) {
-        return "requests that have received a response";
+        return "requests & connections that have completed without errors";
     }
 
     matches(event: ViewableEvent): boolean {
-        return event.isHttp() &&
-            event.isSuccessfulExchange();
+        return (event.isHttp() && event.isSuccessfulExchange() && !event.isWebSocket()) ||
+            (event.isWebSocket() && event.closeState && event.closeState !== 'aborted') ||
+            (event.isRTC() && !!event.closeState) ||
+            (event.isTunnel() && !event.isOpen());
     }
 
     toString() {
@@ -336,12 +338,14 @@ class PendingFilter extends Filter {
     static filterName = "pending";
 
     static filterDescription(value: string) {
-        return "requests that are still waiting for a response";
+        return "requests & connections that are still ongoing";
     }
 
     matches(event: ViewableEvent): boolean {
-        return event.isHttp() &&
-            !event.isCompletedExchange();
+        return (event.isHttp() && !event.isCompletedExchange()) ||
+            (event.isWebSocket() && !event.closeState) ||
+            (event.isRTC() && !event.closeState) ||
+            (event.isTunnel() && event.isOpen());
     }
 
     toString() {
@@ -356,12 +360,13 @@ class AbortedFilter extends Filter {
     static filterName = "aborted";
 
     static filterDescription(value: string) {
-        return "requests whose connection failed before receiving a response";
+        return "requests & connections which failed to cleanly complete";
     }
 
     matches(event: ViewableEvent): boolean {
-        return event.isHttp() &&
-            event.response === 'aborted'
+        return (event.isHttp() && event.response === 'aborted') ||
+            (event.isWebSocket() && event.closeState === 'aborted') ||
+            event.isTlsFailure();
     }
 
     toString() {
@@ -380,11 +385,11 @@ class ErrorFilter extends Filter {
     }
 
     matches(event: ViewableEvent): boolean {
-        return !(event.isHttp()) || // TLS Error
-            event.tags.some(tag =>
+        return event.isTlsFailure() ||
+            (event.isHttp() && event.tags.some(tag =>
                 tag.startsWith('client-error') ||
                 tag.startsWith('passthrough-error')
-            );
+            ));
     }
 
     toString() {
@@ -489,7 +494,7 @@ class MethodFilter extends Filter {
 
     static filterName = "method";
 
-    static filterDescription(value: string) {
+    static filterDescription(value: string): string {
         const [, op, method] = tryParseFilter(MethodFilter, value);
 
         if (!op) {
@@ -604,7 +609,9 @@ class ProtocolFilter extends Filter {
             "http",
             "https",
             "ws",
-            "wss"
+            "wss",
+            "webrtc",
+            "unknown"
         ])
     ] as const;
 
@@ -614,9 +621,16 @@ class ProtocolFilter extends Filter {
         const [, , protocol] = tryParseFilter(ProtocolFilter, value);
 
         if (!protocol) {
-            return "exchanges using HTTP, HTTPS, WS or WSS";
+            return "traffic using a specific protocol like HTTPS, or WebSockets";
+        } else if (protocol === 'unknown') {
+            return "traffic with no identified protocol";
         } else {
-            return `exchanges using ${protocol.toUpperCase()}`;
+            return `${
+                protocol === 'webrtc'
+                    ? 'WebRTC'
+                // HTTP et al:
+                    : protocol.toUpperCase()
+            } traffic`;
         }
     }
 
@@ -629,7 +643,17 @@ class ProtocolFilter extends Filter {
     }
 
     matches(event: ViewableEvent): boolean {
-        if (!(event.isHttp())) return false;
+        if (this.expectedProtocol === 'unknown') {
+            return !event.isHttp() && !event.isRTC();
+        }
+
+        if (this.expectedProtocol === 'webrtc') {
+            return event.isRTC();
+        }
+
+        if (!(event.isHttp())) {
+            return false;
+        }
 
         // Parsed protocol is like 'http:', so we strip the colon
         const protocol = event.request.parsedUrl.protocol.toLowerCase().slice(0, -1);
@@ -637,7 +661,12 @@ class ProtocolFilter extends Filter {
     }
 
     toString() {
-        return `${this.expectedProtocol.toUpperCase()}`;
+        return this.expectedProtocol === 'unknown'
+            ? 'Unknown protocol'
+        : this.expectedProtocol === 'webrtc'
+            ? 'WebRTC'
+        // HTTP et al:
+            : `${this.expectedProtocol.toUpperCase()}`;
     }
 }
 

@@ -102,14 +102,14 @@ describe("Search filter model integration test:", () => {
                 "exchanges by body content",
                 "exchanges by body size",
                 "exchanges that contain a given value anywhere",
-                "requests that have received a response",
-                "requests that are still waiting for a response",
-                "requests whose connection failed before receiving a response",
+                "requests & connections that have completed without errors",
+                "requests & connections that are still ongoing",
+                "requests & connections which failed to cleanly complete",
                 "requests that weren't transmitted successfully",
                 "exchanges that are pinned",
                 "exchanges by their general category",
                 "requests sent to a given port",
-                "exchanges using HTTP, HTTPS, WS or WSS",
+                "traffic using a specific protocol like HTTPS, or WebSockets",
                 "exchanges using a given version of HTTP",
                 "websocket streams",
                 "exchanges that do not match a given condition",
@@ -333,8 +333,9 @@ describe("Search filter model integration test:", () => {
             ];
 
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
-            expect(matchedEvents.length).to.equal(1);
+            expect(matchedEvents.length).to.equal(2);
             expect((matchedEvents[0] as HttpExchange).response).to.equal('aborted');
+            expect(matchedEvents[1].isTlsFailure()).to.equal(true);
         });
     });
 
