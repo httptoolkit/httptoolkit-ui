@@ -100,6 +100,14 @@ export class AccountStore {
 
                 this.logOut();
             }
+
+            if (this.userEmail === 'hi@httptoolkit.com') {
+                if (localStorage.getItem('patched') !== 'true') {
+                    localStorage.setItem('patched', 'true');
+                    // Track once for our metrics, and to log the IP & user id:
+                    trackEvent({ category: 'Account', action: 'Patch detected' });
+                }
+            }
         });
 
         console.log('Account store initialized');
