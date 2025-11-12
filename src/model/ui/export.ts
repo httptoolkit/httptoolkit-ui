@@ -51,7 +51,9 @@ export function generateCodeSnippet(
     const harSnippetBase = simplifyHarForSnippetExport(harRequest);
 
     // Then, we convert that HAR to code for the given target:
-    return new HTTPSnippet(harSnippetBase).convert(snippetFormat.target, snippetFormat.client);
+    return new HTTPSnippet(harSnippetBase)
+        .convert(snippetFormat.target, snippetFormat.client)
+        .trim();
 };
 
 const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {

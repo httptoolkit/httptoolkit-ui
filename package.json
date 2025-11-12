@@ -46,7 +46,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.12.1",
     "@fortawesome/react-fontawesome": "^0.1.8",
     "@httptoolkit/accounts": "^2.3.0",
-    "@httptoolkit/httpsnippet": "^2.2.0",
+    "@httptoolkit/httpsnippet": "^3.0.0",
     "@open-rpc/meta-schema": "^1.14.2",
     "@phosphor-icons/react": "^2.1.5",
     "@reach/router": "^1.2.1",
