@@ -32,6 +32,9 @@
     "httptoolkit-server": ">=1.9.0",
     "httptoolkit-desktop": ">=1.7.0"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@ethersproject/abi": "^5.7.0",
     "@fontsource/dm-mono": "^5.0.19",
