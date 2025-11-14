@@ -36,6 +36,7 @@ import {
     SettingsExplanation
 } from './settings-components';
 import { StringSettingsList, ConfigValueRow } from './string-settings-list';
+import { PROXY_HOST_REGEXES, normalizeProxyHost } from '../../model/http/proxy';
 
 
 const UpstreamProxySettings = styled.div`
@@ -82,7 +83,7 @@ const validateClientCertHost = inputValidation(isValidClientCertHost,
 );
 
 const isValidProxyHost = (host: string | undefined): boolean =>
-    !!host?.match(/^([^/@]*@)?[A-Za-z0-9\-.]+(:\d+)?$/);
+    !!host && PROXY_HOST_REGEXES.some(regex => regex.test(host));
 const validateProxyHost = inputValidation(isValidProxyHost,
     "Should be a plain hostname, optionally with a specific port and/or username:password"
 );
@@ -126,7 +127,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         // We update the rules store proxy type only at the point where we save the host:
         const rulesStore = this.props.rulesStore;
         rulesStore.upstreamProxyType = this.proxyType;
-        rulesStore.upstreamProxyHost = this.proxyHostInput;
+        rulesStore.upstreamProxyHost = normalizeProxyHost(this.proxyHostInput);
     }
 
     @action.bound
@@ -216,7 +217,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
                     <SettingsButton
                         disabled={
                             !isValidProxyHost(proxyHostInput) ||
-                            (proxyHostInput === savedProxyHost && proxyType === savedProxyType)
+                            (normalizeProxyHost(proxyHostInput) === savedProxyHost && proxyType === savedProxyType)
                         }
                         onClick={saveProxyHost}
                     >
