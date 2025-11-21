@@ -144,7 +144,7 @@ export default merge(common, {
                         "'report-sample'",
                         "'unsafe-eval'", // For both wasm & real eval() uses
                         "'self'",
-                        'https://cdn.auth0.com/', 'https://cdn.eu.auth0.com/', 'https://secure.gravatar.com'
+                        'https://cdn.auth0.com', 'https://cdn.eu.auth0.com', 'https://secure.gravatar.com'
                     ],
                     'connect-src': [
                         "'self'", 'data:',
