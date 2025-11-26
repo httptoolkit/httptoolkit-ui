@@ -193,7 +193,7 @@ export default merge(common, {
                     'default-src': "*",
                     'object-src': "'none'",
                     'frame-ancestors': "'none'",
-                    'img-src': "*",
+                    'img-src': ["*", "'data:'"],
                     'font-src': "*",
                     'style-src': ["'report-sample'", "*", "'unsafe-inline'"],
                     'frame-src': "https://login.httptoolkit.tech",
