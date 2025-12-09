@@ -47,6 +47,13 @@ interface DesktopApi {
 
     openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
     restartApp?: () => Promise<void>;
+
+    /**
+     * Given a file object, returns its path. If the path isn't available (e.g. file
+     * object constructed, not selected) then this returns null. If file isn't a
+     * File at all, it throws.
+     */
+    getPathForFile?: (file: File) => string | null;
 }
 
 interface NativeContextMenuDefinition {
