@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, autorun, action } from 'mobx';
+import { observable, autorun, action, computed } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -213,6 +213,16 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
         }
     }
 
+    @computed
+    get contentViewOptions() {
+        const { message } = this.props;
+        return getCompatibleTypes(
+            message.contentType,
+            undefined,
+            asBuffer(message.content)
+        );
+    }
+
     @action.bound
     setContentType(contentType: ViewableContentType | undefined) {
         if (contentType === this.props.message.contentType) {
@@ -225,15 +235,14 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
     render() {
         const { message, isPaidUser, onExportMessage, editorNode, streamId } = this.props;
 
-        const compatibleContentTypes = getCompatibleTypes(
-            message.contentType,
-            undefined,
-            asBuffer(message.content)
-        );
+        const {
+            preferredContentType,
+            availableContentTypes
+        } = this.contentViewOptions;
 
-        const contentType = _.includes(compatibleContentTypes, this.selectedContentType)
+        const contentType = availableContentTypes.includes(this.selectedContentType!)
             ? this.selectedContentType!
-            : message.contentType;
+            : preferredContentType;
 
         const messageDirection = message.direction === 'sent' ? 'left' : 'right';
 
@@ -287,7 +296,7 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
                 <PillSelector<ViewableContentType>
                     onChange={this.setContentType}
                     value={contentType}
-                    options={compatibleContentTypes}
+                    options={availableContentTypes}
                     nameFormatter={getContentEditorName}
                 />
                 <Pill>{ getReadableSize(message.content.byteLength) }</Pill>

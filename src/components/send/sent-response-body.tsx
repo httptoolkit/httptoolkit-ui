@@ -1,15 +1,14 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, autorun, action } from 'mobx';
+import { observable, autorun, action, computed } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../types';
 
-import { ErrorLike } from '../../util/error';
 import { getHeaderValue } from '../../model/http/headers';
 
-import { ViewableContentType, getCompatibleTypes } from '../../model/events/content-types';
+import { ContentViewOptions, ViewableContentType, getCompatibleTypes } from '../../model/events/content-types';
 
 import { ExpandableCardProps } from '../common/card';
 
@@ -56,6 +55,22 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
         }));
     }
 
+    @computed
+    get contentViewOptions(): ContentViewOptions {
+        const { message } = this.props;
+        if (!message) return {
+            preferredContentType: 'text',
+            availableContentTypes: ['text']
+        };
+
+        return getCompatibleTypes(
+            message.contentType,
+            getHeaderValue(message.headers, 'content-type'),
+            message.body,
+            message.headers,
+        );
+    }
+
     @action.bound
     onChangeContentType(contentType: ViewableContentType | undefined) {
         if (contentType === this.props.message?.contentType) {
@@ -77,18 +92,14 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
             ariaLabel
         } = this.props;
 
-        const compatibleContentTypes = message
-            ? getCompatibleTypes(
-                message.contentType,
-                getHeaderValue(message.headers, 'content-type'),
-                message.body,
-                message.headers,
-            )
-            : ['text'] as const;
+        const {
+            preferredContentType,
+            availableContentTypes
+        } = this.contentViewOptions;
 
-        const decodedContentType = _.includes(compatibleContentTypes, this.selectedContentType)
+        const decodedContentType = availableContentTypes.includes(this.selectedContentType!)
             ? this.selectedContentType!
-            : (message?.contentType ?? 'text');
+            : preferredContentType;
 
         if (message?.body.isDecoded()) {
             // We have successfully decoded the body content, show it:
@@ -110,7 +121,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
                         onCollapseToggled={onCollapseToggled}
 
                         selectedContentType={decodedContentType}
-                        contentTypeOptions={compatibleContentTypes}
+                        contentTypeOptions={availableContentTypes}
                         onChangeContentType={this.onChangeContentType}
 
                         isPaidUser={isPaidUser}
@@ -199,7 +210,7 @@ export class SentResponseBodyCard extends React.Component<ExpandableCardProps & 
                         onCollapseToggled={onCollapseToggled}
 
                         selectedContentType={decodedContentType}
-                        contentTypeOptions={compatibleContentTypes}
+                        contentTypeOptions={availableContentTypes}
                         onChangeContentType={this.onChangeContentType}
                         isPaidUser={isPaidUser}
                     />
