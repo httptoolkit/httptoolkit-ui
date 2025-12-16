@@ -134,8 +134,8 @@ describe('Content type parsing', () => {
             const cts = getCompatibleTypes('grpc-proto', 'application/grpc+proto', undefined);
             expect(cts).to.deep.equal({
                 preferredContentType: 'grpc-proto',
-                availableContentTypes: ['grpc-proto', 'text', 'raw'
-            }
+                availableContentTypes: ['grpc-proto', 'text', 'raw']
+            });
         });
 
         it('should flag application/grpc+json as compatible with [grpc-proto,text,raw]', () => {
