@@ -75,7 +75,21 @@ const WorkerFormatters = {
     },
     json: (content: Buffer) => {
         const asString = content.toString('utf8');
-        return formatJson(asString, { formatRecords: false });
+
+        // Do simplify parse + stringify where possible for speed - it's up to 1000x faster.
+        // We fall back to the relaxed formatJson() where that fails, which is slower but
+        // always comes up with something reasonable - unless it's very large, in which
+        // case we give up rather than hanging the UI:
+        try {
+            return JSON.stringify(JSON.parse(asString), null, 2);
+        } catch (e) {
+            if (content.byteLength <= 5_000_000) {
+                return formatJson(asString, { formatRecords: false });
+            } else {
+                // Large non-parseable content - we fall back to the raw string
+                return asString;
+            }
+        }
     },
     'json-records': (content: Buffer) => {
         const asString = content.toString('utf8');
