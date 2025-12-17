@@ -46,6 +46,8 @@ const ConfigContainer = styled.div`
     > svg {
         flex: 1 1 200px;
         margin: 0 auto;
+        width: auto;
+
         /* Without white padding, the QR code sometimes isn't scannable */
         padding: 5px;
         background-color: #fff;
