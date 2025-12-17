@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { when } from 'mobx';
 import { observer, inject } from 'mobx-react';
-import * as QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
     matchers,
     completionCheckers
@@ -43,7 +43,8 @@ const ConfigContainer = styled.div`
         }
     }
 
-    > canvas {
+    > svg {
+        flex: 1 1 200px;
         margin: 0 auto;
         /* Without white padding, the QR code sometimes isn't scannable */
         padding: 5px;
@@ -60,7 +61,7 @@ const ConfigContainer = styled.div`
 `;
 
 const Spacer = styled.div`
-    flex: 1 1 100%;
+    flex: 1 1 20px;
 `;
 
 function urlSafeBase64(content: string) {
@@ -206,8 +207,12 @@ class AndroidConfig extends React.Component<{
             </p>
 
             <Spacer />
-            <QRCode
-                size={160}
+            <QRCodeSVG
+                // Delegate sizing to CSS:
+                height={""}
+                width={""}
+                // Minimum error correction - shouldn't really be required
+                level='L'
                 value={
                     `https://android.httptoolkit.tech/connect/?data=${serializedSetupParams}`
                 }
