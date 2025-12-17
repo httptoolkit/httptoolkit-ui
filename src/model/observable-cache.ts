@@ -24,6 +24,10 @@ export class ObservableCache<T extends {
         return this.#lazyInstData;
     }
 
+    has<K extends keyof T>(key: K): boolean {
+        return key in this.#data;
+    }
+
     get<K extends keyof T>(key: K): T[K] | undefined {
         return this.#data[key] as T[K] | undefined;
     }
