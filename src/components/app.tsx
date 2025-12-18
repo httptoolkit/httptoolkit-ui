@@ -30,8 +30,9 @@ import { ModifyPage } from './modify/modify-page';
 import { SendPage } from './send/send-page';
 import { SettingsPage } from './settings/settings-page';
 
-import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
+import { LoginModal } from './account/login-modal';
+import { PlanPicker } from './account/plan-picker';
 import { CheckoutSpinner } from './account/checkout-spinner';
 import { HtmlContextMenu } from './html-context-menu';
 import { DisconnectedWarning } from './disconnected-warning';
@@ -235,6 +236,13 @@ class App extends React.Component<{
             </AppContainer>
 
             { !!modal && <ModalOverlay /> }
+
+            {
+                modal === 'login' &&
+                    <LoginModal
+                        accountStore={this.props.accountStore}
+                    />
+            }
 
             { modal === 'pick-a-plan' &&
                 <PlanPicker

@@ -142,6 +142,7 @@ const RowMarker = styled(Column)`
     padding: 0;
 
     border-left: 5px solid ${p => p.theme.containerBackground};
+    box-sizing: content-box;
 `;
 
 const MarkerHeader = styled.div<{ role: 'columnheader' }>`

@@ -7,15 +7,10 @@ import { delay } from '../../util/promise';
 import { ObservablePromise, lazyObservablePromise, observablePromise } from '../../util/observable';
 
 import {
-    initializeAuthUi,
-    loginEvents,
-    showLoginDialog,
-    logOut,
-
     User,
     getLatestUserData,
     getLastUserData,
-    RefreshRejectedError,
+    logOut,
 
     SKU,
     SubscriptionPlans,
@@ -32,49 +27,13 @@ export class AccountStore {
     ) {}
 
     readonly initialized = lazyObservablePromise(async () => {
-        // All async auth-related errors at any stage (bad tokens, invalid subscription data,
-        // misc failures) will come through here, so we can log & debug later.
-        loginEvents.on('app_error', logError);
-
-        initializeAuthUi({
-            // Proper indefinitely persistent session via refreshable token please
-            refreshToken: true,
-
-            // Don't persist logins for auto-login later. That makes sense for apps you log into
-            // every day, but it's weird otherwise (e.g. after logout -> one-click login? Very odd).
-            rememberLastLogin: false
-        });
-
         this.subscriptionPlans = observablePromise(
             loadPlanPricesUntilSuccess()
         );
 
-        // Update account data automatically on login, logout & every 10 mins
-        loginEvents.on('authenticated', async (authResult) => {
-            // If a user logs in after picking a plan, they're going to go to the
-            // checkout imminently. The API has to query Paddle to build that checkout,
-            // so we ping here early to kick that process off ASAP:
-            const initialEmailResult = authResult?.idTokenPayload?.email;
-            if (initialEmailResult && this.selectedPlan) {
-                prepareCheckout(initialEmailResult, this.selectedPlan, 'app');
-            }
-
-            await this.updateUser();
-            loginEvents.emit('user_data_loaded');
-        });
-
-        loginEvents.on('authorization_error', (error) => {
-            if (error instanceof RefreshRejectedError) {
-                // If our refresh token ever becomes invalid (caused once by an Auth0 regression,
-                // or in general refresh tokens can be revoked), prompt for a fresh login.
-                logOut();
-                this.logIn();
-            }
-        });
-
+        // Update account data automatically initially & every 10 mins
         this.updateUser();
         setInterval(this.updateUser, 1000 * 60 * 10);
-        loginEvents.on('logout', this.updateUser);
 
         // Whenever account data updates, check if we're a non-user team admin, and notify (and
         // logout) if so. This isn't a security measure (admin's dont get access anyway) it's just
@@ -150,9 +109,6 @@ export class AccountStore {
     subscriptionPlans!: ObservablePromise<SubscriptionPlans>;
 
     @observable
-    modal: 'login' | 'pick-a-plan' | 'post-checkout' | undefined;
-
-    @observable
     private selectedPlan: SKU | undefined;
 
     @computed get isLoggedIn() {
@@ -219,6 +175,9 @@ export class AccountStore {
             (this.isStatusUnexpired || this.accountDataLastUpdated === 0);
     }
 
+    @observable
+    modal: 'login' | 'pick-a-plan' | 'post-checkout' | undefined;
+
     getPro = flow(function * (this: AccountStore, source: string) {
         try {
             trackEvent({ category: 'Account', action: 'Get Pro', value: source });
@@ -250,11 +209,11 @@ export class AccountStore {
     logIn = flow(function * (this: AccountStore) {
         let initialModal = this.modal;
         this.modal = 'login';
-
         trackEvent({ category: 'Account', action: 'Login' });
-        const loggedIn: boolean = yield showLoginDialog();
 
-        if (loggedIn) {
+        yield when(() => this.modal !== 'login');
+
+        if (this.isLoggedIn) {
             trackEvent({ category: 'Account', action: 'Login success' });
             if (this.userHasSubscription) {
                 trackEvent({ category: 'Account', action: 'Paid user login' });
@@ -269,12 +228,28 @@ export class AccountStore {
             this.modal = undefined;
         }
 
-        return loggedIn;
+        return this.isLoggedIn;
     }.bind(this));
+
+    @action.bound
+    cancelLogin() {
+        this.modal = undefined;
+    }
+
+    finalizeLogin = flow(function* (this: AccountStore, email: string) {
+        if (this.selectedPlan) {
+            // If the user logs in after selecting the plan, they're probably going to the checkout.
+            // Start aggressively preloading that now.
+            prepareCheckout(email, this.selectedPlan, 'app');
+        }
+        yield this.updateUser();
+        this.modal = undefined;
+    }).bind(this);
 
     @action.bound
     logOut() {
         logOut();
+        this.updateUser();
     }
 
     private pickPlan = flow(function * (this: AccountStore) {

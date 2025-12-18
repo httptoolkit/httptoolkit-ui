@@ -174,6 +174,7 @@ const RightArrowIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'arrow-left']
 }))`
     transform: rotate(180deg);
+    box-sizing: content-box;
     padding: 0 10px;
     align-self: start;
 }

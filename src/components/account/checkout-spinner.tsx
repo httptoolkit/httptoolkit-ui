@@ -14,7 +14,7 @@ export const CheckoutSpinner = styled((p: { className?: string, onCancel: () => 
         </p>
         <p>
             Have questions? Take a look at <a
-                href="https://httptoolkit.com/docs/guides/subscription-faq"
+                href="https://httptoolkit.com/docs/faq/payments/"
             >the FAQ</a> or email <strong>billing@httptoolkit.com</strong>.
         </p>
         <Icon
@@ -33,12 +33,14 @@ export const CheckoutSpinner = styled((p: { className?: string, onCancel: () => 
     }
 
     > p, > svg {
-        color: #fff;
+        color: ${p => p.theme.modalColor};
         margin: 20px auto;
     }
 
     a[href] {
-        color: #6e8ff4;
+        color: ${p => p.theme.modalColor};
+        font-weight: bold;
+        text-decoration: underline;
     }
 
     text-align: center;

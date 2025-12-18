@@ -203,6 +203,7 @@ const CollapsibleTrigger = styled((p: {
         color: ${p => p.theme.mainColor};
     }
 
+    box-sizing: content-box;
     padding: 5px 10px;
 
     ${p => p.withinGrid ? css`

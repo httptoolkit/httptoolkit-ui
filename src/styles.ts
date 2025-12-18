@@ -10,6 +10,7 @@ import "@fontsource/saira";
 import reset from 'styled-reset';
 
 const fontSizes = {
+    smallPrintSize: '12px',
     textInputFontSize: '13px',
     textSize: '14.5px',
     subHeadingSize: '17px',
@@ -54,6 +55,7 @@ export const lightTheme = {
     mainBackground: almostWhite,
     mainLowlightBackground: greyWhite,
     mainColor: inkGrey,
+    mainLowlightColor: darkishGrey,
 
     highlightBackground: white,
     highlightColor: inkGrey,
@@ -78,6 +80,7 @@ export const lightTheme = {
     inputWarningPlaceholder: '#8c5c1d', // Mix of warning + inkGrey
 
     popColor,
+    popOverlayColor: white,
 
     warningColor,
     warningBackground,
@@ -95,6 +98,7 @@ export const lightTheme = {
     monacoThemeOverrides: globalMonacoOverrides,
 
     modalGradient: 'radial-gradient(#40404b, #111118)',
+    modalColor: almostWhite,
 
     ...fontSizes,
 
@@ -109,6 +113,7 @@ export const darkTheme = {
     mainBackground: darkGrey,
     mainLowlightBackground: darkerGrey,
     mainColor: white,
+    mainLowlightColor: mediumGrey,
 
     highlightBackground: darkishGrey,
     highlightColor: white,
@@ -133,6 +138,7 @@ export const darkTheme = {
     inputWarningPlaceholder: '#e8b978', // Mix of warning + white
 
     popColor,
+    popOverlayColor: white,
 
     warningColor,
     warningBackground,
@@ -151,6 +157,7 @@ export const darkTheme = {
     },
 
     modalGradient: `radial-gradient(${white}, ${lightGrey})`,
+    modalColor: darkGrey,
 
     ...fontSizes,
 
@@ -185,6 +192,7 @@ export const highContrastTheme = {
     mainBackground: '#000000',
     mainLowlightBackground: '#262626',
     mainColor: '#ffffff',
+    mainLowlightColor: '#ffffff',
 
     highlightBackground: '#ffffff',
     highlightColor: '#000',
@@ -209,6 +217,7 @@ export const highContrastTheme = {
     inputWarningPlaceholder: '#e1b374', // Mix of warning + white
 
     popColor,
+    popOverlayColor: '#ffffff',
 
     warningColor,
     warningBackground,
@@ -225,6 +234,7 @@ export const highContrastTheme = {
     monacoThemeOverrides: globalMonacoOverrides,
 
     modalGradient: '#f0f0f0',
+    modalColor: black,
 
     ...fontSizes,
 
@@ -273,6 +283,10 @@ export {
 export const GlobalStyles = createGlobalStyle`
     ${reset};
 
+    * {
+        box-sizing: border-box;
+    }
+
     body {
         font-family: ${p => p.theme.fontFamily};
         color: ${p => p.theme.mainColor};
@@ -297,36 +311,6 @@ export const GlobalStyles = createGlobalStyle`
 
     .slow-spin {
         animation: fa-spin 5s infinite linear;
-    }
-
-    /* Override Auth0's style choices to match the rest of the UI */
-    .auth0-lock {
-        font-family: ${p => p.theme.fontFamily} !important;
-
-        .auth0-lock-overlay {
-            display: none; /* We have our own overlay we'll use instead */
-        }
-
-        .auth0-lock-widget {
-            box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha}) !important;
-            overflow: visible !important;
-        }
-
-        .auth0-lock-form {
-            .auth0-lock-name {
-                font-size: ${fontSizes.headingSize} !important;
-            }
-
-            p, .auth0-lock-social-button-text {
-                font-size: ${fontSizes.textSize} !important;
-            }
-        }
-
-        /* Override auth0 input to fix unreadable text in dark mode */
-        .auth0-lock-input {
-            background-color: rgba(255, 255, 255, 1) !important;
-            color: rgba(0, 0, 0, 1) !important;
-        }
     }
 
     /* Override some Monaco CSS internals */
