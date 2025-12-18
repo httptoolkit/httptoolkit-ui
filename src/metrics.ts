@@ -108,8 +108,7 @@ const normalizeUrl = (url: string) =>
     .replace(/\/modify\/[a-z0-9\-]+/, '/modify') // Strip modify rule ids
     .replace(/\?.*/, ''); // Strip any query & hash params
 
-const SINGLE_EVENT_CATEGORIES = ["Interceptors"];
-const seenLimitedEvents: string[] = [];
+const seenLimitedEvents = new Set<string>();
 
 export function trackEvent(event: {
     category: string,
@@ -118,15 +117,11 @@ export function trackEvent(event: {
 }) {
     if (!enabled) return;
 
-    if (SINGLE_EVENT_CATEGORIES.includes(event.category)) {
-        const eventKey = `${event.category}${event.action}${event.value}`;
-
-        // For events in these categories, we only want to log them once
-        // per session. No need to track more detail than that, good to
-        // avoid tracking unnecessary data where possible.
-        if (seenLimitedEvents.includes(eventKey)) return;
-        else seenLimitedEvents.push(eventKey);
-    }
+    // For each specific event, we only want to log it once per session. We want an outline of
+    // usage (which features are popular) not a detailed log of everything that happens.
+    const eventKey = `${event.category}${event.action}${event.value}`;
+    if (seenLimitedEvents.has(eventKey)) return;
+    seenLimitedEvents.add(eventKey);
 
     const currentUrl = normalizeUrl(location.href);
 
