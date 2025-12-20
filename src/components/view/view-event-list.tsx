@@ -103,6 +103,7 @@ const RowPin = styled(
     title: p.pinned ? "This exchange is pinned, and won't be deleted by default" : ''
 }))`
     font-size: 90%;
+    box-sizing: content-box;
     background-color: ${p => p.theme.containerBackground};
 
     /* Without this, 0 width pins create a large & invisible but still clickable icon */
