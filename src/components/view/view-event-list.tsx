@@ -507,6 +507,7 @@ const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
     title: 'Connected'
 }))`
     margin: 0 5px 0 0;
+    box-sizing: content-box;
 `;
 
 const RTCConnectionRow = observer(({

@@ -40,6 +40,10 @@ export const StatusCode = styled((props: {
         }
     </div>
 ))`
+    > svg {
+        box-sizing: content-box;
+    }
+
     font-weight: bold;
 
     display: flex;
