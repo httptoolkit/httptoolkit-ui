@@ -10,14 +10,17 @@ export const interactiveMouseoverStyles = css`
         cursor: pointer;
         &:hover {
             background-image: linear-gradient(transparent, rgba(0,0,0,.1) 40%, rgba(0,0,0,.2));
+            color: ${p => p.theme.mainColor};
         }
 
         &:active {
             background-image: linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.1) 40%, transparent);
+            color: ${p => p.theme.mainColor};
         }
 
         &:focus {
             outline-offset: -1px;
+            color: ${p => p.theme.mainColor};
         }
     }
 `;

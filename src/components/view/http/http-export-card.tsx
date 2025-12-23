@@ -99,7 +99,7 @@ const ExportSnippetEditor = observer((p: {
                     Find out more
                 </DocsLink>
                 <CopyButtonPill content={snippet}>
-                    {' '}Copy snippet
+                    Copy snippet
                 </CopyButtonPill>
             </SnippetDetailButtons>
         </SnippetDescriptionContainer>

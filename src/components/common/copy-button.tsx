@@ -3,7 +3,6 @@ import * as React from 'react';
 import { Icon } from "../../icons";
 import { styled } from '../../styles';
 
-import { clickOnEnter } from '../component-utils';
 import { PillButton } from './pill';
 import { IconButton } from './icon-button';
 import { copyToClipboard } from '../../util/ui';
@@ -62,7 +61,11 @@ export const CopyButtonIcon = (p: {
     />;
 }
 
-export const CopyButtonPill = (p: { content: string, children?: React.ReactNode }) => {
+export const CopyButtonPill = styled((p: {
+    content: string,
+    children: React.ReactNode,
+    className?: string
+}) => {
     const [success, showSuccess] = useTemporaryFlag();
 
     return <PillButton
@@ -71,6 +74,7 @@ export const CopyButtonPill = (p: { content: string, children?: React.ReactNode 
             copyToClipboard(p.content);
             showSuccess();
         }}
+        className={p.className}
     >
         <Icon
             icon={success ? ['fas', 'check'] : ['far', 'copy']}
@@ -78,4 +82,10 @@ export const CopyButtonPill = (p: { content: string, children?: React.ReactNode 
         />
         { p.children }
     </PillButton>;
-}
+})`
+    padding: 5px 6px;
+
+    > svg {
+        margin-right: 4px;
+    }
+`;

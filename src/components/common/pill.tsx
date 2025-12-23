@@ -46,6 +46,7 @@ export const PillButton = styled(UnstyledButton)`
     ${pillStyles}
     ${interactiveMouseoverStyles}
 
+    padding: 3.5px 8px;
     line-height: 1;
 
     &[disabled] {
