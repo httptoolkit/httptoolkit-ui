@@ -1,8 +1,106 @@
-import parseRawProto from 'rawprotoparse';
+/// <reference path="../../custom-typings/rawproto.d.ts" />
+import RawProto from 'rawproto';
 import { gunzipSync, inflateSync } from 'zlib';
 
 import { Headers } from '../types';
 import { getHeaderValue } from '../model/http/headers';
+
+/**
+ * Recursively converts a RawProto tree to a simple JS object.
+ * This mirrors the output format of the deprecated rawprotoparse package.
+ *
+ * The old rawprotoparse returned:
+ * - Single values directly: { "1": "Hello World" }
+ * - Nested messages as objects: { "1": { "2": "value" } }
+ * - Buffers for binary data
+ *
+ * @param protoNode - A RawProto node to convert
+ * @returns A plain JavaScript object with field numbers as keys
+ */
+function convertRawProtoToObject(protoNode: RawProto): Record<string, any> {
+    const result: Record<string, any> = {};
+
+    if (!protoNode.sub) {
+        return result;
+    }
+
+    for (const fieldNum of Object.keys(protoNode.sub)) {
+        const fields = protoNode.sub[fieldNum];
+
+        if (fields.length === 1) {
+            const field = fields[0];
+            
+            let handled = false;
+
+            // Try string first
+            if (field.likelyString !== undefined ? field.likelyString : false) {
+                try {
+                    const str = field.string;
+                    if (str !== undefined) {
+                        result[fieldNum] = str;
+                        handled = true;
+                    }
+                } catch (e) {}
+            }
+
+            if (handled) continue;
+
+            // Check if it's a sub-message (has its own sub fields)
+            if (field.sub && Object.keys(field.sub).length > 0) {
+                result[fieldNum] = convertRawProtoToObject(field);
+                continue;
+            }
+
+            // Try int for varint types
+            try {
+                const num = field.int;
+                if (num !== undefined && typeof num === 'number' && Number.isSafeInteger(num)) {
+                    result[fieldNum] = num;
+                    continue;
+                }
+            } catch (e) {}
+
+            // Fall back to bytes
+            try {
+                const bytes = field.bytes;
+                if (bytes !== undefined) {
+                    result[fieldNum] = Buffer.from(bytes);
+                    continue;
+                }
+            } catch (e) {}
+
+            result[fieldNum] = null;
+        } else {
+            // Multiple values - create an array
+            result[fieldNum] = fields.map((field: any) => {
+                if (field.likelyString !== undefined ? field.likelyString : false) {
+                    try {
+                        const str = field.string;
+                        if (str !== undefined) return str;
+                    } catch (e) {}
+                }
+
+                if (field.sub && Object.keys(field.sub).length > 0) {
+                    return convertRawProtoToObject(field);
+                }
+
+                try {
+                    const num = field.int;
+                    if (num !== undefined && typeof num === 'number' && Number.isSafeInteger(num)) return num;
+                } catch (e) {}
+
+                try {
+                    const bytes = field.bytes;
+                    if (bytes !== undefined) return Buffer.from(bytes);
+                } catch (e) {}
+
+                return null;
+            });
+        }
+    }
+
+    return result;
+}
 
 export function isProbablyProtobuf(input: Uint8Array) {
     // Protobuf data starts with a varint, consisting of a
@@ -36,7 +134,22 @@ export function isProbablyProtobuf(input: Uint8Array) {
         [0, 1, 2, 5].includes(fieldType);
 }
 
-export const parseRawProtobuf = parseRawProto;
+/**
+ * Parse raw protobuf binary data into a JavaScript object.
+ * This is a wrapper around rawproto that maintains backward compatibility
+ * with the old rawprotoparse API.
+ *
+ * @param input - The protobuf binary data to parse
+ * @param _options - Options object (for backward compatibility, currently unused)
+ * @returns Parsed protobuf data as a JavaScript object
+ */
+export function parseRawProtobuf(
+    input: Uint8Array | Buffer,
+    _options?: { prefix?: string }
+): any {
+    const rawProto = new RawProto(input);
+    return convertRawProtoToObject(rawProto);
+}
 
 // GRPC message structure:
 // Ref: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
