@@ -102,7 +102,7 @@
     "jsonc-parser": "^3.3.1",
     "jsonwebtoken": "^8.4.0",
     "localforage": "^1.7.3",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "mobx": "^5.15.0",
     "mobx-persist": "^0.4.1",
     "mobx-react": "^5.4.0",
