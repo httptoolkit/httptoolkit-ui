@@ -1036,6 +1036,9 @@ export function getWebSocketCloseCodeDocs(closeCode: string | number | undefined
     return WEBSOCKET_CLOSE_CODES[closeCode.toString()];
 }
 
+export const METHOD_NAMES = (Object.values(METHODS) as MdnDocsData[])
+    .map(({ name }) => name.toUpperCase());
+
 export function getMethodDocs(methodName: string) {
     return getDocs(METHODS, methodName.toLowerCase());
 }

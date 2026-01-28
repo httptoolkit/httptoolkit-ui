@@ -21,13 +21,6 @@ export type ApiSpec =
 
 export interface ApiExchange {
 
-    /**
-     * Built-in API specs are special: they're shown for free users too, and they're
-     * shown differently in the list (highlighting the operation, not the normal
-     * lower-level HTTP details).
-     */
-    readonly isBuiltInApi: boolean;
-
     readonly service: ApiService;
     readonly operation: ApiOperation;
     readonly request: ApiRequest;

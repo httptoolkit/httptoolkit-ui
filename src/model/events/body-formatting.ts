@@ -9,10 +9,11 @@ import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
 import { ReadOnlyParams } from '../../components/common/editable-params';
 import { ImageViewer } from '../../components/editor/image-viewer';
+import { formatJson } from '../../util/json';
 
 export interface EditorFormatter {
     language: string;
-    cacheKey: Symbol;
+    cacheKey: symbol;
     isEditApplicable: boolean; // Can you apply this manually during editing to format an input?
     render(content: Buffer, headers?: Headers): string | ObservablePromise<string>;
 }
@@ -106,23 +107,25 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
         render: (input: Buffer, headers?: Headers) => {
             if (input.byteLength < 10_000) {
                 const inputAsString = bufferToString(input);
-
-                try {
-                    // For short-ish inputs, we return synchronously - conveniently this avoids
-                    // showing the loading spinner that churns the layout in short content cases.
-                    return JSON.stringify(
-                        JSON.parse(inputAsString),
-                        null,
-                        2
-                    );
-                    // ^ Same logic as in UI-worker-formatter
-                } catch (e) {
-                    // Fallback to showing the raw un-formatted JSON:
-                    return inputAsString;
-                }
+                return formatJson(inputAsString, { formatRecords: false });
             } else {
                 return observablePromise(
                     formatBufferAsync(input, 'json', headers)
+                );
+            }
+        }
+    },
+    'json-records': {
+        language: 'json-records',
+        cacheKey: Symbol('json-records'),
+        isEditApplicable: false,
+        render: (input: Buffer, headers?: Headers) => {
+            if (input.byteLength < 10_000) {
+                const inputAsString = bufferToString(input);
+                return formatJson(inputAsString, { formatRecords: true });
+            } else {
+                return observablePromise(
+                    formatBufferAsync(input, 'json-records', headers)
                 );
             }
         }

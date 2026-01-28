@@ -7,7 +7,7 @@ import { BreakpointResponseResult, HttpExchange, RawHeaders } from '../../../typ
 import { styled, Theme } from '../../../styles';
 
 import { getStatusColor } from '../../../model/events/categorization';
-import { withHeaderValue } from '../../../util/headers';
+import { withHeaderValue } from '../../../model/http/headers';
 
 import {
     CollapsibleCardHeading,
@@ -81,7 +81,7 @@ export class HttpBreakpointResponseCard extends React.Component<ResponseBreakpoi
 
     @action.bound
     onStatusChange(statusCode: number | undefined, statusMessage: string | undefined) {
-        if (this.props.exchange.httpVersion === 2) {
+        if (this.props.exchange.httpVersion >= 2) {
             const { rawHeaders } = this.props.exchange.responseBreakpoint!.inProgressResult;
             this.props.onChange({
                 statusCode: statusCode || NaN,

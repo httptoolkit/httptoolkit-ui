@@ -19,18 +19,16 @@ import { getMethodColor, getSummaryColor } from '../../model/events/categorizati
 import {
     HtkRule,
     Matcher,
-    Handler,
-    AvailableHandler,
-    isPaidHandler,
+    Step,
+    AvailableStep,
+    isPaidStep,
     InitialMatcher,
     getRuleTypeFromInitialMatcher,
-    isCompatibleHandler,
+    isCompatibleStep,
     getAvailableAdditionalMatchers,
-    getAvailableHandlers,
+    getAvailableSteps,
     RuleType,
-    HandlerStep,
-    isFinalHandler,
-    isStepPoweredRule,
+    isFinalStep,
     RulePriority,
     isHttpBasedRule
 } from '../../model/rules/rules';
@@ -41,7 +39,7 @@ import {
 } from '../../model/rules/rule-creation';
 import {
     summarizeMatcher,
-    summarizeHandler
+    summarizeSteps
 } from '../../model/rules/rule-descriptions';
 import { AccountStore } from '../../model/account/account-store';
 
@@ -53,8 +51,8 @@ import {
     ExistingMatcherRow,
     NewMatcherRow
 } from './matcher-selection';
-import { HandlerSelector } from './handler-selection';
-import { HandlerConfiguration } from './handler-config';
+import { StepSelector } from './step-selection';
+import { StepConfiguration } from './step-config';
 import { DragHandle } from './rule-drag-handle';
 import { IconMenu, IconMenuButton } from './rule-icon-menu';
 import { RuleTitle, EditableRuleTitle } from './rule-title';
@@ -151,7 +149,7 @@ export const AddRuleRow = styled((p: {
     box-shadow: 0 0 4px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
-const MatcherOrHandler = styled.section`
+const MatcherOrSteps = styled.section`
     align-self: stretch;
     flex-grow: 1;
     flex-basis: 0;
@@ -172,11 +170,22 @@ const Summary = styled.h1`
     margin: -5px;
 `;
 
-const ArrowIcon = styled(Icon).attrs(() => ({
+const RightArrowIcon = styled(Icon).attrs(() => ({
     icon: ['fas', 'arrow-left']
 }))`
     transform: rotate(180deg);
-    padding: 0 15px;
+    box-sizing: content-box;
+    padding: 0 10px;
+    align-self: start;
+}
+`;
+
+const NextStepArrowIcon = styled(Icon).attrs(() => ({
+    icon: ['fas', 'arrow-left'],
+    title: "Then..."
+}))`
+    margin: 10px auto;
+    transform: rotate(270deg);
 `;
 
 const Details = styled.div`
@@ -308,7 +317,7 @@ export class RuleRow extends React.Component<{
     deleteRule: (path: ItemPath) => void;
     cloneRule: (path: ItemPath) => void;
 
-    getRuleDefaultHandler: (type: RuleType) => Handler;
+    getRuleDefaultStep: (type: RuleType) => Step;
 }> {
 
     initialMatcherSelect = React.createRef<HTMLSelectElement>();
@@ -357,11 +366,7 @@ export class RuleRow extends React.Component<{
         }
 
         const availableMatchers = getAvailableAdditionalMatchers(ruleType);
-        const availableHandlers = getAvailableHandlers(ruleType, initialMatcher);
-
-        const ruleHandlers = 'handler' in rule
-            ? [rule.handler]
-            : rule.steps;
+        const availableSteps = getAvailableSteps(ruleType, initialMatcher);
 
         // We show the summary by default, but if you set a custom title, we only show it when expanded:
         const shouldShowSummary = !collapsed || (!rule.title && !this.titleEditState);
@@ -439,7 +444,7 @@ export class RuleRow extends React.Component<{
                     />
                 }
 
-                <MatcherOrHandler>
+                <MatcherOrSteps>
                     { shouldShowSummary &&
                         <Summary collapsed={collapsed} title={summarizeMatcher(rule)}>
                             { !shouldShowCustomTitle &&
@@ -483,17 +488,17 @@ export class RuleRow extends React.Component<{
                             </ul>
                         </Details>
                     }
-                </MatcherOrHandler>
+                </MatcherOrSteps>
 
 
                 { shouldShowSummary &&
-                    <ArrowIcon />
+                    <RightArrowIcon />
                 }
 
-                <MatcherOrHandler>
+                <MatcherOrSteps>
                     { shouldShowSummary &&
-                        <Summary collapsed={collapsed} title={ summarizeHandler(rule) }>
-                            { summarizeHandler(rule) }
+                        <Summary collapsed={collapsed} title={ summarizeSteps(rule) }>
+                            { summarizeSteps(rule) }
                         </Summary>
                     }
 
@@ -501,23 +506,26 @@ export class RuleRow extends React.Component<{
                         !collapsed && <Details>
                             <DetailsHeader>Then:</DetailsHeader>
 
-                            { ruleHandlers.map((ruleHandler, i) =>
-                                <HandlerStepSection
+                            { rule.steps.map((step, i) => <>
+                                { i > 0 &&
+                                    <NextStepArrowIcon key={`then-${i}`} />
+                                }
+                                <StepSection
                                     key={i}
 
-                                    handler={ruleHandler}
-                                    handlerIndex={i}
+                                    step={step}
+                                    stepIndex={i}
 
                                     isPaidUser={isPaidUser}
                                     getPro={getPro}
                                     ruleType={ruleType}
-                                    availableHandlers={availableHandlers}
-                                    updateHandler={this.updateHandler}
+                                    availableSteps={availableSteps}
+                                    updateStep={this.updateStep}
                                 />
-                            )}
+                            </>)}
                         </Details>
                     }
-                </MatcherOrHandler>
+                </MatcherOrSteps>
             </RowContainer>
         }</Observer>}</Draggable>;
     }
@@ -577,20 +585,12 @@ export class RuleRow extends React.Component<{
             ) as any[];
         }
 
-        // Reset the rule handler/steps, if incompatible:
-        const handlerResetRequired = 'handler' in this.props.rule
-            ? !isCompatibleHandler(this.props.rule.handler, matcher)
-            : !this.props.rule.steps.every(step => isCompatibleHandler(step, matcher));
+        // Reset the rule steps, if incompatible:
+        const stepResetRequired = !(this.props.rule.steps as Step[]).every(step => isCompatibleStep(step, matcher));
 
-        if (handlerResetRequired) {
-            const newHandler = this.props.getRuleDefaultHandler(newRuleType);
-            if (isStepPoweredRule(this.props.rule)) {
-                (this.props.rule as { steps: HandlerStep[] }).steps = [newHandler as HandlerStep];
-                delete (this.props.rule as any).handler;
-            } else {
-                (this.props.rule as { handler: Handler }).handler = newHandler;
-                delete (this.props.rule as any).steps;
-            }
+        if (stepResetRequired) {
+            const newStep = this.props.getRuleDefaultStep(newRuleType);
+            (this.props.rule as { steps: Step[] }).steps = [newStep as Step];
         }
 
         updateRuleAfterInitialMatcherChange(this.props.rule);
@@ -618,27 +618,20 @@ export class RuleRow extends React.Component<{
     }
 
     @action.bound
-    updateHandler(handlerIndex: number, handler: Handler) {
+    updateStep(stepIndex: number, step: Step) {
         // TS struggles with complex union types here, so we cast more generally:
-        const rule = this.props.rule as
-            | { handler: Handler }
-            | { steps: HandlerStep[] };
+        const rule = this.props.rule as { steps: Step[] };
 
-        if ('handler' in rule) {
-            if (handlerIndex !== 0) throw new Error('Single-handler rules cannot have additional steps');
-            rule.handler = handler;
+        rule.steps[stepIndex] = step;
+
+        if (isFinalStep(step)) {
+            // If this is final, slice off anything after this step, it's all invalid
+            rule.steps = rule.steps.slice(0, stepIndex + 1);
         } else {
-            rule.steps[handlerIndex] = handler as HandlerStep;
-
-            if (isFinalHandler(handler)) {
-                // If this is final, slice off anything after this step, it's all invalid
-                rule.steps = rule.steps.slice(0, handlerIndex + 1);
-            } else {
-                // If at any point you change the last step to be a non-final step, we append a default
-                // (must be final) step to allow continuing the rule:
-                if (handlerIndex === rule.steps.length - 1) {
-                    rule.steps.push(this.props.getRuleDefaultHandler(this.props.rule.type) as HandlerStep);
-                }
+            // If at any point you change the last step to be a non-final step, we append a default
+            // (must be final) step to allow continuing the rule:
+            if (stepIndex === rule.steps.length - 1) {
+                rule.steps.push(this.props.getRuleDefaultStep(this.props.rule.type));
             }
         }
     }
@@ -679,25 +672,25 @@ export class RuleRow extends React.Component<{
 }
 
 @observer
-class HandlerStepSection extends React.Component<{
+class StepSection extends React.Component<{
     isPaidUser: boolean;
     getPro: (source: string) => void;
     ruleType: RuleType;
-    handlerIndex: number;
-    handler: Handler;
+    stepIndex: number;
+    step: Step;
 
-    availableHandlers: AvailableHandler[];
-    updateHandler: (handlerIndex: number, handler: Handler) => void;
+    availableSteps: AvailableStep[];
+    updateStep: (stepIndex: number, step: Step) => void;
 }> {
 
     @observable
-    private demoHandler: Handler | undefined;
+    private demoStep: Step | undefined;
 
     componentDidMount() {
-        // If the actual handler ever changes, dump our demo handler state:
+        // If the actual step ever changes, dump our demo step state:
         disposeOnUnmount(this, reaction(
-            () => this.props.handler,
-            () => { this.demoHandler = undefined; }
+            () => this.props.step,
+            () => { this.demoStep = undefined; }
         ));
     }
 
@@ -706,54 +699,54 @@ class HandlerStepSection extends React.Component<{
             isPaidUser,
             getPro,
             ruleType,
-            availableHandlers,
-            handler,
-            handlerIndex
+            availableSteps,
+            step: step,
+            stepIndex: stepIndex
         } = this.props;
 
-        const shownHandler = this.demoHandler ?? handler;
+        const shownStep = this.demoStep ?? step;
 
-        const isHandlerDemo = !isPaidUser &&
-            shownHandler &&
-            isPaidHandler(ruleType, shownHandler);
+        const isStepDemo = !isPaidUser &&
+            shownStep &&
+            isPaidStep(ruleType, shownStep);
 
         return <>
-            <HandlerSelector
-                value={shownHandler}
+            <StepSelector
+                value={shownStep}
                 ruleType={ruleType}
-                onChange={this.updateHandler}
-                availableHandlers={availableHandlers}
-                handlerIndex={handlerIndex}
+                onChange={this.updateStep}
+                availableSteps={availableSteps}
+                stepIndex={stepIndex}
             />
 
-            { isHandlerDemo
-                // If you select a paid handler with an unpaid account,
-                // show a handler demo with a 'Get Pro' overlay:
-                ? <GetProOverlay getPro={getPro} source={`rule-${handler.type}`}>
-                    <HandlerConfiguration
+            { isStepDemo
+                // If you select a paid step with an unpaid account,
+                // show a step demo with a 'Get Pro' overlay:
+                ? <GetProOverlay getPro={getPro} source={`rule-${step.type}`}>
+                    <StepConfiguration
                         ruleType={ruleType}
-                        handler={shownHandler}
+                        step={shownStep}
                         onChange={_.noop}
                     />
                 </GetProOverlay>
-                : <HandlerConfiguration
+                : <StepConfiguration
                     ruleType={ruleType}
-                    handler={shownHandler}
-                    onChange={this.updateHandler}
+                    step={shownStep}
+                    onChange={this.updateStep}
                 />
             }
         </>;
     }
 
     @action.bound
-    updateHandler(handler: Handler) {
-        const { isPaidUser, handlerIndex, ruleType, updateHandler } = this.props;
+    updateStep(step: Step) {
+        const { isPaidUser, stepIndex: stepIndex, ruleType, updateStep } = this.props;
 
-        // You can never update a paid handler if you're not a paid user
-        if (!isPaidUser && isPaidHandler(ruleType, handler)) {
-            this.demoHandler = handler;
+        // You can never update a paid step if you're not a paid user
+        if (!isPaidUser && isPaidStep(ruleType, step)) {
+            this.demoStep = step;
         } else {
-            updateHandler(handlerIndex, handler);
+            updateStep(stepIndex, step);
         }
     }
 

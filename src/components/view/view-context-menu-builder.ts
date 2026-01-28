@@ -1,13 +1,13 @@
 import * as _ from 'lodash';
 import { runInAction } from 'mobx';
 
-import { CollectedEvent, WebSocketStream } from '../../types';
+import { CollectedEvent, HttpExchangeView, WebSocketStream } from '../../types';
 
 import { copyToClipboard } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui/ui-store';
-import { HttpExchange } from '../../model/http/exchange';
+import { HttpExchange } from '../../model/http/http-exchange';
 import {
     exportHar,
     generateCodeSnippet,
@@ -26,8 +26,8 @@ export class ViewEventContextMenuBuilder {
 
         private onPin: (event: CollectedEvent) => void,
         private onDelete: (event: CollectedEvent) => void,
-        private onBuildRuleFromExchange: (exchange: HttpExchange) => void,
-        private onPrepareToResendRequest?: (exchange: HttpExchange) => void
+        private onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
+        private onPrepareToResendRequest?: (exchange: HttpExchangeView) => void
     ) {}
 
     private readonly BaseOptions = {
@@ -57,7 +57,7 @@ export class ViewEventContextMenuBuilder {
                     {
                         type: 'option',
                         label: 'Copy Request URL',
-                        callback: (data: HttpExchange) => copyToClipboard(data.request.url)
+                        callback: (data: HttpExchangeView) => copyToClipboard(data.request.url)
                     },
                     ...(!isPaidUser ? [
                         { type: 'separator' },
@@ -68,7 +68,7 @@ export class ViewEventContextMenuBuilder {
                             type: 'option',
                             enabled: isPaidUser,
                             label: 'Resend Request',
-                            callback: (data: HttpExchange) => this.onPrepareToResendRequest!(data)
+                            callback: (data: HttpExchangeView) => this.onPrepareToResendRequest!(data)
                         }
                     ] as const : []),
                     {

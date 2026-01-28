@@ -117,7 +117,4 @@ export class RTCMediaTrack extends HTKEventBase {
         this.stats.length = 0;
     }
 
-    @observable
-    public pinned: boolean = false;
-
 }

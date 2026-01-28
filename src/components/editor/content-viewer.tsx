@@ -10,10 +10,11 @@ import { styled } from '../../styles';
 import { ObservablePromise, isObservablePromise } from '../../util/observable';
 import { asError, unreachableCheck } from '../../util/error';
 import { stringToBuffer } from '../../util/buffer';
-import { getHeaderValue } from '../../util/headers';
+import { getHeaderValue } from '../../model/http/headers';
 
 import { ViewableContentType } from '../../model/events/content-types';
 import { Formatters, isEditorFormatter } from '../../model/events/body-formatting';
+import { ObservableCache } from '../../model/observable-cache';
 
 import { ContainerSizedEditor, SelfSizedEditor } from './base-editor';
 import { LoadingCardContent } from '../common/loading-card';
@@ -24,10 +25,11 @@ interface ContentViewerProps {
     children: Buffer | string;
     schema?: SchemaObject;
     expanded: boolean;
+    maxHeight?: string;
     headers?: Headers;
     contentType: ViewableContentType;
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor | typeof ContainerSizedEditor>;
-    cache: Map<Symbol, unknown>;
+    cache: ObservableCache;
 
     // See BaseEditor.props.contentid
     contentId: string | null;
@@ -140,11 +142,16 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
 
         const { cache } = this.props;
         const cacheKey = this.formatter.cacheKey;
-        const cachedValue = cache.get(cacheKey) as ObservablePromise<string> | string | undefined;
+        const hasCachedValue = cache.has(cacheKey);
 
-        const renderingContent = cachedValue ||
-            this.formatter.render(this.contentBuffer, this.props.headers) as ObservablePromise<string> | string;
-        if (!cachedValue) cache.set(cacheKey, renderingContent);
+        let renderingContent: string | ObservablePromise<string>;
+        if (hasCachedValue) {
+            const cachedValue = cache.get(cacheKey) as ObservablePromise<string> | string;
+            renderingContent = cachedValue;
+        } else {
+            renderingContent = this.formatter.render(this.contentBuffer, this.props.headers) as ObservablePromise<string> | string;
+            cache.set(cacheKey, renderingContent);
+        }
 
         if (typeof renderingContent === 'string') {
             return renderingContent;
@@ -178,6 +185,7 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
                         value={content!}
                         schema={this.props.schema}
                         expanded={this.props.expanded}
+                        maxHeight={this.props.maxHeight}
                     />;
                 }
             } catch (e) {

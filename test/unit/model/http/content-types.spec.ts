@@ -100,37 +100,82 @@ describe('Content type parsing', () => {
     describe('getCompatibleTypes', () => {
         it('should detect standard base64 text', () => {
             const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('FWTkm2+ZvMo=', 'ascii'));
-            expect(cts).to.deep.equal(['text', 'base64', 'raw']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'text',
+                availableContentTypes: ['text', 'base64', 'raw']
+            });
         });
 
         it('should detect URL-safe (without padding) base64 text', () => {
             const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('FWTkm2-ZvMo', 'ascii'));
-            expect(cts).to.deep.equal(['text', 'base64', 'raw']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'text',
+                availableContentTypes: ['text', 'base64', 'raw']
+            });
         });
 
         it('should work even if first character is not ASCII', () => {
             const cts = getCompatibleTypes('raw', 'application/octet-stream', Buffer.from('1f8d08', 'hex')); // GZIP magic bytes
-            expect(cts).to.deep.equal(['raw', 'text']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'raw',
+                availableContentTypes: ['raw', 'text']
+            });
         });
 
         it('should flag application/grpc as compatible with [grpc-proto,text,raw]', () => {
             const cts = getCompatibleTypes('grpc-proto', 'application/grpc', undefined);
-            expect(cts).to.deep.equal(['grpc-proto', 'text', 'raw']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'grpc-proto',
+                availableContentTypes: ['grpc-proto', 'text', 'raw']
+            });
         });
 
         it('should flag application/grpc+proto as compatible with [grpc-proto,text,raw]', () => {
             const cts = getCompatibleTypes('grpc-proto', 'application/grpc+proto', undefined);
-            expect(cts).to.deep.equal(['grpc-proto', 'text', 'raw']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'grpc-proto',
+                availableContentTypes: ['grpc-proto', 'text', 'raw']
+            });
         });
 
         it('should flag application/grpc+json as compatible with [grpc-proto,text,raw]', () => {
             const cts = getCompatibleTypes('json', 'application/grpc+json', undefined);
-            expect(cts).to.deep.equal(['json', 'text', 'raw']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'json',
+                availableContentTypes: ['json', 'text', 'raw']
+            });
         });
 
-        it('should detect undeclared grpc+proto', () => {
+        it('should detect & override default for undeclared grpc+proto', () => {
             const cts = getCompatibleTypes('raw', 'application/octet-stream', Buffer.from('AAAAAAIIAQ==', 'base64'));
-            expect(cts).to.deep.equal(['raw', 'grpc-proto', 'text']);
+            expect(cts).to.deep.equal({
+                preferredContentType: 'grpc-proto',
+                availableContentTypes: ['raw', 'grpc-proto', 'text']
+            });
+        });
+
+        it('should detect & override default for undeclared XML', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('<hello></hello', 'ascii'));
+            expect(cts).to.deep.equal({
+                preferredContentType: 'xml',
+                availableContentTypes: ['text', 'xml', 'html', 'raw']
+            });
+        });
+
+        it('should detect & override default for undeclared JSON', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('{"hello": "world"}', 'ascii'));
+            expect(cts).to.deep.equal({
+                preferredContentType: 'json',
+                availableContentTypes: ['text', 'json', 'raw']
+            });
+        });
+
+        it('should detect & override default for undeclared JSON records', () => {
+            const cts = getCompatibleTypes('text', 'text/plain', Buffer.from('{"hello": "world"}\n[]\n', 'ascii'));
+            expect(cts).to.deep.equal({
+                preferredContentType: 'json-records',
+                availableContentTypes: ['text', 'json-records', 'raw']
+            });
         });
     });
 });

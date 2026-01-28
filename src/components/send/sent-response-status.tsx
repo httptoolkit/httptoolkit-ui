@@ -9,7 +9,7 @@ import { getReadableSize } from '../../util/buffer';
 
 import { getStatusColor } from '../../model/events/categorization';
 import { getStatusMessage } from '../../model/http/http-docs';
-import { CompletedExchange, SuccessfulExchange } from '../../model/http/exchange';
+import { CompletedExchange, SuccessfulExchange } from '../../model/http/http-exchange-views';
 import { ErrorType } from '../../model/http/error-types';
 
 import { SendCardSection } from './send-card-section';
@@ -63,7 +63,7 @@ export const ResponseStatusSection = (props: {
             </Pill>
             <DurationPill timingEvents={props.exchange.timingEvents} />
             <Pill title="The size of the raw encoded response body">
-                { getReadableSize(response.body.encoded.byteLength) }
+                { getReadableSize(response.body.encodedByteLength) }
             </Pill>
             { props.showRequestOnViewPage &&
                 <ShowRequestButton onClick={props.showRequestOnViewPage} />

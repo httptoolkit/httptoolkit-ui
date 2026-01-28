@@ -16,7 +16,8 @@ import {
     InitialMatcher,
     InitialMatcherClass,
     getInitialMatchers,
-    getRuleTypeFromInitialMatcher
+    getRuleTypeFromInitialMatcher,
+    StableRuleTypes
 } from '../../model/rules/rules';
 import {
     summarizeMatcherClass
@@ -74,8 +75,8 @@ export const InitialMatcherRow = React.forwardRef((p: {
 }, ref: React.Ref<HTMLSelectElement>) => {
     const availableInitialMatchers = getInitialMatchers();
 
-    const [httpMatchers, otherMatchers] = _.partition(availableInitialMatchers, m =>
-        getRuleTypeFromInitialMatcher(getMatcherKey(m)!) === 'http'
+    const [stableMatchers, experimentalMatchers] = _.partition(availableInitialMatchers, m =>
+        StableRuleTypes.includes(getRuleTypeFromInitialMatcher(getMatcherKey(m)!))
     );
 
     return <MatcherRow>
@@ -98,11 +99,11 @@ export const InitialMatcherRow = React.forwardRef((p: {
                     </option>
                 }
 
-                <MatcherOptions matchers={httpMatchers} />
+                <MatcherOptions matchers={stableMatchers} />
 
-                { otherMatchers.length > 0 &&
+                { experimentalMatchers.length > 0 &&
                     <optgroup label='Experimental'>
-                        <MatcherOptions matchers={otherMatchers} />
+                        <MatcherOptions matchers={experimentalMatchers} />
                     </optgroup>
                 }
             </Select>

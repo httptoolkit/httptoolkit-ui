@@ -5,6 +5,7 @@
 
 import { action, observable, computed } from "mobx";
 import { SelectedRTCCandidate } from "mockrtc";
+
 import {
     InputRTCPeerConnected,
     InputRTCExternalPeerAttached,
@@ -13,6 +14,7 @@ import {
 } from "../../types";
 import { HTKEventBase } from "../events/event-base";
 import { parseSource } from "../http/sources";
+import { ObservableCache } from "../observable-cache";
 
 const candidateToUrl = (candidate: SelectedRTCCandidate) =>
     `${candidate.protocol}://${candidate.address}:${candidate.port}`;
@@ -145,5 +147,7 @@ export class RTCConnection extends HTKEventBase {
     get closeState() {
         return this.closeData;
     }
+
+    readonly cache = new ObservableCache();
 
 }

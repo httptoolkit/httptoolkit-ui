@@ -1,3 +1,5 @@
+import { desktopVersion } from "./service-versions";
+
 type DesktopInjectedKey =
     | 'httpToolkitDesktopVersion'
     | 'httpToolkitForwardingDefault';
@@ -41,9 +43,17 @@ interface DesktopApi {
 
     selectApplication?: () => Promise<string | undefined>;
     selectFilePath?: () => Promise<string | undefined>;
+    selectSaveFilePath?: () => Promise<string | undefined>;
 
     openContextMenu?: (options: NativeContextMenuDefinition) => Promise<string | undefined>;
     restartApp?: () => Promise<void>;
+
+    /**
+     * Given a file object, returns its path. If the path isn't available (e.g. file
+     * object constructed, not selected) then this returns null. If file isn't a
+     * File at all, it throws.
+     */
+    getPathForFile?: (file: File) => string | null;
 }
 
 interface NativeContextMenuDefinition {
@@ -79,3 +89,23 @@ const global = typeof globalThis !== 'undefined'
     : {} as Window;
 
 export const DesktopApi: DesktopApi = global.desktopApi ?? {};
+
+export function canRestartApp(): boolean {
+    return window.desktopApi?.restartApp !== undefined ||
+        (desktopVersion.state === 'fulfilled' && !navigator.platform?.startsWith('Mac'));
+}
+
+export function restartApp(): void {
+    if (DesktopApi.restartApp) {
+        // Where possible (recent desktop release) we restart the whole app directly
+        DesktopApi.restartApp();
+    } else if (desktopVersion.state === 'fulfilled' && !navigator.platform?.startsWith('Mac')) {
+        // If not, on Windows & Linux desktop we just close the window to kill this process
+        window.close();
+    } else {
+        // On Mac, app exit is independent from window exit, so  on older desktop versions we can't
+        // force a restart here, but hopefully this will lead the user to do so themselves:
+        alert("Please fully quit the application to restart all internal components.");
+        window.close();
+    }
+}

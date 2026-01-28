@@ -6,7 +6,7 @@ import * as serializr from 'serializr';
 import { hasSerializrSchema, serializeAsTag } from '../serialization';
 
 import { RulesStore } from './rules-store';
-import { HtkRule, MatcherLookup, HandlerLookup, getRulePartKey } from './rules';
+import { HtkRule, MatcherLookup, StepLookup, getRulePartKey, Step } from './rules';
 import {
     HtkRuleItem,
     HtkRuleRoot,
@@ -40,7 +40,7 @@ const RuleSerializer = serializr.custom(
     (rule: HtkRule): HtkRule => {
         const data = _.cloneDeep(toJS(rule));
 
-        // Allow matchers & handlers to override default serialization using serializr
+        // Allow matchers & steps to override default serialization using serializr
         data.matchers = data.matchers.map((matcher) => {
             if (hasSerializrSchema(matcher)) {
                 return serializr.serialize(matcher);
@@ -49,27 +49,21 @@ const RuleSerializer = serializr.custom(
             }
         });
 
-        if ('steps' in data) {
-            data.steps = data.steps.map((step) => {
-                if (hasSerializrSchema(step)) {
-                    return serializr.serialize(step);
-                } else {
-                    return step;
-                }
-            });
-        } else {
-            if (hasSerializrSchema(data.handler)) {
-                data.handler = serializr.serialize(data.handler);
+        data.steps = data.steps.map((step) => {
+            if (hasSerializrSchema(step)) {
+                return serializr.serialize(step);
+            } else {
+                return step;
             }
+        });
 
-            if ('completionChecker' in data && hasSerializrSchema(data.completionChecker)) {
-                data.completionChecker = serializr.serialize(data.completionChecker);
-            }
+        if ('completionChecker' in data && hasSerializrSchema(data.completionChecker)) {
+            data.completionChecker = serializr.serialize(data.completionChecker);
         }
 
         return data;
     },
-    (data: HtkRule, context: { args: DeserializationArgs }) => {
+    (data: HtkRule & { handler?: Step }, context: { args: DeserializationArgs }) => {
         return {
             id: data.id,
             type: data.type,
@@ -79,12 +73,12 @@ const RuleSerializer = serializr.custom(
             matchers: data.matchers.map((m) =>
                 deserializeByType(m, MatcherLookup, context.args)
             ),
-            ...('steps' in data
-                ? {
-                    steps: data.steps.map((s) => deserializeByType(s, HandlerLookup, context.args))
+            ...(!!data.handler
+                ? { // Fallback for old 'handler' exports from before Mockttp v4:
+                    steps: [deserializeByType(data.handler, StepLookup, context.args)]
                 }
                 : {
-                    handler: deserializeByType(data.handler, HandlerLookup, context.args),
+                    steps: data.steps.map((s) => deserializeByType(s, StepLookup, context.args))
                 }
             ),
             completionChecker: 'completionChecker' in data &&

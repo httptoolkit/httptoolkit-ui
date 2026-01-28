@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Headers, RawHeaders } from '../types';
+import { Headers, RawHeaders } from '../../types';
 
 export {
     h2HeadersToH1
@@ -40,6 +40,9 @@ export const rawHeadersToHeaders = (headers: RawHeaders): Headers =>
         }
         return headersObj;
     }, {});
+
+export const withoutPseudoHeaders = (headers: RawHeaders): RawHeaders =>
+    headers.filter(([key]) => !key.startsWith(':'));
 
 /**
  * Get the header value for the given header key. Case insensitive. If there are multiple values,

@@ -4,10 +4,10 @@ import { observer, inject } from 'mobx-react';
 import { get } from 'typesafe-get';
 
 import { styled } from '../../../styles';
-import { HttpExchange, ExchangeMessage } from '../../../types';
+import { ExchangeMessage, HttpExchangeView } from '../../../types';
 
 import { getReadableSize } from '../../../util/buffer';
-import { asHeaderArray } from '../../../util/headers';
+import { asHeaderArray } from '../../../model/http/headers';
 import { joinAnd } from '../../../util/text';
 import { Icon, WarningIcon, SuggestionIcon } from '../../../icons';
 
@@ -36,7 +36,7 @@ import { ContentLabelBlock, Markdown } from '../../common/text-content';
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 
 interface HttpPerformanceCardProps extends CollapsibleCardProps {
-    exchange: HttpExchange;
+    exchange: HttpExchangeView;
     accountStore?: AccountStore;
 }
 
@@ -100,15 +100,16 @@ const CompressionDescription = observer((p: {
 }) => {
     const { encodings, encodedBodyLength, decodedBodyLength } = p;
 
-    const compressionRatio = decodedBodyLength ? Math.round(100 * (
-        1 - (encodedBodyLength / decodedBodyLength)
-    )) : undefined;
+    const compressionRatio = decodedBodyLength
+        ? Math.round(100 * (1 - (encodedBodyLength / decodedBodyLength)))
+        : undefined;
 
     return <>
         { encodings.length ? <>
             compressed with <strong>{joinAnd(encodings, ', ', ' and then ')}</strong>,
             making it {
-                compressionRatio !== undefined && decodedBodyLength ? <>
+                compressionRatio !== undefined && decodedBodyLength
+                ? <>
                     <strong>
                         { compressionRatio >= 0 ?
                             `${compressionRatio}% smaller`
@@ -120,7 +121,8 @@ const CompressionDescription = observer((p: {
                     } to {
                         getReadableSize(encodedBodyLength)
                     })
-                </> : <Icon icon={['fas', 'spinner']} spin />
+                </>
+                : <Icon icon={['fas', 'spinner']} spin />
             }
         </> :
             <strong>not compressed</strong>
@@ -206,21 +208,25 @@ const CompressionOptionsTips = styled(PerformanceExplanation)`
     font-style: italic;
 `;
 
-const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
+const CompressionPerformance = observer((p: { exchange: HttpExchangeView }) => {
     const messageTypes: Array<'request' | 'response'> = ['request', 'response'];
     const clientAcceptedEncodings = asHeaderArray(p.exchange.request.headers['accept-encoding'])
         .map(getEncodingName);
 
     return <>{ messageTypes.map((messageType) => {
         const message = p.exchange[messageType];
+
+        if (
+            typeof message !== 'object' ||
+            !message?.body ||
+            !message.body.encodedByteLength ||
+            message.body.isFailed()
+        ) return null;
+
         const encodings = getEncodings(message);
-
-        if (typeof message !== 'object' || !message.body.encoded.byteLength) return null;
-
-        const encodedBody = message.body.encoded;
-        const decodedBody = message.body.decoded;
+        const encodedBodySize = message.body.encodedByteLength;
+        const decodedBody = message.body.decodedData;
         const decodedBodySize = decodedBody ? decodedBody.byteLength : 0;
-        const encodedBodySize = encodedBody.byteLength;
 
         const encodingTestResults = _.mapKeys(testEncodings(message),
             (_size, encoding) => getEncodingName(encoding)
@@ -286,7 +292,7 @@ const CompressionPerformance = observer((p: { exchange: HttpExchange }) => {
     }) }</>;
 });
 
-const CachingPerformance = observer((p: { exchange: HttpExchange }) => {
+const CachingPerformance = observer((p: { exchange: HttpExchangeView }) => {
     if (typeof p.exchange.response !== 'object') return null;
 
     const cacheability = explainCacheability(p.exchange);

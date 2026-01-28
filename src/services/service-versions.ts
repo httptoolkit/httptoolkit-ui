@@ -55,6 +55,7 @@ export function serverSupports(versionRequirement: string | undefined) {
 
 // Notable desktop versions:
 export const DESKTOP_HEADER_LIMIT_CONFIGURABLE = "^0.1.20 || ^1.0.0";
+export const DESKTOP_SELECT_SAVE_FILE_SUPPORTED = "^1.23.0";
 
 // Notable server versions:
 export const PORT_RANGE_SERVER_RANGE = '^0.1.14 || ^1.0.0';
@@ -85,3 +86,6 @@ export const CONNECTION_RESET_SUPPORTED = '^1.12.0';
 export const SERVER_REST_API_SUPPORTED = '^1.13.0';
 export const SERVER_SEND_API_SUPPORTED = '^1.13.0';
 export const ADVANCED_PATCH_TRANSFORMS = '^1.18.0';
+export const WILDCARD_CLIENT_CERTS = '^1.22.0';
+export const KEY_LOG_FILE_SUPPORTED = '^1.23.0';
+export const WEBHOOK_AND_DELAY_RULES = '^1.23.0';

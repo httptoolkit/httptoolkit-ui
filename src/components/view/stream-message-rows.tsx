@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, autorun, action } from 'mobx';
+import { observable, autorun, action, computed } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
@@ -62,17 +62,19 @@ export const StreamMessageCollapsedRow = React.memo((p: {
                 p.message.content
                 // Limit the length - no point showing huge messages here. On a typical UI, we show about
                 // 100 chars here, so this should give us a good bit of buffer
-                .slice(0, 200)
+                .subarray(0, 200)
             )
         }
     </CollapsedStreamContent>
-    {
-        p.message.isBinary &&
-            <Pill color={warningColor}>Binary</Pill>
-    }
-    <Pill>
-        { getReadableSize(p.message.content.byteLength) }
-    </Pill>
+    <RowTags>
+        {
+            p.message.isBinary &&
+                <Pill color={warningColor}>Binary</Pill>
+        }
+        <Pill>
+            { getReadableSize(p.message.content.byteLength) }
+        </Pill>
+    </RowTags>
 </CollapsedStreamRowContainer>);
 
 const MessageArrow = styled(React.memo((p: {
@@ -141,6 +143,12 @@ const CollapsedStreamContent = styled(ContentMonoValue)`
     padding: 3px 0 4px;
 `;
 
+const RowTags = styled.div`
+    display: flex;
+    gap: 8px;
+    flex-direction: row;
+`;
+
 interface MessageEditorRowProps {
     streamId: string,
     message: StreamMessage,
@@ -205,6 +213,16 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
         }
     }
 
+    @computed
+    get contentViewOptions() {
+        const { message } = this.props;
+        return getCompatibleTypes(
+            message.contentType,
+            undefined,
+            asBuffer(message.content)
+        );
+    }
+
     @action.bound
     setContentType(contentType: ViewableContentType | undefined) {
         if (contentType === this.props.message.contentType) {
@@ -217,15 +235,14 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
     render() {
         const { message, isPaidUser, onExportMessage, editorNode, streamId } = this.props;
 
-        const compatibleContentTypes = getCompatibleTypes(
-            message.contentType,
-            undefined,
-            asBuffer(message.content)
-        );
+        const {
+            preferredContentType,
+            availableContentTypes
+        } = this.contentViewOptions;
 
-        const contentType = _.includes(compatibleContentTypes, this.selectedContentType)
+        const contentType = availableContentTypes.includes(this.selectedContentType!)
             ? this.selectedContentType!
-            : message.contentType;
+            : preferredContentType;
 
         const messageDirection = message.direction === 'sent' ? 'left' : 'right';
 
@@ -279,7 +296,7 @@ export class StreamMessageEditorRow extends React.Component<MessageEditorRowProp
                 <PillSelector<ViewableContentType>
                     onChange={this.setContentType}
                     value={contentType}
-                    options={compatibleContentTypes}
+                    options={availableContentTypes}
                     nameFormatter={getContentEditorName}
                 />
                 <Pill>{ getReadableSize(message.content.byteLength) }</Pill>

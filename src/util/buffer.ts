@@ -21,8 +21,8 @@ const binaryLaxDecoder = new TextDecoder('latin1', { fatal: false });
 // raw binary data). For viewing content as text we don't care (we just always show
 // as UTF8) but for _editing_ binary data we need a lossless encoding, not utf8.
 // (Monaco isn't perfectly lossless editing binary anyway, but we can try).
-export function isProbablyUtf8(buffer: Buffer) {
-    let dataToCheck: Buffer;
+export function isProbablyUtf8(buffer: Uint8Array) {
+    let dataToCheck: Uint8Array;
     if (buffer.byteLength > 1028) {
         // We want to trim the data to ~1KB, to avoid checking huge bodies in full.
         // Unfortunately, for UTF-8 this isn't safe: if a multibyte char crosses the
@@ -31,7 +31,7 @@ export function isProbablyUtf8(buffer: Buffer) {
         // decode everything up to that point.
 
         const lastUtf8IndexBefore1024 = buffer
-            .slice(1024, 1028) // 4 bytes should be enough - max length of UTF8 char
+            .subarray(1024, 1028) // 4 bytes should be enough - max length of UTF8 char
             .findIndex((byte) =>
                 (byte & 0xC0) != 0x80 // 0x80 === 0b10... => continuation byte
             );
@@ -40,7 +40,7 @@ export function isProbablyUtf8(buffer: Buffer) {
         if (lastUtf8IndexBefore1024 === -1) return false;
         const cleanEndOfUtf8Data = 1024 + lastUtf8IndexBefore1024;
 
-        dataToCheck = buffer.slice(0, cleanEndOfUtf8Data);
+        dataToCheck = buffer.subarray(0, cleanEndOfUtf8Data);
     } else {
         dataToCheck = buffer;
     }
@@ -115,10 +115,19 @@ export function byteLength(input: string | Buffer | MockttpSerializedBuffer | Ui
     }
 }
 
+// We sometimes do hex encoding of large buffers, so we need it to be quick! We handle that by
+// precalculating hex pairs, so we can do it in a simple for loop + join. This is nearly 5x
+// faster than just toString('hex') (before thinking about splitting & spaces) or map(toString(16)).
+const HEX_LOOKUP = Array.from({ length: 256 }, (_, i) =>
+  i.toString(16).padStart(2, '0').toUpperCase()
+);
+
 export function bufferToHex(input: Buffer) {
-    return input.toString('hex')
-        .replace(/(\w\w)/g, '$1 ')
-        .trimRight();
+    const hexPairs = new Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+        hexPairs[i] = HEX_LOOKUP[input[i]];
+    }
+    return hexPairs.join(' ');
 }
 
 export function getReadableSize(input: number | Buffer | string, siUnits = true) {

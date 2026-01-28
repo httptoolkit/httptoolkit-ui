@@ -8,7 +8,7 @@ import { WarningIcon, Icon } from '../../icons';
 import { trackEvent } from '../../metrics';
 
 import { uploadFile } from '../../util/ui';
-import { UnreachableCheck, asError, unreachableCheck } from '../../util/error';
+import { asError, unreachableCheck } from '../../util/error';
 
 import { UpstreamProxyType, RulesStore } from '../../model/rules/rules-store';
 import { ParsedCertificate, ValidationResult } from '../../model/crypto';
@@ -19,7 +19,8 @@ import {
     versionSatisfies,
     CLIENT_CERT_SERVER_RANGE,
     PROXY_CONFIG_RANGE,
-    CUSTOM_CA_TRUST_RANGE
+    CUSTOM_CA_TRUST_RANGE,
+    WILDCARD_CLIENT_CERTS
 } from '../../services/service-versions';
 
 import { inputValidation } from '../component-utils';
@@ -35,6 +36,7 @@ import {
     SettingsExplanation
 } from './settings-components';
 import { StringSettingsList, ConfigValueRow } from './string-settings-list';
+import { PROXY_HOST_REGEXES, normalizeProxyHost } from '../../model/http/proxy';
 
 
 const UpstreamProxySettings = styled.div`
@@ -69,12 +71,19 @@ const UpstreamProxyDropdown = styled(Select)`
     margin-right: 10px;
 `;
 
+const isValidClientCertHost = (input: string): boolean =>
+    isValidHost(input) || input === '*';
+
 const validateHost = inputValidation(isValidHost,
     "Should be a plain hostname, optionally with a specific port"
 );
 
+const validateClientCertHost = inputValidation(isValidClientCertHost,
+    "Should be a plain hostname, optionally with a specific port, or '*'"
+);
+
 const isValidProxyHost = (host: string | undefined): boolean =>
-    !!host?.match(/^([^/@]*@)?[A-Za-z0-9\-.]+(:\d+)?$/);
+    !!host && PROXY_HOST_REGEXES.some(regex => regex.test(host));
 const validateProxyHost = inputValidation(isValidProxyHost,
     "Should be a plain hostname, optionally with a specific port and/or username:password"
 );
@@ -118,7 +127,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
         // We update the rules store proxy type only at the point where we save the host:
         const rulesStore = this.props.rulesStore;
         rulesStore.upstreamProxyType = this.proxyType;
-        rulesStore.upstreamProxyHost = this.proxyHostInput;
+        rulesStore.upstreamProxyHost = normalizeProxyHost(this.proxyHostInput);
     }
 
     @action.bound
@@ -208,7 +217,7 @@ class UpstreamProxyConfig extends React.Component<{ rulesStore: RulesStore }> {
                     <SettingsButton
                         disabled={
                             !isValidProxyHost(proxyHostInput) ||
-                            (proxyHostInput === savedProxyHost && proxyType === savedProxyType)
+                            (normalizeProxyHost(proxyHostInput) === savedProxyHost && proxyType === savedProxyType)
                         }
                         onClick={saveProxyHost}
                     >
@@ -426,7 +435,7 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
                     value={this.clientCertHostInput}
                     onChange={action((e: React.ChangeEvent<HTMLInputElement>) => {
                         this.clientCertHostInput = e.target.value;
-                        validateHost(e.target);
+                        validateClientCertHost(e.target);
                     })}
                 />
                 { this.clientCertState === undefined
@@ -477,7 +486,7 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
                 }
                 <SettingsButton
                     disabled={
-                        !isValidHost(this.clientCertHostInput) ||
+                        !isValidClientCertHost(this.clientCertHostInput) ||
                         this.clientCertState !== 'decrypted' || // Not decrypted yet, or
                         !!clientCertificateHostMap[this.clientCertHostInput] // Duplicate host
                     }
@@ -488,7 +497,11 @@ class ClientCertificateConfig extends React.Component<{ rulesStore: RulesStore }
             </ClientCertificatesList>
             <SettingsExplanation>
                 These certificates will be used for client TLS authentication, if requested by the server, when
-                connecting to their corresponding hostname.
+                connecting to their corresponding hostname. {
+                    versionSatisfies(serverVersion.value, WILDCARD_CLIENT_CERTS)
+                    ? <>Use <code>*</code> to use a certificate for all hosts.</>
+                    : ''
+                }
             </SettingsExplanation>
         </>;
     }

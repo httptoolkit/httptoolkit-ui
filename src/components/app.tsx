@@ -30,10 +30,12 @@ import { ModifyPage } from './modify/modify-page';
 import { SendPage } from './send/send-page';
 import { SettingsPage } from './settings/settings-page';
 
-import { PlanPicker } from './account/plan-picker';
 import { ModalOverlay } from './account/modal-overlay';
+import { LoginModal } from './account/login-modal';
+import { PlanPicker } from './account/plan-picker';
 import { CheckoutSpinner } from './account/checkout-spinner';
 import { HtmlContextMenu } from './html-context-menu';
+import { DisconnectedWarning } from './disconnected-warning';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -72,6 +74,10 @@ const AppKeyboardShortcuts = (props: {
     }, [props.navigate]);
     useHotkeys('Ctrl+3,Cmd+3', (e) => {
         props.navigate('/modify');
+        e.preventDefault();
+    }, [props.navigate]);
+    useHotkeys('Ctrl+4,Cmd+4', (e) => {
+        props.navigate('/send');
         e.preventDefault();
     }, [props.navigate]);
     useHotkeys('Ctrl+9,Cmd+9', (e) => {
@@ -225,9 +231,18 @@ class App extends React.Component<{
                     <Route path={'/send'} pageComponent={SendPage} />
                     <Route path={'/settings'} pageComponent={SettingsPage} />
                 </Router>
+
+                <DisconnectedWarning />
             </AppContainer>
 
             { !!modal && <ModalOverlay /> }
+
+            {
+                modal === 'login' &&
+                    <LoginModal
+                        accountStore={this.props.accountStore}
+                    />
+            }
 
             { modal === 'pick-a-plan' &&
                 <PlanPicker

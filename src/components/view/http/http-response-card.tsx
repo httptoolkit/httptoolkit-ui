@@ -3,7 +3,7 @@ import * as React from 'react';
 import { observer } from 'mobx-react';
 import { get } from 'typesafe-get';
 
-import { HtkResponse, Omit } from '../../../types';
+import { HtkResponse, HttpVersion } from '../../../types';
 import { Theme } from '../../../styles';
 
 import { ApiExchange } from '../../../model/api/api-interfaces';
@@ -16,7 +16,7 @@ import {
     CollapsibleCardHeading
 } from '../../common/card';
 import { Pill } from '../../common/pill';
-import { HeaderDetails } from './header-details';
+import { HeaderDetails, HeaderHeadingContainer } from './header-details';
 import {
 } from '../../common/card';
 import {
@@ -34,7 +34,7 @@ import { DocsLink } from '../../common/docs-link';
 
 interface HttpResponseCardProps extends CollapsibleCardProps  {
     theme: Theme;
-    httpVersion: 1 | 2;
+    httpVersion: HttpVersion;
     requestUrl: URL;
     response: HtkResponse;
     apiExchange: ApiExchange | undefined;
@@ -86,12 +86,20 @@ export const HttpResponseCard = observer((props: HttpResponseCardProps) => {
                 }
             </CollapsibleSection>
 
-            <ContentLabelBlock>Headers</ContentLabelBlock>
-            <HeaderDetails
-                httpVersion={httpVersion}
-                headers={response.rawHeaders}
-                requestUrl={requestUrl}
-            />
+            <CollapsibleSection
+                contentName='Headers'
+                collapsePersistKey='httpResponseHeaders'
+            >
+                <HeaderHeadingContainer>
+                    <ContentLabelBlock>Headers</ContentLabelBlock>
+                </HeaderHeadingContainer>
+
+                <HeaderDetails
+                    httpVersion={httpVersion}
+                    headers={response.rawHeaders}
+                    requestUrl={requestUrl}
+                />
+            </CollapsibleSection>
         </div>
     </CollapsibleCard>;
 });

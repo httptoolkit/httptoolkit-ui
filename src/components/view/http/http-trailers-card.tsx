@@ -2,8 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
-import { RawTrailers } from '../../../types';
-import { Theme } from '../../../styles';
+import { HttpVersion, RawTrailers } from '../../../types';
 
 import {
     CollapsibleCard,
@@ -13,8 +12,8 @@ import {
 import { HeaderDetails } from './header-details';
 
 interface HttpTrailersCardProps extends CollapsibleCardProps {
-    type: 'request' | 'response',
-    httpVersion: 1 | 2;
+    type: 'request' | 'response';
+    httpVersion: HttpVersion;
     requestUrl: URL;
     trailers: RawTrailers;
 }

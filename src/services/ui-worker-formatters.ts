@@ -8,6 +8,7 @@ import * as beautifyXml from 'xml-beautifier';
 import { Headers } from '../types';
 import { bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
+import { formatJson } from '../util/json';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -43,7 +44,7 @@ const WorkerFormatters = {
         // available by downloading the whole body.
         const needsTruncation = content.length > FIVE_MB;
         if (needsTruncation) {
-            content = content.slice(0, FIVE_MB)
+            content = content.subarray(0, FIVE_MB)
         }
 
         const formattedContent = bufferToHex(content);
@@ -74,11 +75,25 @@ const WorkerFormatters = {
     },
     json: (content: Buffer) => {
         const asString = content.toString('utf8');
+
+        // Do simplify parse + stringify where possible for speed - it's up to 1000x faster.
+        // We fall back to the relaxed formatJson() where that fails, which is slower but
+        // always comes up with something reasonable - unless it's very large, in which
+        // case we give up rather than hanging the UI:
         try {
             return JSON.stringify(JSON.parse(asString), null, 2);
         } catch (e) {
-            return asString;
+            if (content.byteLength <= 5_000_000) {
+                return formatJson(asString, { formatRecords: false });
+            } else {
+                // Large non-parseable content - we fall back to the raw string
+                return asString;
+            }
         }
+    },
+    'json-records': (content: Buffer) => {
+        const asString = content.toString('utf8');
+        return formatJson(asString, { formatRecords: true });
     },
     javascript: (content: Buffer) => {
         return beautifyJs(content.toString('utf8'), {

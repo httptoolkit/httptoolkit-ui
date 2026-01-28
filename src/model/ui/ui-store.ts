@@ -35,6 +35,8 @@ const VIEW_CARD_KEYS = [
     'rtcSessionOffer',
     'rtcSessionAnswer',
 
+    'rawTunnelPackets',
+
     'performance',
     'export'
 ] as const;
@@ -43,9 +45,16 @@ type ViewCardKey = typeof VIEW_CARD_KEYS[number];
 const EXPANDABLE_VIEW_CARD_KEYS = [
     'requestBody',
     'responseBody',
-    'webSocketMessages'
+    'webSocketMessages',
+    'rawTunnelPackets'
 ] as const;
 export type ExpandableViewCardKey = typeof EXPANDABLE_VIEW_CARD_KEYS[number];
+
+const COLLAPSIBLE_SECTION_KEYS = [
+    'httpRequestHeaders',
+    'httpResponseHeaders'
+] as const;
+export type CollapsibleSectionKey = typeof COLLAPSIBLE_SECTION_KEYS[number];
 
 const isExpandableViewCard = (key: any): key is ExpandableViewCardKey =>
     EXPANDABLE_VIEW_CARD_KEYS.includes(key);
@@ -63,6 +72,12 @@ const isSendRequestCard = (key: SendCardKey): key is 'requestHeaders' | 'request
 
 const isSentResponseCard = (key: SendCardKey): key is 'responseHeaders' | 'responseBody' =>
     key.startsWith('response');
+
+export type ContentPerspective =
+    | 'client' // What did the client send (original) & receive (after transform)
+    | 'server' // What did the server receive (after transform) & send (original)?
+    | 'transformed' // What was the request & resposne after both transforms?
+    | 'original' // What was the request & response before transforms?
 
 const SEND_REQUEST_CARD_KEYS = SEND_CARD_KEYS.filter(isSendRequestCard);
 const SENT_RESPONSE_CARD_KEYS = SEND_CARD_KEYS.filter(isSentResponseCard);
@@ -210,6 +225,14 @@ export class UiStore {
     @observable
     private animatedExpansionCard: string | undefined;
 
+    /**
+     * For both requests & responses, there are two different ways to look at them (=4 perspectives in total). It
+     * depends on the use case (mostly: are you collecting data, or exploring behaviours) but this field changes which
+     * format is shown in the right-hand UI pane. Note that the list view always still shows the original values.
+     */
+    @observable
+    contentPerspective: ContentPerspective = 'transformed';
+
     // Store the view details cards state here, so that they persist
     // when moving away from the page or deselecting all traffic.
     @observable
@@ -226,6 +249,8 @@ export class UiStore {
         'webSocketMessages': { collapsed: false },
         'webSocketClose': { collapsed: false },
 
+        'rawTunnelPackets': { collapsed: false },
+
         'rtcConnection': { collapsed: false },
         'rtcSessionOffer': { collapsed: false },
         'rtcSessionAnswer': { collapsed: false },
@@ -236,6 +261,20 @@ export class UiStore {
 
     @observable
     expandedViewCard: ExpandableViewCardKey | undefined;
+
+    // Store the state for various persistently collapsible sections here - true
+    // is open, false is collapsed.
+    @observable
+    readonly collapsibleSectionStates: { [key in CollapsibleSectionKey]: boolean } = {
+        'httpRequestHeaders': true,
+        'httpResponseHeaders': true
+    };
+
+    @observable
+    viewScrollPosition: number | 'end' = 'end';
+
+    @observable
+    selectedEventId: string | undefined;
 
     @computed
     get viewCardProps() {
@@ -381,7 +420,6 @@ export class UiStore {
     toggleSettingsCardCollapsed(key: SettingsCardKey) {
         const cardState = this.settingsCardStates[key];
         cardState.collapsed = !cardState.collapsed;
-        this.expandedViewCard = undefined;
     }
 
     @action.bound
@@ -422,6 +460,17 @@ export class UiStore {
 
     @persist @observable
     exportSnippetFormat: string | undefined;
+
+    // Actions for persisting view state when switching tabs
+    @action.bound
+    setViewScrollPosition(position: number | 'end') {
+        this.viewScrollPosition = position;
+    }
+
+    @action.bound
+    setSelectedEventId(eventId: string | undefined) {
+        this.selectedEventId = eventId;
+    }
 
     /**
      * This tracks the context menu state *only if it's not handled natively*. This state

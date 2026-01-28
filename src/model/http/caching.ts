@@ -7,8 +7,8 @@ import {
     distanceInWordsStrict
 } from 'date-fns';
 
-import { HttpExchange, ExchangeMessage } from '../../types';
-import { getHeaderValue, asHeaderArray } from '../../util/headers';
+import { ExchangeMessage, HttpExchangeView } from '../../types';
+import { getHeaderValue, asHeaderArray } from './headers';
 import { joinAnd } from '../../util/text';
 import { escapeForMarkdownEmbedding } from '../ui/markdown';
 
@@ -92,7 +92,7 @@ function parseCCDirectives(message: ExchangeMessage): {
         }, {});
 }
 
-export function explainCacheability(exchange: HttpExchange): (
+export function explainCacheability(exchange: HttpExchangeView): (
     Explanation & { cacheable: boolean }
 ) | undefined {
     const { request, response } = exchange;
@@ -167,7 +167,7 @@ export function explainCacheability(exchange: HttpExchange): (
     const revalidationSuggestion =
         !hasRevalidationOptions &&
         // Revalidation makes no sense without a body
-        response.body.encoded.byteLength &&
+        response.body.encodedByteLength &&
         !responseCCDirectives['immutable'] ?
         dedent`
             :suggestion: This response doesn't however include any validation headers. That
@@ -455,7 +455,7 @@ const SHARED_ONLY = 'May only be cached in shared caches';
  * and why. This assumes that explainCacheability has returned cacheability: true,
  * and doesn't fully repeat the checks included there.
  */
-export function explainValidCacheTypes(exchange: HttpExchange): Explanation | undefined {
+export function explainValidCacheTypes(exchange: HttpExchangeView): Explanation | undefined {
     const { request, response } = exchange;
     if (typeof response !== 'object') return;
 
@@ -547,7 +547,7 @@ export function explainValidCacheTypes(exchange: HttpExchange): Explanation | un
  * This assumes that explainCacheability has returned cacheability: true,
  * so doesn't fully repeat the checks included there.
  */
-export function explainCacheMatching(exchange: HttpExchange): Explanation | undefined {
+export function explainCacheMatching(exchange: HttpExchangeView): Explanation | undefined {
     const { request, response } = exchange;
     if (typeof response !== 'object') return;
 
@@ -642,7 +642,7 @@ export function explainCacheMatching(exchange: HttpExchange): Explanation | unde
  * This assumes that explainCacheability has returned cacheability: true,
  * so doesn't fully repeat the checks included there.
  */
-export function explainCacheLifetime(exchange: HttpExchange): Explanation | undefined {
+export function explainCacheLifetime(exchange: HttpExchangeView): Explanation | undefined {
     const { request, response } = exchange;
     if (typeof response !== 'object') return;
 

@@ -8,36 +8,33 @@ import {
     WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     JSONRPC_RESPONSE_RULE_SUPPORTED,
     RTC_RULES_SUPPORTED,
-    CONNECTION_RESET_SUPPORTED
+    CONNECTION_RESET_SUPPORTED,
+    WEBHOOK_AND_DELAY_RULES
 } from '../../services/service-versions';
 
 import {
-    StaticResponseHandler,
-    ForwardToHostHandler,
-    TimeoutHandler,
-    CloseConnectionHandler,
-    ResetConnectionHandler,
-    FromFileResponseHandler,
-    TransformingHandler,
     HttpMatcherLookup,
-    HttpHandlerLookup,
+    HttpStepLookup,
     HttpRule,
-    HttpInitialMatcherClasses
+    HttpInitialMatcherClasses,
+    RequestBreakpointStep,
+    ResponseBreakpointStep,
+    RequestAndResponseBreakpointStep,
+    PassThroughStep
 } from './definitions/http-rule-definitions';
 
 import {
     WebSocketMatcherLookup,
-    WebSocketHandlerLookup,
+    WebSocketStepLookup,
     WebSocketRule,
     WebSocketInitialMatcherClasses,
-    EchoWebSocketHandlerDefinition,
-    RejectWebSocketHandlerDefinition,
-    ListenWebSocketHandlerDefinition
+    WebSocketForwardToHostStep,
+    WebSocketPassThroughStep
 } from './definitions/websocket-rule-definitions';
 
 import {
     EthereumMatcherLookup,
-    EthereumHandlerLookup,
+    EthereumStepLookup,
     EthereumInitialMatcherClasses,
     EthereumRule,
     EthereumMethodMatcher
@@ -47,7 +44,7 @@ import {
     IpfsRule,
     IpfsMatcherLookup,
     IpfsInitialMatcherClasses,
-    IpfsHandlerLookup,
+    IpfsStepLookup,
     IpfsInteractionMatcher
 } from './definitions/ipfs-rule-definitions';
 
@@ -57,6 +54,10 @@ import {
     RTCRule,
     RTCInitialMatcherClasses
 } from './definitions/rtc-rule-definitions';
+
+export type {
+    MatchReplacePairs
+} from 'mockttp';
 
 /// --- Part-generic logic ---
 
@@ -68,10 +69,10 @@ export const getRulePartKey = (part: {
     // In addition, we define a uiType, for more specific representations of the
     // same rule part in some cases, which takes precedence.
     (part.uiType ?? part.type) as
-        keyof typeof MatcherLookup | keyof typeof HandlerLookup;
+        keyof typeof MatcherLookup | keyof typeof StepLookup;
 
 const PartVersionRequirements: {
-    [PartType in keyof typeof MatcherLookup | keyof typeof HandlerLookup]?: string
+    [PartType in keyof typeof MatcherLookup | keyof typeof StepLookup]?: string
 } = {
     // Matchers:
     'host': HOST_MATCHER_SERVER_RANGE,
@@ -84,13 +85,15 @@ const PartVersionRequirements: {
     'eth-method': JSONRPC_RESPONSE_RULE_SUPPORTED, // Usable without, but a bit pointless
     'rtc-wildcard': RTC_RULES_SUPPORTED,
 
-    // Handlers:
+    // Steps:
     'file': FROM_FILE_HANDLER_SERVER_RANGE,
     'req-res-transformer': PASSTHROUGH_TRANSFORMS_RANGE,
     'ws-echo': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     'ws-listen': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
     'ws-reject': WEBSOCKET_MESSAGING_RULES_SUPPORTED,
-    'reset-connection': CONNECTION_RESET_SUPPORTED
+    'reset-connection': CONNECTION_RESET_SUPPORTED,
+    'delay': WEBHOOK_AND_DELAY_RULES,
+    'webhook': WEBHOOK_AND_DELAY_RULES
 };
 
 /// --- Matchers ---
@@ -116,7 +119,7 @@ export const MatcherLookup = {
 };
 
 // This const isn't used, but the assignment conveniently and clearly checks if
-// any handlers are created without the correct + readonly type/uiType values.
+// any steps are created without the correct + readonly type/uiType values.
 const __MATCHER_KEY_CHECK__: {
     // Enforce that keys match .type or uiType for each matcher class:
     [K in keyof typeof MatcherLookup]: new (...args: any[]) => { type: K } | { uiType: K }
@@ -140,70 +143,62 @@ export const MatcherClassKeyLookup = new Map<MatcherClass, MatcherClassKey>(
     ) as Array<[MatcherClass, MatcherClassKey]>
 );
 
-/// --- Handlers ---
+/// --- Steps ---
 
-export const HandlersByType = {
-    'http': HttpHandlerLookup,
-    'websocket': WebSocketHandlerLookup,
-    'ethereum': EthereumHandlerLookup,
-    'ipfs': IpfsHandlerLookup,
+export const StepsByType = {
+    'http': HttpStepLookup,
+    'websocket': WebSocketStepLookup,
+    'ethereum': EthereumStepLookup,
+    'ipfs': IpfsStepLookup,
     'webrtc': RTCStepLookup
 };
 
-// Define maps to/from handler keys to handler classes, and
-// types for the handlers & classes themselves; both the built-in
+// Define maps to/from step keys to step classes, and
+// types for the steps & classes themselves; both the built-in
 // ones and our own extra additions & overrides.
-export const HandlerLookup = {
-    // These are kept as references to HandlersByType, so the content is always the same:
-    ...HandlersByType['http'],
-    ...HandlersByType['websocket'],
-    ...HandlersByType['ethereum'],
-    ...HandlersByType['ipfs'],
-    ...HandlersByType['webrtc']
+export const StepLookup = {
+    // These are kept as references to StepsByType, so the content is always the same:
+    ...StepsByType['http'],
+    ...StepsByType['websocket'],
+    ...StepsByType['ethereum'],
+    ...StepsByType['ipfs'],
+    ...StepsByType['webrtc']
 };
 
 // This const isn't used, but the assignment conveniently and clearly checks if
-// any handlers are created without the correct + readonly type/uiType values.
-const __HANDLER_KEY_CHECK__: {
-    // Enforce that keys match .type or uiType for each handler class:
-    [K in keyof typeof HandlerLookup]: new (...args: any[]) => { type: K } | { uiType: K }
-} = HandlerLookup;
+// any steps are created without the correct + readonly type/uiType values.
+const __STEP_KEY_CHECK__: {
+    // Enforce that keys match .type or uiType for each step class:
+    [K in keyof typeof StepLookup]: new (...args: any[]) => { type: K } | { uiType: K }
+} = StepLookup;
 
-export type HandlerClassKey = keyof typeof HandlerLookup;
-export type HandlerClass = typeof HandlerLookup[HandlerClassKey];
-export type Handler = InstanceType<HandlerClass>;
+export type StepClassKey = keyof typeof StepLookup;
+export type StepClass = typeof StepLookup[StepClassKey];
+export type Step = InstanceType<StepClass>;
 
-// Steps are a subset of handlers which are allowed to appear in 'steps' arrays on rules, for rule types
-// that support defining a series of steps to execute.
-const HandlerSteps = {
-    ...RTCStepLookup
-};
-export type HandlerStepClass = typeof HandlerSteps[keyof typeof HandlerSteps];
-export type HandlerStep = InstanceType<HandlerStepClass>;
-
-export const HandlerClassKeyLookup = new Map<HandlerClass, HandlerClassKey>(
-    Object.entries(HandlerLookup)
+export const StepClassKeyLookup = new Map<StepClass, StepClassKey>(
+    Object.entries(StepLookup)
     .map(
-        ([key, handler]) => [handler, key]
-    ) as Array<[HandlerClass, HandlerClassKey]>
+        ([key, step]) => [step, key]
+    ) as Array<[StepClass, StepClassKey]>
 );
 
-export const isCompatibleHandler = (handler: Handler, initialMatcher: InitialMatcher) => {
-    const handlerKey = getRulePartKey(handler) as HandlerClassKey;
+export const isCompatibleStep = (step: Step, initialMatcher: InitialMatcher) => {
+    const stepKey = getRulePartKey(step) as StepClassKey;
 
     const ruleType = getRuleTypeFromInitialMatcher(initialMatcher);
-    const handlersForType = HandlersByType[ruleType] as _.Dictionary<HandlerClass>
-    const equivalentHandler = handlersForType[handlerKey];
+    const stepsForType = StepsByType[ruleType] as _.Dictionary<StepClass>
+    const equivalentStep = stepsForType[stepKey];
 
-    // Some handlers require a specific initial matcher, or they're not available.
+    // Some steps require a specific initial matcher, or they're not available.
     // In those cases, we check the initial matcher is valid:
-    const matcherCheck = MatcherLimitedHandlers[handlerKey];
+    const matcherCheck = MatcherLimitedSteps[stepKey];
     if (matcherCheck !== undefined && !matcherCheck(initialMatcher)) return false;
 
-    return equivalentHandler !== undefined;
+    return equivalentStep !== undefined;
 };
 
-/// --- Matcher/handler special categories ---
+/// --- Matcher/step special categories ---
 
 const InitialMatcherClasses = [
     ...HttpInitialMatcherClasses,
@@ -211,6 +206,11 @@ const InitialMatcherClasses = [
     ...EthereumInitialMatcherClasses,
     ...IpfsInitialMatcherClasses,
     ...RTCInitialMatcherClasses
+];
+
+export const StableRuleTypes = [
+    'http',
+    'websocket'
 ];
 
 export const getInitialMatchers = () => InitialMatcherClasses.filter((matcherCls) => {
@@ -286,18 +286,19 @@ export const getAvailableAdditionalMatchers = (ruleType: RuleType): AdditionalMa
 export const isHiddenMatcherKey = (key: MatcherClassKey) =>
     HiddenMatchers.includes(key as HiddenMatcherKey);
 
-const HiddenHandlers = [
+const HiddenSteps = [
     'json-rpc-response', // Only used internally, by Ethereum rules
     'rtc-peer-proxy', // Not usable interactively
     'callback',
     'stream',
-    'wait-for-rtc-track' // Not super useful here I think
+    'wait-for-rtc-track', // Not super useful here I think
+    'wait-for-request-body', // Not super useful here I think
 ] as const;
 
-const MatcherLimitedHandlers: {
-    [K in HandlerClassKey]?: ((matcher: InitialMatcher) => boolean)
+const MatcherLimitedSteps: {
+    [K in StepClassKey]?: ((matcher: InitialMatcher) => boolean)
 } = {
-    // Ethereum interaction-specific handlers:
+    // Ethereum interaction-specific steps:
     'eth-call-result': (matcher: InitialMatcher) =>
         matcher instanceof EthereumMethodMatcher &&
         matcher.methodName === 'eth_call',
@@ -324,7 +325,7 @@ const MatcherLimitedHandlers: {
             'eth_getBlockByNumber'
         ].includes(matcher.methodName),
 
-    // IPFS interaction-specific handlers:
+    // IPFS interaction-specific steps:
     'ipfs-cat-text': (matcher: InitialMatcher) =>
         matcher instanceof IpfsInteractionMatcher &&
         matcher.interactionName === 'cat',
@@ -351,75 +352,72 @@ const MatcherLimitedHandlers: {
         matcher.interactionName === 'pin/ls',
 };
 
-type HiddenHandlerKey = typeof HiddenHandlers[number];
-export type AvailableHandlerKey = Exclude<HandlerClassKey, HiddenHandlerKey>;
-export type AvailableHandler = typeof HandlerLookup[AvailableHandlerKey];
+type HiddenStepKey = typeof HiddenSteps[number];
+export type AvailableStepKey = Exclude<StepClassKey, HiddenStepKey>;
+export type AvailableStep = typeof StepLookup[AvailableStepKey];
 
-export const getAvailableHandlers = (
+export const getAvailableSteps = (
     ruleType: RuleType,
     initialMatcher: InitialMatcher | undefined
-): AvailableHandler[] => {
-    return Object.values(HandlersByType[ruleType])
-        .filter((handler) => {
-            const handlerKey = HandlerClassKeyLookup.get(handler)!;
+): AvailableStep[] => {
+    return Object.values(StepsByType[ruleType])
+        .filter((step) => {
+            const stepKey = StepClassKeyLookup.get(step)!;
 
-            if (HiddenHandlers.includes(handlerKey as HiddenHandlerKey)) return false;
+            if (HiddenSteps.includes(stepKey as HiddenStepKey)) return false;
 
-            // Some handlers require a specific initial matcher, or they're not available.
+            // Some steps require a specific initial matcher, or they're not available.
             // In those cases, we check the initial matcher is valid:
-            const matcherCheck = MatcherLimitedHandlers[handlerKey];
+            const matcherCheck = MatcherLimitedSteps[stepKey];
             if (
                 matcherCheck !== undefined &&
                 (!initialMatcher || !matcherCheck(initialMatcher))
             ) return false;
 
-            return serverSupports(PartVersionRequirements[handlerKey]);
+            return serverSupports(PartVersionRequirements[stepKey]);
         });
 };
 
-const FinalHandlerSteps = [
-    'echo-rtc',
-    'rtc-peer-proxy',
-    'rtc-dynamic-proxy',
-    'close-rtc-connection'
-] as const;
-
-// Handlers are final if a) they're not steps, just normal handlers, or b) if they are steps, but
-// they're final steps that preclude any further interactions (e.g. closing a connection).
-export const isFinalHandler = (handler: Handler) => {
-    const handlerKey = getRulePartKey(handler) as any; // Any -> can't includes() const arrays otherwise
-
-    return !Object.keys(HandlerSteps).includes(handlerKey) ||
-        FinalHandlerSteps.includes(handlerKey);
+export const isFinalStep = (step: Step) => {
+    return StepLookup[step.type].isFinal === true;
 }
 
-const PaidHandlerClasses: HandlerClass[] = [
-    StaticResponseHandler,
-    FromFileResponseHandler,
-    ForwardToHostHandler,
-    TransformingHandler,
-    TimeoutHandler,
-    CloseConnectionHandler,
-    ResetConnectionHandler,
-    EchoWebSocketHandlerDefinition,
-    RejectWebSocketHandlerDefinition,
-    ListenWebSocketHandlerDefinition
+const NonPaidStepClasses: StepClass[] = [
+    // HTTP:
+    RequestBreakpointStep,
+    ResponseBreakpointStep,
+    RequestAndResponseBreakpointStep,
+    PassThroughStep,
+    // WS:
+    WebSocketPassThroughStep,
+    WebSocketForwardToHostStep,
+    // All non-HTTP/WS are free
 ];
 
-export const isPaidHandler = (
+export const isPaidStep = (
     ruleType: RuleType,
-    handler: Handler
+    step: Step
 ) => {
     if (ruleType !== 'http' && ruleType !== 'websocket') return false;
-    return _.some(PaidHandlerClasses, (cls) => handler instanceof cls);
+    return !_.some(NonPaidStepClasses, (cls) => step instanceof cls);
 }
 
-export const isPaidHandlerClass = (
+export const isPaidStepClass = (
     ruleType: RuleType,
-    handlerClass: HandlerClass
+    stepClass: StepClass
 ) => {
     if (ruleType !== 'http' && ruleType !== 'websocket') return false;
-    return PaidHandlerClasses.includes(handlerClass);
+    return !NonPaidStepClasses.includes(stepClass);
+}
+
+export function areStepsModifying(stepTypes: StepClassKey[] | undefined): stepTypes is StepClassKey[] {
+    // We don't show rule details or edit markers for no-modification rules
+    return !!stepTypes?.length &&
+        !stepTypes?.every(
+            type => type === 'passthrough' ||
+                    type === 'ws-passthrough' ||
+                    type === 'webhook'
+        );
 }
 
 /// --- Rules ---
@@ -450,8 +448,6 @@ export const isHttpCompatibleType = matchRuleType('http', 'ethereum', 'ipfs');
 export const isHttpBasedRule = matchRule(isHttpCompatibleType);
 export const isWebSocketRule = matchRule(matchRuleType('websocket'));
 export const isRTCRule = matchRule(matchRuleType('webrtc'));
-
-export const isStepPoweredRule = isRTCRule;
 
 export enum RulePriority {
     FALLBACK = 0,

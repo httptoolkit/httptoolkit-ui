@@ -4,7 +4,7 @@ import * as dateFns from 'date-fns';
 import * as dedent from 'dedent';
 import * as Ajv from 'ajv';
 
-import { CollectedEvent } from '../../types';
+import { ViewableEvent } from '../../types';
 import { saveFile, uploadFile, Ctrl } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
@@ -29,7 +29,7 @@ export const ClearAllButton = observer((props: {
 export const ExportAsHarButton = inject('accountStore')(observer((props: {
     className?: string,
     accountStore?: AccountStore,
-    events: CollectedEvent[]
+    events: ReadonlyArray<ViewableEvent>
 }) => {
     const { isPaidUser } = props.accountStore!;
 

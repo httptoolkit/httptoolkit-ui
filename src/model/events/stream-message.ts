@@ -1,14 +1,16 @@
 import { computed, observable } from 'mobx';
 
 import { InputStreamMessage } from "../../types";
-import { asBuffer } from '../../util/buffer';
+import { asBuffer, isProbablyUtf8 } from '../../util/buffer';
+import { ObservableCache } from '../observable-cache';
+import { isProbablyJson, isProbablyJsonRecords } from '../../util/json';
 
 export class StreamMessage {
 
     @observable
     private inputMessage: InputStreamMessage;
 
-    public readonly cache = observable.map(new Map<symbol, unknown>(), { deep: false });
+    public readonly cache = new ObservableCache();
 
     constructor(
         inputMessage: InputStreamMessage,
@@ -42,7 +44,7 @@ export class StreamMessage {
     }
 
     get contentType() {
-        if (this.inputMessage.isBinary) {
+        if (this.inputMessage.isBinary && !isProbablyUtf8(this.inputMessage.content)) {
             if (this.subprotocol?.includes('proto')) {
                 return 'protobuf';
             } else {
@@ -51,12 +53,11 @@ export class StreamMessage {
         }
 
         // prefix+JSON is very common, so we try to parse anything JSON-ish optimistically:
-        const startOfMessage = this.content.slice(0, 10).toString('utf-8').trim();
-        if (
-            startOfMessage.includes('{') ||
-            startOfMessage.includes('[') ||
-            this.subprotocol?.includes('json')
-        ) return 'json';
+        if (isProbablyJsonRecords(this.content)) {
+            return 'json-records';
+        } else if (isProbablyJson(this.content) || this.subprotocol?.includes('json')) {
+            return 'json';
+        }
 
         else return 'text';
     }

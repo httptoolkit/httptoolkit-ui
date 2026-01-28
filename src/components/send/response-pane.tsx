@@ -7,7 +7,7 @@ import { logError } from "../../errors";
 
 import { UiStore } from '../../model/ui/ui-store';
 import { AccountStore } from '../../model/account/account-store';
-import { CompletedExchange, SuccessfulExchange } from "../../model/http/exchange";
+import { CompletedExchange, SuccessfulExchange } from "../../model/http/http-exchange-views";
 import { RequestInput } from "../../model/send/send-request-model";
 import { tagsToErrorType } from "../../model/http/error-types";
 

@@ -23,16 +23,32 @@ export const noPropagation = <E extends React.BaseSyntheticEvent>(
     callback(event);
 }
 
+/**
+ * An input validation function combines check logic with an explanatory error
+ * message, and provides a convenient mechanism to check the validity of an
+ * input itself (in which case it sets the input's validity state) or a raw
+ * input value (in which case it just returns the result, with no side effects).
+ */
+export interface InputValidationFunction {
+    (input: HTMLInputElement | string): boolean;
+}
+
 export const inputValidation = (
     checkFn: (input: string) => boolean,
     errorMessage: string
-) => (input: HTMLInputElement) => {
-    const inputValue = input.value;
-    if (!inputValue || checkFn(inputValue)) {
-        input.setCustomValidity('');
+): InputValidationFunction => (input) => {
+    const isInput = typeof input !== 'string';
+    const inputValue = isInput ? input.value : input;
+
+    if (isInput) {
+        if (!inputValue || checkFn(inputValue)) {
+            input.setCustomValidity('');
+        } else {
+            input.setCustomValidity(errorMessage);
+        }
+        input.reportValidity();
+        return input.validity.valid;
     } else {
-        input.setCustomValidity(errorMessage);
+        return checkFn(inputValue);
     }
-    input.reportValidity();
-    return input.validity.valid;
 }

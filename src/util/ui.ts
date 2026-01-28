@@ -2,9 +2,11 @@ import * as React from 'react';
 import { useHotkeys as rawUseHotkeys } from "react-hotkeys-hook";
 import { action, observable } from 'mobx';
 
-import { desktopVersion } from '../services/service-versions';
 import { getDeferred, delay } from './promise';
 import { logError } from '../errors';
+
+import { desktopVersion } from '../services/service-versions';
+import { DesktopApi } from '../services/desktop-api';
 
 export function isReactElement(node: any): node is React.ReactElement {
     return node && !!node.$$typeof;
@@ -19,7 +21,8 @@ window.addEventListener('resize', action(() => {
     windowSize.width = window.innerWidth;
 }));
 
-const isMac = navigator.platform.startsWith('Mac');
+export const isWindows = navigator.platform.startsWith('Win');
+export const isMac = navigator.platform.startsWith('Mac');
 
 export const Ctrl = isMac
     ? '⌘'
@@ -127,9 +130,22 @@ export function uploadFile(
         const file = fileInput.files[0];
 
         if (type === 'path') {
-            // file.path is an Electron-only extra property:
-            // https://github.com/electron/electron/blob/master/docs/api/file-object.md
-            result.resolve((file as unknown as { path: string }).path);
+            const fileWithPath = (file as unknown as { path?: string });
+            if (DesktopApi.getPathForFile) {
+                // In the latest desktop app, we can request the file path via the desktop API:
+                return result.resolve(DesktopApi.getPathForFile(file));
+            } else if (fileWithPath.path) {
+                // On older Electron, we can access the path on the File object directly:
+                return result.resolve(fileWithPath.path);
+            } else {
+                // In the middle ground, we released a desktop version that includes an Electron update
+                // with disables file.path, with no fallback. Anybody using this needs to update.
+                window.alert(
+                    "File path access is not available due to a temporary issue in this release.\n\n" +
+                    "Please update to the latest HTTP Toolkit from httptoolkit.com"
+                );
+                return result.resolve(null);
+            }
         } else {
             const fileReader = new FileReader();
 

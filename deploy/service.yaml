@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: httptoolkit-ui
+  namespace: httptoolkit-ui
+spec:
+  selector:
+    app: httptoolkit-ui
+  ports:
+    - name: http-port
+      protocol: TCP
+      port: 4000
+      targetPort: 4000

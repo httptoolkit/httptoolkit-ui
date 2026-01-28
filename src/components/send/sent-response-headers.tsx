@@ -1,6 +1,9 @@
 import * as React from 'react';
 
-import { RawHeaders } from '../../types';
+import {
+    RawHeaders,
+    HttpVersion
+} from '../../types';
 
 import {
     CollapsibleCardHeading,
@@ -17,7 +20,7 @@ import { CollapsingButtons } from '../common/collapsing-buttons';
 import { ExpandShrinkButton } from '../common/expand-shrink-button';
 
 export interface ResponseHeaderSectionProps extends ExpandableCardProps {
-    httpVersion: 1 | 2;
+    httpVersion: HttpVersion;
     requestUrl: URL;
     headers: RawHeaders;
 }

@@ -9,21 +9,23 @@ import {
     TimingEvents
 } from 'mockttp';
 
-import { RawTrailers } from '../../types';
+import { RawTrailers, HttpExchangeView } from '../../types';
 
 import { logError } from '../../errors';
 import { getObservableDeferred, lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { ErrorLike, unreachableWarning } from '../../util/error';
-import { rawHeadersToHeaders } from '../../util/headers';
+import { rawHeadersToHeaders } from '../http/headers';
+import { getEffectivePort } from '../../util/url';
 import { trackEvent } from '../../metrics';
 
 import { EventsStore } from '../events/events-store';
 import { RulesStore } from '../rules/rules-store';
 import { AccountStore } from '../account/account-store';
+import { ProxyStore } from '../proxy-store';
 import * as ServerApi from '../../services/server-api';
 
-import { HttpExchange } from '../http/exchange';
+import { HttpExchange } from '../http/http-exchange';
 import { ResponseHeadEvent, ResponseStreamEvent } from './send-response-model';
 import {
     buildRequestInputFromExchange,
@@ -31,7 +33,8 @@ import {
     RequestInput,
     SendRequest,
     RULE_PARAM_REF_KEY,
-    sendRequestSchema
+    sendRequestSchema,
+    RequestOptions
 } from './send-request-model';
 
 export class SendStore {
@@ -39,14 +42,16 @@ export class SendStore {
     constructor(
         private accountStore: AccountStore,
         private eventStore: EventsStore,
-        private rulesStore: RulesStore
+        private rulesStore: RulesStore,
+        private proxyStore: ProxyStore
     ) {}
 
     readonly initialized = lazyObservablePromise(async () => {
         await Promise.all([
             this.accountStore.initialized,
             this.eventStore.initialized,
-            this.rulesStore.initialized
+            this.rulesStore.initialized,
+            this.proxyStore.initialized
         ]);
 
         if (this.accountStore.mightBePaidUser) {
@@ -83,7 +88,7 @@ export class SendStore {
         return requestInput;
     }
 
-    async addRequestInputFromExchange(exchange: HttpExchange) {
+    async addRequestInputFromExchange(exchange: HttpExchangeView) {
         trackEvent({ category: 'Send', action: 'Resend exchange' });
 
         this.addRequestInput(
@@ -158,19 +163,21 @@ export class SendStore {
             const hostWithPort = `${url.hostname}:${effectivePort}`;
             const clientCertificate = passthroughOptions.clientCertificateHostMap?.[hostWithPort] ||
                 passthroughOptions.clientCertificateHostMap?.[url.hostname!] ||
+                passthroughOptions.clientCertificateHostMap?.['*'] ||
                 undefined;
 
             const additionalCACerts = this.rulesStore.additionalCaCertificates.map((cert) =>
                 ({ cert: cert.rawPEM })
             );
 
-            const requestOptions = {
+            const requestOptions: RequestOptions = {
                 ignoreHostHttpsErrors: passthroughOptions.ignoreHostHttpsErrors,
-                additionalCACerts: additionalCACerts,
+                additionalTrustedCAs: additionalCACerts,
                 trustAdditionalCAs: additionalCACerts, // Deprecated alias, here for backward compat
                 clientCertificate,
                 proxyConfig: getProxyConfig(this.rulesStore.proxyConfig),
-                lookupOptions: passthroughOptions.lookupOptions
+                lookupOptions: passthroughOptions.lookupOptions,
+                keyLogFile: this.proxyStore.keyLogFilePath
             };
 
             const encodedBody = await requestInput.rawBody.encodingBestEffortPromise;
@@ -194,7 +201,6 @@ export class SendStore {
                 url: requestInput.url,
                 protocol: url.protocol.slice(0, -1),
                 path: url.pathname,
-                hostname: url.hostname,
                 headers: rawHeadersToHeaders(requestInput.headers),
                 rawHeaders: _.cloneDeep(requestInput.headers),
                 body: { buffer: encodedBody },
@@ -222,7 +228,7 @@ export class SendStore {
                         timingEvents: {
                             startTimestamp,
                             abortedTimestamp,
-                            ...exchange.timingEvents,
+                            ...exchange.timingEvents as Partial<TimingEvents>,
                             ...error.timingEvents
                         } as TimingEvents,
                         tags: ['client-error:ECONNABORTED']
@@ -333,16 +339,6 @@ const trackResponseEvents = flow(function * (
         }
     }
 });
-
-export const getEffectivePort = (url: { protocol: string | null, port: string | null }) => {
-    if (url.port) {
-        return parseInt(url.port, 10);
-    } else if (url.protocol === 'https:' || url.protocol === 'wss:') {
-        return 443;
-    } else {
-        return 80;
-    }
-}
 
 function getProxyConfig(proxyConfig: RulesStore['proxyConfig']): ClientProxyConfig {
     if (!proxyConfig) return undefined;

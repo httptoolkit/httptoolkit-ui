@@ -13,21 +13,21 @@ import {
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { WithInjected, CollectedEvent } from '../../types';
+import { WithInjected, CollectedEvent, HttpExchangeView, RawTunnel } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
 import { useHotkeys, isEditable, windowSize, AriaCtrlCmd, Ctrl } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
-import { UnreachableCheck } from '../../util/error';
+import { UnreachableCheck, unreachableCheck } from '../../util/error';
 
 import { SERVER_SEND_API_SUPPORTED, serverVersion, versionSatisfies } from '../../services/service-versions';
 
-import { UiStore } from '../../model/ui/ui-store';
+import { ExpandableViewCardKey, UiStore } from '../../model/ui/ui-store';
 import { ProxyStore } from '../../model/proxy-store';
 import { EventsStore } from '../../model/events/events-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 import { SendStore } from '../../model/send/send-store';
-import { HttpExchange } from '../../model/http/exchange';
+import { HttpExchange } from '../../model/http/http-exchange';
 import { FilterSet } from '../../model/filters/search-filters';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
@@ -45,6 +45,7 @@ import { TlsTunnelDetailsPane } from './tls/tls-tunnel-details-pane';
 import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
+import { RawTunnelDetailsPane } from './raw-tunnel-details-pane';
 
 interface ViewPageProps {
     className?: string;
@@ -114,7 +115,7 @@ const ViewPageKeyboardShortcuts = (props: {
         }
     }, [selectedEvent, props.onBuildRuleFromExchange, props.isPaidUser]);
 
-    useHotkeys('Ctrl+Delete, Cmd+Delete', (event) => {
+    useHotkeys('Ctrl+Delete, Cmd+Delete, Ctrl+Backspace, Cmd+Backspace', (event) => {
         if (isEditable(event.target)) return;
 
         if (selectedEvent) {
@@ -122,7 +123,7 @@ const ViewPageKeyboardShortcuts = (props: {
         }
     }, [selectedEvent, props.onDelete]);
 
-    useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete', (event) => {
+    useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete, Ctrl+Shift+Backspace, Cmd+Shift+Backspace', (event) => {
         props.onClear();
         event.preventDefault();
     }, [props.onClear]);
@@ -141,6 +142,19 @@ const EDITOR_KEYS = [
     'streamMessage'
 ] as const;
 type EditorKey = typeof EDITOR_KEYS[number];
+
+const paneExpansionRequirements: { [key in ExpandableViewCardKey]: (event: CollectedEvent) => boolean } = {
+    requestBody: (event: CollectedEvent) =>
+        event.isHttp() &&
+        (event.hasRequestBody() || !!event.downstream.requestBreakpoint),
+    responseBody: (event: CollectedEvent) =>
+        event.isHttp() &&
+        (event.hasResponseBody() || !!event.downstream.responseBreakpoint),
+    webSocketMessages: (event: CollectedEvent) =>
+        event.isWebSocket() && event.wasAccepted,
+    rawTunnelPackets: (event: CollectedEvent) =>
+        event.isRawTunnel()
+};
 
 @inject('eventsStore')
 @inject('proxyStore')
@@ -187,28 +201,51 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @debounceComputed(10) // Debounce slightly - most important for body filtering performance
     get filteredEventState(): {
-        filteredEvents: CollectedEvent[],
+        filteredEvents: ReadonlyArray<CollectedEvent>,
         filteredEventCount: [filtered: number, fromTotal: number]
     } {
         const { events } = this.props.eventsStore;
 
         const filteredEvents = (this.currentSearchFilters.length === 0)
             ? events
-            : events.filter((event) =>
-                this.currentSearchFilters.every((f) => f.matches(event))
-            );
+            : events.filter((event) => {
+                if (event.isHttp() && event.wasTransformed) {
+                    return this.currentSearchFilters.every((f) => f.matches(event.downstream) || f.matches(event.upstream!))
+                } else {
+                    return this.currentSearchFilters.every((f) => f.matches(event))
+                }
+            });
 
         return {
             filteredEvents,
             filteredEventCount: [filteredEvents.length, events.length]
         };
     }
-
     @computed
     get selectedEvent() {
+        // First try to use the URL-based eventId, then fallback to the persisted selection
+        const targetEventId = this.props.eventId || this.props.uiStore.selectedEventId;
+
         return _.find(this.props.eventsStore.events, {
-            id: this.props.eventId
+            id: targetEventId
         });
+    }
+
+    @computed
+    get selectedExchange() {
+        const { contentPerspective } = this.props.uiStore;
+        if (!this.selectedEvent) return undefined;
+        if (!this.selectedEvent.isHttp()) return undefined;
+
+        return contentPerspective === 'client'
+            ? this.selectedEvent.downstream
+        : contentPerspective === 'server'
+            ? (this.selectedEvent.upstream ?? this.selectedEvent.downstream)
+        : contentPerspective === 'original'
+            ? this.selectedEvent.original
+        : contentPerspective === 'transformed'
+            ? this.selectedEvent.transformed
+        : unreachableCheck(contentPerspective)
     }
 
     private readonly contextMenuBuilder = new ViewEventContextMenuBuilder(
@@ -221,12 +258,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
-        // After first render, scroll to the selected event (or the end of the list) by default:
+        // After first render, if we're jumping to an event, then scroll to it:
         requestAnimationFrame(() => {
             if (this.props.eventId && this.selectedEvent) {
+                this.props.uiStore.setSelectedEventId(this.props.eventId);
                 this.onScrollToCenterEvent(this.selectedEvent);
-            } else {
-                this.onScrollToEnd();
             }
         });
 
@@ -257,32 +293,14 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
 
             const { expandedViewCard } = this.props.uiStore;
-
-            if (!expandedViewCard) return;
-
-            // If you have a pane expanded, and select an event with no data
-            // for that pane, then disable the expansion
-            if (
-                !(selectedEvent.isHttp()) ||
-                (
-                    expandedViewCard === 'requestBody' &&
-                    !selectedEvent.hasRequestBody() &&
-                    !selectedEvent.requestBreakpoint
-                ) ||
-                (
-                    expandedViewCard === 'responseBody' &&
-                    !selectedEvent.hasResponseBody() &&
-                    !selectedEvent.responseBreakpoint
-                ) ||
-                (
-                    expandedViewCard === 'webSocketMessages' &&
-                    !(selectedEvent.isWebSocket() && selectedEvent.wasAccepted())
-                )
-            ) {
-                runInAction(() => {
-                    this.props.uiStore.expandedViewCard = undefined;
-                });
-                return;
+            if (expandedViewCard) {
+                // If you have a pane expanded, and select an event with no data
+                // for that pane, then disable the expansion:
+                if (!paneExpansionRequirements[expandedViewCard](selectedEvent)) {
+                    runInAction(() => {
+                        this.props.uiStore.expandedViewCard = undefined;
+                    });
+                }
             }
         }));
 
@@ -300,10 +318,19 @@ class ViewPage extends React.Component<ViewPageProps> {
                     oldFilteredEvents !== newFilteredEvents &&
                     oldFilteredEvents !== this.props.eventsStore.events
                 ) {
-                    oldFilteredEvents.length = 0;
+                    (oldFilteredEvents as CollectedEvent[]).length = 0;
                 }
             })
         );
+    }
+
+    componentDidUpdate(prevProps: ViewPageProps) {
+        // Only clear persisted selection if we're explicitly navigating to a different event via URL
+        // Don't clear it when going from eventId to no eventId (which happens when clearing selection)
+        if (this.props.eventId && prevProps.eventId && this.props.eventId !== prevProps.eventId) {
+            // Clear persisted selection only when explicitly navigating between different events via URL
+            this.props.uiStore.setSelectedEventId(undefined);
+        }
     }
 
     isSendAvailable() {
@@ -328,7 +355,8 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
         } else if (this.selectedEvent.isHttp()) {
             rightPane = <HttpDetailsPane
-                exchange={this.selectedEvent}
+                exchange={this.selectedExchange!}
+                perspective={this.props.uiStore.contentPerspective}
 
                 requestEditor={this.editors.request}
                 responseEditor={this.editors.response}
@@ -370,6 +398,12 @@ class ViewPage extends React.Component<ViewPageProps> {
                 offerEditor={this.editors.request}
                 answerEditor={this.editors.response}
                 navigate={this.props.navigate}
+            />
+        } else if (this.selectedEvent.isRawTunnel()) {
+            rightPane = <RawTunnelDetailsPane
+                tunnel={this.selectedEvent}
+                streamMessageEditor={this.editors.streamMessage}
+                isPaidUser={isPaidUser}
             />
         } else {
             throw new UnreachableCheck(this.selectedEvent);
@@ -424,8 +458,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
-
                         contextMenuBuilder={this.contextMenuBuilder}
+                        uiStore={this.props.uiStore}
 
                         ref={this.listRef}
                     />
@@ -468,6 +502,8 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onSelected(event: CollectedEvent | undefined) {
+        this.props.uiStore.setSelectedEventId(event?.id);
+
         this.props.navigate(event
             ? `/view/${event.id}`
             : '/view'
@@ -503,7 +539,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onBuildRuleFromExchange(exchange: HttpExchange) {
+    onBuildRuleFromExchange(exchange: HttpExchangeView) {
         const { rulesStore, navigate } = this.props;
 
         if (!this.props.accountStore!.isPaidUser) return;
@@ -514,7 +550,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    async onPrepareToResendRequest(exchange: HttpExchange) {
+    async onPrepareToResendRequest(exchange: HttpExchangeView) {
         const { sendStore, navigate } = this.props;
 
         if (!this.props.accountStore!.isPaidUser) return;
@@ -558,9 +594,9 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onClear(confirmRequired = true) {
         const { events } = this.props.eventsStore;
-        const someEventsPinned = _.some(events, { pinned: true });
+        const someEventsPinned = events.some(e => e.pinned === true);
         const allEventsPinned = events.length > 0 &&
-            _.every(events, { pinned: true });
+            events.every(e => e.pinned === true);
 
         if (allEventsPinned) {
             // We always confirm deletion of pinned exchanges:

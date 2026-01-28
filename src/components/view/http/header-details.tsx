@@ -3,7 +3,7 @@ import * as React from 'react';
 import { inject, observer } from 'mobx-react';
 
 import { styled } from '../../../styles';
-import { RawHeaders } from '../../../types';
+import { HttpVersion, RawHeaders } from '../../../types';
 import { Icon } from '../../../icons';
 import { copyToClipboard } from '../../../util/ui';
 
@@ -143,15 +143,6 @@ const HeaderDocsLink = styled(DocsLink)`
     margin-top: 10px;
 `;
 
-const PseudoHeadersHiddenMessage = styled.span`
-    grid-column: 2 / -1;
-    font-style: italic;
-`;
-
-const PseudoHeadersContent = styled(CollapsibleSectionBody)`
-    line-height: 1.3;
-`;
-
 const getHeaderDescription = (
     name: string,
     value: string,
@@ -181,7 +172,7 @@ const getHeaderDescription = (
 };
 
 export const HeaderDetails = inject('accountStore')(observer((props: {
-    httpVersion: 1 | 2;
+    httpVersion: HttpVersion,
     headers: RawHeaders,
     requestUrl: URL,
     accountStore?: AccountStore
@@ -192,35 +183,11 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
         return <BlankContentPlaceholder>(None)</BlankContentPlaceholder>
     }
 
-    let [pseudoHeaders, normalHeaders] = _.partition(sortedHeaders, ([key]) =>
-        props.httpVersion >= 2 && key.startsWith(':')
-    );
-
-    if (normalHeaders.length === 0) {
-        normalHeaders = pseudoHeaders;
-        pseudoHeaders = [];
-    }
+    // Filter out HTTP/2 pseudo-headers - they're not relevant, as all details (URL,
+    // method, status, etc) are shown elsewhere.
+    const normalHeaders = sortedHeaders.filter(([key]) => !key.startsWith(':'));
 
     return <HeadersGrid>
-        {
-            pseudoHeaders.length > 0 && <CollapsibleSection
-                withinGrid={true}
-                contentName='pseudo headers'
-            >
-                <CollapsibleSectionSummary>
-                    <PseudoHeadersHiddenMessage>
-                        HTTP/{props.httpVersion} pseudo-headers
-                    </PseudoHeadersHiddenMessage>
-                </CollapsibleSectionSummary>
-
-                <PseudoHeadersContent>
-                    <PseudoHeaderDetails
-                        headers={pseudoHeaders}
-                    />
-                </PseudoHeadersContent>
-            </CollapsibleSection>
-        }
-
         { _.flatMap(normalHeaders, ([key, value], i) => {
             const docs = getHeaderDocs(key);
             const description = getHeaderDescription(
@@ -248,17 +215,11 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
     </HeadersGrid>;
 }));
 
-const PseudoHeaderDetails = observer((props: {
-    headers: RawHeaders
-}) => {
-    return <HeadersGrid>
-        { _.flatMap(props.headers, ([key, value], i) => {
-            return <CollapsibleSection
-                contentName={`${key} header details`}
-                withinGrid={true}
-                key={`${key}-${i}`}>
-                <HeaderKeyValue headerKey={key} headerValue={value} />
-            </CollapsibleSection>;
-        }) }
-    </HeadersGrid>;
-});
+export const HeaderHeadingContainer = styled.div<{ open?: boolean }>`
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    ${p => p.open !== true && `
+        margin-bottom: -10px;
+    `}
+`;

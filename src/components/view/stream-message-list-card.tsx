@@ -34,17 +34,16 @@ function getFilename(
     }.${extension}`;
 }
 
-export type StreamType = 'WebSocket' | 'DataChannel';
-
 @observer
 export class StreamMessageListCard extends React.Component<ExpandableCardProps & {
     isPaidUser: boolean,
     filenamePrefix: string,
     streamId: string,
-    streamType: StreamType,
+    cardHeading: string,
     streamLabel?: string,
-    messages: Array<StreamMessage>,
+    messages: ReadonlyArray<StreamMessage>,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
+    onClearMessages?: () => void,
 }> {
 
     @observable
@@ -58,7 +57,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
     render() {
         const {
             streamId,
-            streamType,
+            cardHeading,
             streamLabel,
             messages,
             isPaidUser,
@@ -67,6 +66,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
             expanded,
             onCollapseToggled,
             onExpandToggled,
+            onClearMessages,
             ariaLabel
         } = this.props;
 
@@ -86,12 +86,18 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                         icon={['fas', 'download']}
                         title={
                             isPaidUser
-                                ? "Save these message as a file"
+                                ? "Save these messages as a file"
                                 : "With Pro: Save these messages as a file"
                         }
                         disabled={!isPaidUser}
                         onClick={this.exportMessages}
                     />
+                    { onClearMessages &&
+                        <IconButton
+                            icon={['far', 'trash-alt']}
+                            title="Clear all messages"
+                            onClick={onClearMessages}
+                        /> }
                 </CollapsingButtons>
                 { streamLabel && <Pill
                     color={getSummaryColor('data')}
@@ -107,7 +113,7 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                 <CollapsibleCardHeading
                     onCollapseToggled={onCollapseToggled}
                 >
-                    { streamType } messages
+                    { cardHeading }
                 </CollapsibleCardHeading>
             </header>
             <StreamMessagesList expanded={!!expanded}>

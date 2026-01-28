@@ -17,6 +17,8 @@ const PaneScrollOuterContainer = styled.div`
     padding: 0 20px 0 20px;
 
     background-color: ${p => p.theme.containerBackground};
+
+    container-type: size;
 `;
 
 const PaneScrollInnerContainer = styled.div`

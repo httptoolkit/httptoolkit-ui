@@ -9,7 +9,7 @@ import {
     bufferToString,
     stringToBuffer
 } from '../../../util/buffer';
-import { getHeaderValue } from '../../../util/headers';
+import { getHeaderValue } from '../../../model/http/headers';
 import {
     EditableContentType,
     EditableContentTypes,
@@ -30,10 +30,11 @@ export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps 
     title: string,
     direction: 'left' | 'right',
 
-    exchangeId: string,
     body: EditableBody,
     rawHeaders: RawHeaders,
     onChange: (result: Buffer) => void,
+
+    editorKey: string,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>;
 }> {
 
@@ -71,13 +72,14 @@ export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps 
             body,
             rawHeaders,
             title,
-            exchangeId,
             direction,
             collapsed,
             expanded,
             onCollapseToggled,
             onExpandToggled,
-            ariaLabel
+            ariaLabel,
+            editorNode,
+            editorKey
         } = this.props;
 
         const bodyString = bufferToString(body.decoded, this.textEncoding);
@@ -116,12 +118,13 @@ export class HttpBreakpointBodyCard extends React.Component<ExpandableCardProps 
 
             <EditorCardContent showFullBorder={!expanded}>
                 <portals.OutPortal<typeof SelfSizedEditor>
-                    contentId={`bp-${exchangeId}-${direction}`}
-                    node={this.props.editorNode}
+                    contentId={`bp-${editorKey}`}
+                    node={editorNode}
                     language={this.contentType}
                     value={bodyString}
                     onChange={this.onBodyChange}
                     expanded={!!expanded}
+                    maxHeight='50cqh'
                 />
             </EditorCardContent>
         </CollapsibleCard>;

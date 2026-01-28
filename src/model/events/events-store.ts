@@ -1,8 +1,7 @@
 import * as _ from 'lodash';
 import {
     observable,
-    action,
-    computed,
+    action
 } from 'mobx';
 import { HarParseError } from 'har-validator';
 
@@ -28,7 +27,10 @@ import {
     InputRTCMediaStats,
     InputRTCMediaTrackClosed,
     InputRTCExternalPeerAttached,
-    TimingEvents
+    InputRuleEvent,
+    InputRawPassthrough,
+    InputRawPassthroughData,
+    InputRequest
 } from '../../types';
 
 import { lazyObservablePromise } from '../../util/observable';
@@ -39,11 +41,14 @@ import { ApiStore } from '../api/api-store';
 import { RulesStore } from '../rules/rules-store';
 import { findItem, isRuleGroup } from '../rules/rules-structure';
 
+import { ObservableEventsList } from './observable-events-list';
+
 import { parseHar } from '../http/har';
 
 import { FailedTlsConnection } from '../tls/failed-tls-connection';
 import { TlsTunnel } from '../tls/tls-tunnel';
-import { HttpExchange } from '../http/exchange';
+import { RawTunnel } from '../raw-tunnel';
+import { HttpExchange } from '../http/http-exchange';
 import { WebSocketStream } from '../websockets/websocket-stream';
 import { RTCConnection } from '../webrtc/rtc-connection';
 import { RTCDataChannel } from '../webrtc/rtc-data-channel';
@@ -68,6 +73,10 @@ type EventTypesMap = {
     'tls-passthrough-opened': InputTlsPassthrough,
     'tls-passthrough-closed': InputTlsPassthrough,
     'client-error': InputClientError,
+    'raw-passthrough-opened': InputRawPassthrough,
+    'raw-passthrough-closed': InputRawPassthrough,
+    'raw-passthrough-data': InputRawPassthroughData,
+    'rule-event': InputRuleEvent
 } & {
     // MockRTC:
     [K in InputRTCEvent]: InputRTCEventData[K];
@@ -86,7 +95,11 @@ const mockttpEventTypes = [
     'tls-client-error',
     'tls-passthrough-opened',
     'tls-passthrough-closed',
-    'client-error'
+    'client-error',
+    'raw-passthrough-opened',
+    'raw-passthrough-closed',
+    'raw-passthrough-data',
+    'rule-event'
 ] as const;
 
 const mockRTCEventTypes = [
@@ -109,9 +122,11 @@ type EventType =
     | MockttpEventType
     | MockRTCEventType;
 
-export type QueuedEvent = ({
-    [T in EventType]: { type: T, event: EventTypesMap[T] }
-}[EventType]);
+export type QueuedEvent =
+    | ({ // Received Mockttp event data:
+        [T in EventType]: { type: T, event: EventTypesMap[T] }
+    }[EventType])
+    | { type: 'queued-callback', cb: () => void } // Or a callback to run after data is processed
 
 type OrphanableQueuedEvent<T extends
     | 'response'
@@ -130,7 +145,11 @@ type OrphanableQueuedEvent<T extends
     | 'media-track-stats'
     | 'media-track-closed'
     | 'tls-passthrough-closed'
+    | 'raw-passthrough-closed'
+    | 'raw-passthrough-data'
 > = { type: T, event: EventTypesMap[T] };
+
+const LARGE_QUEUE_BATCH_SIZE = 1033; // Off by 33 for a new ticking UI effect
 
 export class EventsStore {
 
@@ -180,40 +199,16 @@ export class EventsStore {
         }
     }
 
-    readonly events = observable.array<CollectedEvent>([], { deep: false });
+    readonly eventsList = new ObservableEventsList();
 
-    @computed.struct
-    get exchanges(): Array<HttpExchange> {
-        return this.events.filter((e): e is HttpExchange => e.isHttp());
-    }
-
-    @computed.struct
-    get websockets(): Array<WebSocketStream> {
-        return this.exchanges.filter((e): e is WebSocketStream => e.isWebSocket());
-    }
-
-    @computed.struct
-    get rtcConnections(): Array<RTCConnection> {
-        return this.events.filter((e): e is RTCConnection => e.isRTCConnection());
-    }
-
-    @computed.struct
-    get rtcDataChannels(): Array<RTCDataChannel> {
-        return this.events.filter((e): e is RTCDataChannel => e.isRTCDataChannel());
-    }
-
-    @computed.struct
-    get rtcMediaTracks(): Array<RTCMediaTrack> {
-        return this.events.filter((e): e is RTCMediaTrack => e.isRTCMediaTrack());
-    }
-
-    @computed.struct
-    get activeSources() {
-        return _(this.exchanges)
-            .map(e => e.request.source)
-            .uniqBy(s => s.summary)
-            .value();
-    }
+    get events() { return this.eventsList.events; }
+    get exchanges() { return this.eventsList.exchanges; }
+    get websockets() { return this.eventsList.websockets; }
+    get tlsFailures() { return this.eventsList.tlsFailures; }
+    get rtcConnections() { return this.eventsList.rtcConnections; }
+    get rtcDataChannels() { return this.eventsList.rtcDataChannels; }
+    get rtcMediaTracks() { return this.eventsList.rtcMediaTracks; }
+    get activeSources() { return this.eventsList.activeSources; }
 
     @action.bound
     private flushQueuedUpdates() {
@@ -223,8 +218,18 @@ export class EventsStore {
         // on request animation frame, so batches get larger and cheaper if
         // the frame rate starts to drop.
 
-        this.eventQueue.forEach(this.updateFromQueuedEvent);
-        this.eventQueue = [];
+        if (this.eventQueue.length > LARGE_QUEUE_BATCH_SIZE) {
+            // If there's a lot of events in the queue (only ever likely to happen
+            // in an import of a large file) we break it up to keep the UI responsive.
+            this.eventQueue.slice(0, LARGE_QUEUE_BATCH_SIZE).forEach(this.updateFromQueuedEvent);
+            this.eventQueue = this.eventQueue.slice(LARGE_QUEUE_BATCH_SIZE);
+            setTimeout(() => {
+                this.queueEventFlush();
+            }, 10);
+        } else {
+            this.eventQueue.forEach(this.updateFromQueuedEvent);
+            this.eventQueue = [];
+        }
     }
 
     private updateFromQueuedEvent = (queuedEvent: QueuedEvent) => {
@@ -260,6 +265,16 @@ export class EventsStore {
                 case 'client-error':
                     return this.addClientError(queuedEvent.event);
 
+                case 'raw-passthrough-opened':
+                    return this.addRawTunnel(queuedEvent.event);
+                case 'raw-passthrough-closed':
+                    return this.markRawTunnelClosed(queuedEvent.event);
+                case 'raw-passthrough-data':
+                    return this.addRawTunnelChunk(queuedEvent.event);
+
+                case 'rule-event':
+                    return this.addRuleEvent(queuedEvent.event);
+
                 case 'peer-connected':
                     return this.addRTCPeerConnection(queuedEvent.event);
                 case 'external-peer-attached':
@@ -279,6 +294,10 @@ export class EventsStore {
                     return this.addRTCMediaTrackStats(queuedEvent.event);
                 case 'media-track-closed':
                     return this.markRTCMediaTrackClosed(queuedEvent.event);
+
+                case 'queued-callback':
+                    queuedEvent.cb();
+                    return;
             }
         } catch (e) {
             // It's possible we might fail to parse an input event. This shouldn't happen, but if it
@@ -310,11 +329,11 @@ export class EventsStore {
     private addInitiatedRequest(request: InputInitiatedRequest) {
         // Due to race conditions, it's possible this request already exists. If so,
         // we just skip this - the existing data will be more up to date.
-        const existingEventIndex = _.findIndex(this.events, { id: request.id });
-        if (existingEventIndex === -1) {
-            const exchange = new HttpExchange(this.apiStore, request);
-            this.events.push(exchange);
-        }
+        const existingEvent = this.eventsList.getById(request.id);
+        if (existingEvent) return;
+
+        const exchange = new HttpExchange(request, this.apiStore);
+        this.eventsList.push(exchange);
     }
 
     private getMatchedRule(request: InputCompletedRequest) {
@@ -337,15 +356,15 @@ export class EventsStore {
         // are received, and this one later when the full body is received.
         // We add the request from scratch if it's somehow missing, which can happen given
         // races or if the server doesn't support request-initiated events.
-        const existingEventIndex = _.findIndex(this.events, { id: request.id });
+        const existingEvent = this.eventsList.getById(request.id);
 
         let event: HttpExchange;
-        if (existingEventIndex >= 0) {
-            event = this.events[existingEventIndex] as HttpExchange;
+        if (existingEvent) {
+            event = existingEvent as HttpExchange
         } else {
-            event = new HttpExchange(this.apiStore, { ...request });
+            event = new HttpExchange({ ...request }, this.apiStore);
             // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
-            this.events.push(event);
+            this.eventsList.push(event);
         }
 
         event.updateFromCompletedRequest(request, this.getMatchedRule(request));
@@ -353,7 +372,7 @@ export class EventsStore {
 
     @action
     private markRequestAborted(request: InputFailedRequest) {
-        const exchange = _.find(this.exchanges, { id: request.id });
+        const exchange = this.eventsList.getExchangeById(request.id);
 
         if (!exchange) {
             // Handle this later, once the request has arrived
@@ -366,7 +385,7 @@ export class EventsStore {
 
     @action
     private setResponse(response: InputResponse) {
-        const exchange = _.find(this.exchanges, { id: response.id });
+        const exchange = this.eventsList.getExchangeById(response.id);
 
         if (!exchange) {
             // Handle this later, once the request has arrived
@@ -379,16 +398,16 @@ export class EventsStore {
 
     @action
     private addWebSocketRequest(request: InputCompletedRequest) {
-        const stream = new WebSocketStream(this.apiStore, { ...request });
+        const stream = new WebSocketStream({ ...request }, this.apiStore);
         // ^ This mutates request to use it, so we have to shallow-clone to use it below too
 
         stream.updateFromCompletedRequest(request, this.getMatchedRule(request));
-        this.events.push(stream);
+        this.eventsList.push(stream);
     }
 
     @action
     private addAcceptedWebSocketResponse(response: InputResponse) {
-        const stream = _.find(this.websockets, { id: response.id });
+        const stream = this.eventsList.getWebSocketById(response.id);
 
         if (!stream) {
             // Handle this later, once the request has arrived
@@ -402,7 +421,7 @@ export class EventsStore {
 
     @action
     private addWebSocketMessage(message: InputWebSocketMessage) {
-        const stream = _.find(this.websockets, { id: message.streamId });
+        const stream = this.eventsList.getWebSocketById(message.streamId);
 
         if (!stream) {
             // Handle this later, once the request has arrived
@@ -418,7 +437,7 @@ export class EventsStore {
 
     @action
     private markWebSocketClosed(close: InputWebSocketClose) {
-        const stream = _.find(this.websockets, { id: close.streamId });
+        const stream = this.eventsList.getWebSocketById(close.streamId);
 
         if (!stream) {
             // Handle this later, once the request has arrived
@@ -433,12 +452,12 @@ export class EventsStore {
 
     @action
     private addTlsTunnel(openEvent: InputTlsPassthrough) {
-        this.events.push(new TlsTunnel(openEvent));
+        this.eventsList.push(new TlsTunnel(openEvent));
     }
 
     @action
     private markTlsTunnelClosed(closeEvent: InputTlsPassthrough) {
-        const tunnel = _.find(this.events, { id: closeEvent.id }) as TlsTunnel | undefined;
+        const tunnel = this.eventsList.getTlsTunnelById(closeEvent.id);
 
         if (!tunnel) {
             // Handle this later, once the tunnel open event has arrived
@@ -452,14 +471,53 @@ export class EventsStore {
     }
 
     @action
+    private addRawTunnel(openEvent: InputRawPassthrough) {
+        const tunnel = new RawTunnel(openEvent);
+        this.eventsList.push(tunnel);
+    }
+
+    @action
+    private markRawTunnelClosed(closeEvent: InputRawPassthrough) {
+        const tunnel = this.eventsList.getRawTunnelById(closeEvent.id);
+
+        if (!tunnel) {
+            // Handle this later, once the tunnel open event has arrived
+            this.orphanedEvents[closeEvent.id] = {
+                type: 'raw-passthrough-closed', event: closeEvent
+            };
+            return;
+        }
+
+        tunnel.markClosed(closeEvent);
+    }
+
+    @action
+    private addRawTunnelChunk(dataEvent: InputRawPassthroughData) {
+        const tunnel = this.eventsList.getRawTunnelById(dataEvent.id);
+
+        if (!tunnel) {
+            // Handle this later, once the tunnel open event has arrived
+            this.orphanedEvents[dataEvent.id] = {
+                type: 'raw-passthrough-data', event: dataEvent
+            };
+            return;
+        }
+
+        tunnel.addChunk(dataEvent);
+    }
+
+    @action
     private addFailedTlsRequest(request: InputTlsFailure) {
-        if (_.some(this.events, (event) =>
-            event.isTlsFailure() &&
-            event.upstreamHostname === request.hostname &&
-            event.remoteIpAddress === request.remoteIpAddress
+        if (this.tlsFailures.some((failure) =>
+            failure.upstreamHostname === (
+                request.tlsMetadata.sniHostname ??
+                request.destination?.hostname ??
+                request.hostname
+            ) &&
+            failure.remoteIpAddress === request.remoteIpAddress
         )) return; // Drop duplicate TLS failures
 
-        this.events.push(new FailedTlsConnection(request));
+        this.eventsList.push(new FailedTlsConnection(request));
     }
 
     @action
@@ -476,32 +534,68 @@ export class EventsStore {
             return;
         }
 
-        const exchange = new HttpExchange(this.apiStore, {
+        const request = {
             ...error.request,
-            protocol: error.request.protocol || '',
+            matchedRuleId: false,
             method: error.request.method || '',
             url: error.request.url || `${error.request.protocol || 'http'}://`,
-            path: error.request.path || '/',
             headers: error.request.headers
-        });
+        } satisfies InputRequest;
+
+        const exchange = new HttpExchange(request, this.apiStore);
 
         if (error.response === 'aborted') {
-            exchange.markAborted(error.request);
+            exchange.markAborted(request);
         } else {
             exchange.setResponse(error.response);
         }
 
-        this.events.push(exchange);
+        this.eventsList.push(exchange);
+    }
+
+    @action
+    private addRuleEvent(event: InputRuleEvent) {
+        const exchange = this.eventsList.getExchangeById(event.requestId);
+
+        if (!exchange) {
+            // Handle this later, once the request has arrived
+            this.orphanedEvents[event.requestId] = { type: 'rule-event', event };
+            return;
+        };
+
+        switch (event.eventType) {
+            case 'passthrough-request-head':
+                exchange.updateFromUpstreamRequestHead(event.eventData);
+                break;
+            case 'passthrough-request-body':
+                exchange.updateFromUpstreamRequestBody(event.eventData);
+                break;
+            case 'passthrough-response-head':
+                exchange.updateFromUpstreamResponseHead(event.eventData);
+                break;
+            case 'passthrough-response-body':
+                exchange.updateFromUpstreamResponseBody(event.eventData);
+                break;
+            case 'passthrough-abort':
+                exchange.updateFromUpstreamAbort(event.eventData);
+                break;
+
+            case 'passthrough-websocket-connect':
+                if (!exchange.isWebSocket()) throw new Error('Received WS connect event for non-WS');
+                const webSocket = exchange as WebSocketStream;
+                webSocket.updateWithUpstreamConnect(event.eventData);
+                break;
+        }
     }
 
     @action
     private addRTCPeerConnection(event: InputRTCPeerConnected) {
-        this.events.push(new RTCConnection(event));
+        this.eventsList.push(new RTCConnection(event));
     }
 
     @action
     private attachExternalRTCPeer(event: InputRTCExternalPeerAttached) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         const otherHalf = this.rtcConnections.find(c => c.isOtherHalfOf(event));
 
         if (conn) {
@@ -514,7 +608,7 @@ export class EventsStore {
 
     @action
     private markRTCPeerDisconnected(event: InputRTCPeerDisconnected) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
             conn.markClosed(event);
         } else {
@@ -524,10 +618,10 @@ export class EventsStore {
 
     @action
     private addRTCDataChannel(event: InputRTCDataChannelOpened) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
             const dc = new RTCDataChannel(event, conn);
-            this.events.push(dc);
+            this.eventsList.push(dc);
             conn.addStream(dc);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'data-channel-opened', event };
@@ -556,10 +650,10 @@ export class EventsStore {
 
     @action
     private addRTCMediaTrack(event: InputRTCMediaTrackOpened) {
-        const conn = this.rtcConnections.find(c => c.id === event.sessionId);
+        const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
             const track = new RTCMediaTrack(event, conn);
-            this.events.push(track);
+            this.eventsList.push(track);
             conn.addStream(track);
         } else {
             this.orphanedEvents[event.sessionId] = { type: 'media-track-opened', event };
@@ -588,7 +682,7 @@ export class EventsStore {
 
     @action.bound
     deleteEvent(event: CollectedEvent) {
-        this.events.remove(event);
+        this.eventsList.remove(event);
 
         if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
             event.rtcConnection.removeStream(event);
@@ -607,10 +701,10 @@ export class EventsStore {
             clearPinned ? () => false : (ex) => ex.pinned
         );
 
-        this.events.clear();
+        this.eventsList.clear();
         unpinnedEvents.forEach((event) => { if ('cleanup' in event) event.cleanup() });
 
-        this.events.push(...pinnedEvents);
+        this.eventsList.push(...pinnedEvents);
         this.orphanedEvents = {};
 
         // If GC is exposed (desktop 0.1.22+), trigger it when data is cleared,
@@ -635,40 +729,27 @@ export class EventsStore {
 
         // We now take each of these input items, and put them on the queue to be added
         // to the UI like any other seen request data. Arguably we could call addRequest &
-        // setResponse etc directly, but this is nicer if the UI thread is already under strain.
+        // setResponse etc directly, but this is nicer in case the UI thread is already under strain.
+        this.eventQueue.push(...events);
 
-        // First, we run through the request & TLS error events together, in order, since these
-        // define the initial event ordering
-        const [initialEvents, updateEvents] = _.partition(events, ({ type }) =>
-            type === 'request' ||
-            type === 'websocket-request' ||
-            type === 'tls-client-error'
-        );
-        this.eventQueue.push(..._.sortBy(initialEvents, (e) =>
-            (e.event as { timingEvents: TimingEvents }).timingEvents.startTime
-        ));
-
-        // Then we add everything else (responses & aborts). They just update, so order doesn't matter:
-        this.eventQueue.push(...updateEvents);
+        // After all events are handled, set the required pins:
+        this.eventQueue.push({
+            type: 'queued-callback',
+            cb: action(() => pinnedIds.forEach((id) => {
+                this.events.find(e => e.id === id)!.pinned = true;
+            }))
+        });
 
         this.queueEventFlush();
-
-        if (pinnedIds.length) {
-            // This rAF will be scheduled after the queued flush, so the event should
-            // always be fully imported by this stage:
-            requestAnimationFrame(action(() => pinnedIds.forEach((id) => {
-                this.events.find(e => e.id === id)!.pinned = true;
-            })));
-        }
     }
 
     @action
     recordSentRequest(request: InputCompletedRequest): HttpExchange {
-        const exchange = new HttpExchange(this.apiStore, { ...request });
+        const exchange = new HttpExchange({ ...request }, this.apiStore);
         // ^ This mutates request to use it, so we have to shallow-clone to use it below too:
         exchange.updateFromCompletedRequest(request, false);
 
-        this.events.push(exchange);
+        this.eventsList.push(exchange);
         return exchange;
     }
 

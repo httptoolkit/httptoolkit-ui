@@ -8,7 +8,7 @@ import { BreakpointRequestResult, HttpExchange, RawHeaders } from '../../../type
 import { styled } from '../../../styles';
 
 import { getSummaryColor } from '../../../model/events/categorization';
-import { withHeaderValue } from '../../../util/headers';
+import { withHeaderValue } from '../../../model/http/headers';
 
 import {
     CollapsibleCardHeading,
@@ -63,7 +63,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
                 <SourceIcon source={request.source} />
                 <Pill color={getSummaryColor(exchange)}>
                     { method } {
-                        (request.hostname || '')
+                        (request.parsedUrl.hostname || '')
                         // Add some tiny spaces to split up parts of the hostname
                         .replace(/\./g, '\u2008.\u2008')
                     }
@@ -105,8 +105,8 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
     }
 
     @computed
-    get isHttp2() {
-        return this.props.exchange.httpVersion === 2;
+    get hasPseudoHeaders() {
+        return this.props.exchange.httpVersion >= 2;
     }
 
     @action.bound
@@ -116,7 +116,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
 
         if (method === inProgressResult.method) return;
 
-        if (this.isHttp2) {
+        if (this.hasPseudoHeaders) {
             this.props.onChange({
                 method,
                 rawHeaders: withHeaderValue(inProgressResult.rawHeaders, { ':method': method })
@@ -137,7 +137,7 @@ export class HttpBreakpointRequestCard extends React.Component<RequestBreakpoint
             // Automatically update the host/H2 headers to match, if we can:
             const parsedUrl = new URL(url);
 
-            if (this.isHttp2) {
+            if (this.hasPseudoHeaders) {
                 rawHeaders = withHeaderValue(rawHeaders, {
                     ':authority': parsedUrl.host,
                     ':path': parsedUrl.pathname + parsedUrl.search,

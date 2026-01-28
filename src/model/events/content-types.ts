@@ -7,6 +7,8 @@ import {
     isProbablyGrpcProto,
     isValidGrpcProto,
 } from '../../util/protobuf';
+import { isProbablyJson, isProbablyJsonRecords } from '../../util/json';
+import { isProbablyUtf8 } from '../../util/buffer';
 
 // Simplify a mime type as much as we can, without throwing any errors
 export const getBaseContentType = (mimeType: string | undefined) => {
@@ -51,7 +53,9 @@ export type ViewableContentType =
     | 'yaml'
     | 'image'
     | 'protobuf'
-    | 'grpc-proto';
+    | 'grpc-proto'
+    | 'json-records'
+    ;
 
 export const EditableContentTypes = [
     'text',
@@ -119,6 +123,14 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/grpc-proto': 'grpc-proto',
     'application/grpc-protobuf': 'grpc-proto',
 
+    // Nobody can quite agree on the names for the various sequence-of-JSON formats:
+    'application/jsonlines': 'json-records',
+    'application/json-lines': 'json-records',
+    'application/x-jsonlines': 'json-records',
+    'application/jsonl': 'json-records',
+    'application/x-ndjson': 'json-records',
+    'application/json-seq': 'json-records',
+
     'application/octet-stream': 'raw'
 } as const;
 
@@ -141,6 +153,7 @@ export function getEditableContentType(mimeType: string | undefined): EditableCo
 
 export function getContentEditorName(contentType: ViewableContentType): string {
     return contentType === 'raw' ? 'Hex'
+        : contentType === 'json-records' ? 'JSON Records'
         : contentType === 'json' ? 'JSON'
         : contentType === 'css' ? 'CSS'
         : contentType === 'url-encoded' ? 'URL-Encoded'
@@ -174,73 +187,150 @@ function isValidURLSafeBase64Byte(byte: number) {
         isAlphaNumOrEquals(byte);
 }
 
+export interface ContentViewOptions {
+    preferredContentType: ViewableContentType;
+    availableContentTypes: ViewableContentType[];
+}
+
 export function getCompatibleTypes(
     contentType: ViewableContentType,
     rawContentType: string | undefined,
-    body: MessageBody | Buffer | undefined,
+    messageBody: MessageBody | Buffer | undefined,
     headers?: Headers,
-): ViewableContentType[] {
-    let types = new Set([contentType]);
+): ContentViewOptions {
+    let preferredType = contentType;
+    let availableTypes = new Set([contentType]);
 
-    if (body && !Buffer.isBuffer(body)) {
-        body = body.decoded;
+    let body: Buffer | undefined;
+    if (messageBody && Buffer.isBuffer(messageBody)) {
+        body = messageBody;
+    } else if (messageBody) {
+        body = messageBody.decodedData;
     }
 
-    // Examine the first char of the body, assuming it's ascii
-    const firstChar = body && body.slice(0, 1).toString('ascii');
+    // For common mistypings, we override the default type if we're confident
+    const isCommonDefaultType = contentType === 'raw' || contentType === 'text' || contentType === 'html';
+    const firstRealChar = getFirstRealChar(body);
 
-    // Allow optionally formatting non-JSON as JSON, if it looks like it might be
-    if (firstChar === '{' || firstChar === '[') {
-        types.add('json');
+    // Format non-JSON-records as JSON-records, if it looks like it might be
+    if (!availableTypes.has('json-records') && isProbablyJsonRecords(body)) {
+        availableTypes.add('json-records');
+        preferredType = 'json-records';
+
+        if (isCommonDefaultType) {
+            preferredType = 'json-records';
+        }
     }
 
-    // Allow optionally formatting non-XML as XML, if it looks like it might be
-    if (firstChar === '<') {
-        types.add('xml');
+    if (!availableTypes.has('json-records') && isProbablyJson(body)) {
+        // Allow optionally formatting non-JSON as JSON, if it's anything remotely close
+        availableTypes.add('json');
+
+        if (isCommonDefaultType) {
+            preferredType = 'json';
+        }
     }
 
     if (
         body &&
-        !types.has('protobuf') &&
-        !types.has('grpc-proto') &&
+        !availableTypes.has('protobuf') &&
+        !availableTypes.has('grpc-proto') &&
         isProbablyProtobuf(body) &&
         // If it's probably unmarked protobuf, and it's a manageable size, try
         // parsing it just to check:
         (body.length < 100_000 && isValidProtobuf(body))
     ) {
-        types.add('protobuf');
+        availableTypes.add('protobuf');
+
+        if (isCommonDefaultType && body.length < 100_000) { // If we've checked fully
+            preferredType = 'protobuf';
+        }
     }
 
     if (
         body &&
-        !types.has('grpc-proto') &&
+        !availableTypes.has('grpc-proto') &&
         isProbablyGrpcProto(body, headers ?? {}) &&
         // If it's probably unmarked gRPC, and it's a manageable size, try
         // parsing it just to check:
         (body.length < 100_000 && isValidGrpcProto(body, headers ?? {}))
     ) {
-        types.add('grpc-proto');
+        availableTypes.add('grpc-proto');
+
+        if (isCommonDefaultType && body.length < 100_000) { // If we've checked fully
+            preferredType = 'grpc-proto';
+        }
     }
 
     // SVGs can always be shown as XML
     if (rawContentType && rawContentType.startsWith('image/svg')) {
-        types.add('xml');
+        availableTypes.add('xml');
+    }
+
+    // Allow optionally formatting non-XML as XML, if it looks like it might be but
+    // isn't otherwise recognized as such:
+    if (firstRealChar === '<') {
+        if (!availableTypes.has('xml')) {
+            availableTypes.add('xml');
+
+            if (contentType !== 'html' && isCommonDefaultType) {
+                preferredType = 'xml';
+            }
+
+            // Sniffed XML could also be HTML, as long as it's not an SVG:
+            if (contentType !== 'image') {
+                availableTypes.add('html');
+            }
+        }
+    } else {
+        // If it doesn't start with < then it's no normal HTML, no matter what it says.
+        // Treat as text by default instead to avoid formatting issues:
+        if (preferredType === 'html') {
+            preferredType = 'text';
+        }
     }
 
     if (
         body &&
-        !types.has('base64') &&
+        !availableTypes.has('base64') &&
         body.length >= 8 &&
-        // body.length % 4 === 0 && // Multiple of 4 bytes (final padding may be omitted)
+        // body.length % 4 === 0 && // Multiple of 4 bytes (no - final padding may be omitted)
         body.length < 100_000 && // < 100 KB of content
         (body.every(isValidStandardBase64Byte) || body.every(isValidURLSafeBase64Byte))
     ) {
-        types.add('base64');
+        availableTypes.add('base64');
     }
 
     // Lastly, anything can be shown raw or as text, if you like:
-    types.add('text');
-    types.add('raw');
+    availableTypes.add('text');
+    availableTypes.add('raw');
 
-    return Array.from(types);
+    return {
+        preferredContentType: preferredType,
+        availableContentTypes: Array.from(availableTypes)
+    };
+}
+
+function getFirstRealChar(buffer: Buffer | undefined): string | null {
+    if (!buffer || buffer.length === 0) return null;
+
+    // Detect BOM, skip it if present
+    let startOffset = 0;
+    if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+        startOffset = 3;
+    }
+
+    // We ignore common whitespace - no need to worry about unicode edge cases etc:
+    const firstNonWhitespaceByte = buffer
+        .subarray(startOffset, startOffset + 1024)
+        .find(byte =>
+            byte !== 0x20 && // Space
+            byte !== 0x09 && // Tab
+            byte !== 0x0A && // LF
+            byte !== 0x0D    // CR
+        );
+
+    return firstNonWhitespaceByte !== undefined
+        ? String.fromCharCode(firstNonWhitespaceByte)
+        : null;
 }

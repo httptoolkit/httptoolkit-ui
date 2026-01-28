@@ -12,6 +12,7 @@ export type ErrorType =
     | 'dns-error'
     | 'connection-refused'
     | 'connection-reset'
+    | 'rule-abort'
     | 'client-abort'
     | 'server-timeout'
     | 'client-timeout'
@@ -152,6 +153,20 @@ export function tagsToErrorType(tags: string[]): ErrorType | undefined {
         tags.includes("client-error:ECONNABORTED") ||
         tags.includes("client-error:EPIPE")
     ) return 'client-abort';
+
+    if (
+        // Request breakpoint close/reset:
+        tags.includes("passthrough-error:E_RULE_BREQ_CLOSE") ||
+        tags.includes("passthrough-error:E_RULE_BREQ_RESET") ||
+        // Response breakpoint close/reset:
+        tags.includes("passthrough-error:E_RULE_BRES_CLOSE") ||
+        tags.includes("passthrough-error:E_RULE_BRES_RESET") ||
+        // Close/reset rule:
+        tags.includes("passthrough-error:E_RULE_CLOSE") ||
+        tags.includes("passthrough-error:E_RULE_RESET")
+    ) {
+        return 'rule-abort';
+    }
 
     if (
         tags.filter(t => t.startsWith("passthrough-error:")).length > 0 ||

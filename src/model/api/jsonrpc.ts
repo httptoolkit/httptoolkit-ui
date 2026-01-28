@@ -10,7 +10,7 @@ import {
     OpenrpcDocument
 } from "@open-rpc/meta-schema";
 import { SchemaObject } from "openapi-directory";
-import { HtkResponse, Html, HttpExchange } from "../../types";
+import { HtkResponse, Html, HttpExchangeView } from "../../types";
 import { ErrorLike, isErrorLike } from "../../util/error";
 import { fromMarkdown } from "../ui/markdown";
 import {
@@ -27,16 +27,17 @@ export type OpenRpcDocument = OpenrpcDocument;
 export interface OpenRpcMetadata {
     type: 'openrpc';
     spec: OpenRpcDocument;
+    isBuiltInApi: boolean;
     serverMatcher: RegExp;
     requestMatchers: { [methodName: string] : MethodObject }; // JSON-RPC method name to method
 }
 
 export async function parseRpcApiExchange(
     api: OpenRpcMetadata,
-    exchange: HttpExchange
+    exchange: HttpExchangeView
 ): Promise<JsonRpcApiExchange> {
     try {
-        const body = await exchange.request.body.decodedPromise;
+        const body = await exchange.request.body.waitForDecoding();
 
         if (!body?.length) throw new Error(`No JSON-RPC request body`);
 
@@ -77,11 +78,9 @@ export class JsonRpcApiExchange implements ApiExchange {
 
     constructor(
         _api: OpenRpcMetadata,
-        _exchange: HttpExchange,
+        _exchange: HttpExchangeView,
         private _rpcMethod: MatchedOperation | ErrorLike
     ) {
-        this.isBuiltInApi = _api.spec.info['x-httptoolkit-builtin-api'] === true;
-
         this.service = new JsonRpcApiService(_api);
 
         if (isErrorLike(_rpcMethod)) {
@@ -95,11 +94,9 @@ export class JsonRpcApiExchange implements ApiExchange {
                 _rpcMethod,
                 _api.spec.externalDocs?.['x-method-base-url'] // Custom extension
             );
-            this.request = new JsonRpcApiRequest(_rpcMethod, _exchange);
+            this.request = new JsonRpcApiRequest(_rpcMethod);
         }
     }
-
-    readonly isBuiltInApi: boolean;
 
     readonly service: ApiService;
     readonly operation: ApiOperation;
@@ -180,7 +177,7 @@ const capitalizeFirst = (input: string | undefined) =>
 
 export class JsonRpcApiRequest implements ApiRequest {
 
-    constructor(rpcMethod: MatchedOperation, exchange: HttpExchange) {
+    constructor(rpcMethod: MatchedOperation) {
         const { methodSpec, parsedBody } = rpcMethod;
 
         this.parameters = (methodSpec.params as ContentDescriptorObject[])

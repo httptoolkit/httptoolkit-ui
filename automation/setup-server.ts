@@ -92,7 +92,17 @@ async function downloadServer(
     });
 
     console.log(`Extracting server to ${SERVER_PATH}`);
-    await extractTarGz({ src: downloadPath, dest: SERVER_PATH });
+    await extractTarGz({
+        src: downloadPath,
+        dest: SERVER_PATH,
+        tar: {
+            ignore (_, header) {
+                // Extract only files & directories - ignore symlinks or similar
+                // which can sneak in in some cases (e.g. native dep build envs)
+                return header!.type !== 'file' && header!.type !== 'directory'
+            }
+        }
+    });
     await deleteFile(downloadPath);
 
     console.log('Server download completed');

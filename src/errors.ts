@@ -65,13 +65,18 @@ export function initSentry(dsn: string | undefined) {
     });
 }
 
-export function logErrorsAsUser(email: string | undefined) {
+export function logErrorsAsUser(id: string | undefined) {
     if (!sentryInitialized) return;
 
-    Sentry.getCurrentScope().setUser({
-        id: email,
-        email: email
-    });
+    if (!id) {
+        Sentry.getCurrentScope().setUser(null);
+    } else {
+        // We track errors by user id - this ensures that any actual identities are
+        // never exposed to Sentry (you need access to our user DB to link user error
+        // reports and the corresponding Sentry data).
+        id = id.replace('email|', '');
+        Sentry.getCurrentScope().setUser({ id: id });
+    }
 }
 
 function addErrorTag(key: string, value: string) {

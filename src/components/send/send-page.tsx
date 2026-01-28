@@ -1,6 +1,8 @@
 import * as React from 'react';
+import { action } from 'mobx';
 import { inject, observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
+import * as HarFormat from 'har-format';
 
 import { styled } from '../../styles';
 import { useHotkeys } from '../../util/ui';
@@ -9,6 +11,7 @@ import { WithInjected } from '../../types';
 import { ApiError } from '../../services/server-api-types';
 import { SendStore } from '../../model/send/send-store';
 import { UiStore } from '../../model/ui/ui-store';
+import { buildRequestInputFromHarRequest } from '../../model/send/send-request-model';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
 
@@ -31,6 +34,7 @@ const TabContentContainer = styled.div`
 
 const SendPageKeyboardShortcuts = (props: {
     onMoveSelection: (distance: number) => void,
+    onCloseTab: () => void,
     onAbortRequest?: () => void
 }) => {
     useHotkeys('Ctrl+Tab, Cmd+Tab', () => {
@@ -41,9 +45,13 @@ const SendPageKeyboardShortcuts = (props: {
         props.onMoveSelection(-1);
     }, [props.onMoveSelection]);
 
+    useHotkeys('Ctrl+w, Cmd+w', () => {
+        props.onCloseTab();
+    }, [props.onCloseTab]);
+
     useHotkeys('Escape', () => {
         if (props.onAbortRequest) props.onAbortRequest();
-    }, [props.onAbortRequest])
+    }, [props.onAbortRequest]);
 
     return null;
 };
@@ -78,6 +86,11 @@ class SendPage extends React.Component<{
             alert(errorMessage);
         });
     };
+
+    private deleteSelectedRequest = () => {
+        const { deleteRequest, selectedRequest } = this.props.sendStore;
+        deleteRequest(selectedRequest);
+    }
 
     private showRequestOnViewPage = () => {
         const { sentExchange } = this.props.sendStore.selectedRequest;
@@ -114,6 +127,7 @@ class SendPage extends React.Component<{
             />
 
             <SendPageKeyboardShortcuts
+                onCloseTab={this.deleteSelectedRequest}
                 onMoveSelection={moveSelection}
                 onAbortRequest={selectedRequest?.pendingSend?.abort}
             />
@@ -136,6 +150,7 @@ class SendPage extends React.Component<{
                             selectedRequest.pendingSend?.promise.state === 'pending'
                         }
                         editorNode={this.requestEditorNode}
+                        updateFromHar={this.updateFromHar}
                     />
                     <ResponsePane
                         requestInput={selectedRequest.request}
@@ -157,6 +172,12 @@ class SendPage extends React.Component<{
                 <ContainerSizedEditor contentId={null} />
             </portals.InPortal>
         </SendPageContainer>;
+    }
+
+    @action.bound
+    updateFromHar(harRequest: HarFormat.Request) {
+        const { selectedRequest } = this.props.sendStore;
+        selectedRequest.request = buildRequestInputFromHarRequest(harRequest);
     }
 
 }

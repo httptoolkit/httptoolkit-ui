@@ -15,7 +15,7 @@ import {
     headersToFlatHeaders,
     headersToRawHeaders,
     rawHeadersToHeaders
-} from '../../util/headers';
+} from '../../model/http/headers';
 
 import {
     Matcher,
@@ -45,10 +45,10 @@ import {
     IpfsArgDescription
 } from '../../model/rules/definitions/ipfs-rule-definitions';
 import {
-    HasDataChannelMatcherDefinition,
-    HasVideoTrackMatcherDefinition,
-    HasAudioTrackMatcherDefinition,
-    HasMediaTrackMatcherDefinition
+    HasDataChannelMatcher,
+    HasVideoTrackMatcher,
+    HasAudioTrackMatcher,
+    HasMediaTrackMatcher
 } from '../../model/rules/definitions/rtc-rule-definitions';
 
 import { Select, TextInput } from '../common/inputs';
@@ -154,7 +154,7 @@ export function AdditionalMatcherConfiguration(props:
         case 'host':
             return <HostMatcherConfig {...configProps} />;
         case 'simple-path':
-            return <SimplePathMatcherConfig {...configProps} />;
+            return <FlexiblePathMatcherConfig {...configProps} />;
         case 'regex-path':
             return <RegexPathMatcherConfig {...configProps} />;
         case 'query':
@@ -447,7 +447,7 @@ class HostMatcherConfig extends MatcherConfig<matchers.HostMatcher> {
 }
 
 @observer
-class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> {
+class FlexiblePathMatcherConfig extends MatcherConfig<matchers.FlexiblePathMatcher> {
 
     private fieldId = _.uniqueId();
 
@@ -511,7 +511,7 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
             new URL(this.url);
         }
 
-        // We leave the rest of the parsing to the SimplePathMatcher itself
+        // We leave the rest of the parsing to the FlexiblePathMatcher itself
     }
 
     @action.bound
@@ -524,12 +524,12 @@ class SimplePathMatcherConfig extends MatcherConfig<matchers.SimplePathMatcher> 
             const [baseUrl, query] = this.url.split('?');
 
             if (query === undefined) {
-                this.props.onChange(new matchers.SimplePathMatcher(baseUrl));
+                this.props.onChange(new matchers.FlexiblePathMatcher(baseUrl));
             } else {
                 if (this.props.matcherIndex !== undefined) this.url = baseUrl;
 
                 this.props.onChange(
-                    new matchers.SimplePathMatcher(baseUrl),
+                    new matchers.FlexiblePathMatcher(baseUrl),
                     new matchers.ExactQueryMatcher('?' + query)
                 );
             }
@@ -1133,10 +1133,10 @@ class EthParamsMatcherConfig extends MatcherConfig<EthereumParamsMatcher> {
 
 @observer
 class RTCContentMatcherConfig<T extends
-    | typeof HasDataChannelMatcherDefinition
-    | typeof HasVideoTrackMatcherDefinition
-    | typeof HasAudioTrackMatcherDefinition
-    | typeof HasMediaTrackMatcherDefinition
+    | typeof HasDataChannelMatcher
+    | typeof HasVideoTrackMatcher
+    | typeof HasAudioTrackMatcher
+    | typeof HasMediaTrackMatcher
 > extends MatcherConfig<InstanceType<T>, { matcherClass?: T, matcherKey: InstanceType<T>['type'] }> {
 
     componentDidMount() {

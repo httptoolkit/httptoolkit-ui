@@ -4,7 +4,7 @@ import { action, observable, reaction, runInAction } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 
 import { RawHeaders } from '../../types';
-import { HEADER_NAME_PATTERN } from '../../util/headers';
+import { HEADER_NAME_PATTERN } from '../../model/http/headers';
 
 import { EditablePairs, PairsArray } from './editable-pairs';
 

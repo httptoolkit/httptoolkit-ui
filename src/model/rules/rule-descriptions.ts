@@ -4,8 +4,7 @@ import { UnreachableCheck } from '../../util/error';
 
 import {
     HtkRule,
-    RuleType,
-    HandlerClassKey,
+    StepClassKey,
     MatcherClassKey
 } from "./rules";
 import {
@@ -97,13 +96,13 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
         case 'multipart-form-data':
         case 'raw-body-regexp':
         case 'regex-url':
-            throw new Error(`${key} handler should not be used directly`);
+            throw new Error(`${key} step should not be used directly`);
         default:
             throw new UnreachableCheck(key);
     }
 };
 
-export function nameHandlerClass(key: HandlerClassKey): string {
+export function nameStepClass(key: StepClassKey): string {
     switch (key) {
         case 'simple':
             return "fixed response";
@@ -121,12 +120,16 @@ export function nameHandlerClass(key: HandlerClassKey): string {
         case 'response-breakpoint':
         case 'request-and-response-breakpoint':
             return "breakpoint";
+        case 'delay':
+            return "delay";
         case 'timeout':
             return "timeout";
         case 'close-connection':
             return "connection close";
         case 'reset-connection':
             return "connection reset";
+        case 'webhook':
+            return "webhook";
 
         case 'ws-reject':
             return "reject";
@@ -170,13 +173,14 @@ export function nameHandlerClass(key: HandlerClassKey): string {
         case 'rtc-peer-proxy':
         case 'callback':
         case 'stream':
-            throw new Error(`${key} handler should not be used directly`);
+        case 'wait-for-request-body':
+            throw new Error(`${key} step should not be used directly`);
         default:
             throw new UnreachableCheck(key);
     }
 }
 
-export function summarizeHandlerClass(key: HandlerClassKey): string {
+export function summarizeStepClass(key: StepClassKey): string {
     switch (key) {
         case 'simple':
             return "Return a fixed response";
@@ -194,12 +198,16 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
             return "Pause the response to manually edit it";
         case 'request-and-response-breakpoint':
             return "Pause the request & response to manually edit them";
+        case 'delay':
+            return "Wait before continuing";
         case 'timeout':
             return "Time out with no response";
         case 'close-connection':
             return "Close the connection";
         case 'reset-connection':
             return "Forcibly reset the connection";
+        case 'webhook':
+            return "Enable webhooks";
 
         case 'ws-passthrough':
             return "Pass the WebSocket through to its destination";
@@ -264,7 +272,8 @@ export function summarizeHandlerClass(key: HandlerClassKey): string {
         case 'rtc-peer-proxy':
         case 'callback':
         case 'stream':
-            throw new Error(`${key} handler should not be used directly`);
+        case 'wait-for-request-body':
+            throw new Error(`${key} step should not be used directly`);
         default:
             throw new UnreachableCheck(key);
     }
@@ -293,16 +302,12 @@ export function summarizeMatcher(rule: HtkRule): string {
         matchers.slice(-1)[0].explain();
 }
 
-// Summarize the handler of an instantiated rule
-export function summarizeHandler(rule: HtkRule): string {
-    if ('steps' in rule) {
-        const stepExplanations = rule.steps.map(s => s.explain());
-        return withFirstCharUppercased(
-            stepExplanations.length > 1
-            ? (stepExplanations.slice(0, -1).join(', ') + ' then ' + stepExplanations.slice(-1)[0])
-            : stepExplanations[0]
-        );
-    } else {
-        return withFirstCharUppercased(rule.handler.explain());
-    }
+// Summarize the steps of an instantiated rule
+export function summarizeSteps(rule: HtkRule): string {
+    const stepExplanations = rule.steps.map(s => s.explain());
+    return withFirstCharUppercased(
+        stepExplanations.length > 1
+        ? (stepExplanations.slice(0, -1).join(', ') + ' then ' + stepExplanations.slice(-1)[0])
+        : stepExplanations[0]
+    );
 }

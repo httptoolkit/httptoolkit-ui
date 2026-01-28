@@ -4,23 +4,24 @@ import { action, computed } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { CollectedEvent, HtkResponse, HttpExchange } from '../../../types';
+import { CollectedEvent, HtkResponse, HttpExchangeView } from '../../../types';
 import { styled } from '../../../styles';
 import { logError } from '../../../errors';
 
-import { ExpandableViewCardKey, UiStore } from '../../../model/ui/ui-store';
+import { ContentPerspective, ExpandableViewCardKey, UiStore } from '../../../model/ui/ui-store';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { AccountStore } from '../../../model/account/account-store';
 import { ApiExchange } from '../../../model/api/api-interfaces';
 import { buildRuleFromRequest } from '../../../model/rules/rule-creation';
 import { findItem } from '../../../model/rules/rules-structure';
 import { HtkRule, getRulePartKey } from '../../../model/rules/rules';
-import { WebSocketStream } from '../../../model/websockets/websocket-stream';
+import { WebSocketView } from '../../../model/websockets/websocket-views';
 import { tagsToErrorType } from '../../../model/http/error-types';
 
 import { PaneScrollContainer } from '../view-details-pane';
 import { StreamMessageListCard } from '../stream-message-list-card';
 import { WebSocketCloseCard } from '../websocket-close-card';
+import { SelfSizedEditor } from '../../editor/base-editor';
 
 import { HttpBodyCard } from './http-body-card';
 import { HttpApiCard, HttpApiPlaceholderCard } from './http-api-card';
@@ -30,13 +31,13 @@ import { HttpAbortedResponseCard } from './http-aborted-card';
 import { HttpTrailersCard } from './http-trailers-card';
 import { HttpPerformanceCard } from './http-performance-card';
 import { HttpExportCard } from './http-export-card';
-import { SelfSizedEditor } from '../../editor/base-editor';
 import { HttpErrorHeader } from './http-error-header';
 import { HttpDetailsFooter } from './http-details-footer';
 import { HttpRequestBreakpointHeader, HttpResponseBreakpointHeader } from './http-breakpoint-header';
 import { HttpBreakpointRequestCard } from './http-breakpoint-request-card';
 import { HttpBreakpointResponseCard } from './http-breakpoint-response-card';
 import { HttpBreakpointBodyCard } from './http-breakpoint-body-card';
+import { TransformCard } from './transform-card';
 
 // Used to push all cards below it to the bottom (when less than 100% height)
 const CardDivider = styled.div`
@@ -60,7 +61,8 @@ const makeFriendlyApiName = (rawName: string) => {
 @inject('rulesStore')
 @observer
 export class HttpDetailsPane extends React.Component<{
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
+    perspective: ContentPerspective,
 
     requestEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
     responseEditor: portals.HtmlPortalNode<typeof SelfSizedEditor>,
@@ -69,8 +71,8 @@ export class HttpDetailsPane extends React.Component<{
     navigate: (path: string) => void,
     onDelete: (event: CollectedEvent) => void,
     onScrollToEvent: (event: CollectedEvent) => void,
-    onBuildRuleFromExchange: (exchange: HttpExchange) => void,
-    onPrepareToResendRequest?: (exchange: HttpExchange) => void,
+    onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
+    onPrepareToResendRequest?: (exchange: HttpExchangeView) => void,
 
     // Injected:
     uiStore?: UiStore,
@@ -96,12 +98,11 @@ export class HttpDetailsPane extends React.Component<{
 
         const { isPaidUser } = accountStore!;
         const { expandedViewCard } = uiStore!;
-        const { requestBreakpoint, responseBreakpoint } = exchange;
 
         // The full API details - for paid APIs, and non-paid users, we don't show
         // the detailed API data in any of the cards, we just show the name (below)
         // in a collapsed API card.
-        const apiExchange = (isPaidUser || exchange.api?.isBuiltInApi)
+        const apiExchange = (isPaidUser || exchange.apiSpec?.isBuiltInApi)
             ? exchange.api
             : undefined;
 
@@ -121,7 +122,7 @@ export class HttpDetailsPane extends React.Component<{
             </>;
         }
 
-        const cards = (requestBreakpoint || responseBreakpoint)
+        const cards = (exchange.downstream.isBreakpointed)
             ? this.renderBreakpointCards(exchange, apiName, apiExchange)
             : this.renderNormalCards(exchange, apiName, apiExchange);
 
@@ -142,7 +143,7 @@ export class HttpDetailsPane extends React.Component<{
         </>;
     }
 
-    renderHeaderCard(exchange: HttpExchange): JSX.Element | null {
+    renderHeaderCard(exchange: HttpExchangeView): JSX.Element | null {
         const { accountStore, navigate } = this.props;
         const { isPaidUser, getPro } = accountStore!;
         const {
@@ -150,7 +151,7 @@ export class HttpDetailsPane extends React.Component<{
             respondToBreakpointedRequest,
             responseBreakpoint,
             tags
-        } = exchange;
+        } = exchange.downstream;
 
         if (requestBreakpoint) {
             return <HttpRequestBreakpointHeader
@@ -212,7 +213,7 @@ export class HttpDetailsPane extends React.Component<{
 
     private renderExpandedCard(
         expandedCard: ExpandableViewCardKey,
-        exchange: HttpExchange,
+        exchange: HttpExchangeView,
         apiExchange: ApiExchange | undefined
     ) {
         if (expandedCard === 'requestBody') {
@@ -220,13 +221,13 @@ export class HttpDetailsPane extends React.Component<{
         } else if (
             expandedCard === 'responseBody' && (
                 exchange.isSuccessfulExchange() ||
-                !!exchange.responseBreakpoint
+                !!exchange.downstream.responseBreakpoint
             )) {
             return this.renderResponseBody(exchange, apiExchange);
         } else if (
             expandedCard === 'webSocketMessages' &&
             exchange.isWebSocket() &&
-            exchange.wasAccepted()
+            exchange.wasAccepted
         ) {
             return this.renderWebSocketMessages(exchange);
         } else {
@@ -236,30 +237,38 @@ export class HttpDetailsPane extends React.Component<{
     }
 
     private renderBreakpointCards(
-        exchange: HttpExchange,
+        exchange: HttpExchangeView,
         apiName: string | undefined,
         apiExchange: ApiExchange | undefined
     ) {
         const { uiStore } = this.props;
-        const { requestBreakpoint } = exchange;
+        const { requestBreakpoint } = exchange.downstream;
 
         const cards: Array<JSX.Element | null> = [];
 
         if (requestBreakpoint) {
             cards.push(<HttpBreakpointRequestCard
                 {...this.cardProps.request}
-                exchange={exchange}
+                exchange={exchange.downstream}
                 onChange={requestBreakpoint.updateMetadata}
             />);
 
             cards.push(this.renderRequestBody(exchange, apiExchange));
         } else {
-            const responseBreakpoint = exchange.responseBreakpoint!;
+            const responseBreakpoint = exchange.downstream.responseBreakpoint!;
+            const transformCard = this.renderTransformCard();
+            if (transformCard) cards.push(transformCard);
 
             cards.push(this.renderApiCard(apiName, apiExchange));
             cards.push(<HttpRequestCard
                 {...this.cardProps.request}
-                matchedRuleData={this.matchedRuleData}
+                matchedRuleData={
+                    // Matched rule data is shown inline here only when there
+                    // was not any substantial proxy transformation.
+                    !transformCard
+                    ? this.matchedRuleData
+                    : undefined
+                }
                 onRuleClicked={this.jumpToRule}
                 exchange={exchange}
             />);
@@ -270,7 +279,7 @@ export class HttpDetailsPane extends React.Component<{
 
             cards.push(<HttpBreakpointResponseCard
                 {...this.cardProps.response}
-                exchange={exchange}
+                exchange={exchange.downstream}
                 onChange={responseBreakpoint.updateMetadata}
                 theme={uiStore!.theme}
             />);
@@ -282,7 +291,7 @@ export class HttpDetailsPane extends React.Component<{
     }
 
     private renderNormalCards(
-        exchange: HttpExchange,
+        exchange: HttpExchangeView,
         apiName: string | undefined,
         apiExchange: ApiExchange | undefined
     ) {
@@ -291,11 +300,19 @@ export class HttpDetailsPane extends React.Component<{
 
         const cards: Array<JSX.Element | null> = [];
 
+        const transformCard = this.renderTransformCard();
+        if (transformCard) cards.push(transformCard);
         cards.push(this.renderApiCard(apiName, apiExchange));
 
         cards.push(<HttpRequestCard
             {...this.cardProps.request}
-            matchedRuleData={this.matchedRuleData}
+            matchedRuleData={
+                // Matched rule data is shown inline here only when there
+                // was not any substantial proxy transformation.
+                !transformCard
+                ? this.matchedRuleData
+                : undefined
+            }
             onRuleClicked={this.jumpToRule}
             exchange={exchange}
         />);
@@ -346,7 +363,7 @@ export class HttpDetailsPane extends React.Component<{
         }
 
         if (exchange.isWebSocket()) {
-            if (exchange.wasAccepted()) {
+            if (exchange.wasAccepted) {
                 cards.push(this.renderWebSocketMessages(exchange));
 
                 if (exchange.closeState) {
@@ -378,13 +395,26 @@ export class HttpDetailsPane extends React.Component<{
         return cards;
     }
 
-    private renderRequestBody(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
-        const { request, requestBreakpoint } = exchange;
+    private renderTransformCard() {
+        const { uiStore } = this.props;
+
+        if (!this.props.exchange.upstream?.wasTransformed) return false;
+
+        return <TransformCard
+            key='transform'
+            matchedRuleData={this.matchedRuleData}
+            onRuleClicked={this.jumpToRule}
+            uiStore={uiStore!}
+        />;
+    }
+
+    private renderRequestBody(exchange: HttpExchangeView, apiExchange: ApiExchange | undefined) {
+        const { request } = exchange;
+        const { requestBreakpoint } = exchange.downstream;
 
         return requestBreakpoint
             ? <HttpBreakpointBodyCard
                 {...this.requestBodyParams()}
-                exchangeId={exchange.id}
                 body={requestBreakpoint.inProgressResult.body}
                 rawHeaders={requestBreakpoint.inProgressResult.rawHeaders}
                 onChange={requestBreakpoint.updateBody}
@@ -398,13 +428,13 @@ export class HttpDetailsPane extends React.Component<{
             />;
     }
 
-    private renderResponseBody(exchange: HttpExchange, apiExchange: ApiExchange | undefined) {
-        const { response, responseBreakpoint } = exchange;
+    private renderResponseBody(exchange: HttpExchangeView, apiExchange: ApiExchange | undefined) {
+        const { response } = exchange;
+        const { responseBreakpoint } = exchange.downstream;
 
         return responseBreakpoint
             ? <HttpBreakpointBodyCard
                 {...this.responseBodyParams()}
-                exchangeId={exchange.id}
                 body={responseBreakpoint.inProgressResult.body}
                 rawHeaders={responseBreakpoint.inProgressResult.rawHeaders}
                 onChange={responseBreakpoint.updateBody}
@@ -418,7 +448,7 @@ export class HttpDetailsPane extends React.Component<{
             />;
     }
 
-    private renderWebSocketMessages(exchange: WebSocketStream) {
+    private renderWebSocketMessages(exchange: WebSocketView) {
         const urlParts = exchange.request.url.split('/');
         const domain = urlParts[2].split(':')[0];
         const baseName = urlParts.length >= 2 ? urlParts[urlParts.length - 1] : undefined;
@@ -432,13 +462,14 @@ export class HttpDetailsPane extends React.Component<{
             // reset when we switch between exchanges:
             key={`${this.cardProps.webSocketMessages.key}-${this.props.exchange.id}`}
             streamId={this.props.exchange.id}
-            streamType='WebSocket'
+            cardHeading='WebSocket Messages'
 
             editorNode={this.props.streamMessageEditor}
 
             isPaidUser={this.props.accountStore!.isPaidUser}
             filenamePrefix={filenamePrefix}
             messages={exchange.messages}
+            onClearMessages={this.clearMessages}
         />;
     }
 
@@ -448,6 +479,7 @@ export class HttpDetailsPane extends React.Component<{
             ...this.cardProps.requestBody,
             title: 'Request Body',
             direction: 'right' as const,
+            editorKey: `${this.props.exchange.id}-${this.props.perspective}-request`,
             editorNode: this.props.requestEditor
         };
     }
@@ -458,6 +490,7 @@ export class HttpDetailsPane extends React.Component<{
             ...this.cardProps.responseBody,
             title: 'Response Body',
             direction: 'left' as const,
+            editorKey: `${this.props.exchange.id}-${this.props.perspective}-response`,
             editorNode: this.props.responseEditor
         };
     }
@@ -480,19 +513,16 @@ export class HttpDetailsPane extends React.Component<{
 
         const currentRuleDraft = findItem(rulesStore!.draftRules, { id: matchedRule.id }) as HtkRule | undefined;
         if (!currentRuleDraft) {
-            return { stepTypes: matchedRule.handlerStepTypes, status: 'deleted' } as const;
+            return { stepTypes: matchedRule.stepTypes, status: 'deleted' } as const;
         }
 
-        const currentStepTypes = ('handler' in currentRuleDraft
-            ? [currentRuleDraft.handler]
-            : currentRuleDraft.steps
-        ).map(s => getRulePartKey(s));
+        const currentStepTypes = currentRuleDraft.steps.map(s => getRulePartKey(s));
 
-        if (!_.isEqual(currentStepTypes, matchedRule.handlerStepTypes)) {
-            return { stepTypes: matchedRule.handlerStepTypes, status: 'modified-types' } as const;
+        if (!_.isEqual(currentStepTypes, matchedRule.stepTypes)) {
+            return { stepTypes: matchedRule.stepTypes, status: 'modified-types' } as const;
         }
 
-        return { stepTypes: matchedRule.handlerStepTypes, status: 'unchanged' } as const;
+        return { stepTypes: matchedRule.stepTypes, status: 'unchanged' } as const;
     }
 
     @action.bound
@@ -507,6 +537,13 @@ export class HttpDetailsPane extends React.Component<{
     private ignoreError() {
         const { exchange } = this.props;
         exchange.hideErrors = true;
+    }
+
+    @action.bound
+    private clearMessages() {
+        const { exchange } = this.props;
+        if (!exchange.isWebSocket()) return;
+        exchange.downstream.clearMessages();
     }
 
 };

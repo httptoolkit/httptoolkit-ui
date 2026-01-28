@@ -29,7 +29,7 @@ export const RTCDataChannelCard = observer(({
     // reset when we switch between traffic:
     key={dataChannel.id}
     streamId={dataChannel.id}
-    streamType='DataChannel'
+    cardHeading='DataChannel Messages'
     streamLabel={dataChannel.label}
 
     editorNode={streamMessageEditor}

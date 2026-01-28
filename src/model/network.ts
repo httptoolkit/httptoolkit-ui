@@ -9,6 +9,21 @@ export function isValidHost(host: string | undefined): boolean {
     return !!host?.match(/^[A-Za-z0-9\-.]+(:\d+)?$/);
 }
 
+export function isValidHostnamePattern(pattern: string | undefined): boolean {
+    if (!pattern) return false;
+
+    if (isValidHostname(pattern)) return true;
+
+    // Not a valid hostname. Is it a URLPatternb wildcard pattern then?
+    // Replace * with a letter to test if it's valid & usable:
+
+    const testHostname = pattern.replace(/\*/g, 'Z');
+    return isValidHostname(testHostname) &&
+        (!('URLPattern' in window) || // On old Electron, just allow anything
+        // Use any here because TS doesn't have types yet:
+        new (window.URLPattern as any)(`https://${pattern}`).test(`https://${testHostname}`));
+}
+
 export function isValidHostname(hostname: string | undefined): boolean {
     return !!hostname?.match(/^[A-Za-z0-9\-.]+$/);
 }

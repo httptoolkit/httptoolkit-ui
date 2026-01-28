@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { get } from 'typesafe-get';
+import { action, observable } from 'mobx';
 
 import type {
     OpenAPIObject,
@@ -14,14 +15,14 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
 import {
-    HttpExchange,
+    HttpExchangeView,
     ExchangeMessage,
     HtkRequest,
     HtkResponse,
     Html
 } from "../../types";
 import { firstMatch, empty } from '../../util';
-import { getHeaderValue } from '../../util/headers';
+import { getHeaderValue } from '../http/headers';
 import { formatAjvError } from '../../util/json-schema';
 
 import {
@@ -286,9 +287,7 @@ function stripTags(input: string | undefined): string | undefined {
 }
 
 export class OpenApiExchange implements ApiExchange {
-    constructor(api: OpenApiMetadata, exchange: HttpExchange) {
-        this.isBuiltInApi = api.spec.info['x-httptoolkit-builtin-api'] === true;
-
+    constructor(api: OpenApiMetadata, exchange: HttpExchangeView) {
         const { request } = exchange;
         this.service = new OpenApiService(api.spec);
 
@@ -306,14 +305,14 @@ export class OpenApiExchange implements ApiExchange {
     private _spec: OpenAPIObject;
     private _opSpec: MatchedOperation;
 
-    public readonly isBuiltInApi: boolean;
-
     public readonly service: ApiService;
     public readonly operation: ApiOperation;
     public readonly request: ApiRequest;
 
+    @observable.ref
     public response: ApiResponse | undefined;
 
+    @action
     updateWithResponse(response: HtkResponse | 'aborted' | undefined): void {
         if (response === 'aborted' || response === undefined) return;
         this.response = new OpenApiResponse(this._spec, this._opSpec, response);
@@ -449,9 +448,11 @@ class OpenApiResponse implements ApiResponse {
             )
             : undefined;
 
-        this.description = bodySpec && bodySpec.description !== response.statusMessage
-            ? fromMarkdown(bodySpec.description, { linkify: true })
-            : undefined;
+        this.description = bodySpec?.description &&
+            bodySpec.description !== response.statusMessage && // Ignore description "Not Found" and similar
+            bodySpec.description.split(' ').filter(Boolean).length! > 2 // Ignore pointlessly short (Response/Error Response) descriptions
+                ? fromMarkdown(bodySpec.description, { linkify: true })
+                : undefined;
         this.bodySchema = getBodySchema(spec, bodySpec, response);
     }
 

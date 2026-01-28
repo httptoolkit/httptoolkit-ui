@@ -1,18 +1,20 @@
 import * as Mockttp from 'mockttp';
 import * as serializr from 'serializr';
 import { observable } from 'mobx';
+import * as HarFormat from 'har-format';
 
-import { HttpExchange, RawHeaders } from "../../types";
+import { HttpExchange, RawHeaders, HttpExchangeView } from "../../types";
 import { ObservablePromise } from '../../util/observable';
-import { h2HeadersToH1 } from '../../util/headers';
 
-import { EditableContentType, getEditableContentTypeFromViewable } from "../events/content-types";
+import { EditableContentType, getEditableContentType, getEditableContentTypeFromViewable } from "../events/content-types";
 import { EditableBody } from '../http/editable-body';
 import {
     syncBodyToContentLength,
     syncFormattingToContentType,
     syncUrlToHeaders
 } from '../http/editable-request-parts';
+import { getHeaderValue, h2HeadersToH1 } from '../http/headers';
+import { parseHarRequest } from '../http/har';
 
 // This is our model of a Request for sending. Smilar to the API model,
 // but not identical, as we add extra UI metadata etc.
@@ -114,13 +116,13 @@ export const sendRequestSchema = serializr.createSimpleSchema({
     pendingSend: false // Never persisted at all
 });
 
-export async function buildRequestInputFromExchange(exchange: HttpExchange): Promise<RequestInput> {
-    const body = await exchange.request.body.decodedPromise ??
+export async function buildRequestInputFromExchange(exchange: HttpExchangeView): Promise<RequestInput> {
+    const body = await exchange.request.body.waitForDecoding() ??
         Buffer.from('!!! ORIGINAL REQUEST BODY COULD NOT BE DECODED !!!');
 
     // For now, all sent requests are HTTP/1, so we need to make sure we convert:
-    const headers = exchange.httpVersion === 2
-        ? h2HeadersToH1(exchange.request.rawHeaders)
+    const headers = exchange.httpVersion >= 2
+        ? h2HeadersToH1(exchange.request.rawHeaders, exchange.request.method)
         : exchange.request.rawHeaders;
 
     return new RequestInput({
@@ -129,6 +131,26 @@ export async function buildRequestInputFromExchange(exchange: HttpExchange): Pro
         headers: headers,
         requestContentType: getEditableContentTypeFromViewable(exchange.request.contentType) ?? 'text',
         rawBody: body,
+    });
+}
+
+export function buildRequestInputFromHarRequest(requestData: HarFormat.Request): RequestInput {
+    const harRequest = parseHarRequest('', requestData, {} as any);
+
+    let headers = harRequest.rawHeaders;
+    if (parseInt(harRequest.httpVersion.split('.')[0], 10) >= 2) {
+        headers = h2HeadersToH1(headers, harRequest.method);
+    }
+
+    return new RequestInput({
+        method: harRequest.method,
+        url: harRequest.url,
+        headers: headers,
+        requestContentType: getEditableContentType(
+            getHeaderValue(harRequest.headers, 'content-type')
+            ?? 'application/octet-stream'
+        ) ?? 'text',
+        rawBody: harRequest.body.decoded
     });
 }
 
@@ -150,6 +172,7 @@ export interface RequestOptions {
     clientCertificate?: { pfx: Buffer, passphrase?: string };
     proxyConfig?: ClientProxyConfig;
     lookupOptions?: { servers?: string[] };
+    keyLogFile?: string;
 }
 
 export const RULE_PARAM_REF_KEY = '__rule_param_reference__';

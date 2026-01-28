@@ -23,7 +23,8 @@ const CollapseIcon = styled((props: CollapseIconProps) =>
     user-select: none;
 
     padding: 4px 10px;
-
+    box-sizing: content-box;
+    
     ${p => p.headerAlignment === 'right'
         ? 'margin: 0 -10px 0 -3px;'
         : 'margin: 0 -3px 0 -10px;'

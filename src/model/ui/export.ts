@@ -2,12 +2,11 @@ import * as _ from 'lodash';
 import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 
 import { saveFile } from "../../util/ui";
-import { ObservablePromise } from '../../util/observable';
 
-import { HttpExchange } from "../http/exchange";
+import { HttpExchangeView } from "../../types";
 import { generateHarRequest, generateHar, ExtendedHarRequest } from '../http/har';
 
-export const exportHar = async (exchange: HttpExchange) => {
+export const exportHar = async (exchange: HttpExchangeView) => {
     const harContent = JSON.stringify(
         await generateHar([exchange], {
             bodySizeLimit: Infinity
@@ -23,27 +22,24 @@ export const exportHar = async (exchange: HttpExchange) => {
 };
 
 export function generateCodeSnippet(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding: true }
-): ObservablePromise<string>;
+): Promise<string>;
 export function generateCodeSnippet(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     snippetFormat: SnippetOption,
     options?: { waitForBodyDecoding?: boolean }
 ): string;
 export function generateCodeSnippet(
-    exchange: HttpExchange,
+    exchange: HttpExchangeView,
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding?: boolean } = {}
-): string | ObservablePromise<string> {
+): string | Promise<string> {
     // If the body isn't decoded yet, and it should be, wait for that decoding first.
-    if (options.waitForBodyDecoding && (
-        exchange.request.body.decodedPromise.state === 'pending' ||
-        exchange.request.body.decodedPromise.state === undefined
-    )) {
+    if (options.waitForBodyDecoding && exchange.request.body.isPending()) {
         // Doesn't matter if this errors - we'll make that explicit in the export later.
-        return exchange.request.body.decodedPromise.catch(() => {})
+        return exchange.request.body.waitForDecoding().catch(() => {})
             .then(() => generateCodeSnippet(exchange, snippetFormat, options));
     }
 
@@ -55,7 +51,9 @@ export function generateCodeSnippet(
     const harSnippetBase = simplifyHarForSnippetExport(harRequest);
 
     // Then, we convert that HAR to code for the given target:
-    return new HTTPSnippet(harSnippetBase).convert(snippetFormat.target, snippetFormat.client);
+    return new HTTPSnippet(harSnippetBase)
+        .convert(snippetFormat.target, snippetFormat.client)
+        .trim();
 };
 
 const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {

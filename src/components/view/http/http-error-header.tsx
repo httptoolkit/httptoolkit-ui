@@ -45,6 +45,10 @@ export const HttpErrorHeader = (p: {
             DESKTOP_HEADER_LIMIT_CONFIGURABLE
         );
 
+    // We don't bother explaining errors we triggered ourselves (breakpoint or
+    // close/reset rule aborts).
+    if (p.type === 'rule-abort') return;
+
     return <HeaderCard>
         <HeaderText>
             <WarningIcon /> {

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { when } from 'mobx';
 import { observer, inject } from 'mobx-react';
-import * as QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
     matchers,
     completionCheckers
@@ -18,7 +18,7 @@ import { EventsStore } from '../../../model/events/events-store';
 
 import {
     MethodMatchers,
-    StaticResponseHandler
+    StaticResponseStep
 } from '../../../model/rules/definitions/http-rule-definitions';
 import { RulesStore } from '../../../model/rules/rules-store';
 import { RulePriority } from '../../../model/rules/rules';
@@ -43,8 +43,11 @@ const ConfigContainer = styled.div`
         }
     }
 
-    > canvas {
+    > svg {
+        flex: 1 1 200px;
         margin: 0 auto;
+        width: auto;
+
         /* Without white padding, the QR code sometimes isn't scannable */
         padding: 5px;
         background-color: #fff;
@@ -60,7 +63,7 @@ const ConfigContainer = styled.div`
 `;
 
 const Spacer = styled.div`
-    flex: 1 1 100%;
+    flex: 1 1 20px;
 `;
 
 function urlSafeBase64(content: string) {
@@ -89,16 +92,16 @@ export function setUpAndroidCertificateRule(
         priority: RulePriority.OVERRIDE,
         matchers: [
             new MethodMatchers.GET(),
-            new matchers.SimplePathMatcher(
+            new matchers.FlexiblePathMatcher(
                 "http://android.httptoolkit.tech/config"
             )
         ],
         completionChecker: new completionCheckers.Always(),
-        handler: new StaticResponseHandler(200, undefined, JSON.stringify({
+        steps: [new StaticResponseStep(200, undefined, JSON.stringify({
             certificate: certContent
         }), {
             'content-type': 'application/json'
-        })
+        })]
     });
 
     // When the next Android config request comes in:
@@ -206,8 +209,12 @@ class AndroidConfig extends React.Component<{
             </p>
 
             <Spacer />
-            <QRCode
-                size={160}
+            <QRCodeSVG
+                // Delegate sizing to CSS:
+                height={""}
+                width={""}
+                // Minimum error correction - shouldn't really be required
+                level='L'
                 value={
                     `https://android.httptoolkit.tech/connect/?data=${serializedSetupParams}`
                 }

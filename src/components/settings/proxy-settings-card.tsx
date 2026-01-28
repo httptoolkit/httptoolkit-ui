@@ -1,19 +1,24 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, computed } from 'mobx';
+import { observable, action, computed, runInAction } from 'mobx';
 import { observer, inject } from "mobx-react";
 
 import { styled } from '../../styles';
+import { isWindows } from '../../util/ui';
 import { WarningIcon, Icon } from '../../icons';
 
 import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
-import { isValidHostname } from '../../model/network';
+import { isValidHostnamePattern } from '../../model/network';
 import {
     serverVersion,
+    desktopVersion,
     versionSatisfies,
     INITIAL_HTTP2_RANGE,
-    TLS_PASSTHROUGH_SUPPORTED
+    TLS_PASSTHROUGH_SUPPORTED,
+    KEY_LOG_FILE_SUPPORTED,
+    DESKTOP_SELECT_SAVE_FILE_SUPPORTED
 } from '../../services/service-versions';
+import { DesktopApi } from '../../services/desktop-api';
 
 import { inputValidation } from '../component-utils';
 import {
@@ -23,6 +28,7 @@ import {
 } from '../common/card';
 import { ContentLabel } from '../common/text-content';
 import { Select, TextInput } from '../common/inputs';
+import { IconButton } from '../common/icon-button';
 import {
     SettingsButton,
     SettingsExplanation,
@@ -85,7 +91,36 @@ const Http2Select = styled(Select)`
     padding: 3px;
 `;
 
-const hostnameValidation = inputValidation(isValidHostname, "Should be a valid hostname");
+const TlsKeyLogInputContainer = styled.div`
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+`;
+
+const TlsKeyLogButtonsContainer = styled.div`
+    display: grid;
+    grid-template-columns: auto min-content min-content;
+    grid-gap: 10px;
+    align-items: center;
+    font-family: ${p => p.theme.monoFontFamily};
+`;
+
+const InputClearButton = styled(IconButton)`
+    position: absolute;
+    top: 1px;
+    right: 2px;
+`;
+
+const hostnameValidation = inputValidation(isValidHostnamePattern, "Should be a valid hostname (with optional * wildcards)");
+
+const isAbsoluteWindowsPath = (path: string) => /^([a-zA-Z]:[\\\/]|[\\\/])((?:[^<>:"\/\\|?*]+)[\\\/]?)*$/.test(path);
+const isAbsolutePosixPath = (path: string) => /^\/(?:[^/]+\/?)*$/.test(path);
+
+const pathValidation = inputValidation(
+    isWindows ? isAbsoluteWindowsPath : isAbsolutePosixPath,
+    "Should be a valid absolute file path"
+);
 
 @inject('proxyStore')
 @observer
@@ -160,6 +195,36 @@ export class ProxySettingsCard extends React.Component<
         tlsPassthroughConfig.splice(hostnameIndex, 1);
     }
 
+    @observable
+    tlsKeyFileInput: string = this.props.proxyStore!.keyLogFilePath || '';
+
+    @action.bound
+    setTlsKeyFilePath({ target }: React.ChangeEvent<HTMLInputElement>) {
+        this.tlsKeyFileInput = target.value;
+
+        if (!this.tlsKeyFileInput.trim()) {
+            this.props.proxyStore!.keyLogFilePath = undefined;
+        } else if (pathValidation(target)) {
+            this.props.proxyStore!.keyLogFilePath = this.tlsKeyFileInput.trim();
+        }
+    }
+
+    @action.bound
+    async setTlsKeyFilePathFromDialog() {
+        const path = await DesktopApi.selectSaveFilePath!();
+        if (!path) return; // Dialog cancelled, change nothing
+
+        runInAction(() => {
+            this.props.proxyStore!.keyLogFilePath = path;
+        });
+    }
+
+    @action.bound
+    clearTlsKeyFilePath() {
+        this.tlsKeyFileInput = '';
+        this.props.proxyStore!.keyLogFilePath = undefined;
+    }
+
     render() {
         const { proxyStore, ...cardProps } = this.props;
         const {
@@ -169,7 +234,10 @@ export class ProxySettingsCard extends React.Component<
             http2CurrentlyEnabled,
 
             tlsPassthroughConfig,
-            currentTlsPassthroughConfig
+            currentTlsPassthroughConfig,
+
+            keyLogFilePath,
+            currentKeyLogFilePath
         } = proxyStore!;
 
         return <CollapsibleCard {...cardProps}>
@@ -184,7 +252,8 @@ export class ProxySettingsCard extends React.Component<
                 visible={
                     (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
                     http2Enabled !== http2CurrentlyEnabled ||
-                    !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig)
+                    !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig) ||
+                    keyLogFilePath !== currentKeyLogFilePath
                 }
             />
 
@@ -234,7 +303,7 @@ export class ProxySettingsCard extends React.Component<
                 versionSatisfies(serverVersion.value, TLS_PASSTHROUGH_SUPPORTED) && <>
                     <SettingsSubheading>
                         TLS Passthrough { !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig) &&
-                            <UnsavedIcon />
+                            <UnsavedIcon title="Restart app to apply changes" />
                         }
                     </SettingsSubheading>
 
@@ -259,7 +328,7 @@ export class ProxySettingsCard extends React.Component<
                 versionSatisfies(serverVersion.value, INITIAL_HTTP2_RANGE) && <>
                     <SettingsSubheading>
                         HTTP/2 Support { http2Enabled !== http2CurrentlyEnabled &&
-                            <UnsavedIcon />
+                            <UnsavedIcon title="Restart app to apply changes" />
                         }
                     </SettingsSubheading>
 
@@ -276,6 +345,64 @@ export class ProxySettingsCard extends React.Component<
                         <option value={'"fallback"'}>Enabled only for HTTP/2-only clients</option>
                         <option value={'false'}>Disabled for all clients</option>
                     </Http2Select>
+                </>
+            }
+
+            {
+                versionSatisfies(serverVersion.value, KEY_LOG_FILE_SUPPORTED) && <>
+                    <SettingsSubheading>
+                        TLS Key Log File { keyLogFilePath !== currentKeyLogFilePath &&
+                            <UnsavedIcon title="Restart app to apply changes" />
+                        }
+                    </SettingsSubheading>
+
+                    <TlsKeyLogInputContainer>
+                        { versionSatisfies(desktopVersion.value, DESKTOP_SELECT_SAVE_FILE_SUPPORTED)
+                            ? !keyLogFilePath
+                                ? <SettingsButton
+                                    onClick={this.setTlsKeyFilePathFromDialog}
+                                >
+                                    Select where to save the TLS keylog file
+                                </SettingsButton>
+                                : <TlsKeyLogButtonsContainer>
+                                    { keyLogFilePath }
+                                    <SettingsButton
+                                        onClick={this.setTlsKeyFilePathFromDialog}
+                                    >
+                                        <Icon icon={['fas', 'folder-open']} />
+                                    </SettingsButton>
+                                    <SettingsButton
+                                        onClick={this.clearTlsKeyFilePath}
+                                    >
+                                        <Icon icon={['far', 'trash-alt']} />
+                                    </SettingsButton>
+                                </TlsKeyLogButtonsContainer>
+                            : <>
+                                <TextInput
+                                    placeholder={
+                                        navigator.platform.startsWith('Win')
+                                            ? 'C:\\tls-keys.log'
+                                            : '/tmp/tls-keys.log'
+                                    }
+                                    value={this.tlsKeyFileInput}
+                                    onChange={this.setTlsKeyFilePath}
+                                />
+                                { !!this.tlsKeyFileInput &&
+                                    <InputClearButton
+                                        title="Unset TLS key file"
+                                        icon={['fas', 'times']}
+                                        onClick={this.clearTlsKeyFilePath}
+                                    />
+                                }
+                            </>
+                        }
+                    </TlsKeyLogInputContainer>
+
+                    <SettingsExplanation>
+                        If set, TLS keys for all client & server traffic will be logged to this file,
+                        allowing inspection of raw TLS packet contents & details in low-level packet
+                        inspection tools like Wireshark.
+                    </SettingsExplanation>
                 </>
             }
         </CollapsibleCard>

@@ -1,14 +1,13 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, autorun, action } from 'mobx';
+import { observable, autorun, action, computed } from 'mobx';
 import { disposeOnUnmount, observer } from 'mobx-react';
 import type { SchemaObject } from 'openapi-directory';
 import * as portals from 'react-reverse-portal';
 
 import { ExchangeMessage } from '../../../types';
 
-import { ErrorLike } from '../../../util/error';
-import { getHeaderValue } from '../../../util/headers';
+import { getHeaderValue } from '../../../model/http/headers';
 
 import { ViewableContentType, getCompatibleTypes } from '../../../model/events/content-types';
 
@@ -38,6 +37,8 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
     url: string,
     message: ExchangeMessage,
     apiBodySchema?: SchemaObject,
+
+    editorKey: string,
     editorNode: portals.HtmlPortalNode<typeof SelfSizedEditor>
 }> {
 
@@ -55,9 +56,20 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
         }));
     }
 
+    @computed
+    get contentViewOptions() {
+        const { message } = this.props;
+        return getCompatibleTypes(
+            message.contentType,
+            getHeaderValue(message.headers, 'content-type'),
+            message.body,
+            message.headers,
+        );
+    }
+
     @action.bound
     onChangeContentType(contentType: ViewableContentType | undefined) {
-        if (contentType === this.props.message.contentType) {
+        if (contentType === this.contentViewOptions.preferredContentType) {
             this.selectedContentType = undefined;
         } else {
             this.selectedContentType = contentType;
@@ -76,22 +88,21 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
             expanded,
             onCollapseToggled,
             onExpandToggled,
-            ariaLabel
+            ariaLabel,
+            editorKey,
+            editorNode
         } = this.props;
 
-        const compatibleContentTypes = getCompatibleTypes(
-            message.contentType,
-            getHeaderValue(message.headers, 'content-type'),
-            message.body,
-            message.headers,
-        );
-        const decodedContentType = compatibleContentTypes.includes(this.selectedContentType!)
+        const {
+            preferredContentType,
+            availableContentTypes
+        } = this.contentViewOptions;
+
+        const decodedContentType = availableContentTypes.includes(this.selectedContentType!)
             ? this.selectedContentType!
-            : message.contentType;
+            : preferredContentType;
 
-        const decodedBody = message.body.decoded;
-
-        if (decodedBody) {
+        if (message.body.isDecoded()) {
             // We have successfully decoded the body content, show it:
             return <CollapsibleCard
                 ariaLabel={ariaLabel}
@@ -102,7 +113,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
             >
                 <header>
                     <ReadonlyBodyCardHeader
-                        body={decodedBody}
+                        body={message.body.decodedData}
                         mimeType={getHeaderValue(message.headers, 'content-type')}
                         downloadFilename={getBodyDownloadFilename(url, message.headers)}
 
@@ -112,7 +123,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                         onCollapseToggled={onCollapseToggled}
 
                         selectedContentType={decodedContentType}
-                        contentTypeOptions={compatibleContentTypes}
+                        contentTypeOptions={availableContentTypes}
                         onChangeContentType={this.onChangeContentType}
 
                         isPaidUser={isPaidUser}
@@ -120,24 +131,23 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                 </header>
                 <EditorCardContent showFullBorder={!expanded}>
                     <ContentViewer
-                        contentId={`${message.id}-${direction}`}
-                        editorNode={this.props.editorNode}
+                        contentId={editorKey}
+                        editorNode={editorNode}
                         headers={message.headers}
                         contentType={decodedContentType}
                         schema={apiBodySchema}
                         expanded={!!expanded}
+                        maxHeight='70cqh'
                         cache={message.cache}
                     >
-                        {decodedBody}
+                        { message.body.decodedData }
                     </ContentViewer>
                 </EditorCardContent>
             </CollapsibleCard>;
-        } else if (!decodedBody && message.body.decodingError) {
+        } else if (message.body.isFailed()) {
             // We have failed to decode the body content! Show the error & raw encoded data instead:
-            const error = message.body.decodingError as ErrorLike;
-            const encodedBody = Buffer.isBuffer(message.body.encoded)
-                ? message.body.encoded
-                : undefined;
+            const error = message.body.decodingError;
+            const encodedBody = message.body.encodedData;
 
             const encodedDataContentType = ENCODED_DATA_CONTENT_TYPES.includes(this.selectedContentType!)
                 ? this.selectedContentType!
@@ -182,6 +192,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                             contentType={encodedDataContentType}
                             expanded={!!expanded}
                             cache={message.cache}
+                            maxHeight='70cqh'
                         >
                             { encodedBody }
                         </ContentViewer>
@@ -207,7 +218,7 @@ export class HttpBodyCard extends React.Component<ExpandableCardProps & {
                         onCollapseToggled={onCollapseToggled}
 
                         selectedContentType={decodedContentType}
-                        contentTypeOptions={compatibleContentTypes}
+                        contentTypeOptions={availableContentTypes}
                         onChangeContentType={this.onChangeContentType}
                         isPaidUser={isPaidUser}
                     />

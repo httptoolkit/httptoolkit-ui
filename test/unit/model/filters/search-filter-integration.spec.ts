@@ -1,14 +1,16 @@
 import * as _ from 'lodash';
 import * as zlib from 'zlib';
+import { computed } from 'mobx';
 
 import { expect } from '../../../test-setup';
 
 import { delay } from '../../../../src/util/promise';
 import { decodeBody } from '../../../../src/services/ui-worker-api';
 
-import { CollectedEvent } from '../../../../src/types';
+import { HtkResponse } from '../../../../src/types';
 import { FailedTlsConnection } from '../../../../src/model/tls/failed-tls-connection';
-import { HttpExchange, SuccessfulExchange } from '../../../../src/model/http/exchange';
+import { HttpExchange } from '../../../../src/model/http/http-exchange';
+import { SuccessfulExchange } from '../../../../src/model/http/http-exchange-views';
 
 import { getExchangeData, getFailedTls } from '../../unit-test-helpers';
 
@@ -100,14 +102,14 @@ describe("Search filter model integration test:", () => {
                 "exchanges by body content",
                 "exchanges by body size",
                 "exchanges that contain a given value anywhere",
-                "requests that have received a response",
-                "requests that are still waiting for a response",
-                "requests whose connection failed before receiving a response",
+                "requests & connections that have completed without errors",
+                "requests & connections that are still ongoing",
+                "requests & connections which failed to cleanly complete",
                 "requests that weren't transmitted successfully",
                 "exchanges that are pinned",
                 "exchanges by their general category",
                 "requests sent to a given port",
-                "exchanges using HTTP, HTTPS, WS or WSS",
+                "traffic using a specific protocol like HTTPS, or WebSockets",
                 "exchanges using a given version of HTTP",
                 "websocket streams",
                 "exchanges that do not match a given condition",
@@ -331,8 +333,9 @@ describe("Search filter model integration test:", () => {
             ];
 
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
-            expect(matchedEvents.length).to.equal(1);
+            expect(matchedEvents.length).to.equal(2);
             expect((matchedEvents[0] as HttpExchange).response).to.equal('aborted');
+            expect(matchedEvents[1].isTlsFailure()).to.equal(true);
         });
     });
 
@@ -1078,16 +1081,6 @@ describe("Search filter model integration test:", () => {
             // ^ Take from worker-decoding tests
         });
 
-        const decodeBodies = async (events: CollectedEvent[]) => {
-            events.forEach(e => {
-                if (e.isHttp()) {
-                    e.request.body.decoded;
-                    if (e.isSuccessfulExchange()) e.response.body.decoded;
-                }
-            });
-            await delay(1);
-        };
-
         it("should correctly filter for a given substring", async () => {
             const filter = createFilter("body*=big");
 
@@ -1106,25 +1099,23 @@ describe("Search filter model integration test:", () => {
                 getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
             ];
 
-            await decodeBodies(exampleEvents);
-
             const matchedEvents = exampleEvents.filter(e =>
                 filter.matches(e)
             ) as HttpExchange[];
 
             expect(
                 matchedEvents.map((e) =>
-                    e.request.body.encoded.toString('utf8') +
+                    e.request.body.decodedData!.toString('utf8') + ':' +
                     (e.isSuccessfulExchange()
-                        ? e.response.body.encoded.toString('utf8')
+                        ? e.response.body.decodedData!.toString('utf8')
                         : ''
                     )
                 )
             ).to.deep.equal([
-                "very-bigvery-big",
-                "big-aborted-request",
-                "big-pending-request",
-                "very-big-response"
+                "very-big:very-big",
+                "big-aborted-request:",
+                "big-pending-request:",
+                ":very-big-response"
             ]);
         });
 
@@ -1146,26 +1137,24 @@ describe("Search filter model integration test:", () => {
                 getExchangeData({ requestBody: '', responseBody: 'very-big-response' })
             ];
 
-            await decodeBodies(exampleEvents);
-
             const matchedEvents = exampleEvents.filter(e =>
                 filter.matches(e)
             ) as HttpExchange[];
 
             expect(
                 matchedEvents.map((e) =>
-                    e.request.body.encoded.toString('utf8') +
+                    e.request.body.decodedData!.toString('utf8') + ':' +
                     (e.isSuccessfulExchange()
-                        ? e.response.body.encoded.toString('utf8')
+                        ? e.response.body.decodedData!.toString('utf8')
                         : ''
                     )
                 )
             ).to.deep.equal([
-                "NOT АЅСІІЖ Cyrillic chars"
+                "NOT АЅСІІ:Ж Cyrillic chars"
             ]);
         });
 
-        it("should wait for and use decoded bodies", async () => {
+        it("should observe and use async-decoded bodies", async () => {
             const filter = createFilter("body^=hello");
 
             const exampleEvents = [
@@ -1183,23 +1172,26 @@ describe("Search filter model integration test:", () => {
                 })
             ];
 
-            let matchedEvents = exampleEvents.filter(e =>
-                filter.matches(e)
-            ) as HttpExchange[];
+            const filterComputed = computed(() => {
+                return exampleEvents.filter(e =>
+                    filter.matches(e)
+                ) as HttpExchange[];
+            });
+
+            let matchedEvents: HttpExchange[] = [];
+            const disposeSubscription = filterComputed.observe((result) => {
+                matchedEvents = result.newValue;
+            }, true);
 
             expect(matchedEvents).to.deep.equal([]);
-
-            await delay(100); // Wait for decode that filter will have triggered
-
-            matchedEvents = exampleEvents.filter(e =>
-                filter.matches(e)
-            ) as HttpExchange[];
-
-            expect(matchedEvents.map((e: any) =>
-                e.response.body.decoded.toString()
+            await delay(10); // Wait for the decode that filter will have triggered
+            expect(matchedEvents.map((e: HttpExchange) =>
+                (e.response as HtkResponse).body.decodedData?.toString()
             )).to.deep.equal([
                 "hello world"
             ]);
+
+            disposeSubscription();
         });
 
         it("should correctly format descriptions", () => {
@@ -1217,7 +1209,7 @@ describe("Search filter model integration test:", () => {
     });
 
     describe("Body size filters", () => {
-        it("should correctly filter for a given size", () => {
+        it("should correctly filter for a given size", async () => {
             const filter = createFilter("bodySize>10");
 
             const exampleEvents = [
@@ -1241,17 +1233,17 @@ describe("Search filter model integration test:", () => {
 
             expect(
                 matchedEvents.map((e) =>
-                    e.request.body.encoded.toString('utf8') +
+                    e.request.body.decodedData?.toString('utf8') + ':' +
                     (e.isSuccessfulExchange()
-                        ? e.response.body.encoded.toString('utf8')
+                        ? e.response.body.decodedData?.toString('utf8')
                         : ''
                     )
                 )
             ).to.deep.equal([
-                "very-bigvery-big",
-                "big-aborted-request",
-                "big-pending-request",
-                "very-big-response"
+                "very-big:very-big",
+                "big-aborted-request:",
+                "big-pending-request:",
+                ":very-big-response"
             ]);
         });
 
