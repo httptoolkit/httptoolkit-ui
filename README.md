@@ -5,6 +5,8 @@ This repo contains the UI for [HTTP Toolkit](https://httptoolkit.com), a beautif
 
 Looking to file bugs, request features or send feedback? File an issue or vote on existing ones at [github.com/httptoolkit/httptoolkit](https://github.com/httptoolkit/httptoolkit).
 
+This repo is a modified version with some build-in check removed and some functionality removed
+
 ## What is this?
 
 HTTP Toolkit is built as a single-page web application (this repo), running on top of [a server](https://github.com/httptoolkit/httptoolkit-server) that provides access to non-web functionality (e.g. running a proxy server), typically run through [an electron desktop wrapper app](https://github.com/httptoolkit/httptoolkit-desktop). The core UI and the majority of HTTP Toolkit functionality all lives here, except for desktop-app specific behaviour & build configuration, or functionality that can't be implemented in a web app.
