@@ -15,6 +15,7 @@ const FilterTagDelete = styled(Icon).attrs(() => ({
     transform: translateY(-50%);
     transition: right 0.1s;
     cursor: pointer;
+    box-sizing: content-box;
 
     padding: 6px;
     background-image: radial-gradient(
