@@ -13,9 +13,9 @@ import {
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
-import { WithInjected, CollectedEvent, HttpExchangeView, RawTunnel } from '../../types';
+import { WithInjected, CollectedEvent, HttpExchangeView } from '../../types';
 import { NARROW_LAYOUT_BREAKPOINT, styled } from '../../styles';
-import { useHotkeys, isEditable, windowSize, AriaCtrlCmd, Ctrl } from '../../util/ui';
+import { useHotkeys, isEditable, windowSize, AriaCtrlCmd } from '../../util/ui';
 import { debounceComputed } from '../../util/observable';
 import { UnreachableCheck, unreachableCheck } from '../../util/error';
 
@@ -28,7 +28,7 @@ import { RulesStore } from '../../model/rules/rules-store';
 import { AccountStore } from '../../model/account/account-store';
 import { SendStore } from '../../model/send/send-store';
 import { HttpExchange } from '../../model/http/http-exchange';
-import { FilterSet } from '../../model/filters/search-filters';
+import { Filter, FilterSet } from '../../model/filters/search-filters';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
 import { SplitPane } from '../split-pane';
@@ -254,7 +254,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.onPin,
         this.onDelete,
         this.onBuildRuleFromExchange,
-        this.onPrepareToResendRequest
+        this.onPrepareToResendRequest,
+        this.onAddSearchFilter
     );
 
     componentDidMount() {
@@ -498,6 +499,23 @@ class ViewPage extends React.Component<ViewPageProps> {
     @action.bound
     onSearchFiltersConsidered(filters: FilterSet | undefined) {
         this.searchFiltersUnderConsideration = filters;
+    }
+
+    @action.bound
+    onAddSearchFilter(filter: Filter) {
+        if (this.searchFiltersUnderConsideration) {
+            this.searchFiltersUnderConsideration = [
+                this.searchFiltersUnderConsideration[0],
+                filter,
+                ...this.searchFiltersUnderConsideration.slice(1)
+            ];
+        }
+
+        this.props.uiStore.activeFilterSet = [
+            this.props.uiStore.activeFilterSet[0],
+            filter,
+            ...this.props.uiStore.activeFilterSet.slice(1)
+        ]
     }
 
     @action.bound

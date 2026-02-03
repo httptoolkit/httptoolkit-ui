@@ -670,7 +670,7 @@ class ProtocolFilter extends Filter {
     }
 }
 
-class HostnameFilter extends Filter {
+export class HostnameFilter extends Filter {
 
     static filterSyntax = [
         new FixedStringSyntax("hostname"),
@@ -1465,7 +1465,7 @@ class NotFilter extends Filter {
 
     private innerFilter: Filter;
 
-    constructor(private filterValue: string) {
+    constructor(filterValue: string) {
         super(filterValue);
 
         const innerValue = filterValue.slice(4, -1);

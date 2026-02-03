@@ -17,6 +17,7 @@ import {
     snippetExportOptions
 } from '../../model/ui/export';
 import { ContextMenuItem } from '../../model/ui/context-menu';
+import { Filter, HostnameFilter } from '../../model/filters/search-filters';
 
 export class ViewEventContextMenuBuilder {
 
@@ -27,7 +28,8 @@ export class ViewEventContextMenuBuilder {
         private onPin: (event: CollectedEvent) => void,
         private onDelete: (event: CollectedEvent) => void,
         private onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
-        private onPrepareToResendRequest?: (exchange: HttpExchangeView) => void
+        private onPrepareToResendRequest: (exchange: HttpExchangeView) => void,
+        private onAddFilter: (filter: Filter) => void
     ) {}
 
     private readonly BaseOptions = {
@@ -54,6 +56,26 @@ export class ViewEventContextMenuBuilder {
             if (event.isHttp()) {
                 const menuOptions = [
                     this.BaseOptions.Pin,
+                    {
+                        type: 'submenu',
+                        label: 'Filter traffic like this',
+                        items: [
+                            {
+                                type: 'option',
+                                label: 'Show only this hostname',
+                                callback: () => this.onAddFilter(
+                                    new HostnameFilter(`hostname=${event.request.parsedUrl.hostname}`)
+                                )
+                            },
+                            {
+                                type: 'option',
+                                label: 'Hide this hostname',
+                                callback: () => this.onAddFilter(
+                                    new HostnameFilter(`hostname!=${event.request.parsedUrl.hostname}`)
+                                )
+                            }
+                        ]
+                    },
                     {
                         type: 'option',
                         label: 'Copy Request URL',
