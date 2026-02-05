@@ -16,7 +16,9 @@ import {
     InputWebSocketMessage,
     TlsSocketMetadata,
     ViewableEvent,
-    HttpExchangeView
+    HttpExchangeView,
+    RawHeaders,
+    RawTrailers
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
@@ -128,13 +130,8 @@ export async function generateHar(
     };
 }
 
-function asHarHeaders(headers: Headers | Trailers) {
-    return _.map(headers, (headerValue, headerKey) => ({
-        name: headerKey,
-        value: _.isArray(headerValue)
-            ? headerValue.join(',')
-            : headerValue!
-    }))
+function asHarHeaders(headers: RawHeaders | RawTrailers) {
+    return headers.map(([name, value]) => ({ name, value }));
 }
 
 function asHtkHeaders(headers: HarFormat.Header[]) {
@@ -201,9 +198,9 @@ export function generateHarRequest(
         url: request.parsedUrl.toString(),
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
         cookies: asHarRequestCookies(request.headers),
-        headers: asHarHeaders(request.headers),
-        ...(request.trailers ? {
-            _trailers: asHarHeaders(request.trailers)
+        headers: asHarHeaders(request.rawHeaders),
+        ...(request.rawTrailers ? {
+            _trailers: asHarHeaders(request.rawTrailers)
         } : {}),
         queryString: Array.from(request.parsedUrl.searchParams.entries()).map(
             ([paramKey, paramValue]) => ({
@@ -357,7 +354,7 @@ async function generateHarResponse(
         statusText: response.statusMessage,
         httpVersion: `HTTP/${request.httpVersion || '1.1'}`,
         cookies: asHarResponseCookies(response.headers),
-        headers: asHarHeaders(response.headers),
+        headers: asHarHeaders(response.rawHeaders),
         content: Object.assign(
             {
                 mimeType: getHeaderValue(response.headers, 'content-type') ||
