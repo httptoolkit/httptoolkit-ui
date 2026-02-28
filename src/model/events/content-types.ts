@@ -122,6 +122,7 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/grpc+protobuf': 'grpc-proto',
     'application/grpc-proto': 'grpc-proto',
     'application/grpc-protobuf': 'grpc-proto',
+    'application/grpc-web': 'grpc-proto',
 
     // Nobody can quite agree on the names for the various sequence-of-JSON formats:
     'application/jsonlines': 'json-records',
