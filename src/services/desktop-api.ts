@@ -1,4 +1,5 @@
 import { desktopVersion } from "./service-versions";
+import { OperationDefinition } from "./ui-api/api-types";
 
 type DesktopInjectedKey =
     | 'httpToolkitDesktopVersion'
@@ -54,6 +55,11 @@ interface DesktopApi {
      * File at all, it throws.
      */
     getPathForFile?: (file: File) => string | null;
+
+    setApiOperations?: (operations: OperationDefinition[]) => void;
+    onOperationRequest?: (
+        handler: (operation: string, params: Record<string, unknown>) => Promise<unknown>
+    ) => void;
 }
 
 interface NativeContextMenuDefinition {

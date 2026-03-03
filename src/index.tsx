@@ -43,6 +43,8 @@ import { App } from './components/app';
 import { StyleProvider } from './components/style-provider';
 import { ErrorBoundary } from './components/error-boundary';
 
+import { initializeUiApi } from './services/ui-api/api-interface';
+
 console.log(`Initialising UI (version ${UI_VERSION})`);
 
 const APP_ELEMENT_SELECTOR = '#app';
@@ -99,6 +101,10 @@ const appStartupPromise = Promise.all(
     Object.values(stores).map(store => store.initialized)
 );
 initMetrics();
+
+// The UI exposes an API itself, allowing external components (the desktop shell) to access
+// UI state for the MCP server etc.
+initializeUiApi({ accountStore, eventsStore });
 
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
