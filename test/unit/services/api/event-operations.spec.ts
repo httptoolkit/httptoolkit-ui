@@ -13,7 +13,8 @@ describe('Event operations', () => {
     beforeEach(() => {
         events = [];
         registry = new OperationRegistry(() => true);
-        registerEventOperations(registry, () => events);
+        const mockEventsStore = { clearInterceptedData: () => {} } as any;
+        registerEventOperations(registry, mockEventsStore, () => events);
     });
 
     describe('events.list', () => {

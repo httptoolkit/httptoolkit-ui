@@ -104,7 +104,7 @@ initMetrics();
 
 // The UI exposes an API itself, allowing external components (the desktop shell) to access
 // UI state for the MCP server etc.
-initializeUiApi({ accountStore, eventsStore });
+initializeUiApi({ accountStore, eventsStore, proxyStore, interceptorStore });
 
 // Once the app is loaded, show the app
 appStartupPromise.then(() => {
