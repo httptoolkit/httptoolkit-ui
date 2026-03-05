@@ -4,15 +4,18 @@ import { serializeExchangeSummary, serializeExchangeOutline, serializeBody } fro
 import { HttpExchange, CollectedEvent } from '../../../types';
 import { matchFilters } from '../../../model/filters/filter-matching';
 import { SelectableSearchFilterClasses } from '../../../model/filters/search-filters';
+import { EventsStore } from '../../../model/events/events-store';
 
 export function registerEventOperations(
     registry: OperationRegistry,
+    eventsStore: EventsStore,
     getEvents: () => ReadonlyArray<CollectedEvent>
 ): void {
     registry.register(eventsListOperation(getEvents));
     registry.register(eventsGetOutlineOperation(getEvents));
     registry.register(eventsGetRequestBodyOperation(getEvents));
     registry.register(eventsGetResponseBodyOperation(getEvents));
+    registry.register(eventsClearOperation(eventsStore));
 }
 
 function findHttpExchange(
@@ -248,6 +251,36 @@ function eventsGetResponseBodyOperation(
                 maxLength: params.maxLength as number | undefined
             });
             return { success: true, data: body };
+        }
+    };
+}
+
+function eventsClearOperation(eventsStore: EventsStore): Operation {
+    return {
+        definition: {
+            name: 'events.clear',
+            description: 'Clear all captured events. By default, pinned events are preserved.',
+            category: 'events',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    clearPinned: {
+                        type: 'boolean',
+                        description: 'Whether to also clear pinned events (default false)'
+                    }
+                }
+            },
+            outputSchema: {
+                type: 'object',
+                properties: {
+                    success: { type: 'boolean' }
+                }
+            }
+        },
+        handler: async (params) => {
+            const clearPinned = (params.clearPinned as boolean) || false;
+            eventsStore.clearInterceptedData(clearPinned);
+            return { success: true, data: {} };
         }
     };
 }
