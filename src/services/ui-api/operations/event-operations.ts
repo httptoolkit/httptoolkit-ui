@@ -49,6 +49,7 @@ function eventsListOperation(
                 '"status=200", "hostname$=google.com", "method=POST path^=/api", ' +
                 '"not(status=404)", "completed", "pending".',
             category: 'events',
+            annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -151,6 +152,7 @@ function eventsGetOutlineOperation(
                 'headers, status, timing, and body sizes, but not the body content itself. ' +
                 'Use events.get-request-body or events.get-response-body to retrieve bodies.',
             category: 'events',
+            annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -206,6 +208,7 @@ function eventsGetRequestBodyOperation(
             description: 'Get the request body of a captured HTTP exchange. ' +
                 'Use offset and maxLength to retrieve specific ranges of large bodies.',
             category: 'events',
+            annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
                 properties: bodyInputProperties,
@@ -235,6 +238,7 @@ function eventsGetResponseBodyOperation(
             description: 'Get the response body of a captured HTTP exchange. ' +
                 'Use offset and maxLength to retrieve specific ranges of large bodies.',
             category: 'events',
+            annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
                 properties: bodyInputProperties,
@@ -261,6 +265,7 @@ function eventsClearOperation(eventsStore: EventsStore): Operation {
             name: 'events.clear',
             description: 'Clear all captured events. By default, pinned events are preserved.',
             category: 'events',
+            annotations: { readOnlyHint: false, destructiveHint: true },
             inputSchema: {
                 type: 'object',
                 properties: {

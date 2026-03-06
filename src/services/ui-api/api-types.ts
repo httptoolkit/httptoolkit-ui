@@ -6,6 +6,12 @@ export interface OperationDefinition {
     inputSchema: JSONSchema7;
     outputSchema: JSONSchema7;
     category: string;
+    annotations?: {
+        readOnlyHint?: boolean;
+        destructiveHint?: boolean;
+        idempotentHint?: boolean;
+        openWorldHint?: boolean;
+    };
 }
 
 export interface OperationResult<T = unknown> {

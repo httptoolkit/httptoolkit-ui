@@ -15,6 +15,7 @@ function proxyGetConfigOperation(proxyStore: ProxyStore): Operation {
             description: 'Get the current proxy configuration: port, certificate path, ' +
                 'certificate fingerprint, and external network addresses.',
             category: 'proxy',
+            annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
                 properties: {}
