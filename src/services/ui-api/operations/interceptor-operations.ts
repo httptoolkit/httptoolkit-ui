@@ -33,6 +33,7 @@ function interceptorsListOperation(interceptorStore: InterceptorStore): Operatio
             description: 'List available interceptors and their current status. ' +
                 'Shows which interceptors are supported, activable, and currently active.',
             category: 'interceptors',
+            annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
                 properties: {}
@@ -80,6 +81,7 @@ function interceptorsActivateOperation(interceptorStore: InterceptorStore): Oper
                 'fresh-terminal, system-proxy). Interactive interceptors like docker-attach, ' +
                 'android-adb, electron etc. require the full UI.',
             category: 'interceptors',
+            annotations: { readOnlyHint: false },
             inputSchema: {
                 type: 'object',
                 properties: {
