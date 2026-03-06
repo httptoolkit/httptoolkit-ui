@@ -41,7 +41,10 @@ export class OperationRegistry {
         }
 
         try {
-            return await op.handler(params);
+            const result = await op.handler(params);
+            // JSON roundtrip to strip MobX observables, class instances, and other
+            // non-cloneable objects before the result crosses the IPC boundary:
+            return JSON.parse(JSON.stringify(result));
         } catch (e: any) {
             return {
                 success: false,
