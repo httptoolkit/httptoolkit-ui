@@ -27,6 +27,7 @@ jobs:
         run: npm run test:integration
         if: github.ref != 'refs/heads/main'
         env:
+          REPORT_URI: ${{ vars.REPORT_URI }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # To pull server without rate limit issues in CI
 
       # Build with secrets & run integrations tests, on main only:
