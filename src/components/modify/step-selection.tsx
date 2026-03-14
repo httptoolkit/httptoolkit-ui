@@ -196,7 +196,7 @@ export const StepSelector = inject('rulesStore', 'accountStore')(observer((p: {
 }) => {
     let [ allowedSteps, needProSteps ] = _.partition(
         p.availableSteps,
-        (stepClass) => p.accountStore!.isPaidUser || !isPaidStepClass(p.ruleType, stepClass)
+        (stepClass) => p.accountStore!.user.isPaidUser() || !isPaidStepClass(p.ruleType, stepClass)
     );
 
     // Pull the breakpoint steps to the top, since they're kind of separate

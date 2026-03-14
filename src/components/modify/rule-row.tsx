@@ -336,10 +336,9 @@ export class RuleRow extends React.Component<{
             collapsed,
             disabled
         } = this.props;
-        const {
-            isPaidUser,
-            getPro
-        } = this.props.accountStore!;
+        const { accountStore } = this.props;
+        const isPaidUser = accountStore!.user.isPaidUser();
+        const { getPro } = accountStore!;
 
         const ruleType = rule.type;
         const initialMatcher = rule.matchers.length ? rule.matchers[0] : undefined;

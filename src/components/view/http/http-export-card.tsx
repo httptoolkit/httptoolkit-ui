@@ -142,7 +142,7 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
 
     render() {
         const { exchange, accountStore } = this.props;
-        const { isPaidUser } = accountStore!;
+        const isPaidUser = accountStore!.user.isPaidUser();
 
         return <CollapsibleCard {...this.props}>
             <header>

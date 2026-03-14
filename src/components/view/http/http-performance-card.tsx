@@ -42,7 +42,7 @@ interface HttpPerformanceCardProps extends CollapsibleCardProps {
 
 export const HttpPerformanceCard = inject('accountStore')(observer((props: HttpPerformanceCardProps) => {
     const { exchange, accountStore } = props;
-    const { isPaidUser } = accountStore!;
+    const isPaidUser = accountStore!.user.isPaidUser();
 
     return <CollapsibleCard {...props}>
         <header>

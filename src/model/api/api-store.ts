@@ -88,7 +88,7 @@ export class ApiStore {
         // logout & subscription expiration (even if that happened while the app was
         // closed), but don't get reset when the app starts with stale account data.
         observe(this.accountStore, 'accountDataLastUpdated', () => {
-            if (!this.accountStore.isPaidUser) this.customOpenApiSpecs = {};
+            if (!this.accountStore.user.isPaidUser()) this.customOpenApiSpecs = {};
         });
 
         await hydrate({

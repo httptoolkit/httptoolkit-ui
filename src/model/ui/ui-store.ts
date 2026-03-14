@@ -137,7 +137,7 @@ export class UiStore {
         // logout & subscription expiration (even if that happened while the app was
         // closed), but don't get reset when the app starts with stale account data.
         observe(this.accountStore, 'accountDataLastUpdated', () => {
-            if (!this.accountStore.isPaidUser) {
+            if (!this.accountStore.user.isPaidUser()) {
                 this.setTheme('automatic');
             }
         });
@@ -448,7 +448,7 @@ export class UiStore {
 
     @computed
     get customFilters() {
-        if (this.accountStore.isPaidUser) {
+        if (this.accountStore.user.isPaidUser()) {
             return this._customFilters;
         } else {
             return {};

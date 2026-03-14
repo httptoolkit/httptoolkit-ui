@@ -58,7 +58,7 @@ export class RTCDataChannelDetailsPane extends React.Component<{
             }
             <RTCDataChannelCard
                 dataChannel={dataChannel}
-                isPaidUser={accountStore!.isPaidUser}
+                isPaidUser={accountStore!.user.isPaidUser()}
                 streamMessageEditor={streamMessageEditor}
 
                 collapsed={false}

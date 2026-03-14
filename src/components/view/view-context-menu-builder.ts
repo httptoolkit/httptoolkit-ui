@@ -47,7 +47,7 @@ export class ViewEventContextMenuBuilder {
 
     getContextMenuCallback(event: CollectedEvent) {
         return (mouseEvent: React.MouseEvent) => {
-            const { isPaidUser } = this.accountStore;
+            const isPaidUser = this.accountStore.user.isPaidUser();
 
             const preferredExportFormat = this.uiStore.exportSnippetFormat
                 ? getCodeSnippetOptionFromKey(this.uiStore.exportSnippetFormat)

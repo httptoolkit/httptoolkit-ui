@@ -150,7 +150,7 @@ class ModifyPage extends React.Component<ModifyPageProps> {
             updateGroupTitle,
             combineDraftRulesAsGroup
         } = this.props.rulesStore;
-        const { isPaidUser } = this.props.accountStore;
+        const isPaidUser = this.props.accountStore.user.isPaidUser();
 
         return <ModifyPageContainer ref={this.containerRef}>
             <ModifyPageHeader>

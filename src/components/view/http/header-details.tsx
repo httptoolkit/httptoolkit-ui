@@ -194,7 +194,7 @@ export const HeaderDetails = inject('accountStore')(observer((props: {
                 key,
                 value,
                 props.requestUrl,
-                props.accountStore!.isPaidUser
+                props.accountStore!.user.isPaidUser()
             )
 
             return <CollapsibleSection

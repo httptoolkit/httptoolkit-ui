@@ -96,7 +96,7 @@ export class HttpDetailsPane extends React.Component<{
             navigate
         } = this.props;
 
-        const { isPaidUser } = accountStore!;
+        const isPaidUser = accountStore!.user.isPaidUser();
         const { expandedViewCard } = uiStore!;
 
         // The full API details - for paid APIs, and non-paid users, we don't show
@@ -145,7 +145,8 @@ export class HttpDetailsPane extends React.Component<{
 
     renderHeaderCard(exchange: HttpExchangeView): JSX.Element | null {
         const { accountStore, navigate } = this.props;
-        const { isPaidUser, getPro } = accountStore!;
+        const isPaidUser = accountStore!.user.isPaidUser();
+        const { getPro } = accountStore!;
         const {
             requestBreakpoint,
             respondToBreakpointedRequest,
@@ -421,7 +422,7 @@ export class HttpDetailsPane extends React.Component<{
             />
             : <HttpBodyCard
                 {...this.requestBodyParams()}
-                isPaidUser={this.props.accountStore!.isPaidUser}
+                isPaidUser={this.props.accountStore!.user.isPaidUser()}
                 url={exchange.request.url}
                 message={request}
                 apiBodySchema={apiExchange?.request?.bodySchema}
@@ -441,7 +442,7 @@ export class HttpDetailsPane extends React.Component<{
             />
             : <HttpBodyCard
                 {...this.responseBodyParams()}
-                isPaidUser={this.props.accountStore!.isPaidUser}
+                isPaidUser={this.props.accountStore!.user.isPaidUser()}
                 url={exchange.request.url}
                 message={response as HtkResponse}
                 apiBodySchema={apiExchange?.response?.bodySchema}
@@ -466,7 +467,7 @@ export class HttpDetailsPane extends React.Component<{
 
             editorNode={this.props.streamMessageEditor}
 
-            isPaidUser={this.props.accountStore!.isPaidUser}
+            isPaidUser={this.props.accountStore!.user.isPaidUser()}
             filenamePrefix={filenamePrefix}
             messages={exchange.messages}
             onClearMessages={this.clearMessages}

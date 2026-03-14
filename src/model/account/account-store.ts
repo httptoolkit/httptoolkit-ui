@@ -20,6 +20,14 @@ import {
     loadPlanPricesUntilSuccess
 } from '@httptoolkit/accounts';
 
+// ------------------------------------------------------------------
+// You could override settings in here to become a paid user for free.
+// I'd rather you didn't! HTTP Toolkit takes time & love to build,
+// and I can't do that if it doesn't pay my bills :-)
+//
+// Fund open source - if you want Pro, help pay for its development.
+// Can't afford it? Get in touch: tim@httptoolkit.com.
+// ------------------------------------------------------------------
 export class AccountStore {
 
     constructor(
@@ -73,7 +81,7 @@ export class AccountStore {
     });
 
     @observable
-    private user: User = getLastUserData();
+    user: User = getLastUserData();
 
     @observable
     accountDataLastUpdated = 0;
@@ -87,7 +95,7 @@ export class AccountStore {
     }
 
     @computed get userSubscription() {
-        return this.isPaidUser || this.isPastDueUser
+        return this.user.userHasSubscription()
             ? this.user.subscription
             : undefined;
     }
@@ -119,60 +127,13 @@ export class AccountStore {
         return _.clone(this.user.featureFlags);
     }
 
-    @computed private get isStatusUnexpired() {
-        const subscriptionExpiry = this.user.subscription?.expiry;
-        const subscriptionStatus = this.user.subscription?.status;
-
-        const expiryMargin = subscriptionStatus === 'active'
-            // If we're offline during subscription renewal, and the sub was active last
-            // we checked, then we might just have outdated data, so leave extra slack.
-            // This gives a week of offline usage. Should be enough, given that most HTTP
-            // development needs network connectivity anyway.
-            ? 1000 * 60 * 60 * 24 * 7
-            : 0;
-
-        return !!subscriptionExpiry &&
-            subscriptionExpiry.valueOf() + expiryMargin > Date.now();
-    }
-
-    @computed get isPaidUser() {
-        // ------------------------------------------------------------------
-        // You could set this to true to become a paid user for free.
-        // I'd rather you didn't. HTTP Toolkit takes time & love to build,
-        // and I can't do that if it doesn't pay my bills!
-        //
-        // Fund open source - if you want Pro, help pay for its development.
-        // Can't afford it? Get in touch: tim@httptoolkit.com.
-        // ------------------------------------------------------------------
-
-        // If you're before the last expiry date, your subscription is valid,
-        // unless it's past_due, in which case you're in a strange ambiguous
-        // zone, and the expiry date is the next retry. In that case, your
-        // status is unexpired, but _not_ considered as valid for Pro features.
-        // Note that explicitly cancelled ('deleted') subscriptions are still
-        // valid until the end of the last paid period though!
-        return this.user.subscription?.status !== 'past_due' &&
-            this.isStatusUnexpired;
-    }
-
-    @computed get isPastDueUser() {
-        // Is the user a subscribed user whose payments are failing? Keep them
-        // in an intermediate state so they can fix it (for now, until payment
-        // retries fail, and their subscription cancels & expires completely).
-        return this.user.subscription?.status === 'past_due' &&
-            this.isStatusUnexpired;
-    }
-
-    @computed get userHasSubscription() {
-        return this.isPaidUser || this.isPastDueUser;
-    }
-
     @computed get mightBePaidUser() {
         // Like isPaidUser, but returns true for users who have subscription data
         // locally that's expired, until we successfully make a first check.
-        return this.user.subscription?.status &&
-            this.user.subscription?.status !== 'past_due' &&
-            (this.isStatusUnexpired || this.accountDataLastUpdated === 0);
+        return this.user.isPaidUser() ||
+            (this.accountDataLastUpdated === 0 &&
+            !!this.user.subscription?.status &&
+            this.user.subscription?.status !== 'past_due');
     }
 
     @observable
@@ -188,8 +149,8 @@ export class AccountStore {
             if (!this.isLoggedIn) yield this.logIn();
 
             // If we cancelled login, or we've already got a plan, we're done.
-            if (!this.isLoggedIn || this.userHasSubscription) {
-                if (this.isPastDueUser) this.goToSettings();
+            if (!this.isLoggedIn || this.user.userHasSubscription()) {
+                if (this.user.isPastDueUser()) this.goToSettings();
                 return;
             }
 
@@ -215,11 +176,11 @@ export class AccountStore {
 
         if (this.isLoggedIn) {
             trackEvent({ category: 'Account', action: 'Login success' });
-            if (this.userHasSubscription) {
+            if (this.user.userHasSubscription()) {
                 trackEvent({ category: 'Account', action: 'Paid user login' });
                 this.modal = undefined;
 
-                if (this.isPastDueUser) this.goToSettings();
+                if (this.user.isPastDueUser()) this.goToSettings();
             } else {
                 this.modal = initialModal;
             }
@@ -262,7 +223,7 @@ export class AccountStore {
 
         if (this.selectedPlan) {
             trackEvent({ category: 'Account', action: 'Plan selected', value: this.selectedPlan });
-        } else if (!this.isPaidUser) {
+        } else if (!this.user.isPaidUser()) {
             // If you don't pick a plan via any route other than already having
             // bought them, then you're pretty clearly rejecting them.
             trackEvent({ category: 'Account', action: 'Plans rejected' });
@@ -285,13 +246,13 @@ export class AccountStore {
 
         this.modal = 'post-checkout';
         this.isAccountUpdateInProcess = true;
-        yield this.waitForUserUpdate(() => this.isPaidUser || !this.modal);
+        yield this.waitForUserUpdate(() => this.user.isPaidUser() || !this.modal);
         this.isAccountUpdateInProcess = false;
         this.modal = undefined;
 
         trackEvent({
             category: 'Account',
-            action: this.isPaidUser ? 'Checkout complete' : 'Checkout cancelled',
+            action: this.user.isPaidUser() ? 'Checkout complete' : 'Checkout cancelled',
             value: sku
         });
     });

@@ -276,7 +276,7 @@ export class RulesStore {
         // logout & subscription expiration (even if that happened while the app was
         // closed), but don't get reset when the app starts with stale account data.
         observe(accountStore, 'accountDataLastUpdated', () => {
-            if (!accountStore.isPaidUser) {
+            if (!accountStore.user.isPaidUser()) {
                 this.whitelistedCertificateHosts = ['localhost'];
                 this.clientCertificateHostMap = {};
                 this.upstreamProxyType = 'system';

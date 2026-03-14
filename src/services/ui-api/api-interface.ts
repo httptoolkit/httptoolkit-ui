@@ -21,7 +21,7 @@ export function initializeUiApi(stores: {
     const { accountStore, eventsStore, proxyStore, interceptorStore } = stores;
 
     const registry = new OperationRegistry(
-        () => accountStore.isPaidUser
+        () => accountStore.user.isPaidUser()
     );
 
     registerAllOperations(

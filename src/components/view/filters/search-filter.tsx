@@ -591,7 +591,7 @@ export class SearchFilter<T> extends React.Component<{
                 availableFilters={availableFilters}
                 suggestionContext={filterSuggestionContext}
 
-                isPaidUser={accountStore!.isPaidUser}
+                isPaidUser={accountStore!.user.isPaidUser()}
                 getPro={accountStore!.getPro}
             />
             { hasContents

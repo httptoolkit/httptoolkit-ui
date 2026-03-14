@@ -72,7 +72,7 @@ export class ResponsePane extends React.Component<{
             />
             <SentResponseBodyCard
                 {...this.cardProps.responseBody}
-                isPaidUser={this.props.accountStore!.isPaidUser}
+                isPaidUser={this.props.accountStore!.user.isPaidUser()}
                 url={exchange.request.url}
                 message={response}
                 editorNode={editorNode}
@@ -126,7 +126,7 @@ export class ResponsePane extends React.Component<{
             />
             <SentResponseBodyCard
                 {...this.cardProps.responseBody}
-                isPaidUser={this.props.accountStore!.isPaidUser}
+                isPaidUser={this.props.accountStore!.user.isPaidUser()}
                 url={requestInput.url}
                 editorNode={editorNode}
             />

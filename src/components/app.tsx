@@ -98,7 +98,7 @@ class App extends React.Component<{
 
     @computed
     get canVisitSettings() {
-        return this.props.accountStore.isPaidUser || this.props.accountStore.isPastDueUser;
+        return this.props.accountStore.user.userHasSubscription();
     }
 
     @computed

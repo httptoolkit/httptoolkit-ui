@@ -341,7 +341,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     render(): JSX.Element {
         const { isPaused, events } = this.props.eventsStore;
         const { certPath } = this.props.proxyStore;
-        const { isPaidUser } = this.props.accountStore;
+        const isPaidUser = this.props.accountStore.user.isPaidUser();
 
         const { filteredEvents, filteredEventCount } = this.filteredEventState;
 
@@ -560,7 +560,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     onBuildRuleFromExchange(exchange: HttpExchangeView) {
         const { rulesStore, navigate } = this.props;
 
-        if (!this.props.accountStore!.isPaidUser) return;
+        if (!this.props.accountStore!.user.isPaidUser()) return;
 
         const rule = buildRuleFromExchange(exchange);
         rulesStore!.draftRules.items.unshift(rule);
@@ -571,7 +571,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     async onPrepareToResendRequest(exchange: HttpExchangeView) {
         const { sendStore, navigate } = this.props;
 
-        if (!this.props.accountStore!.isPaidUser) return;
+        if (!this.props.accountStore!.user.isPaidUser()) return;
 
         await sendStore.addRequestInputFromExchange(exchange);
         navigate(`/send`);

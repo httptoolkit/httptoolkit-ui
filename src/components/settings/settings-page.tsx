@@ -123,8 +123,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
     render() {
         const { uiStore } = this.props;
         const {
-            isPaidUser,
-            isPastDueUser,
+            user,
             userEmail,
             userSubscription,
             subscriptionPlans,
@@ -136,7 +135,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
 
         const cardProps = uiStore.settingsCardProps;
 
-        if (!isPaidUser && !isPastDueUser) {
+        if (!user.userHasSubscription()) {
             // Can only happen if you log out whilst on this page.
             return <SettingsPagePlaceholder>
                 <Button onClick={() => getPro('settings-page')}>Get Pro</Button>
@@ -272,7 +271,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                     The rest is active paid users only:
                  */}
 
-                { isPaidUser && <>
+                { user.isPaidUser() && <>
                     {
                         _.isString(serverVersion.value) &&
                         versionSatisfies(serverVersion.value, PORT_RANGE_SERVER_RANGE) && <>
