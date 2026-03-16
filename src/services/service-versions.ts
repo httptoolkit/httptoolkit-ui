@@ -4,7 +4,7 @@ import * as semver from 'semver';
 import { RUNNING_IN_WORKER } from '../util';
 import { lazyObservablePromise } from "../util/observable";
 import { getServerVersion, waitUntilServerReady } from "./server-api";
-import { getDesktopInjectedValue } from "./desktop-api";
+import { DesktopApi, getDesktopInjectedValue } from "./desktop-api";
 
 export const UI_VERSION = process.env.UI_VERSION || "Unknown";
 
@@ -89,3 +89,29 @@ export const ADVANCED_PATCH_TRANSFORMS = '^1.18.0';
 export const WILDCARD_CLIENT_CERTS = '^1.22.0';
 export const KEY_LOG_FILE_SUPPORTED = '^1.23.0';
 export const WEBHOOK_AND_DELAY_RULES = '^1.23.0';
+
+// Report component versions to the desktop app menu, when available:
+if (DesktopApi.setComponentVersions) {
+    let desktop: string | undefined;
+    let server: string | undefined;
+
+    const buildVersions = () => {
+        const versions: Record<string, string> = {};
+        if (desktop) versions["Desktop"] = desktop;
+        if (server) versions["Server"] = server;
+        versions["UI"] = UI_VERSION;
+        return versions;
+    };
+
+    DesktopApi.setComponentVersions(buildVersions());
+
+    desktopVersion.then((v) => {
+        desktop = v;
+        DesktopApi.setComponentVersions!(buildVersions());
+    }).catch(() => {});
+
+    serverVersion.then((v) => {
+        server = v;
+        DesktopApi.setComponentVersions!(buildVersions());
+    }).catch(() => {});
+}
