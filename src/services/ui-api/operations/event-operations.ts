@@ -45,9 +45,8 @@ function eventsListOperation(
         definition: {
             name: 'events.list',
             description: 'List captured HTTP exchanges with optional filtering and pagination. ' +
-                'Uses the same filter syntax as the UI search bar, e.g. ' +
-                '"status=200", "hostname$=google.com", "method=POST path^=/api", ' +
-                '"not(status=404)", "completed", "pending".',
+                'Uses the same filter syntax as the UI search bar. ' +
+                'See https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic for full docs.',
             category: 'events',
             annotations: { readOnlyHint: true },
             inputSchema: {
@@ -55,8 +54,26 @@ function eventsListOperation(
                 properties: {
                     filter: {
                         type: 'string',
-                        description: 'Filter expression using HTTP Toolkit filter syntax ' +
-                            '(e.g. "status!=404 hostname$=google.com")'
+                        description:
+                            'Filter expression. Space-separated filters are ANDed together. ' +
+                            'Operators: = != ^= $= *= > >= < <=\n' +
+                            '\n' +
+                            'Common filters (subset - see https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic for all options):\n' +
+                            '- method (method=GET)\n' +
+                            '- hostname (hostname=example.com, hostname$=.google.com)\n' +
+                            '- path (path^=/api)\n' +
+                            '- status (status=200, status>=400)\n' +
+                            '- header[name] (header[Authorization]^=Bearer)\n' +
+                            '- body (body*=error)\n' +
+                            '- bodySize (bodySize>=1000)\n' +
+                            '- completed, pending, aborted, errored\n' +
+                            '- contains(x) - search method, URL, headers & body at once\n' +
+                            '- not(filter) and or(a, b) for logical composition\n' +
+                            '\n' +
+                            'Examples:\n' +
+                            '- "status!=404 method=POST" - non-404 POST requests\n' +
+                            '- "hostname*=api contains(password)" - requests to API hosts containing "password" anywhere\n' +
+                            '- "not(path$=.css) bodySize>=10000" - large responses excluding CSS files'
                     },
                     offset: {
                         type: 'number',
