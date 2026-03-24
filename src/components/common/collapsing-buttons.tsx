@@ -56,6 +56,8 @@ const MenuButton = styled(Icon)`
     font-size: ${p => p.theme.textSize};
     padding: 5px 10px;
 
+    box-sizing: content-box;
+
     &:hover + ${HiddenButtonsContainer} {
         opacity: 1;
         pointer-events: auto;
