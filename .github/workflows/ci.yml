@@ -157,22 +157,6 @@ jobs:
 
           kubectl rollout status deployment/httptoolkit-ui -n httptoolkit-ui
 
-      - name: Redeploy container
-        uses: httptoolkit/scaleway-serverless-container-deploy-action@v1
-        with:
-          container_id: ${{ vars.SCW_API_CONTAINER_ID }}
-          region: ${{ vars.SCW_API_CONTAINER_REGION }}
-          secret_key: ${{ secrets.SCW_SECRET_KEY }}
-          registry_image_url: "registry.hub.docker.com/httptoolkit/ui:prod"
-
-      - name: Redeploy failover container
-        uses: httptoolkit/scaleway-serverless-container-deploy-action@v1
-        with:
-          container_id: ${{ vars.SCW_FAILOVER_API_CONTAINER_ID }}
-          region: ${{ vars.SCW_FAILOVER_API_CONTAINER_REGION }}
-          secret_key: ${{ secrets.SCW_SECRET_KEY }}
-          registry_image_url: "registry.hub.docker.com/httptoolkit/ui:prod"
-
       - name: Flush CDN cache
         run: |
           # Clear CDN cache to re-request content:
