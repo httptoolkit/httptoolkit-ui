@@ -1,5 +1,5 @@
 import * as Remarkable from 'remarkable';
-import * as DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify';
 
 import { Html } from '../../types';
 
@@ -16,7 +16,9 @@ const linklessMarkdown = new Remarkable({
 
 // Add an extra hook to DOMPurify to enforce link target. Without this, DOMPurify strips
 // every link target entirely.
-DOMPurify.addHook('afterSanitizeAttributes', function (node: Element | HTMLElement) {
+DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+    if (!(node instanceof Element)) return;
+
     // Closely based on example from https://github.com/cure53/DOMPurify/tree/main/demos#hook-to-open-all-links-in-a-new-window-link
 
     // Set all elements owning target to target=_blank
@@ -36,7 +38,9 @@ DOMPurify.addHook('afterSanitizeAttributes', function (node: Element | HTMLEleme
 
 // Add an extra hook to strip relative URLs (markdown largely comes from external sources,
 // and so should never include relative paths!)
-DOMPurify.addHook('afterSanitizeAttributes', function (node: Element | HTMLElement) {
+DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+    if (!(node instanceof Element)) return;
+
     if (node.hasAttribute('href')) {
         const target = node.getAttribute('href');
         if (target?.startsWith('/')) node.removeAttribute('href');
