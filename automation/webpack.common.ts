@@ -30,6 +30,7 @@ export default <Webpack.Configuration>{
             net: false,
             tls: false,
             http: false,
+            vm: false,
 
             assert: require.resolve('assert/'),
             crypto: require.resolve('crypto-browserify'),
