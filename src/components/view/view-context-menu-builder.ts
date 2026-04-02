@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { runInAction } from 'mobx';
+import { action, runInAction } from 'mobx';
 
 import { CollectedEvent, HttpExchangeView, WebSocketStream } from '../../types';
 
@@ -25,143 +25,195 @@ export class ViewEventContextMenuBuilder {
         private accountStore: AccountStore,
         private uiStore: UiStore,
 
-        private onPin: (event: CollectedEvent) => void,
-        private onDelete: (event: CollectedEvent) => void,
-        private onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
-        private onPrepareToResendRequest: (exchange: HttpExchangeView) => void,
-        private onAddFilter: (filter: Filter) => void
-    ) {}
-
-    private readonly BaseOptions = {
-        Pin: {
-            type: 'option',
-            label: 'Toggle Pinning',
-            callback: this.onPin
-        },
-        Delete: {
-            type: 'option',
-            label: 'Delete',
-            callback: this.onDelete
+        private getSelectedEvents: () => ReadonlyArray<CollectedEvent>,
+        private callbacks: {
+            onPin: () => void,
+            onDelete: (event: CollectedEvent) => void,
+            onDeleteSelection: () => void,
+            onBuildRuleFromExchange: (exchange: HttpExchangeView) => void,
+            onBuildRuleFromSelectedExchanges: () => void,
+            onPrepareToResendRequest: (exchange: HttpExchangeView) => void,
+            onAddFilter: (filter: Filter) => void
         }
-    } as const;
+    ) {}
 
     getContextMenuCallback(event: CollectedEvent) {
         return (mouseEvent: React.MouseEvent) => {
-            const isPaidUser = this.accountStore.user.isPaidUser();
+            const { selectedEventIds } = this.uiStore;
+            const isMultiSelected = selectedEventIds.size > 1 && selectedEventIds.has(event.id);
 
-            const preferredExportFormat = this.uiStore.exportSnippetFormat
-                ? getCodeSnippetOptionFromKey(this.uiStore.exportSnippetFormat)
-                : undefined;
+            if (isMultiSelected) {
+                this.showMultiSelectionMenu(mouseEvent);
+            } else if (event.isHttp()) {
+                this.showHttpEventMenu(mouseEvent, event);
+            } else {
+                this.showBasicEventMenu(mouseEvent, event);
+            }
+        };
+    }
 
-            if (event.isHttp()) {
-                const menuOptions = [
-                    this.BaseOptions.Pin,
+    private showMultiSelectionMenu(mouseEvent: React.MouseEvent) {
+        const isPaidUser = this.accountStore.user.isPaidUser();
+        const selectedEvents = this.getSelectedEvents();
+        const count = selectedEvents.length;
+        const httpCount = selectedEvents.filter(e => e.isHttp() && !e.isWebSocket()).length;
+
+        const menuOptions: Array<ContextMenuItem<void>> = [
+            {
+                type: 'option',
+                label: 'Toggle Pinning',
+                callback: () => this.callbacks.onPin()
+            },
+            ...(httpCount > 0 ? [{
+                type: 'option' as const,
+                enabled: isPaidUser,
+                label: `Create ${httpCount} Matching Rule${httpCount !== 1 ? 's' : ''}`,
+                callback: () => this.callbacks.onBuildRuleFromSelectedExchanges()
+            }] : []),
+            {
+                type: 'option',
+                label: `Delete ${count} Event${count !== 1 ? 's' : ''}`,
+                callback: () => this.callbacks.onDeleteSelection()
+            }
+        ];
+
+        this.uiStore.handleContextMenuEvent(
+            mouseEvent,
+            menuOptions,
+            undefined as void
+        );
+    }
+
+    private showHttpEventMenu(mouseEvent: React.MouseEvent, event: HttpExchange | WebSocketStream) {
+        const isPaidUser = this.accountStore.user.isPaidUser();
+
+        const preferredExportFormat = this.uiStore.exportSnippetFormat
+            ? getCodeSnippetOptionFromKey(this.uiStore.exportSnippetFormat)
+            : undefined;
+
+        const menuOptions = [
+            {
+                type: 'option',
+                label: 'Toggle Pinning',
+                callback: action((data: HttpExchangeView) => { data.pinned = !data.pinned; })
+            },
+            {
+                type: 'submenu',
+                label: 'Filter traffic like this',
+                items: [
                     {
-                        type: 'submenu',
-                        label: 'Filter traffic like this',
-                        items: [
-                            {
-                                type: 'option',
-                                label: 'Show only this hostname',
-                                callback: () => this.onAddFilter(
-                                    new HostnameFilter(`hostname=${event.request.parsedUrl.hostname}`)
-                                )
-                            },
-                            {
-                                type: 'option',
-                                label: 'Hide this hostname',
-                                callback: () => this.onAddFilter(
-                                    new HostnameFilter(`hostname!=${event.request.parsedUrl.hostname}`)
-                                )
-                            }
-                        ]
+                        type: 'option',
+                        label: 'Show only this hostname',
+                        callback: () => this.callbacks.onAddFilter(
+                            new HostnameFilter(`hostname=${event.request.parsedUrl.hostname}`)
+                        )
                     },
                     {
                         type: 'option',
-                        label: 'Copy Request URL',
-                        callback: (data: HttpExchangeView) => copyToClipboard(data.request.url)
-                    },
-                    ...(!isPaidUser ? [
-                        { type: 'separator' },
-                        { type: 'option', label: 'With Pro:', enabled: false, callback: () => {} }
-                    ] as const : []),
-                    ...(this.onPrepareToResendRequest ? [
-                        {
-                            type: 'option',
-                            enabled: isPaidUser,
-                            label: 'Resend Request',
-                            callback: (data: HttpExchangeView) => this.onPrepareToResendRequest!(data)
-                        }
-                    ] as const : []),
-                    {
-                        type: 'option',
-                        enabled: isPaidUser,
-                        label: `Create Matching Modify Rule`,
-                        callback: this.onBuildRuleFromExchange
-                    },
-                    {
-                        type: 'option',
-                        enabled: isPaidUser,
-                        label: `Export Exchange as HAR`,
-                        callback: exportHar
-                    },
-                    // If you have a preferred default format, we show that option at the top level:
-                    ...(preferredExportFormat && isPaidUser ? [{
-                        type: 'option',
-                        label: `Copy as ${getCodeSnippetFormatName(preferredExportFormat)} Snippet`,
+                        label: 'Hide this hostname',
+                        callback: () => this.callbacks.onAddFilter(
+                            new HostnameFilter(`hostname!=${event.request.parsedUrl.hostname}`)
+                        )
+                    }
+                ]
+            },
+            {
+                type: 'option',
+                label: 'Copy Request URL',
+                callback: (data: HttpExchangeView) => copyToClipboard(data.request.url)
+            },
+            ...(!isPaidUser ? [
+                { type: 'separator' },
+                { type: 'option', label: 'With Pro:', enabled: false, callback: () => {} }
+            ] as const : []),
+            ...(this.callbacks.onPrepareToResendRequest ? [
+                {
+                    type: 'option',
+                    enabled: isPaidUser,
+                    label: 'Resend Request',
+                    callback: (data: HttpExchangeView) => this.callbacks.onPrepareToResendRequest!(data)
+                }
+            ] as const : []),
+            {
+                type: 'option',
+                enabled: isPaidUser,
+                label: `Create Matching Modify Rule`,
+                callback: this.callbacks.onBuildRuleFromExchange
+            },
+            {
+                type: 'option',
+                enabled: isPaidUser,
+                label: `Export Exchange as HAR`,
+                callback: exportHar
+            },
+            // If you have a preferred default format, we show that option at the top level:
+            ...(preferredExportFormat && isPaidUser ? [{
+                type: 'option',
+                label: `Copy as ${getCodeSnippetFormatName(preferredExportFormat)} Snippet`,
+                callback: async (data: HttpExchange) => {
+                    copyToClipboard(
+                        await generateCodeSnippet(data, preferredExportFormat, {
+                            waitForBodyDecoding: true
+                        })
+                    );
+                }
+            }] as const : []),
+            {
+                type: 'submenu',
+                enabled: isPaidUser,
+                label: `Copy as Code Snippet`,
+                items: Object.keys(snippetExportOptions).map((snippetGroupName) => ({
+                    type: 'submenu' as const,
+                    label: snippetGroupName,
+                    items: snippetExportOptions[snippetGroupName].map((snippetOption) => ({
+                        type: 'option' as const,
+                        label: getCodeSnippetFormatName(snippetOption),
                         callback: async (data: HttpExchange) => {
+                            // When you pick an option here, it updates your preferred default option
+                            runInAction(() => {
+                                this.uiStore.exportSnippetFormat = getCodeSnippetFormatKey(snippetOption);
+                            });
+
                             copyToClipboard(
-                                await generateCodeSnippet(data, preferredExportFormat, {
+                                await generateCodeSnippet(data, snippetOption, {
                                     waitForBodyDecoding: true
                                 })
                             );
                         }
-                    }] as const : []),
-                    {
-                        type: 'submenu',
-                        enabled: isPaidUser,
-                        label: `Copy as Code Snippet`,
-                        items: Object.keys(snippetExportOptions).map((snippetGroupName) => ({
-                            type: 'submenu' as const,
-                            label: snippetGroupName,
-                            items: snippetExportOptions[snippetGroupName].map((snippetOption) => ({
-                                type: 'option' as const,
-                                label: getCodeSnippetFormatName(snippetOption),
-                                callback: async (data: HttpExchange) => {
-                                    // When you pick an option here, it updates your preferred default option
-                                    runInAction(() => {
-                                        this.uiStore.exportSnippetFormat = getCodeSnippetFormatKey(snippetOption);
-                                    });
-
-                                    copyToClipboard(
-                                        await generateCodeSnippet(data, snippetOption, {
-                                            waitForBodyDecoding: true
-                                        })
-                                    );
-                                }
-                            }))
-                        }))
-                    },
-                    this.BaseOptions.Delete
-                ];
-
-                const sortedOptions = _.sortBy(menuOptions, (o: ContextMenuItem<any>) =>
-                    o.type === 'separator' || !(o.enabled ?? true)
-                ) as Array<ContextMenuItem<HttpExchange | WebSocketStream>>;
-
-                this.uiStore.handleContextMenuEvent(
-                    mouseEvent,
-                    sortedOptions,
-                    event
-                )
-            } else {
-                // For non-HTTP events, we just show the super-basic globally supported options:
-                this.uiStore.handleContextMenuEvent(mouseEvent, [
-                    this.BaseOptions.Pin,
-                    this.BaseOptions.Delete
-                ], event);
+                    }))
+                }))
+            },
+            {
+                type: 'option',
+                label: 'Delete',
+                callback: this.callbacks.onDelete
             }
-        };
+        ];
+
+        const sortedOptions = _.sortBy(menuOptions, (o: ContextMenuItem<unknown>) =>
+            o.type === 'separator' || !(o.enabled ?? true)
+        ) as Array<ContextMenuItem<HttpExchange | WebSocketStream>>;
+
+        this.uiStore.handleContextMenuEvent(
+            mouseEvent,
+            sortedOptions,
+            event
+        )
+    }
+
+    private showBasicEventMenu(mouseEvent: React.MouseEvent, event: CollectedEvent) {
+        this.uiStore.handleContextMenuEvent(mouseEvent, [
+            {
+                type: 'option',
+                label: 'Toggle Pinning',
+                callback: action((data: CollectedEvent) => { data.pinned = !data.pinned; })
+            },
+            {
+                type: 'option',
+                label: 'Delete',
+                callback: this.callbacks.onDelete
+            }
+        ], event);
     }
 
 }

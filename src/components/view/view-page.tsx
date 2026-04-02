@@ -28,6 +28,7 @@ import { AccountStore } from '../../model/account/account-store';
 import { SendStore } from '../../model/send/send-store';
 import { HttpExchange } from '../../model/http/http-exchange';
 import { Filter, FilterSet } from '../../model/filters/search-filters';
+import * as uuid from 'uuid/v4';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
 import { SplitPane } from '../split-pane';
@@ -66,11 +67,10 @@ const ViewPageKeyboardShortcuts = (props: {
     onFocusLeft: () => void,
     onFocusRight: () => void,
     moveSelection: (distance: number) => void,
-    onPin: (event: HttpExchange) => void,
+    onPin: () => void,
     onResend: (event: HttpExchange) => void,
-    onBuildRuleFromExchange: (event: HttpExchange) => void,
-    onDelete: (event: CollectedEvent) => void,
-    onDeleteSelected: () => void,
+    onBuildRule: () => void,
+    onDelete: () => void,
     onClear: () => void,
     onStartSearch: () => void
 }) => {
@@ -97,11 +97,11 @@ const ViewPageKeyboardShortcuts = (props: {
     }, [props.moveSelection]);
 
     useHotkeys('Ctrl+p, Cmd+p', (event) => {
-        if (selectedEvent?.isHttp()) {
-            props.onPin(selectedEvent);
+        if (selectedEvent || props.isMultiSelection) {
+            props.onPin();
             event.preventDefault();
         }
-    }, [selectedEvent, props.onPin]);
+    }, [selectedEvent, props.isMultiSelection, props.onPin]);
 
     useHotkeys('Ctrl+r, Cmd+r', (event) => {
         if (props.isPaidUser && selectedEvent?.isHttp() && !selectedEvent?.isWebSocket()) {
@@ -111,21 +111,18 @@ const ViewPageKeyboardShortcuts = (props: {
     }, [selectedEvent, props.onResend, props.isPaidUser]);
 
     useHotkeys('Ctrl+m, Cmd+m', (event) => {
-        if (props.isPaidUser && selectedEvent?.isHttp() && !selectedEvent?.isWebSocket()) {
-            props.onBuildRuleFromExchange(selectedEvent);
+        if (props.isPaidUser && (selectedEvent?.isHttp() || props.isMultiSelection)) {
+            props.onBuildRule();
             event.preventDefault();
         }
-    }, [selectedEvent, props.onBuildRuleFromExchange, props.isPaidUser]);
+    }, [selectedEvent, props.isMultiSelection, props.onBuildRule, props.isPaidUser]);
 
     useHotkeys('Ctrl+Delete, Cmd+Delete, Ctrl+Backspace, Cmd+Backspace', (event) => {
         if (isEditable(event.target)) return;
-
-        if (props.isMultiSelection) {
-            props.onDeleteSelected();
-        } else if (selectedEvent) {
-            props.onDelete(selectedEvent);
+        if (selectedEvent || props.isMultiSelection) {
+            props.onDelete();
         }
-    }, [selectedEvent, props.isMultiSelection, props.onDelete, props.onDeleteSelected]);
+    }, [selectedEvent, props.isMultiSelection, props.onDelete]);
 
     useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete, Ctrl+Shift+Backspace, Cmd+Shift+Backspace', (event) => {
         props.onClear();
@@ -225,6 +222,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             filteredEventCount: [filteredEvents.length, events.length]
         };
     }
+
     @observable
     private selectionAnchorId: string | undefined;
 
@@ -279,11 +277,16 @@ class ViewPage extends React.Component<ViewPageProps> {
     private readonly contextMenuBuilder = new ViewEventContextMenuBuilder(
         this.props.accountStore,
         this.props.uiStore,
-        this.onPin,
-        this.onDelete,
-        this.onBuildRuleFromExchange,
-        this.onPrepareToResendRequest,
-        this.onAddSearchFilter
+        () => this.selectedEvents,
+        {
+            onPin: this.onPin,
+            onDelete: this.onDelete,
+            onDeleteSelection: this.onDeleteSelection,
+            onBuildRuleFromExchange: this.onBuildRuleFromExchange,
+            onBuildRuleFromSelectedExchanges: this.onBuildRuleFromSelectedExchanges,
+            onPrepareToResendRequest: this.onPrepareToResendRequest,
+            onAddFilter: this.onAddSearchFilter
+        }
     );
 
     componentDidMount() {
@@ -469,9 +472,8 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onFocusRight={this.focusRightPane}
                 onPin={this.onPin}
                 onResend={this.onPrepareToResendRequest}
-                onBuildRuleFromExchange={this.onBuildRuleFromExchange}
-                onDelete={this.onDelete}
-                onDeleteSelected={this.onDeleteSelected}
+                onBuildRule={this.onBuildRuleFromSelectedExchanges}
+                onDelete={this.onDeleteSelection}
                 onClear={this.onForceClear}
                 onStartSearch={this.onStartSearch}
             />
@@ -673,8 +675,15 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onPin(event: CollectedEvent) {
-        event.pinned = !event.pinned;
+    onPin() {
+        const events = this.selectedEvents;
+        if (events.length === 0) return;
+
+        // If any are unpinned, pin all. If all pinned, unpin all.
+        const shouldPin = events.some(e => !e.pinned);
+        for (const event of events) {
+            event.pinned = shouldPin;
+        }
     }
 
     @action.bound
@@ -686,6 +695,33 @@ class ViewPage extends React.Component<ViewPageProps> {
         const rule = buildRuleFromExchange(exchange);
         rulesStore!.draftRules.items.unshift(rule);
         navigate(`/modify/${rule.id}`);
+    }
+
+    @action.bound
+    onBuildRuleFromSelectedExchanges() {
+        const { rulesStore, navigate } = this.props;
+
+        if (!this.props.accountStore!.user.isPaidUser()) return;
+
+        const exchanges = this.selectedEvents
+            .filter((e): e is HttpExchange => e.isHttp() && !e.isWebSocket());
+        if (exchanges.length === 0) return;
+
+        if (exchanges.length === 1) {
+            // Single exchange — create a single rule
+            const rule = buildRuleFromExchange(exchanges[0]);
+            rulesStore!.draftRules.items.unshift(rule);
+            navigate(`/modify/${rule.id}`);
+        } else {
+            // Multiple exchanges — create a rule group
+            const group = {
+                id: uuid(),
+                title: `Rules from ${exchanges.length} requests`,
+                items: exchanges.map(e => buildRuleFromExchange(e))
+            };
+            rulesStore!.draftRules.items.unshift(group);
+            navigate(`/modify/${group.id}`);
+        }
     }
 
     @action.bound
@@ -723,16 +759,20 @@ class ViewPage extends React.Component<ViewPageProps> {
     }
 
     @action.bound
-    onDeleteSelected() {
-        const events = [...this.selectedEvents]; // Snapshot before clearing
-        if (events.length === 0) return;
+    onDeleteSelection() {
+        if (this.isMultiSelection) {
+            const events = [...this.selectedEvents];
+            if (events.length === 0) return;
 
-        const hasPinned = events.some(e => e.pinned);
-        if (hasPinned && !confirm(`Delete ${events.length} events including pinned?`)) return;
+            const hasPinned = events.some(e => e.pinned);
+            if (hasPinned && !confirm(`Delete ${events.length} events including pinned?`)) return;
 
-        this.onClearSelection();
-        for (const event of events) {
-            this.props.eventsStore.deleteEvent(event);
+            this.onClearSelection();
+            for (const event of events) {
+                this.props.eventsStore.deleteEvent(event);
+            }
+        } else if (this.selectedEvent) {
+            this.onDelete(this.selectedEvent);
         }
     }
 
