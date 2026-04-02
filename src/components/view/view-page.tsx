@@ -6,7 +6,6 @@ import {
     action,
     computed,
     runInAction,
-    when,
     comparer,
     observe
 } from 'mobx';
@@ -46,6 +45,7 @@ import { RTCDataChannelDetailsPane } from './rtc/rtc-data-channel-details-pane';
 import { RTCMediaDetailsPane } from './rtc/rtc-media-details-pane';
 import { RTCConnectionDetailsPane } from './rtc/rtc-connection-details-pane';
 import { RawTunnelDetailsPane } from './raw-tunnel-details-pane';
+import { MultiSelectionSummaryPane } from './multi-selection-summary-pane';
 
 interface ViewPageProps {
     className?: string;
@@ -62,6 +62,7 @@ interface ViewPageProps {
 const ViewPageKeyboardShortcuts = (props: {
     isPaidUser: boolean,
     selectedEvent: CollectedEvent | undefined,
+    isMultiSelection: boolean,
     onFocusLeft: () => void,
     onFocusRight: () => void,
     moveSelection: (distance: number) => void,
@@ -69,6 +70,7 @@ const ViewPageKeyboardShortcuts = (props: {
     onResend: (event: HttpExchange) => void,
     onBuildRuleFromExchange: (event: HttpExchange) => void,
     onDelete: (event: CollectedEvent) => void,
+    onDeleteSelected: () => void,
     onClear: () => void,
     onStartSearch: () => void
 }) => {
@@ -118,10 +120,12 @@ const ViewPageKeyboardShortcuts = (props: {
     useHotkeys('Ctrl+Delete, Cmd+Delete, Ctrl+Backspace, Cmd+Backspace', (event) => {
         if (isEditable(event.target)) return;
 
-        if (selectedEvent) {
+        if (props.isMultiSelection) {
+            props.onDeleteSelected();
+        } else if (selectedEvent) {
             props.onDelete(selectedEvent);
         }
-    }, [selectedEvent, props.onDelete]);
+    }, [selectedEvent, props.isMultiSelection, props.onDelete, props.onDeleteSelected]);
 
     useHotkeys('Ctrl+Shift+Delete, Cmd+Shift+Delete, Ctrl+Shift+Backspace, Cmd+Shift+Backspace', (event) => {
         props.onClear();
@@ -221,14 +225,38 @@ class ViewPage extends React.Component<ViewPageProps> {
             filteredEventCount: [filteredEvents.length, events.length]
         };
     }
-    @computed
-    get selectedEvent() {
-        // First try to use the URL-based eventId, then fallback to the persisted selection
-        const targetEventId = this.props.eventId || this.props.uiStore.selectedEventId;
+    @observable
+    private selectionAnchorId: string | undefined;
 
-        return _.find(this.props.eventsStore.events, {
-            id: targetEventId
-        });
+    // Snapshot of selection before a shift operation began, so shift+arrow
+    // can grow/shrink the range without losing prior ctrl+click selections.
+    private selectionBaseIds: ReadonlySet<string> | undefined;
+
+    @computed
+    get selectedEvent(): CollectedEvent | undefined {
+        // Show details only when exactly one event is selected
+        const { selectedEventIds, activeEventId } = this.props.uiStore;
+        if (selectedEventIds.size === 1 && activeEventId) {
+            return _.find(this.props.eventsStore.events, { id: activeEventId });
+        }
+        return undefined;
+    }
+
+    @computed
+    get isMultiSelection(): boolean {
+        return this.props.uiStore.selectedEventIds.size > 1;
+    }
+
+    @computed
+    get isRightPaneVisible(): boolean {
+        return this.isMultiSelection || this.selectedEvent !== undefined;
+    }
+
+    @computed
+    get selectedEvents(): ReadonlyArray<CollectedEvent> {
+        const { selectedEventIds } = this.props.uiStore;
+        if (selectedEventIds.size === 0) return [];
+        return this.props.eventsStore.events.filter(e => selectedEventIds.has(e.id));
     }
 
     @computed
@@ -259,25 +287,20 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
-        // After first render, if we're jumping to an event, scroll to ensure it's visible
-        // and focus the list so keyboard navigation works. Uses scrollToEvent (not center)
-        // to avoid jumping when the row is already on screen (e.g. clicking a visible row
-        // triggers a remount due to /view → /view/:id route change).
         requestAnimationFrame(() => {
-            if (this.props.eventId && this.selectedEvent) {
-                // URL-based deep link or click-triggered remount: sync store and
-                // scroll to the event (it may not be in the restored scroll viewport).
-                this.props.uiStore.setSelectedEventId(this.props.eventId);
-                this.onScrollToEvent(this.selectedEvent);
+            // If we're arriving via deep link (/view/:eventId), sync store from URL
+            if (this.props.eventId) {
+                this.props.uiStore.selectSingleEvent(this.props.eventId);
+                this.selectionAnchorId = this.props.eventId;
+                if (this.selectedEvent) {
+                    this.onScrollToEvent(this.selectedEvent);
+                }
             }
-            // For persisted selection without eventId (tab switch), don't scroll —
-            // restoreScrollPosition already restored the saved viewport.
 
-            // Focus the list window so keyboard navigation works immediately.
             this.listRef.current?.focusListWindow();
         });
 
-        disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
+        disposeOnUnmount(this, observe(this, 'isRightPaneVisible', ({ oldValue, newValue }) => {
             if (this.splitDirection !== 'horizontal') return;
 
             // In horizontal mode, the details pane appears and disappears, so we need to do some
@@ -285,26 +308,30 @@ class ViewPage extends React.Component<ViewPageProps> {
 
             if (!oldValue && newValue) {
                 // If we're bringing the details pane into view, we want to jump to where we were
-                // but then shift slightly to make sure the selected row is visible too.
+                // but then shift slightly to make sure the active row is visible too.
                 setTimeout(() => {
-                    if (!this.selectedEvent) return;
-                    this.listRef.current?.scrollToEvent(this.selectedEvent);
+                    const activeId = this.props.uiStore.activeEventId;
+                    if (!activeId) return;
+                    const activeEvent = this.props.eventsStore.events.find(e => e.id === activeId);
+                    if (activeEvent) {
+                        this.listRef.current?.scrollToEvent(activeEvent);
+                    }
                 }, 50); // We need to delay slightly to let DOM and then UI state catch up
             }
         }));
 
         disposeOnUnmount(this, autorun(() => {
-            if (!this.props.eventId) return;
+            if (this.props.uiStore.selectedEventIds.size === 0) return;
             const selectedEvent = this.selectedEvent;
 
             // If you somehow have a non-existent event selected, unselect it
-            if (!selectedEvent) {
+            if (!selectedEvent && this.props.uiStore.selectedEventIds.size === 1) {
                 this.onSelected(undefined);
                 return;
             }
 
             const { expandedViewCard } = this.props.uiStore;
-            if (expandedViewCard) {
+            if (expandedViewCard && selectedEvent) {
                 // If you have a pane expanded, and select an event with no data
                 // for that pane, then disable the expansion:
                 if (!paneExpansionRequirements[expandedViewCard](selectedEvent)) {
@@ -333,6 +360,19 @@ class ViewPage extends React.Component<ViewPageProps> {
                 }
             })
         );
+
+    }
+
+    componentDidUpdate(prevProps: ViewPageProps) {
+        // When the URL-based event changes (e.g. back/forward navigation, deep link),
+        // sync the selection to match, but only if it doesn't already match (to avoid
+        // redundant updates when our own onSelected triggered the navigation).
+        if (this.props.eventId && this.props.eventId !== prevProps.eventId) {
+            if (!this.props.uiStore.selectedEventIds.has(this.props.eventId)) {
+                this.props.uiStore.selectSingleEvent(this.props.eventId);
+                this.selectionAnchorId = this.props.eventId;
+            }
+        }
     }
 
     isSendAvailable() {
@@ -347,7 +387,11 @@ class ViewPage extends React.Component<ViewPageProps> {
         const { filteredEvents, filteredEventCount } = this.filteredEventState;
 
         let rightPane: JSX.Element | null;
-        if (!this.selectedEvent) {
+        if (this.isMultiSelection) {
+            rightPane = <MultiSelectionSummaryPane
+                selectedEvents={this.selectedEvents}
+            />;
+        } else if (!this.selectedEvent) {
             if (this.splitDirection === 'vertical') {
                 rightPane = <EmptyState key='details' icon='ArrowLeft'>
                     Select an exchange to see the full details.
@@ -419,6 +463,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             <ViewPageKeyboardShortcuts
                 isPaidUser={isPaidUser}
                 selectedEvent={this.selectedEvent}
+                isMultiSelection={this.isMultiSelection}
                 moveSelection={this.moveSelection}
                 onFocusLeft={this.focusLeftPane}
                 onFocusRight={this.focusRightPane}
@@ -426,6 +471,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 onResend={this.onPrepareToResendRequest}
                 onBuildRuleFromExchange={this.onBuildRuleFromExchange}
                 onDelete={this.onDelete}
+                onDeleteSelected={this.onDeleteSelected}
                 onClear={this.onForceClear}
                 onStartSearch={this.onStartSearch}
             />
@@ -455,11 +501,16 @@ class ViewPage extends React.Component<ViewPageProps> {
                     <ViewEventList
                         events={events}
                         filteredEvents={filteredEvents}
-                        selectedEvent={this.selectedEvent}
+                        selectedEventIds={this.props.uiStore.selectedEventIds}
+                        activeEventId={this.props.uiStore.activeEventId}
                         isPaused={isPaused}
 
                         moveSelection={this.moveSelection}
                         onSelected={this.onSelected}
+                        onToggleSelected={this.onToggleSelected}
+                        onRangeSelected={this.onRangeSelected}
+                        onSelectAll={this.onSelectAll}
+                        onClearSelection={this.onClearSelection}
                         contextMenuBuilder={this.contextMenuBuilder}
                         uiStore={this.props.uiStore}
 
@@ -521,22 +572,84 @@ class ViewPage extends React.Component<ViewPageProps> {
 
     @action.bound
     onSelected(event: CollectedEvent | undefined) {
-        this.props.uiStore.setSelectedEventId(event?.id);
+        this.selectionBaseIds = undefined;
+        this.props.uiStore.selectSingleEvent(event?.id);
+        this.selectionAnchorId = event?.id;
 
-        this.props.navigate(event
-            ? `/view/${event.id}`
-            : '/view'
-        );
+        // Update URL for back/forward navigation, but only when selecting
+        // (not deselecting) to avoid /view → /view/:id route-pattern changes
+        // that cause remounts
+        if (event) {
+            this.props.navigate(`/view/${event.id}`);
+        }
     }
 
     @action.bound
-    moveSelection(distance: number) {
+    onToggleSelected(event: CollectedEvent) {
+        this.selectionBaseIds = undefined;
+        this.props.uiStore.toggleEventSelection(event.id);
+        this.selectionAnchorId = event.id;
+    }
+
+    @action.bound
+    onRangeSelected(targetEvent: CollectedEvent) {
+        if (this.extendSelectionTo(targetEvent)) {
+            this.onScrollToEvent(targetEvent);
+        } else {
+            // No anchor — fall back to single-select
+            this.onSelected(targetEvent);
+        }
+    }
+
+    private extendSelectionTo(targetEvent: CollectedEvent): boolean {
+        const { filteredEvents } = this.filteredEventState;
+
+        const anchorIndex = this.selectionAnchorId
+            ? filteredEvents.findIndex(e => e.id === this.selectionAnchorId)
+            : -1;
+        const targetIndex = filteredEvents.findIndex(e => e.id === targetEvent.id);
+
+        if (anchorIndex === -1 || targetIndex === -1) return false;
+
+        // Capture base selection on first shift operation, so the range can
+        // grow/shrink without losing prior ctrl+click selections.
+        if (!this.selectionBaseIds) {
+            this.selectionBaseIds = new Set(this.props.uiStore.selectedEventIds);
+        }
+
+        const start = Math.min(anchorIndex, targetIndex);
+        const end = Math.max(anchorIndex, targetIndex);
+        const rangeIds = filteredEvents.slice(start, end + 1).map(e => e.id);
+
+        // Union of base selection + current range
+        const unionIds = [...this.selectionBaseIds, ...rangeIds];
+        this.props.uiStore.selectEventRange(unionIds, targetEvent.id);
+        return true;
+    }
+
+    @action.bound
+    onSelectAll() {
+        this.selectionBaseIds = undefined;
+        const { filteredEvents } = this.filteredEventState;
+        this.props.uiStore.selectAllEvents(filteredEvents.map(e => e.id));
+    }
+
+    @action.bound
+    onClearSelection() {
+        this.selectionBaseIds = undefined;
+        this.props.uiStore.clearSelection();
+        this.selectionAnchorId = undefined;
+    }
+
+    @action.bound
+    moveSelection(distance: number, extend: boolean = false) {
         const { filteredEvents } = this.filteredEventState;
 
         if (filteredEvents.length === 0) return;
 
-        const currentIndex = this.selectedEvent
-            ? _.findIndex(filteredEvents, { id: this.selectedEvent.id })
+        const { activeEventId } = this.props.uiStore;
+        const currentIndex = activeEventId
+            ? _.findIndex(filteredEvents, { id: activeEventId })
             : -1;
 
         const targetIndex = (currentIndex === -1)
@@ -548,7 +661,14 @@ class ViewPage extends React.Component<ViewPageProps> {
             );
 
         const targetEvent = filteredEvents[targetIndex];
-        this.onSelected(targetEvent);
+
+        if (extend) {
+            this.extendSelectionTo(targetEvent);
+        } else {
+            this.selectionBaseIds = undefined;
+            this.onSelected(targetEvent);
+        }
+
         this.onScrollToEvent(targetEvent);
     }
 
@@ -588,19 +708,30 @@ class ViewPage extends React.Component<ViewPageProps> {
         const rowIndex = filteredEvents.indexOf(event);
         const wasSelected = event === this.selectedEvent;
 
+        // Remove from selection set
+        this.props.uiStore.selectedEventIds.delete(event.id);
+
         // If you delete the selected event, select the next event in the list
         if (rowIndex !== -1 && wasSelected && filteredEvents.length > 0) {
-            // Because navigate is async, we can't delete & change selection together.
-            // Instead, we update the selection now, and delete the event later.
             const nextEvent = filteredEvents[
                 Math.min(rowIndex + 1, filteredEvents.length - 1)
             ];
-
             this.onSelected(nextEvent);
-            when(() => this.selectedEvent === nextEvent, () => {
-                this.props.eventsStore.deleteEvent(event);
-            });
-        } else {
+        }
+
+        this.props.eventsStore.deleteEvent(event);
+    }
+
+    @action.bound
+    onDeleteSelected() {
+        const events = [...this.selectedEvents]; // Snapshot before clearing
+        if (events.length === 0) return;
+
+        const hasPinned = events.some(e => e.pinned);
+        if (hasPinned && !confirm(`Delete ${events.length} events including pinned?`)) return;
+
+        this.onClearSelection();
+        for (const event of events) {
             this.props.eventsStore.deleteEvent(event);
         }
     }
@@ -632,6 +763,8 @@ class ViewPage extends React.Component<ViewPageProps> {
             if (!confirmResult) return;
         }
 
+        this.props.uiStore.clearSelection();
+        this.selectionAnchorId = undefined;
         this.props.eventsStore.clearInterceptedData(allEventsPinned);
     }
 

@@ -274,7 +274,10 @@ export class UiStore {
     viewScrollPosition: number | 'end' = 'end';
 
     @observable
-    selectedEventId: string | undefined;
+    selectedEventIds: Set<string> = observable.set<string>();
+
+    @observable
+    activeEventId: string | undefined;
 
     @computed
     get viewCardProps() {
@@ -467,9 +470,51 @@ export class UiStore {
         this.viewScrollPosition = position;
     }
 
+    // The various ways to (de)select one or more events:
+
     @action.bound
-    setSelectedEventId(eventId: string | undefined) {
-        this.selectedEventId = eventId;
+    selectSingleEvent(eventId: string | undefined) {
+        this.selectedEventIds.clear();
+        if (eventId) {
+            this.selectedEventIds.add(eventId);
+            this.activeEventId = eventId;
+        } else {
+            this.activeEventId = undefined;
+        }
+    }
+
+    @action.bound
+    toggleEventSelection(eventId: string) {
+        if (this.selectedEventIds.has(eventId)) {
+            this.selectedEventIds.delete(eventId);
+        } else {
+            this.selectedEventIds.add(eventId);
+        }
+        this.activeEventId = eventId;
+    }
+
+    @action.bound
+    selectEventRange(eventIds: string[], activeId: string) {
+        this.selectedEventIds.clear();
+        for (const id of eventIds) {
+            this.selectedEventIds.add(id);
+        }
+        this.activeEventId = activeId;
+    }
+
+    @action.bound
+    selectAllEvents(eventIds: string[]) {
+        this.selectedEventIds.clear();
+        for (const id of eventIds) {
+            this.selectedEventIds.add(id);
+        }
+        // Keep activeEventId unchanged
+    }
+
+    @action.bound
+    clearSelection() {
+        this.selectedEventIds.clear();
+        this.activeEventId = undefined;
     }
 
     /**
