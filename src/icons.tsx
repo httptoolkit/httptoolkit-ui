@@ -24,7 +24,8 @@ import {
     Moon,
     CircleHalf,
     Swatches,
-    Repeat
+    Repeat,
+    ListChecks
 } from '@phosphor-icons/react';
 
 export type IconKey = keyof typeof Icons;
@@ -57,7 +58,8 @@ const Icons = {
     Moon,
     CircleHalf,
     Swatches,
-    Repeat
+    Repeat,
+    ListChecks
 } as const;
 
 // Import required FA icons:

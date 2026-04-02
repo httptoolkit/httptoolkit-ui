@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer, Observer } from 'mobx-react';
-import { action } from 'mobx';
+import { action, computed } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
@@ -30,6 +30,7 @@ import { nameStepClass } from '../../model/rules/rule-descriptions';
 import { getReadableSize } from '../../util/buffer';
 
 import { UnreachableCheck } from '../../util/error';
+import { isCmdCtrlPressed } from '../../util/ui';
 import { filterProps } from '../component-utils';
 
 import { EmptyState } from '../common/empty-state';
@@ -53,14 +54,24 @@ interface ViewEventListProps {
     className?: string;
     events: ReadonlyArray<CollectedEvent>;
     filteredEvents: ReadonlyArray<CollectedEvent>;
-    selectedEvent: CollectedEvent | undefined;
+
+    // All selected events, if any
+    selectedEventIds: ReadonlySet<string>;
+
+    // The focused event - usually but not always one of the selected
+    activeEventId: string | undefined;
+
     isPaused: boolean;
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
     uiStore: UiStore;
 
-    moveSelection: (distance: number) => void;
+    moveSelection: (distance: number, extend?: boolean) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
+    onToggleSelected: (event: CollectedEvent) => void;
+    onRangeSelected: (event: CollectedEvent) => void;
+    onSelectAll: () => void;
+    onClearSelection: () => void;
 }
 
 const ListContainer = styled.div<{ role: 'grid' }>`
@@ -83,19 +94,18 @@ const ListContainer = styled.div<{ role: 'grid' }>`
         pointer-events: none;
     }
 
-    /* Disable default outline */ 
+    /* Disable default outline */
     & > div > div[tabindex="0"]:focus {
         outline: none;
     }
 
-    /* When focus-visible (keyboard interaction) and no focus is shown on a
-       row within (activedescendant) - show focus on the list instead */
-    & > div > div[tabindex="0"]:focus-visible:not([aria-activedescendant]) {
+    /* When focused via keyboard and no active row is visible, outline the list */
+    & > div > div[tabindex="0"]:focus-visible:not(:has(.active)) {
         outline: thin dotted ${p => p.theme.popColor};
     }
 
-    /* When the list is focused, highlight the active row */
-    & > div > div[tabindex="0"]:focus [aria-selected="true"] {
+    /* When the list is focused, outline the active row */
+    & > div > div[tabindex="0"]:focus .active {
         outline: thin dotted ${p => p.theme.popColor};
     }
 `;
@@ -339,9 +349,19 @@ export const TableHeaderRow = styled.div<{ role: 'row' }>`
     }
 `;
 
+interface CommonRowProps {
+    'aria-rowindex': number;
+    'aria-selected': boolean;
+    id: string;
+    'data-event-id': string;
+    className: string;
+    style: {};
+}
+
 interface EventRowProps extends ListChildComponentProps {
     data: {
-        selectedEvent: CollectedEvent | undefined;
+        selectedEventIds: ReadonlySet<string>;
+        activeEventId: string | undefined;
         events: ReadonlyArray<CollectedEvent>;
         contextMenuBuilder: ViewEventContextMenuBuilder;
     }
@@ -349,75 +369,54 @@ interface EventRowProps extends ListChildComponentProps {
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent, contextMenuBuilder } = props.data;
+    const { events, selectedEventIds, activeEventId, contextMenuBuilder } = props.data;
     const event = events[index];
 
-    const isSelected = (selectedEvent === event);
+    const isSelected = selectedEventIds.has(event.id);
+    const isActive = event.id === activeEventId;
+
+    const rowProps = {
+        'aria-rowindex': index + 1,
+        'aria-selected': isSelected,
+        id: `event-row-${event.id}`,
+        'data-event-id': event.id,
+        className: (isSelected ? 'selected' : '') + (isActive ? ' active' : ''),
+        style
+    };
 
     if (event.isTlsFailure() || event.isTlsTunnel()) {
-        return <TlsRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            tlsEvent={event}
-        />;
+        return <TlsRow rowProps={rowProps} tlsEvent={event} />;
     } else if (event.isHttp()) {
         if (event.apiSpec?.isBuiltInApi && event.api?.matchedOperation()) {
             return <BuiltInApiRow
-                index={index}
-                isSelected={isSelected}
-                style={style}
+                rowProps={rowProps}
                 exchange={event}
                 contextMenuBuilder={contextMenuBuilder}
             />
         } else {
             return <ExchangeRow
-                index={index}
-                isSelected={isSelected}
-                style={style}
+                rowProps={rowProps}
                 exchange={event}
                 contextMenuBuilder={contextMenuBuilder}
             />;
         }
     } else if (event.isRTCConnection()) {
-        return <RTCConnectionRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            event={event}
-        />;
+        return <RTCConnectionRow rowProps={rowProps} event={event} />;
     } else if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
-        return <RTCStreamRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            event={event}
-        />;
+        return <RTCStreamRow rowProps={rowProps} event={event} />;
     } else if (event.isRawTunnel()) {
-        return <RawTunnelRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            event={event}
-        />;
+        return <RawTunnelRow rowProps={rowProps} event={event} />;
     } else {
         throw new UnreachableCheck(event);
     }
 });
 
-const ExchangeRow = inject('uiStore')(observer(({
-    index,
-    isSelected,
-    style,
-    exchange,
-    contextMenuBuilder
-}: {
-    index: number,
-    isSelected: boolean,
-    style: {},
+const ExchangeRow = inject('uiStore')(observer((p: {
+    rowProps: CommonRowProps,
     exchange: HttpExchange,
     contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
+    const { exchange, contextMenuBuilder } = p;
     const {
         request,
         response,
@@ -446,13 +445,8 @@ const ExchangeRow = inject('uiStore')(observer(({
                 request.source.summary
             }`
         }
-        aria-rowindex={index + 1}
-        id={`event-row-${exchange.id}`}
-        data-event-id={exchange.id}
-        aria-selected={isSelected}
+        {...p.rowProps}
         onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
-        className={isSelected ? 'selected' : ''}
-        style={style}
     >
         <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
         <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
@@ -519,17 +513,11 @@ const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
     box-sizing: content-box;
 `;
 
-const RTCConnectionRow = observer(({
-    index,
-    isSelected,
-    style,
-    event
-}: {
-    index: number,
-    isSelected: boolean,
-    style: {},
+const RTCConnectionRow = observer((p: {
+    rowProps: CommonRowProps,
     event: RTCConnection
 }) => {
+    const { event } = p;
     const { category, pinned } = event;
 
     return <TrafficEventListRow
@@ -545,13 +533,7 @@ const RTCConnectionRow = observer(({
                 event.source.summary
             }`
         }
-        aria-rowindex={index + 1}
-        id={`event-row-${event.id}`}
-        data-event-id={event.id}
-        aria-selected={isSelected}
-
-        className={isSelected ? 'selected' : ''}
-        style={style}
+        {...p.rowProps}
     >
         <RowPin pinned={pinned}/>
         <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
@@ -574,17 +556,11 @@ const RTCConnectionRow = observer(({
     </TrafficEventListRow>;
 });
 
-const RTCStreamRow = observer(({
-    index,
-    isSelected,
-    style,
-    event
-}: {
-    index: number,
-    isSelected: boolean,
-    style: {},
+const RTCStreamRow = observer((p: {
+    rowProps: CommonRowProps,
     event: RTCStream
 }) => {
+    const { event } = p;
     const { category, pinned } = event;
 
     return <TrafficEventListRow
@@ -614,13 +590,7 @@ const RTCStreamRow = observer(({
                     } received`
             }`
         }
-        aria-rowindex={index + 1}
-        id={`event-row-${event.id}`}
-        data-event-id={event.id}
-        aria-selected={isSelected}
-
-        className={isSelected ? 'selected' : ''}
-        style={style}
+        {...p.rowProps}
     >
         <RowPin pinned={pinned}/>
         <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
@@ -666,10 +636,8 @@ const RTCStreamRow = observer(({
 });
 
 const BuiltInApiRow = observer((p: {
-    index: number,
+    rowProps: CommonRowProps,
     exchange: HttpExchange,
-    isSelected: boolean,
-    style: {},
     contextMenuBuilder: ViewEventContextMenuBuilder
 }) => {
     const {
@@ -704,14 +672,8 @@ const BuiltInApiRow = observer((p: {
                 request.source.summary
             }`
         }
-        aria-rowindex={p.index + 1}
-        id={`event-row-${p.exchange.id}`}
-        data-event-id={p.exchange.id}
-        aria-selected={p.isSelected}
-
+        {...p.rowProps}
         onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
     >
         <RowPin pinned={pinned}/>
         <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
@@ -731,10 +693,8 @@ const BuiltInApiRow = observer((p: {
 });
 
 const RawTunnelRow = observer((p: {
-    index: number,
-    event: RawTunnel,
-    isSelected: boolean,
-    style: {}
+    rowProps: CommonRowProps,
+    event: RawTunnel
 }) => {
     const { event } = p;
 
@@ -745,13 +705,7 @@ const RawTunnelRow = observer((p: {
     return <TlsListRow
         role="row"
         aria-label={`Non-HTTP connection to ${connectionTarget}`}
-        aria-rowindex={p.index + 1}
-        id={`event-row-${event.id}`}
-        data-event-id={event.id}
-        aria-selected={p.isSelected}
-
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
+        {...p.rowProps}
     >
         {
             event.isOpen() &&
@@ -761,10 +715,8 @@ const RawTunnelRow = observer((p: {
 });
 
 const TlsRow = observer((p: {
-    index: number,
-    tlsEvent: FailedTlsConnection | TlsTunnel,
-    isSelected: boolean,
-    style: {}
+    rowProps: CommonRowProps,
+    tlsEvent: FailedTlsConnection | TlsTunnel
 }) => {
     const { tlsEvent } = p;
 
@@ -783,13 +735,7 @@ const TlsRow = observer((p: {
     return <TlsListRow
         role="row"
         aria-label={`${description} connection to ${connectionTarget}`}
-        aria-rowindex={p.index + 1}
-        id={`event-row-${tlsEvent.id}`}
-        data-event-id={tlsEvent.id}
-        aria-selected={p.isSelected}
-
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
+        {...p.rowProps}
     >
         {
             tlsEvent.isTlsTunnel() &&
@@ -804,15 +750,10 @@ const TlsRow = observer((p: {
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
 
-    get selectedEventId() {
-        return this.props.selectedEvent
-            ? this.props.selectedEvent.id
-            : undefined;
-    }
-
-    get listItemData(): EventRowProps['data'] {
+    @computed get listItemData(): EventRowProps['data'] {
         return {
-            selectedEvent: this.props.selectedEvent,
+            selectedEventIds: this.props.selectedEventIds,
+            activeEventId: this.props.activeEventId,
             events: this.props.filteredEvents,
             contextMenuBuilder: this.props.contextMenuBuilder
         };
@@ -833,7 +774,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     };
 
     private get activeRowDomId(): string | undefined {
-        const id = this.selectedEventId;
+        const id = this.props.activeEventId;
         if (!id) return undefined;
 
         const listBody = this.listBodyRef.current;
@@ -919,9 +860,12 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     focusList() {
         this.focusListWindow();
-        const { selectedEvent } = this.props;
-        if (selectedEvent) {
-            this.scrollToEvent(selectedEvent);
+        const { activeEventId } = this.props;
+        if (activeEventId) {
+            const activeEvent = this.props.filteredEvents.find(e => e.id === activeEventId);
+            if (activeEvent) {
+                this.scrollToEvent(activeEvent);
+            }
         }
     }
 
@@ -953,11 +897,18 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     private hasRestoredScrollState = false;
 
+    private lastEventCount = 0;
+
     componentDidUpdate() {
-        // If we previously were scrolled to the bottom of the list, but now we're not,
-        // scroll there again ourselves now.
-        if (this.wasListAtBottom && !this.isListAtBottom()) {
-            this.listRef.current?.scrollToItem(this.props.events.length - 1);
+        const eventCount = this.props.events.length;
+        const eventsAdded = eventCount > this.lastEventCount;
+        this.lastEventCount = eventCount;
+
+        // If new events arrived while we were at the bottom, stay at the bottom.
+        // Only check when events were actually added — not on selection changes,
+        // which would fight with moveSelection's scroll.
+        if (eventsAdded && this.wasListAtBottom && !this.isListAtBottom()) {
+            this.listRef.current?.scrollToItem(eventCount - 1);
         }
     }
 
@@ -1028,46 +979,61 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
         const event = this.props.filteredEvents[eventIndex];
-        if (event !== this.props.selectedEvent) {
-            this.onEventSelected(eventIndex);
+        if (!event) return;
+
+        if (mouseEvent.shiftKey) {
+            // Shift+Click: range select from anchor to clicked row
+            mouseEvent.preventDefault(); // Prevent text selection
+            this.props.onRangeSelected(event);
+        } else if (isCmdCtrlPressed(mouseEvent)) {
+            // Ctrl/Cmd+Click: toggle individual row
+            this.props.onToggleSelected(event);
         } else {
-            // Clicking the selected row deselects it
-            this.onEventDeselected();
+            // Plain click: single select, or deselect if it's the only selected item
+            if (
+                this.props.selectedEventIds.size === 1 &&
+                this.props.selectedEventIds.has(event.id)
+            ) {
+                this.props.onClearSelection();
+            } else {
+                this.props.onSelected(event);
+            }
         }
-    }
-
-    @action.bound
-    onEventSelected(index: number) {
-        this.props.onSelected(this.props.filteredEvents[index]);
-    }
-
-    @action.bound
-    onEventDeselected() {
-        this.props.onSelected(undefined);
     }
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         const { moveSelection } = this.props;
+        const isShift = event.shiftKey;
 
         switch (event.key) {
             case 'ArrowDown':
-                moveSelection(1);
+                moveSelection(1, isShift);
                 break;
             case 'ArrowUp':
-                moveSelection(-1);
+                moveSelection(-1, isShift);
                 break;
             case 'PageUp':
-                moveSelection(-10);
+                moveSelection(-10, isShift);
                 break;
             case 'PageDown':
-                moveSelection(10);
+                moveSelection(10, isShift);
                 break;
             case 'Home':
-                moveSelection(-Infinity);
+                moveSelection(-Infinity, isShift);
                 break;
             case 'End':
-                moveSelection(Infinity);
+                moveSelection(Infinity, isShift);
+                break;
+            case 'Escape':
+                this.props.onClearSelection();
+                break;
+            case 'a':
+                if (isCmdCtrlPressed(event)) {
+                    this.props.onSelectAll();
+                } else {
+                    return;
+                }
                 break;
             default:
                 return;
