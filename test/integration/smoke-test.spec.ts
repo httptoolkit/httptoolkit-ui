@@ -73,7 +73,7 @@ async function getRowContents(page: puppeteer.Page, rowIndex: number) {
         const row = document.querySelector(`[aria-rowindex="${index}"]`);
         if (!row) throw new Error(`Row ${index} not found`);
 
-        const cells = Array.from(row.querySelectorAll('[role=cell]'));
+        const cells = Array.from(row.querySelectorAll('[role=gridcell]'));
         return cells.map(cell => cell.textContent);
     }, rowIndex);
 

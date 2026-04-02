@@ -259,12 +259,22 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
-        // After first render, if we're jumping to an event, then scroll to it:
+        // After first render, if we're jumping to an event, scroll to ensure it's visible
+        // and focus the list so keyboard navigation works. Uses scrollToEvent (not center)
+        // to avoid jumping when the row is already on screen (e.g. clicking a visible row
+        // triggers a remount due to /view → /view/:id route change).
         requestAnimationFrame(() => {
             if (this.props.eventId && this.selectedEvent) {
+                // URL-based deep link or click-triggered remount: sync store and
+                // scroll to the event (it may not be in the restored scroll viewport).
                 this.props.uiStore.setSelectedEventId(this.props.eventId);
-                this.onScrollToCenterEvent(this.selectedEvent);
+                this.onScrollToEvent(this.selectedEvent);
             }
+            // For persisted selection without eventId (tab switch), don't scroll —
+            // restoreScrollPosition already restored the saved viewport.
+
+            // Focus the list window so keyboard navigation works immediately.
+            this.listRef.current?.focusListWindow();
         });
 
         disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
@@ -323,15 +333,6 @@ class ViewPage extends React.Component<ViewPageProps> {
                 }
             })
         );
-    }
-
-    componentDidUpdate(prevProps: ViewPageProps) {
-        // Only clear persisted selection if we're explicitly navigating to a different event via URL
-        // Don't clear it when going from eventId to no eventId (which happens when clearing selection)
-        if (this.props.eventId && prevProps.eventId && this.props.eventId !== prevProps.eventId) {
-            // Clear persisted selection only when explicitly navigating between different events via URL
-            this.props.uiStore.setSelectedEventId(undefined);
-        }
     }
 
     isSendAvailable() {

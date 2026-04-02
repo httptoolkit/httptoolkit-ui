@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer, Observer } from 'mobx-react';
-import { action, computed } from 'mobx';
+import { action } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
@@ -63,7 +63,7 @@ interface ViewEventListProps {
     onSelected: (event: CollectedEvent | undefined) => void;
 }
 
-const ListContainer = styled.div<{ role: 'table' }>`
+const ListContainer = styled.div<{ role: 'grid' }>`
     display: block;
     flex-grow: 1;
     position: relative;
@@ -83,12 +83,24 @@ const ListContainer = styled.div<{ role: 'table' }>`
         pointer-events: none;
     }
 
+    /* Disable default outline */ 
     & > div > div[tabindex="0"]:focus {
+        outline: none;
+    }
+
+    /* When focus-visible (keyboard interaction) and no focus is shown on a
+       row within (activedescendant) - show focus on the list instead */
+    & > div > div[tabindex="0"]:focus-visible:not([aria-activedescendant]) {
+        outline: thin dotted ${p => p.theme.popColor};
+    }
+
+    /* When the list is focused, highlight the active row */
+    & > div > div[tabindex="0"]:focus [aria-selected="true"] {
         outline: thin dotted ${p => p.theme.popColor};
     }
 `;
 
-const Column = styled.div<{ role: 'cell' | 'columnheader' }>`
+const Column = styled.div<{ role: 'gridcell' | 'columnheader' }>`
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -255,10 +267,6 @@ const EventListRow = styled.div<{ role: 'row' }>`
             color: ${p => p.theme.highlightColor};
             fill: ${p => p.theme.highlightColor};
         }
-    }
-
-    &:focus {
-        outline: thin dotted ${p => p.theme.popColor};
     }
 `;
 
@@ -439,16 +447,17 @@ const ExchangeRow = inject('uiStore')(observer(({
             }`
         }
         aria-rowindex={index + 1}
+        id={`event-row-${exchange.id}`}
         data-event-id={exchange.id}
-        tabIndex={isSelected ? 0 : -1}
+        aria-selected={isSelected}
         onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
         className={isSelected ? 'selected' : ''}
         style={style}
     >
         <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
-        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
-        <Method role='cell' pinned={pinned}>{ request.method }</Method>
-        <Status role='cell'>
+        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
+        <Method role='gridcell' pinned={pinned}>{ request.method }</Method>
+        <Status role='gridcell'>
             {
                 response === 'aborted'
                     ? <StatusCode status={'aborted'} />
@@ -471,7 +480,7 @@ const ExchangeRow = inject('uiStore')(observer(({
                 />
             }
         </Status>
-        <Source role='cell'>
+        <Source role='gridcell'>
             <Icon
                 title={request.source.summary}
                 {...request.source.icon}
@@ -492,10 +501,10 @@ const ExchangeRow = inject('uiStore')(observer(({
                 />
             }
         </Source>
-        <Host role='cell' title={ request.parsedUrl.host }>
+        <Host role='gridcell' title={ request.parsedUrl.host }>
             { request.parsedUrl.host }
         </Host>
-        <PathAndQuery role='cell' title={ request.parsedUrl.pathname + request.parsedUrl.search }>
+        <PathAndQuery role='gridcell' title={ request.parsedUrl.pathname + request.parsedUrl.search }>
             { request.parsedUrl.pathname + request.parsedUrl.search }
         </PathAndQuery>
     </TrafficEventListRow>;
@@ -537,24 +546,25 @@ const RTCConnectionRow = observer(({
             }`
         }
         aria-rowindex={index + 1}
+        id={`event-row-${event.id}`}
         data-event-id={event.id}
-        tabIndex={isSelected ? 0 : -1}
+        aria-selected={isSelected}
 
         className={isSelected ? 'selected' : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn role='cell'>
+        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn role='gridcell'>
             { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC
         </EventTypeColumn>
-        <Source role='cell' title={event.source.summary}>
+        <Source role='gridcell' title={event.source.summary}>
             <Icon
                 {...event.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <RTCConnectionDetails role='cell'>
+        <RTCConnectionDetails role='gridcell'>
             {
                 event.clientURL
             } <ArrowIcon direction='right' /> {
@@ -605,15 +615,16 @@ const RTCStreamRow = observer(({
             }`
         }
         aria-rowindex={index + 1}
+        id={`event-row-${event.id}`}
         data-event-id={event.id}
-        tabIndex={isSelected ? 0 : -1}
+        aria-selected={isSelected}
 
         className={isSelected ? 'selected' : ''}
         style={style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn role='cell'>
+        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn role='gridcell'>
             { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC {
                 event.isRTCDataChannel()
                     ? 'Data'
@@ -621,16 +632,16 @@ const RTCStreamRow = observer(({
                     'Media'
             }
         </EventTypeColumn>
-        <Source role='cell' title={event.rtcConnection.source.summary}>
+        <Source role='gridcell' title={event.rtcConnection.source.summary}>
             <Icon
                 {...event.rtcConnection.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <RTCEventLabel role='cell'>
+        <RTCEventLabel role='gridcell'>
             <ArrowIcon direction='right' /> { event.rtcConnection.remoteURL }
         </RTCEventLabel>
-        <RTCEventDetails role='cell'>
+        <RTCEventDetails role='gridcell'>
             {
                 event.isRTCDataChannel()
                     ? <>
@@ -694,25 +705,26 @@ const BuiltInApiRow = observer((p: {
             }`
         }
         aria-rowindex={p.index + 1}
+        id={`event-row-${p.exchange.id}`}
         data-event-id={p.exchange.id}
-        tabIndex={p.isSelected ? 0 : -1}
+        aria-selected={p.isSelected}
 
         onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
     >
         <RowPin pinned={pinned}/>
-        <RowMarker role='cell' category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn role='cell'>
+        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
+        <EventTypeColumn role='gridcell'>
             { api.service.shortName }: { apiOperationName }
         </EventTypeColumn>
-        <Source role='cell' title={request.source.summary}>
+        <Source role='gridcell' title={request.source.summary}>
             <Icon
                 {...request.source.icon}
                 fixedWidth={true}
             />
         </Source>
-        <BuiltInApiRequestDetails role='cell'>
+        <BuiltInApiRequestDetails role='gridcell'>
             { apiRequestDescription }
         </BuiltInApiRequestDetails>
     </TrafficEventListRow>
@@ -734,8 +746,9 @@ const RawTunnelRow = observer((p: {
         role="row"
         aria-label={`Non-HTTP connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
+        id={`event-row-${event.id}`}
         data-event-id={event.id}
-        tabIndex={p.isSelected ? 0 : -1}
+        aria-selected={p.isSelected}
 
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
@@ -771,8 +784,9 @@ const TlsRow = observer((p: {
         role="row"
         aria-label={`${description} connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
+        id={`event-row-${tlsEvent.id}`}
         data-event-id={tlsEvent.id}
-        tabIndex={p.isSelected ? 0 : -1}
+        aria-selected={p.isSelected}
 
         className={p.isSelected ? 'selected' : ''}
         style={p.style}
@@ -790,14 +804,13 @@ const TlsRow = observer((p: {
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
 
-    @computed
     get selectedEventId() {
         return this.props.selectedEvent
             ? this.props.selectedEvent.id
             : undefined;
     }
 
-    @computed get listItemData(): EventRowProps['data'] {
+    get listItemData(): EventRowProps['data'] {
         return {
             selectedEvent: this.props.selectedEvent,
             events: this.props.filteredEvents,
@@ -819,6 +832,17 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         }
     };
 
+    private get activeRowDomId(): string | undefined {
+        const id = this.selectedEventId;
+        if (!id) return undefined;
+
+        const listBody = this.listBodyRef.current;
+        if (!listBody) return undefined;
+        if (!listBody.querySelector(`[data-event-id='${id}']`)) return undefined;
+
+        return `event-row-${id}`;
+    }
+
     private KeyBoundListWindow = observer(
         React.forwardRef<HTMLDivElement>(
             (props: any, ref) => <div
@@ -826,10 +850,10 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
                 style={Object.assign({}, props.style, { 'overflowY': 'scroll' })}
                 ref={ref}
 
-                onFocus={this.focusSelectedEvent}
                 onKeyDown={this.onKeyDown}
                 onMouseDown={this.onListMouseDown}
-                tabIndex={this.isSelectedEventVisible() ? -1 : 0}
+                aria-activedescendant={this.activeRowDomId}
+                tabIndex={0}
             />
         )
     );
@@ -837,7 +861,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     render() {
         const { events, filteredEvents, isPaused } = this.props;
 
-        return <ListContainer role="table">
+        return <ListContainer role="grid">
             <TableHeaderRow role="row">
                 <MarkerHeader role="columnheader" aria-label="Category" />
                 <Method role="columnheader">Method</Method>
@@ -888,41 +912,16 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         </ListContainer>;
     }
 
-    private isSelectedEventVisible = () => {
-        if (!this.selectedEventId) return false;
-
-        const listBody = this.listBodyRef.current;
-        if (!listBody) return false;
-
-        return !!listBody.querySelector(`[data-event-id='${this.selectedEventId}']`);
-    }
-
-    private focusEvent(event?: CollectedEvent) {
-        const listBody = this.listBodyRef.current;
-        if (!listBody) return;
-
-        if (event) {
-            const rowElement = listBody.querySelector(
-                `[data-event-id='${event.id}']`
-            ) as HTMLDivElement;
-            rowElement?.focus();
-        } else {
-            const listWindow = listBody.parentElement!;
-            listWindow.focus();
-        }
-    }
-
-    private focusSelectedEvent = () => {
-        this.focusEvent(this.props.selectedEvent);
+    focusListWindow() {
+        const listWindow = this.listBodyRef.current?.parentElement;
+        listWindow?.focus();
     }
 
     focusList() {
+        this.focusListWindow();
         const { selectedEvent } = this.props;
         if (selectedEvent) {
             this.scrollToEvent(selectedEvent);
-        } else {
-            const listWindow = this.listBodyRef.current?.parentElement;
-            listWindow?.focus();
         }
     }
 
@@ -954,21 +953,11 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     private hasRestoredScrollState = false;
 
-    componentDidUpdate(prevProps: ViewEventListProps) {
-        if (this.listBodyRef.current?.parentElement?.contains(document.activeElement)) {
-            // If we previously had something here focused, and we've updated, update
-            // the focus too, to make sure it's in the right place.
-            this.focusSelectedEvent();
-        }
-
+    componentDidUpdate() {
         // If we previously were scrolled to the bottom of the list, but now we're not,
         // scroll there again ourselves now.
         if (this.wasListAtBottom && !this.isListAtBottom()) {
             this.listRef.current?.scrollToItem(this.props.events.length - 1);
-        } else if (prevProps.selectedEvent !== this.props.selectedEvent && this.props.selectedEvent) {
-            // If the selected event changed and we have a selected event, scroll to it
-            // This handles restoring the selected event when returning to the tab
-            this.scrollToEvent(this.props.selectedEvent);
         }
     }
 
@@ -992,8 +981,6 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         if (targetIndex === -1) return;
 
         this.listRef.current?.scrollToItem(targetIndex);
-
-        requestAnimationFrame(() => this.focusEvent(event));
     }
 
     public scrollToCenterEvent(event: CollectedEvent) {
@@ -1016,8 +1003,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         const targetOffset = rowOffset - halfHeight + rowHeight / 2;
         list.scrollTo(_.clamp(targetOffset, 0, maxOffset));
 
-        // Focus the row, after the UI has updated, to make it extra obvious:
-        requestAnimationFrame(() => this.focusEvent(event));
+        // Focus the list so keyboard navigation works from here
+        listWindow.focus();
     }
 
     public scrollToEnd() {
