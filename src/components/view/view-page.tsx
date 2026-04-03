@@ -631,22 +631,14 @@ class ViewPage extends React.Component<ViewPageProps> {
         const end = Math.max(anchorIndex, targetIndex);
         const rangeIds = filteredEvents.slice(start, end + 1).map(e => e.id);
 
-        // Order range from anchor toward target, so items are in the order
-        // they were conceptually added (anchor end first, target end last).
+        // Order range from anchor toward target, so new items are appended
+        // in the order they were conceptually added.
         if (targetIndex < anchorIndex) rangeIds.reverse();
 
-        // Union of base + range, with target last (most recently interacted).
-        // Filter target from both to avoid Set dedup keeping it at an earlier position.
-        const targetId = targetEvent.id;
-        const unionIds: string[] = [];
-        for (const id of this.selectionBaseIds) {
-            if (id !== targetId) unionIds.push(id);
-        }
-        for (const id of rangeIds) {
-            if (id !== targetId) unionIds.push(id);
-        }
-        unionIds.push(targetId);
-        this.props.uiStore.selectEventRange(unionIds, targetId);
+        // Union of base + range. Set dedup preserves base item positions —
+        // items already in the base won't move when the range passes through them.
+        const unionIds = [...this.selectionBaseIds, ...rangeIds];
+        this.props.uiStore.selectEventRange(unionIds, targetEvent.id);
         return true;
     }
 
