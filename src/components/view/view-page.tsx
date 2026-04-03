@@ -233,11 +233,11 @@ class ViewPage extends React.Component<ViewPageProps> {
     @computed
     get selectedEvent(): CollectedEvent | undefined {
         // Show details only when exactly one event is selected
-        const { selectedEventIds, activeEventId } = this.props.uiStore;
-        if (selectedEventIds.size === 1 && activeEventId) {
-            return _.find(this.props.eventsStore.events, { id: activeEventId });
-        }
-        return undefined;
+        const { selectedEventIds } = this.props.uiStore;
+        if (selectedEventIds.size !== 1) return undefined;
+
+        const id = selectedEventIds.values().next().value as string;
+        return this.props.eventsStore.eventsList.getById(id);
     }
 
     @computed
@@ -254,7 +254,15 @@ class ViewPage extends React.Component<ViewPageProps> {
     get selectedEvents(): ReadonlyArray<CollectedEvent> {
         const { selectedEventIds } = this.props.uiStore;
         if (selectedEventIds.size === 0) return [];
-        return this.props.eventsStore.events.filter(e => selectedEventIds.has(e.id));
+
+        // This gives us the events in selection order - nice for UX later
+        const { eventsList } = this.props.eventsStore;
+        const result: CollectedEvent[] = [];
+        for (const id of selectedEventIds) {
+            const event = eventsList.getById(id);
+            if (event) result.push(event);
+        }
+        return result;
     }
 
     @computed
@@ -315,7 +323,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                 setTimeout(() => {
                     const activeId = this.props.uiStore.activeEventId;
                     if (!activeId) return;
-                    const activeEvent = this.props.eventsStore.events.find(e => e.id === activeId);
+                    const activeEvent = this.props.eventsStore.eventsList.getById(activeId);
                     if (activeEvent) {
                         this.listRef.current?.scrollToEvent(activeEvent);
                     }
@@ -623,9 +631,22 @@ class ViewPage extends React.Component<ViewPageProps> {
         const end = Math.max(anchorIndex, targetIndex);
         const rangeIds = filteredEvents.slice(start, end + 1).map(e => e.id);
 
-        // Union of base selection + current range
-        const unionIds = [...this.selectionBaseIds, ...rangeIds];
-        this.props.uiStore.selectEventRange(unionIds, targetEvent.id);
+        // Order range from anchor toward target, so items are in the order
+        // they were conceptually added (anchor end first, target end last).
+        if (targetIndex < anchorIndex) rangeIds.reverse();
+
+        // Union of base + range, with target last (most recently interacted).
+        // Filter target from both to avoid Set dedup keeping it at an earlier position.
+        const targetId = targetEvent.id;
+        const unionIds: string[] = [];
+        for (const id of this.selectionBaseIds) {
+            if (id !== targetId) unionIds.push(id);
+        }
+        for (const id of rangeIds) {
+            if (id !== targetId) unionIds.push(id);
+        }
+        unionIds.push(targetId);
+        this.props.uiStore.selectEventRange(unionIds, targetId);
         return true;
     }
 
@@ -643,6 +664,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         this.selectionAnchorId = undefined;
     }
 
+    private lastActiveIndex: number = -1;
+
     @action.bound
     moveSelection(distance: number, extend: boolean = false) {
         const { filteredEvents } = this.filteredEventState;
@@ -650,9 +673,21 @@ class ViewPage extends React.Component<ViewPageProps> {
         if (filteredEvents.length === 0) return;
 
         const { activeEventId } = this.props.uiStore;
-        const currentIndex = activeEventId
-            ? _.findIndex(filteredEvents, { id: activeEventId })
-            : -1;
+        let currentIndex: number;
+        if (!activeEventId) {
+            currentIndex = -1;
+        } else if (
+            this.lastActiveIndex >= 0 &&
+            this.lastActiveIndex < filteredEvents.length &&
+            filteredEvents[this.lastActiveIndex].id === activeEventId
+        ) {
+            // Optimize for the case where you move repeatedly within the same
+            // filtered list, and avoid rescanning the whole thing if our last index
+            // already matches. Makes up + up + up much quicker.
+            currentIndex = this.lastActiveIndex;
+        } else {
+            currentIndex = _.findIndex(filteredEvents, { id: activeEventId });
+        }
 
         const targetIndex = (currentIndex === -1)
             ? (distance >= 0 ? 0 : filteredEvents.length - 1) // Jump to the start or end
@@ -663,6 +698,7 @@ class ViewPage extends React.Component<ViewPageProps> {
             );
 
         const targetEvent = filteredEvents[targetIndex];
+        this.lastActiveIndex = targetIndex;
 
         if (extend) {
             this.extendSelectionTo(targetEvent);
