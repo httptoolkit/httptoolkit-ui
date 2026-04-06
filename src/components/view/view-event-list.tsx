@@ -19,7 +19,9 @@ import {
     RawTunnel
 } from '../../types';
 import { UiStore } from '../../model/ui/ui-store';
+import { EventsStore } from '../../model/events/events-store';
 import { areStepsModifying } from '../../model/rules/rules';
+import { isCmdCtrlPressed } from '../../util/ui';
 
 import {
     getSummaryColor,
@@ -58,6 +60,7 @@ interface ViewEventListProps {
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
     uiStore: UiStore;
+    eventsStore?: EventsStore;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
@@ -336,15 +339,17 @@ interface EventRowProps extends ListChildComponentProps {
         selectedEvent: CollectedEvent | undefined;
         events: ReadonlyArray<CollectedEvent>;
         contextMenuBuilder: ViewEventContextMenuBuilder;
+        selectedExchangeIds?: Set<string>;
     }
 }
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent, contextMenuBuilder } = props.data;
+    const { events, selectedEvent, contextMenuBuilder, selectedExchangeIds } = props.data;
     const event = events[index];
 
-    const isSelected = (selectedEvent === event);
+    const isSelected = (selectedEvent === event) ||
+        (selectedExchangeIds ? selectedExchangeIds.has(event.id) : false);
 
     if (event.isTlsFailure() || event.isTlsTunnel()) {
         return <TlsRow
@@ -439,6 +444,7 @@ const ExchangeRow = inject('uiStore')(observer(({
             }`
         }
         aria-rowindex={index + 1}
+        aria-selected={isSelected}
         data-event-id={exchange.id}
         tabIndex={isSelected ? 0 : -1}
         onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
@@ -537,6 +543,7 @@ const RTCConnectionRow = observer(({
             }`
         }
         aria-rowindex={index + 1}
+        aria-selected={isSelected}
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
@@ -605,6 +612,7 @@ const RTCStreamRow = observer(({
             }`
         }
         aria-rowindex={index + 1}
+        aria-selected={isSelected}
         data-event-id={event.id}
         tabIndex={isSelected ? 0 : -1}
 
@@ -694,6 +702,7 @@ const BuiltInApiRow = observer((p: {
             }`
         }
         aria-rowindex={p.index + 1}
+        aria-selected={p.isSelected}
         data-event-id={p.exchange.id}
         tabIndex={p.isSelected ? 0 : -1}
 
@@ -734,6 +743,7 @@ const RawTunnelRow = observer((p: {
         role="row"
         aria-label={`Non-HTTP connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
+        aria-selected={p.isSelected}
         data-event-id={event.id}
         tabIndex={p.isSelected ? 0 : -1}
 
@@ -771,6 +781,7 @@ const TlsRow = observer((p: {
         role="row"
         aria-label={`${description} connection to ${connectionTarget}`}
         aria-rowindex={p.index + 1}
+        aria-selected={p.isSelected}
         data-event-id={tlsEvent.id}
         tabIndex={p.isSelected ? 0 : -1}
 
@@ -801,7 +812,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         return {
             selectedEvent: this.props.selectedEvent,
             events: this.props.filteredEvents,
-            contextMenuBuilder: this.props.contextMenuBuilder
+            contextMenuBuilder: this.props.contextMenuBuilder,
+            selectedExchangeIds: this.props.eventsStore?.selectedExchangeIds
         };
     }
 
@@ -1041,6 +1053,29 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
         const event = this.props.filteredEvents[eventIndex];
+        const { eventsStore } = this.props;
+
+        // Multi-select: if Ctrl/Cmd or Shift is held, delegate to the eventsStore
+        if (eventsStore && (isCmdCtrlPressed(mouseEvent) || mouseEvent.shiftKey)) {
+            const visibleIds = this.props.filteredEvents.map(e => e.id);
+            eventsStore.selectExchange(
+                event.id,
+                isCmdCtrlPressed(mouseEvent),
+                mouseEvent.shiftKey,
+                visibleIds
+            );
+            // Also set as the active/focused event
+            this.onEventSelected(eventIndex);
+            return;
+        }
+
+        // Clear multi-selection on plain click, but keep the anchor
+        // so that a subsequent Shift+Click creates a range from here.
+        if (eventsStore) {
+            eventsStore.clearSelection();
+            eventsStore.setSelectionAnchor(event.id);
+        }
+
         if (event !== this.props.selectedEvent) {
             this.onEventSelected(eventIndex);
         } else {
@@ -1061,7 +1096,52 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-        const { moveSelection } = this.props;
+        const { moveSelection, eventsStore } = this.props;
+
+        // Ctrl/Cmd+A: Select all visible events
+        if (event.key === 'a' && isCmdCtrlPressed(event) && eventsStore) {
+            const target = event.target as HTMLElement;
+            // Only if focus is NOT in an editable field
+            if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+                const visibleIds = this.props.filteredEvents.map(e => e.id);
+                eventsStore.selectAllExchanges(visibleIds);
+                event.preventDefault();
+                return;
+            }
+        }
+
+        // Escape: Clear selection
+        if (event.key === 'Escape' && eventsStore && eventsStore.selectedExchangeCount > 0) {
+            eventsStore.clearSelection();
+            event.preventDefault();
+            return;
+        }
+
+        // Shift+Arrow: Extend selection by one row in that direction
+        if (event.shiftKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp') && eventsStore) {
+            const distance = event.key === 'ArrowDown' ? 1 : -1;
+            const { filteredEvents, selectedEvent } = this.props;
+            const visibleIds = filteredEvents.map(e => e.id);
+
+            // Compute target index before calling moveSelection (which is async in effect)
+            const currentIndex = selectedEvent
+                ? filteredEvents.findIndex(e => e.id === selectedEvent.id)
+                : -1;
+            const targetIndex = currentIndex === -1
+                ? (distance >= 0 ? 0 : filteredEvents.length - 1)
+                : Math.max(0, Math.min(filteredEvents.length - 1, currentIndex + distance));
+
+            // Move focus to the target row
+            moveSelection(distance);
+
+            // Extend selection to include the new row
+            const targetId = filteredEvents[targetIndex]?.id;
+            if (targetId) {
+                eventsStore.selectExchange(targetId, false, true, visibleIds);
+            }
+            event.preventDefault();
+            return;
+        }
 
         switch (event.key) {
             case 'ArrowDown':

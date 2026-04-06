@@ -5,3 +5,10 @@ dist/
 meta/
 *.tsbuildinfo
 .httptoolkit-server/
+
+# Local dev/test files (not part of the PR)
+test-features.cmd
+push-fork.cmd
+PR-DESCRIPTION.md
+ISSUE-COMMENTS.md
+export/

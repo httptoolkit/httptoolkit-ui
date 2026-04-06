@@ -8,6 +8,7 @@ import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { unreachableCheck, UnreachableCheck } from '../../util/error';
 
 import { AccountStore } from '../account/account-store';
+import { DEFAULT_SELECTED_FORMAT_IDS } from './snippet-formats';
 import { emptyFilterSet, FilterSet } from '../filters/search-filters';
 import { DesktopApi } from '../../services/desktop-api';
 import {
@@ -460,6 +461,25 @@ export class UiStore {
 
     @persist @observable
     exportSnippetFormat: string | undefined;
+
+    /**
+     * Persisted list of snippet format IDs selected for ZIP export.
+     * Shared between the Export card (single exchange) and the batch toolbar
+     * (multi-select), so the user's choice is consistent everywhere.
+     * Initialized with popular defaults; updated via setZipFormatIds().
+     */
+    @persist('list') @observable
+    _zipFormatIds: string[] = [...DEFAULT_SELECTED_FORMAT_IDS];
+
+    @computed
+    get zipFormatIds(): ReadonlySet<string> {
+        return new Set(this._zipFormatIds);
+    }
+
+    @action.bound
+    setZipFormatIds(ids: ReadonlySet<string> | string[]) {
+        this._zipFormatIds = Array.isArray(ids) ? [...ids] : [...ids];
+    }
 
     // Actions for persisting view state when switching tabs
     @action.bound

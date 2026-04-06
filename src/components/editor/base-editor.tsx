@@ -334,6 +334,10 @@ class BaseEditor extends React.Component<EditorProps> {
             // Update the set of JSON schemas recognized by Monaco, to potentially include this file's
             // schema (from props.newSchema) linked to its model URI, or remove our stale schemas.
 
+            // Guard: Monaco's JSON language support may not be fully loaded yet
+            // (e.g. when MonacoWebpackPlugin is omitted in fast builds).
+            if (!this.monaco.languages.json?.jsonDefaults) return;
+
             const existingOptions = this.monaco.languages.json.jsonDefaults.diagnosticsOptions;
             let newSchemaMappings: SchemaMapping[] = existingOptions.schemas || [];
 
@@ -381,6 +385,7 @@ class BaseEditor extends React.Component<EditorProps> {
     componentWillUnmount() {
         if (this.editor && this.monaco && this.registeredSchemaUri) {
             // When we unmount, clear our registered schema, if we have one.
+            if (!this.monaco.languages.json?.jsonDefaults) return;
             const existingOptions = this.monaco.languages.json.jsonDefaults.diagnosticsOptions;
 
             const newSchemaMappings = (existingOptions.schemas || [])

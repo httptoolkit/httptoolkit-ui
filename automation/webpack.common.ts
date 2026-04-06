@@ -30,6 +30,7 @@ export default <Webpack.Configuration>{
             net: false,
             tls: false,
             http: false,
+            vm: false, // Used by asn1.js via crypto-browserify; not needed in browser
 
             assert: require.resolve('assert/'),
             crypto: require.resolve('crypto-browserify'),

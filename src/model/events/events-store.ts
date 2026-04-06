@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 import {
     observable,
-    action
+    action,
+    computed
 } from 'mobx';
 import { HarParseError } from 'har-validator';
 
@@ -330,6 +331,115 @@ export class EventsStore {
     togglePause() {
         this.isPaused = !this.isPaused;
     }
+
+    // ── Multi-Select State (Feature 1: Batch Export / Issue #76) ─────────────
+
+    // Use observable.set() for guaranteed MobX 5 reactivity on Set operations
+    readonly selectedExchangeIds = observable.set<string>();
+
+    private lastSelectedExchangeId: string | null = null;
+
+    @computed
+    get selectedExchangeCount(): number {
+        return this.selectedExchangeIds.size;
+    }
+
+    @computed
+    get hasMultiSelection(): boolean {
+        return this.selectedExchangeIds.size > 1;
+    }
+
+    /**
+     * Returns the HttpExchangeView[] for all currently selected exchange IDs.
+     * Non-HTTP events and IDs no longer in the event list are silently skipped.
+     */
+    @computed
+    get selectedExchanges(): import('../../types').HttpExchangeView[] {
+        const result: import('../../types').HttpExchangeView[] = [];
+        for (const id of this.selectedExchangeIds) {
+            const event = this.eventsList.getById(id);
+            if (event && event.isHttp()) {
+                result.push(event as import('../../types').HttpExchangeView);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Handle a row click for selection. Supports single click, Ctrl/Cmd+click
+     * (toggle), and Shift+click (range).
+     *
+     * @param id - The exchange ID that was clicked
+     * @param metaKey - Whether Ctrl/Cmd was held
+     * @param shiftKey - Whether Shift was held
+     * @param visibleIds - Ordered array of currently visible event IDs (for range selection)
+     */
+    @action.bound
+    selectExchange(id: string, metaKey: boolean, shiftKey: boolean, visibleIds: string[]) {
+        if (shiftKey) {
+            if (this.lastSelectedExchangeId) {
+                // Range selection: select everything between lastSelectedExchangeId and id
+                const startIdx = visibleIds.indexOf(this.lastSelectedExchangeId);
+                const endIdx = visibleIds.indexOf(id);
+                if (startIdx !== -1 && endIdx !== -1) {
+                    const [lo, hi] = startIdx < endIdx
+                        ? [startIdx, endIdx]
+                        : [endIdx, startIdx];
+
+                    if (!metaKey) {
+                        this.selectedExchangeIds.clear();
+                    }
+                    for (let i = lo; i <= hi; i++) {
+                        this.selectedExchangeIds.add(visibleIds[i]);
+                    }
+                }
+            } else {
+                // Shift+Click with no prior anchor: treat as first anchor
+                this.selectedExchangeIds.clear();
+                this.selectedExchangeIds.add(id);
+                this.lastSelectedExchangeId = id;
+            }
+        } else if (metaKey) {
+            // Toggle selection
+            if (this.selectedExchangeIds.has(id)) {
+                this.selectedExchangeIds.delete(id);
+            } else {
+                this.selectedExchangeIds.add(id);
+            }
+            this.lastSelectedExchangeId = id;
+        } else {
+            // Single selection — replace all
+            this.selectedExchangeIds.clear();
+            this.selectedExchangeIds.add(id);
+            this.lastSelectedExchangeId = id;
+        }
+    }
+
+    @action.bound
+    selectAllExchanges(visibleIds: string[]) {
+        this.selectedExchangeIds.clear();
+        for (const id of visibleIds) {
+            this.selectedExchangeIds.add(id);
+        }
+    }
+
+    @action.bound
+    clearSelection() {
+        this.selectedExchangeIds.clear();
+        this.lastSelectedExchangeId = null;
+    }
+
+    /**
+     * Set the anchor point for Shift+Click range selection without adding
+     * the ID to the selection set itself. This is called on plain click so
+     * that a subsequent Shift+Click produces a range from this row.
+     */
+    @action.bound
+    setSelectionAnchor(id: string) {
+        this.lastSelectedExchangeId = id;
+    }
+
+    // ── End Multi-Select State ───────────────────────────────────────────────
 
     @action
     private addInitiatedRequest(request: InputInitiatedRequest) {
@@ -702,6 +812,9 @@ export class EventsStore {
 
     @action.bound
     clearInterceptedData(clearPinned: boolean) {
+        // Clear multi-select state when exchanges are cleared
+        this.clearSelection();
+
         const [pinnedEvents, unpinnedEvents] = _.partition(
             this.events,
             clearPinned ? () => false : (ex) => ex.pinned
