@@ -635,8 +635,6 @@ class ViewPage extends React.Component<ViewPageProps> {
         // in the order they were conceptually added.
         if (targetIndex < anchorIndex) rangeIds.reverse();
 
-        // Union of base + range. Set dedup preserves base item positions —
-        // items already in the base won't move when the range passes through them.
         const unionIds = [...this.selectionBaseIds, ...rangeIds];
         this.props.uiStore.selectEventRange(unionIds, targetEvent.id);
         return true;

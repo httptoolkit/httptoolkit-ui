@@ -1,13 +1,10 @@
-import * as _ from 'lodash';
 import * as React from 'react';
 import { observer } from 'mobx-react';
 
 import { styled } from '../../styles';
-import { Icon } from '../../icons';
 import { CollectedEvent } from '../../types';
-import { getSummaryColor } from '../../model/events/categorization';
 
-import { StatusCode } from '../common/status-code';
+import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
 
 const SummaryContainer = styled.div`
     display: flex;
@@ -69,23 +66,7 @@ const PreviewRow = styled.div<{
 
     transition: top 0.15s ease-out,
                 transform 0.15s ease-out,
-                opacity 0.15s ease-out,
-                border-color 0.15s ease-out;
-`;
-
-const SourceIcon = styled(Icon)`
-    flex-shrink: 0;
-`;
-
-const InlineStatus = styled(StatusCode)`
-    flex-shrink: 0;
-`;
-
-const RowDetail = styled.span`
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    min-width: 0;
+                opacity 0.15s ease-out;
 `;
 
 const SelectionLabel = styled.div`
@@ -114,88 +95,6 @@ const SelectionLabel = styled.div`
 
 const PREVIEW_COUNT = 10;
 
-// Renders preview content matching the list's column order. Similar but
-// not identical to list rows (for starters, no column spacing).
-function getPreviewContent(event: CollectedEvent): React.ReactNode {
-    if (event.isHttp()) {
-        const { method, source } = event.request;
-        const { response } = event;
-        const { host, pathname, search } = event.request.parsedUrl;
-        const path = pathname + search;
-
-        let status: React.ComponentProps<typeof StatusCode>['status'];
-        if (response === 'aborted') {
-            status = 'aborted';
-        } else if (!response) {
-            status = undefined; // Spinner
-        } else if (event.isWebSocket() && response.statusCode === 101) {
-            status = event.closeState ? 'WS:closed' : 'WS:open';
-        } else {
-            status = response.statusCode;
-        }
-
-        if (event.apiSpec?.isBuiltInApi && event.api?.matchedOperation()) {
-            const opName = _.startCase(event.api.operation.name.replace('eth_', ''));
-            return <>
-                <span>{event.api.service.shortName}: {opName}</span>
-                <SourceIcon {...source.icon} fixedWidth />
-            </>;
-        }
-
-        return <>
-            <span>{method}</span>
-            <InlineStatus status={status} />
-            <SourceIcon {...source.icon} fixedWidth />
-            <RowDetail>{host}{path}</RowDetail>
-        </>;
-    } else if (event.isTlsFailure()) {
-        const target = event.upstreamHostname || 'unknown domain';
-        const desc = ({
-            'closed': 'Aborted',
-            'reset': 'Aborted',
-            'unknown': 'Aborted',
-            'cert-rejected': 'Certificate rejected for',
-            'no-shared-cipher': 'HTTPS setup failed for',
-        } as _.Dictionary<string>)[event.failureCause];
-        return <RowDetail>{desc} connection to {target}</RowDetail>;
-    } else if (event.isTlsTunnel()) {
-        return <>
-            {event.isOpen() && <InlineStatus status={undefined} />}
-            <RowDetail>Tunnelled TLS to {event.upstreamHostname || 'unknown domain'}</RowDetail>
-        </>;
-    } else if (event.isRawTunnel()) {
-        const target = event.upstreamHostname
-            ? `${event.upstreamHostname}:${event.upstreamPort}`
-            : 'unknown destination';
-        return <>
-            {event.isOpen() && <InlineStatus status={undefined} />}
-            <RowDetail>Non-HTTP connection to {target}</RowDetail>
-        </>;
-    } else if (event.isRTCConnection()) {
-        return <>
-            {!event.closeState && <InlineStatus status={undefined} />}
-            <span>WebRTC</span>
-            <SourceIcon {...event.source.icon} fixedWidth />
-            <RowDetail>{event.clientURL} → {event.remoteURL || '?'}</RowDetail>
-        </>;
-    } else if (event.isRTCDataChannel()) {
-        return <>
-            {!event.closeState && <InlineStatus status={undefined} />}
-            <span>WebRTC Data</span>
-            <SourceIcon {...event.rtcConnection.source.icon} fixedWidth />
-            <RowDetail>{event.label}</RowDetail>
-        </>;
-    } else if (event.isRTCMediaTrack()) {
-        return <>
-            {!event.closeState && <InlineStatus status={undefined} />}
-            <span>WebRTC Media</span>
-            <SourceIcon {...event.rtcConnection.source.icon} fixedWidth />
-            <RowDetail>{event.direction} {event.type}</RowDetail>
-        </>;
-    }
-    return '';
-}
-
 export const MultiSelectionSummaryPane = observer((props: {
     selectedEvents: ReadonlyArray<CollectedEvent>
 }) => {
@@ -212,21 +111,13 @@ export const MultiSelectionSummaryPane = observer((props: {
     return <SummaryContainer>
         <PreviewStack>
             {previewEvents.map((event, index) => {
-                const isOpaqueConnection = event.isTlsFailure() ||
-                    event.isTlsTunnel() ||
-                    event.isRawTunnel();
-
                 return <PreviewRow
                     key={event.id}
                     index={index}
-                    markerColor={
-                        isOpaqueConnection
-                        ? 'transparent' // Ironic
-                        : getSummaryColor(event.category)
-                    }
-                    dimRow={isOpaqueConnection}
+                    markerColor={getEventMarkerColor(event)}
+                    dimRow={isOpaqueConnection(event)}
                 >
-                    {getPreviewContent(event)}
+                    {getEventPreviewContent(event)}
                 </PreviewRow>;
             })}
             <SelectionLabel>
