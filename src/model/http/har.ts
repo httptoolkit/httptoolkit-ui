@@ -106,9 +106,15 @@ export async function generateHar(
     events: readonly ViewableEvent[],
     options: HarGenerationOptions = { bodySizeLimit: HAR_BODY_SIZE_LIMIT }
 ): Promise<Har> {
-    const [exchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [
+    const [allExchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [
         HttpExchangeView[], CollectedEvent[]
     ];
+
+    // Filter out exchanges with client errors (fundamental request parsing failures) -
+    // these contain best-guess data that may not be valid in a HAR:
+    const exchanges = allExchanges.filter(e =>
+        !e.tags.some(tag => tag.startsWith('client-error:'))
+    );
 
     const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
 
