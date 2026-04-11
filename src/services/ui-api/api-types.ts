@@ -6,6 +6,8 @@ export interface OperationDefinition {
     inputSchema: JSONSchema7;
     outputSchema: JSONSchema7;
     category: string;
+    tiers: Array<'free' | 'pro'>;
+    sessionLimit?: number;
     annotations?: {
         readOnlyHint?: boolean;
         destructiveHint?: boolean;

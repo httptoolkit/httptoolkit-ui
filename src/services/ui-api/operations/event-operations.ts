@@ -48,6 +48,7 @@ function eventsListOperation(
                 'Uses the same filter syntax as the UI search bar. ' +
                 'See https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic for full docs.',
             category: 'events',
+            tiers: ['free', 'pro'],
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -169,6 +170,7 @@ function eventsGetOutlineOperation(
                 'headers, status, timing, and body sizes, but not the body content itself. ' +
                 'Use events.get-request-body or events.get-response-body to retrieve bodies.',
             category: 'events',
+            tiers: ['free', 'pro'],
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -225,6 +227,8 @@ function eventsGetRequestBodyOperation(
             description: 'Get the request body of a captured HTTP exchange. ' +
                 'Use offset and maxLength to retrieve specific ranges of large bodies.',
             category: 'events',
+            tiers: ['free', 'pro'],
+            sessionLimit: 50,
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -255,6 +259,8 @@ function eventsGetResponseBodyOperation(
             description: 'Get the response body of a captured HTTP exchange. ' +
                 'Use offset and maxLength to retrieve specific ranges of large bodies.',
             category: 'events',
+            tiers: ['free', 'pro'],
+            sessionLimit: 50,
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -282,6 +288,7 @@ function eventsClearOperation(eventsStore: EventsStore): Operation {
             name: 'events.clear',
             description: 'Clear all captured events. By default, pinned events are preserved.',
             category: 'events',
+            tiers: ['free', 'pro'],
             annotations: { readOnlyHint: false, destructiveHint: true },
             inputSchema: {
                 type: 'object',
