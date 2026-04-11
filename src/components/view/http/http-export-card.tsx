@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import React from "react";
 import { action, computed } from "mobx";
 import { inject, observer } from "mobx-react";
@@ -20,6 +21,8 @@ import {
     snippetExportOptions,
     SnippetOption
 } from '../../../model/ui/export';
+import { ZIP_ALL_FORMAT_KEY } from '../../../model/ui/snippet-formats';
+import { ZipDownloadPanel } from '../zip-download-panel';
 
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 import {
@@ -135,6 +138,32 @@ const ExportHarPill = styled(observer((p: {
     margin-right: auto;
 `;
 
+// Virtual SnippetOption used as the PillSelector value when ZIP is selected.
+// This is never passed to httpsnippet — it's only used for dropdown rendering.
+const ZIP_SNIPPET_OPTION: SnippetOption = {
+    target: ZIP_ALL_FORMAT_KEY as any,
+    client: '' as any,
+    name: 'ZIP (Selected Formats)',
+    description: 'Download selected code snippet formats in a single ZIP archive',
+    link: ''
+};
+
+// Build extended optGroups with ZIP at the top
+const exportOptionsWithZip: _.Dictionary<SnippetOption[]> = {
+    'Archive': [ZIP_SNIPPET_OPTION],
+    ...snippetExportOptions
+};
+
+const getExportFormatKey = (option: SnippetOption): string => {
+    if (option === ZIP_SNIPPET_OPTION) return ZIP_ALL_FORMAT_KEY;
+    return getCodeSnippetFormatKey(option);
+};
+
+const getExportFormatName = (option: SnippetOption): string => {
+    if (option === ZIP_SNIPPET_OPTION) return ZIP_SNIPPET_OPTION.name;
+    return getCodeSnippetFormatName(option);
+};
+
 @inject('accountStore')
 @inject('uiStore')
 @observer
@@ -143,6 +172,7 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
     render() {
         const { exchange, accountStore } = this.props;
         const isPaidUser = accountStore!.user.isPaidUser();
+        const isZipSelected = this.isZipSelected;
 
         return <CollapsibleCard {...this.props}>
             <header>
@@ -153,10 +183,10 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
 
                 <PillSelector<SnippetOption>
                     onChange={this.setSnippetOption}
-                    value={this.snippetOption}
-                    optGroups={snippetExportOptions}
-                    keyFormatter={getCodeSnippetFormatKey}
-                    nameFormatter={getCodeSnippetFormatName}
+                    value={this.currentDropdownValue}
+                    optGroups={exportOptionsWithZip}
+                    keyFormatter={getExportFormatKey}
+                    nameFormatter={getExportFormatName}
                 />
 
                 <CollapsibleCardHeading onCollapseToggled={this.props.onCollapseToggled}>
@@ -166,10 +196,13 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
 
             { isPaidUser ?
                 <div>
-                    <ExportSnippetEditor
-                        exchange={exchange}
-                        exportOption={this.snippetOption}
-                    />
+                    { isZipSelected
+                        ? <ZipDownloadPanel exchanges={[exchange]} />
+                        : <ExportSnippetEditor
+                            exchange={exchange}
+                            exportOption={this.snippetOption}
+                        />
+                    }
                 </div>
             :
                 <CardSalesPitch source='export'>
@@ -189,10 +222,28 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
     }
 
     @computed
+    private get isZipSelected(): boolean {
+        return (this.props.uiStore!.exportSnippetFormat || '') === ZIP_ALL_FORMAT_KEY;
+    }
+
+    @computed
+    private get currentDropdownValue(): SnippetOption {
+        if (this.isZipSelected) return ZIP_SNIPPET_OPTION;
+        return this.snippetOption;
+    }
+
+    @computed
     private get snippetOption(): SnippetOption {
         let exportSnippetFormat = this.props.uiStore!.exportSnippetFormat ||
             DEFAULT_SNIPPET_FORMAT_KEY;
-        return getCodeSnippetOptionFromKey(exportSnippetFormat);
+        // If ZIP is selected, fall back to default for the snippet option
+        if (exportSnippetFormat === ZIP_ALL_FORMAT_KEY) {
+            exportSnippetFormat = DEFAULT_SNIPPET_FORMAT_KEY;
+        }
+        // Guard: if the format key doesn't resolve (e.g. deleted/invalid key),
+        // fall back to the default cURL option
+        return getCodeSnippetOptionFromKey(exportSnippetFormat)
+            ?? getCodeSnippetOptionFromKey(DEFAULT_SNIPPET_FORMAT_KEY);
     }
 
     @action.bound
