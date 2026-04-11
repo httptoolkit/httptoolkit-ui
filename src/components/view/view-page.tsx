@@ -8,7 +8,8 @@ import {
     runInAction,
     when,
     comparer,
-    observe
+    observe,
+    reaction
 } from 'mobx';
 import { observer, disposeOnUnmount, inject } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
@@ -37,6 +38,7 @@ import { SelfSizedEditor } from '../editor/base-editor';
 
 import { ViewEventList } from './view-event-list';
 import { ViewEventListFooter } from './view-event-list-footer';
+import { SelectionToolbar } from './selection-toolbar';
 import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
 import { PaneOuterContainer } from './view-details-pane';
 import { HttpDetailsPane } from './http/http-details-pane';
@@ -259,22 +261,12 @@ class ViewPage extends React.Component<ViewPageProps> {
     );
 
     componentDidMount() {
-        // After first render, if we're jumping to an event, scroll to ensure it's visible
-        // and focus the list so keyboard navigation works. Uses scrollToEvent (not center)
-        // to avoid jumping when the row is already on screen (e.g. clicking a visible row
-        // triggers a remount due to /view → /view/:id route change).
+        // After first render, if we're jumping to an event, then scroll to it:
         requestAnimationFrame(() => {
             if (this.props.eventId && this.selectedEvent) {
-                // URL-based deep link or click-triggered remount: sync store and
-                // scroll to the event (it may not be in the restored scroll viewport).
                 this.props.uiStore.setSelectedEventId(this.props.eventId);
-                this.onScrollToEvent(this.selectedEvent);
+                this.onScrollToCenterEvent(this.selectedEvent);
             }
-            // For persisted selection without eventId (tab switch), don't scroll —
-            // restoreScrollPosition already restored the saved viewport.
-
-            // Focus the list window so keyboard navigation works immediately.
-            this.listRef.current?.focusListWindow();
         });
 
         disposeOnUnmount(this, observe(this, 'selectedEvent', ({ oldValue, newValue }) => {
@@ -315,6 +307,21 @@ class ViewPage extends React.Component<ViewPageProps> {
             }
         }));
 
+        // Clear multi-select when filters change, so users don't have invisible selections.
+        // We track the filter configuration itself (not filteredEvents.length) because new
+        // events arriving should NOT clear the selection — only actual filter changes should.
+        disposeOnUnmount(this,
+            reaction(
+                () => this.currentSearchFilters,
+                () => {
+                    const { eventsStore } = this.props;
+                    if (eventsStore.selectedExchangeCount > 0) {
+                        eventsStore.clearSelection();
+                    }
+                }
+            )
+        );
+
         // Due to https://github.com/facebook/react/issues/16087 in React, which is fundamentally caused by
         // https://bugs.chromium.org/p/chromium/issues/detail?id=1218275 in Chrome, we can leak filtered event
         // list references, which means that HTTP exchanges persist in memory even after they're cleared.
@@ -333,6 +340,15 @@ class ViewPage extends React.Component<ViewPageProps> {
                 }
             })
         );
+    }
+
+    componentDidUpdate(prevProps: ViewPageProps) {
+        // Only clear persisted selection if we're explicitly navigating to a different event via URL
+        // Don't clear it when going from eventId to no eventId (which happens when clearing selection)
+        if (this.props.eventId && prevProps.eventId && this.props.eventId !== prevProps.eventId) {
+            // Clear persisted selection only when explicitly navigating between different events via URL
+            this.props.uiStore.setSelectedEventId(undefined);
+        }
     }
 
     isSendAvailable() {
@@ -452,6 +468,9 @@ class ViewPage extends React.Component<ViewPageProps> {
                         onClear={this.onClear}
                         onScrollToEnd={this.onScrollToEnd}
                     />
+                    <SelectionToolbar
+                        eventsStore={this.props.eventsStore}
+                    />
                     <ViewEventList
                         events={events}
                         filteredEvents={filteredEvents}
@@ -462,6 +481,7 @@ class ViewPage extends React.Component<ViewPageProps> {
                         onSelected={this.onSelected}
                         contextMenuBuilder={this.contextMenuBuilder}
                         uiStore={this.props.uiStore}
+                        eventsStore={this.props.eventsStore}
 
                         ref={this.listRef}
                     />

@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { inject, observer, Observer } from 'mobx-react';
-import { action } from 'mobx';
+import { action, computed } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
@@ -19,6 +19,7 @@ import {
     RawTunnel
 } from '../../types';
 import { UiStore } from '../../model/ui/ui-store';
+import { EventsStore } from '../../model/events/events-store';
 import { areStepsModifying } from '../../model/rules/rules';
 
 import {
@@ -28,6 +29,7 @@ import {
 } from '../../model/events/categorization';
 import { nameStepClass } from '../../model/rules/rule-descriptions';
 import { getReadableSize } from '../../util/buffer';
+import { isCmdCtrlPressed } from '../../util/ui';
 
 import { UnreachableCheck } from '../../util/error';
 import { filterProps } from '../component-utils';
@@ -58,6 +60,7 @@ interface ViewEventListProps {
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
     uiStore: UiStore;
+    eventsStore?: EventsStore;
 
     moveSelection: (distance: number) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
@@ -344,15 +347,16 @@ interface EventRowProps extends ListChildComponentProps {
         selectedEvent: CollectedEvent | undefined;
         events: ReadonlyArray<CollectedEvent>;
         contextMenuBuilder: ViewEventContextMenuBuilder;
+        selectedExchangeIds?: Set<string>;
     }
 }
 
 const EventRow = observer((props: EventRowProps) => {
     const { index, style } = props;
-    const { events, selectedEvent, contextMenuBuilder } = props.data;
+    const { events, selectedEvent, contextMenuBuilder, selectedExchangeIds } = props.data;
     const event = events[index];
 
-    const isSelected = (selectedEvent === event);
+    const isSelected = (selectedEvent === event) || (selectedExchangeIds ? selectedExchangeIds.has(event.id) : false);
 
     if (event.isTlsFailure() || event.isTlsTunnel()) {
         return <TlsRow
@@ -814,7 +818,8 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
         return {
             selectedEvent: this.props.selectedEvent,
             events: this.props.filteredEvents,
-            contextMenuBuilder: this.props.contextMenuBuilder
+            contextMenuBuilder: this.props.contextMenuBuilder,
+            selectedExchangeIds: this.props.eventsStore?.selectedExchangeIds
         };
     }
 
@@ -1028,6 +1033,29 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
         const event = this.props.filteredEvents[eventIndex];
+
+        const { eventsStore } = this.props;
+
+        // Multi-select: if Ctrl/Cmd or Shift is held, delegate to the eventsStore
+        if (eventsStore && (isCmdCtrlPressed(mouseEvent) || mouseEvent.shiftKey)) {
+            const visibleIds = this.props.filteredEvents.map(e => e.id);
+            eventsStore.selectExchange(
+                event.id,
+                isCmdCtrlPressed(mouseEvent),
+                mouseEvent.shiftKey,
+                visibleIds
+            );
+            // Also set as the active/focused event
+            this.onEventSelected(eventIndex);
+            return;
+        }
+
+        // Clear multi-selection on plain click, but keep the anchor
+        if (eventsStore) {
+            eventsStore.clearSelection();
+            eventsStore.setSelectionAnchor(event.id);
+        }
+
         if (event !== this.props.selectedEvent) {
             this.onEventSelected(eventIndex);
         } else {
@@ -1049,6 +1077,45 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         const { moveSelection } = this.props;
+        const { eventsStore } = this.props;
+
+        // Ctrl/Cmd+A: Select all visible events
+        if (event.key === 'a' && isCmdCtrlPressed(event) && eventsStore) {
+            const target = event.target as HTMLElement;
+            if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+                const visibleIds = this.props.filteredEvents.map(e => e.id);
+                eventsStore.selectAllExchanges(visibleIds);
+                event.preventDefault();
+                return;
+            }
+        }
+
+        // Escape: Clear selection
+        if (event.key === 'Escape' && eventsStore && eventsStore.selectedExchangeCount > 0) {
+            eventsStore.clearSelection();
+            event.preventDefault();
+            return;
+        }
+
+        // Shift+Arrow: Extend selection by one row in that direction
+        if (event.shiftKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp') && eventsStore) {
+            const distance = event.key === 'ArrowDown' ? 1 : -1;
+            const { filteredEvents, selectedEvent } = this.props;
+            const visibleIds = filteredEvents.map(e => e.id);
+            const currentIndex = selectedEvent
+                ? filteredEvents.findIndex(e => e.id === selectedEvent.id)
+                : -1;
+            const targetIndex = currentIndex === -1
+                ? (distance >= 0 ? 0 : filteredEvents.length - 1)
+                : Math.max(0, Math.min(filteredEvents.length - 1, currentIndex + distance));
+            moveSelection(distance);
+            const targetId = filteredEvents[targetIndex]?.id;
+            if (targetId) {
+                eventsStore.selectExchange(targetId, false, true, visibleIds);
+            }
+            event.preventDefault();
+            return;
+        }
 
         switch (event.key) {
             case 'ArrowDown':
