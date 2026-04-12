@@ -18,11 +18,15 @@ import type {
     FormatRequest,
     FormatResponse,
     ParseCertRequest,
-    ParseCertResponse
+    ParseCertResponse,
+    GenerateZipRequest,
+    GenerateZipResponse
 } from './ui-worker';
 
 import { Headers, Omit } from '../types';
 import type { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
+import type { SnippetFormatDefinition } from '../model/ui/snippet-formats';
+import type { ZipMetadata } from '../model/ui/zip-metadata';
 import { WorkerFormatterKey } from './ui-worker-formatters';
 import { decodingRequired } from '../model/events/bodies';
 
@@ -153,4 +157,110 @@ export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterK
         format,
         headers,
     })).formatted;
+}
+
+export interface ZipProgressInfo {
+    phase: string;
+    completed: number;
+    total: number;
+    percent: number;
+}
+
+export interface ZipResult {
+    buffer: ArrayBuffer;
+    /** Number of snippet generations that failed (see _errors.json in the archive) */
+    snippetErrors: number;
+    /** Total number of snippet generations attempted */
+    totalSnippets: number;
+}
+
+/**
+ * Generates a ZIP archive containing code snippets in all formats plus
+ * the HAR data and metadata. All CPU-intensive work runs in the Web Worker.
+ *
+ * @param harEntries  - Plain (non-MobX-proxy) HAR entry objects. Use toJS() before calling.
+ * @param formats     - Which snippet formats to include.
+ * @param metadata    - The ZipMetadata object for _metadata.json.
+ * @param onProgress  - Optional callback invoked with progress updates (~every 5%).
+ * @returns ZipResult with the compressed archive buffer and snippet error counts.
+ */
+export function generateZipInWorker(
+    harEntries: any[],
+    formats: SnippetFormatDefinition[],
+    metadata: ZipMetadata,
+    onProgress?: (info: ZipProgressInfo) => void
+): Promise<ZipResult> {
+    if (harEntries.length === 0) {
+        return Promise.reject(new Error('No entries to export'));
+    }
+    if (formats.length === 0) {
+        return Promise.reject(new Error('No formats selected'));
+    }
+
+    const id = getId();
+
+    return new Promise<ZipResult>((resolve, reject) => {
+        let settled = false;
+        const cleanup = () => {
+            worker.removeEventListener('message', handler);
+            clearTimeout(timeoutId);
+        };
+
+        // Safety timeout: if the worker doesn't respond within 5 minutes,
+        // clean up the listener to prevent memory leaks.
+        const timeoutId = setTimeout(() => {
+            if (!settled) {
+                settled = true;
+                cleanup();
+                reject(new Error('ZIP generation timed out after 5 minutes'));
+            }
+        }, 5 * 60 * 1000);
+
+        const handler = (event: MessageEvent) => {
+            const data = event.data;
+            if (data.id !== id) return;
+
+            // Progress messages have a 'type' field; final responses don't
+            if (data.type === 'generateZipProgress') {
+                onProgress?.({
+                    phase: data.phase,
+                    completed: data.completed,
+                    total: data.total,
+                    percent: data.percent
+                });
+                return; // Keep listening for the final result
+            }
+
+            // Final result — always remove listener before resolving/rejecting
+            if (settled) return;
+            settled = true;
+            cleanup();
+
+            if (data.error) {
+                reject(deserializeError(data.error));
+            } else {
+                resolve({
+                    buffer: data.buffer,
+                    snippetErrors: data.snippetErrors || 0,
+                    totalSnippets: data.totalSnippets || 0
+                });
+            }
+        };
+
+        worker.addEventListener('message', handler);
+
+        try {
+            worker.postMessage(Object.assign({ id }, {
+                type: 'generateZip',
+                harEntries,
+                formats,
+                metadata
+            } as Omit<GenerateZipRequest, 'id'>));
+        } catch (err) {
+            // postMessage can throw for unserializable data (MobX proxies, etc.)
+            settled = true;
+            cleanup();
+            reject(err);
+        }
+    });
 }

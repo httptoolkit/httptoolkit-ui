@@ -12,12 +12,17 @@ import {
     SUPPORTED_ENCODING
 } from 'http-encoding';
 import { OpenAPIObject } from 'openapi-directory';
+import * as HTTPSnippet from '@httptoolkit/httpsnippet';
+import { zip } from 'fflate';
 
 import { Headers } from '../types';
 import { ApiMetadata, ApiSpec } from '../model/api/api-interfaces';
 import { buildOpenApiMetadata, buildOpenRpcMetadata } from '../model/api/build-api-metadata';
 import { parseCert, ParsedCertificate, validatePKCS12, ValidationResult } from '../model/crypto';
 import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
+import { buildZipFileName } from '../util/export-filenames';
+import type { SnippetFormatDefinition } from '../model/ui/snippet-formats';
+import type { ZipMetadata } from '../model/ui/zip-metadata';
 
 interface Message {
     id: number;
@@ -100,6 +105,18 @@ export interface FormatResponse extends Message {
     formatted: string;
 }
 
+export interface GenerateZipRequest extends Message {
+    type: 'generateZip';
+    harEntries: any[];
+    formats: SnippetFormatDefinition[];
+    metadata: ZipMetadata;
+}
+
+export interface GenerateZipResponse extends Message {
+    error?: Error;
+    buffer: ArrayBuffer;
+}
+
 export type BackgroundRequest =
     | DecodeRequest
     | EncodeRequest
@@ -107,7 +124,8 @@ export type BackgroundRequest =
     | BuildApiRequest
     | ValidatePKCSRequest
     | ParseCertRequest
-    | FormatRequest;
+    | FormatRequest
+    | GenerateZipRequest;
 
 export type BackgroundResponse =
     | DecodeResponse
@@ -116,7 +134,8 @@ export type BackgroundResponse =
     | BuildApiResponse
     | ValidatePKCSResponse
     | ParseCertResponse
-    | FormatResponse;
+    | FormatResponse
+    | GenerateZipResponse;
 
 const bufferToArrayBuffer = (buffer: Buffer): ArrayBuffer =>
     // Have to remember to slice: this can be a view into part of a much larger buffer!
@@ -227,6 +246,184 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
                 const formatted = formatBuffer(event.data.buffer, event.data.format, event.data.headers);
                 ctx.postMessage({ id: event.data.id, formatted });
                 break;
+
+            case 'generateZip': {
+                const { id, harEntries, formats, metadata } = event.data as GenerateZipRequest;
+
+                try {
+                    if (!harEntries || harEntries.length === 0) {
+                        throw new Error('No HAR entries provided for ZIP export');
+                    }
+                    if (!formats || formats.length === 0) {
+                        throw new Error('No snippet formats selected for ZIP export');
+                    }
+
+                    const encoder = new TextEncoder();
+                    const files: Record<string, Uint8Array> = {};
+                    const totalSteps = formats.length * harEntries.length;
+                    let completedSteps = 0;
+                    let lastReportedPercent = 0;
+
+                    // Track snippet generation errors for transparency
+                    const snippetErrors: Array<{
+                        format: string;
+                        entryIndex: number;
+                        method: string;
+                        url: string;
+                        error: string;
+                    }> = [];
+
+                    // 1. Generate snippet files for each format × each entry
+                    for (const format of formats) {
+                        for (let i = 0; i < harEntries.length; i++) {
+                            const entry = harEntries[i];
+                            try {
+                                // HTTPSnippet expects a HAR *request* object, not a full
+                                // HAR entry. Extract and simplify the request, matching
+                                // the pattern used by generateCodeSnippet() on the main
+                                // thread (see model/ui/export.ts).
+                                const harRequest = entry.request;
+
+                                // Sanitize postData: httpsnippet's HAR validator rejects
+                                // null values in postData.text (e.g. CDN beacon POSTs).
+                                // Also strip empty queryString entries that fail validation.
+                                const postData = harRequest.postData
+                                    ? {
+                                        ...harRequest.postData,
+                                        text: harRequest.postData.text ?? ''
+                                    }
+                                    : harRequest.postData;
+
+                                const snippetInput = {
+                                    ...harRequest,
+                                    headers: (harRequest.headers || []).filter((h: any) =>
+                                        h.name.toLowerCase() !== 'content-length' &&
+                                        h.name.toLowerCase() !== 'content-encoding' &&
+                                        !h.name.startsWith(':')
+                                    ),
+                                    queryString: (harRequest.queryString || []).filter(
+                                        (q: any) => q.name !== '' || q.value !== ''
+                                    ),
+                                    cookies: [], // Included in headers already
+                                    ...(postData !== undefined ? { postData } : {})
+                                };
+                                const snippet = new HTTPSnippet(snippetInput);
+                                const code = snippet.convert(format.target, format.client);
+                                if (code) {
+                                    const filename = buildZipFileName(
+                                        i + 1,
+                                        entry.request?.method ?? 'UNKNOWN',
+                                        entry.response?.status ?? null,
+                                        format.extension,
+                                        entry.request?.url
+                                    );
+                                    const content = Array.isArray(code) ? code[0] : code;
+                                    files[`${format.folderName}/${filename}`] = encoder.encode(
+                                        typeof content === 'string' ? content : String(content)
+                                    );
+                                }
+                            } catch (snippetErr) {
+                                // Skip this format for this entry but continue
+                                console.warn(
+                                    `Snippet generation failed for ${format.folderName}, entry ${i}:`,
+                                    snippetErr
+                                );
+                                snippetErrors.push({
+                                    format: format.folderName,
+                                    entryIndex: i + 1,
+                                    method: entry.request?.method ?? 'UNKNOWN',
+                                    url: entry.request?.url ?? 'unknown',
+                                    error: snippetErr instanceof Error ? snippetErr.message : String(snippetErr)
+                                });
+                            }
+
+                            // Report progress every 5% (avoids flooding main thread)
+                            completedSteps++;
+                            if (totalSteps > 0) {
+                                const currentPercent = Math.floor((completedSteps / totalSteps) * 100);
+                                if (currentPercent >= lastReportedPercent + 5) {
+                                    lastReportedPercent = currentPercent;
+                                    ctx.postMessage({
+                                        id,
+                                        type: 'generateZipProgress',
+                                        phase: 'snippets',
+                                        completed: completedSteps,
+                                        total: totalSteps,
+                                        percent: currentPercent
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Add full traffic capture as HAR
+                    // Contains the complete network traffic (requests + responses
+                    // with headers, bodies, timings, cookies) for every exchange.
+                    // The snippets in the format folders only reproduce the request;
+                    // this file is the authoritative record of what actually happened.
+                    const harDocument = {
+                        log: {
+                            version: '1.2',
+                            creator: {
+                                name: 'HTTP Toolkit',
+                                version: metadata.httptoolkitVersion
+                            },
+                            entries: harEntries
+                        }
+                    };
+                    const harFileName = `HTTPToolkit_${harEntries.length}-requests_full-traffic.har`;
+                    files[harFileName] = encoder.encode(
+                        JSON.stringify(harDocument, null, 2)
+                    );
+
+                    // 3. Add _metadata.json (include error summary if any)
+                    const metadataWithErrors = snippetErrors.length > 0
+                        ? { ...metadata, snippetErrors: snippetErrors.length, totalSnippets: totalSteps }
+                        : metadata;
+                    files['_metadata.json'] = encoder.encode(
+                        JSON.stringify(metadataWithErrors, null, 2)
+                    );
+
+                    // 3b. If any snippets failed, include a detailed error log
+                    if (snippetErrors.length > 0) {
+                        files['_errors.json'] = encoder.encode(
+                            JSON.stringify({
+                                summary: `${snippetErrors.length} of ${totalSteps} snippet generations failed`,
+                                errors: snippetErrors
+                            }, null, 2)
+                        );
+                    }
+
+                    // 4. Compress with fflate (async callback API)
+                    zip(files, { level: 6 }, (err, data) => {
+                        if (err) {
+                            ctx.postMessage({
+                                id,
+                                error: serializeError(err)
+                            });
+                            return;
+                        }
+                        // Transfer the ArrayBuffer for zero-copy.
+                        // Include snippet error count so the UI can warn if needed.
+                        ctx.postMessage(
+                            {
+                                id,
+                                buffer: data.buffer,
+                                snippetErrors: snippetErrors.length,
+                                totalSnippets: totalSteps
+                            },
+                            [data.buffer]
+                        );
+                    });
+                } catch (err) {
+                    ctx.postMessage({
+                        id,
+                        error: serializeError(err)
+                    });
+                }
+                // Note: response is sent asynchronously from the zip() callback above
+                return;
+            }
 
             default:
                 console.error('Unknown worker event', event);
