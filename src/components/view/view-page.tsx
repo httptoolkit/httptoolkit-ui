@@ -28,7 +28,6 @@ import { AccountStore } from '../../model/account/account-store';
 import { SendStore } from '../../model/send/send-store';
 import { HttpExchange } from '../../model/http/http-exchange';
 import { Filter, FilterSet } from '../../model/filters/search-filters';
-import * as uuid from 'uuid/v4';
 import { buildRuleFromExchange } from '../../model/rules/rule-creation';
 
 import { SplitPane } from '../split-pane';
@@ -636,7 +635,8 @@ class ViewPage extends React.Component<ViewPageProps> {
         if (targetIndex < anchorIndex) rangeIds.reverse();
 
         const unionIds = [...this.selectionBaseIds, ...rangeIds];
-        this.props.uiStore.selectEventRange(unionIds, targetEvent.id);
+        this.props.uiStore.setSelectedEvents(unionIds);
+        this.props.uiStore.activeEventId = targetEvent.id;
         return true;
     }
 
@@ -644,7 +644,7 @@ class ViewPage extends React.Component<ViewPageProps> {
     onSelectAll() {
         this.selectionBaseIds = undefined;
         const { filteredEvents } = this.filteredEventState;
-        this.props.uiStore.selectAllEvents(filteredEvents.map(e => e.id));
+        this.props.uiStore.setSelectedEvents(filteredEvents.map(e => e.id));
     }
 
     @action.bound
@@ -741,7 +741,7 @@ class ViewPage extends React.Component<ViewPageProps> {
         } else {
             // Multiple exchanges — create a rule group
             const group = {
-                id: uuid(),
+                id: crypto.randomUUID(),
                 title: `Rules from ${exchanges.length} requests`,
                 items: exchanges.map(e => buildRuleFromExchange(e))
             };

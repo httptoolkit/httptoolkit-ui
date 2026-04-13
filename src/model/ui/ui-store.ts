@@ -494,21 +494,13 @@ export class UiStore {
     }
 
     @action.bound
-    selectEventRange(eventIds: string[], activeId: string) {
+    setSelectedEvents(eventIds: string[]) {
         this.selectedEventIds.clear();
         for (const id of eventIds) {
             this.selectedEventIds.add(id);
         }
-        this.activeEventId = activeId;
-    }
-
-    @action.bound
-    selectAllEvents(eventIds: string[]) {
-        this.selectedEventIds.clear();
-        for (const id of eventIds) {
-            this.selectedEventIds.add(id);
-        }
-        // Keep activeEventId unchanged
+        // Doesn't update activeEventId - this may also need
+        // changing, but depends on context.
     }
 
     @action.bound
