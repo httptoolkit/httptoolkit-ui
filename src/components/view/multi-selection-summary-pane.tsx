@@ -1,12 +1,19 @@
 import * as React from 'react';
-import { observer } from 'mobx-react';
+import { inject, observer } from 'mobx-react';
 
-import { styled } from '../../styles';
+import { css, styled } from '../../styles';
+import { Ctrl } from '../../util/ui';
 import { CollectedEvent } from '../../types';
+import { AccountStore } from '../../model/account/account-store';
+
+import { Icon } from '../../icons';
+import { Button } from '../common/inputs';
+import { GetProOverlay } from '../account/pro-placeholders';
 
 import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
 
 const SummaryContainer = styled.div`
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -93,20 +100,88 @@ const SelectionLabel = styled.div`
     pointer-events: none;
 `;
 
+const ActionsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 30px;
+    width: 60%;
+    max-width: 360px;
+`;
+
+const ActionButton = styled(Button)`
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 16px;
+    font-size: ${p => p.theme.textSize};
+
+    > .fa-fw {
+        width: 1.25em;
+        flex-shrink: 0;
+    }
+`;
+
+const PinIcon = styled(Icon).attrs({
+    icon: ['fas', 'thumbtack']
+})`
+    transition: transform 0.1s;
+
+    ${(p: { pinned: boolean }) => !p.pinned && css`
+        transform: rotate(45deg);
+    `}
+`;
+
+const ProDivider = styled.hr`
+    width: 100%;
+    margin: 36px 0;
+    border: none;
+    border: solid 1px ${p => p.theme.mainColor};
+`;
+
+const ProActionsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+`;
+
 const PREVIEW_COUNT = 10;
 
-export const MultiSelectionSummaryPane = observer((props: {
-    selectedEvents: ReadonlyArray<CollectedEvent>
+export const MultiSelectionSummaryPane = inject('accountStore')(observer((props: {
+    accountStore?: AccountStore,
+    selectedEvents: ReadonlyArray<CollectedEvent>,
+    onPin: () => void,
+    onDelete: () => void,
+    onBuildRule: () => void
 }) => {
     const { selectedEvents } = props;
     const count = selectedEvents.length;
+    const isPaidUser = props.accountStore!.user.isPaidUser();
+
+    const httpCount = selectedEvents.filter(e =>
+        e.isHttp() && !e.isWebSocket()
+    ).length;
 
     const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
+    const allPinned = selectedEvents.every(e => e.pinned);
     const label = allHttp ? 'request' : 'event';
 
     // selectedEvents is in selection order (most recent last).
     // Reverse so the most recent is the front card (index 0).
     const previewEvents = selectedEvents.slice(-PREVIEW_COUNT).reverse();
+
+    const ruleButton = <ActionButton
+        title={isPaidUser ? `(${Ctrl}+M)` : 'Requires HTTP Toolkit Pro'}
+        disabled={!isPaidUser || httpCount === 0}
+        onClick={props.onBuildRule}
+    >
+        <Icon icon={['fas', 'wrench']} fixedWidth />
+        Create {httpCount} Matching Rule{httpCount !== 1 ? 's' : ''}
+    </ActionButton>;
 
     return <SummaryContainer>
         <PreviewStack>
@@ -124,5 +199,37 @@ export const MultiSelectionSummaryPane = observer((props: {
                 {count} {label}{count !== 1 ? 's' : ''} selected
             </SelectionLabel>
         </PreviewStack>
+
+        <ActionsContainer>
+            <ActionButton
+                title={`(${Ctrl}+P)`}
+                onClick={props.onPin}
+            >
+                <PinIcon pinned={allPinned} fixedWidth />
+                Toggle Pinning
+            </ActionButton>
+            <ActionButton
+                title={`(${Ctrl}+Delete)`}
+                onClick={props.onDelete}
+            >
+                <Icon icon={['far', 'trash-alt']} fixedWidth />
+                Delete {count} {label}{count !== 1 ? 's' : ''}
+            </ActionButton>
+
+            { isPaidUser
+                ? ruleButton
+                : <>
+                    <ProDivider />
+                    <GetProOverlay
+                        getPro={props.accountStore!.getPro}
+                        source='multi-selection-pane'
+                    >
+                        <ProActionsContainer>
+                            {ruleButton}
+                        </ProActionsContainer>
+                    </GetProOverlay>
+                </>
+            }
+        </ActionsContainer>
     </SummaryContainer>;
-});
+}));

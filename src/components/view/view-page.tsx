@@ -400,6 +400,9 @@ class ViewPage extends React.Component<ViewPageProps> {
         if (this.isMultiSelection) {
             rightPane = <MultiSelectionSummaryPane
                 selectedEvents={this.selectedEvents}
+                onPin={this.onPin}
+                onDelete={this.onDeleteSelection}
+                onBuildRule={this.onBuildRuleFromSelectedExchanges}
             />;
         } else if (!this.selectedEvent) {
             if (this.splitDirection === 'vertical') {
