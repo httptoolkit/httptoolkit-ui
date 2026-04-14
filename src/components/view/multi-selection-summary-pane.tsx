@@ -8,7 +8,6 @@ import { AccountStore } from '../../model/account/account-store';
 
 import { Icon } from '../../icons';
 import { Button } from '../common/inputs';
-import { GetProOverlay } from '../account/pro-placeholders';
 
 import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
 
@@ -134,21 +133,6 @@ const PinIcon = styled(Icon).attrs({
     `}
 `;
 
-const ProDivider = styled.hr`
-    width: 100%;
-    margin: 36px 0;
-    border: none;
-    border: solid 1px ${p => p.theme.mainColor};
-`;
-
-const ProActionsContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    width: 100%;
-`;
-
 const PREVIEW_COUNT = 10;
 
 export const MultiSelectionSummaryPane = inject('accountStore')(observer((props: {
@@ -160,11 +144,6 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
 }) => {
     const { selectedEvents } = props;
     const count = selectedEvents.length;
-    const isPaidUser = props.accountStore!.user.isPaidUser();
-
-    const httpCount = selectedEvents.filter(e =>
-        e.isHttp() && !e.isWebSocket()
-    ).length;
 
     const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
     const allPinned = selectedEvents.every(e => e.pinned);
@@ -173,15 +152,6 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
     // selectedEvents is in selection order (most recent last).
     // Reverse so the most recent is the front card (index 0).
     const previewEvents = selectedEvents.slice(-PREVIEW_COUNT).reverse();
-
-    const ruleButton = <ActionButton
-        title={isPaidUser ? `(${Ctrl}+M)` : 'Requires HTTP Toolkit Pro'}
-        disabled={!isPaidUser || httpCount === 0}
-        onClick={props.onBuildRule}
-    >
-        <Icon icon={['fas', 'wrench']} fixedWidth />
-        Create {httpCount} Matching Rule{httpCount !== 1 ? 's' : ''}
-    </ActionButton>;
 
     return <SummaryContainer>
         <PreviewStack>
@@ -215,21 +185,6 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
                 <Icon icon={['far', 'trash-alt']} fixedWidth />
                 Delete {count} {label}{count !== 1 ? 's' : ''}
             </ActionButton>
-
-            { isPaidUser
-                ? ruleButton
-                : <>
-                    <ProDivider />
-                    <GetProOverlay
-                        getPro={props.accountStore!.getPro}
-                        source='multi-selection-pane'
-                    >
-                        <ProActionsContainer>
-                            {ruleButton}
-                        </ProActionsContainer>
-                    </GetProOverlay>
-                </>
-            }
         </ActionsContainer>
     </SummaryContainer>;
 }));
