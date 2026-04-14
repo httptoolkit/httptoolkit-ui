@@ -17,7 +17,7 @@ export const SplitPane = styled(ReactSplitPane)<{
     .Resizer {
         background: #000;
         opacity: .5;
-        z-index: 100;
+        z-index: 25;
         -moz-box-sizing: border-box;
         -webkit-box-sizing: border-box;
         box-sizing: border-box;
