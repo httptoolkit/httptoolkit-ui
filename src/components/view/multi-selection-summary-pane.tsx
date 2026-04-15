@@ -201,7 +201,7 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
             disabled={!isPaidUser || count === 0}
             onClick={async () => {
                 const harContent = JSON.stringify(
-                    await generateHar(selectedEvents)
+                    await generateHar(selectedEvents, { bodySizeLimit: Infinity })
                 );
                 const filename = `HTTPToolkit_${
                     dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
