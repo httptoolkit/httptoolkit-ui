@@ -13,6 +13,7 @@ import { Button } from '../common/inputs';
 import { GetProOverlay } from '../account/pro-placeholders';
 
 import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
+import { uppercaseFirst } from '../../util/text';
 
 const SummaryContainer = styled.div`
     position: relative;
@@ -244,7 +245,7 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
                 onClick={props.onDelete}
             >
                 <Icon icon={['far', 'trash-alt']} fixedWidth />
-                Delete {count} {label}{count !== 1 ? 's' : ''}
+                Delete {count} {uppercaseFirst(label)}{count !== 1 ? 's' : ''}
             </ActionButton>
 
             { isPaidUser
