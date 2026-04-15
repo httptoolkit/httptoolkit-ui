@@ -1,13 +1,16 @@
 import * as React from 'react';
+import * as dateFns from 'date-fns';
 import { inject, observer } from 'mobx-react';
 
 import { css, styled } from '../../styles';
-import { Ctrl } from '../../util/ui';
+import { Ctrl, saveFile } from '../../util/ui';
 import { CollectedEvent } from '../../types';
 import { AccountStore } from '../../model/account/account-store';
+import { generateHar } from '../../model/http/har';
 
 import { Icon } from '../../icons';
 import { Button } from '../common/inputs';
+import { GetProOverlay } from '../account/pro-placeholders';
 
 import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
 
@@ -133,6 +136,29 @@ const PinIcon = styled(Icon).attrs({
     `}
 `;
 
+const ProDivider = styled.hr`
+    width: 100%;
+    margin: 36px 0;
+    border: none;
+    border: solid 1px ${p => p.theme.mainColor};
+`;
+
+const ProActionsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+`;
+
+const ProActionsOverlay = styled(GetProOverlay)`
+    min-height: 0;
+
+    > button {
+        top: 50%;
+    }
+`;
+
 const PREVIEW_COUNT = 10;
 
 export const MultiSelectionSummaryPane = inject('accountStore')(observer((props: {
@@ -144,6 +170,11 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
 }) => {
     const { selectedEvents } = props;
     const count = selectedEvents.length;
+    const isPaidUser = props.accountStore!.user.isPaidUser();
+
+    const httpCount = selectedEvents.filter(e =>
+        e.isHttp() && !e.isWebSocket()
+    ).length;
 
     const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
     const allPinned = selectedEvents.every(e => e.pinned);
@@ -152,6 +183,36 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
     // selectedEvents is in selection order (most recent last).
     // Reverse so the most recent is the front card (index 0).
     const previewEvents = selectedEvents.slice(-PREVIEW_COUNT).reverse();
+
+    const proButtons = <>
+        <ActionButton
+            title={isPaidUser ? `(${Ctrl}+M)` : 'Requires HTTP Toolkit Pro'}
+            disabled={!isPaidUser || httpCount === 0}
+            onClick={props.onBuildRule}
+        >
+            <Icon icon='Pencil' fixedWidth />
+            Create {httpCount} Matching Rule{httpCount !== 1 ? 's' : ''}
+        </ActionButton>
+        <ActionButton
+            title={isPaidUser
+                ? 'Export selected exchanges as a HAR file'
+                : 'With Pro: export as HAR'
+            }
+            disabled={!isPaidUser || count === 0}
+            onClick={async () => {
+                const harContent = JSON.stringify(
+                    await generateHar(selectedEvents)
+                );
+                const filename = `HTTPToolkit_${
+                    dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
+                }.har`;
+                saveFile(filename, 'application/har+json;charset=utf-8', harContent);
+            }}
+        >
+            <Icon icon={['fas', 'save']} fixedWidth />
+            Export as HAR
+        </ActionButton>
+    </>;
 
     return <SummaryContainer>
         <PreviewStack>
@@ -185,6 +246,21 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
                 <Icon icon={['far', 'trash-alt']} fixedWidth />
                 Delete {count} {label}{count !== 1 ? 's' : ''}
             </ActionButton>
+
+            { isPaidUser
+                ? proButtons
+                : <>
+                    <ProDivider />
+                    <ProActionsOverlay
+                        getPro={props.accountStore!.getPro}
+                        source='multi-selection-pane'
+                    >
+                        <ProActionsContainer>
+                            {proButtons}
+                        </ProActionsContainer>
+                    </ProActionsOverlay>
+                </>
+            }
         </ActionsContainer>
     </SummaryContainer>;
 }));
