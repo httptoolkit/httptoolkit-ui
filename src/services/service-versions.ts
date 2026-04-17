@@ -99,7 +99,7 @@ if (DesktopApi.setComponentVersions) {
         const versions: Record<string, string> = {};
         if (desktop) versions["Desktop"] = desktop;
         if (server) versions["Server"] = server;
-        versions["UI"] = UI_VERSION;
+        versions["UI"] = UI_VERSION.slice(0, 8);
         return versions;
     };
 
