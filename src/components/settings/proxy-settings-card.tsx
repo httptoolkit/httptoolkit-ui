@@ -32,7 +32,8 @@ import { IconButton } from '../common/icon-button';
 import {
     SettingsButton,
     SettingsExplanation,
-    SettingsSubheading
+    SettingsSubheading,
+    SettingsSubheadingRow
 } from './settings-components';
 import { StringSettingsList } from './string-settings-list';
 
@@ -89,6 +90,24 @@ const Http2Select = styled(Select)`
     width: auto;
     font-size: ${p => p.theme.textSize};
     padding: 3px;
+`;
+
+const TlsPassthroughModeToggle = styled.button.attrs(() => ({
+    type: 'button' as const
+}))`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+
+    margin-left: auto;
+
+    background: none;
+    border: none;
+    padding: 0;
+    color: ${p => p.theme.mainColor};
+    font-family: ${p => p.theme.fontFamily};
+    font-size: ${p => p.theme.textSize};
 `;
 
 const TlsKeyLogInputContainer = styled.div`
@@ -177,22 +196,45 @@ export class ProxySettingsCard extends React.Component<
         else this.props.proxyStore!.setPortConfig(this.portConfig);
     }
 
+    private get tlsHostnames() {
+        const config = this.props.proxyStore!.tlsInterceptionConfig;
+        return 'tlsPassthrough' in config
+            ? config.tlsPassthrough
+            : config.tlsInterceptOnly;
+    }
+
+    private get tlsMode(): 'passthrough' | 'intercept-only' {
+        return 'tlsInterceptOnly' in this.props.proxyStore!.tlsInterceptionConfig
+            ? 'intercept-only'
+            : 'passthrough';
+    }
+
     @action.bound
     addTlsPassthroughHostname(hostname: string) {
-        const { tlsPassthroughConfig } = this.props.proxyStore!;
-        tlsPassthroughConfig.push({ hostname });
+        this.tlsHostnames.push({ hostname });
     }
 
     @action.bound
     removeTlsPassthroughHostname(hostname: string) {
-        const { tlsPassthroughConfig } = this.props.proxyStore!;
-        const hostnameIndex = _.findIndex(tlsPassthroughConfig, (passthroughItem) =>
-            passthroughItem.hostname === hostname
+        const hostnames = this.tlsHostnames;
+        const hostnameIndex = _.findIndex(hostnames, (item) =>
+            item.hostname === hostname
         );
 
         if (hostnameIndex === -1) return;
 
-        tlsPassthroughConfig.splice(hostnameIndex, 1);
+        hostnames.splice(hostnameIndex, 1);
+    }
+
+    @action.bound
+    toggleTlsMode() {
+        const proxyStore = this.props.proxyStore!;
+        const hostnames = this.tlsHostnames;
+        if (this.tlsMode === 'passthrough') {
+            proxyStore.tlsInterceptionConfig = { tlsInterceptOnly: hostnames };
+        } else {
+            proxyStore.tlsInterceptionConfig = { tlsPassthrough: hostnames };
+        }
     }
 
     @observable
@@ -233,12 +275,15 @@ export class ProxySettingsCard extends React.Component<
             http2Enabled,
             http2CurrentlyEnabled,
 
-            tlsPassthroughConfig,
-            currentTlsPassthroughConfig,
+            tlsInterceptionConfig,
+            currentTlsInterceptionConfig,
 
             keyLogFilePath,
             currentKeyLogFilePath
         } = proxyStore!;
+
+        const tlsMode = this.tlsMode;
+        const tlsHostnames = this.tlsHostnames;
 
         return <CollapsibleCard {...cardProps}>
             <header>
@@ -252,7 +297,7 @@ export class ProxySettingsCard extends React.Component<
                 visible={
                     (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
                     http2Enabled !== http2CurrentlyEnabled ||
-                    !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig) ||
+                    !_.isEqual(tlsInterceptionConfig, currentTlsInterceptionConfig) ||
                     keyLogFilePath !== currentKeyLogFilePath
                 }
             />
@@ -301,36 +346,67 @@ export class ProxySettingsCard extends React.Component<
 
             {
                 versionSatisfies(serverVersion.value, TLS_PASSTHROUGH_SUPPORTED) && <>
-                    <SettingsSubheading>
-                        TLS Passthrough { !_.isEqual(tlsPassthroughConfig, currentTlsPassthroughConfig) &&
+                    <SettingsSubheadingRow>
+                        <SettingsSubheading>TLS Passthrough</SettingsSubheading>
+
+                        { !_.isEqual(tlsInterceptionConfig, currentTlsInterceptionConfig) &&
                             <UnsavedIcon title="Restart app to apply changes" />
                         }
-                    </SettingsSubheading>
+
+                        <TlsPassthroughModeToggle
+                            title={tlsMode === 'passthrough'
+                                ? "Listed hostnames are not intercepted. Click to switch to intercept-only mode."
+                                : "Only listed hostnames are intercepted. Click to switch to passthrough mode."
+                            }
+                            onClick={this.toggleTlsMode}
+                        >
+                            { tlsMode === 'passthrough'
+                                ? 'Exclude hostnames'
+                                : 'Intercept only these hostnames'
+                            }
+                            <Icon icon={['fas',
+                                tlsMode === 'passthrough' ? 'toggle-on' : 'toggle-off'
+                            ]} />
+                        </TlsPassthroughModeToggle>
+                    </SettingsSubheadingRow>
 
                     <StringSettingsList
-                        values={tlsPassthroughConfig.map(c => c.hostname)}
+                        values={tlsHostnames.map(c => c.hostname)}
                         onAdd={this.addTlsPassthroughHostname}
                         onDelete={this.removeTlsPassthroughHostname}
-                        placeholder='A hostname whose TLS connections should not be intercepted'
+                        placeholder={tlsMode === 'intercept-only'
+                            ? 'A hostname whose TLS connections should be intercepted'
+                            : 'A hostname whose TLS connections should not be intercepted'
+                        }
                         validationFn={hostnameValidation}
                     />
 
                     <SettingsExplanation>
-                        Incoming TLS connections to these hostnames will bypass HTTP Toolkit, and will
-                        be forwarded upstream untouched instead of being intercepted. Clients will not see
-                        HTTP Toolkit's certificate, which may solve some connection issues, but traffic
-                        within these TLS connections will not be accessible.
+                        { tlsMode === 'intercept-only'
+                            ? <>
+                                Only TLS connections to these hostnames will be intercepted by HTTP Toolkit.
+                                All other TLS connections will be forwarded upstream without
+                                interception. Non-TLS traffic is always visible regardless of this setting.
+                            </>
+                            : <>
+                                TLS connections to these hostnames will be forwarded upstream untouched, without
+                                interception. This may solve some certificate trust connectivity issues,
+                                but traffic within these TLS connections will not be accessible.
+                            </>
+                        }
                     </SettingsExplanation>
                 </>
             }
 
             {
                 versionSatisfies(serverVersion.value, INITIAL_HTTP2_RANGE) && <>
-                    <SettingsSubheading>
-                        HTTP/2 Support { http2Enabled !== http2CurrentlyEnabled &&
+                    <SettingsSubheadingRow>
+                        <SettingsSubheading>HTTP/2 Support</SettingsSubheading>
+
+                        { http2Enabled !== http2CurrentlyEnabled &&
                             <UnsavedIcon title="Restart app to apply changes" />
                         }
-                    </SettingsSubheading>
+                    </SettingsSubheadingRow>
 
                     <Http2Select
                         value={JSON.stringify(http2Enabled)}
@@ -350,11 +426,13 @@ export class ProxySettingsCard extends React.Component<
 
             {
                 versionSatisfies(serverVersion.value, KEY_LOG_FILE_SUPPORTED) && <>
-                    <SettingsSubheading>
-                        TLS Key Log File { keyLogFilePath !== currentKeyLogFilePath &&
+                    <SettingsSubheadingRow>
+                        <SettingsSubheading>TLS Key Log File</SettingsSubheading>
+
+                        { keyLogFilePath !== currentKeyLogFilePath &&
                             <UnsavedIcon title="Restart app to apply changes" />
                         }
-                    </SettingsSubheading>
+                    </SettingsSubheadingRow>
 
                     <TlsKeyLogInputContainer>
                         { versionSatisfies(desktopVersion.value, DESKTOP_SELECT_SAVE_FILE_SUPPORTED)
