@@ -8,7 +8,6 @@ import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { unreachableCheck, UnreachableCheck } from '../../util/error';
 
 import { AccountStore } from '../account/account-store';
-import { DEFAULT_SELECTED_FORMAT_IDS } from './snippet-formats';
 import { emptyFilterSet, FilterSet } from '../filters/search-filters';
 import { DesktopApi } from '../../services/desktop-api';
 import {
@@ -275,7 +274,10 @@ export class UiStore {
     viewScrollPosition: number | 'end' = 'end';
 
     @observable
-    selectedEventId: string | undefined;
+    selectedEventIds: Set<string> = observable.set<string>();
+
+    @observable
+    activeEventId: string | undefined;
 
     @computed
     get viewCardProps() {
@@ -463,22 +465,34 @@ export class UiStore {
     exportSnippetFormat: string | undefined;
 
     /**
-     * Persisted list of snippet format IDs selected for ZIP export.
-     * Shared between the Export card (single exchange) and the batch toolbar
-     * (multi-select), so the user's choice is consistent everywhere.
-     * Initialized with popular defaults; updated via setZipFormatIds().
+     * Persisted ZIP export format selection. We store a versioned JSON
+     * structure so that future extensions (e.g. per-format options) remain
+     * backward-compatible. The reader filters out unknown format IDs so
+     * that updating to a new HTTPSnippet version does not corrupt the store.
      */
-    @persist('list') @observable
-    _zipFormatIds: string[] = [...DEFAULT_SELECTED_FORMAT_IDS];
+    @persist @observable
+    private _zipExportSelection: string | undefined;
 
     @computed
-    get zipFormatIds(): ReadonlySet<string> {
-        return new Set(this._zipFormatIds);
+    get zipExportSelectedFormatIds(): string[] | undefined {
+        if (!this._zipExportSelection) return undefined;
+        try {
+            const parsed = JSON.parse(this._zipExportSelection);
+            if (parsed && parsed.version === 1 && Array.isArray(parsed.ids)) {
+                return parsed.ids.filter((x: unknown) => typeof x === 'string');
+            }
+        } catch {
+            /* corrupt value, ignore */
+        }
+        return undefined;
     }
 
     @action.bound
-    setZipFormatIds(ids: ReadonlySet<string> | string[]) {
-        this._zipFormatIds = Array.isArray(ids) ? [...ids] : [...ids];
+    setZipExportSelectedFormatIds(ids: string[]) {
+        this._zipExportSelection = JSON.stringify({
+            version: 1,
+            ids: ids.filter(x => typeof x === 'string')
+        });
     }
 
     // Actions for persisting view state when switching tabs
@@ -487,9 +501,43 @@ export class UiStore {
         this.viewScrollPosition = position;
     }
 
+    // The various ways to (de)select one or more events:
+
     @action.bound
-    setSelectedEventId(eventId: string | undefined) {
-        this.selectedEventId = eventId;
+    selectSingleEvent(eventId: string | undefined) {
+        this.selectedEventIds.clear();
+        if (eventId) {
+            this.selectedEventIds.add(eventId);
+            this.activeEventId = eventId;
+        } else {
+            this.activeEventId = undefined;
+        }
+    }
+
+    @action.bound
+    toggleEventSelection(eventId: string) {
+        if (this.selectedEventIds.has(eventId)) {
+            this.selectedEventIds.delete(eventId);
+        } else {
+            this.selectedEventIds.add(eventId);
+        }
+        this.activeEventId = eventId;
+    }
+
+    @action.bound
+    setSelectedEvents(eventIds: string[]) {
+        this.selectedEventIds.clear();
+        for (const id of eventIds) {
+            this.selectedEventIds.add(id);
+        }
+        // Doesn't update activeEventId - this may also need
+        // changing, but depends on context.
+    }
+
+    @action.bound
+    clearSelection() {
+        this.selectedEventIds.clear();
+        this.activeEventId = undefined;
     }
 
     /**
@@ -550,3 +598,4 @@ export class UiStore {
     }
 
 }
+                                  

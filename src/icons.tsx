@@ -24,7 +24,8 @@ import {
     Moon,
     CircleHalf,
     Swatches,
-    Repeat
+    Repeat,
+    ListChecks
 } from '@phosphor-icons/react';
 
 export type IconKey = keyof typeof Icons;
@@ -57,7 +58,8 @@ const Icons = {
     Moon,
     CircleHalf,
     Swatches,
-    Repeat
+    Repeat,
+    ListChecks
 } as const;
 
 // Import required FA icons:
@@ -125,6 +127,7 @@ import { faClone } from '@fortawesome/free-regular-svg-icons/faClone';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import { faLevelDownAlt } from '@fortawesome/free-solid-svg-icons/faLevelDownAlt';
 import { faPaperPlane } from '@fortawesome/free-regular-svg-icons/faPaperPlane';
+import { faFileArchive } from '@fortawesome/free-solid-svg-icons/faFileArchive';
 
 import { faChrome } from '@fortawesome/free-brands-svg-icons/faChrome';
 import { faFirefox } from '@fortawesome/free-brands-svg-icons/faFirefox';
@@ -204,6 +207,7 @@ library.add(
     faCheck,
     faLevelDownAlt,
     faPaperPlane,
+    faFileArchive,
 
     faChrome,
     faFirefox,
