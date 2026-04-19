@@ -115,6 +115,7 @@ const OverlayGetProButton = styled(GetProButton)`
 
 @observer
 export class GetProOverlay extends React.Component<{
+    className?: string,
     getPro: (source: string) => void,
     source: string,
     children: React.ReactNode
@@ -122,7 +123,7 @@ export class GetProOverlay extends React.Component<{
     private buttonRef = React.createRef<HTMLButtonElement>();
 
     render() {
-        return <OverlayContainer>
+        return <OverlayContainer className={this.props.className}>
             <OverlayGetProButton
                 ref={this.buttonRef}
                 onClick={() => this.props.getPro(this.props.source)}

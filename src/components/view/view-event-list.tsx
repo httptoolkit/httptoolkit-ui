@@ -1,42 +1,32 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { inject, observer, Observer } from 'mobx-react';
-import { action } from 'mobx';
+import { observer, Observer } from 'mobx-react';
+import { action, computed } from 'mobx';
 
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import { FixedSizeList as List } from 'react-window';
 
 import { styled } from '../../styles'
-import { ArrowIcon, Icon, PhosphorIcon, WarningIcon } from '../../icons';
 
-import {
-    CollectedEvent,
-    HttpExchange,
-    RTCStream,
-    FailedTlsConnection,
-    RTCConnection,
-    TlsTunnel,
-    RawTunnel
-} from '../../types';
+import { CollectedEvent } from '../../types';
 import { UiStore } from '../../model/ui/ui-store';
-import { areStepsModifying } from '../../model/rules/rules';
-
-import {
-    getSummaryColor,
-    EventCategory,
-    describeEventCategory
-} from '../../model/events/categorization';
-import { nameStepClass } from '../../model/rules/rule-descriptions';
-import { getReadableSize } from '../../util/buffer';
-
-import { UnreachableCheck } from '../../util/error';
-import { filterProps } from '../component-utils';
+import { isCmdCtrlPressed } from '../../util/ui';
 
 import { EmptyState } from '../common/empty-state';
-import { StatusCode } from '../common/status-code';
 
 import { HEADER_FOOTER_HEIGHT } from './view-event-list-footer';
 import { ViewEventContextMenuBuilder } from './view-context-menu-builder';
+
+import {
+    TableHeaderRow,
+    MarkerHeader,
+    Method,
+    Status,
+    Source,
+    Host,
+    PathAndQuery
+} from './event-rows/event-row-components';
+import { EventRow, EventRowProps } from './event-rows/event-row';
 
 const SCROLL_BOTTOM_MARGIN = 5; // If you're in the last 5 pixels of the scroll area, we say you're at the bottom
 
@@ -53,14 +43,24 @@ interface ViewEventListProps {
     className?: string;
     events: ReadonlyArray<CollectedEvent>;
     filteredEvents: ReadonlyArray<CollectedEvent>;
-    selectedEvent: CollectedEvent | undefined;
+
+    // All selected events, if any
+    selectedEventIds: ReadonlySet<string>;
+
+    // The focused event - usually but not always one of the selected
+    activeEventId: string | undefined;
+
     isPaused: boolean;
 
     contextMenuBuilder: ViewEventContextMenuBuilder;
     uiStore: UiStore;
 
-    moveSelection: (distance: number) => void;
+    moveSelection: (distance: number, extend?: boolean) => void;
     onSelected: (event: CollectedEvent | undefined) => void;
+    onToggleSelected: (event: CollectedEvent) => void;
+    onRangeSelected: (event: CollectedEvent) => void;
+    onSelectAll: () => void;
+    onClearSelection: () => void;
 }
 
 const ListContainer = styled.div<{ role: 'grid' }>`
@@ -83,736 +83,29 @@ const ListContainer = styled.div<{ role: 'grid' }>`
         pointer-events: none;
     }
 
-    /* Disable default outline */ 
+    /* Disable default outline */
     & > div > div[tabindex="0"]:focus {
         outline: none;
     }
 
-    /* When focus-visible (keyboard interaction) and no focus is shown on a
-       row within (activedescendant) - show focus on the list instead */
-    & > div > div[tabindex="0"]:focus-visible:not([aria-activedescendant]) {
+    /* When focused via keyboard and no active row is visible, outline the list */
+    & > div > div[tabindex="0"]:focus-visible:not(:has(.active)) {
         outline: thin dotted ${p => p.theme.popColor};
     }
 
-    /* When the list is focused, highlight the active row */
-    & > div > div[tabindex="0"]:focus [aria-selected="true"] {
+    /* When the list is focused, outline the active row */
+    & > div > div[tabindex="0"]:focus .active {
         outline: thin dotted ${p => p.theme.popColor};
     }
 `;
-
-const Column = styled.div<{ role: 'gridcell' | 'columnheader' }>`
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 3px 0;
-`;
-
-const RowPin = styled(
-    filterProps(Icon, 'pinned')
-).attrs((p: { pinned: boolean }) => ({
-    icon: ['fas', 'thumbtack'],
-    title: p.pinned ? "This exchange is pinned, and won't be deleted by default" : ''
-}))`
-    font-size: 90%;
-    box-sizing: content-box;
-    background-color: ${p => p.theme.containerBackground};
-
-    /* Without this, 0 width pins create a large & invisible but still clickable icon */
-    overflow: hidden;
-
-    transition: width 0.1s, padding 0.1s, margin 0.1s;
-
-    ${(p: { pinned: boolean }) =>
-        p.pinned
-        ? `
-            width: auto;
-            padding: 8px 7px;
-            && { margin-right: -3px; }
-        `
-        : `
-            padding: 8px 0;
-            width: 0 !important;
-            margin: 0 !important;
-
-            > path {
-                display: none;
-            }
-        `
-    }
-`;
-
-const RowMarker = styled(Column)`
-    transition: color 0.2s;
-    color: ${(p: { category: EventCategory }) => getSummaryColor(p.category)};
-
-    background-color: currentColor;
-
-    flex-basis: 5px;
-    flex-shrink: 0;
-    flex-grow: 0;
-    height: 100%;
-    padding: 0;
-
-    border-left: 5px solid ${p => p.theme.containerBackground};
-    box-sizing: content-box;
-`;
-
-const MarkerHeader = styled.div<{ role: 'columnheader' }>`
-    flex-basis: 10px;
-    flex-shrink: 0;
-`;
-
-const Method = styled(Column)`
-    transition: flex-basis 0.1s;
-    ${(p: { pinned?: boolean }) =>
-        p.pinned
-        ? 'flex-basis: 50px;'
-        : 'flex-basis: 71px;'
-    }
-
-    flex-shrink: 0;
-    flex-grow: 0;
-`;
-
-const Status = styled(Column)`
-    flex-basis: 45px;
-    flex-shrink: 0;
-    flex-grow: 0;
-`;
-
-const Source = styled(Column)`
-    flex-basis: 49px;
-    flex-shrink: 0;
-    flex-grow: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-`;
-
-const Host = styled(Column)`
-    flex-shrink: 1;
-    flex-grow: 0;
-    flex-basis: 500px;
-`;
-
-const PathAndQuery = styled(Column)`
-    flex-shrink: 1;
-    flex-grow: 0;
-    flex-basis: 1000px;
-`;
-
-// Match Method + Status, but shrink right margin slightly so that
-// spinner + "WebRTC Media" fits OK.
-const EventTypeColumn = styled(Column)`
-    transition: flex-basis 0.1s;
-    ${(p: { pinned?: boolean }) =>
-        p.pinned
-        ? 'flex-basis: 109px;'
-        : 'flex-basis: 130px;'
-    }
-
-    margin-right: 6px !important;
-
-    flex-shrink: 0;
-    flex-grow: 0;
-`;
-
-// Match Host column:
-const RTCEventLabel = styled(Column)`
-    flex-shrink: 1;
-    flex-grow: 0;
-    flex-basis: 500px;
-
-    > svg {
-        padding-right: 0; /* Right, not left - it's rotated */
-    }
-`;
-
-// Match PathAndQuery column:
-const RTCEventDetails = styled(Column)`
-    flex-shrink: 1;
-    flex-grow: 0;
-    flex-basis: 1000px;
-`;
-
-const RTCConnectionDetails = styled(RTCEventDetails)`
-    text-align: center;
-`;
-
-// Host + Path + Query columns:
-const BuiltInApiRequestDetails = styled(Column)`
-    flex-shrink: 1;
-    flex-grow: 0;
-    flex-basis: 1000px;
-`;
-
-const EventListRow = styled.div<{ role: 'row' }>`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-
-    user-select: none;
-    cursor: pointer;
-
-    &.selected {
-        background-color: ${p => p.theme.highlightBackground};
-        font-weight: bold;
-
-        color: ${p => p.theme.highlightColor};
-        fill: ${p => p.theme.highlightColor};
-        * {
-            /* Override status etc colours to ensure contrast & give row max visibility */
-            color: ${p => p.theme.highlightColor};
-            fill: ${p => p.theme.highlightColor};
-        }
-    }
-`;
-
-const TrafficEventListRow = styled(EventListRow)`
-    background-color: ${props => props.theme.mainBackground};
-
-    border-width: 2px 0;
-    border-style: solid;
-    border-color: transparent;
-    background-clip: padding-box;
-    box-sizing: border-box;
-
-    &:hover ${RowMarker}, &.selected ${RowMarker} {
-        border-color: currentColor;
-    }
-
-    > * {
-        margin-right: 10px;
-    }
-`;
-
-const TlsListRow = styled(EventListRow)`
-    height: 28px !important; /* Important required to override react-window's style attr */
-    margin: 2px 0;
-
-    font-style: italic;
-    justify-content: center;
-    text-align: center;
-
-    opacity: 0.7;
-
-    &:hover {
-        opacity: 1;
-    }
-
-    &.selected {
-        opacity: 1;
-        color: ${p => p.theme.mainColor};
-        background-color: ${p => p.theme.mainBackground};
-    }
-`;
-
-export const TableHeaderRow = styled.div<{ role: 'row' }>`
-    height: 38px;
-    overflow: hidden;
-    width: 100%;
-
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-
-    background-color: ${props => props.theme.mainBackground};
-    color: ${props => props.theme.mainColor};
-    font-weight: bold;
-
-    border-bottom: 1px solid ${props => props.theme.containerBorder};
-    box-shadow: 0 0 30px rgba(0,0,0,0.2);
-
-    padding-right: 18px;
-    box-sizing: border-box;
-
-    > div[role=columnheader] {
-        padding: 5px 0;
-        margin-right: 10px;
-        min-width: 0px;
-
-        &:first-of-type {
-            margin-left: 0;
-        }
-    }
-`;
-
-interface EventRowProps extends ListChildComponentProps {
-    data: {
-        selectedEvent: CollectedEvent | undefined;
-        events: ReadonlyArray<CollectedEvent>;
-        contextMenuBuilder: ViewEventContextMenuBuilder;
-    }
-}
-
-const EventRow = observer((props: EventRowProps) => {
-    const { index, style } = props;
-    const { events, selectedEvent, contextMenuBuilder } = props.data;
-    const event = events[index];
-
-    const isSelected = (selectedEvent === event);
-
-    if (event.isTlsFailure() || event.isTlsTunnel()) {
-        return <TlsRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            tlsEvent={event}
-        />;
-    } else if (event.isHttp()) {
-        if (event.apiSpec?.isBuiltInApi && event.api?.matchedOperation()) {
-            return <BuiltInApiRow
-                index={index}
-                isSelected={isSelected}
-                style={style}
-                exchange={event}
-                contextMenuBuilder={contextMenuBuilder}
-            />
-        } else {
-            return <ExchangeRow
-                index={index}
-                isSelected={isSelected}
-                style={style}
-                exchange={event}
-                contextMenuBuilder={contextMenuBuilder}
-            />;
-        }
-    } else if (event.isRTCConnection()) {
-        return <RTCConnectionRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            event={event}
-        />;
-    } else if (event.isRTCDataChannel() || event.isRTCMediaTrack()) {
-        return <RTCStreamRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            event={event}
-        />;
-    } else if (event.isRawTunnel()) {
-        return <RawTunnelRow
-            index={index}
-            isSelected={isSelected}
-            style={style}
-            event={event}
-        />;
-    } else {
-        throw new UnreachableCheck(event);
-    }
-});
-
-const ExchangeRow = inject('uiStore')(observer(({
-    index,
-    isSelected,
-    style,
-    exchange,
-    contextMenuBuilder
-}: {
-    index: number,
-    isSelected: boolean,
-    style: {},
-    exchange: HttpExchange,
-    contextMenuBuilder: ViewEventContextMenuBuilder
-}) => {
-    const {
-        request,
-        response,
-        pinned,
-        category
-    } = exchange;
-
-    return <TrafficEventListRow
-        role="row"
-        aria-label={
-            `${_.startCase(exchange.category)} ${
-                request.method
-            } request ${
-                response === 'aborted' || exchange.isWebSocket()
-                    ? '' // Stated by the category already
-                : exchange.downstream.isBreakpointed
-                    ? 'waiting at a breakpoint'
-                : !response
-                    ? 'waiting for a response'
-                // Actual response:
-                    : `with a ${response.statusCode} response`
-            } sent to ${
-                // We include host+path but not protocol or search here, to keep this short
-                request.parsedUrl.host + request.parsedUrl.pathname
-            } by ${
-                request.source.summary
-            }`
-        }
-        aria-rowindex={index + 1}
-        id={`event-row-${exchange.id}`}
-        data-event-id={exchange.id}
-        aria-selected={isSelected}
-        onContextMenu={contextMenuBuilder.getContextMenuCallback(exchange)}
-        className={isSelected ? 'selected' : ''}
-        style={style}
-    >
-        <RowPin aria-label={pinned ? 'Pinned' : undefined} pinned={pinned}/>
-        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
-        <Method role='gridcell' pinned={pinned}>{ request.method }</Method>
-        <Status role='gridcell'>
-            {
-                response === 'aborted'
-                    ? <StatusCode status={'aborted'} />
-                : exchange.downstream.isBreakpointed
-                    ? <WarningIcon title='Breakpointed, waiting to be resumed' />
-                : exchange.isWebSocket() && response?.statusCode === 101
-                    ? <StatusCode // Special UI for accepted WebSockets
-                        status={exchange.closeState
-                            ? 'WS:closed'
-                            : 'WS:open'
-                        }
-                        message={`${exchange.closeState
-                            ? 'A closed'
-                            : 'An open'
-                        } WebSocket connection`}
-                    />
-                : <StatusCode
-                    status={response?.statusCode}
-                    message={response?.statusMessage}
-                />
-            }
-        </Status>
-        <Source role='gridcell'>
-            <Icon
-                title={request.source.summary}
-                {...request.source.icon}
-                fixedWidth={true}
-            />
-            {
-                exchange.matchedRule &&
-                areStepsModifying(exchange.matchedRule.stepTypes) &&
-                <PhosphorIcon
-                    icon='Pencil'
-                    alt={`Handled by ${
-                        exchange.matchedRule.stepTypes.length === 1
-                        ? nameStepClass(exchange.matchedRule.stepTypes[0])
-                        : 'multi-step'
-                    } rule`}
-                    size='20px'
-                    color={getSummaryColor('mutative')}
-                />
-            }
-        </Source>
-        <Host role='gridcell' title={ request.parsedUrl.host }>
-            { request.parsedUrl.host }
-        </Host>
-        <PathAndQuery role='gridcell' title={ request.parsedUrl.pathname + request.parsedUrl.search }>
-            { request.parsedUrl.pathname + request.parsedUrl.search }
-        </PathAndQuery>
-    </TrafficEventListRow>;
-}));
-
-const ConnectedSpinnerIcon = styled(Icon).attrs(() => ({
-    icon: ['fas', 'spinner'],
-    spin: true,
-    title: 'Connected'
-}))`
-    margin: 0 5px 0 0;
-    box-sizing: content-box;
-`;
-
-const RTCConnectionRow = observer(({
-    index,
-    isSelected,
-    style,
-    event
-}: {
-    index: number,
-    isSelected: boolean,
-    style: {},
-    event: RTCConnection
-}) => {
-    const { category, pinned } = event;
-
-    return <TrafficEventListRow
-        role="row"
-        aria-label={
-            `${
-                event.closeState ? 'Closed' : 'Open'
-            } RTC connection from ${
-                event.clientURL
-            } to ${
-                event.remoteURL ?? 'an unknown peer'
-            } opened by ${
-                event.source.summary
-            }`
-        }
-        aria-rowindex={index + 1}
-        id={`event-row-${event.id}`}
-        data-event-id={event.id}
-        aria-selected={isSelected}
-
-        className={isSelected ? 'selected' : ''}
-        style={style}
-    >
-        <RowPin pinned={pinned}/>
-        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn role='gridcell'>
-            { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC
-        </EventTypeColumn>
-        <Source role='gridcell' title={event.source.summary}>
-            <Icon
-                {...event.source.icon}
-                fixedWidth={true}
-            />
-        </Source>
-        <RTCConnectionDetails role='gridcell'>
-            {
-                event.clientURL
-            } <ArrowIcon direction='right' /> {
-                event.remoteURL || '?'
-            }
-        </RTCConnectionDetails>
-    </TrafficEventListRow>;
-});
-
-const RTCStreamRow = observer(({
-    index,
-    isSelected,
-    style,
-    event
-}: {
-    index: number,
-    isSelected: boolean,
-    style: {},
-    event: RTCStream
-}) => {
-    const { category, pinned } = event;
-
-    return <TrafficEventListRow
-        role="row"
-        aria-label={
-            `${
-                event.closeState ? 'Closed' : 'Open'
-            } RTC ${
-                event.isRTCDataChannel() ? 'data' : 'media'
-            } stream to ${
-                event.rtcConnection.remoteURL
-            } opened by ${
-                event.rtcConnection.source.summary
-            } ${
-                event.isRTCDataChannel()
-                ? `called ${
-                        event.label
-                    }${
-                        event.protocol ? ` (${event.protocol})` : ''
-                    } with ${event.messages.length} message${
-                        event.messages.length !== 1 ? 's' : ''
-                    }`
-                : `for ${event.direction} ${event.type} with ${
-                        getReadableSize(event.totalBytesSent)
-                    } sent and ${
-                        getReadableSize(event.totalBytesReceived)
-                    } received`
-            }`
-        }
-        aria-rowindex={index + 1}
-        id={`event-row-${event.id}`}
-        data-event-id={event.id}
-        aria-selected={isSelected}
-
-        className={isSelected ? 'selected' : ''}
-        style={style}
-    >
-        <RowPin pinned={pinned}/>
-        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn role='gridcell'>
-            { !event.closeState && <ConnectedSpinnerIcon /> } WebRTC {
-                event.isRTCDataChannel()
-                    ? 'Data'
-                : // RTCMediaTrack:
-                    'Media'
-            }
-        </EventTypeColumn>
-        <Source role='gridcell' title={event.rtcConnection.source.summary}>
-            <Icon
-                {...event.rtcConnection.source.icon}
-                fixedWidth={true}
-            />
-        </Source>
-        <RTCEventLabel role='gridcell'>
-            <ArrowIcon direction='right' /> { event.rtcConnection.remoteURL }
-        </RTCEventLabel>
-        <RTCEventDetails role='gridcell'>
-            {
-                event.isRTCDataChannel()
-                    ? <>
-                        { event.label } <em>
-                            ({event.protocol ? `${event.protocol} - ` : ''}
-                            { event.messages.length } message{
-                                event.messages.length !== 1 ? 's' : ''
-                            })
-                        </em>
-                    </>
-                // Media track:
-                    : <>
-                        { event.direction } { event.type } <em>{
-                            getReadableSize(event.totalBytesSent)
-                        } sent, {
-                            getReadableSize(event.totalBytesReceived)
-                        } received</em>
-                    </>
-            }
-        </RTCEventDetails>
-    </TrafficEventListRow>;
-});
-
-const BuiltInApiRow = observer((p: {
-    index: number,
-    exchange: HttpExchange,
-    isSelected: boolean,
-    style: {},
-    contextMenuBuilder: ViewEventContextMenuBuilder
-}) => {
-    const {
-        request,
-        pinned,
-        category
-    } = p.exchange;
-    const api = p.exchange.api!; // Only shown for built-in APIs, so this must be set
-
-    const apiOperationName =  _.startCase(
-        api.operation.name
-        .replace('eth_', '') // One-off hack for Ethereum, but result looks much nicer.
-    );
-
-    const apiRequestDescription = api.request.parameters
-        .filter(param => param.value !== undefined)
-        .map(param => `${param.name}=${JSON.stringify(param.value)}`)
-        .join(', ');
-
-    return <TrafficEventListRow
-        role="row"
-        aria-label={
-            `${_.startCase(category)} ${
-                api.service.shortName
-            } ${
-                apiOperationName
-            }${
-                apiRequestDescription
-                ? ` with ${apiRequestDescription}`
-                : ''
-            } sent by ${
-                request.source.summary
-            }`
-        }
-        aria-rowindex={p.index + 1}
-        id={`event-row-${p.exchange.id}`}
-        data-event-id={p.exchange.id}
-        aria-selected={p.isSelected}
-
-        onContextMenu={p.contextMenuBuilder.getContextMenuCallback(p.exchange)}
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
-    >
-        <RowPin pinned={pinned}/>
-        <RowMarker role='gridcell' category={category} title={describeEventCategory(category)} />
-        <EventTypeColumn role='gridcell'>
-            { api.service.shortName }: { apiOperationName }
-        </EventTypeColumn>
-        <Source role='gridcell' title={request.source.summary}>
-            <Icon
-                {...request.source.icon}
-                fixedWidth={true}
-            />
-        </Source>
-        <BuiltInApiRequestDetails role='gridcell'>
-            { apiRequestDescription }
-        </BuiltInApiRequestDetails>
-    </TrafficEventListRow>
-});
-
-const RawTunnelRow = observer((p: {
-    index: number,
-    event: RawTunnel,
-    isSelected: boolean,
-    style: {}
-}) => {
-    const { event } = p;
-
-    const connectionTarget = event.upstreamHostname
-        ? `${event.upstreamHostname}:${event.upstreamPort}`
-        : 'unknown destination';
-
-    return <TlsListRow
-        role="row"
-        aria-label={`Non-HTTP connection to ${connectionTarget}`}
-        aria-rowindex={p.index + 1}
-        id={`event-row-${event.id}`}
-        data-event-id={event.id}
-        aria-selected={p.isSelected}
-
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
-    >
-        {
-            event.isOpen() &&
-                <ConnectedSpinnerIcon />
-        } Non-HTTP connection to { connectionTarget }
-    </TlsListRow>
-});
-
-const TlsRow = observer((p: {
-    index: number,
-    tlsEvent: FailedTlsConnection | TlsTunnel,
-    isSelected: boolean,
-    style: {}
-}) => {
-    const { tlsEvent } = p;
-
-    const description = tlsEvent.isTlsTunnel()
-        ? 'Tunnelled TLS '
-        : ({
-            'closed': 'Aborted ',
-            'reset': 'Aborted ',
-            'unknown': 'Aborted ',
-            'cert-rejected': 'Certificate rejected for ',
-            'no-shared-cipher': 'HTTPS setup failed for ',
-        } as _.Dictionary<string>)[tlsEvent.failureCause];
-
-    const connectionTarget = tlsEvent.upstreamHostname || 'unknown domain';
-
-    return <TlsListRow
-        role="row"
-        aria-label={`${description} connection to ${connectionTarget}`}
-        aria-rowindex={p.index + 1}
-        id={`event-row-${tlsEvent.id}`}
-        data-event-id={tlsEvent.id}
-        aria-selected={p.isSelected}
-
-        className={p.isSelected ? 'selected' : ''}
-        style={p.style}
-    >
-        {
-            tlsEvent.isTlsTunnel() &&
-            tlsEvent.isOpen() &&
-                <ConnectedSpinnerIcon />
-        } {
-            description
-        } connection to { connectionTarget }
-    </TlsListRow>
-});
 
 @observer
 export class ViewEventList extends React.Component<ViewEventListProps> {
 
-    get selectedEventId() {
-        return this.props.selectedEvent
-            ? this.props.selectedEvent.id
-            : undefined;
-    }
-
-    get listItemData(): EventRowProps['data'] {
+    @computed get listItemData(): EventRowProps['data'] {
         return {
-            selectedEvent: this.props.selectedEvent,
+            selectedEventIds: this.props.selectedEventIds,
+            activeEventId: this.props.activeEventId,
             events: this.props.filteredEvents,
             contextMenuBuilder: this.props.contextMenuBuilder
         };
@@ -833,7 +126,7 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
     };
 
     private get activeRowDomId(): string | undefined {
-        const id = this.selectedEventId;
+        const id = this.props.activeEventId;
         if (!id) return undefined;
 
         const listBody = this.listBodyRef.current;
@@ -919,9 +212,12 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     focusList() {
         this.focusListWindow();
-        const { selectedEvent } = this.props;
-        if (selectedEvent) {
-            this.scrollToEvent(selectedEvent);
+        const { activeEventId } = this.props;
+        if (activeEventId) {
+            const activeEvent = this.props.filteredEvents.find(e => e.id === activeEventId);
+            if (activeEvent) {
+                this.scrollToEvent(activeEvent);
+            }
         }
     }
 
@@ -953,11 +249,18 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
     private hasRestoredScrollState = false;
 
+    private lastEventCount = 0;
+
     componentDidUpdate() {
-        // If we previously were scrolled to the bottom of the list, but now we're not,
-        // scroll there again ourselves now.
-        if (this.wasListAtBottom && !this.isListAtBottom()) {
-            this.listRef.current?.scrollToItem(this.props.events.length - 1);
+        const eventCount = this.props.events.length;
+        const eventsAdded = eventCount > this.lastEventCount;
+        this.lastEventCount = eventCount;
+
+        // If new events arrived while we were at the bottom, stay at the bottom.
+        // Only check when events were actually added — not on selection changes,
+        // which would fight with moveSelection's scroll.
+        if (eventsAdded && this.wasListAtBottom && !this.isListAtBottom()) {
+            this.listRef.current?.scrollToItem(eventCount - 1);
         }
     }
 
@@ -1028,46 +331,61 @@ export class ViewEventList extends React.Component<ViewEventListProps> {
 
         const eventIndex = parseInt(ariaRowIndex, 10) - 1;
         const event = this.props.filteredEvents[eventIndex];
-        if (event !== this.props.selectedEvent) {
-            this.onEventSelected(eventIndex);
+        if (!event) return;
+
+        if (mouseEvent.shiftKey) {
+            // Shift+Click: range select from anchor to clicked row
+            mouseEvent.preventDefault(); // Prevent text selection
+            this.props.onRangeSelected(event);
+        } else if (isCmdCtrlPressed(mouseEvent)) {
+            // Ctrl/Cmd+Click: toggle individual row
+            this.props.onToggleSelected(event);
         } else {
-            // Clicking the selected row deselects it
-            this.onEventDeselected();
+            // Plain click: single select, or deselect if it's the only selected item
+            if (
+                this.props.selectedEventIds.size === 1 &&
+                this.props.selectedEventIds.has(event.id)
+            ) {
+                this.props.onClearSelection();
+            } else {
+                this.props.onSelected(event);
+            }
         }
-    }
-
-    @action.bound
-    onEventSelected(index: number) {
-        this.props.onSelected(this.props.filteredEvents[index]);
-    }
-
-    @action.bound
-    onEventDeselected() {
-        this.props.onSelected(undefined);
     }
 
     @action.bound
     onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
         const { moveSelection } = this.props;
+        const isShift = event.shiftKey;
 
         switch (event.key) {
             case 'ArrowDown':
-                moveSelection(1);
+                moveSelection(1, isShift);
                 break;
             case 'ArrowUp':
-                moveSelection(-1);
+                moveSelection(-1, isShift);
                 break;
             case 'PageUp':
-                moveSelection(-10);
+                moveSelection(-10, isShift);
                 break;
             case 'PageDown':
-                moveSelection(10);
+                moveSelection(10, isShift);
                 break;
             case 'Home':
-                moveSelection(-Infinity);
+                moveSelection(-Infinity, isShift);
                 break;
             case 'End':
-                moveSelection(Infinity);
+                moveSelection(Infinity, isShift);
+                break;
+            case 'Escape':
+                this.props.onClearSelection();
+                break;
+            case 'a':
+                if (isCmdCtrlPressed(event)) {
+                    this.props.onSelectAll();
+                } else {
+                    return;
+                }
                 break;
             default:
                 return;

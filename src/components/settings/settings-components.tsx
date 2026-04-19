@@ -25,7 +25,22 @@ export const SettingsExplanation = styled.p`
 `;
 
 export const SettingsSubheading = styled(ContentLabel)`
+    &:not(header + &):not(:first-child) {
+        margin-top: 40px;
+    }
+`;
+
+// Subheaders can be wrapped with this if there are other controls
+export const SettingsSubheadingRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: start;
+
     &:not(header + &) {
         margin-top: 40px;
+    }
+
+    ${SettingsSubheading} {
+        margin-top: 0;
     }
 `;

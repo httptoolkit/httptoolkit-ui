@@ -10,7 +10,7 @@ export const ModalOverlay = styled.div<{ opacity?: number }>`
 
     background: ${p => p.theme.modalGradient};
 
-    z-index: 10;
+    z-index: 90;
     opacity: ${p => p.opacity || 0.9};
 `;
 

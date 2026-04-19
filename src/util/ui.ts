@@ -32,7 +32,7 @@ export const AriaCtrlCmd = isMac
     ? 'meta'
     : 'control';
 
-export function isCmdCtrlPressed(event: React.KeyboardEvent<unknown>) {
+export function isCmdCtrlPressed(event: { metaKey: boolean, ctrlKey: boolean }) {
     return isMac
         ? event.metaKey
         : event.ctrlKey;

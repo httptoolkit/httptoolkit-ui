@@ -6,7 +6,15 @@ import {
 } from 'serializr'
 
 function _walk(v: any) {
-    if (typeof v === 'object' && v) Object.keys(v).map(k => _walk(v[k]))
+    if (typeof v === 'object' && v) {
+        if (Array.isArray(v)) {
+            // Make sure we read .length as well as values to observe
+            // the array even if it's empty.
+            for (let i = 0; i < v.length; i++) _walk(v[i]);
+        } else {
+            Object.keys(v).map(k => _walk(v[k]));
+        }
+    }
     return v
 }
 

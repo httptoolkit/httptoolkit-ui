@@ -27,8 +27,8 @@ export class TlsTunnelDetailsPane extends React.Component<{
                 <ContentLabelBlock>Details</ContentLabelBlock>
                 <Content>
                     <p>
-                        This TLS connection was not intercepted by HTTP Toolkit, as it matched
-                        a hostname that is configured for TLS passthrough in your settings.
+                        This TLS connection was not intercepted by HTTP Toolkit, as it is excluded
+                        from interception by the TLS passthrough configuration in your settings.
                     </p>
                 </Content>
                 <Content>
