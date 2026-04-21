@@ -14,7 +14,7 @@ describe('Event operations', () => {
         events = [];
         registry = new OperationRegistry(() => true);
         const mockEventsStore = { clearInterceptedData: () => {} } as any;
-        registerEventOperations(registry, mockEventsStore, () => events);
+        registerEventOperations(registry, mockEventsStore, () => events, () => true);
     });
 
     describe('events.list', () => {

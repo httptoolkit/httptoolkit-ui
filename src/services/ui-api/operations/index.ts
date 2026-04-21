@@ -19,7 +19,8 @@ export function registerAllOperations(
     },
     getEvents: () => ReadonlyArray<CollectedEvent>
 ): void {
-    registerEventOperations(registry, stores.eventsStore, getEvents);
+    const isPaidUser = () => stores.accountStore.user.isPaidUser();
+    registerEventOperations(registry, stores.eventsStore, getEvents, isPaidUser);
     registerProxyOperations(registry, stores.proxyStore);
     registerInterceptorOperations(registry, stores.interceptorStore);
     registerAccountOperations(registry, stores.accountStore);

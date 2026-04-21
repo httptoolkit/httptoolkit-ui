@@ -74,9 +74,29 @@ describe('OperationRegistry', () => {
             expect(defs[0].description).to.include('Limited to 10 calls per session');
         });
 
-        it('should not augment descriptions for free users when there is no session limit', () => {
+        it('should not augment descriptions for free users when there is no session limit or note', () => {
             const registry = new OperationRegistry(() => false);
             registry.register(makeOperation('test.op'));
+
+            const defs = registry.getDefinitions();
+            expect(defs[0].description).to.equal('Test operation test.op');
+        });
+
+        it('should append freeTierNote to descriptions for free users', () => {
+            const registry = new OperationRegistry(() => false);
+            registry.register(makeOperation('test.op', {
+                freeTierNote: 'Bodies are capped at 100 chars per call.'
+            }));
+
+            const defs = registry.getDefinitions();
+            expect(defs[0].description).to.include('[Free tier] Bodies are capped at 100 chars per call.');
+        });
+
+        it('should not append freeTierNote for pro users', () => {
+            const registry = new OperationRegistry(() => true);
+            registry.register(makeOperation('test.op', {
+                freeTierNote: 'Bodies are capped at 100 chars per call.'
+            }));
 
             const defs = registry.getDefinitions();
             expect(defs[0].description).to.equal('Test operation test.op');

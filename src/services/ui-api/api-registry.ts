@@ -40,19 +40,26 @@ export class OperationRegistry {
                 return true;
             })
             .map(op => {
-                if (tier === 'pro') return op.definition;
+                // Strip internal-only fields from output before sending to
+                // external clients — they're only used here for augmentation.
+                const { freeTierNote, sessionLimit, ...definition } = op.definition;
+
+                if (tier === 'pro') return definition;
 
                 // Augment descriptions for free users so AI agents understand limits
-                let description = op.definition.description;
-                const { tiers, sessionLimit } = op.definition;
+                let description = definition.description;
 
                 if (sessionLimit) {
                     description += `\n\n[Free tier] Limited to ${sessionLimit} calls per session. ` +
                         'Use account.upgrade to subscribe to Pro for unlimited access.';
                 }
 
-                if (description === op.definition.description) return op.definition;
-                return { ...op.definition, description };
+                if (freeTierNote) {
+                    description += `\n\n[Free tier] ${freeTierNote}`;
+                }
+
+                if (description === definition.description) return definition;
+                return { ...definition, description };
             });
     }
 
