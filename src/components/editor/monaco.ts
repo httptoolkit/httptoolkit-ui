@@ -3,6 +3,7 @@ import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-e
 import { observable, runInAction } from 'mobx';
 
 import { defineMonacoThemes } from '../../styles';
+import { getHexMonarchDefinition } from '../../util/hex-colors';
 
 import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
@@ -45,6 +46,9 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
                 });
             });
         });
+
+        monaco.languages.register({ id: 'hex' });
+        monaco.languages.setMonarchTokensProvider('hex', getHexMonarchDefinition());
 
         monaco.languages.register({
             id: 'protobuf'

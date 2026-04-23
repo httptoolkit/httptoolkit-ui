@@ -7,6 +7,7 @@ import {
     getTextColor,
     getBackgroundColor
 } from "../../src/util/colors";
+import { generateHexColors } from "../../src/util/hex-colors";
 import { expect } from '../test-setup';
 
 ([
@@ -140,6 +141,37 @@ import { expect } from '../test-setup';
                 );
             });
 
+        });
+
+        describe("hex byte colors", () => {
+            const hexColors = generateHexColors(theme.editorBackground, theme.hexColorMinContrast);
+
+            const nibbleLabels = '0123456789ABCDEF';
+
+            for (let i = 0; i < 16; i++) {
+                const label = nibbleLabels[i];
+                it(`should have sufficient contrast for 0x${label}X bytes`, () => {
+                    const color = hexColors.nibbleColors[i];
+                    const contrast = polished.getContrast(color, theme.editorBackground);
+                    expect(contrast).to.be.greaterThan(normalContrastTarget,
+                        `Contrast for ${color}/${theme.editorBackground} was only ${contrast}`
+                    );
+                });
+            }
+
+            it("should have sufficient contrast for 0x00 bytes", () => {
+                const contrast = polished.getContrast(hexColors.zeroColor, theme.editorBackground);
+                expect(contrast).to.be.greaterThan(normalContrastTarget,
+                    `Contrast for ${hexColors.zeroColor}/${theme.editorBackground} was only ${contrast}`
+                );
+            });
+
+            it("should have sufficient contrast for 0xFF bytes", () => {
+                const contrast = polished.getContrast(hexColors.ffColor, theme.editorBackground);
+                expect(contrast).to.be.greaterThan(normalContrastTarget,
+                    `Contrast for ${hexColors.ffColor}/${theme.editorBackground} was only ${contrast}`
+                );
+            });
         });
 
         describe("color pair generation", () => {

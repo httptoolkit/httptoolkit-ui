@@ -43,7 +43,7 @@ const buildAsyncRenderer = (formatKey: WorkerFormatterKey) =>
 
 export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
-        language: 'text',
+        language: 'hex',
         cacheKey: Symbol('raw'),
         isEditApplicable: false,
         render: (input: Buffer, headers?: Headers) => {
