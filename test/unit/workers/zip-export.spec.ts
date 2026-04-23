@@ -338,4 +338,3 @@ describe('ZIP export worker round-trip', function () {
         expect(res.snippetErrorCount).to.equal(0);
     });
 });
-                                    

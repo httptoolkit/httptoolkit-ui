@@ -241,4 +241,3 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
         this.props.uiStore!.exportSnippetFormat = optionKey;
     }
 };
-                                             
