@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import { action, flow, observable, runInAction } from 'mobx';
-import * as uuid from 'uuid/v4';
 import {
     MOCKTTP_PARAM_REF,
     ProxySetting,
@@ -77,7 +76,7 @@ export class SendStore {
     @action.bound
     addRequestInput(requestInput = new RequestInput()): RequestInput {
         const newSendRequest = observable({
-            id: uuid(),
+            id: crypto.randomUUID(),
             request: requestInput,
             sentExchange: undefined
         });
@@ -154,7 +153,7 @@ export class SendStore {
                 sendRequest.pendingSend.promise.then(clearPending, clearPending);
             });
 
-            const exchangeId = uuid();
+            const exchangeId = crypto.randomUUID();
 
             const passthroughOptions = this.rulesStore.activePassthroughOptions;
 

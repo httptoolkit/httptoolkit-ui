@@ -168,7 +168,7 @@ export default merge(common, {
                     ],
                     'connect-src': [
                         "'self'", 'data:',
-                        'http://127.0.0.1:45456', 'http://127.0.0.1:45457', 'ws://127.0.0.1:45456',
+                        'http://127.0.0.1:45456', 'http://127.0.0.1:45457', 'ws://127.0.0.1:45456', 'ws://127.0.0.1:45457',
                         'https://*.httptoolkit.tech', 'https://*.ingest.us.sentry.io'
                     ],
                     'report-uri': CSP_REPORT_URL,

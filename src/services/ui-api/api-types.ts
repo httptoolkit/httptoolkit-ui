@@ -6,6 +6,12 @@ export interface OperationDefinition {
     inputSchema: JSONSchema7;
     outputSchema: JSONSchema7;
     category: string;
+    tiers: Array<'free' | 'pro'>;
+    sessionLimit?: number;
+    // Appended to the description for free users only — explains a free-tier
+    // limitation that the operation enforces in its handler (e.g. body size
+    // caps), so agents understand why responses look the way they do.
+    freeTierNote?: string;
     annotations?: {
         readOnlyHint?: boolean;
         destructiveHint?: boolean;

@@ -6,15 +6,20 @@ import { matchFilters } from '../../../model/filters/filter-matching';
 import { SelectableSearchFilterClasses } from '../../../model/filters/search-filters';
 import { EventsStore } from '../../../model/events/events-store';
 
+// Free-tier body exports are capped to support exploration but not
+// arbitrary export (paid feature).
+const FREE_TIER_MAX_BODY_CHARS = 100_000;
+
 export function registerEventOperations(
     registry: OperationRegistry,
     eventsStore: EventsStore,
-    getEvents: () => ReadonlyArray<CollectedEvent>
+    getEvents: () => ReadonlyArray<CollectedEvent>,
+    isPaidUser: () => boolean
 ): void {
     registry.register(eventsListOperation(getEvents));
     registry.register(eventsGetOutlineOperation(getEvents));
-    registry.register(eventsGetRequestBodyOperation(getEvents));
-    registry.register(eventsGetResponseBodyOperation(getEvents));
+    registry.register(eventsGetRequestBodyOperation(getEvents, isPaidUser));
+    registry.register(eventsGetResponseBodyOperation(getEvents, isPaidUser));
     registry.register(eventsClearOperation(eventsStore));
 }
 
@@ -48,6 +53,7 @@ function eventsListOperation(
                 'Uses the same filter syntax as the UI search bar. ' +
                 'See https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic for full docs.',
             category: 'events',
+            tiers: ['free', 'pro'],
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -169,6 +175,11 @@ function eventsGetOutlineOperation(
                 'headers, status, timing, and body sizes, but not the body content itself. ' +
                 'Use events.get-request-body or events.get-response-body to retrieve bodies.',
             category: 'events',
+            tiers: ['free', 'pro'],
+            sessionLimit: 500,
+            freeTierNote: 'This operation is limited to 500 calls per session for free users, so ' +
+                'ensure only the necessary events are queried. Upgrade to Pro (account.upgrade) ' +
+                'for unlimited access to all features.',
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -216,8 +227,15 @@ function eventsGetOutlineOperation(
     };
 }
 
+function effectiveMaxLength(requested: number | undefined, isPaid: boolean): number | undefined {
+    if (isPaid) return requested;
+    if (requested === undefined) return FREE_TIER_MAX_BODY_CHARS;
+    return Math.min(requested, FREE_TIER_MAX_BODY_CHARS);
+}
+
 function eventsGetRequestBodyOperation(
-    getEvents: () => ReadonlyArray<CollectedEvent>
+    getEvents: () => ReadonlyArray<CollectedEvent>,
+    isPaidUser: () => boolean
 ): Operation {
     return {
         definition: {
@@ -225,6 +243,11 @@ function eventsGetRequestBodyOperation(
             description: 'Get the request body of a captured HTTP exchange. ' +
                 'Use offset and maxLength to retrieve specific ranges of large bodies.',
             category: 'events',
+            tiers: ['free', 'pro'],
+            sessionLimit: 100,
+            freeTierNote: `Response bodies are capped at ${FREE_TIER_MAX_BODY_CHARS} ` +
+                'characters per call. Page through larger bodies with offset, or upgrade ' +
+                'to Pro (account.upgrade) for full bodies.',
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -239,7 +262,7 @@ function eventsGetRequestBodyOperation(
 
             const body = await serializeBody(lookup.exchange, 'request', {
                 offset: params.offset as number | undefined,
-                maxLength: params.maxLength as number | undefined
+                maxLength: effectiveMaxLength(params.maxLength as number | undefined, isPaidUser())
             });
             return { success: true, data: body };
         }
@@ -247,7 +270,8 @@ function eventsGetRequestBodyOperation(
 }
 
 function eventsGetResponseBodyOperation(
-    getEvents: () => ReadonlyArray<CollectedEvent>
+    getEvents: () => ReadonlyArray<CollectedEvent>,
+    isPaidUser: () => boolean
 ): Operation {
     return {
         definition: {
@@ -255,6 +279,11 @@ function eventsGetResponseBodyOperation(
             description: 'Get the response body of a captured HTTP exchange. ' +
                 'Use offset and maxLength to retrieve specific ranges of large bodies.',
             category: 'events',
+            tiers: ['free', 'pro'],
+            sessionLimit: 100,
+            freeTierNote: `Response bodies are capped at ${FREE_TIER_MAX_BODY_CHARS} ` +
+                'characters per call. Page through larger bodies with offset, or upgrade ' +
+                'to Pro (account.upgrade) for full bodies.',
             annotations: { readOnlyHint: true },
             inputSchema: {
                 type: 'object',
@@ -269,7 +298,7 @@ function eventsGetResponseBodyOperation(
 
             const body = await serializeBody(lookup.exchange, 'response', {
                 offset: params.offset as number | undefined,
-                maxLength: params.maxLength as number | undefined
+                maxLength: effectiveMaxLength(params.maxLength as number | undefined, isPaidUser())
             });
             return { success: true, data: body };
         }
@@ -282,6 +311,7 @@ function eventsClearOperation(eventsStore: EventsStore): Operation {
             name: 'events.clear',
             description: 'Clear all captured events. By default, pinned events are preserved.',
             category: 'events',
+            tiers: ['free', 'pro'],
             annotations: { readOnlyHint: false, destructiveHint: true },
             inputSchema: {
                 type: 'object',

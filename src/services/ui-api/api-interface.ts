@@ -1,7 +1,7 @@
 import { OperationRegistry } from './api-registry';
 import { registerAllOperations } from './operations';
+import { startServerOperationBridge } from './server-operation-bridge';
 
-import { DesktopApi } from '../desktop-api';
 import { AccountStore } from '../../model/account/account-store';
 import { EventsStore } from '../../model/events/events-store';
 import { ProxyStore } from '../../model/proxy-store';
@@ -13,11 +13,6 @@ export function initializeUiApi(stores: {
     proxyStore: ProxyStore;
     interceptorStore: InterceptorStore;
 }) {
-    if (!DesktopApi.setApiOperations || !DesktopApi.onOperationRequest) {
-        console.log("UI API not available");
-        return;
-    }
-
     const { accountStore, eventsStore, proxyStore, interceptorStore } = stores;
 
     const registry = new OperationRegistry(
@@ -26,12 +21,11 @@ export function initializeUiApi(stores: {
 
     registerAllOperations(
         registry,
-        { eventsStore, proxyStore, interceptorStore },
+        { eventsStore, proxyStore, interceptorStore, accountStore },
         () => eventsStore.events
     );
 
-    DesktopApi.setApiOperations(registry.getDefinitions());
-    DesktopApi.onOperationRequest(async (operation, params) => {
-        return await registry.execute(operation, params || {});
-    });
+    // Connect to the server's WebSocket bridge (for MCP and external tool access).
+    const authToken = new URLSearchParams(window.location.search).get('authToken') ?? undefined;
+    startServerOperationBridge(registry, authToken, accountStore);
 }

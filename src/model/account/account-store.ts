@@ -100,6 +100,22 @@ export class AccountStore {
             : undefined;
     }
 
+    // Expose the JWT directly, for delegating auth to remote services (e.g. HTK local server
+    // for MCP, public endpoint cloud server).
+    get userJwt(): string {
+        if (this.isLoggedIn && this.accountDataLastUpdated !== Infinity) {
+            // We read accountDataLastUpdated just to set up a subscription, so this will
+            // re-calculate on each JWT update, since we can't observe localStorage directly.
+            // It's never actually Infinity.
+
+            const jwt = localStorage.getItem('last_jwt');
+            if (!jwt) throw new Error("No JWT found for logged in user");
+            return jwt;
+        } else {
+            throw new Error("Can't get JWT for logged out user");
+        }
+    }
+
     private updateUser = flow(function * (this: AccountStore) {
         this.user = yield getLatestUserData();
         this.accountDataLastUpdated = Date.now();

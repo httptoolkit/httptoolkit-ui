@@ -1,5 +1,3 @@
-import * as uuid from 'uuid/v4';
-
 import { InputTlsFailure } from '../../types';
 import { HTKEventBase } from '../events/event-base';
 
@@ -15,7 +13,7 @@ export class FailedTlsConnection extends HTKEventBase {
             .join('\n');
     }
 
-    readonly id = uuid();
+    readonly id = crypto.randomUUID();
 
     readonly upstreamHostname = this.failureEvent.tlsMetadata.sniHostname ??
         this.failureEvent.destination?.hostname ??
