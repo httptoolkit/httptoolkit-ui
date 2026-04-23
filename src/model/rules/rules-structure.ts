@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 
 import { HtkRule } from './rules';
@@ -167,7 +166,7 @@ export function cloneRule<R extends HtkRule>(rule: R): R {
     return observable({
         ...rule, // All handler/matcher/checker state is immutable
         matchers: [...rule.matchers], // Except the matcher array itself
-        id: uuid() // And we need a different rule id
+        id: crypto.randomUUID() // And we need a different rule id
     });
 };
 
@@ -176,7 +175,7 @@ export function cloneRuleGroup<G extends HtkRuleGroup>(group: HtkRuleGroup): G {
         ...group,
         items: group.items.map(i => cloneItem(i)),
         collapsed: true,
-        id: uuid()
+        id: crypto.randomUUID()
     } as G;
 }
 

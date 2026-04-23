@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/browser';
-import * as uuid from 'uuid/v4';
 
 import { UI_VERSION, serverVersion, desktopVersion } from './services/service-versions';
 import { ApiError } from './services/server-api-types';
@@ -58,7 +57,7 @@ export function initSentry(dsn: string | undefined) {
     // We use a random id to distinguish between many errors in one session vs
     // one error in many sessions. This isn't persisted and can't be used to
     // identify anybody between sessions.
-    const randomId = uuid();
+    const randomId = crypto.randomUUID();
     Sentry.getCurrentScope().setUser({
         id: randomId,
         username: `anon-${randomId}`

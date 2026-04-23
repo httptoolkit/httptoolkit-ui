@@ -1,13 +1,11 @@
 import * as _ from 'lodash';
 
 import {
-    requestSteps,
     MOCKTTP_PARAM_REF,
     PassThroughStepConnectionOptions,
     ProxySetting,
     RuleParameterReference,
-    ProxySettingSource,
-    webSocketSteps
+    ProxySettingSource
 } from 'mockttp';
 import * as MockRTC from 'mockrtc';
 
@@ -17,11 +15,9 @@ import {
     flow,
     computed,
     observe,
-    when,
     reaction,
     runInAction
 } from 'mobx';
-import * as uuid from 'uuid/v4';
 import * as serializr from 'serializr';
 import { encode as encodeBase64, decode as decodeBase64 } from 'base64-arraybuffer';
 import * as semver from 'semver';
@@ -681,7 +677,7 @@ export class RulesStore {
         const targetItem = targetParent.items[targetIndex];
 
         targetParent.items[targetIndex] = {
-            id: uuid(),
+            id: crypto.randomUUID(),
             title: "New group",
             items: [
                 targetItem,

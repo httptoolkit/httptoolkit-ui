@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import * as uuid from 'uuid/v4'
 import { observable } from 'mobx';
 import {
     matchers,
@@ -46,7 +45,7 @@ import * as RtcRule from './definitions/rtc-rule-definitions';
 
 export function getNewRule(rulesStore: RulesStore): HtkRule {
     return observable({
-        id: uuid(),
+        id: crypto.randomUUID(),
         type: 'http', // New rules default to HTTP (i.e. they show HTTP step options)
         activated: true,
         matchers: [],
@@ -146,7 +145,7 @@ function buildRequestMatchers(request: HtkRequest) {
 
 export function buildRuleFromRequest(rulesStore: RulesStore, request: HtkRequest): HtkRule {
     return {
-        id: uuid(),
+        id: crypto.randomUUID(),
         type: 'http',
         activated: true,
         matchers: buildRequestMatchers(request),
@@ -187,7 +186,7 @@ export function buildRuleFromExchange(exchange: HttpExchangeView): HtkRule {
     }
 
     return {
-        id: uuid(),
+        id: crypto.randomUUID(),
         type: 'http',
         activated: true,
         matchers: buildRequestMatchers(exchange.request),
