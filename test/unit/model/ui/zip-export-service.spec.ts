@@ -131,4 +131,6 @@ describe('ZipExportController', () => {
         await runPromise;
 
         expect(controller.state.kind).to.equal('idle');
-        expect((window.URL.createObjectU
+        expect((window.URL.createObjectURL as sinon.SinonStub).called).to.equal(false);
+    });
+});

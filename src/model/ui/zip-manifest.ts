@@ -75,4 +75,5 @@ export interface ZipExportManifest {
      */
     errors: ZipExportErrorRecord[];
     /** Name of the HAR file included in the archive, if the HAR was bundled separately. */
- 
+    harFile: string;
+}

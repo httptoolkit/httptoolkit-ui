@@ -369,4 +369,25 @@ export class ZipExportController {
             runInAction(() => {
                 if (!this.isCurrentRun(runId, runAbortController)) return;
                 this.state = {
-                   
+                    kind: 'error',
+                    message: e && e.message
+                        ? String(e.message)
+                        : 'Unknown error during ZIP export.'
+                };
+            });
+        } finally {
+            if (this.isCurrentRun(runId, runAbortController)) {
+                this.abortController = undefined;
+                zipLog('run() finally: abortController cleaned up');
+            }
+        }
+    }
+
+    @action.bound
+    reset() {
+        this.invalidateActiveRun();
+        this.abortActiveRun();
+        this.revokeActiveDownloadUrl();
+        this.state = { kind: 'idle' };
+    }
+}

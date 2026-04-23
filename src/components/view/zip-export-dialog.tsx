@@ -849,4 +849,17 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                                 </PrimaryButton>
                             : <PrimaryButton
                                 ref={this.submitButtonRef}
-                                on
+                                onClick={this.startExport}
+                                disabled={this.selectedCount === 0 || events.length === 0}
+                            >
+                                <Icon icon={['fas', 'file-archive']} />
+                                Download ZIP
+                            </PrimaryButton>
+                        }
+                    </div>
+                </ModalFooter>
+            </Modal>
+        </Overlay>;
+    }
+}
+                              

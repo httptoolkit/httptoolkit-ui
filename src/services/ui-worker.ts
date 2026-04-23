@@ -843,3 +843,16 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
 
             case 'zip-export-prewarm':
                 prewarmZipExportPath();
+                ctx.postMessage({ id: event.data.id, warmed: true } as ZipExportPrewarmResponse);
+                break;
+
+            default:
+                console.error('Unknown worker event', event);
+        }
+    } catch (e) {
+        ctx.postMessage({
+            id: event.data.id,
+            error: serializeError(e)
+        });
+    }
+});

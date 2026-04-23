@@ -286,4 +286,36 @@ export async function exportAsZip(args: {
     snippetBodySizeLimit?: number;
 }): Promise<ZipExportResponse> {
     try {
-    
+        return await callApi<ZipExportRequest, ZipExportResponse>(
+            {
+                type: 'zip-export',
+                har: args.har,
+                formats: args.formats,
+                toolVersion: args.toolVersion,
+                snippetBodySizeLimit: args.snippetBodySizeLimit
+            },
+            [],
+            {
+                signal: args.signal,
+                onProgress: args.onProgress,
+                cancelChannel: true,
+                timeoutMs: ZIP_EXPORT_TIMEOUT_MS
+            }
+        );
+    } catch (error: any) {
+        // Keep the ZIP API contract stable: callers expect cancellation to
+        // resolve as a cancelled response, not reject. `callApi` may reject
+        // immediately on abort to avoid hangs before the worker yields.
+        if (error?.name === 'AbortError') {
+            return {
+                id: -1,
+                archive: new ArrayBuffer(0),
+                cancelled: true,
+                snippetSuccessCount: 0,
+                snippetErrorCount: 0
+            };
+        }
+
+        throw error;
+    }
+}
