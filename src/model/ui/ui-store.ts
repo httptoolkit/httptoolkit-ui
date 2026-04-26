@@ -464,6 +464,37 @@ export class UiStore {
     @persist @observable
     exportSnippetFormat: string | undefined;
 
+    /**
+     * Persisted ZIP export format selection. We store a versioned JSON
+     * structure so that future extensions (e.g. per-format options) remain
+     * backward-compatible. The reader filters out unknown format IDs so
+     * that updating to a new HTTPSnippet version does not corrupt the store.
+     */
+    @persist @observable
+    private _zipExportSelection: string | undefined;
+
+    @computed
+    get zipExportSelectedFormatIds(): string[] | undefined {
+        if (!this._zipExportSelection) return undefined;
+        try {
+            const parsed = JSON.parse(this._zipExportSelection);
+            if (parsed && parsed.version === 1 && Array.isArray(parsed.ids)) {
+                return parsed.ids.filter((x: unknown) => typeof x === 'string');
+            }
+        } catch {
+            /* corrupt value, ignore */
+        }
+        return undefined;
+    }
+
+    @action.bound
+    setZipExportSelectedFormatIds(ids: string[]) {
+        this._zipExportSelection = JSON.stringify({
+            version: 1,
+            ids: ids.filter(x => typeof x === 'string')
+        });
+    }
+
     // Actions for persisting view state when switching tabs
     @action.bound
     setViewScrollPosition(position: number | 'end') {

@@ -14,26 +14,25 @@ import { GetProOverlay } from '../account/pro-placeholders';
 
 import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
 import { uppercaseFirst } from '../../util/text';
+import { ZipExportDialog } from './zip-export-dialog';
 
 const SummaryContainer = styled.div`
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-
+    overflow-y: auto;
+    padding: 0 20px 20px;
     height: 100%;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 20px;
-
-    background-color: ${p => p.theme.containerBackground};
 `;
 
 const PreviewStack = styled.div`
-    position: relative;
-    width: 80%;
-    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 20px 0 0;
+    width: 100%;
 `;
 
 const PreviewRow = styled.div<{
@@ -41,85 +40,55 @@ const PreviewRow = styled.div<{
     markerColor: string,
     dimRow: boolean
 }>`
-    position: absolute;
-    top: calc(50% - ${p => p.index * 4}px);
-    transform: translateY(-50%) scaleX(${p => 1 - p.index * 0.03});
-    height: 40px;
-
-    left: 0;
-    right: 0;
-
-    background-color: ${p =>
-        p.dimRow
-        ? p.theme.mainBackground + Math.round(p.theme.lowlightTextOpacity * 255).toString(16)
-        : p.theme.mainBackground
-    };
-    border-radius: 4px;
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,${p => p.theme.boxShadowAlpha});
-
-    opacity: ${p => 1 - p.index * 0.12};
-    z-index: ${p => 9 - p.index};
-
+    background-color: ${p => p.theme.mainBackground};
     border-left: 5px solid ${p => p.markerColor};
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    border-radius: 0 4px 4px 0;
 
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 2px 10px 0;
-    box-sizing: border-box;
+    width: calc(100% - ${p => p.index * 20}px);
+    margin-top: ${p => p.index === 0 ? '0' : '-4px'};
+    padding: 8px 12px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     font-size: ${p => p.theme.textSize};
-    color: ${p => p.dimRow ? p.theme.mainColor : p.theme.containerWatermark};
 
-    overflow: hidden;
-    white-space: nowrap;
-
-    transition: top 0.15s ease-out,
-                transform 0.15s ease-out,
-                opacity 0.15s ease-out;
+    ${p => p.dimRow && css`
+        opacity: 0.6;
+    `}
 `;
 
 const SelectionLabel = styled.div`
-    position: absolute;
-    top: calc(50% - 24px);
-    left: 0;
-    right: 0;
-    transform: translateY(-50%);
-    z-index: 10;
-
-    text-align: center;
-    color: ${p => p.theme.mainColor};
-    font-size: ${p => p.theme.loudHeadingSize};
+    margin-top: 20px;
+    font-size: ${p => p.theme.headingSize};
     font-weight: bold;
-    letter-spacing: -1px;
-
-    background: radial-gradient(
-        ellipse at center,
-        ${p => p.theme.containerBackground}c0 30%,
-        transparent 70%
-    );
-    padding: 50px 0;
-
-    pointer-events: none;
 `;
 
 const ActionsContainer = styled.div`
+    width: 100%;
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
-    align-items: stretch;
     gap: 10px;
-    margin-top: 30px;
-    width: 60%;
-    max-width: 360px;
 `;
 
-const ActionButton = styled(Button)`
+const ActionButton = styled(Button)<{
+    disabled?: boolean
+}>`
+    font-size: ${p => p.theme.textSize};
+    padding: 8px 16px;
+    width: 100%;
+    font-weight: bold;
+
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    padding: 10px 16px;
-    font-size: ${p => p.theme.textSize};
+    gap: 10px;
+
+    ${p => p.disabled && css`
+        opacity: 0.5;
+    `}
 
     > .fa-fw {
         width: 1.25em;
@@ -141,19 +110,17 @@ const ProDivider = styled.hr`
     width: 100%;
     margin: 36px 0;
     border: none;
-    border: solid 1px ${p => p.theme.mainColor};
+    border-top: 1px solid ${p => p.theme.containerBorder};
+`;
+
+const ProActionsOverlay = styled(GetProOverlay)`
+    width: 100%;
 `;
 
 const ProActionsContainer = styled.div`
     display: flex;
     flex-direction: column;
-    align-items: stretch;
     gap: 10px;
-    width: 100%;
-`;
-
-const ProActionsOverlay = styled(GetProOverlay)`
-    min-height: 0;
 
     > button {
         top: 50%;
@@ -169,13 +136,16 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
     onDelete: () => void,
     onBuildRule: () => void
 }) => {
+    const [zipDialogEvents, setZipDialogEvents] = React.useState<ReadonlyArray<CollectedEvent> | null>(null);
+
     const { selectedEvents } = props;
     const count = selectedEvents.length;
     const isPaidUser = props.accountStore!.user.isPaidUser();
 
-    const httpCount = selectedEvents.filter(e =>
+    const exportableEvents = selectedEvents.filter(e =>
         e.isHttp() && !e.isWebSocket()
-    ).length;
+    );
+    const httpCount = exportableEvents.length;
 
     const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
     const allPinned = selectedEvents.every(e => e.pinned);
@@ -212,6 +182,17 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
         >
             <Icon icon={['fas', 'save']} fixedWidth />
             Export as HAR
+        </ActionButton>
+        <ActionButton
+            title={isPaidUser
+                ? 'Export selected exchanges as a ZIP (HAR + snippets + manifest)'
+                : 'With Pro: export as ZIP'
+            }
+            disabled={!isPaidUser || httpCount === 0}
+            onClick={() => setZipDialogEvents(exportableEvents)}
+        >
+            <Icon icon={['fas', 'file-archive']} fixedWidth />
+            Export as ZIP
         </ActionButton>
     </>;
 
@@ -263,5 +244,11 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
                 </>
             }
         </ActionsContainer>
+
+        {zipDialogEvents && <ZipExportDialog
+            events={zipDialogEvents}
+            onClose={() => setZipDialogEvents(null)}
+            titleSuffix={`${zipDialogEvents.length} request${zipDialogEvents.length !== 1 ? 's' : ''}`}
+        />}
     </SummaryContainer>;
 }));

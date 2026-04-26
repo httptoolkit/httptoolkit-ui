@@ -5,6 +5,14 @@ import { saveFile } from "../../util/ui";
 
 import { HttpExchangeView } from "../../types";
 import { generateHarRequest, generateHar, ExtendedHarRequest } from '../http/har';
+import {
+    simplifyHarEntryRequestForSnippetExport
+} from './snippet-export-sanitization';
+
+// Re-export for existing external callers/tests that historically imported
+// from `model/ui/export`. Single source of truth lives in
+// `snippet-export-sanitization.ts` so that UI + Worker share identical rules.
+export { simplifyHarEntryRequestForSnippetExport };
 
 export const exportHar = async (exchange: HttpExchangeView) => {
     const harContent = JSON.stringify(
@@ -36,25 +44,21 @@ export function generateCodeSnippet(
     snippetFormat: SnippetOption,
     options: { waitForBodyDecoding?: boolean } = {}
 ): string | Promise<string> {
-    // If the body isn't decoded yet, and it should be, wait for that decoding first.
     if (options.waitForBodyDecoding && exchange.request.body.isPending()) {
-        // Doesn't matter if this errors - we'll make that explicit in the export later.
         return exchange.request.body.waitForDecoding().catch(() => {})
             .then(() => generateCodeSnippet(exchange, snippetFormat, options));
     }
 
-    // First, we need to get a HAR that appropriately represents this request as we
-    // want to export it:
     const harRequest = generateHarRequest(exchange.request, false, {
         bodySizeLimit: Infinity
     });
     const harSnippetBase = simplifyHarForSnippetExport(harRequest);
 
-    // Then, we convert that HAR to code for the given target:
     return new HTTPSnippet(harSnippetBase)
         .convert(snippetFormat.target, snippetFormat.client)
         .trim();
 };
+
 
 const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
     const postData = !!harRequest.postData
@@ -76,37 +80,10 @@ const simplifyHarForSnippetExport = (harRequest: ExtendedHarRequest) => {
             }
         : undefined;
 
-    // When exporting code snippets the primary goal is to generate convenient code to send the
-    // request that's *semantically* equivalent to the original request, not to force every
-    // tool to produce byte-for-byte identical requests (that's effectively impossible). To do
-    // this, we drop headers that tools can produce automatically for themselves:
-    return {
+    return simplifyHarEntryRequestForSnippetExport({
         ...harRequest,
-        postData,
-        headers: harRequest.headers.filter((header) => {
-            // All clients should be able to automatically generate the correct content-length
-            // headers as required for a request where it's unspecified. If we override this,
-            // it can cause problems if tools change the body length (due to encoding/compression).
-            if (header.name.toLowerCase() === 'content-length') return false;
-
-            // HTTP/2 headers should never be included in snippets - they're implicitly part of
-            // the other request data (the method etc).
-            // We can drop this after fixing https://github.com/Kong/httpsnippet/issues/298
-            if (header.name.startsWith(':')) return false;
-
-            // The body data in the HAR (and therefore the snippet) is always the _decoded_ data,
-            // and encoded data is often not representable directly as a string anyway. Fortunately,
-            // request bodies are rarely encoded. In the rare cases that they are, we just drop the
-            // encoding header and send the decoded body directly instead. Not perfect, but it
-            // should be semantically equivalent, and the only alternative is embedding encoded data
-            // in snippets (messy, confusing, hard to edit) or adding encoding logic to every kind
-            // of snippet we can produce for every encoding you could use (difficult/impossible)
-            if (header.name.toLowerCase() === 'content-encoding') return false;
-
-            return true;
-        }),
-        cookies: [] // There are included separately in the headers, it's unhelpful to duplicate that
-    };
+        postData
+    });
 };
 
 export interface SnippetOption {
@@ -146,8 +123,15 @@ export const getCodeSnippetOptionFromKey = (key: string) => {
         .find({ target, client }) as SnippetOption;
 };
 
+export const getSafeCodeSnippetOptionFromKey = (key?: string) => {
+    if (key) {
+        const option = getCodeSnippetOptionFromKey(key);
+        if (option) return option;
+    }
 
-// Show the client name, or an overridden name in some ambiguous cases
+    return getCodeSnippetOptionFromKey(DEFAULT_SNIPPET_FORMAT_KEY)!;
+};
+
 export const getCodeSnippetFormatName = (option: SnippetOption) => ({
     'php~~curl': 'PHP ext-cURL',
     'php~~http1': 'PHP HTTP v1',

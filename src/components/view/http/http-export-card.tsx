@@ -1,9 +1,9 @@
 import React from "react";
-import { action, computed } from "mobx";
+import { action, computed, observable } from "mobx";
 import { inject, observer } from "mobx-react";
 import dedent from 'dedent';
 
-import { HttpExchangeView } from '../../../types';
+import { CollectedEvent, HttpExchangeView } from '../../../types';
 import { styled } from '../../../styles';
 import { Icon } from '../../../icons';
 import { logError } from '../../../errors';
@@ -15,7 +15,7 @@ import {
     generateCodeSnippet,
     getCodeSnippetFormatKey,
     getCodeSnippetFormatName,
-    getCodeSnippetOptionFromKey,
+    getSafeCodeSnippetOptionFromKey,
     DEFAULT_SNIPPET_FORMAT_KEY,
     snippetExportOptions,
     SnippetOption
@@ -31,6 +31,7 @@ import { PillSelector, PillButton } from '../../common/pill';
 import { CopyButtonPill } from '../../common/copy-button';
 import { DocsLink } from '../../common/docs-link';
 import { SelfSizedEditor } from '../../editor/base-editor';
+import { ZipExportDialog } from '../zip-export-dialog';
 
 interface ExportCardProps extends CollapsibleCardProps  {
     exchange: HttpExchangeView;
@@ -140,59 +141,99 @@ const ExportHarPill = styled(observer((p: {
 @observer
 export class HttpExportCard extends React.Component<ExportCardProps> {
 
+    @observable
+    private zipDialogOpen = false;
+
+    @action.bound
+    private openZipDialog() { this.zipDialogOpen = true; }
+
+    @action.bound
+    private closeZipDialog() { this.zipDialogOpen = false; }
+
     render() {
         const { exchange, accountStore } = this.props;
         const isPaidUser = accountStore!.user.isPaidUser();
 
-        return <CollapsibleCard {...this.props}>
-            <header>
-                { isPaidUser
-                    ? <ExportHarPill exchange={exchange} />
-                    : <ProHeaderPill />
-                }
+        return <>
+            <CollapsibleCard {...this.props}>
+                <header>
+                    { isPaidUser
+                        ? <>
+                            <ExportHarPill exchange={exchange} />
+                            {/*
+                             * ZIP PillButton is active immediately (even when
+                             * the card is collapsed). The click stops propagation
+                             * so a header click underneath does not inadvertently
+                             * toggle the card.
+                             */}
+                            <PillButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    this.openZipDialog();
+                                }}
+                            >
+                                <Icon icon={['fas', 'file-archive']} /> ZIP
+                            </PillButton>
+                        </>
+                        : <ProHeaderPill />
+                    }
 
-                <PillSelector<SnippetOption>
-                    onChange={this.setSnippetOption}
-                    value={this.snippetOption}
-                    optGroups={snippetExportOptions}
-                    keyFormatter={getCodeSnippetFormatKey}
-                    nameFormatter={getCodeSnippetFormatName}
-                />
-
-                <CollapsibleCardHeading onCollapseToggled={this.props.onCollapseToggled}>
-                    Export
-                </CollapsibleCardHeading>
-            </header>
-
-            { isPaidUser ?
-                <div>
-                    <ExportSnippetEditor
-                        exchange={exchange}
-                        exportOption={this.snippetOption}
+                    <PillSelector<SnippetOption>
+                        onChange={this.setSnippetOption}
+                        value={this.snippetOption}
+                        optGroups={snippetExportOptions}
+                        keyFormatter={getCodeSnippetFormatKey}
+                        nameFormatter={getCodeSnippetFormatName}
                     />
-                </div>
-            :
-                <CardSalesPitch source='export'>
-                    <p>
-                        Instantly export requests as code, for languages and tools including cURL, wget, JS
-                        (XHR, Node HTTP, Request, ...), Python (native or Requests), Ruby, Java (OkHttp
-                        or Unirest), Go, PHP, Swift, HTTPie, and a whole lot more.
-                    </p>
-                    <p>
-                        Want to save the exchange itself? Export one or all requests as HAR (the{' '}
-                        <a href="https://en.wikipedia.org/wiki/.har">HTTP Archive Format</a>), to import
-                        and examine elsewhere, share with your team, or store for future reference.
-                    </p>
-                </CardSalesPitch>
-            }
-        </CollapsibleCard>;
+
+                    <CollapsibleCardHeading onCollapseToggled={this.props.onCollapseToggled}>
+                        Export
+                    </CollapsibleCardHeading>
+                </header>
+
+                { isPaidUser ?
+                    <div>
+                        <ExportSnippetEditor
+                            exchange={exchange}
+                            exportOption={this.snippetOption}
+                        />
+                    </div>
+                :
+                    <CardSalesPitch source='export'>
+                        <p>
+                            Instantly export requests as code, for languages and tools including cURL, wget, JS
+                            (XHR, Node HTTP, Request, ...), Python (native or Requests), Ruby, Java (OkHttp
+                            or Unirest), Go, PHP, Swift, HTTPie, and a whole lot more.
+                        </p>
+                        <p>
+                            Want to save the exchange itself? Export one or all requests as HAR (the{' '}
+                            <a href="https://en.wikipedia.org/wiki/.har">HTTP Archive Format</a>), to import
+                            and examine elsewhere, share with your team, or store for future reference.
+                        </p>
+                    </CardSalesPitch>
+                }
+            </CollapsibleCard>
+            {/*
+             * Dialog intentionally rendered OUTSIDE the CollapsibleCard.
+             * `CollapsibleCard.renderChildren()` discards all children
+             * after child 0 when the card is collapsed; placed there the
+             * dialog JSX would never appear in the DOM when the card is
+             * closed. The modal component uses a portal internally anyway,
+             * so its position in the React tree does not matter.
+             */}
+            {this.zipDialogOpen && <ZipExportDialog
+                events={[exchange as unknown as CollectedEvent]}
+                onClose={this.closeZipDialog}
+                titleSuffix='1 request'
+            />}
+        </>;
     }
 
     @computed
     private get snippetOption(): SnippetOption {
         let exportSnippetFormat = this.props.uiStore!.exportSnippetFormat ||
             DEFAULT_SNIPPET_FORMAT_KEY;
-        return getCodeSnippetOptionFromKey(exportSnippetFormat);
+        return getSafeCodeSnippetOptionFromKey(exportSnippetFormat);
     }
 
     @action.bound

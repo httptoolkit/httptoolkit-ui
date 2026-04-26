@@ -1,0 +1,159 @@
+/**
+ * Sanitizing / naming helpers for ZIP exports.
+ *
+ * Single source of truth, shared by UI, Worker, and tests.
+ * The goal is a platform-neutral, conservative set of rules:
+ *
+ *   - no path separators (`/`, `\`)
+ *   - no path-traversal segments (`..`, `.`)
+ *   - no Windows-reserved characters (`<>:"|?*` + control characters)
+ *   - no Windows-reserved names (CON, PRN, AUX, NUL, COM1..9, LPT1..9)
+ *     including case-insensitive variants and with extensions, as well as
+ *     the whitespace/dot variants Windows ignores (" CON ", "aux...", "nul .txt")
+ *   - no leading/trailing whitespace or dots
+ *   - length capped at 120 characters (including padding index)
+ *
+ * No dependency on Node APIs — runs in the Web Worker as well.
+ */
+
+const WIN_RESERVED_CHARS = /[<>:"/\\|?*\u0000-\u001F]/g;
+const WIN_RESERVED_NAMES = new Set([
+    'CON', 'PRN', 'AUX', 'NUL',
+    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+]);
+const MAX_NAME_LENGTH = 120;
+
+/**
+ * Sanitizes a single path segment name — not multiple segments.
+ * An empty input returns `'unnamed'`.
+ */
+export function sanitizeFilename(raw: string, fallback: string = 'unnamed'): string {
+    if (!raw) return fallback;
+
+    // 1. Replace path separators and reserved characters
+    let name = raw.replace(WIN_RESERVED_CHARS, '_');
+
+    // 2. Trim leading/trailing whitespace and dots FIRST.
+    //    Windows ignores these when opening files, i.e. " CON ",
+    //    "aux...", "PRN ." etc. are treated as device names by the OS
+    //    even though the literal form is not in WIN_RESERVED_NAMES.
+    //    Therefore the trim must happen BEFORE the reserved-name check
+    //    so the check operates on the effective OS view.
+    name = name.replace(/^[\s.]+|[\s.]+$/g, '');
+
+    // 3. Separate Windows-reserved names into root part + extension
+    const dotIdx = name.lastIndexOf('.');
+    const root = dotIdx > 0 ? name.slice(0, dotIdx) : name;
+    const ext = dotIdx > 0 ? name.slice(dotIdx) : '';
+
+    // 4. Reserved-name check on the trimmed root — for cases like "nul .txt"
+    //    (root="nul ", ext=".txt") that Windows also interprets as a device
+    //    name. The original root is preserved for output but prefixed with
+    //    an underscore to decouple it from the device name.
+    const rootForCheck = root.replace(/^[\s.]+|[\s.]+$/g, '').toUpperCase();
+    if (WIN_RESERVED_NAMES.has(rootForCheck)) {
+        name = `_${root}${ext}`;
+    }
+
+    // 5. Collapse only multiple whitespace. Double underscores are kept
+    //    intentionally so the 1:1 mapping "reserved char -> _" remains
+    //    stable for specs (e.g. `a:"b` -> `a__b`).
+    name = name.replace(/\s+/g, ' ');
+
+    // 6. Path traversal: catch . / .. as a whole name
+    if (name === '' || name === '.' || name === '..') return fallback;
+
+    // 7. Length — code-point-aware so that surrogate pairs (e.g. emoji,
+    //    CJK supplementary) are never split in the middle.
+    //    Array.from() iterates by code point; a high + low surrogate
+    //    pair counts as one element. A trailing combining mark is harmless.
+    if (name.length > MAX_NAME_LENGTH) {
+        const codePoints = Array.from(name);
+        if (codePoints.length > MAX_NAME_LENGTH) {
+            name = codePoints.slice(0, MAX_NAME_LENGTH).join('');
+        } else {
+            // codePoints.length <= MAX_NAME_LENGTH but string.length >
+            // MAX_NAME_LENGTH — the name consists primarily of surrogate
+            // pairs. We accept the code-point length.
+            name = codePoints.join('');
+        }
+        // After cutting, remove trailing whitespace/dots again.
+        name = name.replace(/[\s.]+$/g, '');
+        if (name === '') return fallback;
+    }
+
+    return name;
+}
+
+/**
+ * Builds a stable base filename for a request in the format
+ * `NN_METHOD[_STATUS]_host_path`. The index is zero-padded to
+ * `log10(total)+1` digits (minimum 2) so that alphabetical sorting in
+ * file managers matches chronological order.
+ *
+ * `status` is optional — omitted when not known (e.g. aborted request).
+ * Only included as a 3-digit HTTP status (100-599); anything else is
+ * discarded to prevent "NaN" or "undefined" in the filename.
+ */
+export function buildRequestBaseName(args: {
+    index: number;
+    total: number;
+    method: string;
+    url: string;
+    status?: number | null;
+}): string {
+    const padWidth = Math.max(2, String(Math.max(0, args.total - 1)).length);
+    const idxStr = String(args.index).padStart(padWidth, '0');
+
+    let host = '';
+    let path = '';
+    try {
+        const u = new URL(args.url);
+        host = u.hostname;
+        path = u.pathname;
+    } catch {
+        host = '';
+        path = args.url;
+    }
+
+    const pathSegment = path.replace(/\//g, '_').slice(0, 40);
+    const method = args.method ? args.method.toUpperCase() : 'REQ';
+
+    const statusNum = typeof args.status === 'number' && Number.isFinite(args.status)
+        ? Math.trunc(args.status)
+        : null;
+    const statusSegment = statusNum !== null && statusNum >= 100 && statusNum <= 599
+        ? String(statusNum)
+        : '';
+
+    const raw = [idxStr, method, statusSegment, host, pathSegment].filter(Boolean).join('_');
+
+    return sanitizeFilename(raw, `${idxStr}_request`);
+}
+
+/**
+ * Builds the complete path of a snippet file inside the ZIP:
+ *   `{sanitizedFolder}/{sanitizedBase}.{extension}`
+ *
+ * All three components are sanitized individually so that neither the
+ * folder nor the file level can be broken by path traversal.
+ */
+export function buildSnippetZipPath(
+    folderName: string,
+    baseName: string,
+    extension: string
+): string {
+    const folder = sanitizeFilename(folderName, 'format');
+    const file = sanitizeFilename(baseName, 'request');
+    const ext = sanitizeFilename(extension, 'txt').replace(/^\.+/, '');
+    return `${folder}/${file}.${ext}`;
+}
+
+/** Default filename for the archive itself. */
+export function buildArchiveFilename(now: Date = new Date()): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+        + `_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+    return `HTTPToolkit_Export_${stamp}.zip`;
+}
