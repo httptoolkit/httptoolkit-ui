@@ -230,6 +230,13 @@ export interface MessageBody {
     isDecoded(): this is DecodedMessageBody;
     isFailed(): this is FailedDecodeMessageBody;
 
+    // True once the body has reached a terminal state — either fully received or aborted
+    // mid-stream. Bodies built via the legacy (one-shot) ingestion path are complete from
+    // construction; bodies built via HttpBody.streaming() transition to complete via
+    // markBodyComplete() or markBodyAborted().
+    isComplete(): boolean;
+    isAborted(): boolean;
+
     waitForDecoding(): Promise<Buffer | undefined>;
     cleanup(): void;
 }

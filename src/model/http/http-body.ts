@@ -1,5 +1,4 @@
-import * as _ from 'lodash';
-import { observable, runInAction } from 'mobx';
+import { observable, runInAction, action, when } from 'mobx';
 
 import {
     Headers,
@@ -11,11 +10,6 @@ import {
     FailedDecodeMessageBody
 } from "../../types";
 import {
-    fakeBuffer,
-    FakeBuffer,
-    stringToBuffer,
-} from '../../util/buffer';
-import {
     asHeaderArray,
     getHeaderValues
 } from './headers';
@@ -24,52 +18,131 @@ import { logError } from '../../errors';
 import { decodeBody } from '../../services/ui-worker-api';
 import { decodingRequired } from '../events/bodies';
 
+// Marker init shape for the streaming factory below. Distinguishable from InputMessage and
+// { body: Buffer } by the unique 'streaming' key, so 'streaming' in message narrows cleanly.
+type StreamingBodyInit = { streaming: true };
+
 export class HttpBody implements MessageBody {
 
     constructor(
-        message: InputMessage | { body: Buffer },
+        message: InputMessage | { body: Buffer } | StreamingBodyInit,
         headers: Headers | RawHeaders
     ) {
         this._contentEncoding = asHeaderArray(getHeaderValues(headers, 'content-encoding'));
 
+        if ('streaming' in message) {
+            // New streaming ingestion path: chunks arrive later via appendChunk.
+            this._bodyState = 'streaming';
+            this._encodedChunks = [];
+            this._encodedByteLength = 0;
+            return;
+        }
+
+        // Legacy one-shot ingestion: body is fully present at construction.
+        this._bodyState = 'completed';
+
         if (!('body' in message) || !message.body) {
-            this._encoded = stringToBuffer("");
+            this._encodedChunks = [];
+            this._encodedByteLength = 0;
         } else if (Buffer.isBuffer(message.body)) {
-            this._encoded = message.body;
+            this._encodedChunks = [message.body];
+            this._encodedByteLength = message.body.byteLength;
         } else if ('buffer' in message.body) {
-            this._encoded = message.body.buffer;
+            this._encodedChunks = [message.body.buffer];
+            this._encodedByteLength = message.body.buffer.byteLength;
         } else {
-            this._encoded = fakeBuffer(message.body.encodedLength);
+            // HAR-imported body: encoded bytes were never available, only their length and the
+            // pre-decoded result. Skip the encoded array entirely.
+            this._encodedChunks = undefined;
+            this._encodedByteLength = message.body.encodedLength;
             this._decoded = message.body.decoded;
         }
     }
 
+    /**
+     * Construct a body that will be populated incrementally. Append bytes via appendChunk
+     * as chunks arrive, then finalize with markBodyComplete (normal end) or markBodyAborted
+     * (stream interrupted).
+     */
+    static streaming(headers: Headers | RawHeaders): HttpBody {
+        return new HttpBody({ streaming: true }, headers);
+    }
+
     private readonly _contentEncoding: string[];
 
-    private _encoded: FakeBuffer | Buffer; // Not readonly - replaced with FakeBuffer on decode
-    get encodedData() {
-        // We only allow accessing this after a failed decoding (enforced type-level by the
-        // MessageBody interfaces), and the data isn't necessarily _always_ available regardless.
-        if (this._decodingError && Buffer.isBuffer(this._encoded)) {
-            return this._encoded;
-        }
-    }
+    // Encoded bytes are stored as an array of chunks until decoding is triggered, at which
+    // point they're consolidated into a single buffer and (for non-identity encodings) handed
+    // off to the worker — leaving _encodedChunks undefined. _encodedByteLength survives that
+    // transition so consumers can keep reading the original encoded length.
+    private _encodedChunks: Buffer[] | undefined;
+
+    @observable
+    private _encodedByteLength: number = 0;
 
     get encodedByteLength() {
-        return this._encoded.byteLength;
+        return this._encodedByteLength;
     }
 
-    private startDecodingAsync() {
-        if (!this._decodedPromise) {
-            this.waitForDecoding().catch(() => {});
+    // Recovered encoded bytes after a decode failure: the worker returns the original input
+    // buffer alongside the error so the UI can show what we tried to decode.
+    @observable.ref
+    private _encodedRecovered: Buffer | undefined;
+
+    get encodedData(): Buffer | undefined {
+        // Only exposed after a failed decode
+        if (this._decodingError) {
+            return this._encodedRecovered;
         }
+        return undefined;
+    }
+
+    // 'streaming' — chunks may still arrive (only via the streaming factory).
+    // 'completed' — body fully received; decode may run on demand.
+    // 'aborted'   — body terminated mid-stream; decode may still run on the partial bytes
+    //               (legitimately succeeds for identity encoding, generally fails for truncated
+    //               compressed encodings — surfaced via the standard decode-failure path).
+    @observable
+    private _bodyState: 'streaming' | 'completed' | 'aborted' = 'completed';
+
+    isComplete(): boolean {
+        return this._bodyState !== 'streaming';
+    }
+
+    isAborted(): boolean {
+        return this._bodyState === 'aborted';
+    }
+
+    @action
+    appendChunk(chunk: Buffer): void {
+        if (this._bodyState !== 'streaming') {
+            throw new Error(`Cannot append body chunk: body is in '${this._bodyState}' state`);
+        }
+        this._encodedChunks!.push(chunk);
+        this._encodedByteLength += chunk.byteLength;
+    }
+
+    @action
+    markBodyComplete(): void {
+        if (this._bodyState !== 'streaming') {
+            throw new Error(`Cannot mark body complete: body is in '${this._bodyState}' state`);
+        }
+        this._bodyState = 'completed';
+    }
+
+    @action
+    markBodyAborted(): void {
+        if (this._bodyState !== 'streaming') {
+            throw new Error(`Cannot mark body aborted: body is in '${this._bodyState}' state`);
+        }
+        this._bodyState = 'aborted';
     }
 
     @observable.ref
     private _decoded: Buffer | undefined;
+
     get decodedData() {
-        // Any attempt to read pending decoded data will trigger the decoding process,
-        // if it hasn't already started.
+        // Reading the decoded view triggers decoding (which itself defers until the body
+        // reaches a terminal state). Returns undefined until the decode promise resolves.
         if (!this._decoded) this.startDecodingAsync();
         return this._decoded;
     }
@@ -79,8 +152,6 @@ export class HttpBody implements MessageBody {
     }
 
     isDecoded(): this is DecodedMessageBody {
-        // Any attempt to check whether decoded data is available yet will trigger the decoding
-        // process, if it hasn't already started.
         if (!this._decoded) this.startDecodingAsync();
         return !!this._decoded;
     }
@@ -89,86 +160,88 @@ export class HttpBody implements MessageBody {
         return !!this._decodingError;
     }
 
-    // Note that exactly one of _encoded & _decoded is a buffer, never neither/both. We set the
-    // available buffer in the constructor. After successful encoding, we clear the encoded data
-    // and replace it with a fake buffer that just stores the original length. Adding some edge
-    // cases, possible states are:
-    // * Usual initial state: _encoded set, nothing else
-    // * Encoding: _encoded is fake, _decodedPromise is pending, nothing else
-    // * Encoded: _encoded is fake, _decoded is set, nothing else
-    // * Failed: _encoded is buffer, _decodingError is set, nothing else
-    // * Very hard unusual failure: _encoded is fake, _decodingError is set
-
-
-
-    // While errors are never thrown, they're stored here, so we can show them in the UI where
-    // appropriate (body section, explaining the failure alongside the encoded data for debugging).
     @observable.ref
     private _decodingError: Error | undefined;
     get decodingError() { return this._decodingError; }
 
-    // Not populated until it's read, to reduce memory usage in large sessions
-    _decodedPromise: Promise<Buffer | undefined> | undefined;
+    private startDecodingAsync() {
+        if (!this._decodedPromise) {
+            this.waitForDecoding().catch(() => {});
+        }
+    }
+
+    // Held until the promise settles, then dropped to free closure refs (we may have
+    // tens of thousands of these in large sessions).
+    private _decodedPromise: Promise<Buffer | undefined> | undefined;
+
     waitForDecoding(): Promise<Buffer | undefined> {
         if (this._decoded) return Promise.resolve(this._decoded);
         if (this._decodingError) return Promise.resolve(undefined);
 
-        // If we have no result and no error, we need to do the decoding ourselves (or use
-        // an existing pending decoding promise, if already set)
         if (!this._decodedPromise) {
-            this._decodedPromise = (async (): Promise<Buffer | undefined> => {
-                // One is always set - so if _decoded is not set, _encoded must be.
-                const encodedBuffer = this._encoded as Buffer;
-
-                // Change to a fake buffer, while the web worker takes the data to decode. If we
-                // decoded successfully, we never put this back (to avoid duplicting the data).
-                const encodedLength = encodedBuffer.byteLength;
-                this._encoded = fakeBuffer(encodedLength);
-
-                try {
-                    // We short-circuit (to avoid the render+async+re-render) if we know that
-                    // decoding is not actually required here.
-                    const { decoded } = decodingRequired(encodedBuffer, this._contentEncoding)
-                        ? await decodeBody(encodedBuffer, this._contentEncoding)
-                        : { decoded: encodedBuffer };
-
-                    runInAction(() => {
-                        this._decoded = decoded;
-                    });
-
-                    return decoded;
-                } catch (e: any) {
-                    logError(e);
-
-                    // In most cases, we get the encoded data back regardless, so recapture it here:
-                    if (e.inputBuffer) {
-                        this._encoded = e.inputBuffer;
-                    }
-                    runInAction(() => {
-                        this._decodingError = e;
-                    });
-
-                    return undefined;
-                } finally {
-                    // Once the promise is done, we drop it to save memory (sometimes we store
-                    // 10s or 100s of thousands of these objects, so extra data isn't cheap).
-                    this._decodedPromise = undefined;
-                }
-
-            })();
+            this._decodedPromise = this._runDecode();
         }
         return this._decodedPromise;
     }
 
-    // Must only be called when the exchange & body will no longer be used. Ensures that large data is
-    // definitively unlinked, since some browser issues can result in exchanges not GCing immediately.
-    // Important: for safety, this leaves the body in a *VALID* but reset state - not a totally blank one.
+    private async _runDecode(): Promise<Buffer | undefined> {
+        // Defer until the body has stopped streaming. 'aborted' is a valid terminal state for
+        // decode purposes — partial gzip will fail loudly via the standard failure path,
+        // partial identity content is just shorter than expected.
+        if (this._bodyState === 'streaming') {
+            await when(() => this._bodyState !== 'streaming');
+        }
+
+        const chunks = this._encodedChunks ?? [];
+        const encodedBuffer =
+            chunks.length === 0 ? EMPTY_BUFFER :
+            chunks.length === 1 ? chunks[0] :
+            Buffer.concat(chunks);
+
+        // Drop chunk references; the consolidated buffer will be transferred to the worker
+        // (or used directly for identity bodies). The byte length is preserved separately.
+        runInAction(() => {
+            this._encodedChunks = undefined;
+        });
+
+        try {
+            const { decoded } = decodingRequired(encodedBuffer, this._contentEncoding)
+                ? await decodeBody(encodedBuffer, this._contentEncoding)
+                : { decoded: encodedBuffer };
+
+            runInAction(() => {
+                this._decoded = decoded;
+            });
+
+            return decoded;
+        } catch (e: any) {
+            logError(e);
+
+            runInAction(() => {
+                if (e.inputBuffer) {
+                    this._encodedRecovered = e.inputBuffer;
+                }
+                this._decodingError = e;
+            });
+
+            return undefined;
+        } finally {
+            this._decodedPromise = undefined;
+        }
+    }
+
+    // Must only be called when the exchange & body will no longer be used. Ensures large data
+    // is definitively unlinked, since some browser issues can result in exchanges not GCing
+    // immediately. Important: leaves the body in a *VALID* but reset state — equivalent to
+    // a completed empty decoded body — not a totally blank one.
     cleanup() {
-        // Set to a valid state for an un-decoded but totally empty body.
         this._decoded = EMPTY_BUFFER;
-        this._encoded = EMPTY_BUFFER;
+        this._encodedChunks = undefined;
+        this._encodedByteLength = 0;
+        this._encodedRecovered = undefined;
         this._decodingError = undefined;
-        this._decodedPromise = undefined;;
+        this._decodedPromise = undefined;
+        this._bodyState = 'completed';
     }
 }
 
