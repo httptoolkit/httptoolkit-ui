@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { computed } from 'mobx';
+import { autorun, computed, IReactionDisposer } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import {
     Router,
@@ -38,6 +38,7 @@ import { CheckoutSpinner } from './account/checkout-spinner';
 import { HtmlContextMenu } from './html-context-menu';
 import { DisconnectedWarning } from './disconnected-warning';
 import { McpModal } from './mcp/mcp-modal';
+import { ZipExportDialog } from './view/zip-export-dialog';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -99,6 +100,20 @@ class App extends React.Component<{
     uiStore: UiStore,
     proxyStore: ProxyStore
 }> {
+
+    private closeZipExportOnAccountModal?: IReactionDisposer;
+
+    componentDidMount() {
+        this.closeZipExportOnAccountModal = autorun(() => {
+            if (this.props.accountStore.modal) {
+                this.props.uiStore.closeZipExport();
+            }
+        });
+    }
+
+    componentWillUnmount() {
+        this.closeZipExportOnAccountModal?.();
+    }
 
     @computed
     get canUseMcp() {
@@ -225,8 +240,12 @@ class App extends React.Component<{
 
         const {
             contextMenuState,
-            clearHtmlContextMenu
+            clearHtmlContextMenu,
+            zipExportRequest,
+            closeZipExport
         } = this.props.uiStore;
+
+        const hasModal = !!modal || !!zipExportRequest;
 
         return <LocationProvider history={appHistory}>
             <AppKeyboardShortcuts
@@ -234,10 +253,10 @@ class App extends React.Component<{
                 canVisitSettings={this.canVisitSettings}
             />
             <AppContainer
-                aria-hidden={!!modal}
-                inert={!!modal}
+                aria-hidden={hasModal}
+                inert={hasModal}
                 // 'inert' doesn't actually work - it's non-standard, so we need this:
-                ref={node => node && (!!modal ?
+                ref={node => node && (hasModal ?
                     node.setAttribute('inert', '') : node.removeAttribute('inert')
                 )}
             >
@@ -257,7 +276,7 @@ class App extends React.Component<{
                 <DisconnectedWarning />
             </AppContainer>
 
-            { !!modal && <ModalOverlay /> }
+            { hasModal && <ModalOverlay /> }
 
             {
                 modal === 'login' &&
@@ -284,6 +303,14 @@ class App extends React.Component<{
 
             { this.props.uiStore.mcpModalOpen && this.canUseMcp &&
                 <McpModal onClose={this.props.uiStore.closeMcpModal} />
+            }
+
+            { zipExportRequest &&
+                <ZipExportDialog
+                    events={zipExportRequest.events}
+                    titleSuffix={zipExportRequest.titleSuffix}
+                    onClose={closeZipExport}
+                />
             }
 
             {

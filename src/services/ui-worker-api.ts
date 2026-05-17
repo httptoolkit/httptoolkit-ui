@@ -1,5 +1,6 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
+import type { Har } from 'har-format';
 import type { SUPPORTED_ENCODING } from 'http-encoding';
 
 import type {
@@ -18,7 +19,13 @@ import type {
     FormatRequest,
     FormatResponse,
     ParseCertRequest,
-    ParseCertResponse
+    ParseCertResponse,
+    ZipExportRequest,
+    ZipExportResponse,
+    ZipExportProgressMessage,
+    ZipExportFormatTriple,
+    ZipExportPrewarmRequest,
+    ZipExportPrewarmResponse
 } from './ui-worker';
 
 import { Headers, Omit } from '../types';
@@ -34,43 +41,137 @@ function getId() {
 }
 
 const emitter = new EventEmitter();
+const progressEmitter = new EventEmitter();
 
 worker.addEventListener('message', (event) => {
-    emitter.emit(event.data.id.toString(), event.data);
+    const data = event.data;
+    if (data && data.type === 'zip-export-progress') {
+        progressEmitter.emit(data.id.toString(), data);
+        return;
+    }
+    emitter.emit(data.id.toString(), data);
 });
+
+/**
+ * Additional options for long-running requests (ZIP export, potentially
+ * others). Intentionally optional — no existing `callApi` call needs to
+ * be modified.
+ */
+export interface CallApiOptions<R> {
+    signal?: AbortSignal;
+    onProgress?: (msg: ZipExportProgressMessage) => void;
+    cancelChannel?: boolean;
+    /**
+     * Hard timeout in ms. If the worker does not respond within this window,
+     * the call is rejected and (if `cancelChannel` is active) an abort is
+     * sent to the worker. `undefined` = no timeout.
+     */
+    timeoutMs?: number;
+}
 
 function callApi<
     T extends BackgroundRequest,
     R extends BackgroundResponse
->(request: Omit<T, 'id'>, transfer: any[] = []): Promise<R> {
+>(
+    request: Omit<T, 'id'>,
+    transfer: any[] = [],
+    options?: CallApiOptions<R>
+): Promise<R> {
     const id = getId();
 
     return new Promise<R>((resolve, reject) => {
-        worker.postMessage(Object.assign({ id }, request), transfer);
+        let cancelChannel: MessageChannel | undefined;
+        let finalized = false;
+        let progressHandler: ((data: ZipExportProgressMessage) => void) | undefined;
+        let abortListener: (() => void) | undefined;
+        let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+        let responseHandler: ((data: R) => void) | undefined;
+        const signal = options?.signal;
 
-        emitter.once(id.toString(), (data: R) => {
+        const finalize = () => {
+            if (finalized) return;
+            finalized = true;
+            if (progressHandler) {
+                progressEmitter.off(id.toString(), progressHandler);
+            }
+            if (responseHandler) {
+                emitter.off(id.toString(), responseHandler);
+            }
+            if (abortListener && signal) {
+                try { signal.removeEventListener('abort', abortListener); } catch {}
+            }
+            if (timeoutHandle !== undefined) {
+                clearTimeout(timeoutHandle);
+                timeoutHandle = undefined;
+            }
+            try { cancelChannel?.port1.close(); } catch {}
+        };
+
+        // Spread request first, then override with generated id to prevent
+        // any request.id from accidentally overwriting the correlation id.
+        let payload: any = { ...request, id };
+        const transferList = transfer.slice();
+        if (options?.cancelChannel) {
+            cancelChannel = new MessageChannel();
+            payload.cancelPort = cancelChannel.port2;
+            transferList.push(cancelChannel.port2);
+        }
+
+        if (signal) {
+            if (signal.aborted) {
+                finalize();
+                reject(new DOMException('Aborted', 'AbortError'));
+                return;
+            }
+            abortListener = () => {
+                try { cancelChannel?.port1.postMessage({ type: 'abort' }); } catch {}
+                // Also reject immediately so the main thread is not blocked
+                // waiting for the worker if it is stuck before its next yield.
+                finalize();
+                reject(new DOMException('Aborted', 'AbortError'));
+            };
+            signal.addEventListener('abort', abortListener, { once: true });
+        }
+
+        if (options?.onProgress) {
+            progressHandler = (data: ZipExportProgressMessage) => {
+                options.onProgress!(data);
+            };
+            progressEmitter.on(id.toString(), progressHandler);
+        }
+
+        if (typeof options?.timeoutMs === 'number' && options.timeoutMs > 0) {
+            timeoutHandle = setTimeout(() => {
+                // Proactively try to stop the worker; if it cooperates,
+                // this will result in a cancelled response and finalize
+                // runs normally. If not, reject directly — the worker
+                // can be ignored afterwards.
+                try { cancelChannel?.port1.postMessage({ type: 'abort' }); } catch {}
+                finalize();
+                reject(new Error(
+                    `Worker call (${(request as any).type}) timed out after ${options.timeoutMs}ms`
+                ));
+            }, options.timeoutMs);
+        }
+
+        // Register the response handler BEFORE postMessage so that an
+        // (unlikely) synchronous worker response cannot be missed.
+        responseHandler = (data: R) => {
+            finalize();
             if (data.error) {
                 reject(deserializeError(data.error));
             } else {
                 resolve(data);
             }
-        });
+        };
+        emitter.once(id.toString(), responseHandler);
+
+        worker.postMessage(payload, transferList);
     });
 }
 
-/**
- * Takes a body, asynchronously decodes it and returns the decoded buffer.
- *
- * Note that this requires transferring the _encoded_ body to a web worker,
- * so after this is run the encoded the buffer will become empty, if any
- * decoding is actually required.
- *
- * The method returns an object containing the new decoded buffer and the
- * original encoded data (transferred back) in a new buffer.
- */
 export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
     if (!decodingRequired(encodedBuffer, encodings)) {
-        // Shortcut to skip decoding when we know it's not required:
         return { encoded: encodedBuffer, decoded: encodedBuffer };
     }
 
@@ -86,8 +187,6 @@ export async function decodeBody(encodedBuffer: Buffer, encodings: string[]) {
             decoded: Buffer.from(result.decodedBuffer)
         };
     } catch (e: any) {
-        // In general, the worker should return the original encoded buffer to us, so we can
-        // show it to the user to help them debug encoding issues:
         if (e.inputBuffer) {
             e.inputBuffer = Buffer.from(e.inputBuffer);
         }
@@ -100,7 +199,6 @@ export async function encodeBody(decodedBuffer: Buffer, encodings: string[]) {
         encodings.length === 0 ||
         (encodings.length === 1 && encodings[0] === 'identity')
     ) {
-        // Shortcut to skip encoding when we know it's not required
         return decodedBuffer;
     }
 
@@ -153,4 +251,71 @@ export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterK
         format,
         headers,
     })).formatted;
+}
+
+/**
+ * Hard timeout for ZIP exports. Even very large exports (5k requests ×
+ * 37 formats ≈ 185k snippets) complete in a few seconds; 5 minutes is
+ * a safeguard against a hung worker, not an expected upper bound.
+ */
+const ZIP_EXPORT_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * Pre-warms the ZIP export hot path in the worker. Idempotent, very
+ * cheap, fire-and-forget in the UI. Drastically reduces perceived
+ * latency on the first "Download ZIP" click because HTTPSnippet + fflate
+ * are already JIT-compiled by then.
+ */
+export async function prewarmZipExport(): Promise<void> {
+    try {
+        await callApi<ZipExportPrewarmRequest, ZipExportPrewarmResponse>({
+            type: 'zip-export-prewarm'
+        });
+    } catch {
+        // Ignore prewarm errors — the actual export will surface a
+        // real error that we can display to the user.
+    }
+}
+
+export async function exportAsZip(args: {
+    har: Har;
+    formats: ZipExportFormatTriple[];
+    toolVersion: string;
+    signal?: AbortSignal;
+    onProgress?: (p: ZipExportProgressMessage) => void;
+    snippetBodySizeLimit?: number;
+}): Promise<ZipExportResponse> {
+    try {
+        return await callApi<ZipExportRequest, ZipExportResponse>(
+            {
+                type: 'zip-export',
+                har: args.har,
+                formats: args.formats,
+                toolVersion: args.toolVersion,
+                snippetBodySizeLimit: args.snippetBodySizeLimit
+            },
+            [],
+            {
+                signal: args.signal,
+                onProgress: args.onProgress,
+                cancelChannel: true,
+                timeoutMs: ZIP_EXPORT_TIMEOUT_MS
+            }
+        );
+    } catch (error: any) {
+        // Keep the ZIP API contract stable: callers expect cancellation to
+        // resolve as a cancelled response, not reject. `callApi` may reject
+        // immediately on abort to avoid hangs before the worker yields.
+        if (error?.name === 'AbortError') {
+            return {
+                id: -1,
+                archive: new ArrayBuffer(0),
+                cancelled: true,
+                snippetSuccessCount: 0,
+                snippetErrorCount: 0
+            };
+        }
+
+        throw error;
+    }
 }
