@@ -1,5 +1,6 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
+import type { Har } from 'har-format';
 import type { SUPPORTED_ENCODING } from 'http-encoding';
 
 import type {
@@ -18,7 +19,11 @@ import type {
     FormatRequest,
     FormatResponse,
     ParseCertRequest,
-    ParseCertResponse
+    ParseCertResponse,
+    ZipExportRequest,
+    ZipExportResponse,
+    ZipExportProgress,
+    ZipExportFormatTriple
 } from './ui-worker';
 
 import { Headers, Omit } from '../types';
@@ -153,4 +158,38 @@ export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterK
         format,
         headers,
     })).formatted;
+}
+
+export async function exportAsZip(args: {
+    har: Har;
+    formats: ZipExportFormatTriple[];
+    toolVersion: string;
+    signal?: AbortSignal;
+    onProgress?: (progress: ZipExportProgress) => void;
+}): Promise<ZipExportResponse> {
+    // ZIP exports are long-running, so they get a dedicated channel for
+    // cancellation & progress, to avoid complicating the shared
+    // request-response logic above:
+    const controlChannel = new MessageChannel();
+
+    controlChannel.port1.onmessage = (event: MessageEvent) => {
+        args.onProgress?.(event.data as ZipExportProgress);
+    };
+
+    const abortListener = () => controlChannel.port1.postMessage({ type: 'abort' });
+    args.signal?.addEventListener('abort', abortListener, { once: true });
+    if (args.signal?.aborted) abortListener();
+
+    try {
+        return await callApi<ZipExportRequest, ZipExportResponse>({
+            type: 'zip-export',
+            har: args.har,
+            formats: args.formats,
+            toolVersion: args.toolVersion,
+            controlPort: controlChannel.port2
+        }, [controlChannel.port2]);
+    } finally {
+        args.signal?.removeEventListener('abort', abortListener);
+        controlChannel.port1.close();
+    }
 }

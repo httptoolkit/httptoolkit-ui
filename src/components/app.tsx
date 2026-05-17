@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { computed } from 'mobx';
+import { autorun, computed, IReactionDisposer } from 'mobx';
 import { observer, inject } from 'mobx-react';
 import {
     Router,
@@ -38,6 +38,7 @@ import { CheckoutSpinner } from './account/checkout-spinner';
 import { HtmlContextMenu } from './html-context-menu';
 import { DisconnectedWarning } from './disconnected-warning';
 import { McpModal } from './mcp/mcp-modal';
+import { ZipExportDialog } from './view/zip-export-dialog';
 
 const AppContainer = styled.div<{ inert?: boolean }>`
     display: flex;
@@ -104,6 +105,22 @@ class App extends React.Component<{
     get canUseMcp() {
         const mcpPath = this.props.proxyStore.toolPaths?.mcp;
         return !!mcpPath && mcpPath.length > 0;
+    }
+
+    private closeZipExportOnAccountModal?: IReactionDisposer;
+
+    componentDidMount() {
+        // If an account modal opens (e.g. a login prompt), close the ZIP
+        // export dialog underneath it rather than stacking the two:
+        this.closeZipExportOnAccountModal = autorun(() => {
+            if (this.props.accountStore.modal) {
+                this.props.uiStore.closeZipExport();
+            }
+        });
+    }
+
+    componentWillUnmount() {
+        this.closeZipExportOnAccountModal?.();
     }
 
     @computed
@@ -284,6 +301,13 @@ class App extends React.Component<{
 
             { this.props.uiStore.mcpModalOpen && this.canUseMcp &&
                 <McpModal onClose={this.props.uiStore.closeMcpModal} />
+            }
+
+            { this.props.uiStore.zipExportRequest &&
+                <ZipExportDialog
+                    events={this.props.uiStore.zipExportRequest.events}
+                    onClose={this.props.uiStore.closeZipExport}
+                />
             }
 
             {

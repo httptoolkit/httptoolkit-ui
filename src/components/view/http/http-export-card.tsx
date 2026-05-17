@@ -135,6 +135,18 @@ const ExportHarPill = styled(observer((p: {
     margin-right: auto;
 `;
 
+const ExportZipPill = inject('uiStore')(observer((p: {
+    uiStore?: UiStore,
+    exchange: HttpExchangeView
+}) =>
+    <PillButton
+        title='Export this request as code snippets in a ZIP archive'
+        onClick={() => p.uiStore!.openZipExport([p.exchange])}
+    >
+        <Icon icon={['fas', 'file-archive']} /> Export as ZIP
+    </PillButton>
+));
+
 @inject('accountStore')
 @inject('uiStore')
 @observer
@@ -147,7 +159,10 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
         return <CollapsibleCard {...this.props}>
             <header>
                 { isPaidUser
-                    ? <ExportHarPill exchange={exchange} />
+                    ? <>
+                        <ExportHarPill exchange={exchange} />
+                        <ExportZipPill exchange={exchange} />
+                    </>
                     : <ProHeaderPill />
                 }
 

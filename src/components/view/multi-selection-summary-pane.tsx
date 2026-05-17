@@ -6,6 +6,7 @@ import { css, styled } from '../../styles';
 import { Ctrl, saveFile } from '../../util/ui';
 import { CollectedEvent } from '../../types';
 import { AccountStore } from '../../model/account/account-store';
+import { UiStore } from '../../model/ui/ui-store';
 import { generateHar } from '../../model/http/har';
 
 import { Icon } from '../../icons';
@@ -162,8 +163,9 @@ const ProActionsOverlay = styled(GetProOverlay)`
 
 const PREVIEW_COUNT = 10;
 
-export const MultiSelectionSummaryPane = inject('accountStore')(observer((props: {
+export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(observer((props: {
     accountStore?: AccountStore,
+    uiStore?: UiStore,
     selectedEvents: ReadonlyArray<CollectedEvent>,
     onPin: () => void,
     onDelete: () => void,
@@ -173,9 +175,10 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
     const count = selectedEvents.length;
     const isPaidUser = props.accountStore!.user.isPaidUser();
 
-    const httpCount = selectedEvents.filter(e =>
+    const exportableEvents = selectedEvents.filter(e =>
         e.isHttp() && !e.isWebSocket()
-    ).length;
+    );
+    const httpCount = exportableEvents.length;
 
     const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
     const allPinned = selectedEvents.every(e => e.pinned);
@@ -212,6 +215,17 @@ export const MultiSelectionSummaryPane = inject('accountStore')(observer((props:
         >
             <Icon icon={['fas', 'save']} fixedWidth />
             Export as HAR
+        </ActionButton>
+        <ActionButton
+            title={isPaidUser
+                ? 'Export selected exchanges as a ZIP (HAR + snippets + manifest)'
+                : 'With Pro: export as ZIP'
+            }
+            disabled={!isPaidUser || httpCount === 0}
+            onClick={() => props.uiStore!.openZipExport(exportableEvents)}
+        >
+            <Icon icon={['fas', 'file-archive']} fixedWidth />
+            Export as ZIP
         </ActionButton>
     </>;
 
