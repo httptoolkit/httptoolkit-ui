@@ -1,5 +1,5 @@
 import * as sinon from 'sinon';
-import { autorun, computed, configure, runInAction } from 'mobx';
+import { autorun, computed } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import { expect } from '../../test-setup';

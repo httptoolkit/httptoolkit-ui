@@ -1,5 +1,5 @@
 import * as sinon from 'sinon';
-import { observable, reaction } from 'mobx';
+import { observable, reaction, runInAction } from 'mobx';
 
 import { expect } from '../../test-setup';
 import { debounceComputed } from '../../../src/util/observable';
@@ -54,7 +54,7 @@ describe("Deferred observables", () => {
 
         clock.tick(100);
         expect(seenUpdates).to.equal(0);
-        counter.set(2);
+        runInAction(() => counter.set(2));
         expect(seenUpdates).to.equal(1);
     });
 
@@ -66,12 +66,14 @@ describe("Deferred observables", () => {
         reaction(() => slowComputed.get(), () => { seenUpdates += 1; });
 
         clock.tick(100);
-        counter.set(2);
+        runInAction(() => counter.set(2));
         expect(seenUpdates).to.equal(1);
 
-        counter.set(3);
-        counter.set(4);
-        counter.set(5);
+        runInAction(() => {
+            counter.set(3);
+            counter.set(4);
+            counter.set(5);
+        });
         expect(seenUpdates).to.equal(1); // No update yet
 
         clock.tick(100);

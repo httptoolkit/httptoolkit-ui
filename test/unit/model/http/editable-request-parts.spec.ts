@@ -1,4 +1,4 @@
-import { observable } from 'mobx';
+import { observable, runInAction } from 'mobx';
 
 import { expect } from '../../../test-setup';
 
@@ -35,7 +35,7 @@ describe("Editable request part synchronization", () => {
                 () => headers
             );
 
-            url.set('https://');
+            runInAction(() => url.set('https://'));
 
             expect(headers).to.deep.equal([]);
         });
@@ -49,8 +49,8 @@ describe("Editable request part synchronization", () => {
                 () => headers
             );
 
-            url.set('https://');
-            url.set('https://a');
+            runInAction(() => url.set('https://'));
+            runInAction(() => url.set('https://a'));
 
             expect(headers).to.deep.equal([
                 ['host', 'a']
@@ -68,7 +68,7 @@ describe("Editable request part synchronization", () => {
                 () => headers
             );
 
-            url.set('https://example2.test');
+            runInAction(() => url.set('https://example2.test'));
 
             expect(headers).to.deep.equal([
                 ['host', 'example2.test']
@@ -86,7 +86,7 @@ describe("Editable request part synchronization", () => {
                 () => headers
             );
 
-            url.set('https://example2.test');
+            runInAction(() => url.set('https://example2.test'));
 
             expect(headers).to.deep.equal([
                 ['host', 'other.test']
@@ -235,7 +235,7 @@ describe("Editable request part synchronization", () => {
                 () => headers
             );
 
-            headers.push(['content-encoding', 'gzip']);
+            runInAction(() => { headers.push(['content-encoding', 'gzip']); });
 
             await waitForBodyUpdates(body);
             expect(headers).to.deep.equal([
@@ -263,7 +263,7 @@ describe("Editable request part synchronization", () => {
                 () => headers
             );
 
-            headers.splice(1, 1); // Remove the content-encoding header
+            runInAction(() => { headers.splice(1, 1); }); // Remove the content-encoding header
 
             await waitForBodyUpdates(body);
             expect(headers).to.deep.equal([
@@ -362,7 +362,7 @@ describe("Editable request part synchronization", () => {
                 (x) => format.set(x)
             );
 
-            format.set('json');
+            runInAction(() => format.set('json'));
 
             expect(headers).to.deep.equal([
                 ['content-type', 'application/json']
@@ -381,7 +381,7 @@ describe("Editable request part synchronization", () => {
                 (x) => format.set(x)
             );
 
-            headers[0][1] = 'application/json'
+            runInAction(() => { headers[0][1] = 'application/json'; });
 
             expect(format.get()).to.equal('json');
         });
@@ -398,7 +398,7 @@ describe("Editable request part synchronization", () => {
                 (x) => format.set(x)
             );
 
-            headers[0][1] = 'application/unknown-mystery-data'
+            runInAction(() => { headers[0][1] = 'application/unknown-mystery-data'; });
             expect(format.get()).to.equal('xml');
         });
 
@@ -414,7 +414,7 @@ describe("Editable request part synchronization", () => {
                 (x) => format.set(x)
             );
 
-            format.set('xml');
+            runInAction(() => format.set('xml'));
 
             expect(headers).to.deep.equal([
                 ['content-type', 'application/xml']
@@ -433,7 +433,7 @@ describe("Editable request part synchronization", () => {
                 (x) => format.set(x)
             );
 
-            format.set('xml');
+            runInAction(() => format.set('xml'));
 
             expect(headers).to.deep.equal([
                 ['content-type', 'application/json']
