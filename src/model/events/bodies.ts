@@ -2,24 +2,21 @@ import { IObservableValue, observable, action } from 'mobx';
 
 import { testEncodingsAsync } from '../../services/ui-worker-api';
 import { ExchangeMessage } from '../../types';
-import { ObservableCache } from '../observable-cache';
 
 const EncodedSizesCacheKey = Symbol('encoded-body-test');
 type EncodedBodySizes = { [encoding: string]: number };
-type EncodedSizesCache = ObservableCache<{
-    [EncodedSizesCacheKey]: IObservableValue<EncodedBodySizes | undefined> | undefined
-}>;
+type EncodedSizesObservable = IObservableValue<EncodedBodySizes | undefined>;
 
 export function testEncodings(message: ExchangeMessage): EncodedBodySizes | undefined {
     if (!message.body.isDecoded()) return;
 
-    const encodedSizesCache = <EncodedSizesCache> message.cache;
-    const existingObservable = encodedSizesCache.get(EncodedSizesCacheKey);
+    const cache = message.cache;
+    const existingObservable = cache.get(EncodedSizesCacheKey) as EncodedSizesObservable | undefined;
 
     if (existingObservable) return existingObservable.get();
     else {
         const sizesObservable = observable.box<EncodedBodySizes | undefined>();
-        encodedSizesCache.set(EncodedSizesCacheKey, sizesObservable);
+        cache.set(EncodedSizesCacheKey, sizesObservable);
 
         testEncodingsAsync(message.body.decodedData)
         .then(action((testResults: EncodedBodySizes) => {
