@@ -1,6 +1,17 @@
-const webpackConfig = require('../../automation/webpack.unittest').default;
+import { Config } from 'karma';
+import type { Configuration } from 'webpack';
 
-module.exports = function(config) {
+declare module 'karma' {
+    interface ConfigOptions {
+        webpack?: Configuration;
+        webpackMiddleware?: { stats?: string };
+        mochaReporter?: { showDiff?: boolean };
+    }
+}
+
+const webpackConfig: Configuration = require('../../automation/webpack.unittest').default;
+
+module.exports = function(config: Config) {
     config.set({
         frameworks: ['mocha', 'chai', 'webpack'],
 
@@ -10,7 +21,7 @@ module.exports = function(config) {
 
             {
                 // Required due to https://github.com/codymikol/karma-webpack/issues/450
-                pattern: `${webpackConfig.output.path}/**/*`,
+                pattern: `${webpackConfig.output!.path}/**/*`,
                 watched: false,
                 included: false
             }
