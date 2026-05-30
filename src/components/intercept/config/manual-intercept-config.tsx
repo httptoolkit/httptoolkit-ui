@@ -95,18 +95,27 @@ const ManualInterceptConfig = inject('proxyStore')(
         children?: React.ReactNode,
         reportStarted: () => void
     }) => {
-        // Report activation when first opened
-        React.useEffect(() => p.reportStarted(), []);
+        // Report activation when first opened, and refresh network addresses so
+        // the list of remote IPs shown is current.
+        React.useEffect(() => {
+            p.reportStarted();
+            p.proxyStore!.refreshNetworkAddresses();
+        }, []);
 
-        const { httpProxyPort, certPath, certContent } = p.proxyStore!;
+        const {
+            httpProxyPort,
+            certPath,
+            certContent,
+            externalNetworkAddresses
+        } = p.proxyStore!;
 
         return <Observer>{() =>
             <InstructionsContainer>
                 <InstructionsStep>
                     <p>To intercept traffic you need to:</p>
                     <ol>
-                        <li><strong>send your traffic via the HTTP Toolkit proxy</strong></li>
-                        <li><strong>trust the certificate authority</strong> (if using HTTPS) </li>
+                        <li><strong>Proxy your traffic through HTTP Toolkit</strong></li>
+                        <li><strong>Trust the certificate authority</strong></li>
                     </ol>
                     <p>
                         The steps to do this manually depend
@@ -123,7 +132,7 @@ const ManualInterceptConfig = inject('proxyStore')(
                 </InstructionsStep>
 
                 <InstructionsStep>
-                    <h2>1. Send traffic via HTTP Toolkit</h2>
+                    <h2>1. Proxy traffic through HTTP Toolkit</h2>
                     <p>
                         To intercept an HTTP client on this machine, configure it to send traffic via{' '}
                         <CopyableMonoValue>http://localhost:{httpProxyPort}</CopyableMonoValue>.
@@ -137,17 +146,30 @@ const ManualInterceptConfig = inject('proxyStore')(
                         using networking tools like iptables.
                     </p>
                     <p>
-                        Remote clients (e.g. phones) will need to use the IP address of this machine, not
-                        localhost.
+                        Remote clients like phones should use the IP address of this machine, not
+                        localhost{ externalNetworkAddresses.length > 0
+                            ? <>: { externalNetworkAddresses.map((address, i) => {
+                                const sep = i === 0
+                                    ? null
+                                    : i === externalNetworkAddresses.length - 1
+                                        ? (externalNetworkAddresses.length > 2 ? ', or ' : ' or ')
+                                        : ', ';
+                                return <React.Fragment key={address}>
+                                    { sep }
+                                    <CopyableMonoValue>http://{address}:{httpProxyPort}</CopyableMonoValue>
+                                </React.Fragment>;
+                            }) }.</>
+                            : '.'
+                        }
                     </p>
                 </InstructionsStep>
 
                 <InstructionsStep>
                     <h2>2. Trust the certificate authority</h2>
-                    <p><em>Only required to intercept traffic that uses HTTPS</em></p>
+                    <p><em>Only required to intercept traffic using HTTPS</em></p>
                     <p>
                         HTTP Toolkit has generated a certificate authority (CA) on your machine. All
-                        intercepted HTTPS uses certificates from this CA.
+                        HTTPS interception uses this CA.
                     </p>
                     { certContent // Not defined in some older server versions
                         ? <ExportCertificateButton certContent={certContent} />
