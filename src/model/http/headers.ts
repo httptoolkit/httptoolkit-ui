@@ -1,9 +1,37 @@
 import * as _ from 'lodash';
 import { Headers, RawHeaders } from '../../types';
 
-export {
-    h2HeadersToH1
-} from 'mockttp/dist/util/header-utils';
+// Mockttp defines this method, but it's subtle broken with cookies. This is fixed
+// in place here for now - we'll fix more formally in Mockttp later.
+export function h2HeadersToH1(h2Headers: RawHeaders, method: string): RawHeaders {
+    let h1Headers = h2Headers.filter(([key]) => key[0] !== ':');
+
+    if (!getHeaderValue(h1Headers, 'host') && getHeaderValue(h2Headers, ':authority')) {
+        h1Headers.unshift(['Host', getHeaderValue(h2Headers, ':authority')!]);
+    }
+
+    // In HTTP/1 you MUST only send one cookie header - in HTTP/2 sending multiple is fine,
+    // so we have to concatenate them:
+    const cookieHeaders = getHeaderValues(h1Headers, 'cookie');
+    if (cookieHeaders.length > 1) {
+        h1Headers = h1Headers.filter(([key]) => key.toLowerCase() !== 'cookie');
+        h1Headers.push(['Cookie', cookieHeaders.join('; ')]);
+    }
+
+    // We don't know if the request has a body yet - but just in case, we ensure it could:
+    if (
+        // If the request is a method that probably has a body
+        method !== 'GET' &&
+        method !== 'HEAD' &&
+        !( // And you haven't set any kind of framing headers:
+            getHeaderValue(h1Headers, 'content-length') ||
+            getHeaderValue(h1Headers, 'transfer-encoding')?.includes('chunked'))
+    ) { // Add transfer-encoding chunked, which should support all possible cases:
+        h1Headers.push(['Transfer-Encoding', 'chunked']);
+    }
+
+    return h1Headers;
+}
 
 // Based RFC7230, 3.2.6:
 export const HEADER_NAME_PATTERN = '^[!#$%&\'*+\\-.^_`\\|~A-Za-z0-9]+$';
