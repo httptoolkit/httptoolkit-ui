@@ -137,7 +137,7 @@ describe("Editable bodies", () => {
         );
 
         expect(body.latestEncodingResult).to.deep.equal({ state: 'pending' }); // Initial pre-encoding value
-        await delay(0);
+        await body.encodingPromise.catch(() => {}); // Wait for the (rejecting) initial encoding to settle
 
         // Initial failure:
         const secondResult = body.latestEncodingResult;
