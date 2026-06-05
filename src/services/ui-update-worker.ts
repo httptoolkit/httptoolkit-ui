@@ -11,8 +11,7 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies';
 
 import packageMetadata from '../../package.json';
-import { getServerVersion } from './server-api';
-import { lastServerVersion, versionSatisfies } from './service-versions';
+import { lastServerVersion, versionSatisfies } from './version-check';
 
 const appVersion = process.env.UI_VERSION || "Unknown";
 
@@ -47,21 +46,17 @@ async function precacheNewVersionIfSupported(event: ExtendableEvent) {
 }
 
 async function checkServerVersion() {
-    const serverVersion = await getServerVersion().catch(async (e) => {
-        console.log("Failed to get server version. Fallback back to last version anyway...");
-        logError(e);
+    // We gate updates on the last version - should be safe since we generally only upgrade.
+    // On first run, we assume we're roughly up to date. Key goal here is just to avoid loading a
+    // new UI in an env with a very old server.
+    const serverVersion = await lastServerVersion;
 
-        // This isn't perfect, but it's a pretty good approximation of when it's safe to update
-        // This only happens if we get an outdated authToken (possible) or we start before the server.
-        const cachedServerVersion = await lastServerVersion;
-        if (cachedServerVersion) return cachedServerVersion;
+    if (!serverVersion) {
+        console.log('No cached server version available, installing optimistically...');
+        return;
+    }
 
-        // This should never happen: the serverStatus checks should guarantee that we can
-        // talk to the server in almost all cases, or that we have cached data. Fail & report it.
-        throw new Error("No server version available in UI update worker");
-    });
-
-    console.log(`Connected httptoolkit-server version is ${serverVersion}.`);
+    console.log(`Last connected httptoolkit-server version is ${serverVersion}.`);
     console.log(`App requires server version satisfying ${
         packageMetadata.runtimeDependencies['httptoolkit-server']
     }.`);
@@ -69,7 +64,7 @@ async function checkServerVersion() {
     if (!versionSatisfies(serverVersion, packageMetadata.runtimeDependencies['httptoolkit-server'])) {
         throw new Error(
             `New app version ${appVersion} available, but server ${
-                await serverVersion
+                serverVersion
             } is out of date - aborting`
         );
     }

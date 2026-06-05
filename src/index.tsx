@@ -8,7 +8,10 @@ const authToken = urlParams.get('authToken');
 localForage.setItem('latest-auth-token', authToken);
 
 import { initSentry, logError } from './errors';
-initSentry(process.env.SENTRY_DSN);
+initSentry(process.env.SENTRY_DSN, {
+    'version:server': serverVersion,
+    'version:desktop': desktopVersion
+});
 
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -32,7 +35,7 @@ import { InterceptorStore } from './model/interception/interceptor-store';
 import { ApiStore } from './model/api/api-store';
 import { SendStore } from './model/send/send-store';
 
-import { serverVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
+import { serverVersion, desktopVersion, lastServerVersion, UI_VERSION } from './services/service-versions';
 import {
     attemptServerUpdate,
     checkForOutdatedComponents,
