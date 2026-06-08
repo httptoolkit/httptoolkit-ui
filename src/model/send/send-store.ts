@@ -249,6 +249,14 @@ export class SendStore {
             runInAction(() => {
                 sendRequest.sentExchange = exchange;
             });
+
+            const requestRef = new WeakRef(sendRequest);
+            exchange.onCleanup(action(() => {
+                const request = requestRef.deref();
+                if (request?.sentExchange === exchange) {
+                    request.sentExchange = undefined;
+                }
+            }));
         } catch (e: any) {
             pendingRequestDeferred.reject(e);
             runInAction(() => {

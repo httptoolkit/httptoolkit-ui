@@ -16,6 +16,7 @@
         "lib": [
           "dom",
           "ES2017",
+          "ES2021.WeakRef",
           "ScriptHost",
           "WebWorker"
         ],
