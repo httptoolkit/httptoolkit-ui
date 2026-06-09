@@ -49,7 +49,23 @@ async function checkServerVersion() {
     // We gate updates on the last version - should be safe since we generally only upgrade.
     // On first run, we assume we're roughly up to date. Key goal here is just to avoid loading a
     // new UI in an env with a very old server.
-    const serverVersion = await lastServerVersion;
+    let serverVersion: string | null;
+    try {
+        serverVersion = await lastServerVersion;
+    } catch (error) {
+        // Can fail, especially due to IndexedDB issues. If the version isn't available, we
+        // assume it's better to update (almost always safe anyway, sometimes unavoidable).
+        console.log('Could not read last server version, installing optimistically...');
+
+        if (isStorageInitFailure(error)) {
+            // LocalForage hides error details, so we try to reproduce here.
+            await reportStorageFailure(error);
+        } else {
+            logError(error);
+        }
+
+        return;
+    }
 
     if (!serverVersion) {
         console.log('No cached server version available, installing optimistically...');
@@ -70,6 +86,63 @@ async function checkServerVersion() {
     }
 
     console.log('Server version is sufficient, continuing install...');
+}
+
+const INDEXEDDB_PROBE_TIMEOUT = 5000;
+const LOCALFORAGE_NO_STORAGE_ERROR = 'No available storage method found.';
+
+function isStorageInitFailure(error: unknown): boolean {
+    return error instanceof Error && error.message === LOCALFORAGE_NO_STORAGE_ERROR;
+}
+
+async function reportStorageFailure(originalError: unknown) {
+    const cause = await probeIndexedDBFailure();
+    logError(new Error(`SW storage unavailable: ${cause}`), {
+        originalError: describeError(originalError)
+    });
+}
+
+function probeIndexedDBFailure(): Promise<string> {
+    return new Promise((resolve) => {
+        if (typeof indexedDB === 'undefined') {
+            return resolve('indexedDB is not defined in this context');
+        }
+
+        let request: IDBOpenDBRequest;
+        try {
+            // Same database name localforage uses (its configured name, see top of file):
+            request = indexedDB.open('httptoolkit');
+        } catch (error) {
+            return resolve(`indexedDB.open() threw synchronously: ${describeError(error)}`);
+        }
+
+        const timeout = setTimeout(() => {
+            resolve(`indexedDB.open() did not respond within ${INDEXEDDB_PROBE_TIMEOUT}ms`);
+        }, INDEXEDDB_PROBE_TIMEOUT);
+
+        request.onsuccess = () => {
+            clearTimeout(timeout);
+            request.result.close();
+            resolve('indexedDB.open() succeeded (original failure was transient)');
+        };
+        request.onerror = () => {
+            clearTimeout(timeout);
+            resolve(`indexedDB.open() failed: ${describeError(request.error)}`);
+        };
+        request.onblocked = () => {
+            clearTimeout(timeout);
+            resolve('indexedDB.open() was blocked by another open connection');
+        };
+    });
+}
+
+// IndexedDB rejects with DOMExceptions, which carry a meaningful name (e.g. 'UnknownError',
+// 'QuotaExceededError', 'InvalidStateError') that pinpoints the failure - so surface it:
+function describeError(error: unknown) {
+    if (error instanceof Error || error instanceof DOMException) {
+        return `${error.name}: ${error.message}`;
+    }
+    return String(error);
 }
 
 // Async, drop leftover caches from previous workbox versions:
