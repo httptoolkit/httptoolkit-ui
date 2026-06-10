@@ -168,7 +168,8 @@ export default merge(common, {
                     ],
                     'connect-src': [
                         "'self'", 'data:',
-                        'http://127.0.0.1:45456', 'http://127.0.0.1:45457', 'ws://127.0.0.1:45456', 'ws://127.0.0.1:45457',
+                        // Server ports are dynamic, so we allow all localhost here
+                        'http://127.0.0.1:*', 'ws://127.0.0.1:*',
                         'https://*.httptoolkit.tech', 'https://*.ingest.us.sentry.io'
                     ],
                     'report-uri': CSP_REPORT_URL,
