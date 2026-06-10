@@ -121,7 +121,7 @@ export interface ZipExportRequest extends Message {
     formatIds: string[];
     // Whether to include the full raw data as requests.har in the archive:
     includeHar: boolean;
-    toolVersion: string;
+    httpToolkitVersion: string;
 }
 
 export interface ZipExportResponse extends Message {
@@ -211,7 +211,7 @@ async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
 
 
 async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResponse> {
-    const { id, har, formatIds, includeHar, toolVersion } = request;
+    const { id, har, formatIds, includeHar, httpToolkitVersion } = request;
 
     const entries = har.log.entries;
     const total = entries.length;
@@ -286,15 +286,11 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
             } catch (e: any) {
                 // Per-snippet failures are non-fatal: they're recorded in
                 // the manifest (and reported by the UI thread), and the
-                // rest of the export continues.
+                // rest of the export continues. The request details are
+                // recoverable from manifest.entries[entryIndex]:
                 manifestErrors.push({
-                    file: baseName,
-                    formatId: fmt.id,
-                    format: fmt.label,
                     entryIndex: i,
-                    method: cleanedReq.method,
-                    url: cleanedReq.url,
-                    status,
+                    formatId: fmt.id,
                     error: String(e?.message ?? e)
                 });
             }
@@ -318,14 +314,12 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
     const manifest: ZipExportManifest = {
         version: ZIP_EXPORT_MANIFEST_VERSION,
         generatedAt: new Date().toISOString(),
-        tool: 'httptoolkit-ui',
-        toolVersion,
+        httpToolkitVersion,
         requestCount: total,
         formats: formats.map(f => ({
             id: f.id,
             target: f.target,
             client: f.client,
-            category: f.category,
             label: f.label,
             folderName: f.folderName,
             extension: f.extension

@@ -162,13 +162,13 @@ export async function exportAsZip(args: {
     har: Har;
     formatIds: string[];
     includeHar: boolean;
-    toolVersion: string;
+    httpToolkitVersion: string;
 }): Promise<ZipExportResponse> {
     return callApi<ZipExportRequest, ZipExportResponse>({
         type: 'zip-export',
         har: args.har,
         formatIds: args.formatIds,
         includeHar: args.includeHar,
-        toolVersion: args.toolVersion
+        httpToolkitVersion: args.httpToolkitVersion
     });
 }

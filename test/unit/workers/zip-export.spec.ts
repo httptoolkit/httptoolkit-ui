@@ -50,7 +50,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(2),
             formatIds: ['shell~~curl'],
             includeHar: true,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
 
         expect(res.snippetErrorCount).to.equal(0);
@@ -64,9 +64,12 @@ describe('ZIP export worker round-trip', function () {
 
         const manifest = JSON.parse(strFromU8(unpacked['manifest.json']));
         expect(manifest.version).to.equal(1);
+        expect(manifest.httpToolkitVersion).to.equal('test');
         expect(manifest.requestCount).to.equal(2);
         expect(manifest.formats).to.have.length(1);
         expect(manifest.formats[0].id).to.equal('shell~~curl');
+        expect(manifest.formats[0].target).to.equal('shell');
+        expect(manifest.formats[0].client).to.equal('curl');
         expect(manifest.formats[0].folderName).to.equal('shell-curl');
         expect(manifest.errors).to.have.length(0);
     });
@@ -76,13 +79,15 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(1),
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
         const unpacked = unzipSync(new Uint8Array(res.archive));
         const curlFile = Object.keys(unpacked).find(n => n.startsWith('shell-curl/') && !n.endsWith('/'))!;
         const content = strFromU8(unpacked[curlFile]);
         expect(content.toLowerCase()).to.not.include('content-length');
         expect(content).to.not.include(':authority');
+        // Snippets are trimmed, matching the single-snippet export:
+        expect(content).to.equal(content.trim());
     });
 
     it('exports placeholder text for binary request bodies, not a silently bodiless request', async () => {
@@ -101,7 +106,7 @@ describe('ZIP export worker round-trip', function () {
             har,
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);
 
@@ -120,7 +125,7 @@ describe('ZIP export worker round-trip', function () {
             har,
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);
 
@@ -149,6 +154,7 @@ describe('ZIP export worker round-trip', function () {
             har: harWithNullBody,
             formatIds: ['clojure~~clj_http'],
             includeHar: false,
+            httpToolkitVersion: 'test'
         });
 
         expect(res.snippetSuccessCount).to.equal(0);
@@ -167,7 +173,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(0),
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         })).to.be.rejectedWith('No HTTP requests available for ZIP export');
     });
 
@@ -176,7 +182,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(1),
             formatIds: [],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         })).to.be.rejectedWith('Nothing selected for ZIP export');
     });
 
@@ -185,7 +191,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(1),
             formatIds: ['nonsense~~nonsense'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         })).to.be.rejectedWith('Nothing selected for ZIP export');
     });
 
@@ -194,7 +200,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(2),
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
 
         const names = Object.keys(unzipSync(new Uint8Array(res.archive)));
@@ -208,7 +214,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(2),
             formatIds: [],
             includeHar: true,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
 
         expect(res.snippetSuccessCount).to.equal(0);
@@ -223,7 +229,7 @@ describe('ZIP export worker round-trip', function () {
         expect(manifest.requestCount).to.equal(2);
     });
 
-    it('error records carry full request context (entryIndex, method, url, status)', async () => {
+    it('error records reference the request by entryIndex, recoverable via entries', async () => {
         const har: any = makeHar(3);
         for (const entry of har.log.entries) {
             entry.request.method = 'POST';
@@ -239,7 +245,7 @@ describe('ZIP export worker round-trip', function () {
             har,
             formatIds: ['clojure~~clj_http'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
 
         const unpacked = unzipSync(new Uint8Array(res.archive));
@@ -248,10 +254,15 @@ describe('ZIP export worker round-trip', function () {
         for (let i = 0; i < 3; i++) {
             const e = manifest.errors[i];
             expect(e.entryIndex).to.equal(i);
-            expect(e.method).to.equal('POST');
-            expect(e.url).to.include('example.com/item/');
-            expect(e.status).to.equal(200);
             expect(e.formatId).to.equal('clojure~~clj_http');
+            expect(e.error).to.be.a('string').and.not.empty;
+
+            // The full request context lives in the entries list, not the
+            // error record, so it isn't duplicated:
+            const entry = manifest.entries[e.entryIndex];
+            expect(entry.method).to.equal('POST');
+            expect(entry.url).to.include('example.com/item/');
+            expect(entry.status).to.equal(200);
         }
     });
 
@@ -260,7 +271,7 @@ describe('ZIP export worker round-trip', function () {
             har: makeHar(2),
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
         const unpacked = unzipSync(new Uint8Array(res.archive));
         const files = Object.keys(unpacked).filter(n => n.startsWith('shell-curl/') && !n.endsWith('/'));
@@ -282,7 +293,7 @@ describe('ZIP export worker round-trip', function () {
             har: harWithFormBody,
             formatIds: ['shell~~curl'],
             includeHar: false,
-            toolVersion: 'test'
+            httpToolkitVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);
         expect(res.snippetErrorCount).to.equal(0);

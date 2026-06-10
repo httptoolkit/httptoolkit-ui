@@ -5,15 +5,13 @@
 
 export const ZIP_EXPORT_MANIFEST_VERSION = 1;
 
-// Describes one selected export format, mirroring what was requested:
+// Describes one selected export format:
 export interface ZipExportManifestFormat {
     /** Stable ID (`target~~client`, e.g. `shell~~curl`). */
     id: string;
     /** HTTPSnippet target & client. */
     target: string;
     client: string;
-    /** Category name (e.g. `Shell`). */
-    category: string;
     /** Human-readable label. */
     label: string;
     /** Folder name inside the ZIP archive. */
@@ -31,18 +29,14 @@ export interface ZipExportEntryRecord {
     status: number | null;
 }
 
-// Per-snippet failure details, for snippets that couldn't be generated:
+// Per-snippet failure details, for snippets that couldn't be generated. The
+// request itself (file/method/url/status) is recoverable via
+// `entries[entryIndex]`, so we reference it rather than duplicating it:
 export interface ZipExportErrorRecord {
-    /** Base filename of the request in the ZIP (without extension). */
-    file: string;
+    /** Index into `entries` (and the HAR entry array) of the failed request. */
+    entryIndex: number;
     /** Stable format ID (`target~~client`) for which generation failed. */
     formatId: string;
-    format?: string;
-    /** Index in the HAR entry array, to locate the entry in requests.har. */
-    entryIndex: number;
-    method: string;
-    url: string;
-    status: number | null;
     error: string;
 }
 
@@ -50,8 +44,7 @@ export interface ZipExportManifest {
     version: typeof ZIP_EXPORT_MANIFEST_VERSION;
     /** ISO timestamp of generation. */
     generatedAt: string;
-    tool: 'httptoolkit-ui';
-    toolVersion: string;
+    httpToolkitVersion: string;
     requestCount: number;
     formats: ZipExportManifestFormat[];
     entries: ZipExportEntryRecord[];

@@ -77,7 +77,7 @@ export class ZipExportController {
                 har,
                 formatIds,
                 includeHar: args.includeHar,
-                toolVersion: UI_VERSION
+                httpToolkitVersion: UI_VERSION
             });
             if (version !== this.runVersion) return;
 
