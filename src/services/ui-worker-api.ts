@@ -22,8 +22,7 @@ import type {
     ParseCertResponse,
     ZipExportRequest,
     ZipExportResponse,
-    ZipExportProgress,
-    ZipExportFormatTriple
+    ZipExportProgress
 } from './ui-worker';
 
 import { Headers, Omit } from '../types';
@@ -162,7 +161,7 @@ export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterK
 
 export async function exportAsZip(args: {
     har: Har;
-    formats: ZipExportFormatTriple[];
+    formatIds: string[];
     toolVersion: string;
     signal?: AbortSignal;
     onProgress?: (progress: ZipExportProgress) => void;
@@ -184,7 +183,7 @@ export async function exportAsZip(args: {
         return await callApi<ZipExportRequest, ZipExportResponse>({
             type: 'zip-export',
             har: args.har,
-            formats: args.formats,
+            formatIds: args.formatIds,
             toolVersion: args.toolVersion,
             controlPort: controlChannel.port2
         }, [controlChannel.port2]);

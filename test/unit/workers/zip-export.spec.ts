@@ -45,20 +45,10 @@ describe('ZIP export worker round-trip', function () {
         }
     }) as any;
 
-    const curlFormat = {
-        id: 'shell~~curl',
-        target: 'shell',
-        client: 'curl',
-        category: 'Shell',
-        label: 'cURL',
-        folderName: 'shell-curl',
-        extension: 'sh'
-    };
-
     it('produces a valid ZIP with snippets, HAR and manifest', async () => {
         const res = await exportAsZip({
             har: makeHar(2),
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test'
         });
 
@@ -76,6 +66,8 @@ describe('ZIP export worker round-trip', function () {
         expect(manifest.version).to.equal(1);
         expect(manifest.requestCount).to.equal(2);
         expect(manifest.formats).to.have.length(1);
+        expect(manifest.formats[0].id).to.equal('shell~~curl');
+        expect(manifest.formats[0].folderName).to.equal('shell-curl');
         expect(manifest.errors).to.have.length(0);
     });
 
@@ -83,7 +75,7 @@ describe('ZIP export worker round-trip', function () {
         const controller = new AbortController();
         const p = exportAsZip({
             har: makeHar(200),
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test',
             signal: controller.signal
         });
@@ -96,7 +88,7 @@ describe('ZIP export worker round-trip', function () {
         const controller = new AbortController();
         const p = exportAsZip({
             har: makeHar(200),
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test',
             signal: controller.signal
         });
@@ -112,7 +104,7 @@ describe('ZIP export worker round-trip', function () {
     it('filters content-length / pseudo-headers before snippet generation', async () => {
         const res = await exportAsZip({
             har: makeHar(1),
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test'
         });
         const unpacked = unzipSync(new Uint8Array(res.archive));
@@ -122,34 +114,85 @@ describe('ZIP export worker round-trip', function () {
         expect(content).to.not.include(':authority');
     });
 
-    it('surfaces per-snippet errors as partial failures, not overall rejection', async () => {
-        const bogusFormat = {
-            id: 'nonsense~~nonsense',
-            target: 'nonsense',
-            client: 'nonsense',
-            category: 'Nonsense',
-            label: 'Nonsense',
-            folderName: 'nonsense',
-            extension: 'txt'
+    it('exports placeholder text for binary request bodies, not a silently bodiless request', async () => {
+        const har: any = makeHar(1);
+        har.log.entries[0].request.method = 'POST';
+        // Binary bodies can't be represented in HAR postData directly:
+        // they're base64'd into _content & flagged via _requestBodyStatus:
+        har.log.entries[0].request._requestBodyStatus = 'discarded:not-representable';
+        har.log.entries[0].request._content = {
+            text: '//4AAQ==', // Non-UTF8 bytes, base64 encoded
+            size: 4,
+            encoding: 'base64'
         };
 
         const res = await exportAsZip({
-            har: makeHar(1),
-            formats: [bogusFormat],
+            har,
+            formatIds: ['shell~~curl'],
             toolVersion: 'test'
         });
+        expect(res.snippetSuccessCount).to.equal(1);
+
+        const unpacked = unzipSync(new Uint8Array(res.archive));
+        const curlFile = Object.keys(unpacked).find(n => n.startsWith('shell-curl/') && !n.endsWith('/'))!;
+        const content = strFromU8(unpacked[curlFile]);
+        expect(content).to.include('UNREPRESENTABLE BINARY REQUEST BODY');
+    });
+
+    it('exports placeholder text for undecodable request bodies', async () => {
+        const har: any = makeHar(1);
+        har.log.entries[0].request.method = 'POST';
+        har.log.entries[0].request._requestBodyStatus = 'discarded:not-decodable';
+
+        const res = await exportAsZip({
+            har,
+            formatIds: ['shell~~curl'],
+            toolVersion: 'test'
+        });
+        expect(res.snippetSuccessCount).to.equal(1);
+
+        const unpacked = unzipSync(new Uint8Array(res.archive));
+        const curlFile = Object.keys(unpacked).find(n => n.startsWith('shell-curl/') && !n.endsWith('/'))!;
+        const content = strFromU8(unpacked[curlFile]);
+        expect(content).to.include('REQUEST BODY COULD NOT BE DECODED');
+    });
+
+    it('surfaces per-snippet errors as partial failures, not overall rejection', async () => {
+        // clj-http's converter crashes on JSON bodies containing nulls
+        // (e.g. GraphQL requests with `variables: null`). That should
+        // produce an error record, while the export itself succeeds:
+        const harWithNullBody: any = makeHar(1);
+        harWithNullBody.log.entries[0].request.method = 'POST';
+        harWithNullBody.log.entries[0].request.postData = {
+            mimeType: 'application/json',
+            text: JSON.stringify({
+                operationName: 'ThreadList',
+                query: 'query ThreadList { threads { id } }',
+                variables: null
+            })
+        };
+
+        const res = await exportAsZip({
+            har: harWithNullBody,
+            formatIds: ['clojure~~clj_http'],
+            toolVersion: 'test'
+        });
+
         expect(res.snippetSuccessCount).to.equal(0);
         expect(res.snippetErrorCount).to.equal(1);
+        expect(res.errors).to.have.length(1);
+        expect(res.errors[0].formatId).to.equal('clojure~~clj_http');
+
         const unpacked = unzipSync(new Uint8Array(res.archive));
         const manifest = JSON.parse(strFromU8(unpacked['manifest.json']));
         expect(manifest.errors).to.have.length(1);
-        expect(manifest.errors[0].formatId).to.equal('nonsense~~nonsense');
+        expect(manifest.errors[0].formatId).to.equal('clojure~~clj_http');
     });
 
     it('rejects empty request sets instead of producing an empty archive', async () => {
         await expect(exportAsZip({
             har: makeHar(0),
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test'
         })).to.be.rejectedWith('No HTTP requests available for ZIP export');
     });
@@ -157,44 +200,54 @@ describe('ZIP export worker round-trip', function () {
     it('rejects empty format selections instead of producing an empty archive', async () => {
         await expect(exportAsZip({
             har: makeHar(1),
-            formats: [],
+            formatIds: [],
+            toolVersion: 'test'
+        })).to.be.rejectedWith('No formats selected for ZIP export');
+    });
+
+    it('skips unrecognized format ids, rejecting if none are left', async () => {
+        await expect(exportAsZip({
+            har: makeHar(1),
+            formatIds: ['nonsense~~nonsense'],
             toolVersion: 'test'
         })).to.be.rejectedWith('No formats selected for ZIP export');
     });
 
     it('error records carry full request context (entryIndex, method, url, status)', async () => {
-        const bogusFormat = {
-            id: 'nonsense~~nonsense',
-            target: 'nonsense',
-            client: 'nonsense',
-            category: 'Nonsense',
-            label: 'Bogus Format',
-            folderName: 'bogus',
-            extension: 'txt'
-        };
+        const har: any = makeHar(3);
+        for (const entry of har.log.entries) {
+            entry.request.method = 'POST';
+            // A JSON body parsing to top-level null crashes clj-http's
+            // converter, so every entry fails for this format:
+            entry.request.postData = {
+                mimeType: 'application/json',
+                text: 'null'
+            };
+        }
+
         const res = await exportAsZip({
-            har: makeHar(3),
-            formats: [bogusFormat],
+            har,
+            formatIds: ['clojure~~clj_http'],
             toolVersion: 'test'
         });
+
         const unpacked = unzipSync(new Uint8Array(res.archive));
         const manifest = JSON.parse(strFromU8(unpacked['manifest.json']));
         expect(manifest.errors).to.have.length(3);
         for (let i = 0; i < 3; i++) {
             const e = manifest.errors[i];
             expect(e.entryIndex).to.equal(i);
-            expect(e.method).to.equal('GET');
+            expect(e.method).to.equal('POST');
             expect(e.url).to.include('example.com/item/');
             expect(e.status).to.equal(200);
-            expect(e.format).to.equal('Bogus Format');
-            expect(e.formatId).to.equal('nonsense~~nonsense');
+            expect(e.formatId).to.equal('clojure~~clj_http');
         }
     });
 
     it('produces filenames that embed the response status code', async () => {
         const res = await exportAsZip({
             har: makeHar(2),
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test'
         });
         const unpacked = unzipSync(new Uint8Array(res.archive));
@@ -215,7 +268,7 @@ describe('ZIP export worker round-trip', function () {
 
         const res = await exportAsZip({
             har: harWithFormBody,
-            formats: [curlFormat],
+            formatIds: ['shell~~curl'],
             toolVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);
@@ -226,81 +279,5 @@ describe('ZIP export worker round-trip', function () {
         const content = strFromU8(unpacked[curlFile]);
         // The raw text body (not the params array) should drive snippet generation
         expect(content).to.include('key=value');
-    });
-
-    it('recovers clj-http crashes on nested-null JSON bodies via fallback retries', async () => {
-        // GraphQL bodies with `variables: null` or `persistedQuery: null`
-        // crash clj-http's converter ("Cannot read properties of null").
-        // The fallback retries must still produce a usable snippet:
-        const graphqlBody = JSON.stringify({
-            operationName: 'ThreadList',
-            query: 'query ThreadList { threads { id } }',
-            variables: null,
-            extensions: { persistedQuery: null }
-        });
-        const harWithNullBody: any = makeHar(1);
-        harWithNullBody.log.entries[0].request.method = 'POST';
-        harWithNullBody.log.entries[0].request.postData = {
-            mimeType: 'application/json',
-            text: graphqlBody
-        };
-
-        const cljFormat = {
-            id: 'clojure~~clj_http',
-            target: 'clojure',
-            client: 'clj_http',
-            category: 'Clojure',
-            label: 'clj-http',
-            folderName: 'clojure-clj_http',
-            extension: 'clj'
-        };
-
-        const res = await exportAsZip({
-            har: harWithNullBody,
-            formats: [cljFormat],
-            toolVersion: 'test'
-        });
-
-        expect(res.snippetSuccessCount).to.equal(1);
-        expect(res.snippetErrorCount).to.equal(0);
-        const unpacked = unzipSync(new Uint8Array(res.archive));
-        const manifest = JSON.parse(strFromU8(unpacked['manifest.json']));
-        expect(manifest.errors).to.have.length(0);
-        const cljFile = Object.keys(unpacked).find(n =>
-            n.startsWith('clojure-clj_http/') && !n.endsWith('/')
-        )!;
-        expect(cljFile).to.match(/_200_/);
-        const content = strFromU8(unpacked[cljFile]);
-        expect(content).to.include('clj-http.client');
-    });
-
-    it('recovers clj-http crashes on JSON body that parses to top-level null', async () => {
-        // Variant: a body that parses to null directly, which also
-        // crashes clj-http's converter without the fallback retries:
-        const harWithTopLevelNull: any = makeHar(1);
-        harWithTopLevelNull.log.entries[0].request.method = 'POST';
-        harWithTopLevelNull.log.entries[0].request.postData = {
-            mimeType: 'application/json',
-            text: 'null'
-        };
-
-        const cljFormat = {
-            id: 'clojure~~clj_http',
-            target: 'clojure',
-            client: 'clj_http',
-            category: 'Clojure',
-            label: 'clj-http',
-            folderName: 'clojure-clj_http',
-            extension: 'clj'
-        };
-
-        const res = await exportAsZip({
-            har: harWithTopLevelNull,
-            formats: [cljFormat],
-            toolVersion: 'test'
-        });
-
-        expect(res.snippetSuccessCount).to.equal(1);
-        expect(res.snippetErrorCount).to.equal(0);
     });
 });

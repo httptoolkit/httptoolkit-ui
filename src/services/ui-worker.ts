@@ -21,18 +21,15 @@ import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 
 import type * as HarFormat from 'har-format';
 import * as HTTPSnippet from '@httptoolkit/httpsnippet';
-import { zipSync, strToU8, type Zippable } from 'fflate';
-import {
-    buildRequestBaseName,
-    buildSnippetZipPath
-} from '../util/export-filenames';
+import { zipSync, strToU8 } from 'fflate';
+import { buildRequestBaseName } from '../util/export-filenames';
 import {
     ZIP_EXPORT_MANIFEST_VERSION,
     ZipExportManifest,
     ZipExportEntryRecord,
-    ZipExportErrorRecord,
-    ZipExportFormatTriple
+    ZipExportErrorRecord
 } from '../model/ui/zip-manifest';
+import { resolveFormats } from '../model/ui/zip-export-formats';
 import { simplifyHarRequestForSnippetExport } from '../model/ui/snippet-export-sanitization';
 
 interface Message {
@@ -116,8 +113,6 @@ export interface FormatResponse extends Message {
     formatted: string;
 }
 
-export type { ZipExportFormatTriple };
-
 // Sent worker -> UI over the ZIP export control channel, separately from
 // the normal request-response routing:
 export interface ZipExportProgress {
@@ -130,7 +125,9 @@ export interface ZipExportProgress {
 export interface ZipExportRequest extends Message {
     type: 'zip-export';
     har: HarFormat.Har;
-    formats: ZipExportFormatTriple[];
+    // Format ids as per getCodeSnippetFormatKey - the worker resolves these
+    // itself, silently skipping any ids it no longer recognizes:
+    formatIds: string[];
     toolVersion: string;
     // Receives { type: 'abort' } from the UI, and sends ZipExportProgress back:
     controlPort?: MessagePort;
@@ -142,6 +139,9 @@ export interface ZipExportResponse extends Message {
     cancelled: boolean;
     snippetSuccessCount: number;
     snippetErrorCount: number;
+    // Per-snippet failures (also recorded in the archive's manifest) so the
+    // UI thread can report them:
+    errors: ZipExportErrorRecord[];
 }
 
 export type BackgroundRequest =
@@ -220,98 +220,8 @@ async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
 }
 
 
-function setZipEntry(zip: Zippable, path: string, data: Uint8Array): void {
-    const parts = path.split('/').filter(p => !!p);
-    let node: any = zip;
-    for (let i = 0; i < parts.length - 1; i++) {
-        node = node[parts[i]] = node[parts[i]] ?? {};
-    }
-    node[parts[parts.length - 1]] = data;
-}
-
-// Returns a unique path within the archive, appending _2, _3 etc to the
-// filename on collision (e.g. two requests with the same sanitized name):
-function reserveZipPath(taken: Set<string>, folder: string, base: string, ext: string): string {
-    const extPart = ext ? `.${ext}` : '';
-    let candidate = `${folder}/${base}${extPart}`;
-    for (let n = 2; taken.has(candidate); n++) {
-        candidate = `${folder}/${base}_${n}${extPart}`;
-    }
-    taken.add(candidate);
-    return candidate;
-}
-
-// Drops header/query entries whose name or value isn't a string. Some
-// HTTPSnippet targets (e.g. clj-http) crash hard on null/undefined values:
-function filterStringKV<T extends { name?: any; value?: any }>(
-    xs: readonly T[] | undefined
-): T[] {
-    return Array.isArray(xs)
-        ? xs.filter(x => typeof x?.name === 'string' && typeof x?.value === 'string')
-        : [];
-}
-
-// Builds a reduced HAR request for HTTPSnippet targets that crash on richer
-// postData shapes: postData is cut down to { mimeType, text }, and header &
-// query values are filtered to plain strings:
-function buildReducedRequest(source: HarFormat.Request): HarFormat.Request {
-    let postData = source.postData;
-    if (postData) {
-        const safeText = typeof (postData as any).text === 'string'
-            ? (postData as any).text
-            : '';
-        const safeMime = typeof (postData as any).mimeType === 'string' && (postData as any).mimeType
-            ? (postData as any).mimeType
-            : 'application/octet-stream';
-        postData = { mimeType: safeMime, text: safeText } as HarFormat.PostData;
-    }
-    return {
-        method: source.method || 'GET',
-        url: source.url || 'about:blank',
-        httpVersion: source.httpVersion || 'HTTP/1.1',
-        headers: filterStringKV(source.headers),
-        queryString: filterStringKV(source.queryString),
-        cookies: [],
-        headersSize: -1,
-        bodySize: typeof source.bodySize === 'number' ? source.bodySize : 0,
-        postData
-    };
-}
-
-// Last-resort fallback: forces the body to text/plain, so targets that
-// parse & descend into JSON bodies (and crash on null values there, e.g.
-// clj-http with GraphQL `variables: null`) take the plain-string path:
-function buildUltraSafeRequest(source: HarFormat.Request): HarFormat.Request {
-    const rawText = typeof (source as any)?.postData?.text === 'string'
-        ? (source as any).postData.text
-        : '';
-    return {
-        method: typeof source.method === 'string' ? source.method : 'GET',
-        url: typeof source.url === 'string' ? source.url : 'about:blank',
-        httpVersion: typeof source.httpVersion === 'string' ? source.httpVersion : 'HTTP/1.1',
-        headers: filterStringKV(source.headers),
-        queryString: filterStringKV(source.queryString),
-        cookies: [],
-        headersSize: -1,
-        bodySize: typeof source.bodySize === 'number' ? source.bodySize : 0,
-        ...(rawText
-            ? { postData: { mimeType: 'text/plain', text: rawText } as HarFormat.PostData }
-            : {}),
-    };
-}
-
-// Is this error a known null-shape TypeError, where retrying with a reduced
-// request has a realistic chance of success?
-function isRecoverableSnippetError(e: any): boolean {
-    const msg = String(e?.message ?? e ?? '');
-    return (
-        e instanceof TypeError
-        || /Cannot read propert(y|ies) of (null|undefined)/.test(msg)
-    );
-}
-
 async function handleZipExport(request: ZipExportRequest): Promise<void> {
-    const { id, har, formats, toolVersion, controlPort } = request;
+    const { id, har, formatIds, toolVersion, controlPort } = request;
 
     let cancelled = false;
     if (controlPort) {
@@ -323,9 +233,10 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
     try {
         const entries = har.log.entries;
         const total = entries.length;
-        const formatCount = formats.length;
 
-        if (formatCount === 0) {
+        const formats = resolveFormats(formatIds);
+
+        if (formats.length === 0) {
             throw new Error('No formats selected for ZIP export');
         }
 
@@ -348,18 +259,11 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
 
         progress(0, 'preparing');
 
-        const zipRoot: Zippable = {};
+        // fflate treats each key as a full path within the archive:
+        const zipEntries: Record<string, Uint8Array> = {};
         const manifestEntries: ZipExportEntryRecord[] = [];
         const manifestErrors: ZipExportErrorRecord[] = [];
         let snippetSuccessCount = 0;
-        let snippetErrorCount = 0;
-
-        // All assigned paths within this archive, so duplicate basenames
-        // (e.g. equal after truncation) can't overwrite each other:
-        const usedZipPaths: Set<string> = new Set([
-            'requests.har',
-            'manifest.json'
-        ]);
 
         for (let i = 0; i < total; i++) {
             // Yield to the event loop every few requests, so abort messages
@@ -370,26 +274,16 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
             if (cancelled) break;
 
             const entry = entries[i];
-            const baseReq: HarFormat.Request = entry?.request ?? {
-                method: 'GET',
-                url: 'about:blank',
-                httpVersion: 'HTTP/1.1',
-                headers: [],
-                queryString: [],
-                cookies: [],
-                headersSize: -1,
-                bodySize: 0
-            };
 
             // Same request preprocessing as the single-snippet export:
-            const cleanedReq = simplifyHarRequestForSnippetExport(baseReq);
+            const cleanedReq = simplifyHarRequestForSnippetExport(entry.request);
 
-            const status = entry?.response?.status ?? null;
+            const status = entry.response?.status ?? null;
             const baseName = buildRequestBaseName({
                 index: i,
                 total,
-                method: cleanedReq.method || 'GET',
-                url: cleanedReq.url || 'about:blank',
+                method: cleanedReq.method,
+                url: cleanedReq.url,
                 status
             });
 
@@ -397,83 +291,49 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
             // normalization), so we do it once per request, not per format:
             const snippet = new HTTPSnippet(cleanedReq);
 
-            // Fallback snippets for targets that crash on certain postData
-            // shapes (see buildReducedRequest/buildUltraSafeRequest above),
-            // instantiated only if actually needed:
-            let reducedSnippet: HTTPSnippet | null = null;
-            let ultraSafeSnippet: HTTPSnippet | null = null;
-
-            for (let f = 0; f < formatCount; f++) {
+            for (const fmt of formats) {
                 if (cancelled) break;
-                const fmt = formats[f];
 
-                // buildSnippetZipPath sanitizes folder+file+extension (no
-                // path traversal), reserveZipPath then resolves duplicates:
-                const templatePath = buildSnippetZipPath(fmt.folderName, baseName, fmt.extension);
-                const slashIdx = templatePath.lastIndexOf('/');
-                const folderPart = slashIdx >= 0 ? templatePath.slice(0, slashIdx) : '';
-                const filePart = slashIdx >= 0 ? templatePath.slice(slashIdx + 1) : templatePath;
-                const dotIdx = filePart.lastIndexOf('.');
-                const basePart = dotIdx > 0 ? filePart.slice(0, dotIdx) : filePart;
-                const extPart = dotIdx > 0 ? filePart.slice(dotIdx + 1) : '';
-                const zipPath = reserveZipPath(usedZipPaths, folderPart, basePart, extPart);
+                const zipPath = `${fmt.folderName}/${baseName}.${fmt.extension}`;
 
                 try {
-                    let snippetRaw: unknown;
-                    try {
-                        snippetRaw = snippet.convert(fmt.target as HTTPSnippet.Target, fmt.client);
-                    } catch (primaryErr: any) {
-                        // Some targets (notably clj-http) throw on body shapes
-                        // they don't expect. Retry twice, with progressively
-                        // more conservative versions of the request:
-                        if (!isRecoverableSnippetError(primaryErr)) throw primaryErr;
-                        try {
-                            reducedSnippet ??= new HTTPSnippet(buildReducedRequest(cleanedReq));
-                            snippetRaw = reducedSnippet.convert(
-                                fmt.target as HTTPSnippet.Target,
-                                fmt.client
-                            );
-                        } catch (secondErr: any) {
-                            if (!isRecoverableSnippetError(secondErr)) throw secondErr;
-                            ultraSafeSnippet ??= new HTTPSnippet(buildUltraSafeRequest(cleanedReq));
-                            snippetRaw = ultraSafeSnippet.convert(
-                                fmt.target as HTTPSnippet.Target,
-                                fmt.client
-                            );
-                        }
-                    }
+                    const snippetOutput: unknown = snippet.convert(fmt.target, fmt.client);
 
                     // HTTPSnippet types convert() as string, but it returns
-                    // false for unknown targets/clients (Kong/httpsnippet#298):
-                    if (typeof snippetRaw !== 'string' || snippetRaw.length === 0) {
+                    // false for unknown targets/clients (Kong/httpsnippet#298).
+                    // We trim to match the single-snippet export exactly:
+                    const snippetText = typeof snippetOutput === 'string'
+                        ? snippetOutput.trim()
+                        : '';
+                    if (snippetText.length === 0) {
                         throw new Error(
                             `HTTPSnippet produced no output for ${fmt.target}/${fmt.client}`
                         );
                     }
 
-                    setZipEntry(zipRoot, zipPath, strToU8(snippetRaw));
+                    zipEntries[zipPath] = strToU8(snippetText);
                     snippetSuccessCount++;
                 } catch (e: any) {
                     // Per-snippet failures are non-fatal: they're recorded in
-                    // the manifest, and the rest of the export continues.
+                    // the manifest (and reported by the UI thread), and the
+                    // rest of the export continues.
                     manifestErrors.push({
                         file: baseName,
                         formatId: fmt.id,
                         format: fmt.label,
                         entryIndex: i,
-                        method: cleanedReq.method || 'GET',
-                        url: cleanedReq.url || 'about:blank',
+                        method: cleanedReq.method,
+                        url: cleanedReq.url,
                         status,
                         error: String(e?.message ?? e)
                     });
-                    snippetErrorCount++;
                 }
             }
 
             manifestEntries.push({
                 file: baseName,
-                method: cleanedReq.method || 'GET',
-                url: cleanedReq.url || 'about:blank',
+                method: cleanedReq.method,
+                url: cleanedReq.url,
                 status
             });
             progress(Math.round(((i + 1) / total) * 90), 'generating', i + 1);
@@ -485,7 +345,8 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
                 archive: new ArrayBuffer(0),
                 cancelled: true,
                 snippetSuccessCount,
-                snippetErrorCount
+                snippetErrorCount: manifestErrors.length,
+                errors: manifestErrors
             };
             ctx.postMessage(response);
             return;
@@ -495,7 +356,7 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
 
         // The full unmodified HAR is included in the archive too, as compact
         // JSON (pretty-printing roughly doubles size & stringify time):
-        setZipEntry(zipRoot, 'requests.har', strToU8(JSON.stringify(har)));
+        zipEntries['requests.har'] = strToU8(JSON.stringify(har));
 
         const manifest: ZipExportManifest = {
             version: ZIP_EXPORT_MANIFEST_VERSION,
@@ -503,15 +364,23 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
             tool: 'httptoolkit-ui',
             toolVersion,
             requestCount: total,
-            formats,
+            formats: formats.map(f => ({
+                id: f.id,
+                target: f.target,
+                client: f.client,
+                category: f.category,
+                label: f.label,
+                folderName: f.folderName,
+                extension: f.extension
+            })),
             entries: manifestEntries,
             errors: manifestErrors
         };
-        setZipEntry(zipRoot, 'manifest.json', strToU8(JSON.stringify(manifest, null, 2)));
+        zipEntries['manifest.json'] = strToU8(JSON.stringify(manifest, null, 2));
 
         // STORE mode (no compression): snippets are tiny, so we prioritize
         // packing speed over archive size:
-        const archiveBytes = zipSync(zipRoot, { level: 0 });
+        const archiveBytes = zipSync(zipEntries, { level: 0 });
 
         const archiveBuffer = archiveBytes.buffer.slice(
             archiveBytes.byteOffset,
@@ -525,7 +394,8 @@ async function handleZipExport(request: ZipExportRequest): Promise<void> {
             archive: archiveBuffer,
             cancelled: false,
             snippetSuccessCount,
-            snippetErrorCount
+            snippetErrorCount: manifestErrors.length,
+            errors: manifestErrors
         };
 
         ctx.postMessage(response, [response.archive]);

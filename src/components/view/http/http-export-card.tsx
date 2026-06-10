@@ -10,16 +10,15 @@ import { logError } from '../../../errors';
 
 import { AccountStore } from '../../../model/account/account-store';
 import { UiStore } from '../../../model/ui/ui-store';
+import { exportHar, generateCodeSnippet } from '../../../model/ui/export';
 import {
-    exportHar,
-    generateCodeSnippet,
     getCodeSnippetFormatKey,
     getCodeSnippetFormatName,
     getCodeSnippetOptionFromKey,
     DEFAULT_SNIPPET_FORMAT_KEY,
     snippetExportOptions,
     SnippetOption
-} from '../../../model/ui/export';
+} from '../../../model/ui/snippet-formats';
 
 import { ProHeaderPill, CardSalesPitch } from '../../account/pro-placeholders';
 import {

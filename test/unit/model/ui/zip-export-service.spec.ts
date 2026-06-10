@@ -67,7 +67,8 @@ describe('ZipExportController', () => {
             archive: new ArrayBuffer(1),
             cancelled: false,
             snippetSuccessCount: 1,
-            snippetErrorCount: 0
+            snippetErrorCount: 0,
+            errors: []
         });
         await firstRun;
 
@@ -79,7 +80,8 @@ describe('ZipExportController', () => {
             archive: new ArrayBuffer(2),
             cancelled: false,
             snippetSuccessCount: 2,
-            snippetErrorCount: 0
+            snippetErrorCount: 0,
+            errors: []
         });
         await secondRun;
 
@@ -112,7 +114,8 @@ describe('ZipExportController', () => {
             archive: new ArrayBuffer(1),
             cancelled: false,
             snippetSuccessCount: 1,
-            snippetErrorCount: 0
+            snippetErrorCount: 0,
+            errors: []
         });
         await runPromise;
 
@@ -141,7 +144,8 @@ describe('ZipExportController', () => {
             archive: new ArrayBuffer(1),
             cancelled: false,
             snippetSuccessCount: 1,
-            snippetErrorCount: 0
+            snippetErrorCount: 0,
+            errors: []
         });
         await runPromise;
 

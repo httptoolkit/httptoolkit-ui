@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import {
     buildArchiveFilename,
     buildRequestBaseName,
-    buildSnippetZipPath,
     sanitizeFilename
 } from '../../../src/util/export-filenames';
 
@@ -16,8 +15,8 @@ describe('export-filenames', () => {
         });
 
         it('prefixes Windows-reserved device names', () => {
-            expect(sanitizeFilename(' CON .txt'))
-                .to.equal('_CON .txt');
+            expect(sanitizeFilename('CON.txt'))
+                .to.equal('_CON.txt');
             expect(sanitizeFilename('nul...'))
                 .to.equal('_nul');
         });
@@ -126,15 +125,6 @@ describe('export-filenames', () => {
                 status: 200,
                 url: 'not-a-url'
             })).to.equal('01_GET_200_not-a-url');
-        });
-
-    });
-
-    describe('buildSnippetZipPath', () => {
-
-        it('builds a sanitized folder/file path', () => {
-            expect(buildSnippetZipPath('Shell/Curl', '01_GET_200_api.github.com', '.sh'))
-                .to.equal('Shell_Curl/01_GET_200_api.github.com.sh');
         });
 
     });

@@ -2,7 +2,10 @@
  * ZIP export format definitions, derived from `snippetExportOptions` (and
  * thereby from `HTTPSnippet.availableTargets()`) as the single source of
  * truth. This module only adds the ZIP-specific presentation details:
- * archive folder names, file extensions, and the default picker selection.
+ * archive folder names and file extensions.
+ *
+ * This module must stay free of main-thread dependencies (DOM, stores,
+ * etc) as it's also imported by the UI web worker.
  */
 import * as _ from 'lodash';
 import * as HTTPSnippet from '@httptoolkit/httpsnippet';
@@ -12,18 +15,7 @@ import {
     snippetExportOptions,
     getCodeSnippetFormatKey,
     getCodeSnippetFormatName
-} from './export';
-
-// Formats that are preselected in the picker by default:
-const POPULAR_FORMAT_IDS: ReadonlySet<string> = new Set([
-    'shell~~curl',
-    'shell~~httpie',
-    'javascript~~fetch',
-    'node~~axios',
-    'python~~requests',
-    'java~~okhttp',
-    'powershell~~webrequest'
-]);
+} from './snippet-formats';
 
 // Snippet file extension per target (e.g. python -> py), as reported by
 // HTTPSnippet itself:
@@ -41,21 +33,18 @@ export interface ZipExportFormat extends SnippetOption {
     folderName: string;
     extension: string;
     label: string;
-    popular: boolean;
 }
 
 function toZipExportFormat(option: SnippetOption, category: string): ZipExportFormat {
-    const id = getCodeSnippetFormatKey(option);
     return {
         ...option,
-        id,
+        id: getCodeSnippetFormatKey(option),
         category,
         label: getCodeSnippetFormatName(option),
         folderName: `${option.target}-${option.client}`
             .toLowerCase()
             .replace(/[^a-z0-9._-]+/g, '-'),
-        extension: TARGET_EXTENSIONS.get(option.target as string) ?? 'txt',
-        popular: POPULAR_FORMAT_IDS.has(id)
+        extension: TARGET_EXTENSIONS.get(option.target as string) ?? 'txt'
     };
 }
 
@@ -71,18 +60,7 @@ export const ALL_ZIP_EXPORT_FORMATS: ReadonlyArray<ZipExportFormat> = _(snippetE
 export const ZIP_EXPORT_FORMATS_BY_CATEGORY: Readonly<Record<string, ZipExportFormat[]>> =
     _.groupBy(ALL_ZIP_EXPORT_FORMATS, 'category');
 
-export const ZIP_EXPORT_CATEGORIES: ReadonlyArray<string> =
-    Object.keys(ZIP_EXPORT_FORMATS_BY_CATEGORY);
-
-export const DEFAULT_SELECTED_FORMAT_IDS: ReadonlySet<string> = new Set(
-    ALL_ZIP_EXPORT_FORMATS.filter(f => f.popular).map(f => f.id)
-);
-
-export const ALL_FORMAT_IDS: ReadonlySet<string> = new Set(
-    ALL_ZIP_EXPORT_FORMATS.map(f => f.id)
-);
-
-export const FORMAT_BY_ID: ReadonlyMap<string, ZipExportFormat> = new Map(
+const FORMAT_BY_ID: ReadonlyMap<string, ZipExportFormat> = new Map(
     ALL_ZIP_EXPORT_FORMATS.map(f => [f.id, f])
 );
 

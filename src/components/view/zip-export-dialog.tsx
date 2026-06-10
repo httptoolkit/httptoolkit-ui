@@ -9,12 +9,10 @@ import { getReadableSize } from '../../util/buffer';
 
 import { UiStore } from '../../model/ui/ui-store';
 import { ZipExportController } from '../../model/ui/zip-export-service';
+import { DEFAULT_SNIPPET_FORMAT_KEY } from '../../model/ui/snippet-formats';
 import {
     ALL_ZIP_EXPORT_FORMATS,
     ZIP_EXPORT_FORMATS_BY_CATEGORY,
-    ZIP_EXPORT_CATEGORIES,
-    DEFAULT_SELECTED_FORMAT_IDS,
-    ALL_FORMAT_IDS,
     resolveFormats
 } from '../../model/ui/zip-export-formats';
 
@@ -196,12 +194,12 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
         super(props);
 
         // Start from the persisted selection (ignoring any format ids that
-        // no longer exist), or from the popular defaults:
+        // no longer exist), or from the default snippet format:
         const persisted = resolveFormats(props.uiStore!.zipExportSelectedFormatIds);
         this.selected = new Set(
             persisted.length
                 ? persisted.map(f => f.id)
-                : DEFAULT_SELECTED_FORMAT_IDS
+                : [DEFAULT_SNIPPET_FORMAT_KEY]
         );
     }
 
@@ -228,13 +226,8 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
     }
 
     @action.bound
-    private selectPopular() {
-        this.selected = new Set(DEFAULT_SELECTED_FORMAT_IDS);
-    }
-
-    @action.bound
     private selectAll() {
-        this.selected = new Set(ALL_FORMAT_IDS);
+        this.selected = new Set(ALL_ZIP_EXPORT_FORMATS.map(f => f.id));
     }
 
     @action.bound
@@ -272,13 +265,12 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                     <SelectionSummary>
                         { selectedCount } of { ALL_ZIP_EXPORT_FORMATS.length } formats selected
                     </SelectionSummary>
-                    <SelectionButton onClick={this.selectPopular}>Popular</SelectionButton>
                     <SelectionButton onClick={this.selectAll}>All</SelectionButton>
                     <SelectionButton onClick={this.selectNone}>None</SelectionButton>
                 </SelectionControls>
 
                 <Body>
-                    { ZIP_EXPORT_CATEGORIES.map(category =>
+                    { Object.keys(ZIP_EXPORT_FORMATS_BY_CATEGORY).map(category =>
                         <React.Fragment key={category}>
                             <CategoryTitle>{ category }</CategoryTitle>
                             <FormatGrid>

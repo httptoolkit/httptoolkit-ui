@@ -11,12 +11,7 @@ import { logError } from '../../errors';
 import { saveFile } from '../../util/ui';
 
 import * as workerApi from '../../services/ui-worker-api';
-import type { ZipExportFormatTriple } from '../../services/ui-worker';
 
-import {
-    resolveFormats,
-    ZipExportFormat
-} from './zip-export-formats';
 import { buildArchiveFilename } from '../../util/export-filenames';
 
 export type ZipExportState =
@@ -113,7 +108,7 @@ export class ZipExportController {
         const runId = this.invalidateActiveRun();
 
         const eventsSnapshot = args.events.slice();
-        const formatSnapshot: ZipExportFormat[] = resolveFormats(args.formatIds);
+        const formatIds = Array.from(args.formatIds);
 
         const runAbortController = new AbortController();
         this.abortController = runAbortController;
@@ -137,16 +132,6 @@ export class ZipExportController {
                 return;
             }
 
-            const formats: ZipExportFormatTriple[] = formatSnapshot.map((f) => ({
-                id: f.id,
-                target: f.target as string,
-                client: f.client as string,
-                category: f.category,
-                label: f.label,
-                folderName: f.folderName,
-                extension: f.extension
-            }));
-
             runInAction(() => {
                 if (!this.isCurrentRun(runId, runAbortController)) return;
                 this.state = {
@@ -159,7 +144,7 @@ export class ZipExportController {
 
             const response = await this.deps.exportAsZip({
                 har,
-                formats,
+                formatIds,
                 toolVersion: UI_VERSION,
                 signal: runAbortController.signal,
                 onProgress: (p) => {
@@ -187,6 +172,19 @@ export class ZipExportController {
                     }
                 });
                 return;
+            }
+
+            if (response.snippetErrorCount > 0) {
+                // Report snippet generation failures, but without the URLs,
+                // which may contain sensitive user data:
+                logError('Some snippets failed during ZIP export', {
+                    failedCount: response.snippetErrorCount,
+                    successCount: response.snippetSuccessCount,
+                    errors: response.errors.slice(0, 10).map(e => ({
+                        format: e.formatId,
+                        error: e.error
+                    }))
+                });
             }
 
             const filename = buildArchiveFilename();

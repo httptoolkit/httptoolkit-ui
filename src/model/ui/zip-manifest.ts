@@ -5,9 +5,8 @@
 
 export const ZIP_EXPORT_MANIFEST_VERSION = 1;
 
-// Describes one selected export format. Also used as the worker request
-// format input, so the manifest mirrors exactly what was requested:
-export interface ZipExportFormatTriple {
+// Describes one selected export format, mirroring what was requested:
+export interface ZipExportManifestFormat {
     /** Stable ID (`target~~client`, e.g. `shell~~curl`). */
     id: string;
     /** HTTPSnippet target & client. */
@@ -54,7 +53,7 @@ export interface ZipExportManifest {
     tool: 'httptoolkit-ui';
     toolVersion: string;
     requestCount: number;
-    formats: ZipExportFormatTriple[];
+    formats: ZipExportManifestFormat[];
     entries: ZipExportEntryRecord[];
     /** Per-snippet errors (partial failure). Empty for fully clean exports. */
     errors: ZipExportErrorRecord[];
