@@ -52,7 +52,6 @@ describe('ZIP export worker round-trip', function () {
             toolVersion: 'test'
         });
 
-        expect(res.cancelled).to.equal(false);
         expect(res.snippetErrorCount).to.equal(0);
         expect(res.snippetSuccessCount).to.equal(2);
 
@@ -69,36 +68,6 @@ describe('ZIP export worker round-trip', function () {
         expect(manifest.formats[0].id).to.equal('shell~~curl');
         expect(manifest.formats[0].folderName).to.equal('shell-curl');
         expect(manifest.errors).to.have.length(0);
-    });
-
-    it('can be cancelled mid-flight', async () => {
-        const controller = new AbortController();
-        const p = exportAsZip({
-            har: makeHar(200),
-            formatIds: ['shell~~curl'],
-            toolVersion: 'test',
-            signal: controller.signal
-        });
-        setTimeout(() => controller.abort(), 5);
-        const res = await p;
-        expect(res.cancelled).to.equal(true);
-    });
-
-    it('handles Race A: an abort posted immediately after worker dispatch', async () => {
-        const controller = new AbortController();
-        const p = exportAsZip({
-            har: makeHar(200),
-            formatIds: ['shell~~curl'],
-            toolVersion: 'test',
-            signal: controller.signal
-        });
-
-        // Abort synchronously, immediately after the worker message is
-        // posted, racing the abort against the worker's export setup:
-        controller.abort();
-
-        const res = await p;
-        expect(res.cancelled).to.equal(true);
     });
 
     it('filters content-length / pseudo-headers before snippet generation', async () => {

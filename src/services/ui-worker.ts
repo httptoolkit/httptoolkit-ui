@@ -113,15 +113,6 @@ export interface FormatResponse extends Message {
     formatted: string;
 }
 
-// Sent worker -> UI over the ZIP export control channel, separately from
-// the normal request-response routing:
-export interface ZipExportProgress {
-    percent: number;
-    stage: 'preparing' | 'generating' | 'finalizing';
-    currentRequest?: number;
-    totalRequests?: number;
-}
-
 export interface ZipExportRequest extends Message {
     type: 'zip-export';
     har: HarFormat.Har;
@@ -129,14 +120,11 @@ export interface ZipExportRequest extends Message {
     // itself, silently skipping any ids it no longer recognizes:
     formatIds: string[];
     toolVersion: string;
-    // Receives { type: 'abort' } from the UI, and sends ZipExportProgress back:
-    controlPort?: MessagePort;
 }
 
 export interface ZipExportResponse extends Message {
     error?: Error;
     archive: ArrayBuffer;
-    cancelled: boolean;
     snippetSuccessCount: number;
     snippetErrorCount: number;
     // Per-snippet failures (also recorded in the archive's manifest) so the
@@ -220,188 +208,144 @@ async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
 }
 
 
-async function handleZipExport(request: ZipExportRequest): Promise<void> {
-    const { id, har, formatIds, toolVersion, controlPort } = request;
+async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResponse> {
+    const { id, har, formatIds, toolVersion } = request;
 
-    let cancelled = false;
-    if (controlPort) {
-        controlPort.onmessage = (e: MessageEvent) => {
-            if (e.data?.type === 'abort') cancelled = true;
-        };
+    const entries = har.log.entries;
+    const total = entries.length;
+
+    const formats = resolveFormats(formatIds);
+
+    if (formats.length === 0) {
+        throw new Error('No formats selected for ZIP export');
     }
 
-    try {
-        const entries = har.log.entries;
-        const total = entries.length;
+    if (total === 0) {
+        throw new Error('No HTTP requests available for ZIP export');
+    }
 
-        const formats = resolveFormats(formatIds);
+    // fflate treats each key as a full path within the archive:
+    const zipEntries: Record<string, Uint8Array> = {};
+    const manifestEntries: ZipExportEntryRecord[] = [];
+    const manifestErrors: ZipExportErrorRecord[] = [];
+    let snippetSuccessCount = 0;
 
-        if (formats.length === 0) {
-            throw new Error('No formats selected for ZIP export');
+    for (let i = 0; i < total; i++) {
+        // Yield to the event loop periodically, so that during very large
+        // exports the worker can still serve its other duties (e.g. body
+        // decoding) without multi-second stalls:
+        if (i % 20 === 0) {
+            await new Promise(r => setTimeout(r, 0));
         }
 
-        if (total === 0) {
-            throw new Error('No HTTP requests available for ZIP export');
-        }
+        const entry = entries[i];
 
-        const progress = (
-            percent: number,
-            stage: ZipExportProgress['stage'],
-            currentRequest?: number
-        ) => {
-            controlPort?.postMessage({
-                percent,
-                stage,
-                currentRequest,
-                totalRequests: total
-            } satisfies ZipExportProgress);
-        };
+        // Same request preprocessing as the single-snippet export:
+        const cleanedReq = simplifyHarRequestForSnippetExport(entry.request);
 
-        progress(0, 'preparing');
+        const status = entry.response?.status ?? null;
+        const baseName = buildRequestBaseName({
+            index: i,
+            total,
+            method: cleanedReq.method,
+            url: cleanedReq.url,
+            status
+        });
 
-        // fflate treats each key as a full path within the archive:
-        const zipEntries: Record<string, Uint8Array> = {};
-        const manifestEntries: ZipExportEntryRecord[] = [];
-        const manifestErrors: ZipExportErrorRecord[] = [];
-        let snippetSuccessCount = 0;
+        // Building the HTTPSnippet is the expensive part (parsing +
+        // normalization), so we do it once per request, not per format:
+        const snippet = new HTTPSnippet(cleanedReq);
 
-        for (let i = 0; i < total; i++) {
-            // Yield to the event loop every few requests, so abort messages
-            // on the control port can be received mid-run:
-            if (controlPort && (i % 5 === 0)) {
-                await new Promise(r => setTimeout(r, 0));
-            }
-            if (cancelled) break;
+        for (const fmt of formats) {
+            // These paths are unique by construction: every base name
+            // starts with the entry's unique index (a prefix that name
+            // sanitization & truncation never touch), each format gets
+            // its own folder, and the root files (requests.har &
+            // manifest.json) sit outside the per-format folders:
+            const zipPath = `${fmt.folderName}/${baseName}.${fmt.extension}`;
 
-            const entry = entries[i];
+            try {
+                const snippetOutput: unknown = snippet.convert(fmt.target, fmt.client);
 
-            // Same request preprocessing as the single-snippet export:
-            const cleanedReq = simplifyHarRequestForSnippetExport(entry.request);
-
-            const status = entry.response?.status ?? null;
-            const baseName = buildRequestBaseName({
-                index: i,
-                total,
-                method: cleanedReq.method,
-                url: cleanedReq.url,
-                status
-            });
-
-            // Building the HTTPSnippet is the expensive part (parsing +
-            // normalization), so we do it once per request, not per format:
-            const snippet = new HTTPSnippet(cleanedReq);
-
-            for (const fmt of formats) {
-                if (cancelled) break;
-
-                const zipPath = `${fmt.folderName}/${baseName}.${fmt.extension}`;
-
-                try {
-                    const snippetOutput: unknown = snippet.convert(fmt.target, fmt.client);
-
-                    // HTTPSnippet types convert() as string, but it returns
-                    // false for unknown targets/clients (Kong/httpsnippet#298).
-                    // We trim to match the single-snippet export exactly:
-                    const snippetText = typeof snippetOutput === 'string'
-                        ? snippetOutput.trim()
-                        : '';
-                    if (snippetText.length === 0) {
-                        throw new Error(
-                            `HTTPSnippet produced no output for ${fmt.target}/${fmt.client}`
-                        );
-                    }
-
-                    zipEntries[zipPath] = strToU8(snippetText);
-                    snippetSuccessCount++;
-                } catch (e: any) {
-                    // Per-snippet failures are non-fatal: they're recorded in
-                    // the manifest (and reported by the UI thread), and the
-                    // rest of the export continues.
-                    manifestErrors.push({
-                        file: baseName,
-                        formatId: fmt.id,
-                        format: fmt.label,
-                        entryIndex: i,
-                        method: cleanedReq.method,
-                        url: cleanedReq.url,
-                        status,
-                        error: String(e?.message ?? e)
-                    });
+                // HTTPSnippet types convert() as string, but it returns
+                // false for unknown targets/clients (Kong/httpsnippet#298).
+                // We trim to match the single-snippet export exactly:
+                const snippetText = typeof snippetOutput === 'string'
+                    ? snippetOutput.trim()
+                    : '';
+                if (snippetText.length === 0) {
+                    throw new Error(
+                        `HTTPSnippet produced no output for ${fmt.target}/${fmt.client}`
+                    );
                 }
+
+                zipEntries[zipPath] = strToU8(snippetText);
+                snippetSuccessCount++;
+            } catch (e: any) {
+                // Per-snippet failures are non-fatal: they're recorded in
+                // the manifest (and reported by the UI thread), and the
+                // rest of the export continues.
+                manifestErrors.push({
+                    file: baseName,
+                    formatId: fmt.id,
+                    format: fmt.label,
+                    entryIndex: i,
+                    method: cleanedReq.method,
+                    url: cleanedReq.url,
+                    status,
+                    error: String(e?.message ?? e)
+                });
             }
-
-            manifestEntries.push({
-                file: baseName,
-                method: cleanedReq.method,
-                url: cleanedReq.url,
-                status
-            });
-            progress(Math.round(((i + 1) / total) * 90), 'generating', i + 1);
         }
 
-        if (cancelled) {
-            const response: ZipExportResponse = {
-                id,
-                archive: new ArrayBuffer(0),
-                cancelled: true,
-                snippetSuccessCount,
-                snippetErrorCount: manifestErrors.length,
-                errors: manifestErrors
-            };
-            ctx.postMessage(response);
-            return;
-        }
-
-        progress(95, 'finalizing');
-
-        // The full unmodified HAR is included in the archive too, as compact
-        // JSON (pretty-printing roughly doubles size & stringify time):
-        zipEntries['requests.har'] = strToU8(JSON.stringify(har));
-
-        const manifest: ZipExportManifest = {
-            version: ZIP_EXPORT_MANIFEST_VERSION,
-            generatedAt: new Date().toISOString(),
-            tool: 'httptoolkit-ui',
-            toolVersion,
-            requestCount: total,
-            formats: formats.map(f => ({
-                id: f.id,
-                target: f.target,
-                client: f.client,
-                category: f.category,
-                label: f.label,
-                folderName: f.folderName,
-                extension: f.extension
-            })),
-            entries: manifestEntries,
-            errors: manifestErrors
-        };
-        zipEntries['manifest.json'] = strToU8(JSON.stringify(manifest, null, 2));
-
-        // STORE mode (no compression): snippets are tiny, so we prioritize
-        // packing speed over archive size:
-        const archiveBytes = zipSync(zipEntries, { level: 0 });
-
-        const archiveBuffer = archiveBytes.buffer.slice(
-            archiveBytes.byteOffset,
-            archiveBytes.byteOffset + archiveBytes.byteLength
-        ) as ArrayBuffer;
-
-        progress(100, 'finalizing');
-
-        const response: ZipExportResponse = {
-            id,
-            archive: archiveBuffer,
-            cancelled: false,
-            snippetSuccessCount,
-            snippetErrorCount: manifestErrors.length,
-            errors: manifestErrors
-        };
-
-        ctx.postMessage(response, [response.archive]);
-    } finally {
-        controlPort?.close();
+        manifestEntries.push({
+            file: baseName,
+            method: cleanedReq.method,
+            url: cleanedReq.url,
+            status
+        });
     }
+
+    // The full unmodified HAR is included in the archive too, as compact
+    // JSON (pretty-printing roughly doubles size & stringify time):
+    zipEntries['requests.har'] = strToU8(JSON.stringify(har));
+
+    const manifest: ZipExportManifest = {
+        version: ZIP_EXPORT_MANIFEST_VERSION,
+        generatedAt: new Date().toISOString(),
+        tool: 'httptoolkit-ui',
+        toolVersion,
+        requestCount: total,
+        formats: formats.map(f => ({
+            id: f.id,
+            target: f.target,
+            client: f.client,
+            category: f.category,
+            label: f.label,
+            folderName: f.folderName,
+            extension: f.extension
+        })),
+        entries: manifestEntries,
+        errors: manifestErrors
+    };
+    zipEntries['manifest.json'] = strToU8(JSON.stringify(manifest, null, 2));
+
+    // STORE mode (no compression): snippets are tiny, so we prioritize
+    // packing speed over archive size:
+    const archiveBytes = zipSync(zipEntries, { level: 0 });
+
+    const archiveBuffer = archiveBytes.buffer.slice(
+        archiveBytes.byteOffset,
+        archiveBytes.byteOffset + archiveBytes.byteLength
+    ) as ArrayBuffer;
+
+    return {
+        id,
+        archive: archiveBuffer,
+        snippetSuccessCount,
+        snippetErrorCount: manifestErrors.length,
+        errors: manifestErrors
+    };
 }
 
 ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
@@ -460,7 +404,8 @@ ctx.addEventListener('message', async (event: { data: BackgroundRequest }) => {
                 break;
 
             case 'zip-export':
-                await handleZipExport(event.data);
+                const zipResult = await handleZipExport(event.data);
+                ctx.postMessage(zipResult, [zipResult.archive]);
                 break;
 
             default:

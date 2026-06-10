@@ -21,8 +21,7 @@ import type {
     ParseCertRequest,
     ParseCertResponse,
     ZipExportRequest,
-    ZipExportResponse,
-    ZipExportProgress
+    ZipExportResponse
 } from './ui-worker';
 
 import { Headers, Omit } from '../types';
@@ -163,32 +162,11 @@ export async function exportAsZip(args: {
     har: Har;
     formatIds: string[];
     toolVersion: string;
-    signal?: AbortSignal;
-    onProgress?: (progress: ZipExportProgress) => void;
 }): Promise<ZipExportResponse> {
-    // ZIP exports are long-running, so they get a dedicated channel for
-    // cancellation & progress, to avoid complicating the shared
-    // request-response logic above:
-    const controlChannel = new MessageChannel();
-
-    controlChannel.port1.onmessage = (event: MessageEvent) => {
-        args.onProgress?.(event.data as ZipExportProgress);
-    };
-
-    const abortListener = () => controlChannel.port1.postMessage({ type: 'abort' });
-    args.signal?.addEventListener('abort', abortListener, { once: true });
-    if (args.signal?.aborted) abortListener();
-
-    try {
-        return await callApi<ZipExportRequest, ZipExportResponse>({
-            type: 'zip-export',
-            har: args.har,
-            formatIds: args.formatIds,
-            toolVersion: args.toolVersion,
-            controlPort: controlChannel.port2
-        }, [controlChannel.port2]);
-    } finally {
-        args.signal?.removeEventListener('abort', abortListener);
-        controlChannel.port1.close();
-    }
+    return callApi<ZipExportRequest, ZipExportResponse>({
+        type: 'zip-export',
+        har: args.har,
+        formatIds: args.formatIds,
+        toolVersion: args.toolVersion
+    });
 }

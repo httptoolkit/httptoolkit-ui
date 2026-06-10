@@ -160,21 +160,6 @@ const ErrorStatus = styled(FooterStatus)`
     color: ${p => p.theme.warningColor};
 `;
 
-const ProgressTrack = styled.div`
-    height: 6px;
-    border-radius: 3px;
-    background-color: ${p => p.theme.containerWatermark};
-    overflow: hidden;
-    max-width: 300px;
-`;
-
-const ProgressFill = styled.div<{ percent: number }>`
-    height: 100%;
-    width: ${p => p.percent}%;
-    background-color: ${p => p.theme.popColor};
-    transition: width 0.2s ease-out;
-`;
-
 interface ZipExportDialogProps {
     uiStore?: UiStore;
     events: ReadonlyArray<ViewableEvent>;
@@ -213,7 +198,7 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
 
     componentWillUnmount() {
         window.removeEventListener('keydown', this.onKeyDown);
-        this.controller.dispose(); // Aborts any ongoing export
+        this.controller.dispose(); // Ignore the result of any ongoing export
     }
 
     @action.bound
@@ -290,12 +275,9 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                 </Body>
 
                 <Footer>
-                    { (state.kind === 'idle' || state.kind === 'cancelled') && <>
+                    { state.kind === 'idle' && <>
                         <FooterStatus>
-                            { state.kind === 'cancelled'
-                                ? 'Export cancelled.'
-                                : `${requestCount} request${requestCount === 1 ? '' : 's'} to export`
-                            }
+                            { requestCount } request{ requestCount === 1 ? '' : 's' } to export
                         </FooterStatus>
                         <Button
                             disabled={selectedCount === 0}
@@ -305,25 +287,15 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                         </Button>
                     </> }
 
-                    { (state.kind === 'preparing' || state.kind === 'running') && <>
+                    { state.kind === 'running' && <>
                         <FooterStatus role='status'>
                             <span>
-                                { state.kind === 'running' && state.currentRequest
-                                    ? `Exporting request ${state.currentRequest} of ${
-                                        state.totalRequests ?? requestCount
-                                    }...`
-                                    : 'Preparing export...'
-                                }
+                                <Icon icon={['fas', 'spinner']} spin /> Exporting...
                             </span>
-                            <ProgressTrack>
-                                <ProgressFill percent={
-                                    state.kind === 'running' ? state.percent : 0
-                                } />
-                            </ProgressTrack>
                         </FooterStatus>
-                        <SecondaryButton onClick={this.controller.cancel}>
-                            Cancel
-                        </SecondaryButton>
+                        <Button disabled>
+                            Download ZIP
+                        </Button>
                     </> }
 
                     { state.kind === 'done' && <>

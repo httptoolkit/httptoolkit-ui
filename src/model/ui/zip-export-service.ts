@@ -1,6 +1,6 @@
 /**
  * Orchestrates ZIP export from the UI: builds the HAR, invokes the worker,
- * tracks progress, and triggers the download.
+ * and triggers the download.
  */
 import { action, observable, runInAction, toJS } from 'mobx';
 
@@ -16,15 +16,7 @@ import { buildArchiveFilename } from '../../util/export-filenames';
 
 export type ZipExportState =
     | { kind: 'idle' }
-    | { kind: 'preparing' }
-    | {
-        kind: 'running',
-        percent: number,
-        stage: string,
-        currentRequest?: number,
-        totalRequests?: number
-    }
-    | { kind: 'cancelled' }
+    | { kind: 'running' }
     | { kind: 'error', message: string }
     | {
         kind: 'done',
@@ -48,131 +40,44 @@ const DEFAULT_ZIP_EXPORT_DEPENDENCIES: ZipExportDependencies = {
 
 export class ZipExportController {
     @observable state: ZipExportState = { kind: 'idle' };
-    private abortController: AbortController | undefined;
-    private activeRunId = 0;
+
+    // Bumped by each run() and by dispose(), so that completions of
+    // superseded runs can't trigger downloads or update UI state:
+    private runVersion = 0;
 
     constructor(
         private readonly deps: ZipExportDependencies = DEFAULT_ZIP_EXPORT_DEPENDENCIES
     ) {}
 
-    get isBusy(): boolean {
-        return this.state.kind === 'preparing' || this.state.kind === 'running';
-    }
-
-    private invalidateActiveRun(): number {
-        this.activeRunId += 1;
-        return this.activeRunId;
-    }
-
-    private isCurrentRun(runId: number, abortController?: AbortController): boolean {
-        return this.activeRunId === runId &&
-            (!abortController || this.abortController === abortController);
-    }
-
-    private abortActiveRun() {
-        const activeController = this.abortController;
-        this.abortController = undefined;
-
-        if (activeController) {
-            try { activeController.abort(); } catch { /* noop */ }
-        }
-    }
-
     @action.bound
     dispose() {
-        this.invalidateActiveRun();
-        this.abortActiveRun();
+        this.runVersion += 1;
     }
 
-    @action.bound
-    cancel() {
-        this.invalidateActiveRun();
-        this.abortActiveRun();
-
-        if (this.isBusy) {
-            this.state = { kind: 'cancelled' };
-        }
-    }
-
-    /**
-     * Runs an export. Event & format input is snapshotted up front, and each
-     * invocation gets its own run id, invalidating older runs, so stale async
-     * completions can't update UI state after a cancel/retry/reset.
-     */
     @action.bound
     async run(args: {
         events: ReadonlyArray<ViewableEvent>;
         formatIds: Iterable<string>;
     }): Promise<void> {
-        this.abortActiveRun();
-        const runId = this.invalidateActiveRun();
+        const version = ++this.runVersion;
 
         const eventsSnapshot = args.events.slice();
         const formatIds = Array.from(args.formatIds);
 
-        const runAbortController = new AbortController();
-        this.abortController = runAbortController;
-        this.state = { kind: 'preparing' };
+        this.state = { kind: 'running' };
 
         try {
             const harObservable = await this.deps.generateHar(eventsSnapshot, { bodySizeLimit: Infinity });
-            if (!this.isCurrentRun(runId, runAbortController)) return;
+            if (version !== this.runVersion) return;
 
             const har = toJS(harObservable);
-
-            if (!har.log.entries.length) {
-                runInAction(() => {
-                    if (this.isCurrentRun(runId, runAbortController)) {
-                        this.state = {
-                            kind: 'error',
-                            message: 'No exportable HTTP requests selected.'
-                        };
-                    }
-                });
-                return;
-            }
-
-            runInAction(() => {
-                if (!this.isCurrentRun(runId, runAbortController)) return;
-                this.state = {
-                    kind: 'running',
-                    percent: 0,
-                    stage: 'preparing',
-                    totalRequests: har.log.entries.length
-                };
-            });
 
             const response = await this.deps.exportAsZip({
                 har,
                 formatIds,
-                toolVersion: UI_VERSION,
-                signal: runAbortController.signal,
-                onProgress: (p) => {
-                    runInAction(() => {
-                        if (!this.isCurrentRun(runId, runAbortController)) return;
-                        if (this.state.kind === 'running' || this.state.kind === 'preparing') {
-                            this.state = {
-                                kind: 'running',
-                                percent: p.percent,
-                                stage: p.stage,
-                                currentRequest: p.currentRequest,
-                                totalRequests: p.totalRequests
-                            };
-                        }
-                    });
-                }
+                toolVersion: UI_VERSION
             });
-
-            if (!this.isCurrentRun(runId, runAbortController)) return;
-
-            if (response.cancelled) {
-                runInAction(() => {
-                    if (this.isCurrentRun(runId, runAbortController)) {
-                        this.state = { kind: 'cancelled' };
-                    }
-                });
-                return;
-            }
+            if (version !== this.runVersion) return;
 
             if (response.snippetErrorCount > 0) {
                 // Report snippet generation failures, but without the URLs,
@@ -195,7 +100,6 @@ export class ZipExportController {
             );
 
             runInAction(() => {
-                if (!this.isCurrentRun(runId, runAbortController)) return;
                 this.state = {
                     kind: 'done',
                     snippetSuccessCount: response.snippetSuccessCount,
@@ -205,20 +109,10 @@ export class ZipExportController {
                 };
             });
         } catch (e: any) {
-            if (!this.isCurrentRun(runId, runAbortController)) return;
-
-            if (e && e.name === 'AbortError') {
-                runInAction(() => {
-                    if (this.isCurrentRun(runId, runAbortController)) {
-                        this.state = { kind: 'cancelled' };
-                    }
-                });
-                return;
-            }
+            if (version !== this.runVersion) return;
 
             logError(e);
             runInAction(() => {
-                if (!this.isCurrentRun(runId, runAbortController)) return;
                 this.state = {
                     kind: 'error',
                     message: e && e.message
@@ -226,17 +120,6 @@ export class ZipExportController {
                         : 'Unknown error during ZIP export.'
                 };
             });
-        } finally {
-            if (this.isCurrentRun(runId, runAbortController)) {
-                this.abortController = undefined;
-            }
         }
-    }
-
-    @action.bound
-    reset() {
-        this.invalidateActiveRun();
-        this.abortActiveRun();
-        this.state = { kind: 'idle' };
     }
 }
