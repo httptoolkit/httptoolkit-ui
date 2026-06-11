@@ -39,7 +39,8 @@ import {
     getRulePartKey,
     AvailableStepKey,
     isHttpCompatibleType,
-    MatchReplacePairs
+    MatchReplacePairs,
+    MatchReplaceHeaders
 } from '../../model/rules/rules';
 import {
     StaticResponseStep,
@@ -1293,7 +1294,8 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
 
     private static readonly FIELDS = [
         'replaceHeaders',
-        'updateHeaders'
+        'updateHeaders',
+        'matchReplaceHeaders'
     ] as const;
 
     @computed
@@ -1304,8 +1306,8 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
     }
 
     @computed
-    get headers() {
-        if (this.selected === 'none') return {};
+    get headers(): Headers {
+        if (this.selected === 'none' || this.selected === 'matchReplaceHeaders') return {};
         return this.props.transform[this.selected] || {};
     }
 
@@ -1315,7 +1317,8 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
             selected,
             convertResultFromRawHeaders,
             onTransformTypeChange,
-            setHeadersValue
+            setHeadersValue,
+            setMatchReplaceHeadersValue
         } = this;
 
         return <TransformConfig active={selected !== 'none'}>
@@ -1327,9 +1330,15 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
                 <option value='none'>Use the original { type } headers</option>
                 <option value='updateHeaders'>Update the { type } headers</option>
                 <option value='replaceHeaders'>Replace the { type } headers</option>
+                <option value='matchReplaceHeaders'>Match & replace text in a { type } header value</option>
             </SelectTransform>
             {
-                selected !== 'none' && <TransformDetails>
+                selected === 'matchReplaceHeaders'
+                    ? <HeaderMatchReplaceTransformConfig
+                        value={this.props.transform.matchReplaceHeaders!}
+                        onChange={setMatchReplaceHeadersValue}
+                    />
+                : selected !== 'none' && <TransformDetails>
                     <EditableHeaders
                         headers={this.headers}
                         convertToRawHeaders={headersToRawHeaders}
@@ -1356,9 +1365,15 @@ class HeadersTransformConfig<T extends RequestTransform | ResponseTransform> ext
     @action.bound
     setHeadersValue(value: Headers) {
         this.clearValues();
-        if (this.selected !== 'none') {
+        if (this.selected === 'updateHeaders' || this.selected === 'replaceHeaders') {
             this.props.onChange(this.selected)(value);
         }
+    }
+
+    @action.bound
+    setMatchReplaceHeadersValue(value: MatchReplaceHeaders) {
+        this.clearValues();
+        this.props.onChange('matchReplaceHeaders')(value);
     }
 
     @action.bound
@@ -1734,6 +1749,45 @@ const validateRegexMatcher = (value: string): true | string => {
         return e.message ?? e.toString();
     }
 }
+
+const HeaderMatchReplaceTransformConfig = (props: {
+    value: MatchReplaceHeaders,
+    onChange: (value: MatchReplaceHeaders) => void
+}) => {
+    // We edit the match/replace config for a single header here: that's by far the
+    // most common case, and keeps the UI simple. The underlying Mockttp transform
+    // does support transforming multiple headers at once, if configured directly.
+    const initialHeaderName = Object.keys(props.value)[0] ?? '';
+
+    const [headerName, setHeaderName] = React.useState(initialHeaderName);
+    const [replacements, setReplacements] = React.useState<MatchReplacePairs>(
+        props.value[initialHeaderName] ?? []
+    );
+
+    React.useEffect(() => {
+        if (headerName) {
+            props.onChange({ [headerName]: replacements });
+        } else {
+            props.onChange({});
+        }
+    }, [headerName, replacements]);
+
+    return <>
+        <TransformDetails>
+            <SectionLabel>Header name</SectionLabel>
+            <WideTextInput
+                value={headerName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHeaderName(e.target.value)}
+                placeholder='The name of the header to modify, e.g. cookie'
+                spellCheck={false}
+            />
+        </TransformDetails>
+        <MatchReplaceTransformConfig
+            replacements={replacements}
+            updateReplacements={setReplacements}
+        />
+    </>;
+};
 
 @observer
 class WebhookStepConfig extends StepConfig<WebhookStep> {
