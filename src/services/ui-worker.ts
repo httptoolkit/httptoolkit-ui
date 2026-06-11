@@ -21,7 +21,7 @@ import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 
 import type * as HarFormat from 'har-format';
 import * as HTTPSnippet from '@httptoolkit/httpsnippet';
-import { zipSync, strToU8 } from 'fflate';
+import { zipSync, strToU8, ZipOptions } from 'fflate';
 import { buildRequestBaseName } from '../util/export-filenames';
 import {
     ZIP_EXPORT_MANIFEST_VERSION,
@@ -119,6 +119,8 @@ export interface ZipExportRequest extends Message {
     // Format ids as per getCodeSnippetFormatKey - the worker resolves these
     // itself, silently skipping any ids it no longer recognizes:
     formatIds: string[];
+    // Whether to include the full raw data as requests.har in the archive:
+    includeHar: boolean;
     toolVersion: string;
 }
 
@@ -209,15 +211,15 @@ async function buildApi(request: BuildApiRequest): Promise<BuildApiResponse> {
 
 
 async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResponse> {
-    const { id, har, formatIds, toolVersion } = request;
+    const { id, har, formatIds, includeHar, toolVersion } = request;
 
     const entries = har.log.entries;
     const total = entries.length;
 
     const formats = resolveFormats(formatIds);
 
-    if (formats.length === 0) {
-        throw new Error('No formats selected for ZIP export');
+    if (formats.length === 0 && !includeHar) {
+        throw new Error('Nothing selected for ZIP export');
     }
 
     if (total === 0) {
@@ -225,7 +227,7 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
     }
 
     // fflate treats each key as a full path within the archive:
-    const zipEntries: Record<string, Uint8Array> = {};
+    const zipEntries: Record<string, Uint8Array | [Uint8Array, ZipOptions]> = {};
     const manifestEntries: ZipExportEntryRecord[] = [];
     const manifestErrors: ZipExportErrorRecord[] = [];
     let snippetSuccessCount = 0;
@@ -306,9 +308,12 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
         });
     }
 
-    // The full unmodified HAR is included in the archive too, as compact
-    // JSON (pretty-printing roughly doubles size & stringify time):
-    zipEntries['requests.har'] = strToU8(JSON.stringify(har));
+    if (includeHar) {
+        // The full unmodified HAR, as compact JSON (pretty-printing roughly
+        // doubles size & stringify time). We use some minimal compression here
+        // as this is likely the largest content in the zip by a fair way.
+        zipEntries['requests.har'] = [strToU8(JSON.stringify(har)), { level: 1 }];
+    }
 
     const manifest: ZipExportManifest = {
         version: ZIP_EXPORT_MANIFEST_VERSION,
@@ -330,8 +335,9 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
     };
     zipEntries['manifest.json'] = strToU8(JSON.stringify(manifest, null, 2));
 
-    // STORE mode (no compression): snippets are tiny, so we prioritize
-    // packing speed over archive size:
+    // STORE mode (no compression) by default: snippets & the manifest are
+    // tiny, so we prioritize packing speed over archive size (requests.har
+    // opts into light compression above):
     const archiveBytes = zipSync(zipEntries, { level: 0 });
 
     const archiveBuffer = archiveBytes.buffer.slice(

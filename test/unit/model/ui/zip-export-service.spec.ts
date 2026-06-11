@@ -54,7 +54,8 @@ describe('ZipExportController', () => {
         const controller = makeController();
         await controller.run({
             events: [] as any,
-            formatIds: ['shell~~curl']
+            formatIds: ['shell~~curl'],
+            includeHar: false
         });
 
         expect(saveFileStub.calledOnce).to.equal(true);
@@ -77,13 +78,15 @@ describe('ZipExportController', () => {
 
         const firstRun = controller.run({
             events: [] as any,
-            formatIds: ['shell~~curl']
+            formatIds: ['shell~~curl'],
+            includeHar: false
         });
         await Promise.resolve();
 
         const secondRun = controller.run({
             events: [] as any,
-            formatIds: ['shell~~curl']
+            formatIds: ['shell~~curl'],
+            includeHar: false
         });
         await Promise.resolve();
 
@@ -123,7 +126,8 @@ describe('ZipExportController', () => {
         const controller = makeController();
         const runPromise = controller.run({
             events: [] as any,
-            formatIds: ['shell~~curl']
+            formatIds: ['shell~~curl'],
+            includeHar: false
         });
         await Promise.resolve();
 
@@ -148,7 +152,8 @@ describe('ZipExportController', () => {
         const controller = makeController();
         await controller.run({
             events: [] as any,
-            formatIds: ['shell~~curl']
+            formatIds: ['shell~~curl'],
+            includeHar: false
         });
 
         expect(saveFileStub.called).to.equal(false);

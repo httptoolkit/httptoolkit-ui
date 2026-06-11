@@ -219,13 +219,13 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
         <ActionButton
             title={isPaidUser
                 ? 'Export selected exchanges as a ZIP (HAR + snippets + manifest)'
-                : 'With Pro: export as ZIP'
+                : 'With Pro: export as code snippet ZIP'
             }
             disabled={!isPaidUser || httpCount === 0}
             onClick={() => props.uiStore!.openZipExport(exportableEvents)}
         >
             <Icon icon={['fas', 'file-archive']} fixedWidth />
-            Export as ZIP
+            Export code snippet ZIP
         </ActionButton>
     </>;
 

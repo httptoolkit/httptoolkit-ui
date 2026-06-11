@@ -161,12 +161,14 @@ export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterK
 export async function exportAsZip(args: {
     har: Har;
     formatIds: string[];
+    includeHar: boolean;
     toolVersion: string;
 }): Promise<ZipExportResponse> {
     return callApi<ZipExportRequest, ZipExportResponse>({
         type: 'zip-export',
         har: args.har,
         formatIds: args.formatIds,
+        includeHar: args.includeHar,
         toolVersion: args.toolVersion
     });
 }

@@ -58,6 +58,7 @@ export class ZipExportController {
     async run(args: {
         events: ReadonlyArray<ViewableEvent>;
         formatIds: Iterable<string>;
+        includeHar: boolean;
     }): Promise<void> {
         const version = ++this.runVersion;
 
@@ -75,6 +76,7 @@ export class ZipExportController {
             const response = await this.deps.exportAsZip({
                 har,
                 formatIds,
+                includeHar: args.includeHar,
                 toolVersion: UI_VERSION
             });
             if (version !== this.runVersion) return;

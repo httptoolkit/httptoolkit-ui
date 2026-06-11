@@ -49,6 +49,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har: makeHar(2),
             formatIds: ['shell~~curl'],
+            includeHar: true,
             toolVersion: 'test'
         });
 
@@ -74,6 +75,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har: makeHar(1),
             formatIds: ['shell~~curl'],
+            includeHar: false,
             toolVersion: 'test'
         });
         const unpacked = unzipSync(new Uint8Array(res.archive));
@@ -98,6 +100,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har,
             formatIds: ['shell~~curl'],
+            includeHar: false,
             toolVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);
@@ -116,6 +119,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har,
             formatIds: ['shell~~curl'],
+            includeHar: false,
             toolVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);
@@ -144,7 +148,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har: harWithNullBody,
             formatIds: ['clojure~~clj_http'],
-            toolVersion: 'test'
+            includeHar: false,
         });
 
         expect(res.snippetSuccessCount).to.equal(0);
@@ -162,6 +166,7 @@ describe('ZIP export worker round-trip', function () {
         await expect(exportAsZip({
             har: makeHar(0),
             formatIds: ['shell~~curl'],
+            includeHar: false,
             toolVersion: 'test'
         })).to.be.rejectedWith('No HTTP requests available for ZIP export');
     });
@@ -170,16 +175,52 @@ describe('ZIP export worker round-trip', function () {
         await expect(exportAsZip({
             har: makeHar(1),
             formatIds: [],
+            includeHar: false,
             toolVersion: 'test'
-        })).to.be.rejectedWith('No formats selected for ZIP export');
+        })).to.be.rejectedWith('Nothing selected for ZIP export');
     });
 
     it('skips unrecognized format ids, rejecting if none are left', async () => {
         await expect(exportAsZip({
             har: makeHar(1),
             formatIds: ['nonsense~~nonsense'],
+            includeHar: false,
             toolVersion: 'test'
-        })).to.be.rejectedWith('No formats selected for ZIP export');
+        })).to.be.rejectedWith('Nothing selected for ZIP export');
+    });
+
+    it('omits requests.har when includeHar is false', async () => {
+        const res = await exportAsZip({
+            har: makeHar(2),
+            formatIds: ['shell~~curl'],
+            includeHar: false,
+            toolVersion: 'test'
+        });
+
+        const names = Object.keys(unzipSync(new Uint8Array(res.archive)));
+        expect(names).to.not.include('requests.har');
+        expect(names).to.include('manifest.json');
+        expect(names.filter(n => n.startsWith('shell-curl/') && !n.endsWith('/'))).to.have.length(2);
+    });
+
+    it('supports HAR-only exports, with no snippet formats at all', async () => {
+        const res = await exportAsZip({
+            har: makeHar(2),
+            formatIds: [],
+            includeHar: true,
+            toolVersion: 'test'
+        });
+
+        expect(res.snippetSuccessCount).to.equal(0);
+        expect(res.snippetErrorCount).to.equal(0);
+
+        const unpacked = unzipSync(new Uint8Array(res.archive));
+        const names = Object.keys(unpacked).filter(n => !n.endsWith('/'));
+        expect(names.sort()).to.deep.equal(['manifest.json', 'requests.har']);
+
+        const manifest = JSON.parse(strFromU8(unpacked['manifest.json']));
+        expect(manifest.formats).to.have.length(0);
+        expect(manifest.requestCount).to.equal(2);
     });
 
     it('error records carry full request context (entryIndex, method, url, status)', async () => {
@@ -197,6 +238,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har,
             formatIds: ['clojure~~clj_http'],
+            includeHar: false,
             toolVersion: 'test'
         });
 
@@ -217,6 +259,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har: makeHar(2),
             formatIds: ['shell~~curl'],
+            includeHar: false,
             toolVersion: 'test'
         });
         const unpacked = unzipSync(new Uint8Array(res.archive));
@@ -238,6 +281,7 @@ describe('ZIP export worker round-trip', function () {
         const res = await exportAsZip({
             har: harWithFormBody,
             formatIds: ['shell~~curl'],
+            includeHar: false,
             toolVersion: 'test'
         });
         expect(res.snippetSuccessCount).to.equal(1);

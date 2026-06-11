@@ -123,6 +123,32 @@ const FormatOption = styled.label`
     }
 `;
 
+const HarOption = styled.label`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 14px 24px;
+    border-top: 1px solid ${p => p.theme.containerBorder};
+
+    cursor: pointer;
+
+    input {
+        cursor: pointer;
+    }
+`;
+
+const HarOptionText = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const HarOptionHint = styled.span`
+    font-size: ${p => p.theme.textSize};
+    opacity: 0.7;
+`;
+
 const Footer = styled.footer`
     display: flex;
     align-items: center;
@@ -162,6 +188,9 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
     @observable
     private selected: Set<string>;
 
+    @observable
+    private includeHar: boolean;
+
     constructor(props: ZipExportDialogProps) {
         super(props);
 
@@ -173,6 +202,7 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                 ? persisted.map(f => f.id)
                 : [DEFAULT_SNIPPET_FORMAT_KEY]
         );
+        this.includeHar = props.uiStore!.zipExportIncludeHar;
     }
 
     componentWillUnmount() {
@@ -199,11 +229,18 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
     }
 
     @action.bound
+    private toggleIncludeHar() {
+        this.includeHar = !this.includeHar;
+    }
+
+    @action.bound
     private startExport() {
         this.props.uiStore!.setZipExportSelectedFormatIds(Array.from(this.selected));
+        this.props.uiStore!.setZipExportIncludeHar(this.includeHar);
         this.controller.run({
             events: this.props.events,
-            formatIds: this.selected
+            formatIds: this.selected,
+            includeHar: this.includeHar
         });
     }
 
@@ -213,6 +250,7 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
 
         const requestCount = events.length;
         const selectedCount = this.selected.size;
+        const nothingToExport = selectedCount === 0 && !this.includeHar;
 
         return (
             <Dialog
@@ -255,13 +293,28 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                     ) }
                 </Body>
 
+                <HarOption>
+                    <input
+                        type='checkbox'
+                        checked={this.includeHar}
+                        onChange={this.toggleIncludeHar}
+                    />
+                    <HarOptionText>
+                        Include all raw data in HAR format
+                        <HarOptionHint>
+                            Include complete request & response raw data - this
+                            can make the export much larger.
+                        </HarOptionHint>
+                    </HarOptionText>
+                </HarOption>
+
                 <Footer>
                     { state.kind === 'idle' && <>
                         <FooterStatus>
                             { requestCount } request{ requestCount === 1 ? '' : 's' } to export
                         </FooterStatus>
                         <Button
-                            disabled={selectedCount === 0}
+                            disabled={nothingToExport}
                             onClick={this.startExport}
                         >
                             Download ZIP
@@ -299,7 +352,7 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                             Export failed: { state.message }
                         </ErrorStatus>
                         <Button
-                            disabled={selectedCount === 0}
+                            disabled={nothingToExport}
                             onClick={this.startExport}
                         >
                             Try again

@@ -489,6 +489,14 @@ export class UiStore {
         this.zipExportSelectedFormatIds = ids;
     }
 
+    @persist @observable
+    zipExportIncludeHar: boolean = false;
+
+    @action.bound
+    setZipExportIncludeHar(includeHar: boolean) {
+        this.zipExportIncludeHar = includeHar;
+    }
+
     @observable.ref
     zipExportRequest: {
         events: ReadonlyArray<ViewableEvent>;
