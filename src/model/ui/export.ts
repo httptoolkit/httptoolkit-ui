@@ -3,7 +3,13 @@ import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 import { saveFile } from "../../util/ui";
 
 import { HttpExchangeView } from "../../types";
-import { generateHarRequest, generateHar } from '../http/har';
+import {
+    generateHarRequest,
+    generateHarRequestFromRequestData,
+    generateHar,
+    ExtendedHarRequest
+} from '../http/har';
+import { RequestInput } from '../send/send-request-model';
 import { simplifyHarRequestForSnippetExport } from './snippet-export-sanitization';
 import { SnippetOption } from './snippet-formats';
 
@@ -45,15 +51,40 @@ export function generateCodeSnippet(
     }
 
     // First, we need to get a HAR that appropriately represents this request as we
-    // want to export it. All snippet-specific preprocessing (header filtering,
-    // body placeholders) lives in snippet-export-sanitization.ts, so that this
-    // export and the bulk ZIP export share identical behaviour:
+    // want to export it:
     const harRequest = generateHarRequest(exchange.request, false, {
         bodySizeLimit: Infinity
     });
+
+    return generateCodeSnippetFromHarRequest(harRequest, snippetFormat);
+};
+
+// Generates a code snippet for a not-yet-sent request input, e.g. while editing
+// a request on the Send page.
+export function generateCodeSnippetFromRequestInput(
+    requestInput: RequestInput,
+    snippetFormat: SnippetOption
+): string {
+    const harRequest = generateHarRequestFromRequestData({
+        method: requestInput.method,
+        url: requestInput.url,
+        rawHeaders: requestInput.headers,
+        decodedBody: requestInput.rawBody.decoded
+    });
+
+    return generateCodeSnippetFromHarRequest(harRequest, snippetFormat);
+};
+
+function generateCodeSnippetFromHarRequest(
+    harRequest: ExtendedHarRequest,
+    snippetFormat: SnippetOption
+): string {
+    // All snippet-specific preprocessing (header filtering, body placeholders) lives in
+    // snippet-export-sanitization.ts, so that this export and the bulk ZIP export share
+    // identical behaviour:
     const harSnippetBase = simplifyHarRequestForSnippetExport(harRequest);
 
-    // Then, we convert that HAR to code for the given target:
+    // We convert the HAR to code for the given target:
     return new HTTPSnippet(harSnippetBase)
         .convert(snippetFormat.target, snippetFormat.client)
         .trim();

@@ -10,6 +10,7 @@ import { getMethodColor } from '../../model/events/categorization';
 
 import { Ctrl } from '../../util/ui';
 import { Button, Select, TextInput } from '../common/inputs';
+import { IconButton } from '../common/icon-button';
 
 type MethodName = keyof typeof Method;
 const validMethods = Object.values(Method)
@@ -95,6 +96,13 @@ const UrlInput = styled(TextInput)`
     }
 `;
 
+const CopySnippetButton = styled(IconButton)`
+    flex-shrink: 0;
+    padding: 5px 12px;
+
+    font-size: ${p => p.theme.textSize};
+`;
+
 const SendButton = styled(Button)`
     padding: 4px 18px 5px;
     border-radius: 0;
@@ -122,6 +130,8 @@ export const SendRequestLine = (props: {
 
     isSending: boolean;
     sendRequest: () => void;
+
+    showCopyAsSnippetMenu: (event: React.MouseEvent) => void;
 }) => {
     const updateMethodFromEvent = React.useCallback((changeEvent: React.ChangeEvent<HTMLSelectElement>) => {
         props.updateMethod(changeEvent.target.value);
@@ -197,6 +207,12 @@ export const SendRequestLine = (props: {
             onFocus={prepopulateUrl}
             onChange={updateUrlFromEvent}
             onPaste={onPaste}
+        />
+        <CopySnippetButton
+            title='Copy this request as a code snippet'
+            icon={['far', 'copy']}
+            disabled={!props.url}
+            onClick={props.showCopyAsSnippetMenu}
         />
         <SendButton
             type='submit'
