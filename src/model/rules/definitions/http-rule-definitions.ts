@@ -77,6 +77,48 @@ export class AmIUsingMatcher extends httpMatchers.RegexPathMatcher {
     }
 }
 
+// Matches requests whose given header's value contains the given substring. Useful
+// for cases that full-value header matching can't handle, like matching one cookie
+// within a Cookie header. Built on Mockttp's callback matcher, so the actual
+// matching runs here in the UI, called back from the server for each request.
+export class HeaderContainsMatcher extends httpMatchers.CallbackMatcher {
+
+    readonly uiType = 'header-contains';
+
+    constructor(
+        public readonly headerName: string,
+        public readonly headerValue: string
+    ) {
+        // Headers are always keyed lowercase in Mockttp's request data:
+        const lowerCasedName = headerName.toLowerCase();
+
+        super((request) => {
+            const headerOrHeaders = request.headers[lowerCasedName];
+            if (!headerOrHeaders) return false;
+
+            return (
+                Array.isArray(headerOrHeaders)
+                    ? headerOrHeaders
+                    : [headerOrHeaders]
+            ).some((value) => value.includes(headerValue));
+        });
+    }
+
+    explain() {
+        return `with a '${this.headerName}' header containing ${JSON.stringify(this.headerValue)}`;
+    }
+}
+
+serializr.createModelSchema(HeaderContainsMatcher, {
+    uiType: serializeAsTag(() => 'header-contains'),
+    type: serializr.primitive(),
+    headerName: serializr.primitive(),
+    headerValue: serializr.primitive()
+}, (context) => new HeaderContainsMatcher(
+    context.json.headerName,
+    context.json.headerValue
+));
+
 export class StaticResponseStep extends httpSteps.FixedResponseStep {
     explain() {
         return `respond with status ${this.status}${
@@ -363,7 +405,9 @@ export const HttpMatcherLookup = {
     'wildcard': WildcardMatcher,
     // Add special types for our built-in matcher explanation overrides:
     'default-wildcard': DefaultWildcardMatcher,
-    'am-i-using': AmIUsingMatcher
+    'am-i-using': AmIUsingMatcher,
+    // Our own UI-only matcher types, built on Mockttp's callback matcher:
+    'header-contains': HeaderContainsMatcher
 };
 
 export const HttpInitialMatcherClasses = [

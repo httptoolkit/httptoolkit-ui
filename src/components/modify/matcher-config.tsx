@@ -29,6 +29,9 @@ import {
 } from '../../model/rules/rules';
 import { summarizeMatcherClass } from '../../model/rules/rule-descriptions';
 import {
+    HeaderContainsMatcher
+} from '../../model/rules/definitions/http-rule-definitions';
+import {
     WebSocketMethodMatcher
 } from '../../model/rules/definitions/websocket-rule-definitions';
 import {
@@ -163,6 +166,8 @@ export function AdditionalMatcherConfiguration(props:
             return <ExactQueryMatcherConfig {...configProps} />;
         case 'header':
             return <HeaderMatcherConfig {...configProps} />;
+        case 'header-contains':
+            return <HeaderContainsMatcherConfig {...configProps} />;
         case 'raw-body':
             return <RawBodyExactMatcherConfig {...configProps} />;
         case 'raw-body-includes':
@@ -822,6 +827,93 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
             this.props.onChange();
         } else {
             this.props.onChange(new matchers.HeaderMatcher(headers));
+        }
+    }
+}
+
+const HeaderContainsConfigRow = styled.div`
+    display: flex;
+    flex-direction: row;
+
+    > :first-child {
+        flex: 1 1 40%;
+        margin-right: 5px;
+    }
+
+    > :last-child {
+        flex: 1 1 60%;
+    }
+`;
+
+@observer
+class HeaderContainsMatcherConfig extends MatcherConfig<HeaderContainsMatcher> {
+
+    private fieldId = _.uniqueId();
+
+    @observable
+    private headerName = '';
+
+    @observable
+    private headerValue = '';
+
+    componentDidMount() {
+        disposeOnUnmount(this, autorun(() => {
+            const headerName = this.props.matcher?.headerName ?? '';
+            const headerValue = this.props.matcher?.headerValue ?? '';
+
+            runInAction(() => {
+                this.headerName = headerName;
+                this.headerValue = headerValue;
+            });
+        }));
+    }
+
+    render() {
+        const { matcherIndex } = this.props;
+
+        return <MatcherConfigContainer>
+            { matcherIndex !== undefined &&
+                <ConfigLabel htmlFor={this.fieldId}>
+                    { matcherIndex !== 0 && 'and ' } with a header value containing
+                </ConfigLabel>
+            }
+            <HeaderContainsConfigRow>
+                <TextInput
+                    id={this.fieldId}
+                    invalid={!this.headerName && !!this.headerValue}
+                    spellCheck={false}
+                    value={this.headerName}
+                    onChange={this.onNameChange}
+                    placeholder='Header name, e.g. cookie'
+                />
+                <TextInput
+                    invalid={!this.headerValue && !!this.headerName}
+                    spellCheck={false}
+                    value={this.headerValue}
+                    onChange={this.onValueChange}
+                    placeholder='Text the header value must contain'
+                />
+            </HeaderContainsConfigRow>
+        </MatcherConfigContainer>;
+    }
+
+    @action.bound
+    onNameChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.headerName = event.target.value;
+        this.updateMatcher();
+    }
+
+    @action.bound
+    onValueChange(event: React.ChangeEvent<HTMLInputElement>) {
+        this.headerValue = event.target.value;
+        this.updateMatcher();
+    }
+
+    private updateMatcher() {
+        if (this.headerName && this.headerValue) {
+            this.props.onChange(new HeaderContainsMatcher(this.headerName, this.headerValue));
+        } else {
+            this.props.onInvalidState();
         }
     }
 }
