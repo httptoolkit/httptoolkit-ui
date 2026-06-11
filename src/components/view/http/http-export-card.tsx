@@ -37,6 +37,10 @@ interface ExportCardProps extends CollapsibleCardProps  {
     uiStore?: UiStore;
 }
 
+const SnippetFormatSelector = styled(PillSelector)`
+    max-width: 33%;
+` as typeof PillSelector;
+
 const SnippetDescriptionContainer = styled.div`
     p {
         margin-bottom: 10px;
@@ -142,7 +146,7 @@ const ExportZipPill = inject('uiStore')(observer((p: {
         title='Export this request as code snippets in a ZIP archive'
         onClick={() => p.uiStore!.openZipExport([p.exchange])}
     >
-        <Icon icon={['fas', 'file-archive']} /> Export as ZIP
+        <Icon icon={['fas', 'file-archive']} /> Save snippet ZIP
     </PillButton>
 ));
 
@@ -165,7 +169,7 @@ export class HttpExportCard extends React.Component<ExportCardProps> {
                     : <ProHeaderPill />
                 }
 
-                <PillSelector<SnippetOption>
+                <SnippetFormatSelector<SnippetOption>
                     onChange={this.setSnippetOption}
                     value={this.snippetOption}
                     optGroups={snippetExportOptions}

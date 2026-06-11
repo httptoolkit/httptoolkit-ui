@@ -68,9 +68,6 @@ const SelectionControls = styled.div`
     gap: 10px;
 
     padding: 12px 24px;
-    border-bottom: 1px solid ${p => p.theme.containerBorder};
-
-    font-size: ${p => p.theme.textSize};
 `;
 
 const SelectionSummary = styled.span`
@@ -87,7 +84,10 @@ const Body = styled.div`
     padding: 8px 24px 16px;
     overflow-y: auto;
 
-    font-size: ${p => p.theme.textSize};
+    background-color: ${p => p.theme.mainLowlightBackground};
+    box-shadow:
+        inset 0px 12px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha}),
+        inset 0px -8px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
 `;
 
 const CategoryTitle = styled.h2`
@@ -110,12 +110,12 @@ const FormatOption = styled.label`
     align-items: center;
     gap: 8px;
 
-    padding: 4px 6px;
+    padding: 5px 8px;
     border-radius: 3px;
     cursor: pointer;
 
     &:hover {
-        background-color: ${p => p.theme.mainLowlightBackground};
+        background-color: ${p => p.theme.mainBackground};
     }
 
     input {
@@ -129,7 +129,6 @@ const HarOption = styled.label`
     gap: 12px;
 
     padding: 14px 24px;
-    border-top: 1px solid ${p => p.theme.containerBorder};
 
     cursor: pointer;
 
@@ -160,7 +159,6 @@ const Footer = styled.footer`
 
 const FooterStatus = styled.div`
     margin-right: auto;
-    font-size: ${p => p.theme.textSize};
 
     display: flex;
     flex-direction: column;
