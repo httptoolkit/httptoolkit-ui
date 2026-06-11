@@ -47,8 +47,8 @@ export function summarizeMatcherClass(key: MatcherClassKey): string {
             return "With exact query string";
         case 'header':
             return "Including headers";
-        case 'header-contains':
-            return "With a header value containing";
+        case 'header-includes':
+            return "With header values including";
         case 'cookie':
             return "With cookie";
         case 'raw-body':
