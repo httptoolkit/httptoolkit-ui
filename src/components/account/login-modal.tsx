@@ -10,30 +10,19 @@ import Logo from '../../images/logo-icon.svg';
 
 import { AccountStore } from '../../model/account/account-store';
 import { CloseButton } from '../common/close-button';
+import { AppModal } from '../common/modal';
 
-const Modal = styled.dialog`
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    margin: 0;
-
+const Modal = styled(AppModal)`
     width: auto;
     max-width: 340px;
-
-    width: auto;
-    max-width: 340px;
-
-    background: white;
-    color: black;
 
     border-radius: 16px;
-    padding: 0;
+    /* Clip children (e.g. the square-cornered small print strip at the
+       bottom) to the rounded corners: */
+    overflow: hidden;
     box-shadow: 0 0 0 1px ${p => p.theme.containerBorder} inset;
 
     outline: none;
-    border: none;
 
     background-color: ${p => p.theme.mainBackground};
     color: ${p => p.theme.mainColor};
@@ -201,9 +190,7 @@ export const LoginModal = observer(({ accountStore }: { accountStore: AccountSto
         accountStore.cancelLogin();
     }, []);
 
-    return <Modal
-        ref={(dialog) => dialog?.showModal()}
-    >
+    return <Modal onClose={handleDialogClose}>
         <CloseButton onClose={handleDialogClose} />
         <LoginFields accountStore={accountStore} />
     </Modal>;

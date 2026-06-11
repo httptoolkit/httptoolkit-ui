@@ -31,7 +31,6 @@ import { ModifyPage } from './modify/modify-page';
 import { SendPage } from './send/send-page';
 import { SettingsPage } from './settings/settings-page';
 
-import { ModalOverlay } from './account/modal-overlay';
 import { LoginModal } from './account/login-modal';
 import { PlanPicker } from './account/plan-picker';
 import { CheckoutSpinner } from './account/checkout-spinner';
@@ -40,7 +39,7 @@ import { DisconnectedWarning } from './disconnected-warning';
 import { McpModal } from './mcp/mcp-modal';
 import { ZipExportDialog } from './view/zip-export-dialog';
 
-const AppContainer = styled.div<{ inert?: boolean }>`
+const AppContainer = styled.div`
     display: flex;
     height: 100%;
 
@@ -107,20 +106,18 @@ class App extends React.Component<{
         return !!mcpPath && mcpPath.length > 0;
     }
 
-    private closeZipExportOnAccountModal?: IReactionDisposer;
+    private closeZipExportOnOtherModal?: IReactionDisposer;
 
     componentDidMount() {
-        // If an account modal opens (e.g. a login prompt), close the ZIP
-        // export dialog underneath it rather than stacking the two:
-        this.closeZipExportOnAccountModal = autorun(() => {
-            if (this.props.accountStore.modal) {
+        this.closeZipExportOnOtherModal = autorun(() => {
+            if (this.props.accountStore.modal || this.props.uiStore.mcpModalOpen) {
                 this.props.uiStore.closeZipExport();
             }
         });
     }
 
     componentWillUnmount() {
-        this.closeZipExportOnAccountModal?.();
+        this.closeZipExportOnOtherModal?.();
     }
 
     @computed
@@ -250,14 +247,7 @@ class App extends React.Component<{
                 navigate={appHistory.navigate}
                 canVisitSettings={this.canVisitSettings}
             />
-            <AppContainer
-                aria-hidden={!!modal}
-                inert={!!modal}
-                // 'inert' doesn't actually work - it's non-standard, so we need this:
-                ref={node => node && (!!modal ?
-                    node.setAttribute('inert', '') : node.removeAttribute('inert')
-                )}
-            >
+            <AppContainer>
                 <Sidebar items={this.menuItems} />
 
                 <Router>
@@ -273,8 +263,6 @@ class App extends React.Component<{
 
                 <DisconnectedWarning />
             </AppContainer>
-
-            { !!modal && <ModalOverlay /> }
 
             {
                 modal === 'login' &&

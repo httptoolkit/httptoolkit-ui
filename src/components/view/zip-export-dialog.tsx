@@ -17,19 +17,9 @@ import {
 } from '../../model/ui/zip-export-formats';
 
 import { Button, SecondaryButton, UnstyledButton } from '../common/inputs';
-import { ModalOverlay } from '../account/modal-overlay';
+import { AppModal } from '../common/modal';
 
-const Dialog = styled.dialog`
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    bottom: auto;
-    right: auto;
-
-    z-index: 9999;
-
+const Dialog = styled(AppModal)`
     background-color: ${p => p.theme.mainBackground};
     color: ${p => p.theme.mainColor};
     border: 1px solid ${p => p.theme.containerBorder};
@@ -40,9 +30,6 @@ const Dialog = styled.dialog`
     width: 90%;
     max-width: 680px;
     max-height: 85vh;
-
-    padding: 0;
-    margin: 0;
 
     display: flex;
     flex-direction: column;
@@ -188,16 +175,7 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
         );
     }
 
-    private onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') this.props.onClose();
-    };
-
-    componentDidMount() {
-        window.addEventListener('keydown', this.onKeyDown);
-    }
-
     componentWillUnmount() {
-        window.removeEventListener('keydown', this.onKeyDown);
         this.controller.dispose(); // Ignore the result of any ongoing export
     }
 
@@ -236,9 +214,12 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
         const requestCount = events.length;
         const selectedCount = this.selected.size;
 
-        return <>
-            <ModalOverlay opacity={0.6} onClick={onClose} />
-            <Dialog open aria-modal aria-labelledby='zip-export-title'>
+        return (
+            <Dialog
+                onClose={onClose}
+                backdropOpacity={0.6}
+                aria-labelledby='zip-export-title'
+            >
                 <Header>
                     <h1 id='zip-export-title'>Export as ZIP</h1>
                     <CloseButton title='Close' onClick={onClose}>
@@ -326,6 +307,6 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                     </> }
                 </Footer>
             </Dialog>
-        </>;
+        );
     }
 }
