@@ -11,27 +11,13 @@ import { Icon } from "../../icons";
 import { ObservablePromise } from "../../util/observable";
 
 import { Button, UnstyledButton, ButtonLink, SecondaryButton } from "../common/inputs";
-import { ModalButton } from "./modal-overlay";
+import { ModalButton } from "./modal-button";
+import { AppModal } from "../common/modal";
 
-const PlanPickerModal = styled.dialog`
-    position: absolute;
-
-    top: 50%;
-    left: 50%;
-
-    /* There's default styling for dialog, so undo it: */
-    bottom: auto;
-    right: auto;
-
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-
+const PlanPickerModal = styled(AppModal)`
     display: flex;
     flex-direction: row;
     color: ${p => p.theme.mainBackground};
-
-    background-color: transparent;
-    border: none;
 
     min-width: 850px;
     max-width: 980px;
@@ -276,14 +262,8 @@ const PlanSmallPrint = styled.div`
     }
 `;
 
-const SpinnerModal = styled.div`
-    position: absolute;
-
-    top: 50%;
-    left: 50%;
-
-    transform: translate(-50%, -50%) scale(2);
-    z-index: 99;
+const SpinnerModal = styled(AppModal)`
+    transform: scale(2);
 
     display: flex;
     flex-direction: column;
@@ -332,7 +312,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
         const { email, logOut, logIn } = this.props;
 
         if (!isPricingAvailable) {
-            return <SpinnerModal>
+            return <SpinnerModal onClose={closePicker} aria-label='Loading plans'>
                 <p>
                     Unable to connect to HTTP Toolkit account servers...
                 </p>
@@ -352,7 +332,7 @@ export class PlanPicker extends React.Component<PlanPickerProps> {
             </SpinnerModal>
         }
 
-        return <PlanPickerModal open>
+        return <PlanPickerModal onClose={closePicker} aria-label='Choose your plan'>
             <PlanPickerDetails>
                 <PlanPickerHeading>Choose your Plan</PlanPickerHeading>
                 <PlanCycleToggle onClick={toggleCycle}>

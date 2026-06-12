@@ -3,10 +3,14 @@ import * as React from 'react';
 import { styled } from '../../styles';
 
 import { Icon } from '../../icons';
-import { ModalButton } from './modal-overlay';
+import { ModalButton } from './modal-button';
+import { AppModal } from '../common/modal';
 
 export const CheckoutSpinner = styled((p: { className?: string, onCancel: () => void }) => (
-    <div className={p.className}>
+    <AppModal
+        className={p.className}
+        aria-label='Waiting for checkout'
+    >
         <p>
             The checkout has been opened in your browser.
             <br/>
@@ -25,7 +29,7 @@ export const CheckoutSpinner = styled((p: { className?: string, onCancel: () => 
         <ModalButton onClick={p.onCancel}>
             Cancel checkout
         </ModalButton>
-    </div>
+    </AppModal>
 ))`
     > p {
         max-width: 500px;
@@ -44,10 +48,5 @@ export const CheckoutSpinner = styled((p: { className?: string, onCancel: () => 
     }
 
     text-align: center;
-
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(2);
-    z-index: 100;
+    transform: scale(2);
 `;

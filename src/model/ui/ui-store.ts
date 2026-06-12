@@ -3,6 +3,7 @@ import * as React from 'react';
 import { observable, action, autorun, computed, observe } from 'mobx';
 
 import { Theme, ThemeName, Themes } from '../../styles';
+import { ViewableEvent } from '../../types';
 import { lazyObservablePromise } from '../../util/observable';
 import { persist, hydrate } from '../../util/mobx-persist/persist';
 import { unreachableCheck, UnreachableCheck } from '../../util/error';
@@ -475,6 +476,40 @@ export class UiStore {
     @action.bound
     closeMcpModal() {
         this.mcpModalOpen = false;
+    }
+
+    // The set of formats selected for the last ZIP export. May include
+    // formats that no longer exist (if HTTPSnippet changes) - readers
+    // should ignore any unrecognized ids here.
+    @persist('list') @observable
+    zipExportSelectedFormatIds: string[] = [];
+
+    @action.bound
+    setZipExportSelectedFormatIds(ids: string[]) {
+        this.zipExportSelectedFormatIds = ids;
+    }
+
+    @persist @observable
+    zipExportIncludeHar: boolean = false;
+
+    @action.bound
+    setZipExportIncludeHar(includeHar: boolean) {
+        this.zipExportIncludeHar = includeHar;
+    }
+
+    @observable.ref
+    zipExportRequest: {
+        events: ReadonlyArray<ViewableEvent>;
+    } | undefined;
+
+    @action.bound
+    openZipExport(events: ReadonlyArray<ViewableEvent>) {
+        this.zipExportRequest = { events };
+    }
+
+    @action.bound
+    closeZipExport() {
+        this.zipExportRequest = undefined;
     }
 
     // Actions for persisting view state when switching tabs

@@ -1,0 +1,363 @@
+import * as React from 'react';
+import { observable, action } from 'mobx';
+import { observer, inject } from 'mobx-react';
+
+import { ViewableEvent } from '../../types';
+import { styled } from '../../styles';
+import { Icon } from '../../icons';
+import { getReadableSize } from '../../util/buffer';
+
+import { UiStore } from '../../model/ui/ui-store';
+import { ZipExportController } from '../../model/ui/zip-export-service';
+import { DEFAULT_SNIPPET_FORMAT_KEY } from '../../model/ui/snippet-formats';
+import {
+    ALL_ZIP_EXPORT_FORMATS,
+    ZIP_EXPORT_FORMATS_BY_CATEGORY,
+    resolveFormats
+} from '../../model/ui/zip-export-formats';
+
+import { Button, SecondaryButton, UnstyledButton } from '../common/inputs';
+import { AppModal } from '../common/modal';
+
+const Dialog = styled(AppModal)`
+    background-color: ${p => p.theme.mainBackground};
+    color: ${p => p.theme.mainColor};
+    border: 1px solid ${p => p.theme.containerBorder};
+    border-radius: 4px;
+
+    box-shadow: 0 2px 30px rgba(0, 0, 0, 0.3);
+
+    width: 90%;
+    max-width: 680px;
+    max-height: 85vh;
+
+    display: flex;
+    flex-direction: column;
+`;
+
+const Header = styled.header`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 20px 24px;
+    border-bottom: 1px solid ${p => p.theme.containerBorder};
+
+    h1 {
+        font-size: ${p => p.theme.loudHeadingSize};
+        font-weight: bold;
+        letter-spacing: -0.5px;
+    }
+`;
+
+const CloseButton = styled(UnstyledButton)`
+    color: ${p => p.theme.mainColor};
+    opacity: 0.7;
+    font-size: 20px;
+    padding: 4px 8px;
+
+    &:hover, &:focus {
+        opacity: 1;
+        outline: none;
+    }
+`;
+
+const SelectionControls = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 24px;
+`;
+
+const SelectionSummary = styled.span`
+    margin-right: auto;
+    opacity: 0.8;
+`;
+
+const SelectionButton = styled(SecondaryButton)`
+    padding: 4px 10px;
+    font-size: ${p => p.theme.textSize};
+`;
+
+const Body = styled.div`
+    padding: 8px 24px 16px;
+    overflow-y: auto;
+
+    background-color: ${p => p.theme.mainLowlightBackground};
+    box-shadow:
+        inset 0px 12px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha}),
+        inset 0px -8px 8px -10px rgba(0,0,0,${p => p.theme.boxShadowAlpha});
+`;
+
+const CategoryTitle = styled.h2`
+    font-size: ${p => p.theme.subHeadingSize};
+    font-weight: bold;
+    text-transform: uppercase;
+    opacity: 0.7;
+
+    margin: 16px 0 8px;
+`;
+
+const FormatGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 4px 16px;
+`;
+
+const FormatOption = styled.label`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 5px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+
+    &:hover {
+        background-color: ${p => p.theme.mainBackground};
+    }
+
+    input {
+        cursor: pointer;
+    }
+`;
+
+const HarOption = styled.label`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 14px 24px;
+
+    cursor: pointer;
+
+    input {
+        cursor: pointer;
+    }
+`;
+
+const HarOptionText = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const HarOptionHint = styled.span`
+    font-size: ${p => p.theme.textSize};
+    opacity: 0.7;
+`;
+
+const Footer = styled.footer`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 16px 24px;
+    border-top: 1px solid ${p => p.theme.containerBorder};
+`;
+
+const FooterStatus = styled.div`
+    margin-right: auto;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    flex-grow: 1;
+`;
+
+const ErrorStatus = styled(FooterStatus)`
+    color: ${p => p.theme.warningColor};
+`;
+
+interface ZipExportDialogProps {
+    uiStore?: UiStore;
+    events: ReadonlyArray<ViewableEvent>;
+    onClose: () => void;
+}
+
+@inject('uiStore')
+@observer
+export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
+
+    private readonly controller = new ZipExportController();
+
+    @observable
+    private selected: Set<string>;
+
+    @observable
+    private includeHar: boolean;
+
+    constructor(props: ZipExportDialogProps) {
+        super(props);
+
+        // Start from the persisted selection (ignoring any format ids that
+        // no longer exist), or from the default snippet format:
+        const persisted = resolveFormats(props.uiStore!.zipExportSelectedFormatIds);
+        this.selected = new Set(
+            persisted.length
+                ? persisted.map(f => f.id)
+                : [DEFAULT_SNIPPET_FORMAT_KEY]
+        );
+        this.includeHar = props.uiStore!.zipExportIncludeHar;
+    }
+
+    componentWillUnmount() {
+        this.controller.dispose(); // Ignore the result of any ongoing export
+    }
+
+    @action.bound
+    private toggleFormat(id: string) {
+        if (this.selected.has(id)) {
+            this.selected.delete(id);
+        } else {
+            this.selected.add(id);
+        }
+    }
+
+    @action.bound
+    private selectAll() {
+        this.selected = new Set(ALL_ZIP_EXPORT_FORMATS.map(f => f.id));
+    }
+
+    @action.bound
+    private selectNone() {
+        this.selected = new Set();
+    }
+
+    @action.bound
+    private toggleIncludeHar() {
+        this.includeHar = !this.includeHar;
+    }
+
+    @action.bound
+    private startExport() {
+        this.props.uiStore!.setZipExportSelectedFormatIds(Array.from(this.selected));
+        this.props.uiStore!.setZipExportIncludeHar(this.includeHar);
+        this.controller.run({
+            events: this.props.events,
+            formatIds: this.selected,
+            includeHar: this.includeHar
+        });
+    }
+
+    render() {
+        const { events, onClose } = this.props;
+        const { state } = this.controller;
+
+        const requestCount = events.length;
+        const selectedCount = this.selected.size;
+        const nothingToExport = selectedCount === 0 && !this.includeHar;
+
+        return (
+            <Dialog
+                onClose={onClose}
+                backdropOpacity={0.6}
+                aria-labelledby='zip-export-title'
+            >
+                <Header>
+                    <h1 id='zip-export-title'>Export as ZIP</h1>
+                    <CloseButton title='Close' onClick={onClose}>
+                        <Icon icon={['fas', 'times']} />
+                    </CloseButton>
+                </Header>
+
+                <SelectionControls>
+                    <SelectionSummary>
+                        { selectedCount } of { ALL_ZIP_EXPORT_FORMATS.length } formats selected
+                    </SelectionSummary>
+                    <SelectionButton onClick={this.selectAll}>All</SelectionButton>
+                    <SelectionButton onClick={this.selectNone}>None</SelectionButton>
+                </SelectionControls>
+
+                <Body>
+                    { Object.keys(ZIP_EXPORT_FORMATS_BY_CATEGORY).map(category =>
+                        <React.Fragment key={category}>
+                            <CategoryTitle>{ category }</CategoryTitle>
+                            <FormatGrid>
+                                { ZIP_EXPORT_FORMATS_BY_CATEGORY[category].map(format =>
+                                    <FormatOption key={format.id}>
+                                        <input
+                                            type='checkbox'
+                                            checked={this.selected.has(format.id)}
+                                            onChange={() => this.toggleFormat(format.id)}
+                                        />
+                                        { format.label }
+                                    </FormatOption>
+                                ) }
+                            </FormatGrid>
+                        </React.Fragment>
+                    ) }
+                </Body>
+
+                <HarOption>
+                    <input
+                        type='checkbox'
+                        checked={this.includeHar}
+                        onChange={this.toggleIncludeHar}
+                    />
+                    <HarOptionText>
+                        Include all raw data in HAR format
+                        <HarOptionHint>
+                            Include complete request & response raw data - this
+                            can make the export much larger.
+                        </HarOptionHint>
+                    </HarOptionText>
+                </HarOption>
+
+                <Footer>
+                    { state.kind === 'idle' && <>
+                        <FooterStatus>
+                            { requestCount } request{ requestCount === 1 ? '' : 's' } to export
+                        </FooterStatus>
+                        <Button
+                            disabled={nothingToExport}
+                            onClick={this.startExport}
+                        >
+                            Download ZIP
+                        </Button>
+                    </> }
+
+                    { state.kind === 'running' && <>
+                        <FooterStatus role='status'>
+                            <span>
+                                <Icon icon={['fas', 'spinner']} spin /> Exporting...
+                            </span>
+                        </FooterStatus>
+                        <Button disabled>
+                            Download ZIP
+                        </Button>
+                    </> }
+
+                    { state.kind === 'done' && <>
+                        <FooterStatus role='status'>
+                            Saved { state.downloadName } ({
+                                getReadableSize(state.downloadBytes)
+                            }): { state.snippetSuccessCount } snippet{
+                                state.snippetSuccessCount === 1 ? '' : 's'
+                            } exported{
+                                state.snippetErrorCount > 0
+                                    ? `, ${state.snippetErrorCount} failed (see manifest.json)`
+                                    : ''
+                            }.
+                        </FooterStatus>
+                        <Button onClick={onClose}>Done</Button>
+                    </> }
+
+                    { state.kind === 'error' && <>
+                        <ErrorStatus role='alert'>
+                            Export failed: { state.message }
+                        </ErrorStatus>
+                        <Button
+                            disabled={nothingToExport}
+                            onClick={this.startExport}
+                        >
+                            Try again
+                        </Button>
+                    </> }
+                </Footer>
+            </Dialog>
+        );
+    }
+}

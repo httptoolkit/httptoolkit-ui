@@ -106,6 +106,7 @@ import { faMoon } from '@fortawesome/free-solid-svg-icons/faMoon';
 import { faAdjust } from '@fortawesome/free-solid-svg-icons/faAdjust';
 import { faUpload } from '@fortawesome/free-solid-svg-icons/faUpload';
 import { faDownload } from '@fortawesome/free-solid-svg-icons/faDownload';
+import { faFileArchive } from '@fortawesome/free-solid-svg-icons/faFileArchive';
 import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay';
 import { faPause } from '@fortawesome/free-solid-svg-icons/faPause';
 import { faGem } from '@fortawesome/free-solid-svg-icons/faGem';
@@ -184,6 +185,7 @@ library.add(
     faAdjust,
     faUpload,
     faDownload,
+    faFileArchive,
     faPlay,
     faPause,
     faGem,

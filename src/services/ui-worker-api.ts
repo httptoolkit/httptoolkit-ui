@@ -1,5 +1,6 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
+import type { Har } from 'har-format';
 import type { SUPPORTED_ENCODING } from 'http-encoding';
 
 import type {
@@ -18,7 +19,9 @@ import type {
     FormatRequest,
     FormatResponse,
     ParseCertRequest,
-    ParseCertResponse
+    ParseCertResponse,
+    ZipExportRequest,
+    ZipExportResponse
 } from './ui-worker';
 
 import { Headers, Omit } from '../types';
@@ -153,4 +156,19 @@ export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterK
         format,
         headers,
     })).formatted;
+}
+
+export async function exportAsZip(args: {
+    har: Har;
+    formatIds: string[];
+    includeHar: boolean;
+    httpToolkitVersion: string;
+}): Promise<ZipExportResponse> {
+    return callApi<ZipExportRequest, ZipExportResponse>({
+        type: 'zip-export',
+        har: args.har,
+        formatIds: args.formatIds,
+        includeHar: args.includeHar,
+        httpToolkitVersion: args.httpToolkitVersion
+    });
 }

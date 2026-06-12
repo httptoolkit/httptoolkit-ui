@@ -8,14 +8,13 @@ import { copyToClipboard } from '../../util/ui';
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { HttpExchange } from '../../model/http/http-exchange';
+import { exportHar, generateCodeSnippet } from '../../model/ui/export';
 import {
-    exportHar,
-    generateCodeSnippet,
     getCodeSnippetFormatKey,
     getCodeSnippetFormatName,
     getCodeSnippetOptionFromKey,
     snippetExportOptions
-} from '../../model/ui/export';
+} from '../../model/ui/snippet-formats';
 import { ContextMenuItem } from '../../model/ui/context-menu';
 import { Filter, HostnameFilter } from '../../model/filters/search-filters';
 

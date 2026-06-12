@@ -11,7 +11,7 @@ import { AccountStore } from '../../model/account/account-store';
 
 import { UnstyledButton } from '../common/inputs';
 import { CopyButtonIcon } from '../common/copy-button';
-import { ModalOverlay } from '../account/modal-overlay';
+import { AppModal } from '../common/modal';
 
 interface IntegrationConfig {
     id: string;
@@ -96,17 +96,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     }
 ];
 
-const Dialog = styled.dialog`
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    bottom: auto;
-    right: auto;
-
-    z-index: 9999;
-
+const Dialog = styled(AppModal)`
     background-color: ${p => p.theme.mainBackground};
     color: ${p => p.theme.mainColor};
     border: 1px solid ${p => p.theme.containerBorder};
@@ -117,9 +107,6 @@ const Dialog = styled.dialog`
     width: 90%;
     max-width: 760px;
     max-height: 85vh;
-
-    padding: 0;
-    margin: 0;
 
     display: flex;
     flex-direction: column;
@@ -253,17 +240,8 @@ class McpModal extends React.Component<McpModalProps> {
         return { command: path[0], args: path.slice(1) };
     }
 
-    private onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') this.props.onClose();
-    };
-
     componentDidMount() {
-        window.addEventListener('keydown', this.onKeyDown);
         trackEvent({ category: 'MCP', action: 'Open' });
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener('keydown', this.onKeyDown);
     }
 
     render() {
@@ -271,11 +249,14 @@ class McpModal extends React.Component<McpModalProps> {
         const { onClose } = this.props;
         const { mcpCommand } = this;
 
-        return <>
-            <ModalOverlay opacity={0.6} onClick={onClose} />
-            <Dialog open aria-modal>
+        return (
+            <Dialog
+                onClose={onClose}
+                backdropOpacity={0.6}
+                aria-labelledby='mcp-modal-title'
+            >
                 <Header>
-                    <h1>Connect HTTP Toolkit to your LLM</h1>
+                    <h1 id='mcp-modal-title'>Connect HTTP Toolkit to your LLM</h1>
                     <CloseButton title="Close" onClick={onClose}>
                         <Icon icon={['fas', 'times']} />
                     </CloseButton>
@@ -337,7 +318,7 @@ class McpModal extends React.Component<McpModalProps> {
                     </FooterNote>
                 </Body>
             </Dialog>
-        </>;
+        );
     }
 }
 

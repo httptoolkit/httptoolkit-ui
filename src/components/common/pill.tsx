@@ -80,6 +80,7 @@ export const PillSelector = <
     T extends {},
     K extends string = T extends string ? T : string
 >(props: {
+    className?: string,
     value: T,
     onChange: (optionKey: K) => void
     nameFormatter?: (key: T) => string,
@@ -90,6 +91,7 @@ export const PillSelector = <
     const asName = props.nameFormatter || ((k: T) => k.toString());
 
     return <PillSelect
+        className={props.className}
         onChange={(e) => props.onChange(e.target.value as K)}
         value={asKey(props.value)}
     >
