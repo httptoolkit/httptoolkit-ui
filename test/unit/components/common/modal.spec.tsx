@@ -125,9 +125,12 @@ describe('AppModal', () => {
         let closeCount = 0;
         const dialog = renderModal({ onClose: () => closeCount++ });
 
+        const closed = new Promise<void>(resolve =>
+            dialog.addEventListener('close', () => resolve(), { once: true })
+        );
+
         dialog.close();
-        // The native close event fires from a queued task:
-        await new Promise(r => setTimeout(r, 0));
+        await closed;
 
         expect(closeCount).to.equal(1);
     });
