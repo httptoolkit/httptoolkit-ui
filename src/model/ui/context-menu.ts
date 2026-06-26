@@ -4,6 +4,7 @@ import { UnreachableCheck } from "../../util/error";
 export interface ContextMenuState<T> {
     data: T;
     event: React.MouseEvent;
+    position?: { x: number, y: number };
     items: readonly ContextMenuItem<T>[];
 }
 

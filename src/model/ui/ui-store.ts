@@ -583,8 +583,17 @@ export class UiStore {
 
         event.preventDefault();
 
+        // Right-click menus open at the cursor, other menus (e.g. button dropdowns) anchor
+        // to the bottom of the triggering element instead:
+        const anchorPosition = event.type === 'contextmenu'
+            ? undefined
+            : (() => {
+                const bounds = event.currentTarget.getBoundingClientRect();
+                return { x: bounds.left, y: bounds.bottom };
+            })();
+
         if (DesktopApi.openContextMenu) {
-            const position = { x: event.pageX, y: event.pageY };
+            const position = anchorPosition ?? { x: event.pageX, y: event.pageY };
             this.contextMenuState = undefined; // Should be set already, but let's be explicit
 
             DesktopApi.openContextMenu({
@@ -604,6 +613,7 @@ export class UiStore {
             this.contextMenuState = {
                 data,
                 event,
+                position: anchorPosition,
                 items
             };
         }

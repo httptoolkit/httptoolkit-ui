@@ -7,13 +7,23 @@ import * as HarFormat from 'har-format';
 
 import { RawHeaders } from '../../types';
 
+import { AccountStore } from '../../model/account/account-store';
 import { RulesStore } from '../../model/rules/rules-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { RequestInput } from '../../model/send/send-request-model';
 import { EditableContentType } from '../../model/events/content-types';
+import { ContextMenuItem } from '../../model/ui/context-menu';
+import { generateCodeSnippetFromRequestInput } from '../../model/ui/export';
+import {
+    getCodeSnippetFormatKey,
+    getCodeSnippetFormatName,
+    getCodeSnippetOptionFromKey,
+    snippetExportOptions,
+    SnippetOption
+} from '../../model/ui/snippet-formats';
 
 import { ContainerSizedEditor } from '../editor/base-editor';
-import { useHotkeys } from '../../util/ui';
+import { useHotkeys, copyToClipboard } from '../../util/ui';
 
 import { SendCardContainer } from './send-card-section';
 import { SendRequestLine } from './send-request-line';
@@ -49,10 +59,12 @@ const RequestPaneKeyboardShortcuts = (props: {
 
 @inject('rulesStore')
 @inject('uiStore')
+@inject('accountStore')
 @observer
 export class RequestPane extends React.Component<{
     rulesStore?: RulesStore,
     uiStore?: UiStore,
+    accountStore?: AccountStore,
 
     editorNode: portals.HtmlPortalNode<typeof ContainerSizedEditor>,
 
@@ -106,6 +118,7 @@ export class RequestPane extends React.Component<{
                 isSending={isSending}
                 sendRequest={sendRequest}
                 updateFromHar={this.props.updateFromHar}
+                showCopyAsSnippetMenu={this.showCopyAsSnippetMenu}
             />
             <SendRequestHeadersCard
                 {...this.cardProps.requestHeaders}
@@ -151,5 +164,58 @@ export class RequestPane extends React.Component<{
         const { requestInput } = this.props;
         requestInput.rawBody.updateDecodedBody(input);
     }
+
+    private copyRequestAsSnippet = async (snippetOption: SnippetOption) => {
+        const { requestInput } = this.props;
+
+        try {
+            const snippet = generateCodeSnippetFromRequestInput(requestInput, snippetOption);
+            await copyToClipboard(snippet);
+        } catch (e: any) {
+            console.log(e);
+            alert(`Could not copy this request as a code snippet:\n\n${e.message || e}`);
+        }
+    };
+
+    private showCopyAsSnippetMenu = (event: React.MouseEvent) => {
+        const uiStore = this.props.uiStore!;
+        const isPaidUser = this.props.accountStore!.user.isPaidUser();
+
+        const preferredFormat = uiStore.exportSnippetFormat
+            ? getCodeSnippetOptionFromKey(uiStore.exportSnippetFormat)
+            : undefined;
+
+        const menuItems: Array<ContextMenuItem<void>> = [
+            ...(!isPaidUser ? [
+                { type: 'option', label: 'With Pro:', enabled: false, callback: () => {} }
+            ] as const : []),
+            // If you have a preferred default format, we show that option at the top level:
+            ...(preferredFormat && isPaidUser ? [{
+                type: 'option' as const,
+                label: `Copy as ${getCodeSnippetFormatName(preferredFormat)} Snippet`,
+                callback: () => this.copyRequestAsSnippet(preferredFormat)
+            }] : []),
+            {
+                type: 'submenu',
+                enabled: isPaidUser,
+                label: `Copy as Code Snippet`,
+                items: Object.keys(snippetExportOptions).map((snippetGroupName) => ({
+                    type: 'submenu' as const,
+                    label: snippetGroupName,
+                    items: snippetExportOptions[snippetGroupName].map((snippetOption) => ({
+                        type: 'option' as const,
+                        label: getCodeSnippetFormatName(snippetOption),
+                        callback: action(() => {
+                            // When you pick an option here, it updates your preferred default option
+                            uiStore.exportSnippetFormat = getCodeSnippetFormatKey(snippetOption);
+                            this.copyRequestAsSnippet(snippetOption);
+                        })
+                    }))
+                }))
+            }
+        ];
+
+        uiStore.handleContextMenuEvent(event, menuItems);
+    };
 
 }

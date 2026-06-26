@@ -32,7 +32,8 @@ export class HtmlContextMenu<T> extends React.Component<{
             setTimeout(() => {
                 contextMenu.show({
                     id: 'menu',
-                    event: menuState.event
+                    event: menuState.event,
+                    position: menuState.position
                 });
             }, 10);
         }));

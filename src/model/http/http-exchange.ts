@@ -76,7 +76,7 @@ function tryParseUrl(url: string): ParsedUrl | undefined  {
 
 const unparseableUrl = Object.assign(new URL("unknown://unparseable.invalid/"), { parseable: false } as const);
 
-function addRequestMetadata(request: InputRequest): HtkRequest {
+export function buildHtkRequest(request: InputRequest): HtkRequest {
     try {
         return Object.assign(request, {
             parsedUrl: request.url
@@ -112,7 +112,7 @@ export class HttpExchange extends HTKEventBase implements HttpExchangeView {
     ) {
         super();
 
-        this.request = addRequestMetadata(request);
+        this.request = buildHtkRequest(request);
 
         this.timingEvents = request.timingEvents;
         this.tags = this.request.tags;
