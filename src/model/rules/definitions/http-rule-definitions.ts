@@ -227,6 +227,21 @@ const MatchReplaceSerializer = serializr.list(
     )
 );
 
+const MatchReplaceHeadersSerializer = serializr.custom(
+    (headersConfig: { [headerName: string]: Array<[RegExp, string]> }) =>
+        _.mapValues(headersConfig, (pairs) =>
+            pairs.map(([key, value]) =>
+                [{ source: key.source, flags: key.flags }, value]
+            )
+        ),
+    (headersConfig: { [headerName: string]: Array<[{ source: string, flags: string }, string]> }) =>
+        _.mapValues(headersConfig, (pairs) =>
+            pairs.map(([key, value]) =>
+                [new RegExp(key.source, key.flags), value]
+            )
+        )
+);
+
 serializr.createModelSchema(TransformingStep, {
     uiType: serializeAsTag(() => 'req-res-transformer'),
     transformRequest: serializr.object(
@@ -240,6 +255,7 @@ serializr.createModelSchema(TransformingStep, {
             matchReplacePath: MatchReplaceSerializer,
             matchReplaceQuery: MatchReplaceSerializer,
             updateHeaders: serializeWithUndefineds,
+            matchReplaceHeaders: MatchReplaceHeadersSerializer,
             updateJsonBody: serializeWithUndefineds,
             replaceBody: serializeBuffer,
             matchReplaceBody: MatchReplaceSerializer,
@@ -249,6 +265,7 @@ serializr.createModelSchema(TransformingStep, {
     transformResponse: serializr.object(
         serializr.createSimpleSchema({
             updateHeaders: serializeWithUndefineds,
+            matchReplaceHeaders: MatchReplaceHeadersSerializer,
             updateJsonBody: serializeWithUndefineds,
             replaceBody: serializeBuffer,
             matchReplaceBody: serializr.list(

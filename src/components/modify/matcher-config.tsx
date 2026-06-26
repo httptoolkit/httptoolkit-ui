@@ -162,7 +162,17 @@ export function AdditionalMatcherConfiguration(props:
         case 'exact-query-string':
             return <ExactQueryMatcherConfig {...configProps} />;
         case 'header':
-            return <HeaderMatcherConfig {...configProps} />;
+            return <HeaderMatcherConfig
+                matcherClass={matchers.HeaderMatcher}
+                description='with headers including'
+                {...configProps}
+            />;
+        case 'header-includes':
+            return <HeaderMatcherConfig
+                matcherClass={matchers.HeaderValueIncludesMatcher}
+                description='with header values including'
+                {...configProps}
+            />;
         case 'raw-body':
             return <RawBodyExactMatcherConfig {...configProps} />;
         case 'raw-body-includes':
@@ -785,7 +795,12 @@ class ExactQueryMatcherConfig extends MatcherConfig<matchers.ExactQueryMatcher> 
 }
 
 @observer
-class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
+class HeaderMatcherConfig<
+    M extends (typeof matchers.HeaderMatcher | typeof matchers.HeaderValueIncludesMatcher)
+> extends MatcherConfig<InstanceType<M>, {
+    matcherClass: M,
+    description: string
+}> {
 
     render() {
         const { matcherIndex } = this.props;
@@ -795,7 +810,7 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
         return <MatcherConfigContainer>
             { matcherIndex !== undefined &&
                 <ConfigLabel>
-                    { matcherIndex !== 0 && 'and ' } with headers including
+                    { matcherIndex !== 0 && 'and ' } { this.props.description }
                 </ConfigLabel>
             }
             <EditableHeaders<FlatHeaders>
@@ -821,7 +836,7 @@ class HeaderMatcherConfig extends MatcherConfig<matchers.HeaderMatcher> {
         if (Object.keys(headers).length === 0) {
             this.props.onChange();
         } else {
-            this.props.onChange(new matchers.HeaderMatcher(headers));
+            this.props.onChange(new this.props.matcherClass(headers) as InstanceType<M>);
         }
     }
 }

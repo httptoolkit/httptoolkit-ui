@@ -56,7 +56,8 @@ import {
 } from './definitions/rtc-rule-definitions';
 
 export type {
-    MatchReplacePairs
+    MatchReplacePairs,
+    MatchReplaceHeaders
 } from 'mockttp';
 
 /// --- Part-generic logic ---
