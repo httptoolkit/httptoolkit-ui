@@ -5,11 +5,11 @@ import { saveFile } from "../../util/ui";
 import { HttpExchangeView } from "../../types";
 import {
     generateHarRequest,
-    generateHarRequestFromRequestData,
     generateHar,
     ExtendedHarRequest
 } from '../http/har';
-import { RequestInput } from '../send/send-request-model';
+import { buildHtkRequest } from '../http/http-exchange';
+import { RequestInput, buildSentExchangeRequest } from '../send/send-request-model';
 import { simplifyHarRequestForSnippetExport } from './snippet-export-sanitization';
 import { SnippetOption } from './snippet-formats';
 
@@ -60,16 +60,20 @@ export function generateCodeSnippet(
 };
 
 // Generates a code snippet for a not-yet-sent request input, e.g. while editing
-// a request on the Send page.
+// a request on the Send page. We build the same HtkRequest a real send would produce,
+// so this goes through exactly the same HAR generation as exported captured requests.
 export function generateCodeSnippetFromRequestInput(
     requestInput: RequestInput,
     snippetFormat: SnippetOption
 ): string {
-    const harRequest = generateHarRequestFromRequestData({
-        method: requestInput.method,
-        url: requestInput.url,
-        rawHeaders: requestInput.headers,
-        decodedBody: requestInput.rawBody.decoded
+    const decoded = requestInput.rawBody.decoded;
+    const sentRequest = buildSentExchangeRequest(requestInput, {
+        encodedLength: decoded.byteLength,
+        decoded
+    });
+
+    const harRequest = generateHarRequest(buildHtkRequest(sentRequest), false, {
+        bodySizeLimit: Infinity
     });
 
     return generateCodeSnippetFromHarRequest(harRequest, snippetFormat);

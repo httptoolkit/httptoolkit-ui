@@ -1,9 +1,16 @@
+import * as _ from 'lodash';
 import * as Mockttp from 'mockttp';
 import * as serializr from 'serializr';
 import { observable } from 'mobx';
 import * as HarFormat from 'har-format';
 
-import { HttpExchange, RawHeaders, HttpExchangeView } from "../../types";
+import {
+    HttpExchange,
+    HttpExchangeView,
+    RawHeaders,
+    SentRequest,
+    TimingEvents
+} from "../../types";
 import { ObservablePromise } from '../../util/observable';
 
 import { EditableContentType, getEditableContentType, getEditableContentTypeFromViewable } from "../events/content-types";
@@ -13,7 +20,7 @@ import {
     syncFormattingToContentType,
     syncUrlToHeaders
 } from '../http/editable-request-parts';
-import { getHeaderValue, h2HeadersToH1 } from '../http/headers';
+import { getHeaderValue, h2HeadersToH1, rawHeadersToHeaders } from '../http/headers';
 import { parseHarRequest } from '../http/har';
 
 // This is our model of a Request for sending. Smilar to the API model,
@@ -152,6 +159,28 @@ export function buildRequestInputFromHarRequest(requestData: HarFormat.Request):
         ) ?? 'text',
         rawBody: harRequest.body.decoded
     });
+}
+
+export function buildSentExchangeRequest(
+    requestInput: RequestInput,
+    body: SentRequest['body']
+): SentRequest {
+    const url = new URL(requestInput.url);
+
+    return {
+        id: crypto.randomUUID(),
+        httpVersion: '1.1', // All sent requests are HTTP/1.1 for now
+        matchedRuleId: false,
+        method: requestInput.method,
+        url: requestInput.url,
+        protocol: url.protocol.slice(0, -1),
+        path: url.pathname,
+        headers: rawHeadersToHeaders(requestInput.headers),
+        rawHeaders: _.cloneDeep(requestInput.headers),
+        body,
+        timingEvents: { startTime: Date.now() } as TimingEvents,
+        tags: ['httptoolkit:manually-sent-request']
+    };
 }
 
 // These are the types that the sever client API expects. They are _not_ the same as

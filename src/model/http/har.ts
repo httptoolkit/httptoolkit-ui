@@ -250,55 +250,6 @@ export function generateHarRequest(
     return requestEntry;
 }
 
-// Generates a HAR request for request data that hasn't (yet) been sent, e.g. an
-// in-progress request input on the Send page. Unlike generateHarRequest above, the
-// body here is always already decoded & available synchronously.
-export function generateHarRequestFromRequestData(request: {
-    method: string,
-    url: string,
-    rawHeaders: RawHeaders,
-    decodedBody: Buffer
-}): ExtendedHarRequest {
-    const parsedUrl = new URL(request.url);
-    const headers = asHtkHeaders(asHarHeaders(request.rawHeaders));
-
-    const requestEntry: ExtendedHarRequest = {
-        method: request.method,
-        url: parsedUrl.toString(),
-        httpVersion: 'HTTP/1.1', // All sent requests are HTTP/1.1 for now
-        cookies: asHarRequestCookies(headers),
-        headers: asHarHeaders(request.rawHeaders),
-        queryString: Array.from(parsedUrl.searchParams.entries()).map(
-            ([paramKey, paramValue]) => ({
-                name: paramKey,
-                value: paramValue
-            })
-        ),
-        headersSize: -1,
-        bodySize: request.decodedBody.byteLength
-    };
-
-    try {
-        requestEntry.postData = generateHarPostBody(
-            UTF8Decoder.decode(request.decodedBody),
-            getHeaderValue(request.rawHeaders, 'content-type') || 'application/octet-stream'
-        );
-    } catch (e) {
-        if (e instanceof TypeError) {
-            requestEntry._requestBodyStatus = 'discarded:not-representable';
-            requestEntry._content = {
-                text: request.decodedBody.toString('base64'),
-                size: request.decodedBody.byteLength,
-                encoding: 'base64'
-            };
-        } else {
-            throw e;
-        }
-    }
-
-    return requestEntry;
-}
-
 type TextBody = {
     mimeType: string,
     text: string

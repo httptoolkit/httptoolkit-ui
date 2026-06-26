@@ -58,7 +58,7 @@ export type HarResponse = Omit<MockttpResponse, 'body' | 'timingEvents'> &
     { body: HarBody; timingEvents: TimingEvents };
 
 export type SentRequest = Omit<MockttpInitiatedRequest, 'matchedRuleId' | 'body' | 'destination'> &
-    { matchedRuleId: false, body: { buffer: Buffer } };
+    { matchedRuleId: false, body: { buffer: Buffer } | HarBody };
 export type SentRequestResponse = Omit<MockttpResponse, 'body'> &
     { body: { buffer: Buffer } };
 export type SentRequestError = Pick<MockttpAbortedRequest, 'id' | 'timingEvents' | 'tags'> & {
