@@ -301,7 +301,8 @@ export class RulesStore {
                 ? { servers: this.proxyStore.dnsServers }
                 : undefined,
             simulateConnectionErrors: true,
-            mirrorTlsFingerprint: true
+            mirrorTlsFingerprint: this.accountStore
+                .featureFlags.includes("tls-mirroring")
         };
 
         // Clone to ensure we touch & subscribe to everything here
