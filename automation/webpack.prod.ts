@@ -57,7 +57,7 @@ export default merge(common, {
             // Split out various extra chunks for libraries that we know to be large & either
             // rarely used or updated differently to other code in the frontend. The goal is to
             // avoid re-downloading large non-updated libs when often-updated libs change.
-            // This is a bit suspect - definitely more art then science right now.
+            // This is a bit suspect - definitely more art than science right now.
             cacheGroups: {
                 // Zstd is rarely used, big-ish, always loaded async, and v rarely changed:
                 zstd: {

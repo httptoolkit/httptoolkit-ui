@@ -65,7 +65,7 @@ function callApi<
  * Takes a body, asynchronously decodes it and returns the decoded buffer.
  *
  * Note that this requires transferring the _encoded_ body to a web worker,
- * so after this is run the encoded the buffer will become empty, if any
+ * so after this is run the encoded buffer will become empty, if any
  * decoding is actually required.
  *
  * The method returns an object containing the new decoded buffer and the

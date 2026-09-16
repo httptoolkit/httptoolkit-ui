@@ -23,7 +23,7 @@ import {
 import { getHeaderValue, h2HeadersToH1, rawHeadersToHeaders } from '../http/headers';
 import { parseHarRequest } from '../http/har';
 
-// This is our model of a Request for sending. Smilar to the API model,
+// This is our model of a Request for sending. Similar to the API model,
 // but not identical, as we add extra UI metadata etc.
 export class RequestInput {
 

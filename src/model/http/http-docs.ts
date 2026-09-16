@@ -605,7 +605,7 @@ const HEADERS: { [key: string]: MdnDocsData | undefined } = {
     "dpr": {
         "mdnSlug": "Web/HTTP/Headers/DPR",
         "name": "DPR",
-        "summary": "The DPR header is a Client Hints headers which represents the client device pixel ratio (DPR), which is the the number of physical device pixels corresponding to every CSS pixel."
+        "summary": "The DPR header is one of the Client Hints headers, which represents the client device pixel ratio (DPR), the number of physical device pixels corresponding to every CSS pixel."
     },
     "date": {
         "mdnSlug": "Web/HTTP/Headers/Date",
