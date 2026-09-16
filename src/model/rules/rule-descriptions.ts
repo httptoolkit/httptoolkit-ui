@@ -282,7 +282,7 @@ export function summarizeStepClass(key: StepClassKey): string {
 }
 
 // Summarize the matchers of an instantiated rule
-// Slight varation on the Mockttp explanation to make the
+// Slight variation on the Mockttp explanation to make the
 // comma positioning more consistent for UX of changing rules
 export function summarizeMatcher(rule: HtkRule): string {
     const { matchers } = rule;

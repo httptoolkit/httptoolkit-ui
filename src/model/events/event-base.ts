@@ -17,7 +17,7 @@ export abstract class HTKEventBase {
 
     abstract get id(): string;
 
-    // These can be overriden by subclasses to allow easy type narrowing:
+    // These can be overridden by subclasses to allow easy type narrowing:
     isHttp(): this is HttpExchangeView { return false; }
     isWebSocket(): this is WebSocketView { return false; }
 
