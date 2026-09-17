@@ -94,6 +94,11 @@ const global = typeof globalThis !== 'undefined'
 
 export const DesktopApi: DesktopApi = global.desktopApi ?? {};
 
+// The desktop shell injects its API into the page before the UI loads. A browser
+// tab pointed at the same server never has it, so this tells the two apart
+// synchronously, unlike desktopVersion which never resolves in a browser.
+export const isDesktopShell = (): boolean => !!global.desktopApi;
+
 const DEFAULT_SERVER_PORT = 45457;
 const DEFAULT_MOCKTTP_PORT = 45456;
 

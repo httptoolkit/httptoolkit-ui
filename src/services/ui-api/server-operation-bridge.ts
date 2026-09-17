@@ -1,6 +1,6 @@
 import { autorun, IReactionDisposer } from 'mobx';
 import { AccountStore } from '../../model/account/account-store';
-import { getServerPort } from '../desktop-api';
+import { getServerPort, isDesktopShell } from '../desktop-api';
 import { OperationRegistry } from './api-registry';
 
 const RECONNECT_BASE_MS = 1_000;
@@ -83,7 +83,11 @@ export function startServerOperationBridge(
         disposers.push(autorun(() => {
             ws!.send(JSON.stringify({
                 type: 'operations',
-                operations: registry.getDefinitions()
+                operations: registry.getDefinitions(),
+                // The desktop app is the UI the user is actually driving, so it
+                // takes the bridge's primary role from any browser tab that
+                // happens to be pointed at the same server too.
+                priority: isDesktopShell() ? 1 : 0
             }));
         }));
     }
