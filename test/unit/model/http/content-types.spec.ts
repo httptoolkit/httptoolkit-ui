@@ -79,6 +79,11 @@ describe('Content type parsing', () => {
             expect(ct).to.equal('json');
         });
 
+        it('should render text/event-stream as an event stream', () => {
+            const ct = getContentType('text/event-stream; charset=utf-8');
+            expect(ct).to.equal('event-stream');
+        });
+
         it('should return undefined for unknown content', () => {
             const ct = getContentType('application/unknownsomething');
             expect(ct).to.equal(undefined);
@@ -143,6 +148,14 @@ describe('Content type parsing', () => {
             expect(cts).to.deep.equal({
                 preferredContentType: 'json',
                 availableContentTypes: ['json', 'text', 'raw']
+            });
+        });
+
+        it('should flag text/event-stream as compatible with [event-stream,text,raw]', () => {
+            const cts = getCompatibleTypes('event-stream', 'text/event-stream', Buffer.from('data: {"a": 1}\n\n'));
+            expect(cts).to.deep.equal({
+                preferredContentType: 'event-stream',
+                availableContentTypes: ['event-stream', 'text', 'raw']
             });
         });
 

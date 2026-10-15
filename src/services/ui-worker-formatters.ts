@@ -9,6 +9,7 @@ import { Headers } from '../types';
 import { asBuffer, bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
 import { formatJson } from '../util/json';
+import { formatEventStreamAsJson } from '../util/event-stream';
 
 const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
 const FIVE_MB = 1024 * 1024 * 5;
@@ -143,6 +144,9 @@ const WorkerFormatters = {
     'json-records': (content: Buffer) => {
         const asString = content.toString('utf8');
         return formatJson(asString, { formatRecords: true });
+    },
+    'event-stream': (content: Buffer) => {
+        return formatEventStreamAsJson(content.toString('utf8'));
     },
     javascript: (content: Buffer) => {
         return beautifyJs(content.toString('utf8'), {

@@ -55,6 +55,7 @@ export type ViewableContentType =
     | 'protobuf'
     | 'grpc-proto'
     | 'json-records'
+    | 'event-stream'
     ;
 
 export const EditableContentTypes = [
@@ -131,6 +132,8 @@ const mimeTypeToContentTypeMap: { [mimeType: string]: ViewableContentType } = {
     'application/x-ndjson': 'json-records',
     'application/json-seq': 'json-records',
 
+    'text/event-stream': 'event-stream',
+
     'application/octet-stream': 'raw'
 } as const;
 
@@ -155,6 +158,7 @@ export function getContentEditorName(contentType: ViewableContentType): string {
     return contentType === 'raw' ? 'Hex'
         : contentType === 'json-records' ? 'JSON Records'
         : contentType === 'json' ? 'JSON'
+        : contentType === 'event-stream' ? 'Event Stream'
         : contentType === 'css' ? 'CSS'
         : contentType === 'url-encoded' ? 'URL-Encoded'
         : contentType === 'grpc-proto' ? 'gRPC'

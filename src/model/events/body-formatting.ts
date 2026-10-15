@@ -11,6 +11,7 @@ import { ReadOnlyParams } from '../../components/common/editable-params';
 import { ImageViewer } from '../../components/editor/image-viewer';
 import { ExifBanner, ExifTags, parseImageExif } from '../../components/editor/exif-banner';
 import { formatJson } from '../../util/json';
+import { formatEventStreamAsJson } from '../../util/event-stream';
 
 export interface EditorFormatter {
     language: string;
@@ -140,6 +141,20 @@ export const Formatters: { [key in ViewableContentType]: Formatter } = {
             } else {
                 return observablePromise(
                     formatBufferAsync(input, 'json-records', headers)
+                );
+            }
+        }
+    },
+    'event-stream': {
+        language: 'json',
+        cacheKey: Symbol('event-stream'),
+        isEditApplicable: false,
+        render: (input: Buffer, headers?: Headers) => {
+            if (input.byteLength < 10_000) {
+                return formatEventStreamAsJson(bufferToString(input));
+            } else {
+                return observablePromise(
+                    formatBufferAsync(input, 'event-stream', headers)
                 );
             }
         }
