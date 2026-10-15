@@ -62,12 +62,61 @@ export const RECORD_SEPARATOR_CHARS = [
     '\r'
 ];
 
+// Accumulates output in chunks, since reading the end of a large concatenated string forces
+// V8 to flatten (copy) the whole thing, making formatting quadratic in the output size.
+class OutputBuffer {
+    private chunks: string[] = [];
+
+    append(text: string) {
+        if (text) this.chunks.push(text);
+    }
+
+    isEmpty() {
+        return this.chunks.length === 0;
+    }
+
+    charFromEnd(offset: number): string | undefined {
+        for (let i = this.chunks.length - 1; i >= 0; i--) {
+            const chunk = this.chunks[i];
+            if (offset < chunk.length) return chunk[chunk.length - 1 - offset];
+            offset -= chunk.length;
+        }
+        return undefined;
+    }
+
+    endsWith(char: string) {
+        return this.charFromEnd(0) === char;
+    }
+
+    // Returns whether any whitespace was removed
+    trimEnd(): boolean {
+        let trimmed = false;
+        while (this.chunks.length) {
+            const last = this.chunks[this.chunks.length - 1];
+            const trimmedLast = last.trimEnd();
+            if (trimmedLast.length === last.length) break;
+
+            trimmed = true;
+            if (trimmedLast) {
+                this.chunks[this.chunks.length - 1] = trimmedLast;
+                break;
+            }
+            this.chunks.pop();
+        }
+        return trimmed;
+    }
+
+    toString() {
+        return this.chunks.join('');
+    }
+}
+
 // A *very* forgiving & flexible JSON formatter. This will correctly format even things that
 // will fail validation later, such as trailing commas, unquoted keys, comments, etc.
 export function formatJson(text: string, options: { formatRecords: boolean } = { formatRecords: false }): string {
     const scanner = createJsonScanner(text);
 
-    let result = "";
+    const result = new OutputBuffer();
     let indent = 0;
     let token: JsonSyntaxKind;
 
@@ -102,20 +151,20 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
             // We've finished one record and we have another coming that won't get a newline
             // automatically: add an extra newline to properly separate records if required.
             betweenRecords = false;
-            if (result && result[result.length - 1] !== '\n' && !isValueToken(token)) {
-                result += '\n';
+            if (!result.isEmpty() && !result.endsWith('\n') && !isValueToken(token)) {
+                result.append('\n');
             }
         }
 
         if (needsIndent) {
-            result += indentString.repeat(indent);
+            result.append(indentString.repeat(indent));
             needsIndent = false;
         }
 
         switch (token) {
             case JsonSyntaxKind.OpenBraceToken:
             case JsonSyntaxKind.OpenBracketToken:
-                result += tokenText;
+                result.append(tokenText);
                 indent++;
 
                 const afterOpener = scanAhead(scanner);
@@ -126,7 +175,7 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
                     afterOpener !== JsonSyntaxKind.EOF &&
                     afterOpener !== JsonSyntaxKind.LineCommentTrivia
                 ) {
-                    result += '\n';
+                    result.append('\n');
                     needsIndent = true;
                 }
                 break;
@@ -141,18 +190,18 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
 
                 if (!wasEmpty) {
                     if (!result.endsWith('\n')) {
-                        result += '\n';
+                        result.append('\n');
                     }
-                    result += indentString.repeat(indent);
+                    result.append(indentString.repeat(indent));
                 }
 
-                result += tokenText;
-                if (indentUnderflow) result += '\n';
+                result.append(tokenText);
+                if (indentUnderflow) result.append('\n');
 
                 break;
 
             case JsonSyntaxKind.CommaToken:
-                result += tokenText;
+                result.append(tokenText);
 
                 const afterComma = scanAhead(scanner);
                 if (
@@ -163,14 +212,14 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
                     afterComma !== JsonSyntaxKind.EOF &&
                     afterComma !== JsonSyntaxKind.CommaToken
                 ) {
-                    result += '\n';
+                    result.append('\n');
                     needsIndent = true;
                 }
                 break;
 
             case JsonSyntaxKind.ColonToken:
-                result += tokenText;
-                result += ' ';
+                result.append(tokenText);
+                result.append(' ');
                 break;
 
             case JsonSyntaxKind.LineCommentTrivia:
@@ -180,21 +229,17 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
                 ) && !result.endsWith('\n');
 
                 if (needsNewlineBefore) {
-                    result += '\n';
+                    result.append('\n');
                     needsIndent = true;
                 }
 
                 if (needsIndent) {
-                    result += indentString.repeat(indent);
+                    result.append(indentString.repeat(indent));
                     needsIndent = false;
-                    result += tokenText;
+                    result.append(tokenText);
                 } else {
-                    const trimmedResult = result.trimEnd();
-                    if (result.length > trimmedResult.length) {
-                        result = trimmedResult + tokenText;
-                    } else {
-                        result += ' ' + tokenText;
-                    }
+                    if (!result.trimEnd()) result.append(' ');
+                    result.append(tokenText);
                 }
 
                 const afterComment = scanAhead(scanner);
@@ -203,17 +248,18 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
                     afterComment !== JsonSyntaxKind.CloseBracketToken &&
                     afterComment !== JsonSyntaxKind.EOF
                 ) {
-                    result += '\n';
+                    result.append('\n');
                     needsIndent = true;
                 }
                 break;
 
             case JsonSyntaxKind.BlockCommentTrivia:
-                const prevChar = result[result.length - 1];
-                if (prevChar === '\n' || (prevChar === ' ' && result[result.length - 2] === '\n')) {
-                    result += tokenText;
+                const prevChar = result.charFromEnd(0);
+                if (prevChar === '\n' || (prevChar === ' ' && result.charFromEnd(1) === '\n')) {
+                    result.append(tokenText);
                 } else {
-                    result += ' ' + tokenText;
+                    result.append(' ');
+                    result.append(tokenText);
                 }
 
                 const afterBlock = scanAhead(scanner);
@@ -223,7 +269,7 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
                     afterBlock !== JsonSyntaxKind.CloseBracketToken &&
                     afterBlock !== JsonSyntaxKind.EOF
                 ) {
-                    result += '\n';
+                    result.append('\n');
                     needsIndent = true;
                 }
                 break;
@@ -233,18 +279,18 @@ export function formatJson(text: string, options: { formatRecords: boolean } = {
                 if (followsValue && isValueToken(token) && !result.endsWith('\n')) {
                     // Missing comma detected between sequential values,
                     // so add a newline for readability
-                    result += '\n';
-                    result += indentString.repeat(indent);
+                    result.append('\n');
+                    result.append(indentString.repeat(indent));
                 }
 
-                result += tokenText;
+                result.append(tokenText);
                 break;
         }
 
         previousToken = token;
     }
 
-    return result;
+    return result.toString();
 }
 
 function isValueToken(token: JsonSyntaxKind | null): boolean {

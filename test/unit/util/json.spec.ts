@@ -336,4 +336,19 @@ true
 
     });
 
+    it("should format large inputs in linear time", () => {
+        // ~2MB, which takes minutes if formatting is quadratic
+        const input = JSON.stringify(Array.from({ length: 20_000 }, (_, i) => ({
+            index: i,
+            value: { text: 'hello world '.repeat(4) }
+        })));
+
+        const start = performance.now();
+        const result = formatJson(input);
+        const duration = performance.now() - start;
+
+        expect(JSON.parse(result)).to.have.length(20_000);
+        expect(duration).to.be.lessThan(2000);
+    });
+
 });
