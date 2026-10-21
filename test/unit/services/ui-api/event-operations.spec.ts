@@ -1,9 +1,14 @@
+import * as zlib from 'zlib';
+
 import { expect } from '../../../test-setup';
 
 import { OperationRegistry } from '../../../../src/services/ui-api/api-registry';
 import { registerEventOperations } from '../../../../src/services/ui-api/operations/event-operations';
 import { getExchangeData } from '../../unit-test-helpers';
 import { CollectedEvent } from '../../../../src/types';
+import { decodeBody } from '../../../../src/services/ui-worker-api';
+import { HttpBody } from '../../../../src/model/http/http-body';
+import { SuccessfulExchange } from '../../../../src/model/http/http-exchange-views';
 
 describe('Event operations', () => {
 
@@ -18,6 +23,19 @@ describe('Event operations', () => {
     });
 
     describe('events.list', () => {
+
+        before(async function () {
+            this.timeout(10000);
+            // Warm up the worker, as the first decode can be slow
+            await decodeBody(Buffer.from(zlib.gzipSync('Warmup content')), ['gzip']);
+        });
+
+        const listIds = async (filter: string) => {
+            const result = await registry.execute('events.list', { filter });
+            expect(result.error).to.equal(undefined);
+            expect(result.success).to.equal(true);
+            return (result.data as { events: Array<{ id: string }> }).events.map(e => e.id);
+        };
 
         it('should return empty list when no events', async () => {
             const result = await registry.execute('events.list', {});
@@ -70,6 +88,108 @@ describe('Event operations', () => {
             expect((result.data as any).total).to.equal(1);
             expect((result.data as any).events[0].url).to.include('api.example.com');
             expect((result.data as any).events[0].status).to.equal(200);
+        });
+
+        it('should match body filters against not-yet-decoded gzipped bodies', async () => {
+            const matching = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('hello world')
+            });
+            const nonMatching = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('goodbye world')
+            });
+            events.push(matching, nonMatching);
+
+            expect(await listIds('body*=hello')).to.deep.equal([matching.id]);
+        });
+
+        it('should match contains() against not-yet-decoded gzipped bodies', async () => {
+            const matching = getExchangeData({
+                requestHeaders: { 'content-encoding': 'gzip' },
+                requestBody: zlib.gzipSync('secret-token')
+            });
+            const nonMatching = getExchangeData({
+                requestHeaders: { 'content-encoding': 'gzip' },
+                requestBody: zlib.gzipSync('public-data')
+            });
+            events.push(matching, nonMatching);
+
+            expect(await listIds('contains(secret-token)')).to.deep.equal([matching.id]);
+        });
+
+        it('should match negated body filters against not-yet-decoded gzipped bodies', async () => {
+            const matching = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('hello world')
+            });
+            const nonMatching = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('goodbye world')
+            });
+            events.push(matching, nonMatching);
+
+            expect(await listIds('not(body*=hello)')).to.deep.equal([nonMatching.id]);
+        });
+
+        it('should match body filters alongside bodies that fail to decode', async () => {
+            const failingFirst = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: 'hello but not actually gzip'
+            });
+            const matching = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('hello world')
+            });
+            const failingUnknownEncoding = getExchangeData({
+                responseHeaders: { 'content-encoding': 'gibberish-encoding' },
+                responseBody: 'hello gibberish'
+            });
+            events.push(failingFirst, matching, failingUnknownEncoding);
+
+            expect(await listIds('body*=hello')).to.deep.equal([matching.id]);
+            expect(await listIds('not(body*=hello)')).to.deep.equal([
+                failingFirst.id,
+                failingUnknownEncoding.id
+            ]);
+
+            expect((failingFirst as SuccessfulExchange).response.body.isFailed()).to.equal(true);
+            expect((failingUnknownEncoding as SuccessfulExchange).response.body.isFailed()).to.equal(true);
+        });
+
+        it('should still return results if waiting for a body rejects', async () => {
+            const rejecting = getExchangeData({ requestBody: 'hello' });
+            rejecting.request.body.waitForDecoding = () => Promise.reject(new Error('Unexpected'));
+            const matching = getExchangeData({ requestBody: 'hello' });
+            events.push(rejecting, matching);
+
+            expect(await listIds('body*=hello')).to.deep.equal([matching.id]);
+        });
+
+        it('should not wait for bodies that are still streaming', async () => {
+            const streaming = getExchangeData({ method: 'POST' });
+            Object.assign(streaming.request, { body: HttpBody.streaming({}) });
+            const complete = getExchangeData({ requestBody: 'hello' });
+            events.push(streaming, complete);
+
+            expect(await listIds('body*=hello')).to.deep.equal([complete.id]);
+        });
+
+        it('should reject filters with unparseable text, rather than free-text matching', async () => {
+            events.push(getExchangeData());
+
+            const result = await registry.execute('events.list', { filter: 'method=GET example' });
+            expect(result.success).to.equal(false);
+            expect(result.error!.code).to.equal('INVALID_PARAMS');
+            expect(result.error!.message).to.include("'example'");
+        });
+
+        it('should reject unclosed filters', async () => {
+            events.push(getExchangeData());
+
+            const result = await registry.execute('events.list', { filter: 'or(method=GET, status=200' });
+            expect(result.success).to.equal(false);
+            expect(result.error!.code).to.equal('INVALID_PARAMS');
         });
     });
 

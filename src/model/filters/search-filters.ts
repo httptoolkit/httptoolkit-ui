@@ -35,6 +35,14 @@ export abstract class Filter {
     abstract matches(event: ViewableEvent): boolean;
     abstract toString(): string;
 
+    /**
+     * Whether matching reads decoded bodies. These are decoded asynchronously, and treated
+     * as empty until then, so results may change (observably) once decoding completes.
+     */
+    get requiresDecodedBodies(): boolean {
+        return false;
+    }
+
     constructor(
         private readonly filterString: string
     ) {}
@@ -1267,6 +1275,10 @@ class BodyFilter extends Filter {
         this.predicate = bufferOperations[this.op];
     }
 
+    get requiresDecodedBodies() {
+        return true;
+    }
+
     matches(event: ViewableEvent): boolean {
         if (!event.isHttp()) return false;
         if (!event.hasRequestBody() && !event.hasResponseBody()) return false; // No body, no match
@@ -1322,6 +1334,10 @@ class ContainsFilter extends Filter {
         const [, expectedContent] = parseFilter(ContainsFilter, filter);
 
         this.expectedContent = expectedContent.toLowerCase();
+    }
+
+    get requiresDecodedBodies() {
+        return true;
     }
 
     matches(event: ViewableEvent): boolean {
@@ -1476,6 +1492,10 @@ class NotFilter extends Filter {
         this.innerFilter = new matchingFilterClass(innerValue) as Filter; // Never Filters - we don't support filter aliases here
     }
 
+    get requiresDecodedBodies() {
+        return this.innerFilter.requiresDecodedBodies;
+    }
+
     matches(event: ViewableEvent): boolean {
         return !this.innerFilter.matches(event);
     }
@@ -1551,6 +1571,10 @@ class OrFilter extends Filter {
             )!;
             return new matchingFilterClass(valuePart) as Filter; // Never Filters - we don't support filter aliases here
         });
+    }
+
+    get requiresDecodedBodies() {
+        return this.innerFilters.some(f => f.requiresDecodedBodies);
     }
 
     matches(event: ViewableEvent): boolean {

@@ -1,9 +1,11 @@
-import { Operation } from '../api-types';
+import * as _ from 'lodash';
+
+import { Operation, OperationResult } from '../api-types';
 import { OperationRegistry } from '../api-registry';
 import { serializeExchangeSummary, serializeExchangeOutline, serializeBody } from '../serialize';
 import { HttpExchange, CollectedEvent } from '../../../types';
 import { matchFilters } from '../../../model/filters/filter-matching';
-import { SelectableSearchFilterClasses } from '../../../model/filters/search-filters';
+import { Filter, SelectableSearchFilterClasses } from '../../../model/filters/search-filters';
 import { EventsStore } from '../../../model/events/events-store';
 
 // Free-tier body exports are capped to support exploration but not
@@ -43,6 +45,39 @@ function findHttpExchange(
     return { exchange: event };
 }
 
+// Unlike the UI, unparseable text is rejected rather than used for free-text matching,
+// since agents generally intend structured filters & should see when they're invalid.
+function parseFilters(filterString: string): Filter[] | OperationResult {
+    const [stringFilter, ...filters] = matchFilters(SelectableSearchFilterClasses, filterString);
+
+    if (stringFilter.filter !== '') {
+        return {
+            success: false,
+            error: {
+                code: 'INVALID_PARAMS',
+                message: `Could not parse filter at '${stringFilter.filter}'. ` +
+                    'Only structured filters are supported - use contains(text) to search for text.'
+            }
+        };
+    }
+
+    return filters;
+}
+
+async function waitForDecodedBodies(exchange: HttpExchange): Promise<void> {
+    const bodies = [
+        exchange.request.body,
+        ...(exchange.isSuccessfulExchange() ? [exchange.response.body] : [])
+    ];
+
+    await Promise.all(bodies
+        // Streaming bodies only decode once complete, so we match those as-is
+        .filter(body => body.isComplete())
+        // Failures are matched as empty bodies, so must never block other results
+        .map(body => body.waitForDecoding().catch(() => {}))
+    );
+}
+
 function eventsListOperation(
     getEvents: () => ReadonlyArray<CollectedEvent>
 ): Operation {
@@ -62,6 +97,7 @@ function eventsListOperation(
                         type: 'string',
                         description:
                             'Filter expression. Space-separated filters are ANDed together. ' +
+                            'Free text is not supported - use contains(text) to search for text.\n' +
                             'Operators: = != ^= $= *= > >= < <=\n' +
                             '\n' +
                             'Common filters (subset - see https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic for all options):\n' +
@@ -121,10 +157,22 @@ function eventsListOperation(
             let events = getEvents().filter(e => e.isHttp());
 
             if (filterString) {
-                const filters = matchFilters(SelectableSearchFilterClasses, filterString);
+                const filters = parseFilters(filterString);
+                if (!Array.isArray(filters)) return filters;
+
+                // Apply the cheap filters first, so we only decode bodies where necessary
+                const [bodyFilters, otherFilters] = _.partition(filters, f => f.requiresDecodedBodies);
+
                 events = events.filter(event =>
-                    filters.every(f => f.matches(event))
+                    otherFilters.every(f => f.matches(event))
                 );
+
+                if (bodyFilters.length) {
+                    await Promise.all(events.map(waitForDecodedBodies));
+                    events = events.filter(event =>
+                        bodyFilters.every(f => f.matches(event))
+                    );
+                }
             }
 
             const total = events.length;
