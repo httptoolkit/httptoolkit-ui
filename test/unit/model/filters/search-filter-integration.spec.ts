@@ -22,7 +22,8 @@ import {
 } from "../../../../src/model/filters/search-filters";
 import {
     applySuggestionToFilters,
-    getFilterSuggestions
+    getFilterSuggestions,
+    matchFilters
 } from "../../../../src/model/filters/filter-matching";
 import {
     applySuggestionToText
@@ -641,6 +642,18 @@ describe("Search filter model integration test:", () => {
             expect((matchedEvents[0] as SuccessfulExchange).request.parsedUrl.pathname).to.equal('/home');
             expect((matchedEvents[1] as SuccessfulExchange).request.parsedUrl.pathname).to.equal('/home/missing');
         });
+
+        it("should correctly filter for a bracketed path", () => {
+            const filter = createFilter("path=[/a(b),c]");
+
+            const exampleEvents = [
+                getExchangeData({ path: '/a(b),c' }),
+                getExchangeData({ path: '/a(b)' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([true, false]);
+            expect(filter.toString()).to.equal('Path = /a(b),c');
+        });
     });
 
     describe("Query filters", () => {
@@ -755,6 +768,23 @@ describe("Search filter model integration test:", () => {
             const matchedEvents = exampleEvents.filter(e => filter.matches(e));
             expect(matchedEvents.length).to.equal(1);
             expect((matchedEvents[0] as SuccessfulExchange).response.statusCode).to.equal(404);
+        });
+
+        it("should correctly filter for a bracketed query", () => {
+            const filter = createFilter("query*=[a=1,2]");
+
+            const exampleEvents = [
+                getExchangeData({ query: '?a=1,2' }),
+                getExchangeData({ query: '?a=1' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([true, false]);
+        });
+
+        it("should allow an empty query followed by other filters", () => {
+            const [stringFilter, ...filters] = matchFilters(FilterClasses, "query= method=GET");
+            expect(stringFilter.filter).to.equal('');
+            expect(filters.map(f => f.toString())).to.deep.equal(['Method = GET', 'Query = ']);
         });
     });
 
@@ -1331,7 +1361,9 @@ describe("Search filter model integration test:", () => {
                 { index: 3, showAs: "port" },
                 { index: 3, showAs: "protocol" },
                 { index: 3, showAs: "httpVersion" },
-                { index: 3, showAs: "websocket" }
+                { index: 3, showAs: "websocket" },
+                { index: 3, showAs: "not" },
+                { index: 3, showAs: "or" }
             ]);
         });
 
@@ -1386,7 +1418,9 @@ describe("Search filter model integration test:", () => {
                 { index: 14, showAs: "port" },
                 { index: 14, showAs: "protocol" },
                 { index: 14, showAs: "httpVersion" },
-                { index: 14, showAs: "websocket)" }
+                { index: 14, showAs: "websocket)" },
+                { index: 14, showAs: "not" },
+                { index: 14, showAs: "or" }
             ]);
         });
 
@@ -1426,6 +1460,34 @@ describe("Search filter model integration test:", () => {
                 { index: 10, showAs: "another-header]" },
                 { index: 10, showAs: "content-type]" }
             ]);
+        });
+
+        it("should wrap suggested inner values that contain delimiters", () => {
+            const input = "or(path=";
+
+            const suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({ path: '/x,y' }),
+                getExchangeData({ path: '/a(b)' }),
+                getExchangeData({ path: '/plain' })
+            ]);
+
+            const values = suggestions.map(s => applySuggestionToText(input, s));
+            expect(values).to.include.members([
+                "or(path=[/x,y]",
+                "or(path=[/a(b)]",
+                "or(path=/plain"
+            ]);
+        });
+
+        it("should wrap suggested values that start with a bracket", () => {
+            const input = "header[x]=";
+
+            const suggestions = getFilterSuggestions(FilterClasses, input, [
+                getExchangeData({ requestHeaders: { 'x': '[abc' } })
+            ]);
+
+            expect(suggestions.map(s => applySuggestionToText(input, s)))
+                .to.include("header[x]=[[abc]");
         });
 
         it("should show descriptions for various suggestions", () => {
@@ -1490,6 +1552,79 @@ describe("Search filter model integration test:", () => {
                 { status: 321 }
             ]);
         });
+
+        it("should match inner filters containing commas & brackets", () => {
+            const filter = createFilter("or(contains(a,b), contains(c,d))");
+
+            const exampleEvents = [
+                getExchangeData({ requestBody: 'a,b' }),
+                getExchangeData({ requestBody: 'c,d' }),
+                getExchangeData({ requestBody: 'a,d' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([true, true, false]);
+        });
+
+        it("should describe inner filters containing commas", () => {
+            expect(getSuggestionDescriptions("or(contains(a,b), method=POST)")[0]).to.equal(
+                "exchanges that contain 'a,b' anywhere, or POST requests"
+            );
+        });
+
+        it("should end unwrapped inner values at delimiters", () => {
+            const filter = createFilter("or(path^=/api, path^=/v2)");
+
+            const exampleEvents = [
+                getExchangeData({ path: '/api/x' }),
+                getExchangeData({ path: '/v2/x' }),
+                getExchangeData({ path: '/other' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([true, true, false]);
+        });
+
+        it("should allow bracketed inner values containing delimiters", () => {
+            const filter = createFilter("or(path=[/a,b)], header[x]=[c, d])");
+
+            const exampleEvents = [
+                getExchangeData({ path: '/a,b)' }),
+                getExchangeData({ requestHeaders: { 'x': 'c, d' } }),
+                getExchangeData({ path: '/a' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([true, true, false]);
+        });
+
+        it("should match nested not() and or() filters", () => {
+            const filter = createFilter("or(not(method=GET), or(path=/a, contains(x,y)))");
+
+            const exampleEvents = [
+                getExchangeData({ method: 'POST' }),
+                getExchangeData({ method: 'GET', path: '/a' }),
+                getExchangeData({ method: 'GET', requestBody: 'x,y' }),
+                getExchangeData({ method: 'GET', path: '/b' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([true, true, true, false]);
+        });
+
+        it("should describe nested filters", () => {
+            expect(getSuggestionDescriptions("or(not(method=GET), status=404)")[0]).to.equal(
+                "excluding GET requests, or responses with status 404 (Not Found)"
+            );
+        });
+
+        it("should not extend inner values past their own first closing bracket", () => {
+            [
+                "or(contains(), method=GET)",
+                "or(body*=[], method=GET])",
+                "contains() or(method=GET, status=200)"
+            ].forEach((input) => {
+                const [stringFilter, ...filters] = matchFilters(FilterClasses, input);
+                expect(filters.map(f => f.toString())).to.deep.equal([]);
+                expect(stringFilter.filter).to.equal(input);
+            });
+        });
     });
 
     describe("Not() filters", () => {
@@ -1518,6 +1653,8 @@ describe("Search filter model integration test:", () => {
                 { index: 4, showAs: "protocol" },
                 { index: 4, showAs: "httpVersion" },
                 { index: 4, showAs: "websocket)" },
+                { index: 4, showAs: "not" },
+                { index: 4, showAs: "or" },
             ]);
         });
 
@@ -1608,6 +1745,29 @@ describe("Search filter model integration test:", () => {
                 { status: 404 },
                 { status: undefined }
             ]);
+        });
+
+        it("should match nested or() filters", () => {
+            const filter = createFilter("not(or(method=GET, status=404))");
+
+            const exampleEvents = [
+                getExchangeData({ method: 'GET' }),
+                getExchangeData({ method: 'POST', statusCode: 404 }),
+                getExchangeData({ method: 'POST', statusCode: 200 })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([false, false, true]);
+        });
+
+        it("should match bracketed inner filters", () => {
+            const filter = createFilter("not(contains(a,b))");
+
+            const exampleEvents = [
+                getExchangeData({ requestBody: 'a,b' }),
+                getExchangeData({ requestBody: 'a,c' })
+            ];
+
+            expect(exampleEvents.map(e => filter.matches(e))).to.deep.equal([false, true]);
         });
     });
 });

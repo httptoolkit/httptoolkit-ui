@@ -7,7 +7,11 @@ import {
     SyntaxPartContext,
     SyntaxPartMatch,
     SyntaxPartValue,
-    SyntaxSuggestion
+    SyntaxSuggestion,
+    Terminators,
+    findTerminator,
+    isAtInputEnd,
+    limitToTerminators
 } from './syntax-matching';
 
 type CharRange = readonly [number, number];
@@ -23,6 +27,7 @@ export function charRange(charA: string, charB?: string): CharRange {
 export const ALPHABETICAL = [charRange("a", "z"), charRange("A", "Z")];
 export const NUMERIC = charRange("0", "9");
 export const ALPHANUMERIC = [...ALPHABETICAL, NUMERIC];
+export const ASCII_PRINTABLE = charRange(" ", "~");
 
 export function matchesRange(charCode: number, range: CharRange) {
     return charCode >= range[0] && charCode <= range[1];
@@ -61,8 +66,13 @@ function getStringAt(value: string, index: number, allowedCharRanges: CharRange[
 
 const NUMBER_CHARS = [48, 57] as const; // 0-9 ascii codes
 
-function getParsedValue(part: SyntaxPart, value: string, index: number): string {
-    const match = part.match(value, index);
+function getParsedValue(
+    part: SyntaxPart,
+    value: string,
+    index: number,
+    terminators?: Terminators
+): string {
+    const match = part.match(value, index, terminators);
     if (!match || match.type !== 'full') {
         console.log("Unparseable expected-parseable input", value);
         throw new Error("Can't parse expected-parseable value");
@@ -103,7 +113,8 @@ export class FixedStringSyntax<OptionsType extends string = string> implements S
         private matcher: OptionsType
     ) {}
 
-    match(value: string, index: number): undefined | SyntaxPartMatch {
+    match(fullValue: string, index: number, terminators: Terminators = []): undefined | SyntaxPartMatch {
+        const value = limitToTerminators(fullValue, index, terminators);
         const expected = this.matcher.toLowerCase();
         let i: number;
 
@@ -132,9 +143,9 @@ export class FixedStringSyntax<OptionsType extends string = string> implements S
         }];
     }
 
-    parse(value: string, index: number): OptionsType {
+    parse(value: string, index: number, terminators?: Terminators): OptionsType {
         // Ensure the parsing matches correctly
-        getParsedValue(this, value, index);
+        getParsedValue(this, value, index, terminators);
         // Return the expected string (ignoring input case) not the matched text:
         return this.matcher;
     }
@@ -161,22 +172,29 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
         this.allowEmpty = options.allowEmpty || (() => false);
     }
 
-    match(value: string, index: number): undefined | SyntaxPartMatch {
-        const matchingString = getStringAt(value, index, this.allowedCharRanges);
+    match(value: string, index: number, terminators: Terminators = []): undefined | SyntaxPartMatch {
+        const input = limitToTerminators(value, index, terminators);
+        const matchingString = getStringAt(input, index, this.allowedCharRanges);
         if (matchingString === undefined) return;
 
         const consumedChars = matchingString.length;
 
         // Any string is a full match, any empty space is a potential string
         return {
-            type: (consumedChars > 0 || this.allowEmpty(value, index))
+            type: (consumedChars > 0 || this.allowEmpty(input, index))
                 ? 'full'
                 : 'partial',
             consumed: consumedChars
         };
     }
 
-    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
+    getSuggestions(
+        fullValue: string,
+        index: number,
+        context?: C,
+        terminators: Terminators = []
+    ): SyntaxSuggestion[] {
+        const value = limitToTerminators(fullValue, index, terminators);
         const matchingString = getStringAt(value, index, this.allowedCharRanges);
 
         const suggestions = filterContextualSuggestions(value, index, context,
@@ -221,8 +239,8 @@ export class StringSyntax<C = never> implements SyntaxPart<string, C> {
         }
     }
 
-    parse(value: string, index: number): string {
-        return getParsedValue(this, value, index);
+    parse(value: string, index: number, terminators?: Terminators): string {
+        return getParsedValue(this, value, index, terminators);
     }
 
 }
@@ -245,12 +263,13 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
         this.optional = !!options.optional;
     }
 
-    match(value: string, startIndex: number): SyntaxPartMatch | undefined {
+    match(value: string, startIndex: number, terminators: Terminators = []): SyntaxPartMatch | undefined {
         let isWrapped: boolean;
         let index = startIndex;
 
-        // Check for the wrapper start character first:
-        if (value[index] === undefined) {
+        // Check for the wrapper start character first. Optional wrappers at the end fall
+        // through to their unwrapped content, which may itself allow an empty value.
+        if (isAtInputEnd(value, index, terminators) && !this.optional) {
             return { type: 'partial', consumed: 0 };
         } else if (value[index] === this.wrapper[0]) {
             index += 1;
@@ -261,17 +280,10 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
             return; // No wrapped, not optional - no match
         }
 
-        // Check the syntax within:
-        const endChar = isWrapped ? this.wrapper[1] : ' ';
-        const nextEndCharIndex = value.slice(index).indexOf(endChar);
-        const valueToMatch = nextEndCharIndex !== -1
-            // Don't allow the wrapped syntax to read beyond the wrapper end
-            ? value.slice(0, index + nextEndCharIndex)
-            : value;
-
         const submatch = this.wrappedSyntax.match(
-            valueToMatch,
-            index
+            value,
+            index,
+            this.getContentTerminators(isWrapped, terminators)
         );
         if (!submatch) return;
 
@@ -286,13 +298,13 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
 
         // Check for the wrapper close character:
         if (isWrapped) {
-            if (value[index] === undefined) {
+            if (value[index] === this.wrapper[1]) {
+                index += 1;
+            } else if (isAtInputEnd(value, index, terminators)) {
                 return { type: 'partial', consumed: index - startIndex };
-            } else if (value[index] !== this.wrapper[1]) {
+            } else {
                 // Missing closing wrapper after open wrapper - no match
                 return;
-            } else {
-                index += 1;
             }
         }
 
@@ -302,34 +314,36 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
         };
     }
 
-    getSuggestions(value: string, index: number, context?: never): SyntaxSuggestion[] {
+    getSuggestions(
+        value: string,
+        index: number,
+        context?: never,
+        terminators: Terminators = []
+    ): SyntaxSuggestion[] {
         const hasStartWrapper = value[index] === this.wrapper[0];
 
-        const endChar = !this.optional || hasStartWrapper
-            ? this.wrapper[1]
-            : ' ';
-
-        // Don't allow the wrapped syntax to include the wrapper end in suggestions:
-        const nextEndCharIndex = value.slice(index).indexOf(endChar);
-        const valueToMatch = nextEndCharIndex !== -1
-            ? value.slice(0, index + nextEndCharIndex)
-            : value;
+        const isWrapped = !this.optional || hasStartWrapper;
 
         const wrappedSyntaxStartPosition = hasStartWrapper
             ? index + 1
             : index;
 
         const suggestionsToWrap = this.wrappedSyntax.getSuggestions(
-            valueToMatch,
+            value,
             wrappedSyntaxStartPosition,
-            context
+            context,
+            this.getContentTerminators(isWrapped, terminators)
         );
 
         return suggestionsToWrap.map(suggestion => {
             // Suggestions need a wrapper when it's required or when it's optional but
-            // the value would be invalid unwrapped (because it has space)
+            // the value would be invalid unwrapped (because it has a space or terminator,
+            // or would be read as a wrapper itself)
             const needsWrapper = !this.optional ||
-                suggestion.value.includes(' ');
+                suggestion.value.includes(' ') ||
+                terminators.some(terminator => suggestion.value.includes(terminator)) ||
+                (!hasStartWrapper && suggestion.index === wrappedSyntaxStartPosition &&
+                    suggestion.value.startsWith(this.wrapper[0]));
 
             const shouldAddStartWrapper = needsWrapper && !hasStartWrapper;
 
@@ -375,25 +389,24 @@ export class SyntaxWrapperSyntax<P> implements SyntaxPart<P> {
         });
     }
 
-    parse(value: string, index: number): P {
+    parse(value: string, index: number, terminators: Terminators = []): P {
         const hasStartWrapper = value[index] === this.wrapper[0];
         const hasEndWrapper = value.slice(index).indexOf(this.wrapper[1]) !== -1;
         const isWrapped = !this.optional || (hasStartWrapper && hasEndWrapper);
 
-        const endChar = isWrapped
-            ? this.wrapper[1]
-            : ' ';
-
-        // Don't allow the wrapped syntax to read beyond the wrapper end:
-        const nextEndCharIndex = value.slice(index).indexOf(endChar);
-        const valueToMatch = nextEndCharIndex !== -1
-            ? value.slice(0, index + nextEndCharIndex)
-            : value;
-
         return this.wrappedSyntax.parse(
-            valueToMatch,
-            isWrapped ? index + 1 : index
+            value,
+            isWrapped ? index + 1 : index,
+            this.getContentTerminators(isWrapped, terminators)
         );
+    }
+
+    private getContentTerminators(isWrapped: boolean, outerTerminators: Terminators): Terminators {
+        return isWrapped
+            // Wrapped content ends only at the wrapper end, and may contain outer terminators:
+            ? [this.wrapper[1]]
+            // Unwrapped content cannot contain spaces (that's what the wrapper is for):
+            : [...outerTerminators, ' '];
     }
 
 }
@@ -432,28 +445,18 @@ export class SyntaxRepeaterSyntax<
     // minimum repetitions at all.
     private matchSyntaxOnly(
         value: string,
-        startIndex: number
+        startIndex: number,
+        terminators: Terminators
     ): (SyntaxPartMatch & { matchCount: number }) {
-        const { wrappedSyntax, delimiterString, delimiterSyntax } = this;
+        const { wrappedSyntax, delimiterSyntax } = this;
+        const itemTerminators = this.getItemTerminators(terminators);
 
         let index = startIndex;
         let matchCount = 0;
-        let lastPartMatchEndIndex = 0;
+        let lastPartMatchEndIndex = startIndex;
 
         while (true) {
-            // Check the syntax within:
-            const nextDelimiterIndex = value.slice(index).indexOf(delimiterString);
-            const valueToMatch = value.slice(0,
-                // Don't allow the wrapped syntax to read beyond the next delimiter
-                nextDelimiterIndex !== -1
-                    ? index + nextDelimiterIndex
-                    : undefined
-            );
-
-            const submatch = wrappedSyntax.match(
-                valueToMatch,
-                index
-            );
+            const submatch = wrappedSyntax.match(value, index, itemTerminators);
 
             // If we run into non-matching values, we're done. Return everything up
             // to the last matching part:
@@ -480,7 +483,7 @@ export class SyntaxRepeaterSyntax<
 
             matchCount += 1;
 
-            const delimiterMatch = delimiterSyntax.match(value, index);
+            const delimiterMatch = delimiterSyntax.match(value, index, terminators);
             if (!delimiterMatch || delimiterMatch.consumed === 0) {
                 // If we have a non-delimiter (or we're at the end of the string) stop.
                 return { matchCount, type: 'full', consumed: index - startIndex };
@@ -500,14 +503,14 @@ export class SyntaxRepeaterSyntax<
         }
     }
 
-    match(value: string, startIndex: number): SyntaxPartMatch | undefined {
+    match(value: string, startIndex: number, terminators: Terminators = []): SyntaxPartMatch | undefined {
         const { minimumRepetitions } = this;
 
         const {
             matchCount,
             type: matchType,
             consumed
-        } = this.matchSyntaxOnly(value, startIndex);
+        } = this.matchSyntaxOnly(value, startIndex, terminators);
 
         if (consumed === 0) {
             if (minimumRepetitions <= 0) {
@@ -518,7 +521,7 @@ export class SyntaxRepeaterSyntax<
         } else if (matchType === 'full') {
             if (matchCount >= minimumRepetitions) {
                 return { type: 'full', consumed };
-            } else if (startIndex + consumed === value.length) {
+            } else if (isAtInputEnd(value, startIndex + consumed, terminators)) {
                 // If you have a full match with too few parts, but up to the
                 // end of the string, then it's a partial match (we can append to complete)
                 return { type: 'partial', consumed: consumed };
@@ -532,7 +535,12 @@ export class SyntaxRepeaterSyntax<
         }
     }
 
-    getSuggestions(value: string, initialIndex: number, context?: C): SyntaxSuggestion[] {
+    getSuggestions(
+        value: string,
+        initialIndex: number,
+        context?: C,
+        terminators: Terminators = []
+    ): SyntaxSuggestion[] {
         // getSuggestions requires a match. That means we can find the right suggestion
         // by looping through part matches until we find the first partial match or a
         // mismatch, and then ask the last matching part for suggestions.
@@ -543,19 +551,13 @@ export class SyntaxRepeaterSyntax<
             minimumRepetitions
         } = this;
 
+        const itemTerminators = this.getItemTerminators(terminators);
+
         let index = initialIndex;
         let matchCount = 0;
 
         while (true) {
-            const nextDelimiterIndex = value.slice(index).indexOf(delimiterString);
-            const valueToMatch = value.slice(0,
-                // Don't allow the wrapped syntax to read beyond the next delimiter
-                nextDelimiterIndex !== -1
-                    ? index + nextDelimiterIndex
-                    : undefined
-            );
-
-            const wrappedMatch = wrappedSyntax.match(valueToMatch, index);
+            const wrappedMatch = wrappedSyntax.match(value, index, itemTerminators);
             if (!wrappedMatch) {
                 // Must be a full match on the parsed content up to the last delimiter
                 // (if any) because otherwise this is no match at all, and getSuggestions
@@ -570,7 +572,7 @@ export class SyntaxRepeaterSyntax<
                 }];
             } else if (wrappedMatch.type === 'partial') {
                 // We have a partial match on our contents, so suggest continuing it
-                const suggestions = wrappedSyntax.getSuggestions(value, index, context);
+                const suggestions = wrappedSyntax.getSuggestions(value, index, context, itemTerminators);
                 if (matchCount + 1 < minimumRepetitions) {
                     return suggestions.map(suggestion => ({
                         ...suggestion,
@@ -589,7 +591,7 @@ export class SyntaxRepeaterSyntax<
             index += wrappedMatch.consumed;
             matchCount += 1;
 
-            const delimiterMatch = delimiterSyntax.match(value, index);
+            const delimiterMatch = delimiterSyntax.match(value, index, terminators);
             if (!delimiterMatch) {
                 // Non-delimiter after a valid value - we have to stop here.
                 return [{
@@ -598,7 +600,10 @@ export class SyntaxRepeaterSyntax<
                     showAs: '',
                     value: ''
                 }];
-            } else if (delimiterMatch.type === 'partial' || value[index + delimiterMatch.consumed] === undefined) {
+            } else if (
+                delimiterMatch.type === 'partial' ||
+                isAtInputEnd(value, index + delimiterMatch.consumed, terminators)
+            ) {
                 // If we have a partial delimiter, no delimiter, or a delimiter but no following space at
                 // the end of the value: suggest completing a nice delimiter+space+template for the next value.
                 const suggestions: SyntaxSuggestion[] = [{
@@ -628,14 +633,44 @@ export class SyntaxRepeaterSyntax<
         }
     }
 
-    parse(value: string, index: number): V[] {
-        const match = this.match(value, index)!;
+    parse(value: string, index: number, terminators: Terminators = []): V[] {
+        const match = this.match(value, index, terminators)!;
 
         if (match.type === 'full' && match.consumed === 0) return [];
 
-        const matchedValue = value.slice(index, index + match.consumed);
-        const matchedValueParts = matchedValue.split(this.delimiterString);
-        return matchedValueParts.map((part) => this.wrappedSyntax.parse(part.trim(), 0));
+        const matchedValue = value.slice(0, index + match.consumed);
+        return this.splitValues(matchedValue, index, terminators)
+            .map((part) => this.wrappedSyntax.parse(part, 0));
+    }
+
+    /**
+     * Splits a fully or partially matching value into the raw string for each repeated
+     * value. Any trailing unmatched content is returned as a final value.
+     */
+    splitValues(value: string, startIndex: number, terminators: Terminators = []): string[] {
+        const { wrappedSyntax, delimiterString } = this;
+        const itemTerminators = this.getItemTerminators(terminators);
+
+        const values: string[] = [];
+        let index = startIndex;
+
+        while (true) {
+            const match = wrappedSyntax.match(value, index, itemTerminators);
+            const valueEnd = match
+                ? index + match.consumed
+                : findTerminator(value, index, itemTerminators);
+
+            values.push(value.slice(index, valueEnd));
+
+            if (!value.startsWith(delimiterString, valueEnd)) return values;
+
+            index = valueEnd + delimiterString.length;
+            while (value[index] === ' ') index += 1;
+        }
+    }
+
+    private getItemTerminators(terminators: Terminators): Terminators {
+        return [...terminators, this.delimiterString];
     }
 
 }
@@ -648,16 +683,21 @@ export class NumberSyntax implements SyntaxPart<number> {
         this.stringSyntax = new StringSyntax(name, { allowedChars: [NUMBER_CHARS] });
     }
 
-    match(value: string, index: number): SyntaxPartMatch | undefined {
-        return this.stringSyntax.match(value, index);
+    match(value: string, index: number, terminators?: Terminators): SyntaxPartMatch | undefined {
+        return this.stringSyntax.match(value, index, terminators);
     }
 
-    getSuggestions(value: string, index: number): SyntaxSuggestion[] {
-        return this.stringSyntax.getSuggestions(value, index);
+    getSuggestions(
+        value: string,
+        index: number,
+        _context?: never,
+        terminators?: Terminators
+    ): SyntaxSuggestion[] {
+        return this.stringSyntax.getSuggestions(value, index, undefined, terminators);
     }
 
-    parse(value: string, index: number): number {
-        const valueAsString = this.stringSyntax.parse(value, index);
+    parse(value: string, index: number, terminators?: Terminators): number {
+        const valueAsString = this.stringSyntax.parse(value, index, terminators);
         return parseInt(valueAsString, 10);
     }
 
@@ -750,9 +790,9 @@ export class OptionsSyntax<
         this.options = options;
     }
 
-    match(value: string, index: number): SyntaxPartMatch | undefined {
+    match(value: string, index: number, terminators?: Terminators): SyntaxPartMatch | undefined {
         const matches = this.options.map((option) =>
-            option.match(value, index)
+            option.match(value, index, terminators)
         ).filter(m => !!m) as SyntaxPartMatch[];
 
         const [fullMatches, partialMatches] = _.partition(matches, { type: 'full' });
@@ -767,10 +807,11 @@ export class OptionsSyntax<
     getSuggestions(
         value: string,
         index: number,
-        context?: C
+        context?: C,
+        terminators?: Terminators
     ): SyntaxSuggestion[] {
         const matchingOptions = this.options
-            .map((option) => ({ option, match: option.match(value, index) }))
+            .map((option) => ({ option, match: option.match(value, index, terminators) }))
             .filter(({ match }) => !!match);
 
         // If there's an exact match, suggest only that.
@@ -783,7 +824,7 @@ export class OptionsSyntax<
                 match!.consumed
             )!;
 
-            return longestFullMatch.option.getSuggestions(value, index, context);
+            return longestFullMatch.option.getSuggestions(value, index, context, terminators);
         } else {
             // Otherwise, combine all the options together
             return _.flatMap(matchingOptions, ({ option }) => {
@@ -793,23 +834,57 @@ export class OptionsSyntax<
                     return option.getSuggestions(value, index, Object.assign({},
                         context,
                         { canExtend: false }
-                    ));
+                    ), terminators);
                 } else {
-                    return option.getSuggestions(value, index, context)
+                    return option.getSuggestions(value, index, context, terminators)
                 }
             });
         }
     }
 
-    parse(value: string, index: number): V {
+    parse(value: string, index: number, terminators?: Terminators): V {
         const fullMatches = this.options.map((option) => ({
             option,
-            match: option.match(value, index)
+            match: option.match(value, index, terminators)
         })).filter(({ match }) => match?.type === 'full');
 
         const bestMatch = _.maxBy(fullMatches, ({ match }) => match!.consumed);
 
-        return bestMatch!.option.parse(value, index);
+        return bestMatch!.option.parse(value, index, terminators);
+    }
+}
+
+/**
+ * Defers building syntax until it's first used, to allow recursive syntax.
+ */
+export class LazySyntax<V, C> implements SyntaxPart<V, C> {
+
+    private syntax: SyntaxPart<V, C> | undefined;
+
+    constructor(
+        private buildSyntax: () => SyntaxPart<V, C>
+    ) {}
+
+    private get resolvedSyntax(): SyntaxPart<V, C> {
+        if (!this.syntax) this.syntax = this.buildSyntax();
+        return this.syntax;
+    }
+
+    match(value: string, index: number, terminators?: Terminators): SyntaxPartMatch | undefined {
+        return this.resolvedSyntax.match(value, index, terminators);
+    }
+
+    getSuggestions(
+        value: string,
+        index: number,
+        context?: C,
+        terminators?: Terminators
+    ): SyntaxSuggestion[] {
+        return this.resolvedSyntax.getSuggestions(value, index, context, terminators);
+    }
+
+    parse(value: string, index: number, terminators?: Terminators): V {
+        return this.resolvedSyntax.parse(value, index, terminators);
     }
 }
 
@@ -848,15 +923,15 @@ export class OptionalSyntax<
         this.subParts = subParts; // Apparently ... isn't allowed in field params.
     }
 
-    match(value: string, index: number): SyntaxPartMatch | undefined {
+    match(value: string, index: number, terminators: Terminators = []): SyntaxPartMatch | undefined {
         let currentIndex = index;
 
         // Optional syntax matches and disappears if there's no content available
-        if (currentIndex >= value.length) {
+        if (isAtInputEnd(value, currentIndex, terminators)) {
             return { type: 'full', consumed: 0 };
         }
 
-        const subMatch = matchSyntax(this.subParts, value, index);
+        const subMatch = matchSyntax(this.subParts, value, index, terminators);
 
         // Optional syntax matches and disappears if the sub-syntax doesn't match at all
         if (!subMatch) {
@@ -871,23 +946,28 @@ export class OptionalSyntax<
         // If the contained syntax partially matches, it's only a partial match if we're
         // at the end of the string. If we're not, then we match 0 & disappear, and the
         // filter's matching continues to the next part (if any)
-        if (index + subMatch.partiallyConsumed === value.length) {
+        if (isAtInputEnd(value, index + subMatch.partiallyConsumed, terminators)) {
             return { type: 'partial', consumed: subMatch.partiallyConsumed };
         } else {
             return { type: 'full', consumed: 0 };
         }
     }
 
-    getSuggestions(value: string, index: number, context?: C): SyntaxSuggestion[] {
-        const subPartMatch = this.match(value, index);
+    getSuggestions(
+        value: string,
+        index: number,
+        context?: C,
+        terminators: Terminators = []
+    ): SyntaxSuggestion[] {
+        const subPartMatch = this.match(value, index, terminators);
         const subPartSuggestions = getSuggestions(
             [{ key: null, syntax: this.subParts }],
             value,
             index,
-            { context }
+            { context, terminators }
         ).map(({ suggestion }) => suggestion);
 
-        const isEndOfValue = value.length === index;
+        const isEndOfValue = isAtInputEnd(value, index, terminators);
 
         if (isEndOfValue) {
             // If we're at the end of the string, we offer all suggestions and no suggestion
@@ -911,14 +991,14 @@ export class OptionalSyntax<
         }
     }
 
-    parse(value: string, index: number): Ps | [] {
-        const match = this.match(value, index);
+    parse(value: string, index: number, terminators?: Terminators): Ps | [] {
+        const match = this.match(value, index, terminators);
         if (!match || match.consumed === 0) return [];
 
         // Parse implies a full match, and now know it's not empty, so we must
         // have a full match for every part. Loop through, return them as an array.
         return _.reduce(this.subParts, (parsed: Ps[], part: SyntaxPart<any>) => {
-            const parsedValue = part.parse(value, index);
+            const parsedValue = part.parse(value, index, terminators);
             index += parsedValue.toString().length;
             parsed.push(parsedValue as any);
             return parsed;
@@ -944,8 +1024,8 @@ export class CombinedSyntax<
         this.subParts = subParts; // Apparently ... isn't allowed in field params.
     }
 
-    match(value: string, index: number): SyntaxPartMatch | undefined {
-        const subMatch = matchSyntax(this.subParts, value, index);
+    match(value: string, index: number, terminators?: Terminators): SyntaxPartMatch | undefined {
+        const subMatch = matchSyntax(this.subParts, value, index, terminators);
         return subMatch
             ? { type: subMatch?.type, consumed: subMatch?.partiallyConsumed }
             : undefined;
@@ -954,21 +1034,22 @@ export class CombinedSyntax<
     getSuggestions(
         value: string,
         index: number,
-        context?: C & { canExtend?: boolean }
+        context?: C & { canExtend?: boolean },
+        terminators?: Terminators
     ): SyntaxSuggestion[] {
         return getSuggestions(
             [{ key: null, syntax: this.subParts }],
             value,
             index,
-            { context, canExtend: context?.canExtend }
+            { context, canExtend: context?.canExtend, terminators }
         ).map(({ suggestion }) => suggestion);
     }
 
-    parse(value: string, index: number): Ps {
+    parse(value: string, index: number, terminators?: Terminators): Ps {
         // Parse implies a full match, so we must have a full match for every part.
         // Loop through, return the parsed parts as an array.
         return _.reduce(this.subParts, (parsed: Ps[], part: SyntaxPart<any>) => {
-            const parsedValue = part.parse(value, index);
+            const parsedValue = part.parse(value, index, terminators);
             index += parsedValue.toString().length;
             parsed.push(parsedValue as any);
             return parsed;

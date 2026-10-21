@@ -56,7 +56,9 @@ function parseFilters(filterString: string): Filter[] | OperationResult {
             error: {
                 code: 'INVALID_PARAMS',
                 message: `Could not parse filter at '${stringFilter.filter}'. ` +
-                    'Only structured filters are supported - use contains(text) to search for text.'
+                    'Only structured filters are supported - use contains(text) to search for text. ' +
+                    'Wrap values containing spaces (or commas/brackets within or()/not()) in [], ' +
+                    'e.g. body*=[two words].'
             }
         };
     }
@@ -99,23 +101,27 @@ function eventsListOperation(
                             'Filter expression. Space-separated filters are ANDed together. ' +
                             'Free text is not supported - use contains(text) to search for text.\n' +
                             'Operators: = != ^= $= *= > >= < <=\n' +
+                            'Wrap path, query, header & body values in [] if they contain spaces, or ' +
+                            'commas/brackets within or()/not(), e.g. body*=[two words], or(path=[/a,b], status=404). ' +
+                            'Values cannot contain ], and contains() text cannot contain ).\n' +
                             '\n' +
                             'Common filters (subset - see https://httptoolkit.com/docs/reference/view-page/#filtering-intercepted-traffic for all options):\n' +
                             '- method (method=GET)\n' +
                             '- hostname (hostname=example.com, hostname$=.google.com)\n' +
-                            '- path (path^=/api)\n' +
+                            '- path (path^=/api), query (query*=page=2)\n' +
                             '- status (status=200, status>=400)\n' +
                             '- header[name] (header[Authorization]^=Bearer)\n' +
                             '- body (body*=error)\n' +
                             '- bodySize (bodySize>=1000)\n' +
                             '- completed, pending, aborted, errored\n' +
                             '- contains(x) - search method, URL, headers & body at once\n' +
-                            '- not(filter) and or(a, b) for logical composition\n' +
+                            '- not(filter) and or(a, b, ...) for logical composition\n' +
                             '\n' +
                             'Examples:\n' +
                             '- "status!=404 method=POST" - non-404 POST requests\n' +
                             '- "hostname*=api contains(password)" - requests to API hosts containing "password" anywhere\n' +
-                            '- "not(path$=.css) bodySize>=10000" - large responses excluding CSS files'
+                            '- "not(path$=.css) bodySize>=10000" - large responses excluding CSS files\n' +
+                            '- "or(contains(a,b), header[accept]*=[text/html, application/json])" - either condition'
                     },
                     offset: {
                         type: 'number',

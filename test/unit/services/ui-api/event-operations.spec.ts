@@ -175,6 +175,17 @@ describe('Event operations', () => {
             expect(await listIds('body*=hello')).to.deep.equal([complete.id]);
         });
 
+        it('should support or() with comma-containing contains() conditions', async () => {
+            const first = getExchangeData({ requestBody: 'a,b' });
+            const second = getExchangeData({ requestBody: 'c,d' });
+            const neither = getExchangeData({ requestBody: 'a,d' });
+            events.push(first, second, neither);
+
+            expect(
+                await listIds('or(contains(a,b), contains(c,d))')
+            ).to.deep.equal([first.id, second.id]);
+        });
+
         it('should reject filters with unparseable text, rather than free-text matching', async () => {
             events.push(getExchangeData());
 
@@ -182,6 +193,33 @@ describe('Event operations', () => {
             expect(result.success).to.equal(false);
             expect(result.error!.code).to.equal('INVALID_PARAMS');
             expect(result.error!.message).to.include("'example'");
+            expect(result.error!.message).to.include('[two words]');
+        });
+
+        it('should match bracketed values containing delimiters within or()', async () => {
+            const matching = getExchangeData({ path: '/a,b' });
+            const other = getExchangeData({ path: '/a' });
+            events.push(matching, other);
+
+            expect(await listIds('or(path=[/a,b], status=404)')).to.deep.equal([matching.id]);
+        });
+
+        it('should match nested filters needing decoded bodies', async () => {
+            const matching = getExchangeData({
+                method: 'POST',
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('hello world')
+            });
+            const wrongMethod = getExchangeData({
+                method: 'GET',
+                responseHeaders: { 'content-encoding': 'gzip' },
+                responseBody: zlib.gzipSync('hello world')
+            });
+            events.push(matching, wrongMethod);
+
+            expect(
+                await listIds('not(or(method=GET, not(body*=hello)))')
+            ).to.deep.equal([matching.id]);
         });
 
         it('should reject unclosed filters', async () => {

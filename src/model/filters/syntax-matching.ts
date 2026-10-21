@@ -1,5 +1,30 @@
 import * as _ from 'lodash';
 
+/**
+ * Strings which end any open-ended content (e.g. free text values) at the current position
+ * in the syntax, e.g. the ',' and ')' within or(...). Open-ended content treats the first
+ * terminator as the end of the input. Wrapped content (e.g. [...]) ignores the terminators
+ * from outside the wrapper, so can contain them.
+ */
+export type Terminators = readonly string[];
+
+export function findTerminator(value: string, index: number, terminators: Terminators): number {
+    return _.min(
+        terminators
+            .map(terminator => value.indexOf(terminator, index))
+            .filter(terminatorIndex => terminatorIndex !== -1)
+    ) ?? value.length;
+}
+
+export function limitToTerminators(value: string, index: number, terminators: Terminators): string {
+    return value.slice(0, findTerminator(value, index, terminators));
+}
+
+export function isAtInputEnd(value: string, index: number, terminators: Terminators): boolean {
+    return index >= value.length ||
+        terminators.some(terminator => value.startsWith(terminator, index));
+}
+
 export interface SyntaxPart<PartValue = string | number, Context extends any = never> {
     /**
      * Checks whether the syntax part matches, or _could_ match if
@@ -12,7 +37,7 @@ export interface SyntaxPart<PartValue = string | number, Context extends any = n
      * match if the end of the string was reached without breaking any
      * rules, but without successfully completing the matcher.
      */
-    match(value: string, index: number): undefined | SyntaxPartMatch;
+    match(value: string, index: number, terminators?: Terminators): undefined | SyntaxPartMatch;
 
     /**
      * Given that there was a full or partial match, this returns a list of
@@ -20,7 +45,12 @@ export interface SyntaxPart<PartValue = string | number, Context extends any = n
      *
      * Don't call it without a match, as the behaviour is undefined.
      */
-    getSuggestions(value: string, index: number, context?: Context): SyntaxSuggestion[];
+    getSuggestions(
+        value: string,
+        index: number,
+        context?: Context,
+        terminators?: Terminators
+    ): SyntaxSuggestion[];
 
     /**
      * For a part that fully matches, this will return the fully matched
@@ -29,7 +59,7 @@ export interface SyntaxPart<PartValue = string | number, Context extends any = n
      *
      * If the part does not fully match, this throws an error.
      */
-    parse(value: string, index: number): PartValue;
+    parse(value: string, index: number, terminators?: Terminators): PartValue;
 };
 
 // The value a syntax part will return when parsed
@@ -181,7 +211,8 @@ export type SyntaxPartMatch = {
  export function matchSyntax(
     syntax: readonly SyntaxPart<unknown, unknown>[],
     value: string,
-    initialIndex: number
+    initialIndex: number,
+    terminators: Terminators = []
 ): SyntaxMatch | undefined {
     let stringIndex = initialIndex;
     let fullyConsumed = 0;
@@ -196,7 +227,7 @@ export type SyntaxPartMatch = {
         syntaxIndex < syntax.length && stringIndex <= value.length && wasFullMatch;
         syntaxIndex++
     ) {
-        const partMatch = syntax[syntaxIndex].match(value, stringIndex);
+        const partMatch = syntax[syntaxIndex].match(value, stringIndex, terminators);
         if (!partMatch) return;
 
         wasFullMatch = partMatch.type === 'full';
@@ -238,19 +269,22 @@ export type SyntaxPartMatch = {
     initialIndex: number,
     options: {
         context: C,
-        canExtend?: boolean
+        canExtend?: boolean,
+        terminators?: Terminators
     }
 ): Array<{ key: K, suggestion: SyntaxSuggestion }> {
+    const terminators = options.terminators ?? [];
+
     const syntaxMatches = syntaxOptions.map(({ key: key, syntax }) => ({
         key,
         syntax,
-        match: matchSyntax(syntax, value, initialIndex)
+        match: matchSyntax(syntax, value, initialIndex, terminators)
     })).filter(({ match }) => {
         // We only show suggestions for syntax that does/might match, and which matches
         // the whole of the input - so "status=40" suggests 404, but "status=hello" shows
         // nothing (it doesn't suggest 404 at the start of hello).
         // Maybe later we could show suggestions in such cases given a space separator?
-        return !!match && (initialIndex + match.partiallyConsumed) === value.length
+        return !!match && isAtInputEnd(value, initialIndex + match.partiallyConsumed, terminators)
     });
 
     const [fullMatches, partialMatches] = _.partition(syntaxMatches, ({ match }) =>
@@ -271,11 +305,11 @@ export type SyntaxPartMatch = {
                 ? match!.lastConsumingPartStringIndex
                 // If last consuming part is not the last part, there must be final full-matching
                 // but zero-consuming part(s), like an optional suffix. We want to rerun the last
-                // part but in that case we just rerun it at the very end of the string.
-                : value.length;
+                // part but in that case we just rerun it at the very end of the match.
+                : initialIndex + match!.partiallyConsumed;
 
             return syntax[finalSyntaxIndex]
-                .getSuggestions(value, stringIndex, options.context)
+                .getSuggestions(value, stringIndex, options.context, terminators)
                 .map((suggestion) => ({
                     key,
                     suggestion
@@ -309,7 +343,7 @@ export type SyntaxPartMatch = {
         const nextPartToMatch = syntax[syntaxPartIndex];
         const isLastPart = syntaxPartIndex === syntax.length - 1;
 
-        return nextPartToMatch.getSuggestions(value, stringIndex, options.context)
+        return nextPartToMatch.getSuggestions(value, stringIndex, options.context, terminators)
             .map((suggestion) => ({
                 key,
                 syntax,
@@ -357,7 +391,7 @@ export type SyntaxPartMatch = {
         const updatedText = applySuggestionToText(value, singleSuggestion);
 
         const nextSuggestions = syntax[syntaxPartIndex]
-            .getSuggestions(updatedText, updatedText.length, options.context);
+            .getSuggestions(updatedText, updatedText.length, options.context, terminators);
 
         // After we hit a template we keep collecting suggestions until they're ambiguous
         if (sawTemplate && nextSuggestions.length > 1) break;

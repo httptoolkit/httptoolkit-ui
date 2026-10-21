@@ -17,10 +17,12 @@ import {
 import {
     ALPHABETICAL,
     ALPHANUMERIC,
+    ASCII_PRINTABLE,
     charRange,
     CombinedSyntax,
     FixedLengthNumberSyntax,
     FixedStringSyntax,
+    LazySyntax,
     NumberSyntax,
     OptionalSyntax,
     OptionsSyntax,
@@ -817,14 +819,19 @@ class PathFilter extends Filter {
             "^=",
             "$="
         ]),
-        new StringSyntax("path", {
-            suggestionGenerator: (_v, _i, events: ViewableEvent[]) =>
-                _(events)
-                .map(e => e.isHttp() && e.request.parsedUrl.pathname)
-                .uniq()
-                .filter(Boolean)
-                .valueOf() as string[]
-        })
+        new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("path", {
+                allowedChars: [ASCII_PRINTABLE], // Wrapper guards against spaces for us
+                suggestionGenerator: (_v, _i, events: ViewableEvent[]) =>
+                    _(events)
+                    .map(e => e.isHttp() && e.request.parsedUrl.pathname)
+                    .uniq()
+                    .filter(Boolean)
+                    .valueOf() as string[]
+            }),
+            { optional: true }
+        )
     ] as const;
 
     static filterName = "path";
@@ -872,24 +879,29 @@ class QueryFilter extends Filter {
             "^=",
             "$="
         ]),
-        new StringSyntax("query", {
-            // We allow an empty query only with = and !=, which means we need to get the op:
-            allowEmpty: (value, index): boolean => {
-                // Slightly messy logic to roll backwards and find the index of the start
-                // of the string operation just before this.
-                const opIndex = value.slice(0, index).lastIndexOf("query") + "query".length;
-                const op = QueryFilter.filterSyntax[1].parse(value, opIndex);
+        new SyntaxWrapperSyntax(
+            ['[', ']'],
+            new StringSyntax("query", {
+                allowedChars: [ASCII_PRINTABLE], // Wrapper guards against spaces for us
+                // We allow an empty query only with = and !=, which means we need to get the op:
+                allowEmpty: (value, index): boolean => {
+                    // Slightly messy logic to roll backwards and find the index of the start
+                    // of the string operation just before this.
+                    const opIndex = value.slice(0, index).lastIndexOf("query") + "query".length;
+                    const op = QueryFilter.filterSyntax[1].parse(value, opIndex);
 
-                // You can pass an empty query only to = or !=
-                return op === "=" || op === "!=";
-            },
-            suggestionGenerator: (_v, _i, events: ViewableEvent[]) =>
-                _(events)
-                .map(e => e.isHttp() && e.request.parsedUrl.search)
-                .uniq()
-                .filter(Boolean)
-                .valueOf() as string[]
-        })
+                    // You can pass an empty query only to = or !=
+                    return op === "=" || op === "!=";
+                },
+                suggestionGenerator: (_v, _i, events: ViewableEvent[]) =>
+                    _(events)
+                    .map(e => e.isHttp() && e.request.parsedUrl.search)
+                    .uniq()
+                    .filter(Boolean)
+                    .valueOf() as string[]
+            }),
+            { optional: true }
+        )
     ] as const;
 
     static filterName = "query";
@@ -1432,15 +1444,20 @@ const BaseSearchFilterClasses: FilterClass[] = [
     WebSocketFilter
 ];
 
-// Meta-filters, which can wrap the base filters above:
+// Meta-filters, which can wrap the base filters above, or each other:
+
+// Lazy, since the meta-filters' syntax includes their own syntax
+const innerFilterSyntax = () => new LazySyntax(() =>
+    new OptionsSyntax(
+        SelectableSearchFilterClasses.map(f =>
+            new CombinedSyntax(...f.filterSyntax)
+        )
+    )
+);
 
 class NotFilter extends Filter {
 
-    private static innerFilterSyntax = new OptionsSyntax(
-        BaseSearchFilterClasses.map(f =>
-            new CombinedSyntax(...f.filterSyntax)
-        )
-    );
+    private static innerFilterSyntax = innerFilterSyntax();
 
     static filterSyntax = [
         new FixedStringSyntax('not'),
@@ -1461,7 +1478,7 @@ class NotFilter extends Filter {
         if (innerValue.length === 0) {
             return "exchanges that do not match a given condition"
         } else {
-            const matches = BaseSearchFilterClasses.map((filter) => ({
+            const matches = SelectableSearchFilterClasses.map((filter) => ({
                 filter,
                 match: matchSyntax(filter.filterSyntax, innerValue, 0)
             })).filter(({ match }) => (match?.partiallyConsumed || 0) > 0);
@@ -1486,7 +1503,7 @@ class NotFilter extends Filter {
 
         const innerValue = filterValue.slice(4, -1);
 
-        const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
+        const matchingFilterClass = _.find(SelectableSearchFilterClasses, (filter) =>
             matchSyntax(filter.filterSyntax, innerValue, 0)?.type === 'full'
         )!;
         this.innerFilter = new matchingFilterClass(innerValue) as Filter; // Never Filters - we don't support filter aliases here
@@ -1509,11 +1526,7 @@ class OrFilter extends Filter {
 
     private static innerFilterSyntax = new SyntaxRepeaterSyntax(
         ',',
-        new OptionsSyntax(
-            BaseSearchFilterClasses.map(f =>
-                new CombinedSyntax(...f.filterSyntax)
-            )
-        ),
+        innerFilterSyntax(),
         { placeholderName: 'condition' }
     );
 
@@ -1530,7 +1543,7 @@ class OrFilter extends Filter {
     static filterDescription(value: string, isTemplate: boolean) {
         if (value[value.length - 1] === ')') value = value.slice(0, -1);
 
-        const innerValues = value.slice(3).split(',').map(v => v.trim());
+        const innerValues = OrFilter.innerFilterSyntax.splitValues(value, 3).map(v => v.trim());
 
         if (innerValues.length === 1 && innerValues[0].length === 0) {
             return "exchanges that match any one of multiple conditions"
@@ -1539,7 +1552,7 @@ class OrFilter extends Filter {
                 const isLastPart = index === innerValues.length - 1;
                 const partIsTemplate = isTemplate && isLastPart;
 
-                const matches = BaseSearchFilterClasses.map((filter) => ({
+                const matches = SelectableSearchFilterClasses.map((filter) => ({
                     filter,
                     match: matchSyntax(filter.filterSyntax, valuePart, 0)
                 })).filter(({ match }) => (match?.partiallyConsumed || 0) > 0);
@@ -1565,8 +1578,9 @@ class OrFilter extends Filter {
     constructor(private filterValue: string) {
         super(filterValue);
 
-        this.innerFilters = filterValue.slice(3, -1).split(',').map(v => v.trim()).map((valuePart) => {
-            const matchingFilterClass = _.find(BaseSearchFilterClasses, (filter) =>
+        const innerValues = OrFilter.innerFilterSyntax.splitValues(filterValue.slice(0, -1), 3);
+        this.innerFilters = innerValues.map((valuePart) => {
+            const matchingFilterClass = _.find(SelectableSearchFilterClasses, (filter) =>
                 matchSyntax(filter.filterSyntax, valuePart, 0)?.type === 'full'
             )!;
             return new matchingFilterClass(valuePart) as Filter; // Never Filters - we don't support filter aliases here
