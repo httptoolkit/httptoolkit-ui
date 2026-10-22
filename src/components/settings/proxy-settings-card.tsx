@@ -1,10 +1,11 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { observable, action, computed, runInAction } from 'mobx';
+import { observable, action, computed, flow, runInAction } from 'mobx';
 import { observer, inject } from "mobx-react";
 
 import { styled } from '../../styles';
 import { isWindows } from '../../util/ui';
+import { asError } from '../../util/error';
 import { WarningIcon, Icon } from '../../icons';
 
 import { isValidPortConfiguration, ProxyStore } from '../../model/proxy-store';
@@ -18,6 +19,7 @@ import {
     KEY_LOG_FILE_SUPPORTED,
     DESKTOP_SELECT_SAVE_FILE_SUPPORTED
 } from '../../services/service-versions';
+import { ApiError, CertificateMode } from '../../services/server-api-types';
 import { DesktopApi } from '../../services/desktop-api';
 
 import { inputValidation } from '../component-utils';
@@ -38,8 +40,7 @@ import {
 import { StringSettingsList } from './string-settings-list';
 
 const RestartApp = styled(SettingsButton).attrs(() => ({
-    children: 'Restart app to activate',
-    onClick: () => window.location.reload()
+    children: 'Restart app to activate'
 }))`
     position: absolute;
     top: 18px;
@@ -267,10 +268,33 @@ export class ProxySettingsCard extends React.Component<
         this.props.proxyStore!.keyLogFilePath = undefined;
     }
 
+    @observable
+    restarting = false;
+
+    @observable
+    restartError: string | undefined;
+
+    applySettingsAndReload = flow(function * (this: ProxySettingsCard) {
+        this.restarting = true;
+        this.restartError = undefined;
+        try {
+            yield this.props.proxyStore!.applyCertificateMode();
+            window.location.reload();
+        } catch (error) {
+            this.restartError = error instanceof ApiError && error.apiError?.message
+                ? error.apiError.message
+                : asError(error).message;
+            this.restarting = false;
+        }
+    }).bind(this);
+
     render() {
         const { proxyStore, ...cardProps } = this.props;
         const {
             httpProxyPort,
+            certificateModes,
+            certificateMode,
+            currentCertificateMode,
 
             http2Enabled,
             http2CurrentlyEnabled,
@@ -294,13 +318,18 @@ export class ProxySettingsCard extends React.Component<
                 </CollapsibleCardHeading>
             </header>
             <RestartApp
+                onClick={this.applySettingsAndReload}
+                disabled={this.restarting}
                 visible={
                     (this.isCurrentPortConfigValid && !this.isCurrentPortInRange) ||
                     http2Enabled !== http2CurrentlyEnabled ||
                     !_.isEqual(tlsInterceptionConfig, currentTlsInterceptionConfig) ||
-                    keyLogFilePath !== currentKeyLogFilePath
+                    keyLogFilePath !== currentKeyLogFilePath ||
+                    certificateMode !== currentCertificateMode
                 }
             />
+
+            {this.restartError && <p role="alert">Could not apply proxy settings: {this.restartError}</p>}
 
             <ProxyPortsContainer>
                 <ContentLabel>
@@ -343,6 +372,38 @@ export class ProxySettingsCard extends React.Component<
                 this range that is available. If all ports in the range are in use, the
                 first free port above 8000 will be used instead.
             </SettingsExplanation>
+
+            {certificateModes.includes('emudhra') && <>
+                <SettingsSubheadingRow>
+                    <SettingsSubheading as="label" htmlFor="tls-signing-certificate">
+                        TLS signing certificate
+                    </SettingsSubheading>
+                    {certificateMode !== currentCertificateMode &&
+                        <UnsavedIcon title="Restart app to apply changes" />
+                    }
+                </SettingsSubheadingRow>
+                <Http2Select
+                    id="tls-signing-certificate"
+                    style={{ display: 'block', marginBottom: 10 }}
+                    value={certificateMode}
+                    disabled={this.restarting}
+                    onChange={action((event: React.ChangeEvent<HTMLSelectElement>) => {
+                        proxyStore!.certificateMode = event.target.value as CertificateMode;
+                    })}
+                >
+                    <option value="local">HTTP Toolkit local CA (default)</option>
+                    <option value="emudhra">Compromised eMudhra CA (modern trust stores)</option>
+                    <option value="emudhra-old" disabled={!certificateModes.includes('emudhra-old')}>
+                        Compromised eMudhra CA (legacy trust stores)
+                    </option>
+                </Http2Select>
+                <SettingsExplanation>
+                    Sign intercepted HTTPS certificates with the local CA or the compromised
+                    eMudhra CA. Modern prioritizes the emSign chain; legacy prioritizes
+                    AAA Certificate Services. Restart the app to apply, then relaunch
+                    intercepted applications.
+                </SettingsExplanation>
+            </>}
 
             {
                 versionSatisfies(serverVersion.value, TLS_PASSTHROUGH_SUPPORTED) && <>
