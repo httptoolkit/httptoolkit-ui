@@ -24,10 +24,12 @@ import {
 } from '../types';
 import {
     getConfig,
+    setCertificateMode,
     announceServerReady,
     getNetworkInterfaces,
     NetworkInterfaces,
 } from '../services/server-api';
+import { CertificateMode } from '../services/server-api-types';
 import { AccountStore } from './account/account-store';
 
 import { delay } from '../util/promise';
@@ -236,6 +238,9 @@ export class ProxyStore {
         console.log('Server started');
 
         yield getConfig(this.httpProxyPort).then((config) => {
+            this.certificateModes = config.certificateModes ?? [];
+            this.certificateMode = config.certificateMode ?? 'local';
+            this.currentCertificateMode = this.certificateMode;
             this.certPath = config.certificatePath;
             this.certContent = config.certificateContent;
             this.certFingerprint = config.certificateFingerprint;
@@ -311,6 +316,21 @@ export class ProxyStore {
 
     @computed get httpProxyPort() {
         return this.adminClient.metadata.http.port;
+    }
+
+    @observable
+    certificateModes: CertificateMode[] = [];
+
+    @observable
+    certificateMode: CertificateMode = 'local';
+
+    @observable
+    currentCertificateMode: CertificateMode = 'local';
+
+    async applyCertificateMode(): Promise<void> {
+        if (this.certificateMode !== this.currentCertificateMode) {
+            await setCertificateMode(this.certificateMode);
+        }
     }
 
     @persist @observable
