@@ -14,7 +14,11 @@ export interface NetworkInterfaces {
     [index: string]: NetworkInterfaceInfo[];
 }
 
+export type CertificateMode = 'local' | 'emudhra' | 'emudhra-old';
+
 export interface ServerConfig {
+    certificateMode?: CertificateMode;
+    certificateModes?: CertificateMode[];
     certificatePath: string;
     certificateContent?: string;
     certificateFingerprint?: string;

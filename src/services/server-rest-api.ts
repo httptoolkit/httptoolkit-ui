@@ -9,6 +9,7 @@ import {
 import { RawHeaders } from '../types';
 import {
     ServerConfig,
+    CertificateMode,
     NetworkInterfaces,
     ServerInterceptor,
     ApiError
@@ -130,6 +131,10 @@ export class RestApiClient {
         }>('GET', '/config', { proxyPort: proxyPort });
 
         return response.config;
+    }
+
+    async setCertificateMode(certificateMode: CertificateMode): Promise<void> {
+        await this.apiJsonRequest('POST', '/config/certificate', {}, { certificateMode });
     }
 
     async getNetworkInterfaces() {
