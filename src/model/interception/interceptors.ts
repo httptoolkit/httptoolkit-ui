@@ -156,6 +156,13 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         tags: BROWSER_TAGS,
         getActivationOptions: getChromiumOptions
     },
+    'fresh-helium': {
+        name: 'Helium',
+        description: ["Intercept a fresh independent Helium window"],
+        iconProps: SourceIcons.Helium,
+        tags: BROWSER_TAGS,
+        getActivationOptions: getChromiumOptions
+    },
     'fresh-firefox': {
         name: 'Firefox',
         description: ["Intercept a fresh independent Firefox window"],
