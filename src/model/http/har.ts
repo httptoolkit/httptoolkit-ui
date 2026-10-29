@@ -460,7 +460,7 @@ async function generateHarHttpEntry(
                     code: exchange.closeState.closeCode,
                     reason: exchange.closeState.closeReason,
                     timestamp: timingEvents.wsClosedTimestamp
-                        ? timingEvents.wsClosedTimestamp / 1000 // Match _webSocketMessage format
+                        ? getHarEpochSeconds(timingEvents.wsClosedTimestamp, timingEvents)
                         : undefined
                 }
                 : exchange.closeState
@@ -485,10 +485,14 @@ function generateHarWebSocketMessage(
             ? message.content.toString('base64')
             : message.content.toString('utf8'),
 
-        // N.b. timestamp is precise but relative, startTime is epoch-based but imprecise,
-        // eventual result here has to be in seconds as a float.
-        time: (timingEvents.startTime! + (message.timestamp - timingEvents.startTimestamp!)) / 1000
+        time: getHarEpochSeconds(message.timestamp, timingEvents)
     };
+}
+
+// Timestamps are precise but relative, startTime is epoch-based but imprecise,
+// and HAR WebSocket times are epoch seconds as a float.
+function getHarEpochSeconds(timestamp: number, timingEvents: Partial<TimingEvents>) {
+    return (timingEvents.startTime! + (timestamp - timingEvents.startTimestamp!)) / 1000;
 }
 
 function generateHarTlsError(event: FailedTlsConnection): HarTlsErrorEntry {
@@ -541,6 +545,10 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
     .forEach((entry, i) => {
         const id = baseId + i;
         const isWebSocket = entry._resourceType === 'websocket';
+        const wasAccepted = isWebSocket && entry.response.status === 101;
+        // Missing for WebSockets still open at export time, and for
+        // other tools' exports that don't record closes at all:
+        const closeEvent = wasAccepted ? entry._webSocketClose : undefined;
 
         const timingEvents: TimingEvents = {
             startTime: dateFns.parse(entry.startedDateTime).getTime(),
@@ -565,12 +573,14 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
                 ? { responseSentTimestamp: entry.time }
                 : { abortedTimestamp: entry.time },
 
-            isWebSocket
-                ? {
-                    wsAcceptedTimestamp: timingEvents.headersSentTimestamp,
-                    wsClosedTimestamp: entry.time
-                }
-                : {}
+            wasAccepted
+                ? { wsAcceptedTimestamp: timingEvents.headersSentTimestamp }
+                : {},
+            closeEvent === 'aborted'
+                ? { abortedTimestamp: entry.time }
+            : closeEvent
+                ? { wsClosedTimestamp: entry.time }
+            : {}
         );
 
 
@@ -583,17 +593,19 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 
         if (entry.response.status !== 0) {
             events.push({
-                type: isWebSocket && entry.response.status === 101
-                    ? 'websocket-accepted'
-                    : 'response',
+                type: wasAccepted ? 'websocket-accepted' : 'response',
                 event: parseHarResponse(id, entry.response, timingEvents)
             });
         } else {
             events.push({ type: 'abort', event: request });
         }
 
-        if (isWebSocket) {
-            events.push(...entry._webSocketMessages?.map(message => ({
+        if (wasAccepted) {
+            events.push(...entry._webSocketMessages?.filter(message =>
+                // Chrome also records connection failures here, as 'error' type messages.
+                // We have no direct parallel, so we just drop them.
+                message.type === 'send' || message.type === 'receive'
+            ).map(message => ({
                 type: `websocket-message-${message.type === 'send' ? 'received' : 'sent'}` as const,
                 event: {
                     streamId: request.id,
@@ -606,9 +618,10 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
                 } satisfies InputWebSocketMessage
             })) ?? []);
 
-            const closeEvent = entry._webSocketClose;
-
-            if (closeEvent && closeEvent !== 'aborted') {
+            if (closeEvent === 'aborted') {
+                // N.b. WebSockets can abort _after_ the response event!
+                events.push({ type: 'abort', event: request });
+            } else if (closeEvent) {
                 events.push({
                     type: 'websocket-close',
                     event: {
@@ -619,9 +632,6 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
                         tags: []
                     }
                 });
-            } else {
-                // N.b. WebSockets can abort _after_ the response event!
-                events.push({ type: 'abort', event: request });
             }
         }
 
