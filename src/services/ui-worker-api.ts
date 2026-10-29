@@ -1,6 +1,6 @@
 import deserializeError from 'deserialize-error';
 import { EventEmitter } from 'events';
-import type { Har } from 'har-format';
+import type { Har } from '../model/http/har';
 import type { SUPPORTED_ENCODING } from 'http-encoding';
 
 import type {

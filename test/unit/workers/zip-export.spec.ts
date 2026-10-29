@@ -2,6 +2,7 @@ import { expect } from '../../test-setup';
 import { unzipSync, strFromU8 } from 'fflate';
 
 import { exportAsZip } from '../../../src/services/ui-worker-api';
+import type { ZipExportManifest } from '../../../src/model/ui/zip-manifest';
 
 describe('ZIP export worker round-trip', function () {
     this.timeout(10000);
@@ -166,6 +167,48 @@ describe('ZIP export worker round-trip', function () {
         const manifest = JSON.parse(strFromU8(unpacked['manifest.json']));
         expect(manifest.errors).to.have.length(1);
         expect(manifest.errors[0].formatId).to.equal('clojure~~clj_http');
+    });
+
+    it('includes WebSockets in the HAR & manifest, without snippets', async () => {
+        const har = makeHar(2);
+        har.log.entries[1]._resourceType = 'websocket';
+        har.log.entries[1].response.status = 101;
+
+        const res = await exportAsZip({
+            har,
+            formatIds: ['shell~~curl'],
+            includeHar: true,
+            httpToolkitVersion: 'test'
+        });
+
+        expect(res.snippetSuccessCount).to.equal(1);
+        expect(res.snippetErrorCount).to.equal(0);
+
+        const unpacked = unzipSync(new Uint8Array(res.archive));
+        const snippetFiles = Object.keys(unpacked)
+            .filter(n => n.startsWith('shell-curl/') && !n.endsWith('/'));
+        expect(snippetFiles).to.have.length(1);
+        expect(snippetFiles[0]).to.match(/^shell-curl\/00_/);
+
+        const manifest: ZipExportManifest = JSON.parse(strFromU8(unpacked['manifest.json']));
+        expect(manifest.requestCount).to.equal(2);
+        expect(manifest.entries.map(e => e.type)).to.deep.equal(['http', 'websocket']);
+        expect(manifest.entries[1].status).to.equal(101);
+
+        const exportedHar = JSON.parse(strFromU8(unpacked['requests.har']));
+        expect(exportedHar.log.entries[1]._resourceType).to.equal('websocket');
+    });
+
+    it('rejects snippet-only exports of only WebSockets', async () => {
+        const har = makeHar(1);
+        har.log.entries[0]._resourceType = 'websocket';
+
+        await expect(exportAsZip({
+            har,
+            formatIds: ['shell~~curl'],
+            includeHar: false,
+            httpToolkitVersion: 'test'
+        })).to.be.rejectedWith('WebSockets can only be exported as HAR');
     });
 
     it('rejects empty request sets instead of producing an empty archive', async () => {

@@ -19,7 +19,7 @@ import { buildOpenApiMetadata, buildOpenRpcMetadata } from '../model/api/build-a
 import { parseCert, ParsedCertificate, validatePKCS12, ValidationResult } from '../model/crypto';
 import { WorkerFormatterKey, formatBuffer } from './ui-worker-formatters';
 
-import type * as HarFormat from 'har-format';
+import type { Har, HarEntry } from '../model/http/har';
 import * as HTTPSnippet from '@httptoolkit/httpsnippet';
 import { zipSync, strToU8, ZipOptions } from 'fflate';
 import { buildRequestBaseName } from '../util/export-filenames';
@@ -115,7 +115,7 @@ export interface FormatResponse extends Message {
 
 export interface ZipExportRequest extends Message {
     type: 'zip-export';
-    har: HarFormat.Har;
+    har: Har;
     // Format ids as per getCodeSnippetFormatKey - the worker resolves these
     // itself, silently skipping any ids it no longer recognizes:
     formatIds: string[];
@@ -226,6 +226,14 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
         throw new Error('No HTTP requests available for ZIP export');
     }
 
+    // Snippets for a WebSocket would only reproduce its upgrade request, so these
+    // are included only in the HAR:
+    const isSnippetExportable = (entry: HarEntry) => entry._resourceType !== 'websocket';
+
+    if (!includeHar && !entries.some(isSnippetExportable)) {
+        throw new Error('WebSockets can only be exported as HAR');
+    }
+
     // fflate treats each key as a full path within the archive:
     const zipEntries: Record<string, Uint8Array | [Uint8Array, ZipOptions]> = {};
     const manifestEntries: ZipExportEntryRecord[] = [];
@@ -253,6 +261,16 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
             url: cleanedReq.url,
             status
         });
+
+        manifestEntries.push({
+            type: entry._resourceType === 'websocket' ? 'websocket' : 'http',
+            file: baseName,
+            method: cleanedReq.method,
+            url: cleanedReq.url,
+            status
+        });
+
+        if (!isSnippetExportable(entry)) continue;
 
         // Building the HTTPSnippet is the expensive part (parsing +
         // normalization), so we do it once per request, not per format:
@@ -295,13 +313,6 @@ async function handleZipExport(request: ZipExportRequest): Promise<ZipExportResp
                 });
             }
         }
-
-        manifestEntries.push({
-            file: baseName,
-            method: cleanedReq.method,
-            url: cleanedReq.url,
-            status
-        });
     }
 
     if (includeHar) {

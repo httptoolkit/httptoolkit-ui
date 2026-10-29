@@ -175,10 +175,10 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
     const count = selectedEvents.length;
     const isPaidUser = props.accountStore!.user.isPaidUser();
 
-    const exportableEvents = selectedEvents.filter(e =>
+    // WebSockets have no snippets or rules, but are still included in the ZIP's HAR
+    const httpCount = selectedEvents.filter(e =>
         e.isHttp() && !e.isWebSocket()
-    );
-    const httpCount = exportableEvents.length;
+    ).length;
 
     const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
     const allPinned = selectedEvents.every(e => e.pinned);
@@ -222,7 +222,7 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
                 : 'With Pro: export as code snippet ZIP'
             }
             disabled={!isPaidUser || httpCount === 0}
-            onClick={() => props.uiStore!.openZipExport(exportableEvents)}
+            onClick={() => props.uiStore!.openZipExport(selectedEvents)}
         >
             <Icon icon={['fas', 'file-archive']} fixedWidth />
             Export code snippet ZIP

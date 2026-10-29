@@ -246,7 +246,9 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
         const { events, onClose } = this.props;
         const { state } = this.controller;
 
-        const requestCount = events.length;
+        // Non-HTTP events are only included in the HAR, not as snippets:
+        const requestCount = events.filter(e => e.isHttp()).length;
+        const webSocketCount = events.filter(e => e.isWebSocket()).length;
         const selectedCount = this.selected.size;
         const nothingToExport = selectedCount === 0 && !this.includeHar;
 
@@ -309,7 +311,13 @@ export class ZipExportDialog extends React.Component<ZipExportDialogProps> {
                 <Footer>
                     { state.kind === 'idle' && <>
                         <FooterStatus>
-                            { requestCount } request{ requestCount === 1 ? '' : 's' } to export
+                            { requestCount } request{ requestCount === 1 ? '' : 's' } to export{
+                                webSocketCount > 0
+                                    ? ` (${webSocketCount} WebSocket${
+                                        webSocketCount === 1 ? '' : 's'
+                                    }, HAR only)`
+                                    : ''
+                            }
                         </FooterStatus>
                         <Button
                             disabled={nothingToExport}

@@ -21,6 +21,8 @@ export interface ZipExportManifestFormat {
 }
 
 export interface ZipExportEntryRecord {
+    /** WebSocket entries are included in the HAR only, with no snippet files. */
+    type: 'http' | 'websocket';
     /** Filename in each format folder (without extension), e.g. `01_GET_example.com`. */
     file: string;
     method: string;
