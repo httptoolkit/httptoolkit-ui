@@ -20,6 +20,7 @@ import { onActivateExistingBrowser } from "../../components/intercept/config/exi
 import { JvmCustomUi } from "../../components/intercept/config/jvm-config";
 import { DockerAttachCustomUi } from "../../components/intercept/config/docker-attach-config";
 import { ManualIOSCustomUi } from "../../components/intercept/config/manual-ios-config";
+import { EmudhraCustomUi } from '../../components/intercept/config/emudhra-config';
 
 interface InterceptorConfig {
     name: string;
@@ -31,7 +32,8 @@ interface InterceptorConfig {
     checkRequirements?: (options: {
         interceptorVersion: string,
         accountStore: AccountStore,
-        serverVersion?: string
+        serverVersion?: string,
+        extraHttpsNames: string[]
     }) => boolean;
     uiConfig?: InterceptorCustomUiConfig;
     customActivation?: CustomActivationFunction,
@@ -355,6 +357,16 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         uiConfig: ElectronCustomUi,
         tags: ['electron', 'desktop', 'postman']
     },
+    'emudhra': {
+        name: 'eMudhra Interception',
+        description: ['Intercept clients that already trust the legacy compromised eMudhra certificates'],
+        iconProps: { icon: ['fas', 'unlock'], color: '#d98b32' },
+        uiConfig: EmudhraCustomUi,
+        clientOnly: true,
+        checkRequirements: ({ extraHttpsNames }) => extraHttpsNames.includes('emudhra'),
+        tags: ['emudhra', 'legacy', 'iot', 'network', 'devices'],
+        experimental: true
+    },
     [MANUAL_INTERCEPT_ID]: {
         name: 'Anything',
         description: ["Manually configure any source using the proxy settings and CA certificate"],
@@ -368,7 +380,8 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
 export function getInterceptOptions(
     serverInterceptorArray: ServerInterceptor[],
     accountStore: AccountStore,
-    serverVersion?: string
+    serverVersion?: string,
+    extraHttpsNames: string[] = []
 ) {
     const serverInterceptors = _.keyBy(serverInterceptorArray, 'id');
 
@@ -381,7 +394,8 @@ export function getInterceptOptions(
             (option.checkRequirements && !option.checkRequirements({
                 interceptorVersion: (serverInterceptors[id] || {}).version,
                 accountStore,
-                serverVersion
+                serverVersion,
+                extraHttpsNames
             }))
         ) {
             // The UI knows about this interceptor, but we can't use it for some reason.
