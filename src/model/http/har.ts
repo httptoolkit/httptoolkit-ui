@@ -18,7 +18,8 @@ import {
     ViewableEvent,
     HttpExchangeView,
     RawHeaders,
-    RawTrailers
+    RawTrailers,
+    InputRawPassthrough
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
@@ -30,6 +31,7 @@ import { UI_VERSION } from '../../services/service-versions';
 import { getStatusMessage } from './http-docs';
 import { StreamMessage } from '../events/stream-message';
 import { QueuedEvent } from '../events/events-store';
+import type { RawTunnel } from '../raw-tunnel';
 import { parseCookieHeader, parseSetCookieHeader } from './cookies';
 
 // We only include request/response bodies that are under 500KB
@@ -45,8 +47,9 @@ export interface HarGenerationOptions {
 }
 
 interface HarLog extends HarFormat.Log {
-    // Custom field to expose failed TLS connections
+    // Custom fields to expose non-HTTP traffic:
     _tlsErrors: HarTlsErrorEntry[];
+    _rawTunnels?: HarRawTunnelEntry[];
 
     // Our extended version of HAR entries:
     entries: HarEntry[];
@@ -74,7 +77,7 @@ export interface ExtendedHarResponse extends HarFormat.Response {
 
 export interface HarEntry extends HarFormat.Entry {
     _resourceType?: 'websocket';
-    _webSocketMessages?: HarWebSocketMessage[];
+    _webSocketMessages?: HarStreamMessage[];
     _webSocketClose?: {
         code?: number;
         reason?: string;
@@ -89,11 +92,23 @@ const compareHarEntryStartTimes = (
 ) => dateFns.parse(a.startedDateTime).getTime() -
     dateFns.parse(b.startedDateTime).getTime();
 
-export interface HarWebSocketMessage {
-    type: 'send' | 'receive';
-    opcode: 1 | 2;
-    data: string;
+// The format of Chrome's _webSocketMessages, which we use for all message streams:
+export interface HarStreamMessage {
+    type: 'send' | 'receive'; // From the client's perspective
+    opcode: 1 | 2; // Text or binary
+    data: string; // UTF-8 for text, base64 for binary
     time: number; // Epoch timestamp, as a float in seconds
+}
+
+export interface HarRawTunnelEntry {
+    startedDateTime: string;
+    time?: number; // Duration in ms, if closed (-1 if closed at an unknown time)
+    clientIPAddress: string;
+    clientPort: number;
+    hostname: string;
+    port: number;
+    messages: HarStreamMessage[];
+    pinned?: true;
 }
 
 export type HarTlsErrorEntry = {
@@ -123,6 +138,7 @@ export async function generateHar(
     );
 
     const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
+    const rawTunnels = otherEvents.filter((e): e is RawTunnel => e.isRawTunnel());
 
     const sourcePages = getSourcesAsHarPages(exchanges);
     const entries = (await Promise.all(
@@ -139,7 +155,11 @@ export async function generateHar(
             },
             pages: sourcePages,
             entries,
-            _tlsErrors: errorEntries
+            _tlsErrors: errorEntries,
+            ...(rawTunnels.length
+                ? { _rawTunnels: rawTunnels.map(generateHarRawTunnel) }
+                : {}
+            )
         }
     };
 }
@@ -453,7 +473,7 @@ async function generateHarHttpEntry(
         ...(exchange.isWebSocket() ? {
             _resourceType: 'websocket',
             _webSocketMessages: exchange.messages.map((message) =>
-                generateHarWebSocketMessage(message, timingEvents)
+                generateHarStreamMessage(message, timingEvents)
             ),
             _webSocketClose: exchange.closeState && exchange.closeState !== 'aborted'
                 ? {
@@ -468,10 +488,16 @@ async function generateHarHttpEntry(
     };
 }
 
-function generateHarWebSocketMessage(
+// The relative high-precision timestamp corresponding to an epoch time:
+interface HarTimeOrigin {
+    startTime: number;
+    startTimestamp: number;
+}
+
+function generateHarStreamMessage(
     message: StreamMessage,
-    timingEvents: Partial<TimingEvents>
-): HarWebSocketMessage {
+    timeOrigin: HarTimeOrigin
+): HarStreamMessage {
     return {
         // Note that msg.direction is from the perspective of Mockttp, not the client.
         type: message.direction === 'sent'
@@ -485,14 +511,48 @@ function generateHarWebSocketMessage(
             ? message.content.toString('base64')
             : message.content.toString('utf8'),
 
-        time: getHarEpochSeconds(message.timestamp, timingEvents)
+        time: getHarEpochSeconds(message.timestamp, timeOrigin)
     };
 }
 
 // Timestamps are precise but relative, startTime is epoch-based but imprecise,
-// and HAR WebSocket times are epoch seconds as a float.
-function getHarEpochSeconds(timestamp: number, timingEvents: Partial<TimingEvents>) {
-    return (timingEvents.startTime! + (timestamp - timingEvents.startTimestamp!)) / 1000;
+// and HAR stream message times are epoch seconds as a float.
+function getHarEpochSeconds(timestamp: number, { startTime, startTimestamp }: HarTimeOrigin) {
+    return (startTime + (timestamp - startTimestamp)) / 1000;
+}
+
+function parseHarStreamMessages(messages: HarStreamMessage[] | undefined, startTime: number) {
+    return (messages ?? [])
+        // Chrome also records connection failures here, as 'error' type messages.
+        // We have no direct parallel, so we just drop them.
+        .filter(message => message.type === 'send' || message.type === 'receive')
+        .map(message => ({
+            direction: message.type === 'send' ? 'received' as const : 'sent' as const,
+            isBinary: message.opcode === 2,
+            content: Buffer.from(message.data, message.opcode === 2 ? 'base64' : 'utf8'),
+            eventTimestamp: (message.time * 1000) - startTime
+        }));
+}
+
+function generateHarRawTunnel(tunnel: RawTunnel): HarRawTunnelEntry {
+    const { startTime, connectTimestamp, disconnectTimestamp } = tunnel.timingEvents;
+
+    return {
+        startedDateTime: dateFns.format(startTime),
+        ...(!tunnel.isOpen() ? {
+            time: disconnectTimestamp !== undefined
+                ? disconnectTimestamp - connectTimestamp
+                : -1
+        } : {}),
+        clientIPAddress: tunnel.remoteIpAddress,
+        clientPort: tunnel.remotePort,
+        hostname: tunnel.upstreamHostname,
+        port: tunnel.upstreamPort,
+        messages: tunnel.packets.map((packet) =>
+            generateHarStreamMessage(packet, { startTime, startTimestamp: connectTimestamp })
+        ),
+        ...(tunnel.pinned ? { pinned: true } : {})
+    };
 }
 
 function generateHarTlsError(event: FailedTlsConnection): HarTlsErrorEntry {
@@ -601,22 +661,18 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
         }
 
         if (wasAccepted) {
-            events.push(...entry._webSocketMessages?.filter(message =>
-                // Chrome also records connection failures here, as 'error' type messages.
-                // We have no direct parallel, so we just drop them.
-                message.type === 'send' || message.type === 'receive'
+            events.push(...parseHarStreamMessages(
+                entry._webSocketMessages,
+                timingEvents.startTime
             ).map(message => ({
-                type: `websocket-message-${message.type === 'send' ? 'received' : 'sent'}` as const,
+                type: `websocket-message-${message.direction}` as const,
                 event: {
+                    ...message,
                     streamId: request.id,
-                    direction: message.type === 'send' ? 'received' : 'sent',
-                    isBinary: message.opcode === 2,
-                    content: Buffer.from(message.data, message.opcode === 2 ? 'base64' : 'utf8'),
-                    eventTimestamp: (message.time * 1000) - timingEvents.startTime,
                     timingEvents: timingEvents,
                     tags: []
                 } satisfies InputWebSocketMessage
-            })) ?? []);
+            })));
 
             if (closeEvent === 'aborted') {
                 // N.b. WebSockets can abort _after_ the response event!
@@ -656,6 +712,47 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
             }
         })));
     }
+
+    har.log._rawTunnels?.forEach((tunnel, i) => {
+        const id = `${baseId}tunnel-${i}`;
+        const startTime = dateFns.parse(tunnel.startedDateTime).getTime();
+
+        const openEvent: InputRawPassthrough = {
+            id,
+            destination: { hostname: tunnel.hostname, port: tunnel.port },
+            remoteIpAddress: tunnel.clientIPAddress,
+            remotePort: tunnel.clientPort,
+            tags: [],
+            timingEvents: { startTime, connectTimestamp: 0 }
+        };
+        events.push({ type: 'raw-passthrough-opened', event: openEvent });
+
+        events.push(...parseHarStreamMessages(tunnel.messages, startTime).map(message => ({
+            type: 'raw-passthrough-data' as const,
+            event: {
+                id,
+                direction: message.direction,
+                content: message.content,
+                eventTimestamp: message.eventTimestamp
+            }
+        })));
+
+        if (tunnel.time !== undefined) {
+            events.push({
+                type: 'raw-passthrough-closed',
+                event: {
+                    ...openEvent,
+                    timingEvents: {
+                        startTime,
+                        connectTimestamp: 0,
+                        ...(tunnel.time >= 0 ? { disconnectTimestamp: tunnel.time } : {})
+                    }
+                }
+            });
+        }
+
+        if (tunnel.pinned) pinnedIds.push(id);
+    });
 
     return { events, pinnedIds };
 }

@@ -1,8 +1,10 @@
+import * as dateFns from 'date-fns';
 import { expect } from '../../../test-setup';
 
 import { generateHar, parseHar } from '../../../../src/model/http/har';
 import { WebSocketStream } from '../../../../src/model/websockets/websocket-stream';
 import { StreamMessage } from '../../../../src/model/events/stream-message';
+import { RawTunnel } from '../../../../src/model/raw-tunnel';
 import { getExchangeData } from '../../unit-test-helpers';
 
 describe('HAR generation', () => {
@@ -160,6 +162,124 @@ describe('HAR parsing', () => {
         expect(await getEventTypes({ _webSocketMessages: [] }, 0)).to.deep.equal([
             'websocket-request',
             'abort'
+        ]);
+    });
+});
+
+describe('HAR raw tunnel support', () => {
+    const startTime = Date.parse('2026-07-17T20:35:23.000Z');
+
+    const getTunnel = () => {
+        const tunnel = new RawTunnel({
+            id: 'tunnel-id',
+            destination: { hostname: 'example.com', port: 1234 },
+            remoteIpAddress: '10.0.0.1',
+            remotePort: 5678,
+            tags: [],
+            timingEvents: { startTime, connectTimestamp: 1000 }
+        });
+
+        tunnel.addChunk({
+            id: 'tunnel-id',
+            direction: 'received',
+            content: Buffer.from('hello'),
+            eventTimestamp: 1250
+        });
+        tunnel.addChunk({
+            id: 'tunnel-id',
+            direction: 'sent',
+            content: Buffer.from([0x00, 0xff, 0xfe, 0x80]),
+            eventTimestamp: 1500
+        });
+
+        return tunnel;
+    };
+
+    const closeTunnel = (tunnel: RawTunnel) => tunnel.markClosed({
+        id: 'tunnel-id',
+        destination: { hostname: 'example.com', port: 1234 },
+        remoteIpAddress: '10.0.0.1',
+        remotePort: 5678,
+        tags: [],
+        timingEvents: { startTime, connectTimestamp: 1000, disconnectTimestamp: 3000 }
+    });
+
+    const roundTrip = async (har: unknown) => parseHar(JSON.parse(JSON.stringify(har)));
+
+    it('exports raw tunnels with their packets', async () => {
+        const tunnel = getTunnel();
+        closeTunnel(tunnel);
+
+        const har = await generateHar([tunnel]);
+
+        expect(har.log.entries).to.deep.equal([]);
+        expect(har.log._rawTunnels).to.deep.equal([{
+            startedDateTime: dateFns.format(startTime),
+            time: 2000,
+            clientIPAddress: '10.0.0.1',
+            clientPort: 5678,
+            hostname: 'example.com',
+            port: 1234,
+            messages: [
+                { type: 'send', opcode: 2, data: Buffer.from('hello').toString('base64'), time: startTime / 1000 + 0.25 },
+                { type: 'receive', opcode: 2, data: 'AP/+gA==', time: startTime / 1000 + 0.5 }
+            ]
+        }]);
+    });
+
+    it('omits raw tunnels from HARs without any', async () => {
+        const har = await generateHar([getExchangeData()]);
+        expect(har.log).to.not.have.property('_rawTunnels');
+    });
+
+    it('round-trips closed raw tunnels through HAR import', async () => {
+        const tunnel = getTunnel();
+        closeTunnel(tunnel);
+        tunnel.pinned = true;
+
+        const { events, pinnedIds } = await roundTrip(await generateHar([tunnel]));
+
+        expect(events.map(e => e.type)).to.deep.equal([
+            'raw-passthrough-opened',
+            'raw-passthrough-data',
+            'raw-passthrough-data',
+            'raw-passthrough-closed'
+        ]);
+
+        const [openEvent, firstData, secondData, closeEvent] = events;
+        if (
+            openEvent.type !== 'raw-passthrough-opened' ||
+            firstData.type !== 'raw-passthrough-data' ||
+            secondData.type !== 'raw-passthrough-data' ||
+            closeEvent.type !== 'raw-passthrough-closed'
+        ) throw new Error('Unexpected event types');
+
+        expect(openEvent.event).to.deep.include({
+            destination: { hostname: 'example.com', port: 1234 },
+            remoteIpAddress: '10.0.0.1',
+            remotePort: 5678
+        });
+        expect(openEvent.event.timingEvents).to.deep.equal({ startTime, connectTimestamp: 0 });
+
+        expect(firstData.event.direction).to.equal('received');
+        expect(Buffer.from(firstData.event.content).toString()).to.equal('hello');
+        expect(firstData.event.eventTimestamp).to.be.closeTo(250, 0.001);
+
+        expect(secondData.event.direction).to.equal('sent');
+        expect(Buffer.from(secondData.event.content)).to.deep.equal(Buffer.from([0x00, 0xff, 0xfe, 0x80]));
+        expect(secondData.event.eventTimestamp).to.be.closeTo(500, 0.001);
+
+        expect(closeEvent.event.timingEvents.disconnectTimestamp).to.equal(2000);
+        expect(pinnedIds).to.deep.equal([openEvent.event.id]);
+    });
+
+    it('round-trips still-open raw tunnels without a close', async () => {
+        const { events } = await roundTrip(await generateHar([getTunnel()]));
+
+        expect(events.map(e => e.type)).to.deep.equal([
+            'raw-passthrough-opened',
+            'raw-passthrough-data',
+            'raw-passthrough-data'
         ]);
     });
 });
