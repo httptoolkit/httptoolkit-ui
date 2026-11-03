@@ -2,7 +2,7 @@ import * as HTTPSnippet from "@httptoolkit/httpsnippet";
 
 import { saveFile } from "../../util/ui";
 
-import { HttpExchangeView } from "../../types";
+import { HttpExchangeView, ViewableEvent } from "../../types";
 import {
     generateHarRequest,
     generateHar,
@@ -13,20 +13,25 @@ import { RequestInput, buildSentExchangeRequest } from '../send/send-request-mod
 import { simplifyHarRequestForSnippetExport } from './snippet-export-sanitization';
 import { SnippetOption } from './snippet-formats';
 
-export const exportHar = async (exchange: HttpExchangeView) => {
+export const exportEventsAsHar = async (
+    events: ReadonlyArray<ViewableEvent>,
+    filename: string
+) => {
     const harContent = JSON.stringify(
-        await generateHar([exchange], {
+        await generateHar(events, {
             bodySizeLimit: Infinity
         })
     );
-    const filename = `${
-        exchange.request.method
-    } ${
-        exchange.request.parsedUrl.hostname
-    }.har`;
 
     saveFile(filename, 'application/har+json;charset=utf-8', harContent);
 };
+
+export const exportHar = (exchange: HttpExchangeView) =>
+    exportEventsAsHar([exchange], `${
+        exchange.request.method
+    } ${
+        exchange.request.parsedUrl.hostname
+    }.har`);
 
 export function generateCodeSnippet(
     exchange: HttpExchangeView,

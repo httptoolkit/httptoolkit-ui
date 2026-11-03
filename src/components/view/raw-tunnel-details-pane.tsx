@@ -43,6 +43,7 @@ export class RawTunnelDetailsPane extends React.Component<{
             streamLabel={tunnel.upstreamHostname}
             editorNode={this.props.streamMessageEditor}
             filenamePrefix={`Raw Tunnel ${tunnel.upstreamHostname} ${tunnel.upstreamPort} ${tunnel.id}`}
+            streamEvent={tunnel}
             messages={tunnel.packets}
         />;
 

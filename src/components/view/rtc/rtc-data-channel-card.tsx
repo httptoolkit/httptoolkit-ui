@@ -36,5 +36,6 @@ export const RTCDataChannelCard = observer(({
 
     isPaidUser={isPaidUser}
     filenamePrefix={'DataChannel ' + (dataChannel.label || dataChannel.channelId)}
+    streamEvent={dataChannel}
     messages={dataChannel.messages}
 />);

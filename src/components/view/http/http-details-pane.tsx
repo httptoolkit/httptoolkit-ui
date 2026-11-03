@@ -454,7 +454,7 @@ export class HttpDetailsPane extends React.Component<{
         const domain = urlParts[2].split(':')[0];
         const baseName = urlParts.length >= 2 ? urlParts[urlParts.length - 1] : undefined;
 
-        const filenamePrefix = `${domain}${baseName ? `- ${baseName}` : ''} - websocket`;
+        const filenamePrefix = `${domain}${baseName ? ` - ${baseName}` : ''} - websocket`;
 
         return <StreamMessageListCard
             {...this.cardProps.webSocketMessages}
@@ -469,6 +469,7 @@ export class HttpDetailsPane extends React.Component<{
 
             isPaidUser={this.props.accountStore!.user.isPaidUser()}
             filenamePrefix={filenamePrefix}
+            streamEvent={exchange}
             messages={exchange.messages}
             onClearMessages={this.clearMessages}
         />;

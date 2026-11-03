@@ -1,13 +1,15 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { action, computed, observable } from 'mobx';
+import { action, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as portals from 'react-reverse-portal';
 
 import { styled } from '../../styles';
+import { ViewableEvent } from '../../types';
 import { saveFile } from '../../util/ui';
 
 import { StreamMessage } from '../../model/events/stream-message';
+import { exportEventsAsHar } from '../../model/ui/export';
 import { getSummaryColor } from '../../model/events/categorization';
 
 import { Pill } from '../common/pill';
@@ -22,22 +24,20 @@ import {
     StreamMessageEditorRow
 } from './stream-message-rows';
 
-function getFilename(
+function getMessageFilename(
     filenamePrefix: string,
-    someBinary: boolean,
-    messageIndex?: number
+    isBinary: boolean,
+    messageIndex: number
 ) {
-    const extension = someBinary ? 'bin' : 'txt';
-
-    return `${filenamePrefix} ${
-        messageIndex ? `message ${messageIndex}` : 'messages'
-    }.${extension}`;
+    return `${filenamePrefix} message ${messageIndex}.${isBinary ? 'bin' : 'txt'}`;
 }
 
 @observer
 export class StreamMessageListCard extends React.Component<ExpandableCardProps & {
     isPaidUser: boolean,
     filenamePrefix: string,
+    // The event containing these messages, for the HAR export
+    streamEvent: ViewableEvent,
     streamId: string,
     cardHeading: string,
     streamLabel?: string,
@@ -48,11 +48,6 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
 
     @observable
     expandedRow: number | undefined = undefined;
-
-    @computed
-    get someBinaryMessages() {
-        return this.props.messages.some(m => m.isBinary);
-    }
 
     render() {
         const {
@@ -86,8 +81,8 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
                         icon={['fas', 'download']}
                         title={
                             isPaidUser
-                                ? "Save these messages as a file"
-                                : "With Pro: Save these messages as a file"
+                                ? "Save these messages as a HAR file"
+                                : "With Pro: Save these messages as a HAR file"
                         }
                         disabled={!isPaidUser}
                         onClick={this.exportMessages}
@@ -148,19 +143,11 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
     }
 
     exportMessages = () => {
-        saveFile(
-            getFilename(this.props.filenamePrefix, this.someBinaryMessages),
-            this.someBinaryMessages
-                ? 'application/octet-stream'
-                : 'text/plain',
-            this.props.messages
-                .map(m => m.content)
-                .join('\n\n---\n\n')
-        );
+        exportEventsAsHar([this.props.streamEvent], `${this.props.filenamePrefix}.har`);
     };
 
     exportMessage = (message: StreamMessage) => {
-        const filename = getFilename(
+        const filename = getMessageFilename(
             this.props.filenamePrefix,
             message.isBinary,
             this.props.messages.indexOf(message)
