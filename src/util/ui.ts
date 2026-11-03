@@ -60,7 +60,10 @@ export function saveFile(
 ): void {
     const element = document.createElement('a');
 
-    const data = new Blob([content], { type: mimeType });
+    const data = new Blob([
+        // Blobs only accept plain ArrayBuffer-backed data, so copy Buffers into one:
+        typeof content === 'string' ? content : new Uint8Array(content)
+    ], { type: mimeType });
 
     const objectUrl = window.URL.createObjectURL(data);
     element.setAttribute('href', objectUrl);

@@ -155,8 +155,8 @@ export type BackgroundResponse =
     | ZipExportResponse;
 
 const bufferToArrayBuffer = (buffer: Buffer): ArrayBuffer =>
-    // Have to remember to slice: this can be a view into part of a much larger buffer!
-    buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+    // Copy just this view's bytes: it can be a view into part of a much larger buffer!
+    new Uint8Array(buffer).buffer;
 
 async function decodeRequest(request: DecodeRequest): Promise<DecodeResponse> {
     const { id, buffer, encodings } = request;
@@ -172,7 +172,7 @@ async function decodeRequest(request: DecodeRequest): Promise<DecodeResponse> {
 async function encodeRequest(request: EncodeRequest): Promise<EncodeResponse> {
     const { id, buffer, encodings } = request;
 
-    const result = await encodings.reduce((contentPromise, nextEncoding) => {
+    const result = await encodings.reduce<Promise<Buffer>>((contentPromise, nextEncoding) => {
         return contentPromise.then((content) =>
             encodeBuffer(content, nextEncoding)
         )

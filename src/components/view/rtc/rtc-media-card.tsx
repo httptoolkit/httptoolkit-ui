@@ -7,7 +7,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { computed } from 'mobx';
 import { Observer, observer } from 'mobx-react';
-import { ParentSize } from '@vx/responsive';
+import { ParentSize } from '@visx/responsive';
 
 import { styled } from '../../../styles';
 
@@ -75,16 +75,15 @@ const StatsGraphWrapper = styled.div`
     flex-grow: 1;
 
     min-height: 400px;
-
-    /* Fix the ParentSize measuring div to match our size exactly. */
-    > div {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-    }
 `;
+
+const FILL_PARENT_STYLES = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+} as const;
 
 @observer
 class RTCMediaStats extends React.Component<{ mediaTrack: RTCMediaTrack }> {
@@ -96,7 +95,7 @@ class RTCMediaStats extends React.Component<{ mediaTrack: RTCMediaTrack }> {
     }
 
     render() {
-        return <ParentSize>{ parent =>
+        return <ParentSize parentSizeStyles={FILL_PARENT_STYLES}>{ parent =>
             <Observer>{() =>
                 <SendReceiveGraph
                     width={parent.width}

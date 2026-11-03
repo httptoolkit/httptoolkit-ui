@@ -86,7 +86,7 @@ async function downloadServer(
     const assetDownload = await fetch(asset.browser_download_url);
     const assetWrite = assetDownload.body.pipe(fs.createWriteStream(downloadPath));
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         assetWrite.on('finish', resolve);
         assetWrite.on('error', reject);
     });

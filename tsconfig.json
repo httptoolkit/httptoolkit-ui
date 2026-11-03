@@ -17,9 +17,12 @@
           "dom",
           "ES2017",
           "ES2021.WeakRef",
-          "ScriptHost",
-          "WebWorker"
+          "ScriptHost"
         ],
+
+        "paths": {
+          "mobx-react": ["./custom-typings/mobx-react.d.ts"]
+        },
 
         // Limit the global types included, to fix https://github.com/DefinitelyTyped/DefinitelyTyped/issues/33015
         "types": [
