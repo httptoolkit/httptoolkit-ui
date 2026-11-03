@@ -5,6 +5,11 @@ import { generateHar, parseHar } from '../../../../src/model/http/har';
 import { WebSocketStream } from '../../../../src/model/websockets/websocket-stream';
 import { StreamMessage } from '../../../../src/model/events/stream-message';
 import { RawTunnel } from '../../../../src/model/raw-tunnel';
+import { AccountStore } from '../../../../src/model/account/account-store';
+import { ProxyStore } from '../../../../src/model/proxy-store';
+import { ApiStore } from '../../../../src/model/api/api-store';
+import { RulesStore } from '../../../../src/model/rules/rules-store';
+import { EventsStore } from '../../../../src/model/events/events-store';
 import { getExchangeData } from '../../unit-test-helpers';
 
 describe('HAR generation', () => {
@@ -281,5 +286,131 @@ describe('HAR raw tunnel support', () => {
             'raw-passthrough-data',
             'raw-passthrough-data'
         ]);
+    });
+});
+
+describe('HAR import into the events store', function () {
+    this.timeout(5000);
+
+    const baseTime = Date.parse('2026-07-17T20:35:23.000Z');
+    const getDateTime = (offsetMs: number) => new Date(baseTime + offsetMs).toISOString();
+
+    const getHttpEntry = (hostname: string, offsetMs: number, fields: {} = {}) => ({
+        startedDateTime: getDateTime(offsetMs),
+        time: 100,
+        request: {
+            method: 'GET',
+            url: `https://${hostname}/`,
+            httpVersion: 'HTTP/1.1',
+            headers: [{ name: 'host', value: hostname }],
+            queryString: [],
+            cookies: [],
+            headersSize: -1,
+            bodySize: 0
+        },
+        response: {
+            status: 200,
+            statusText: 'OK',
+            httpVersion: 'HTTP/1.1',
+            headers: [],
+            cookies: [],
+            content: { size: 0, mimeType: 'text/plain' },
+            redirectURL: '',
+            headersSize: -1,
+            bodySize: 0
+        },
+        cache: {},
+        timings: { send: 0, wait: 0, receive: 0 },
+        ...fields
+    });
+
+    const getTlsError = (hostname: string, offsetMs: number) => ({
+        startedDateTime: getDateTime(offsetMs),
+        time: 10,
+        hostname,
+        cause: 'cert-rejected',
+        tlsMetadata: { sniHostname: hostname }
+    });
+
+    const getRawTunnel = (hostname: string, offsetMs: number) => ({
+        startedDateTime: getDateTime(offsetMs),
+        time: 1000,
+        clientIPAddress: '10.0.0.1',
+        clientPort: 5678,
+        hostname,
+        port: 1234,
+        messages: [{ type: 'send', opcode: 2, data: 'AP8=', time: (baseTime + offsetMs + 10) / 1000 }]
+    });
+
+    const getHar = (log: {}) => ({
+        log: {
+            version: '1.2',
+            creator: { name: 'test', version: '1' },
+            entries: [],
+            ...log
+        }
+    });
+
+    const getEventsStore = () => {
+        const accountStore = new AccountStore(() => {});
+        const proxyStore = new ProxyStore(accountStore);
+        return new EventsStore(
+            proxyStore,
+            new ApiStore(accountStore),
+            new RulesStore(accountStore, proxyStore, () => Promise.reject(new Error('Unused')))
+        );
+    };
+
+    const importHar = async (eventsStore: EventsStore, harContents: {}) => {
+        await eventsStore.loadFromHar(harContents);
+        // Queued events are flushed within at most 500ms:
+        await new Promise((resolve) => setTimeout(resolve, 600));
+    };
+
+    it('orders all imported traffic by start time', async () => {
+        const eventsStore = getEventsStore();
+        await importHar(eventsStore, getHar({
+            entries: [
+                getHttpEntry('http-2s.test', 2000),
+                getHttpEntry('ws-0s.test', 0, {
+                    response: { ...getHttpEntry('', 0).response, status: 101 },
+                    _resourceType: 'websocket',
+                    _webSocketMessages: [
+                        { type: 'send', opcode: 1, data: 'hi', time: (baseTime + 50) / 1000 }
+                    ],
+                    _webSocketClose: { code: 1000, reason: '' }
+                })
+            ],
+            _tlsErrors: [getTlsError('tls-1s.test', 1000)],
+            _rawTunnels: [
+                getRawTunnel('tunnel-3s.test', 3000),
+                getRawTunnel('tunnel-minus-1s.test', -1000)
+            ]
+        }));
+
+        expect(eventsStore.events.map(e =>
+            e.isHttp()
+                ? e.request.parsedUrl.hostname
+            : e.isTlsFailure()
+                ? e.upstreamHostname
+            : e.isRawTunnel()
+                ? e.upstreamHostname
+            : 'unexpected'
+        )).to.deep.equal([
+            'tunnel-minus-1s.test',
+            'ws-0s.test',
+            'tls-1s.test',
+            'http-2s.test',
+            'tunnel-3s.test'
+        ]);
+
+        // Each item's own events are still applied together & in order:
+        const [webSocket] = eventsStore.websockets;
+        expect(webSocket.wasAccepted).to.equal(true);
+        expect(webSocket.messages.map(m => m.content.toString())).to.deep.equal(['hi']);
+        expect(webSocket.closeState).to.deep.include({ closeCode: 1000 });
+
+        const tunnels = eventsStore.events.filter(e => e.isRawTunnel());
+        expect(tunnels.map(t => t.isRawTunnel() && t.packets.length)).to.deep.equal([1, 1]);
     });
 });

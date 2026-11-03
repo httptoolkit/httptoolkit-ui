@@ -597,13 +597,13 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 
     const baseId = _.random(1_000_000) + '-';
 
-    const events: QueuedEvent[] = [];
+    // Each traffic item's events, which must stay together & in order:
+    const eventGroups: Array<{ startTime: number, events: QueuedEvent[] }> = [];
     const pinnedIds: string[] = []
 
-    har.log.entries
-    .sort(compareHarEntryStartTimes)
-    .forEach((entry, i) => {
+    har.log.entries.forEach((entry, i) => {
         const id = baseId + i;
+        const events: QueuedEvent[] = [];
         const isWebSocket = entry._resourceType === 'websocket';
         const wasAccepted = isWebSocket && entry.response.status === 101;
         // Missing for WebSockets still open at export time, and for
@@ -691,12 +691,15 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
             }
         }
 
+        eventGroups.push({ startTime: timingEvents.startTime, events });
         if (entry._pinned) pinnedIds.push(id);
     });
 
-    if (har.log._tlsErrors) {
-        events.push(...har.log._tlsErrors.map((entry) => ({
-            type: 'tls-client-error' as const,
+    har.log._tlsErrors?.forEach((entry) => {
+        const startTime = dateFns.parse(entry.startedDateTime).getTime();
+
+        eventGroups.push({ startTime, events: [{
+            type: 'tls-client-error',
             event: {
                 failureCause: entry.cause,
                 hostname: entry.hostname,
@@ -705,17 +708,18 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
                 tlsMetadata: entry.tlsMetadata ?? {},
                 tags: [],
                 timingEvents: {
-                    startTime: dateFns.parse(entry.startedDateTime).getTime(),
+                    startTime,
                     connectTimestamp: 0,
                     failureTimestamp: entry.time
                 }
             }
-        })));
-    }
+        }] });
+    });
 
     har.log._rawTunnels?.forEach((tunnel, i) => {
         const id = `${baseId}tunnel-${i}`;
         const startTime = dateFns.parse(tunnel.startedDateTime).getTime();
+        const events: QueuedEvent[] = [];
 
         const openEvent: InputRawPassthrough = {
             id,
@@ -751,10 +755,19 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
             });
         }
 
+        eventGroups.push({ startTime, events });
         if (tunnel.pinned) pinnedIds.push(id);
     });
 
-    return { events, pinnedIds };
+    // The event list shows items in the order they're added, and the HAR spec doesn't
+    // require any ordering, so we order all items by start time (stable, for ties):
+    return {
+        events: _(eventGroups)
+            .sortBy(group => group.startTime)
+            .flatMap(group => group.events)
+            .value(),
+        pinnedIds
+    };
 }
 
 // Mutatively cleans & returns the HAR, to tidy up irrelevant but potentially
