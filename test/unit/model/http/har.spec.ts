@@ -8,12 +8,8 @@ import { RawTunnel } from '../../../../src/model/raw-tunnel';
 import { RTCConnection } from '../../../../src/model/webrtc/rtc-connection';
 import { RTCDataChannel } from '../../../../src/model/webrtc/rtc-data-channel';
 import { RTCMediaTrack } from '../../../../src/model/webrtc/rtc-media-track';
-import { AccountStore } from '../../../../src/model/account/account-store';
-import { ProxyStore } from '../../../../src/model/proxy-store';
-import { ApiStore } from '../../../../src/model/api/api-store';
-import { RulesStore } from '../../../../src/model/rules/rules-store';
 import { EventsStore } from '../../../../src/model/events/events-store';
-import { getExchangeData } from '../../unit-test-helpers';
+import { getExchangeData, getEventsStore } from '../../unit-test-helpers';
 
 describe('HAR generation', () => {
     it('orders entries chronologically regardless of selection order', async () => {
@@ -606,16 +602,6 @@ describe('HAR import into the events store', function () {
             ...log
         }
     });
-
-    const getEventsStore = () => {
-        const accountStore = new AccountStore(() => {});
-        const proxyStore = new ProxyStore(accountStore);
-        return new EventsStore(
-            proxyStore,
-            new ApiStore(accountStore),
-            new RulesStore(accountStore, proxyStore, () => Promise.reject(new Error('Unused')))
-        );
-    };
 
     const importHar = async (eventsStore: EventsStore, harContents: {}) => {
         await eventsStore.loadFromHar(harContents);

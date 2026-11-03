@@ -3,6 +3,11 @@ import { SourceIcons } from '../../src/icons';
 import { HttpExchange } from '../../src/model/http/http-exchange';
 import { HttpBody } from '../../src/model/http/http-body';
 import { FailedTlsConnection } from '../../src/model/tls/failed-tls-connection';
+import { AccountStore } from '../../src/model/account/account-store';
+import { ProxyStore } from '../../src/model/proxy-store';
+import { ApiStore } from '../../src/model/api/api-store';
+import { RulesStore } from '../../src/model/rules/rules-store';
+import { EventsStore } from '../../src/model/events/events-store';
 import { HtkRequest, HtkResponse, TimingEvents } from '../../src/types';
 
 let nextId = 0;
@@ -108,3 +113,15 @@ export function httpDate(date: Date) {
     const utcDate = dateFns.addMinutes(date, date.getTimezoneOffset());
     return dateFns.format(utcDate, 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 }
+
+// A real events store, unconnected to any server (none of these stores have
+// constructor side effects):
+export const getEventsStore = () => {
+    const accountStore = new AccountStore(() => {});
+    const proxyStore = new ProxyStore(accountStore);
+    return new EventsStore(
+        proxyStore,
+        new ApiStore(accountStore),
+        new RulesStore(accountStore, proxyStore, () => Promise.reject(new Error('Unused')))
+    );
+};

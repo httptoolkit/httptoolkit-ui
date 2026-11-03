@@ -68,7 +68,7 @@ type EventTypesMap = {
     'websocket-message-sent': InputWebSocketMessage,
     'websocket-close': InputWebSocketClose,
     // Mockttp misc:
-    'abort': InputInitiatedRequest,
+    'abort': InputFailedRequest,
     'tls-client-error': InputTlsFailure,
     'tls-passthrough-opened': InputTlsPassthrough,
     'tls-passthrough-closed': InputTlsPassthrough,
@@ -128,7 +128,7 @@ export type QueuedEvent =
     }[EventType])
     | { type: 'queued-callback', cb: () => void } // Or a callback to run after data is processed
 
-type OrphanableQueuedEvent<T extends
+type OrphanableEventType =
     | 'response'
     | 'abort'
     | 'websocket-accepted'
@@ -147,7 +147,16 @@ type OrphanableQueuedEvent<T extends
     | 'tls-passthrough-closed'
     | 'raw-passthrough-closed'
     | 'raw-passthrough-data'
-> = { type: T, event: EventTypesMap[T] };
+    | 'rule-event';
+
+type OrphanableQueuedEvent = {
+    [T in OrphanableEventType]: { type: T, event: EventTypesMap[T] }
+}[OrphanableEventType];
+
+const getDataChannelId = (sessionId: string, channelId: number) =>
+    `${sessionId}:data:${channelId}`;
+const getMediaTrackId = (sessionId: string, trackMid: string) =>
+    `${sessionId}:media:${trackMid}`;
 
 const LARGE_QUEUE_BATCH_SIZE = 1033; // Off by 33 for a new ticking UI effect
 
@@ -189,7 +198,7 @@ export class EventsStore {
     isPaused = false;
 
     private eventQueue: Array<QueuedEvent> = [];
-    private orphanedEvents: { [id: string]: OrphanableQueuedEvent<any> } = {};
+    private orphanedEvents: { [id: string]: OrphanableQueuedEvent[] } = {};
 
     private isFlushQueued = false;
     private queueEventFlush() {
@@ -272,7 +281,8 @@ export class EventsStore {
                     return this.addClientError(queuedEvent.event);
 
                 case 'raw-passthrough-opened':
-                    return this.addRawTunnel(queuedEvent.event);
+                    this.addRawTunnel(queuedEvent.event);
+                    return this.checkForOrphan(queuedEvent.event.id);
                 case 'raw-passthrough-closed':
                     return this.markRawTunnelClosed(queuedEvent.event);
                 case 'raw-passthrough-data':
@@ -282,20 +292,29 @@ export class EventsStore {
                     return this.addRuleEvent(queuedEvent.event);
 
                 case 'peer-connected':
-                    return this.addRTCPeerConnection(queuedEvent.event);
+                    this.addRTCPeerConnection(queuedEvent.event);
+                    return this.checkForOrphan(queuedEvent.event.sessionId);
                 case 'external-peer-attached':
                     return this.attachExternalRTCPeer(queuedEvent.event);
                 case 'peer-disconnected':
                     return this.markRTCPeerDisconnected(queuedEvent.event);
                 case 'data-channel-opened':
-                    return this.addRTCDataChannel(queuedEvent.event);
+                    this.addRTCDataChannel(queuedEvent.event);
+                    return this.checkForOrphan(getDataChannelId(
+                        queuedEvent.event.sessionId,
+                        queuedEvent.event.channelId
+                    ));
                 case 'data-channel-message-sent':
                 case 'data-channel-message-received':
                     return this.addRTCDataChannelMessage(queuedEvent.event);
                 case 'data-channel-closed':
                     return this.markRTCDataChannelClosed(queuedEvent.event);
                 case 'media-track-opened':
-                    return this.addRTCMediaTrack(queuedEvent.event);
+                    this.addRTCMediaTrack(queuedEvent.event);
+                    return this.checkForOrphan(getMediaTrackId(
+                        queuedEvent.event.sessionId,
+                        queuedEvent.event.trackMid
+                    ));
                 case 'media-track-stats':
                     return this.addRTCMediaTrackStats(queuedEvent.event);
                 case 'media-track-closed':
@@ -315,15 +334,19 @@ export class EventsStore {
     private checkForOrphan(id: string) {
         // Sometimes we receive events out of order (response/abort before request).
         // They could be later in the same batch, or in a previous batch. If that happens,
-        // we store them separately, and we check later whether they're valid when subsequent
-        // completed/initiated request events come in. If so, we re-queue them.
+        // we store them separately, and re-apply them in order once the item they belong
+        // to (request, tunnel, connection, stream) has been added.
 
-        const orphanEvent = this.orphanedEvents[id];
+        const orphanEvents = this.orphanedEvents[id];
 
-        if (orphanEvent) {
+        if (orphanEvents) {
             delete this.orphanedEvents[id];
-            this.updateFromQueuedEvent(orphanEvent);
+            orphanEvents.forEach(this.updateFromQueuedEvent);
         }
+    }
+
+    private addOrphan(id: string, event: OrphanableQueuedEvent) {
+        (this.orphanedEvents[id] ??= []).push(event);
     }
 
     @action.bound
@@ -385,7 +408,7 @@ export class EventsStore {
 
         if (!exchange) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[request.id] = { type: 'abort', event: request };
+            this.addOrphan(request.id, { type: 'abort', event: request });
             return;
         };
 
@@ -398,7 +421,7 @@ export class EventsStore {
 
         if (!exchange) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[response.id] = { type: 'response', event: response };
+            this.addOrphan(response.id, { type: 'response', event: response });
             return;
         }
 
@@ -425,7 +448,7 @@ export class EventsStore {
 
         if (!stream) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[response.id] = { type: 'websocket-accepted', event: response };
+            this.addOrphan(response.id, { type: 'websocket-accepted', event: response });
             return;
         }
 
@@ -439,10 +462,10 @@ export class EventsStore {
 
         if (!stream) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[message.streamId] = {
+            this.addOrphan(message.streamId, {
                 type: `websocket-message-${message.direction}`,
                 event: message
-            };
+            });
             return;
         }
 
@@ -455,9 +478,7 @@ export class EventsStore {
 
         if (!stream) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[close.streamId] = {
-                type: 'websocket-close', event: close
-            };
+            this.addOrphan(close.streamId, { type: 'websocket-close', event: close });
             return;
         }
 
@@ -479,9 +500,7 @@ export class EventsStore {
 
         if (!tunnel) {
             // Handle this later, once the tunnel open event has arrived
-            this.orphanedEvents[closeEvent.id] = {
-                type: 'tls-passthrough-closed', event: close
-            };
+            this.addOrphan(closeEvent.id, { type: 'tls-passthrough-closed', event: closeEvent });
             return;
         }
 
@@ -504,9 +523,7 @@ export class EventsStore {
 
         if (!tunnel) {
             // Handle this later, once the tunnel open event has arrived
-            this.orphanedEvents[closeEvent.id] = {
-                type: 'raw-passthrough-closed', event: closeEvent
-            };
+            this.addOrphan(closeEvent.id, { type: 'raw-passthrough-closed', event: closeEvent });
             return;
         }
 
@@ -519,9 +536,7 @@ export class EventsStore {
 
         if (!tunnel) {
             // Handle this later, once the tunnel open event has arrived
-            this.orphanedEvents[dataEvent.id] = {
-                type: 'raw-passthrough-data', event: dataEvent
-            };
+            this.addOrphan(dataEvent.id, { type: 'raw-passthrough-data', event: dataEvent });
             return;
         }
 
@@ -592,7 +607,7 @@ export class EventsStore {
 
         if (!exchange) {
             // Handle this later, once the request has arrived
-            this.orphanedEvents[event.requestId] = { type: 'rule-event', event };
+            this.addOrphan(event.requestId, { type: 'rule-event', event });
             return;
         };
 
@@ -639,7 +654,7 @@ export class EventsStore {
             conn.attachExternalPeer(event, otherHalf);
             if (otherHalf) otherHalf.connectOtherHalf(conn);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'external-peer-attached', event };
+            this.addOrphan(event.sessionId, { type: 'external-peer-attached', event });
         }
     }
 
@@ -649,7 +664,7 @@ export class EventsStore {
         if (conn) {
             conn.markClosed(event);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'peer-disconnected', event };
+            this.addOrphan(event.sessionId, { type: 'peer-disconnected', event });
         }
     }
 
@@ -657,7 +672,7 @@ export class EventsStore {
     private addRTCDataChannel(event: InputRTCDataChannelOpened) {
         const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
-            const dcId = event.sessionId + ':data:' + event.channelId;
+            const dcId = getDataChannelId(event.sessionId, event.channelId);
             if (this.eventsList.getById(dcId)) {
                 logError('Duplicate event received', { eventType: 'data-channel-opened', id: dcId });
                 return;
@@ -666,7 +681,7 @@ export class EventsStore {
             this.eventsList.push(dc);
             conn.addStream(dc);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'data-channel-opened', event };
+            this.addOrphan(event.sessionId, { type: 'data-channel-opened', event });
         }
     }
 
@@ -676,7 +691,10 @@ export class EventsStore {
         if (channel) {
             channel.addMessage(event);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: `data-channel-message-${event.direction}`, event };
+            this.addOrphan(getDataChannelId(event.sessionId, event.channelId), event.direction === 'sent'
+                ? { type: 'data-channel-message-sent', event }
+                : { type: 'data-channel-message-received', event }
+            );
         }
     }
 
@@ -686,7 +704,10 @@ export class EventsStore {
         if (channel) {
             channel.markClosed(event);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'data-channel-closed', event };
+            this.addOrphan(getDataChannelId(event.sessionId, event.channelId), {
+                type: 'data-channel-closed',
+                event
+            });
         }
     }
 
@@ -694,7 +715,7 @@ export class EventsStore {
     private addRTCMediaTrack(event: InputRTCMediaTrackOpened) {
         const conn = this.eventsList.getRTCConnectionById(event.sessionId);
         if (conn) {
-            const trackId = event.sessionId + ':media:' + event.trackMid;
+            const trackId = getMediaTrackId(event.sessionId, event.trackMid);
             if (this.eventsList.getById(trackId)) {
                 logError('Duplicate event received', { eventType: 'media-track-opened', id: trackId });
                 return;
@@ -703,7 +724,7 @@ export class EventsStore {
             this.eventsList.push(track);
             conn.addStream(track);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'media-track-opened', event };
+            this.addOrphan(event.sessionId, { type: 'media-track-opened', event });
         }
     }
 
@@ -713,7 +734,10 @@ export class EventsStore {
         if (track) {
             track.addStats(event);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'media-track-stats', event };
+            this.addOrphan(getMediaTrackId(event.sessionId, event.trackMid), {
+                type: 'media-track-stats',
+                event
+            });
         }
     }
 
@@ -723,7 +747,10 @@ export class EventsStore {
         if (track) {
             track.markClosed(event);
         } else {
-            this.orphanedEvents[event.sessionId] = { type: 'media-track-closed', event };
+            this.addOrphan(getMediaTrackId(event.sessionId, event.trackMid), {
+                type: 'media-track-closed',
+                event
+            });
         }
     }
 
