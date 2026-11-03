@@ -22,7 +22,7 @@ const candidateToUrl = (candidate: SelectedRTCCandidate) =>
 export class RTCConnection extends HTKEventBase {
 
     constructor(
-        private connectionEvent: InputRTCPeerConnected
+        readonly connectionEvent: InputRTCPeerConnected
     ) {
         super();
     }
@@ -99,6 +99,10 @@ export class RTCConnection extends HTKEventBase {
 
         return ourExternalAddress === theirRemoteAddress &&
             theirExternalAddress === ourRemoteAddress;
+    }
+
+    get externalConnection() {
+        return this.attachedConnection?.externalConnection;
     }
 
     @action

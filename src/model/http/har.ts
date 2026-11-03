@@ -19,7 +19,10 @@ import {
     HttpExchangeView,
     RawHeaders,
     RawTrailers,
-    InputRawPassthrough
+    InputRawPassthrough,
+    InputRTCPeerConnected,
+    InputRTCExternalPeerAttached,
+    RTCStream
 } from '../../types';
 
 import { stringToBuffer } from '../../util/buffer';
@@ -32,6 +35,9 @@ import { getStatusMessage } from './http-docs';
 import { StreamMessage } from '../events/stream-message';
 import { QueuedEvent } from '../events/events-store';
 import type { RawTunnel } from '../raw-tunnel';
+import type { RTCConnection } from '../webrtc/rtc-connection';
+import type { RTCDataChannel } from '../webrtc/rtc-data-channel';
+import type { RTCMediaTrack } from '../webrtc/rtc-media-track';
 import { parseCookieHeader, parseSetCookieHeader } from './cookies';
 
 // We only include request/response bodies that are under 500KB
@@ -50,6 +56,7 @@ interface HarLog extends HarFormat.Log {
     // Custom fields to expose non-HTTP traffic:
     _tlsErrors: HarTlsErrorEntry[];
     _rawTunnels?: HarRawTunnelEntry[];
+    _rtcConnections?: HarRTCConnectionEntry[];
 
     // Our extended version of HAR entries:
     entries: HarEntry[];
@@ -111,6 +118,45 @@ export interface HarRawTunnelEntry {
     pinned?: true;
 }
 
+export interface HarRTCConnectionEntry {
+    startedDateTime: string;
+    time?: number; // Duration in ms, if closed (-1 if closed at an unknown time)
+    peerId: string;
+    metadata: InputRTCPeerConnected['metadata'];
+    localSessionDescription: InputRTCPeerConnected['localSessionDescription'];
+    remoteSessionDescription: InputRTCPeerConnected['remoteSessionDescription'];
+    selectedLocalCandidate: InputRTCPeerConnected['selectedLocalCandidate'];
+    selectedRemoteCandidate: InputRTCPeerConnected['selectedRemoteCandidate'];
+    externalConnection?: InputRTCExternalPeerAttached['externalConnection'];
+    dataChannels: HarRTCDataChannelEntry[];
+    mediaTracks: HarRTCMediaTrackEntry[];
+    pinned?: true;
+}
+
+export interface HarRTCDataChannelEntry {
+    startedDateTime: string;
+    time?: number; // Duration in ms, if closed
+    channelId: number;
+    label: string;
+    protocol: string;
+    messages: HarStreamMessage[];
+    pinned?: true;
+}
+
+export interface HarRTCMediaTrackEntry {
+    startedDateTime: string;
+    time?: number; // Duration in ms, if closed
+    mid: string;
+    type: string;
+    direction: string;
+    stats: Array<{
+        time: number; // Epoch timestamp, as a float in seconds
+        totalBytesSent: number;
+        totalBytesReceived: number;
+    }>;
+    pinned?: true;
+}
+
 export type HarTlsErrorEntry = {
     startedDateTime: string;
     time: number; // Floating-point high-resolution duration, in ms
@@ -139,6 +185,7 @@ export async function generateHar(
 
     const errors = otherEvents.filter(e => e.isTlsFailure()) as FailedTlsConnection[];
     const rawTunnels = otherEvents.filter((e): e is RawTunnel => e.isRawTunnel());
+    const rtcEvents = otherEvents.filter((e): e is RTCConnection | RTCStream => e.isRTC());
 
     const sourcePages = getSourcesAsHarPages(exchanges);
     const entries = (await Promise.all(
@@ -158,6 +205,10 @@ export async function generateHar(
             _tlsErrors: errorEntries,
             ...(rawTunnels.length
                 ? { _rawTunnels: rawTunnels.map(generateHarRawTunnel) }
+                : {}
+            ),
+            ...(rtcEvents.length
+                ? { _rtcConnections: generateHarRTCConnections(rtcEvents) }
                 : {}
             )
         }
@@ -555,6 +606,95 @@ function generateHarRawTunnel(tunnel: RawTunnel): HarRawTunnelEntry {
     };
 }
 
+// Selected connections are exported with all their streams, while selected streams are
+// exported alone, within their parent connection:
+function generateHarRTCConnections(
+    rtcEvents: Array<RTCConnection | RTCStream>
+): HarRTCConnectionEntry[] {
+    const selectedEvents = new Set<RTCConnection | RTCStream>(rtcEvents);
+    const connections = _.uniq(rtcEvents.map(e => e.isRTCConnection() ? e : e.rtcConnection));
+
+    return connections.map((connection) => generateHarRTCConnection(
+        connection,
+        selectedEvents.has(connection)
+            ? connection.streams
+            : connection.streams.filter(stream => selectedEvents.has(stream))
+    ));
+}
+
+function generateHarRTCConnection(
+    connection: RTCConnection,
+    streams: RTCStream[]
+): HarRTCConnectionEntry {
+    const { connectionEvent, closeState, externalConnection } = connection;
+    const { startTime, connectTimestamp } = connectionEvent.timingEvents;
+
+    const timeOrigin = { startTime, startTimestamp: connectTimestamp };
+    const asDateTime = (timestamp: number) =>
+        dateFns.format(startTime + (timestamp - connectTimestamp));
+
+    const disconnectTimestamp = closeState?.timingEvents.disconnectTimestamp;
+
+    return {
+        startedDateTime: dateFns.format(startTime),
+        ...(closeState ? {
+            time: disconnectTimestamp !== undefined
+                ? disconnectTimestamp - connectTimestamp
+                : -1
+        } : {}),
+        peerId: connectionEvent.peerId,
+        metadata: connectionEvent.metadata,
+        localSessionDescription: connectionEvent.localSessionDescription,
+        remoteSessionDescription: connectionEvent.remoteSessionDescription,
+        selectedLocalCandidate: connectionEvent.selectedLocalCandidate,
+        selectedRemoteCandidate: connectionEvent.selectedRemoteCandidate,
+        ...(externalConnection ? { externalConnection } : {}),
+        dataChannels: streams
+            .filter((stream): stream is RTCDataChannel => stream.isRTCDataChannel())
+            .map((channel) => ({
+                startedDateTime: asDateTime(channel.openEvent.eventTimestamp),
+                ...(channel.closeState ? {
+                    time: channel.closeState.eventTimestamp - channel.openEvent.eventTimestamp
+                } : {}),
+                channelId: channel.channelId,
+                label: channel.label,
+                protocol: channel.protocol,
+                messages: channel.messages.map((message) =>
+                    generateHarStreamMessage(message, timeOrigin)
+                ),
+                ...(channel.pinned ? { pinned: true } : {})
+            })),
+        mediaTracks: streams
+            .filter((stream): stream is RTCMediaTrack => stream.isRTCMediaTrack())
+            .map((track) => {
+                // The model stores deltas, but Mockttp reports (and we export) running totals:
+                let totalBytesSent = 0;
+                let totalBytesReceived = 0;
+
+                return {
+                    startedDateTime: asDateTime(track.openEvent.eventTimestamp),
+                    ...(track.closeState ? {
+                        time: track.closeState.eventTimestamp - track.openEvent.eventTimestamp
+                    } : {}),
+                    mid: track.mid,
+                    type: track.type,
+                    direction: track.direction,
+                    stats: track.stats.map((stat) => {
+                        totalBytesSent += stat.sentDelta;
+                        totalBytesReceived += stat.receivedDelta;
+                        return {
+                            time: getHarEpochSeconds(stat.timestamp, timeOrigin),
+                            totalBytesSent,
+                            totalBytesReceived
+                        };
+                    }),
+                    ...(track.pinned ? { pinned: true } : {})
+                };
+            }),
+        ...(connection.pinned ? { pinned: true } : {})
+    };
+}
+
 function generateHarTlsError(event: FailedTlsConnection): HarTlsErrorEntry {
     const timingEvents = event.timingEvents ?? {};
 
@@ -757,6 +897,126 @@ export async function parseHar(harContents: unknown): Promise<ParsedHar> {
 
         eventGroups.push({ startTime, events });
         if (tunnel.pinned) pinnedIds.push(id);
+    });
+
+    har.log._rtcConnections?.forEach((connection, i) => {
+        const sessionId = `${baseId}rtc-${i}`;
+        const startTime = dateFns.parse(connection.startedDateTime).getTime();
+        const asTimestamp = (dateTime: string) => dateFns.parse(dateTime).getTime() - startTime;
+
+        const timingEvents = { startTime, connectTimestamp: 0 };
+        const connectionDetails = { peerId: connection.peerId, sessionId, timingEvents };
+
+        const connectionEvents: QueuedEvent[] = [{
+            type: 'peer-connected',
+            event: {
+                ...connectionDetails,
+                metadata: connection.metadata,
+                localSessionDescription: connection.localSessionDescription,
+                remoteSessionDescription: connection.remoteSessionDescription,
+                selectedLocalCandidate: connection.selectedLocalCandidate,
+                selectedRemoteCandidate: connection.selectedRemoteCandidate
+            }
+        }];
+
+        if (connection.externalConnection) {
+            connectionEvents.push({
+                type: 'external-peer-attached',
+                event: { ...connectionDetails, externalConnection: connection.externalConnection }
+            });
+        }
+
+        if (connection.time !== undefined) {
+            connectionEvents.push({
+                type: 'peer-disconnected',
+                event: {
+                    ...connectionDetails,
+                    timingEvents: {
+                        startTime,
+                        connectTimestamp: 0,
+                        ...(connection.time >= 0 ? { disconnectTimestamp: connection.time } : {})
+                    }
+                }
+            });
+        }
+
+        eventGroups.push({ startTime, events: connectionEvents });
+        if (connection.pinned) pinnedIds.push(sessionId);
+
+        // Streams are separate items in the event list, added when they open. They must be
+        // added after their connection, which the stable sort ensures for ties:
+        const getStreamStartTime = (openTimestamp: number) => startTime + Math.max(openTimestamp, 0);
+        connection.dataChannels.forEach((channel) => {
+            const channelDetails = { ...connectionDetails, channelId: channel.channelId };
+            const openTimestamp = asTimestamp(channel.startedDateTime);
+
+            const events: QueuedEvent[] = [{
+                type: 'data-channel-opened',
+                event: {
+                    ...channelDetails,
+                    channelLabel: channel.label,
+                    channelProtocol: channel.protocol,
+                    eventTimestamp: openTimestamp
+                }
+            }];
+
+            events.push(...parseHarStreamMessages(channel.messages, startTime).map((message) =>
+                message.direction === 'sent'
+                    ? {
+                        type: 'data-channel-message-sent' as const,
+                        event: { ...channelDetails, ...message, direction: 'sent' as const }
+                    }
+                    : {
+                        type: 'data-channel-message-received' as const,
+                        event: { ...channelDetails, ...message, direction: 'received' as const }
+                    }
+            ));
+
+            if (channel.time !== undefined) {
+                events.push({
+                    type: 'data-channel-closed',
+                    event: { ...channelDetails, eventTimestamp: openTimestamp + channel.time }
+                });
+            }
+
+            eventGroups.push({ startTime: getStreamStartTime(openTimestamp), events });
+            if (channel.pinned) pinnedIds.push(`${sessionId}:data:${channel.channelId}`);
+        });
+
+        connection.mediaTracks.forEach((track) => {
+            const trackDetails = { ...connectionDetails, trackMid: track.mid };
+            const openTimestamp = asTimestamp(track.startedDateTime);
+
+            const events: QueuedEvent[] = [{
+                type: 'media-track-opened',
+                event: {
+                    ...trackDetails,
+                    trackType: track.type,
+                    trackDirection: track.direction,
+                    eventTimestamp: openTimestamp
+                }
+            }];
+
+            events.push(...track.stats.map((stat) => ({
+                type: 'media-track-stats' as const,
+                event: {
+                    ...trackDetails,
+                    totalBytesSent: stat.totalBytesSent,
+                    totalBytesReceived: stat.totalBytesReceived,
+                    eventTimestamp: (stat.time * 1000) - startTime
+                }
+            })));
+
+            if (track.time !== undefined) {
+                events.push({
+                    type: 'media-track-closed',
+                    event: { ...trackDetails, eventTimestamp: openTimestamp + track.time }
+                });
+            }
+
+            eventGroups.push({ startTime: getStreamStartTime(openTimestamp), events });
+            if (track.pinned) pinnedIds.push(`${sessionId}:media:${track.mid}`);
+        });
     });
 
     // The event list shows items in the order they're added, and the HAR spec doesn't

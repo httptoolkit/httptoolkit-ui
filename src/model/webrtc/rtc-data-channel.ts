@@ -18,7 +18,7 @@ import { RTCConnection } from './rtc-connection';
 export class RTCDataChannel extends HTKEventBase {
 
     constructor(
-        private openEvent: InputRTCDataChannelOpened,
+        readonly openEvent: InputRTCDataChannelOpened,
         private connection: RTCConnection
     ) {
         super();

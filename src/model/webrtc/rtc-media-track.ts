@@ -25,7 +25,7 @@ export interface RTCMediaStatEvent {
 export class RTCMediaTrack extends HTKEventBase {
 
     constructor(
-        private openEvent: InputRTCMediaTrackOpened,
+        readonly openEvent: InputRTCMediaTrackOpened,
         private connection: RTCConnection
     ) {
         super();
