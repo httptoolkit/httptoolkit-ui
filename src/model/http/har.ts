@@ -17,6 +17,7 @@ import {
     TlsSocketMetadata,
     ViewableEvent,
     HttpExchangeView,
+    MessageBody,
     RawHeaders,
     RawTrailers,
     InputRawPassthrough,
@@ -40,8 +41,6 @@ import type { RTCDataChannel } from '../webrtc/rtc-data-channel';
 import type { RTCMediaTrack } from '../webrtc/rtc-media-track';
 import { parseCookieHeader, parseSetCookieHeader } from './cookies';
 
-// We only include request/response bodies that are under 500KB
-const HAR_BODY_SIZE_LIMIT = 500000;
 const UTF8Decoder = new TextDecoder('utf8', { fatal: true });
 
 export interface Har extends HarFormat.Har {
@@ -49,7 +48,8 @@ export interface Har extends HarFormat.Har {
 }
 
 export interface HarGenerationOptions {
-    bodySizeLimit: number;
+    // Bodies to leave out, to limit the HAR's size:
+    droppedBodies?: ReadonlySet<MessageBody>;
 }
 
 interface HarLog extends HarFormat.Log {
@@ -79,10 +79,15 @@ export interface ExtendedHarRequest extends HarFormat.Request {
 }
 
 export interface ExtendedHarResponse extends HarFormat.Response {
+    _responseBodyStatus?:
+        | 'discarded:too-large'
+        | 'discarded:not-decodable';
     _trailers?: HarFormat.Header[];
 }
 
 export interface HarEntry extends HarFormat.Entry {
+    request: ExtendedHarRequest;
+    response: ExtendedHarResponse;
     _resourceType?: 'websocket';
     _webSocketMessages?: HarStreamMessage[];
     _webSocketClose?: {
@@ -171,7 +176,7 @@ export type HarTlsErrorEntry = {
 
 export async function generateHar(
     events: readonly ViewableEvent[],
-    options: HarGenerationOptions = { bodySizeLimit: HAR_BODY_SIZE_LIMIT }
+    options: HarGenerationOptions = {}
 ): Promise<Har> {
     const [allExchanges, otherEvents] = _.partition(events, e => e.isHttp()) as [
         HttpExchangeView[], CollectedEvent[]
@@ -298,11 +303,11 @@ export function generateHarRequest(
     };
 
     if (request.body.isDecoded()) {
-        if (request.body.decodedData.byteLength > options.bodySizeLimit) {
+        if (options.droppedBodies?.has(request.body)) {
             requestEntry._requestBodyStatus = 'discarded:too-large';
-            requestEntry.comment = `Body discarded during HAR generation: longer than limit of ${
-                options.bodySizeLimit
-            } bytes`;
+            requestEntry.comment = `Body discarded during HAR generation: too large (${
+                request.body.decodedData.byteLength
+            } bytes)`;
         } else {
             try {
                 requestEntry.postData = generateHarPostBody(
@@ -394,7 +399,7 @@ function generateHarParamsFromParsedQuery(query: querystring.ParsedUrlQuery): Ha
 async function generateHarResponse(
     exchange: HttpExchangeView,
     options: HarGenerationOptions
-): Promise<HarFormat.Response> {
+): Promise<ExtendedHarResponse> {
     const { request, response } = exchange;
 
     if (!response || response === 'aborted') {
@@ -414,13 +419,19 @@ async function generateHarResponse(
     const decoded = await response.body.waitForDecoding();
 
     let responseContent: { text: string, encoding?: string } | { comment: string };
+    let responseBodyStatus: ExtendedHarResponse['_responseBodyStatus'];
     try {
-        if (!decoded || decoded.byteLength > options.bodySizeLimit) {
-            // If no body or the body is too large, don't include it
+        if (!decoded) {
+            responseBodyStatus = 'discarded:not-decodable';
             responseContent = {
-                comment: `Body discarded during HAR generation: longer than limit of ${
-                    options.bodySizeLimit
-                } bytes`
+                comment: 'Body discarded during HAR generation: could not be decoded'
+            };
+        } else if (options.droppedBodies?.has(response.body)) {
+            responseBodyStatus = 'discarded:too-large';
+            responseContent = {
+                comment: `Body discarded during HAR generation: too large (${
+                    decoded.byteLength
+                } bytes)`
             };
         } else {
             // If body decodes as text, keep it as text
@@ -450,7 +461,8 @@ async function generateHarResponse(
         ),
         redirectURL: "",
         headersSize: -1,
-        bodySize: response.body.encodedByteLength || 0
+        bodySize: response.body.encodedByteLength || 0,
+        ...(responseBodyStatus ? { _responseBodyStatus: responseBodyStatus } : {})
     };
 }
 

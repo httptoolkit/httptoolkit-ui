@@ -3,11 +3,11 @@ import * as dateFns from 'date-fns';
 import { inject, observer } from 'mobx-react';
 
 import { css, styled } from '../../styles';
-import { Ctrl, saveFile } from '../../util/ui';
+import { Ctrl } from '../../util/ui';
 import { CollectedEvent } from '../../types';
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui/ui-store';
-import { generateHar } from '../../model/http/har';
+import { exportEventsAsBulkHar } from '../../model/ui/export';
 
 import { Icon } from '../../icons';
 import { Button } from '../common/inputs';
@@ -203,15 +203,9 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
                 : 'With Pro: export as HAR'
             }
             disabled={!isPaidUser || count === 0}
-            onClick={async () => {
-                const harContent = JSON.stringify(
-                    await generateHar(selectedEvents, { bodySizeLimit: Infinity })
-                );
-                const filename = `HTTPToolkit_${
-                    dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
-                }.har`;
-                saveFile(filename, 'application/har+json;charset=utf-8', harContent);
-            }}
+            onClick={() => exportEventsAsBulkHar(selectedEvents, `HTTPToolkit_${
+                dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
+            }.har`)}
         >
             <Icon icon={['fas', 'save']} fixedWidth />
             Export as HAR

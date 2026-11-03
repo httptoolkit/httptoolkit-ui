@@ -9,6 +9,7 @@ import * as harModel from '../http/har';
 import { UI_VERSION } from '../../services/service-versions';
 import { logError } from '../../errors';
 import { saveFile } from '../../util/ui';
+import { getBulkHarExportOptions } from './export';
 
 import * as workerApi from '../../services/ui-worker-api';
 
@@ -27,12 +28,14 @@ export type ZipExportState =
     };
 
 type ZipExportDependencies = {
+    getHarExportOptions: typeof getBulkHarExportOptions;
     generateHar: typeof harModel.generateHar;
     exportAsZip: typeof workerApi.exportAsZip;
     saveFile: typeof saveFile;
 };
 
 const DEFAULT_ZIP_EXPORT_DEPENDENCIES: ZipExportDependencies = {
+    getHarExportOptions: getBulkHarExportOptions,
     generateHar: harModel.generateHar,
     exportAsZip: workerApi.exportAsZip,
     saveFile
@@ -68,7 +71,18 @@ export class ZipExportController {
         this.state = { kind: 'running' };
 
         try {
-            const harObservable = await this.deps.generateHar(eventsSnapshot, { bodySizeLimit: Infinity });
+            // Without the HAR file itself, only the snippets (& so their bodies) are exported:
+            const harOptions = args.includeHar
+                ? await this.deps.getHarExportOptions(eventsSnapshot)
+                : {};
+            if (version !== this.runVersion) return;
+
+            if (!harOptions) {
+                runInAction(() => { this.state = { kind: 'idle' }; });
+                return;
+            }
+
+            const harObservable = await this.deps.generateHar(eventsSnapshot, harOptions);
             if (version !== this.runVersion) return;
 
             const har = toJS(harObservable);

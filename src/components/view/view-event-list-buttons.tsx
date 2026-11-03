@@ -5,11 +5,11 @@ import * as dedent from 'dedent';
 import * as Ajv from 'ajv';
 
 import { ViewableEvent } from '../../types';
-import { saveFile, uploadFile, Ctrl } from '../../util/ui';
+import { uploadFile, Ctrl } from '../../util/ui';
 
 import { AccountStore } from '../../model/account/account-store';
 import { EventsStore } from '../../model/events/events-store';
-import { generateHar } from '../../model/http/har';
+import { exportEventsAsBulkHar } from '../../model/ui/export';
 import { logError } from '../../errors';
 import { formatAjvError } from '../../util/json-schema';
 
@@ -44,16 +44,9 @@ export const ExportAsHarButton = inject('accountStore')(observer((props: {
                 )
         }
         disabled={!isPaidUser || props.events.length === 0}
-        onClick={async () => {
-            const harContent = JSON.stringify(
-                await generateHar(props.events)
-            );
-            const filename = `HTTPToolkit_${
-                dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
-            }.har`;
-
-            saveFile(filename, 'application/har+json;charset=utf-8', harContent);
-        }}
+        onClick={() => exportEventsAsBulkHar(props.events, `HTTPToolkit_${
+            dateFns.format(Date.now(), 'YYYY-MM-DD_HH-mm')
+        }.har`)}
     />
 }));
 

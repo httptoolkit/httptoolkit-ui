@@ -143,7 +143,11 @@ export class StreamMessageListCard extends React.Component<ExpandableCardProps &
     }
 
     exportMessages = () => {
-        exportEventsAsHar([this.props.streamEvent], `${this.props.filenamePrefix}.har`);
+        exportEventsAsHar(
+            [this.props.streamEvent],
+            `${this.props.filenamePrefix}.har`,
+            'To export very large messages, select them and use the save button on the message individually instead.'
+        );
     };
 
     exportMessage = (message: StreamMessage) => {

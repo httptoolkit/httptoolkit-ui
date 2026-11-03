@@ -25,6 +25,41 @@ describe('HAR generation', () => {
             .to.deep.equal([403, 200]);
     });
 
+    it('marks dropped request & response bodies', async () => {
+        const exchange = getExchangeData({
+            requestBody: Buffer.alloc(50),
+            responseBody: Buffer.alloc(100)
+        });
+        if (!exchange.isSuccessfulExchange()) throw new Error('Unexpected exchange state');
+
+        const har = await generateHar([exchange], {
+            droppedBodies: new Set([exchange.request.body, exchange.response.body])
+        });
+        const { request, response } = har.log.entries[0];
+
+        expect(request._requestBodyStatus).to.equal('discarded:too-large');
+        expect(request.postData).to.equal(undefined);
+        expect(request.comment).to.include('too large (50 bytes)');
+
+        expect(response._responseBodyStatus).to.equal('discarded:too-large');
+        expect(response.content.text).to.equal(undefined);
+        expect(response.content.comment).to.include('too large (100 bytes)');
+    });
+
+    it('marks response bodies that could not be decoded', async () => {
+        const exchange = getExchangeData({
+            responseBody: Buffer.from('not really gzip'),
+            responseHeaders: { 'content-encoding': 'gzip' }
+        });
+
+        const har = await generateHar([exchange]);
+        const response = har.log.entries[0].response;
+
+        expect(response._responseBodyStatus).to.equal('discarded:not-decodable');
+        expect(response.content.text).to.equal(undefined);
+        expect(response.content.comment).to.include('could not be decoded');
+    });
+
     it('exports WebSocket message & close times as epoch seconds', async () => {
         const startTime = Date.parse('2026-07-17T20:35:23.000Z');
         const stream = Object.assign(getExchangeData({ statusCode: 101 }), {

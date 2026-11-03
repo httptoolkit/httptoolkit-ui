@@ -2,6 +2,7 @@ import { expect } from '../../../test-setup';
 import * as sinon from 'sinon';
 
 import { ZipExportController } from '../../../../src/model/ui/zip-export-service';
+import { getBulkHarExportOptions } from '../../../../src/model/ui/export';
 
 function getDeferred<T>() {
     let resolve!: (value: T | PromiseLike<T>) => void;
@@ -27,17 +28,26 @@ function makeHar() {
 }
 
 describe('ZipExportController', () => {
+    let getHarExportOptionsStub: sinon.SinonStub<
+        Parameters<typeof getBulkHarExportOptions>,
+        ReturnType<typeof getBulkHarExportOptions>
+    >;
     let generateHarStub: sinon.SinonStub;
     let exportAsZipStub: sinon.SinonStub;
     let saveFileStub: sinon.SinonStub;
 
     const makeController = () => new ZipExportController({
+        getHarExportOptions: getHarExportOptionsStub,
         generateHar: generateHarStub as any,
         exportAsZip: exportAsZipStub as any,
         saveFile: saveFileStub as any
     });
 
     beforeEach(() => {
+        getHarExportOptionsStub = sinon.stub<
+            Parameters<typeof getBulkHarExportOptions>,
+            ReturnType<typeof getBulkHarExportOptions>
+        >().resolves({ droppedBodies: new Set() });
         generateHarStub = sinon.stub().resolves(makeHar());
         exportAsZipStub = sinon.stub();
         saveFileStub = sinon.stub();
@@ -161,5 +171,45 @@ describe('ZipExportController', () => {
         if (controller.state.kind === 'error') {
             expect(controller.state.message).to.equal('Worker exploded');
         }
+    });
+
+    describe('HAR size checks', () => {
+        beforeEach(() => {
+            exportAsZipStub.resolves({
+                archive: new ArrayBuffer(8),
+                snippetSuccessCount: 1,
+                snippetErrorCount: 0,
+                errors: []
+            });
+        });
+
+        it('uses the checked HAR export options when including the HAR', async () => {
+            const controller = makeController();
+            await controller.run({ events: [], formatIds: [], includeHar: true });
+
+            expect(getHarExportOptionsStub.calledOnce).to.equal(true);
+            expect(generateHarStub.firstCall.args[1]).to.deep.equal({ droppedBodies: new Set() });
+            expect(controller.state.kind).to.equal('done');
+        });
+
+        it('skips the size check & limits when not including the HAR', async () => {
+            const controller = makeController();
+            await controller.run({ events: [], formatIds: ['shell~~curl'], includeHar: false });
+
+            expect(getHarExportOptionsStub.called).to.equal(false);
+            expect(generateHarStub.firstCall.args[1]).to.deep.equal({});
+        });
+
+        it('exports nothing if the HAR export is cancelled', async () => {
+            getHarExportOptionsStub.resolves(undefined);
+
+            const controller = makeController();
+            await controller.run({ events: [], formatIds: [], includeHar: true });
+
+            expect(generateHarStub.called).to.equal(false);
+            expect(exportAsZipStub.called).to.equal(false);
+            expect(saveFileStub.called).to.equal(false);
+            expect(controller.state.kind).to.equal('idle');
+        });
     });
 });
