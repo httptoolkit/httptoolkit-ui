@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as _ from 'lodash';
 import * as dateFns from 'date-fns';
 import { inject, observer } from 'mobx-react';
 
@@ -8,13 +9,15 @@ import { CollectedEvent } from '../../types';
 import { AccountStore } from '../../model/account/account-store';
 import { UiStore } from '../../model/ui/ui-store';
 import { exportEventsAsBulkHar } from '../../model/ui/export';
+import { getTransferSize } from '../../model/events/transfer-size';
+import { getReadableSize } from '../../util/buffer';
 
 import { Icon } from '../../icons';
 import { Button } from '../common/inputs';
 import { GetProOverlay } from '../account/pro-placeholders';
 
 import { getEventPreviewContent, getEventMarkerColor, isOpaqueConnection } from './event-rows/event-row';
-import { uppercaseFirst } from '../../util/text';
+import { joinAnd } from '../../util/text';
 
 const SummaryContainer = styled.div`
     position: relative;
@@ -104,6 +107,19 @@ const SelectionLabel = styled.div`
     pointer-events: none;
 `;
 
+const SelectionDetails = styled.div`
+    margin-top: -20px;
+    text-align: center;
+    font-size: ${p => p.theme.textSize};
+    line-height: 1.5;
+    color: ${p => p.theme.mainColor};
+    opacity: ${p => p.theme.lowlightTextOpacity};
+`;
+
+const SelectionSize = styled.div`
+    cursor: help;
+`;
+
 const ActionsContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -163,6 +179,25 @@ const ProActionsOverlay = styled(GetProOverlay)`
 
 const PREVIEW_COUNT = 10;
 
+const EVENT_TYPES: Array<[(event: CollectedEvent) => boolean, string]> = [
+    [(e) => e.isHttp() && !e.isWebSocket(), 'HTTP request'],
+    [(e) => e.isWebSocket(), 'WebSocket'],
+    [(e) => e.isRTCConnection(), 'WebRTC connection'],
+    [(e) => e.isRTCDataChannel(), 'WebRTC data channel'],
+    [(e) => e.isRTCMediaTrack(), 'WebRTC media track'],
+    [(e) => e.isRawTunnel(), 'raw tunnel'],
+    [(e) => e.isTlsTunnel(), 'TLS tunnel'],
+    [(e) => e.isTlsFailure(), 'TLS failure']
+];
+
+const describeEventTypes = (events: ReadonlyArray<CollectedEvent>) =>
+    joinAnd(_.flatMap(EVENT_TYPES, ([matcher, name]) => {
+        const count = events.filter(matcher).length;
+        return count > 0
+            ? [`${count} ${name}${count !== 1 ? 's' : ''}`]
+            : [];
+    }));
+
 export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(observer((props: {
     accountStore?: AccountStore,
     uiStore?: UiStore,
@@ -180,13 +215,13 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
         e.isHttp() && !e.isWebSocket()
     ).length;
 
-    const allHttp = count > 0 && selectedEvents.every(e => e.isHttp());
     const allPinned = selectedEvents.every(e => e.pinned);
-    const label = allHttp ? 'request' : 'event';
 
     // selectedEvents is in selection order (most recent last).
     // Reverse so the most recent is the front card (index 0).
     const previewEvents = selectedEvents.slice(-PREVIEW_COUNT).reverse();
+
+    const transferSize = getTransferSize(selectedEvents);
 
     const proButtons = <>
         <ActionButton
@@ -236,9 +271,17 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
                 </PreviewRow>;
             })}
             <SelectionLabel>
-                {count} {label}{count !== 1 ? 's' : ''} selected
+                {count} row{count !== 1 ? 's' : ''} selected
             </SelectionLabel>
         </PreviewStack>
+        <SelectionDetails>
+            <div>{ describeEventTypes(selectedEvents) }</div>
+            <SelectionSize title={
+                'The approximate size of the selected traffic as transferred, before decompression'
+            }>
+                About { getReadableSize(transferSize) } in total
+            </SelectionSize>
+        </SelectionDetails>
 
         <ActionsContainer>
             <ActionButton
@@ -253,7 +296,7 @@ export const MultiSelectionSummaryPane = inject('accountStore', 'uiStore')(obser
                 onClick={props.onDelete}
             >
                 <Icon icon={['far', 'trash-alt']} fixedWidth />
-                Delete {count} {uppercaseFirst(label)}{count !== 1 ? 's' : ''}
+                Delete {count} Row{count !== 1 ? 's' : ''}
             </ActionButton>
 
             { isPaidUser
