@@ -4,7 +4,7 @@ import {
     SERVER_REST_API_SUPPORTED
 } from './service-versions';
 
-import { type ServerConfig, type NetworkInterfaces, type ServerInterceptor, ApiError, ActivationFailure, ActivationNonSuccess } from './server-api-types';
+import { type CertificateMode, type ServerConfig, type NetworkInterfaces, type ServerInterceptor, ApiError, ActivationFailure, ActivationNonSuccess } from './server-api-types';
 export type { ServerConfig, NetworkInterfaces, ServerInterceptor };
 
 import { GraphQLApiClient } from './server-graphql-api';
@@ -129,4 +129,10 @@ export async function triggerServerUpdate() {
     return (await getApiClient()).triggerServerUpdate()
         // We ignore all errors, this trigger is just advisory
         .catch(console.log);
+}
+
+export async function setCertificateMode(mode: CertificateMode): Promise<void> {
+    const client = await getApiClient();
+    if (!(client instanceof RestApiClient)) throw new Error('Update the HTTP Toolkit server to select a TLS signing certificate');
+    await client.setCertificateMode(mode);
 }
