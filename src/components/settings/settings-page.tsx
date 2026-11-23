@@ -145,6 +145,9 @@ class SettingsPage extends React.Component<SettingsPageProps> {
         // ! because we know this is set, as we have a paid user
         const sub = userSubscription!;
 
+        // Perpetual plans never renew or end, so there's no billing cycle to show or manage
+        const isPerpetual = sub.interval === 'perpetual';
+
         return <SettingsPageScrollContainer>
             <SettingPageContainer>
                 <SettingsHeading>Settings</SettingsHeading>
@@ -169,8 +172,9 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             Subscription status
                         </ContentLabel>
                         <ContentValue>
-                            {
-                                ({
+                            { isPerpetual && sub.status !== 'past_due'
+                                ? 'Active'
+                                : ({
                                     'active': 'Active',
                                     'trialing': 'Active (trial)',
                                     'past_due': <strong
@@ -202,26 +206,28 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                             }
                         </ContentValue>
 
-                        <ContentLabel>
-                            {
-                                ({
-                                    'active': 'Next renews',
-                                    'trialing': 'Renews',
-                                    'past_due': 'Next payment attempt',
-                                    'deleted': 'Ends',
-                                }[sub.status]) || 'Current period ends'
-                            }
-                        </ContentLabel>
-                        <ContentValue>
-                            {
-                                distanceInWordsStrict(new Date(), sub.expiry, {
-                                    addSuffix: true,
-                                    partialMethod: 'round'
+                        { !isPerpetual && <>
+                            <ContentLabel>
+                                {
+                                    ({
+                                        'active': 'Next renews',
+                                        'trialing': 'Renews',
+                                        'past_due': 'Next payment attempt',
+                                        'deleted': 'Ends',
+                                    }[sub.status]) || 'Current period ends'
+                                }
+                            </ContentLabel>
+                            <ContentValue>
+                                {
+                                    distanceInWordsStrict(new Date(), sub.expiry, {
+                                        addSuffix: true,
+                                        partialMethod: 'round'
+                                    })
+                                } ({
+                                    format(sub.expiry.toString(), 'Do [of] MMMM YYYY')
                                 })
-                            } ({
-                                format(sub.expiry.toString(), 'Do [of] MMMM YYYY')
-                            })
-                        </ContentValue>
+                            </ContentValue>
+                        </> }
                     </AccountDetailsContainer>
 
                     <AccountControls>
@@ -234,7 +240,7 @@ class SettingsPage extends React.Component<SettingsPageProps> {
                                 View latest invoice
                             </SettingsButtonLink>
                         }
-                        { canManageSubscription && <>
+                        { canManageSubscription && !isPerpetual && <>
                             { sub.updateBillingDetailsUrl &&
                                 <SettingsButtonLink
                                     href={sub.updateBillingDetailsUrl}
