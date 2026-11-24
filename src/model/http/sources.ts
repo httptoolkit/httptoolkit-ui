@@ -145,6 +145,21 @@ function checkForElectron(userAgent: IUAParser.IResult) {
     }
 }
 
+function checkForLadybird(userAgent: IUAParser.IResult) {
+    const ladybirdVersion = userAgent.ua.match(/Ladybird\/(\S+)/);
+
+    if (ladybirdVersion) {
+        // Ladybird UAs include Chrome & WebKit tokens for compatibility, but it's
+        // an independent browser with its own engine.
+        userAgent.browser = {
+            name: 'Ladybird',
+            version: ladybirdVersion[1],
+            major: ladybirdVersion[1].split('.')[0]
+        };
+        userAgent.engine = { name: 'LibWeb', version: undefined };
+    }
+}
+
 export const UNKNOWN_SOURCE = {
     ua: '',
     summary: 'Unknown client',
@@ -167,6 +182,7 @@ export const parseSource = (userAgentHeader: string | undefined): TrafficSource 
     const useragent = new UAParser(userAgentHeader).getResult();
 
     checkForElectron(useragent);
+    checkForLadybird(useragent);
 
     return {
         ua: useragent.ua,

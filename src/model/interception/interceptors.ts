@@ -184,6 +184,12 @@ const INTERCEPT_OPTIONS: _.Dictionary<InterceptorConfig> = {
         iconProps: recolored(SourceIcons.Firefox, "#1ED5E2"),
         tags: BROWSER_TAGS
     },
+    'fresh-ladybird': {
+        name: 'Ladybird',
+        description: ["Intercept a fresh independent Ladybird window"],
+        iconProps: SourceIcons.Ladybird,
+        tags: BROWSER_TAGS
+    },
     'existing-arc': {
         name: 'Global Arc Browser',
         description: [

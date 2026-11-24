@@ -11,6 +11,9 @@ const WINDOWS_IE = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET
 const WINDOWS_CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36';
 const WINDOWS_EDGE = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.48 Safari/537.36 Edg/74.1.96.24';
 
+const LINUX_LADYBIRD = 'Mozilla/5.0 (X11; Linux x86_64) Ladybird/2026.47.7 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36';
+const OSX_LADYBIRD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Ladybird/2026.47.7 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36';
+
 const ANDROID_CHROME = 'Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko; googleweblight) Chrome/38.0.1025.166 Mobile Safari/535.19';
 const IPHONE_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.0 Mobile/15E148 Safari/604.1';
 
@@ -80,6 +83,16 @@ describe('HTTP source parsing', () => {
                 expect(source.icon).to.equal(SourceIcons.Php);
             });
 
+            it('should parse Ladybird UAs', () => {
+                const linuxSource = parseSource(LINUX_LADYBIRD);
+                expect(linuxSource.summary).to.equal('Ladybird 2026.47 (Linux x86_64)');
+                expect(linuxSource.icon).to.equal(SourceIcons.Ladybird);
+
+                const osxSource = parseSource(OSX_LADYBIRD);
+                expect(osxSource.summary).to.equal('Ladybird 2026.47 (Mac OS 10.15)');
+                expect(osxSource.icon).to.equal(SourceIcons.Ladybird);
+            });
+
             it('should parse an Electron-based UA', () => {
                 const source = parseSource(SLACK);
 
@@ -137,6 +150,16 @@ describe('HTTP source parsing', () => {
             expect(source.description).to.equal(
                 'This request came from Chrome 60, based on the ' +
                     'Blink engine. The device is running Windows 10, with ' +
+                    'an amd64 CPU.'
+            );
+        });
+
+        it('should show detailed info for Ladybird clients', () => {
+            const source = parseSource(LINUX_LADYBIRD);
+
+            expect(source.description).to.equal(
+                'This request came from Ladybird 2026.47, based on the ' +
+                    'LibWeb engine. The device is running Linux x86_64, with ' +
                     'an amd64 CPU.'
             );
         });
