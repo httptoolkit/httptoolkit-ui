@@ -6,13 +6,10 @@ import {
 import * as beautifyXml from 'xml-beautifier';
 
 import { Headers } from '../types';
-import { asBuffer, bufferToHex, bufferToString, getReadableSize } from '../util/buffer';
+import { asBuffer, bufferToHex, bufferToHexLines, bufferToString, getReadableSize, HEX_BYTES_PER_LINE } from '../util/buffer';
 import { parseRawProtobuf, extractProtobufFromGrpc } from '../util/protobuf';
 import { formatJson } from '../util/json';
 import { formatEventStreamAsJson } from '../util/event-stream';
-
-const truncationMarker = (size: string) => `\n[-- Truncated to ${size} --]`;
-const FIVE_MB = 1024 * 1024 * 5;
 
 export type WorkerFormatterKey = keyof typeof WorkerFormatters;
 
@@ -89,21 +86,7 @@ const prettyProtobufView = (data: unknown) => {
 const WorkerFormatters = {
     // Poor man's hex editor:
     raw: (content: Buffer) => {
-        // Truncate the content if necessary. Nobody should manually dig
-        // through more than 5MB of content, and the full content is
-        // available by downloading the whole body.
-        const needsTruncation = content.length > FIVE_MB;
-        if (needsTruncation) {
-            content = content.subarray(0, FIVE_MB)
-        }
-
-        const formattedContent = bufferToHex(content);
-
-        if (needsTruncation) {
-            return formattedContent + truncationMarker("5MB");
-        } else {
-            return formattedContent;
-        }
+        return bufferToHexLines(content, HEX_BYTES_PER_LINE);
     },
     base64: (content: Buffer) => {
         const b64 = content.toString('ascii');

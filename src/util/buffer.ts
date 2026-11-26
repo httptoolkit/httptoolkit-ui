@@ -130,6 +130,23 @@ export function bufferToHex(input: Buffer) {
     return hexPairs.join(' ');
 }
 
+export const HEX_BYTES_PER_LINE = 16;
+
+export function bufferToHexLines(input: Buffer, bytesPerLine: number) {
+    const lines = new Array(Math.ceil(input.length / bytesPerLine));
+    const linePairs = new Array(bytesPerLine);
+    for (let line = 0; line < lines.length; line++) {
+        const start = line * bytesPerLine;
+        const end = Math.min(start + bytesPerLine, input.length);
+        linePairs.length = end - start;
+        for (let i = start; i < end; i++) {
+            linePairs[i - start] = HEX_LOOKUP[input[i]];
+        }
+        lines[line] = linePairs.join(' ');
+    }
+    return lines.join('\n');
+}
+
 export function getReadableSize(input: number | Buffer | string, siUnits = true) {
     const bytes = Buffer.isBuffer(input)
             ? input.byteLength

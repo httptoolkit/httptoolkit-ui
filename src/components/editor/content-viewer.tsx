@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { reaction, computed } from 'mobx';
+import { reaction, computed, comparer } from 'mobx';
 import { observer, disposeOnUnmount } from 'mobx-react';
 import { SchemaObject } from 'openapi3-ts';
 import * as portals from 'react-reverse-portal';
@@ -166,9 +166,16 @@ export class ContentViewer extends React.Component<ContentViewerProps> {
         }
     }
 
-    private readonly editorOptions = {
-        readOnly: true
-    };
+    // Compared structurally, so the editor only sees a new options object when the options change
+    @computed({ equals: comparer.structural })
+    private get editorOptions() {
+        const isHex = isEditorFormatter(this.formatter) && this.formatter.language === 'hex';
+        return {
+            readOnly: true,
+            // Hex has fixed-width rows, which wrapping would break up in narrow editors:
+            ...(isHex ? { wordWrap: 'off' as const } : {})
+        };
+    }
 
     render() {
         if (isEditorFormatter(this.formatter)) {

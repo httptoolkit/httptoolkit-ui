@@ -29,6 +29,16 @@ describe('Worker formatting', function () {
         ].join('\n'));
     });
 
+    it('should format only the bytes of a buffer view', async () => {
+        const backing = Buffer.from('before<p>hello</p>after');
+        const view = backing.subarray(6, 18);
+
+        const formatted = await formatBufferAsync(view, 'html');
+
+        expect(formatted).to.equal('<p>hello</p>');
+        expect(backing.toString()).to.equal('before<p>hello</p>after');
+    });
+
     it('should format gzipped gRPC via the worker, using the given headers', async () => {
         const message = zlib.gzipSync(bufferFromHex('0a:0b:48:65:6c:6c:6f:20:57:6f:72:6c:64')); // #1 = "Hello World"
         const lengthPrefix = Buffer.alloc(5);

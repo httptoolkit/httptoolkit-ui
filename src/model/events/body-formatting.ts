@@ -3,7 +3,7 @@ import { styled } from '../../styles';
 
 import { ViewableContentType } from '../events/content-types';
 import { ObservablePromise, observablePromise } from '../../util/observable';
-import { bufferToString, bufferToHex } from '../../util/buffer';
+import { bufferToString, bufferToHexLines, HEX_BYTES_PER_LINE } from '../../util/buffer';
 
 import type { WorkerFormatterKey } from '../../services/ui-worker-formatters';
 import { formatBufferAsync } from '../../services/ui-worker-api';
@@ -56,23 +56,36 @@ const buildAsyncRenderer = (formatKey: WorkerFormatterKey) =>
         formatBufferAsync(input, formatKey, headers)
     );
 
+// Hex is shown in lines of 16 bytes, and Monaco stops syntax highlighting entirely above
+// 300k lines, so this limit keeps all hex highlighted.
+export const MAX_HEX_FORMAT_SIZE = 4 * 1024 * 1024;
+
 export const Formatters: { [key in ViewableContentType]: Formatter } = {
     raw: {
         language: 'hex',
         cacheKey: Symbol('raw'),
         isEditApplicable: false,
         render: (input: Buffer, headers?: Headers) => {
-            if (input.byteLength < 2_000) {
+            // Nobody should manually dig through more than this in hex, and the full content
+            // is available by downloading the whole body.
+            const truncated = input.byteLength > MAX_HEX_FORMAT_SIZE;
+            const content = truncated ? input.subarray(0, MAX_HEX_FORMAT_SIZE) : input;
+            const truncationMarker = truncated
+                ? `\n[-- Truncated to ${MAX_HEX_FORMAT_SIZE / 1024 / 1024}MB --]`
+                : '';
+
+            if (content.byteLength < 2_000) {
                 try {
                     // For short-ish inputs, we return synchronously - conveniently this avoids
                     // showing the loading spinner that churns the layout in short content cases.
-                    return bufferToHex(input);
+                    return bufferToHexLines(content, HEX_BYTES_PER_LINE) + truncationMarker;
                 } catch (e) {
                     return observablePromise(Promise.reject(e));
                 }
             } else {
                 return observablePromise(
-                    formatBufferAsync(input, 'raw', headers)
+                    formatBufferAsync(content, 'raw', headers)
+                        .then((hex) => hex + truncationMarker)
                 );
             }
         }

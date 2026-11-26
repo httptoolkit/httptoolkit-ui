@@ -150,12 +150,15 @@ export async function parseCert(buffer: ArrayBuffer) {
 }
 
 export async function formatBufferAsync(buffer: Buffer, format: WorkerFormatterKey, headers?: Headers) {
+    // Copy exactly this buffer's bytes (it may be a view into a larger ArrayBuffer), and
+    // transfer that copy, so it's not copied again or retained here.
+    const data = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
     return (await callApi<FormatRequest, FormatResponse>({
         type: 'format',
-        buffer: buffer.buffer as ArrayBuffer,
+        buffer: data,
         format,
         headers,
-    })).formatted;
+    }, [data])).formatted;
 }
 
 export async function exportAsZip(args: {
