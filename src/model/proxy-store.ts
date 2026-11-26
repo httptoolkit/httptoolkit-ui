@@ -232,6 +232,8 @@ export class ProxyStore {
             { messageBodyDecoding: 'none' }
         );
 
+        this.extraHttpsNames = this.adminClient.metadata.http.extraHttpsNames ?? [];
+
         announceServerReady();
         console.log('Server started');
 
@@ -311,6 +313,13 @@ export class ProxyStore {
 
     @computed get httpProxyPort() {
         return this.adminClient.metadata.http.port;
+    }
+
+    @observable
+    extraHttpsNames: string[] = [];
+
+    enableExtraHttps(name: string): Promise<number> {
+        return this.adminClient.sendQuery(this.mockttpRequestBuilder.buildEnableExtraHttpsQuery(name));
     }
 
     @persist @observable

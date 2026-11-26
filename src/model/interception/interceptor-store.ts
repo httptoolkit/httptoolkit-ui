@@ -47,7 +47,8 @@ export class InterceptorStore {
             const supportedInterceptors = getInterceptOptions(
                 serverInterceptors,
                 this.accountStore,
-                serverVersion
+                serverVersion,
+                this.proxyStore.extraHttpsNames
             );
 
             // Quick patch for a bug in existing-chrome for server <= 1.1.2 which incorrectly
