@@ -1,5 +1,4 @@
 import type * as MonacoTypes from 'monaco-editor';
-import type { default as _MonacoEditor, MonacoEditorProps } from 'react-monaco-editor';
 import { observable, runInAction } from 'mobx';
 
 import { defineMonacoThemes } from '../../styles';
@@ -9,15 +8,16 @@ import { delay } from '../../util/promise';
 import { asError } from '../../util/error';
 
 import { ContentValidator, validateJsonRecords, validateXml } from '../../model/events/content-validation';
+import { buildMonacoEditor, MonacoEditorProps } from './monaco-editor';
 
 export type {
     MonacoTypes,
     MonacoEditorProps
 };
 
-export let MonacoEditor: typeof _MonacoEditor | undefined;
+export let MonacoEditor: ReturnType<typeof buildMonacoEditor> | undefined;
 
-// Defer loading react-monaco-editor ever so slightly. This has two benefits:
+// Defer loading Monaco ever so slightly. This has two benefits:
 // * don't delay first app start waiting for this massive chunk to load
 // * better caching (app/monaco-editor bundles can update independently)
 export let monacoLoadingPromise = delay(100)
@@ -25,9 +25,6 @@ export let monacoLoadingPromise = delay(100)
 
 async function loadMonacoEditor(retries = 5): Promise<void> {
     try {
-        // These might look like two sequential requests, but since they're a single webpack
-        // chunk, it'll actually just be one load, and then both will fire together.
-        const rmeModule = await import('react-monaco-editor');
         const monaco = await import('monaco-editor/esm/vs/editor/editor.api');
 
         defineMonacoThemes(monaco);
@@ -87,7 +84,7 @@ async function loadMonacoEditor(retries = 5): Promise<void> {
         addValidator(monaco, 'xml', validateXml);
         addValidator(monaco, 'json-records', validateJsonRecords);
 
-        MonacoEditor = rmeModule.default;
+        MonacoEditor = buildMonacoEditor(monaco);
     } catch (err) {
         console.log('Monaco load failed', asError(err).message);
         if (retries <= 0) {

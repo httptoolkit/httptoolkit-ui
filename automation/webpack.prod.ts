@@ -67,7 +67,7 @@ export default merge(common, {
 
                 // Monaco is loaded async, v large, and rarely changed:
                 monaco: {
-                    test: /[\\/]node_modules[\\/](monaco-editor|react-monaco-editor)[\\/]/,
+                    test: /[\\/]node_modules[\\/]monaco-editor[\\/]/,
                     name: 'monaco'
                 },
 
